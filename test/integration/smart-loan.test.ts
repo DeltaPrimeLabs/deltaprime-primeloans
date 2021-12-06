@@ -680,5 +680,310 @@ describe('Smart loan', () => {
       expect(await loan.isSolvent()).to.be.false;
     });
   });
+
+  describe('A loan with closeLoan() and additional AVAX supplied', () => {
+    let exchange: PangolinExchange,
+        loan: MockSmartLoanRedstoneProvider,
+        wrappedLoan: any,
+        wrappedLoanUpdated: any,
+        pool: Pool,
+        owner: SignerWithAddress,
+        depositor: SignerWithAddress,
+        usdTokenContract: Contract,
+        linkTokenContract: Contract,
+        usdTokenDecimalPlaces: BigNumber,
+        linkTokenDecimalPlaces: BigNumber,
+        MOCK_PRICES: any,
+        MOCK_PRICES_UPDATED: any,
+        AVAX_PRICE: number,
+        LINK_PRICE: number,
+        USD_PRICE: number;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
+          [
+            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
+            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+          ]);
+
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      linkTokenDecimalPlaces = await linkTokenContract.decimals();
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
+
+    it("should deploy a smart loan, fund, borrow and invest", async () => {
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      loan.initialize(exchange.address, pool.address);
+
+      wrappedLoan = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+
+      await wrappedLoan.authorizeProvider();
+
+      await wrappedLoan.fund({value: toWei("100")});
+      await wrappedLoan.borrow(toWei("300"));
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(400);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(300);
+      expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+
+      const slippageTolerance = 0.03;
+      let investedAmount = 20000;
+      let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
+
+      await wrappedLoan.invest(
+          toBytes32('USD'),
+          parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
+          toWei(requiredAvaxAmount.toString())
+      );
+    });
+
+
+    it("should withdraw collateral and part of borrowed funds, bring prices back to normal and close the loan by supplying additional AVAX", async () => {
+      // Define "updated" (USD x 1000) prices and build an updated wrapped loan
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+      MOCK_PRICES_UPDATED = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE * 1000
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      wrappedLoanUpdated = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES_UPDATED,
+                  timestamp: Date.now()
+                }
+              })
+
+      // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
+      let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
+      expect(await wrappedLoan.isSolvent()).to.be.true;
+      await wrappedLoanUpdated.withdraw(toWei("150"));
+      expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
+      expect(await wrappedLoan.isSolvent()).to.be.false;
+
+      // Try to close the debt
+      await expect(wrappedLoan.closeLoan()).to.be.revertedWith("DebtNotRepaidAfterLoanSelout()");
+
+      let debt = BigNumber.from(await wrappedLoan.getDebt());
+      let loanTotalValue = BigNumber.from(await wrappedLoan.getTotalValue());
+      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("150")).sub(debt).add(loanTotalValue);
+
+      // Try to close the debt using remaining AVAX and additional 290 AVAX
+      await wrappedLoan.closeLoan({value: toWei("290")});
+
+      // The "normal" loan should be solvent and debt should be equal to 0
+      debt = BigNumber.from(fromWei(await wrappedLoan.getDebt()));
+      expect(await wrappedLoan.isSolvent()).to.be.true;
+      expect(debt).to.be.equal(0);
+
+      // Make sure that the loan returned all of the remaining AVAX after repaying the whole debt
+      expect(await provider.getBalance(loan.address)).to.be.equal(0);
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
+    });
+  });
+
+  describe('A loan with liquidateLoan() and additional AVAX supplied', () => {
+    let exchange: PangolinExchange,
+        loan: MockSmartLoanRedstoneProvider,
+        wrappedLoan: any,
+        wrappedLoanUpdated: any,
+        pool: Pool,
+        owner: SignerWithAddress,
+        depositor: SignerWithAddress,
+        usdTokenContract: Contract,
+        linkTokenContract: Contract,
+        usdTokenDecimalPlaces: BigNumber,
+        linkTokenDecimalPlaces: BigNumber,
+        MOCK_PRICES: any,
+        MOCK_PRICES_UPDATED: any,
+        AVAX_PRICE: number,
+        LINK_PRICE: number,
+        USD_PRICE: number;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
+          [
+            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
+            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+          ]);
+
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      linkTokenDecimalPlaces = await linkTokenContract.decimals();
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
+
+    it("should deploy a smart loan, fund, borrow and invest", async () => {
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      loan.initialize(exchange.address, pool.address);
+
+      wrappedLoan = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+
+      await wrappedLoan.authorizeProvider();
+
+      await wrappedLoan.fund({value: toWei("100")});
+      await wrappedLoan.borrow(toWei("300"));
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(400);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(300);
+      expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+
+      const slippageTolerance = 0.03;
+      let investedAmount = 20000;
+      let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
+
+      await wrappedLoan.invest(
+          toBytes32('USD'),
+          parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
+          toWei(requiredAvaxAmount.toString())
+      );
+    });
+
+
+    it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {
+      // Define "updated" (USD x 1000) prices and build an updated wrapped loan
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+      MOCK_PRICES_UPDATED = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE * 1000
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      wrappedLoanUpdated = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES_UPDATED,
+                  timestamp: Date.now()
+                }
+              })
+
+      // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
+      let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
+      expect(await wrappedLoan.isSolvent()).to.be.true;
+      await wrappedLoanUpdated.withdraw(toWei("150"));
+      expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
+      expect(await wrappedLoan.isSolvent()).to.be.false;
+
+      // Try to liquidate the loan
+      await expect(wrappedLoan.liquidateLoan(toWei("305"))).to.be.revertedWith("LoanInsolventAfterLiquidation()");
+
+      let debt = BigNumber.from(await wrappedLoan.getDebt());
+      let liquidationBonus = BigNumber.from(toWei("300")).div(10);
+      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("150")).sub(toWei("100")).add(liquidationBonus);
+
+      // Try to liquidate the loan using remaining AVAX and additional 100 AVAX
+      await wrappedLoan.liquidateLoan(toWei("305"), {value: toWei("100")});
+
+      // The "normal" loan should be solvent and debt should be equal to 0
+      debt = BigNumber.from(fromWei(await wrappedLoan.getDebt()));
+      expect(await wrappedLoan.isSolvent()).to.be.true;
+      expect(debt).to.be.equal(0);
+
+      // Make sure that the loan returned excessive AVAX after repaying the whole debt
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
+    });
+  });
 });
 
