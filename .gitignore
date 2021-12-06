@@ -1,0 +1,12 @@
+node_modules
+build
+artifacts
+
+public
+cache
+.idea
+/.secret
+/.secret2
+
+.vercel
+typechain

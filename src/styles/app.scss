@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@900&display=swap');
+@import "./variables.scss";
+@import "./overrides.scss";
+@import "./tooltip.scss";
+@import "./table.scss";
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+
+    @media screen and (min-width: $md) {
+        font-size: 14px;
+    }
+}
+
+html {
+    //forced scroll to prevent layout change
+    overflow-y: scroll;
+}
+
+.container {
+    margin: auto;
+    padding-bottom: 30px;
+    width: 90vw;
+
+    @media screen and (min-width: $md) {
+        width: 800px;
+    }
+}
+
+.label {
+    color: #696969;
+    font-size: $font-size-sm;
+    text-align: center;
+}
+
