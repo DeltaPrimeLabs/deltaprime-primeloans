@@ -154,6 +154,19 @@ describe('Smart loan', () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+    it("should revert with AssetPriceNotFoundInMsg()", async () => {
+      let wrappedLoanWithoutPrices = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: [],
+                  timestamp: Date.now()
+                }
+              })
+      await expect(wrappedLoanWithoutPrices.getAssetValue(toBytes32("USD"))).to.be.revertedWith("AssetPriceNotFoundInMsg()");
+    });
+
     it("should provide assets balances and prices", async () => {
       const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
       const usdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[0];

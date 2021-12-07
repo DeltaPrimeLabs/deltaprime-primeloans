@@ -275,7 +275,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
-    uint normalizedPrice = (getPriceFromMsg(_asset) * 10 ** 18) / getPriceFromMsg(bytes32('AVAX'));
+    uint256 assetPrice = getPriceFromMsg(_asset);
+    uint256 avaxPrice = getPriceFromMsg(bytes32('AVAX'));
+    if (assetPrice == 0 || avaxPrice == 0) revert AssetPriceNotFoundInMsg();
+    uint normalizedPrice = (assetPrice * 10 ** 18) / (avaxPrice);
     return normalizedPrice;
   }
 
@@ -511,3 +514,6 @@ error InvestmentFailed();
 
 /// Redemption failed
 error RedemptionFailed();
+
+/// Price for a chosen asset not found
+error AssetPriceNotFoundInMsg();
