@@ -107,9 +107,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function approve(address spender, uint256 amount) external override returns (bool) {
-    _accumulateDepositInterest(msg.sender);
-
-    if(_deposited[msg.sender] < amount) revert ApproveExceedsBalance();
+    if (spender == address(0)) revert SpenderAddressZero();
     _allowed[msg.sender][spender] = amount;
 
     emit Approval(msg.sender, spender, amount);
@@ -398,9 +396,6 @@ error PoolAddressTransfer();
 /// ERC20: transfer amount exceeds balance
 error TransferExceedsBalance();
 
-/// ERC20: approve amount exceeds balance
-error ApproveExceedsBalance();
-
 /// Not enough tokens allowed to transfer required amount
 error InsufficientAllowance();
 
@@ -437,3 +432,6 @@ error BorrowFromEmptyPool();
 
 /// The pool utilisation cannot be greater than 95%
 error PoolUtilisationTooHighForBorrowing();
+
+// Allowance spender cannot be a zero address
+error SpenderAddressZero();

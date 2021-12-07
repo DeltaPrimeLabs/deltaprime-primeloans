@@ -84,36 +84,8 @@ describe("Pool ERC20 token functions", () => {
   });
 
   describe("approve", () => {
-    it("should revert if value to approve is higher than current balance", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
-
-      await expect(sut.connect(user1).approve(user2.address, toWei("1.01")))
-        .to.be.revertedWith("ApproveExceedsBalance()");
-
-    });
-
-    it("should revert if value to approve is higher than current balance (after accumulating interest)", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
-      await time.increase(time.duration.years(1));
-
-      await expect(sut.connect(user1).approve(user2.address, toWei("1.06")))
-        .to.be.revertedWith("ApproveExceedsBalance()");
-    });
-
-    it("should properly accumulate interest rate before approving", async () => {
-      // given
-      await sut.connect(user1).deposit({value: toWei("1.0")});
-      await sut.connect(user1).borrow(toWei("0.5"));
-      await time.increase(time.duration.years(1));
-
-      // when
-      // note: even though only 1.0 was deposited, 1.05 can be approved
-      // thanks to interest being accumulated
-      await sut.connect(user1).approve(user2.address, toWei("1.05"));
-
-      // then
-      expect(fromWei(await sut.allowance(user1.address, user2.address)))
-        .to.be.equal(1.05);
+    it("should revert upon setting an allowance for a zero address", async () => {
+      await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).to.be.revertedWith("SpenderAddressZero()");
     });
 
     it("should properly assign amount to different spenders within one owner", async () => {
