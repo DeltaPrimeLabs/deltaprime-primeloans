@@ -106,6 +106,27 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return _allowed[owner][spender];
   }
 
+  function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
+    if (spender == address(0)) revert SpenderAddressZero();
+    uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
+    _allowed[msg.sender][spender] = newAllowance;
+
+    emit Approval(msg.sender, spender, newAllowance);
+    return true;
+  }
+
+  function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
+    if (spender == address(0)) revert SpenderAddressZero();
+    uint256 currentAllowance = _allowed[msg.sender][spender];
+    if (currentAllowance < subtractedValue) revert CurrentAllowanceSmallerThanSubtractedValue();
+
+    uint256 newAllowance = currentAllowance - subtractedValue;
+    _allowed[msg.sender][spender] = newAllowance;
+
+    emit Approval(msg.sender, spender, newAllowance);
+    return true;
+  }
+
   function approve(address spender, uint256 amount) external override returns (bool) {
     if (spender == address(0)) revert SpenderAddressZero();
     _allowed[msg.sender][spender] = amount;
@@ -435,3 +456,6 @@ error PoolUtilisationTooHighForBorrowing();
 
 // Allowance spender cannot be a zero address
 error SpenderAddressZero();
+
+/// Current allowance is smaller than the subtractedValue
+error CurrentAllowanceSmallerThanSubtractedValue();
