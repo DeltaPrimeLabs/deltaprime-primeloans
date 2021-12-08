@@ -12,7 +12,7 @@ import {
   OpenBorrowersRegistry__factory,
   Pool,
   VariableUtilisationRatesCalculator,
-  DestructableContract
+  DestructableContract, OpenBorrowersRegistry
 } from "../../typechain";
 
 chai.use(solidity);
@@ -21,6 +21,41 @@ const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
 describe('Safety tests of pool', () => {
+  describe('Intializing a pool', () => {
+    let pool: Pool,
+        owner: SignerWithAddress,
+        nonContractAddress: string,
+        ratesCalculator: VariableUtilisationRatesCalculator,
+        borrowersRegistry: OpenBorrowersRegistry;
+
+    before("Deploy a pool contract and a destructable contract for force funding", async () => {
+      [owner] = await getFixedGasSigners(10000000);
+      nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
+      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+    });
+
+    it("should not allow initializing pool with a non-contract ratesCalculator", async () => {
+      await expect(pool.initialize(nonContractAddress, borrowersRegistry.address, ZERO, ZERO)).to.be.revertedWith("function call to a non-contract account");
+    });
+
+    it("should not allow initializing pool with a non-contract borrowersRegistry", async () => {
+      await expect(pool.initialize(ratesCalculator.address, nonContractAddress, ZERO, ZERO)).to.be.revertedWith("MustBeContract()");
+    });
+
+    it("should initialize a pool", async () => {
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+    });
+
+    it("should not allow setting a non-contract ratesCalculator", async () => {
+      await expect(pool.setRatesCalculator(nonContractAddress)).to.be.revertedWith("MustBeContract()");
+    });
+
+    it("should not allow setting a non-contract borrowersRegistry", async () => {
+      await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("MustBeContract()");
+    });
+  });
 
   describe('Forcefully fund pool', () => {
     let pool: Pool,
