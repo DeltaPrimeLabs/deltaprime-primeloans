@@ -346,7 +346,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
 
-  function _checkIfContract(address account) internal returns(bool) {
+  function _checkIfContract(address account) private returns(bool) {
     uint32 size;
 
     assembly {
