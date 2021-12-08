@@ -40,7 +40,11 @@ const erc20ABI = [
 ]
 const MOCK_AVAX_PRICE = 100000;
 
-describe('Smart loan - upgrading', () => {
+describe('Smart loan - upgrading',  () => {
+  before("Synchronize blockchain time", async () => {
+    await syncTime();
+  });
+
   function getMockPrices(usdPrice: BigNumber): Array<{symbol: string, value: number}> {
     return [
       {
@@ -146,9 +150,6 @@ describe('Smart loan - upgrading', () => {
             timestamp: Date.now()
           }
         })
-
-
-      await syncTime(); // recommended for hardhat test
 
       await wrappedLoan.invest(
         toBytes32('USD'),

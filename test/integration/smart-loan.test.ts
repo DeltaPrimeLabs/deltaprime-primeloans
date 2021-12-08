@@ -26,15 +26,14 @@ import {
   MockSmartLoan__factory,
   MockSmartLoanRedstoneProvider,
   MockSmartLoanRedstoneProvider__factory,
-  TransparentUpgradeableProxy__factory,
   MockUpgradedSmartLoan__factory,
   UpgradeableBeacon, SmartLoansFactory
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
-import {syncTime} from "../../src/utils/blockchain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 
@@ -51,7 +50,10 @@ const erc20ABI = [
 ]
 
 
-describe('Smart loan', () => {
+describe('Smart loan',  () => {
+  before("Synchronize blockchain time", async () => {
+    await syncTime();
+  });
 
   describe('A loan without debt', () => {
     let exchange: PangolinExchange,
@@ -177,7 +179,6 @@ describe('Smart loan', () => {
         }
       );
 
-      await syncTime(); // recommended for hardhat test
 
       let updatedLoan = WrapperBuilder
         .mockLite(loan)
