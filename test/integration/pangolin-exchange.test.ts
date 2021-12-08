@@ -7,6 +7,7 @@ import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from '../../typechain';
 import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei} from "../_helpers";
+import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 
@@ -31,6 +32,10 @@ const pangolinRouterAbi = [
 
 
 describe('PangolinExchange', () => {
+  before("Synchronize blockchain time", async () => {
+    await syncTime();
+  });
+
   describe('Test buying and selling an asset', () => {
     let sut: PangolinExchange,
       daiToken: Contract,

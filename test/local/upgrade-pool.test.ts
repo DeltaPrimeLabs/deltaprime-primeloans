@@ -8,7 +8,7 @@ import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
-import {CompoundingIndex, VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
+import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
 import {TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../../typechain";
 
 chai.use(solidity);
@@ -18,7 +18,7 @@ const ZERO = ethers.constants.AddressZero;
 
 describe('Upgradeable pool', () => {
 
-  describe('', () => {
+  describe('Basic upgradeability functionalities', () => {
     let pool: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
@@ -26,8 +26,6 @@ describe('Upgradeable pool', () => {
       borrower: SignerWithAddress,
       admin: SignerWithAddress,
       VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
-      depositIndex: CompoundingIndex,
-      borrowIndex: CompoundingIndex,
       borrowersRegistry: OpenBorrowersRegistry,
       proxy: TransparentUpgradeableProxy;
 
@@ -51,6 +49,7 @@ describe('Upgradeable pool', () => {
 
       await pool.connect(borrower).borrow(toWei("0.5"));
       expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
     });
 
 
@@ -66,6 +65,7 @@ describe('Upgradeable pool', () => {
 
       await proxy.connect(admin).upgradeTo(mockUpgradedPool.address);
 
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
       expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
     });
@@ -87,7 +87,6 @@ describe('Upgradeable pool', () => {
       //Should allow setting new value
       await pool.connect(owner).setRatesCalculator(ratesCalculatorV2.address);
     });
-
   });
 
 });
