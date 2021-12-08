@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
-import "./IAssetsExchange.sol";
+import "./interfaces/IAssetsExchange.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../IRatesCalculator.sol";
-import "../WadRayMath.sol";
+import "../interfaces/IRatesCalculator.sol";
+import "../lib/WadRayMath.sol";
 
 
 /**
