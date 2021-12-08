@@ -38,9 +38,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
       CompoundingIndex depositIndex_,
       CompoundingIndex borrowIndex_
     )  initializer public {
+      if(!_checkIfContract(address(borrowersRegistry_))) revert MustBeContract();
 
-      _ratesCalculator = ratesCalculator_;
       _borrowersRegistry = borrowersRegistry_;
+      _ratesCalculator = ratesCalculator_;
 
       depositIndex = address(depositIndex_) == address(0) ? new CompoundingIndex() : depositIndex_;
       borrowIndex = address(borrowIndex_) == address(0) ? new CompoundingIndex() : borrowIndex_;
@@ -62,6 +63,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     if(address(ratesCalculator_) == address(0)) revert RatesCalculatorNullAddress();
+    if(!_checkIfContract(address(ratesCalculator_))) revert MustBeContract();
     _ratesCalculator = ratesCalculator_;
     _updateRates();
   }
@@ -75,6 +77,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
     if(address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
+    if(!_checkIfContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
   }
@@ -343,6 +346,17 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
 
+  function _checkIfContract(address account) internal returns(bool) {
+    uint32 size;
+
+    assembly {
+      size := extcodesize(account)
+    }
+
+    return size != 0;
+  }
+
+
   /* ========== MODIFIERS ========== */
 
   modifier canBorrow() {
@@ -453,6 +467,9 @@ error BorrowFromEmptyPool();
 
 /// The pool utilisation cannot be greater than 95%
 error PoolUtilisationTooHighForBorrowing();
+
+/// Must be a contract
+error MustBeContract();
 
 // Allowance spender cannot be a zero address
 error SpenderAddressZero();
