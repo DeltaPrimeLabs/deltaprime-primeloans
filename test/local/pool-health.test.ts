@@ -6,13 +6,15 @@ import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
+import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
   OpenBorrowersRegistry__factory,
   Pool,
   VariableUtilisationRatesCalculator,
-  DestructableContract, OpenBorrowersRegistry
+  DestructableContract,
+  OpenBorrowersRegistry,
 } from "../../typechain";
 
 chai.use(solidity);
@@ -377,4 +379,76 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
     });
   });
+
+  describe('Freeze pool', () => {
+      let pool: Pool,
+          originalPool: Pool,
+          owner: SignerWithAddress,
+          depositor: SignerWithAddress,
+          borrower: SignerWithAddress,
+          admin: SignerWithAddress,
+          variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
+          borrowersRegistry: OpenBorrowersRegistry;
+
+      before("should deploy a contract behind a proxy", async () => {
+        [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
+        originalPool = (await deployContract(owner, PoolArtifact)) as Pool;
+
+        pool = (await deployContract(owner, PoolArtifact)) as Pool;
+
+        variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+
+        await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      });
+
+
+      it("should allow basic actions for a standard Rates calculator ", async () => {
+        await pool.connect(depositor).deposit({value: toWei("1.0")});
+        expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1, 0.000001);
+
+        await pool.connect(borrower).borrow(toWei("0.5"));
+        expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
+        expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
+        expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
+        expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      });
+
+
+      it("should set a zero address calculator to freeze the pool", async () => {
+        await pool.connect(owner).setRatesCalculator(ethers.constants.AddressZero)
+
+        expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
+        expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
+        expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      });
+
+
+      it("should revert basic actions for a freeze calculator ", async () => {
+        await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).to.be.revertedWith("PoolFrozen()");
+        await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("PoolFrozen()");
+        await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("PoolFrozen()");
+        await expect(pool.connect(borrower).repay({value: toWei("0.5")})).to.be.revertedWith("PoolFrozen()");
+
+        expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
+        expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
+        expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      });
+
+
+      it("should set back a standard calculator", async () => {
+        await pool.connect(owner).setRatesCalculator(variableUtilisationRatesCalculator.address)
+      });
+
+      it("should allow basic actions for a standard calculator ", async () => {
+        expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
+        expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
+        expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+
+        await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).not.to.be.reverted;
+        await expect(pool.connect(depositor).withdraw(toWei("0.2"))).not.to.be.reverted;
+        await expect(pool.connect(borrower).borrow(toWei("0.2"))).not.to.be.reverted;
+        await expect(pool.connect(borrower).repay({value: toWei("0.5")})).not.to.be.reverted;
+      });
+    });
 });
