@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IRatesCalculator.sol";
-import "./lib/WadRayMath.sol";
 
 
 /**
@@ -15,8 +14,6 @@ import "./lib/WadRayMath.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
 **/
 contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-  using WadRayMath for uint256;
-
   uint256 public constant SLOPE_1 = 0.12 ether;
   uint256 public constant OFFSET = 0.05 ether;
   // BREAKPOINT must be lower than 1 ether
@@ -40,9 +37,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
-    return _totalLoans.wadToRay()
-    .rayDiv(_totalDeposits.wadToRay())
-    .rayToWad();
+    return _totalLoans * 1 ether / _totalDeposits;
   }
 
 
@@ -59,10 +54,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalLoans >= _totalDeposits) {
       return MAX_RATE;
     } else {
-      return this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay()
-      .rayMul(_totalLoans.wadToRay())
-      .rayDiv(_totalDeposits.wadToRay())
-      .rayToWad();
+      return this.calculateBorrowingRate(_totalLoans, _totalDeposits) * _totalLoans / _totalDeposits;
     }
   }
 
@@ -85,15 +77,11 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (poolUtilisation >= 1 ether) {
       return MAX_RATE;
     } else if (poolUtilisation <= BREAKPOINT) {
-      return poolUtilisation.wadToRay()
-        .rayMul(SLOPE_1.wadToRay()).rayToWad()
-        + OFFSET;
+      return poolUtilisation * SLOPE_1 / 1 ether + OFFSET;
     } else {
       // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
       // unsigned integer safety check)
-      uint256 value = SLOPE_2.wadToRay()
-        .rayMul(poolUtilisation.wadToRay()).rayToWad()
-        + MAX_RATE;
+      uint256 value = poolUtilisation * SLOPE_2 / 1 ether + MAX_RATE;
 
       if(value < SLOPE_2) revert SlopeCalculationOutOfRange();
 
