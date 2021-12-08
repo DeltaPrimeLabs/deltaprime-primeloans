@@ -28,8 +28,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   IRatesCalculator private _ratesCalculator;
   IBorrowersRegistry private _borrowersRegistry;
 
-  CompoundingIndex depositIndex = new CompoundingIndex();
-  CompoundingIndex borrowIndex = new CompoundingIndex();
+  CompoundingIndex depositIndex;
+  CompoundingIndex borrowIndex;
 
 
   function initialize(
