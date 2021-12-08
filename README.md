@@ -21,7 +21,10 @@ The borrowed amount is specified as the parameter to the function call and is tr
 
 The interest are accumulated every second and compounding on the depositors' account. To save the gas costs the Pool contract uses the [CompoundingIndex](https://github.com/ava-loan/avaloan/blob/master/contracts/CompoundingIndex.sol) helper contract which manages the balances using virtual indices and updates the state only after user interaction.
 
-The total amount of interest earned by depositors always equals the total amount of interest owned by borrowers.
+Borrowing interest are higher than deposit interest. Flexible borrowing/deposit rates give a possibility of adjusting
+pool for demand and optimize it for better performance. For shorter periods of time the pool should be balanced, but in 
+a longer term positive surplus can arise. Total deposited value in a pool must be always lower or equal to total borrowed
+plus a current pool balance.
 
 ## Insolvency protection
 
