@@ -81,7 +81,8 @@ contract CompoundingIndex is Ownable {
      * of 1 Wei)
     **/
     function getIndexedValue(uint256 value, address user) public view returns(uint256) {
-        uint256 prevUserIndex = userUpdateTime[user] == 0 ? BASE_RATE : prevIndex[getLastUserUpdateTime(user)];
+        uint256 userTime = userUpdateTime[user];
+        uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
 
         return value.wadToRay()
         .rayMul(getIndex().wadToRay())
@@ -98,10 +99,6 @@ contract CompoundingIndex is Ownable {
 
       index = getIndex();
       indexUpdateTime = block.timestamp;
-    }
-
-    function getLastUserUpdateTime(address user) internal view returns(uint256) {
-      return userUpdateTime[user] == 0 ? start : userUpdateTime[user];
     }
 
 
