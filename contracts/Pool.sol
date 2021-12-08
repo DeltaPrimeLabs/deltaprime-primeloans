@@ -62,10 +62,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _ratesCalculator the address of rates calculator
   **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
-    if(address(ratesCalculator_) == address(0)) revert RatesCalculatorNullAddress();
-    if(!_checkIfContract(address(ratesCalculator_))) revert MustBeContract();
+    // setting address(0) ratesCalculator_ freezes the pool
+    if (!(_checkIfContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
     _ratesCalculator = ratesCalculator_;
-    _updateRates();
+    if(address(ratesCalculator_) != address(0)) {
+      _updateRates();
+    }
   }
 
 
@@ -317,6 +319,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   function _updateRates() internal {
+    if (address(_ratesCalculator) == address(0)) revert PoolFrozen();
     depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
     borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
   }
@@ -415,9 +418,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 }
 
-
-/// The rates calculator cannot set to a null address
-error RatesCalculatorNullAddress();
+/// Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations
+error PoolFrozen();
 
 /// The borrowers registry cannot set to a null address
 error BorrowersRegistryNullAddress();
