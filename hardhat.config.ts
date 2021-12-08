@@ -12,7 +12,9 @@ export default {
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
       timeout: 1800000,
-      // for testing purposes
+      accounts: {
+        accountsBalance: "1000000000000000000000000" // 1000.000 ETH
+      },
       // mining: {
       //   auto: false,
       //   interval: 500
