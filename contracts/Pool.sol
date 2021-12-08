@@ -5,8 +5,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CompoundingIndex.sol";
-import "./IRatesCalculator.sol";
-import "./IBorrowersRegistry.sol";
+import "./interfaces/IRatesCalculator.sol";
+import "./interfaces/IBorrowersRegistry.sol";
 
 
 /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "../WadRayMath.sol";
+import "../lib/WadRayMath.sol";
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";

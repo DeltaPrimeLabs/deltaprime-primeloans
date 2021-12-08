@@ -5,8 +5,8 @@ import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IAssetsExchange.sol";
-import "./Bytes32EnumerableMap.sol";
+import "./interfaces/IAssetsExchange.sol";
+import "./lib/Bytes32EnumerableMap.sol";
 
 
 /**
