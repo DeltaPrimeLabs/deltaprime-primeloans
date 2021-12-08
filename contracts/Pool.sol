@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./CompoundingIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
@@ -38,7 +39,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
       CompoundingIndex depositIndex_,
       CompoundingIndex borrowIndex_
     )  initializer public {
-      if(!_checkIfContract(address(borrowersRegistry_))) revert MustBeContract();
+      if(!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
       _borrowersRegistry = borrowersRegistry_;
       _ratesCalculator = ratesCalculator_;
@@ -63,7 +64,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     // setting address(0) ratesCalculator_ freezes the pool
-    if (!(_checkIfContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
+    if (!(Address.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
     _ratesCalculator = ratesCalculator_;
     if(address(ratesCalculator_) != address(0)) {
       _updateRates();
@@ -79,7 +80,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
     if(address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
-    if(!_checkIfContract(address(borrowersRegistry_))) revert MustBeContract();
+    if(!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
   }
@@ -348,16 +349,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowIndex.updateUser(address(this));
   }
 
-
-  function _checkIfContract(address account) private returns(bool) {
-    uint32 size;
-
-    assembly {
-      size := extcodesize(account)
-    }
-
-    return size != 0;
-  }
 
 
   /* ========== MODIFIERS ========== */
