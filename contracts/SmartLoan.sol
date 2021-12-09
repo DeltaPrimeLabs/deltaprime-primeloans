@@ -228,10 +228,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     if (isSolvent()) {
       require(msg.sender == owner());
     }
-    uint256 debt = getDebt();
-    if (_amount > debt) {
-      _amount = debt;
-    }
+
+    _amount = Math.min(_amount, getDebt());
     if (address(this).balance < _amount) revert InsufficientFundsToRepayDebt();
 
     pool.repay{value : _amount}();
