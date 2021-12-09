@@ -999,6 +999,119 @@ describe('Smart loan',  () => {
     });
   });
 
+  describe('A loan with debt and withdrawAsset()', () => {
+    let exchange: PangolinExchange,
+        loan: MockSmartLoanRedstoneProvider,
+        wrappedLoan: any,
+        wrappedLoanUpdated: any,
+        pool: Pool,
+        owner: SignerWithAddress,
+        depositor: SignerWithAddress,
+        usdTokenContract: Contract,
+        linkTokenContract: Contract,
+        usdTokenDecimalPlaces: BigNumber,
+        linkTokenDecimalPlaces: BigNumber,
+        MOCK_PRICES: any,
+        MOCK_PRICES_UPDATED: any,
+        AVAX_PRICE: number,
+        LINK_PRICE: number,
+        USD_PRICE: number;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
+          [
+            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
+            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+          ]);
+
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      linkTokenDecimalPlaces = await linkTokenContract.decimals();
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
+
+    it("should deploy a smart loan, fund, borrow and invest", async () => {
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      loan.initialize(exchange.address, pool.address);
+
+      wrappedLoan = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+
+      await wrappedLoan.authorizeProvider();
+
+      await wrappedLoan.fund({value: toWei("100")});
+      await wrappedLoan.borrow(toWei("300"));
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(400);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(300);
+      expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+
+      const slippageTolerance = 0.03;
+      let investedAmount = 20000;
+      let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
+
+      await wrappedLoan.invest(
+          toBytes32('USD'),
+          parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
+          toWei(requiredAvaxAmount.toString())
+      );
+    });
+
+    it('should not revert on 0 token withdrawal amount', async () => {
+      await wrappedLoan.withdrawAsset(toBytes32("USD"), 0);
+    });
+
+    it('should revert on a withdrawal amount being higher than the available balance', async () => {
+      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("200001", usdTokenDecimalPlaces))).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+    });
+
+    it('should revert on a withdrawal resulting in an insolvent loan', async () => {
+      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("20000", usdTokenDecimalPlaces))).to.be.revertedWith("LoanInsolvent()");
+    });
+
+    it('should withdraw', async () => {
+      expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(0)
+      await wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("1", usdTokenDecimalPlaces));
+      expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(parseUnits("1", usdTokenDecimalPlaces))
+    });
+  });
+
     describe('A loan with extra AVAX repayment', () => {
         let exchange: PangolinExchange,
             loan: MockSmartLoanRedstoneProvider,

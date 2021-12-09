@@ -72,9 +72,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
-  function withdrawAsset(bytes32 asset) external onlyOwner remainsSolvent {
+  function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(msg.sender, token.balanceOf(address(this)));
+    address(token).safeTransfer(msg.sender, amount);
   }
 
 
