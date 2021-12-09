@@ -33,16 +33,9 @@ contract PangolinExchange is
   constructor(address _pangolinRouter, Asset[] memory supportedAssets) {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
 
-    updateAssets(supportedAssets);
+    _updateAssets(supportedAssets);
   }
 
-  /* ========= MODIFIERS ========= */
-
-  function refundTokenBalance(bytes32 _asset) private {
-    address tokenAddress = getAssetAddress(_asset);
-    IERC20 token = IERC20(tokenAddress);
-    address(token).safeTransfer(msg.sender, token.balanceOf(address(this)));
-  }
 
   /**
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
@@ -115,7 +108,7 @@ contract PangolinExchange is
     );
 
     if (!success) {
-      refundTokenBalance(_token);
+      token.safeTransfer(msg.sender, token.balanceOf(address(this)));
       return false;
     }
     payable(msg.sender).safeTransferETH(address(this).balance);
@@ -123,30 +116,30 @@ contract PangolinExchange is
     return true;
   }
 
-  /**
-   * Adds or updates supported assets
-   * @dev _assets assets to be added or updated
-   **/
-  function updateAssets(Asset[] memory _assets) internal {
-    for (uint256 i = 0; i < _assets.length; i++) {
-      require(_assets[i].asset != "", "Cannot set an empty string asset.");
-      require(
-        _assets[i].assetAddress != address(0),
-        "Cannot set an empty address."
-      );
+    /**
+     * Adds or updates supported assets
+     * @dev _assets assets to be added or updated
+     **/
+    function updateAssets(Asset[] memory _assets) internal {
+      for (uint256 i = 0; i < _assets.length; i++) {
+          require(_assets[i].asset != "", "Cannot set an empty string asset.");
+          require(
+              _assets[i].assetAddress != address(0),
+              "Cannot set an empty address."
+          );
 
-      EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
+         EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
+        }
+
+        emit AssetsAdded(_assets);
     }
 
-    emit AssetsAdded(_assets);
-  }
-
-  /**
+   /**
    * Adds or updates supported assets
    * @dev _assets assets to be added/updated
    **/
-  function setAssets(Asset[] memory _assets) external override onlyOwner {
-    updateAssets(_assets);
+  function updateAssets(Asset[] memory _assets) external override onlyOwner {
+      _updateAssets(_assets);
   }
 
   /**
