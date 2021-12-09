@@ -8,7 +8,7 @@ import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/p
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Asset, deployAndInitPangolinExchangeContract, fromWei, toBytes32, toWei} from "../_helpers";
+import {Asset, deployAndInitPangolinExchangeContract, fromWei, toBytes32, toWei, syncTime} from "../_helpers";
 import {
   VariableUtilisationRatesCalculator,
   Pool,
@@ -24,7 +24,6 @@ import {
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
-import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 

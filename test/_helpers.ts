@@ -2,6 +2,7 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from "../typechain";
+const {provider} = waffle;
 
 const {deployContract} = waffle;
 import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
@@ -71,6 +72,26 @@ export const deployAndInitPangolinExchangeContract = async function (
 
   return exchange
 };
+
+export async function syncTime() {
+    const now = Math.ceil(new Date().getTime() / 1000);
+    try {
+        await provider.send('evm_setNextBlockTimestamp', [now]);
+    } catch (error) {
+        await (provider as any)._hardhatNetwork.provider.request({
+            method: "hardhat_reset",
+            params: [
+                {
+                    forking: {
+                        jsonRpcUrl: "https://api.avax.network/ext/bc/C/rpc"
+                    },
+                },
+            ],
+        });
+
+        await syncTime();
+    }
+}
 
 export class Asset {
   asset: string;
