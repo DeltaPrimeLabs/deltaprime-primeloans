@@ -17,20 +17,18 @@ contract MockSmartLoan is MockSmartLoanRedstoneProvider {
     debt = _newDebt;
   }
 
-
   function setValue(uint256 _newValue) public {
     value = _newValue;
   }
 
   /**
    * Dummy implementation used to test SmartLoan LTV logic
-  **/
-  function getTotalValue() public override view returns(uint256) {
+   **/
+  function getTotalValue() public view override returns (uint256) {
     return value;
   }
 
-  function getDebt() public override view returns(uint256) {
+  function getDebt() public view override returns (uint256) {
     return debt;
   }
-
 }

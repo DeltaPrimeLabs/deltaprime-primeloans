@@ -7,9 +7,13 @@ pragma solidity ^0.8.4;
  * The calculated value could be based on the relation between funds borrowed and deposited.
  */
 interface IRatesCalculator {
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits)
+    external
+    view
+    returns (uint256);
 
-    function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view returns(uint256);
-
-    function calculateDepositRate(uint256 totalLoans, uint256 totalDeposits) external view returns(uint256);
-
+  function calculateDepositRate(uint256 totalLoans, uint256 totalDeposits)
+    external
+    view
+    returns (uint256);
 }
