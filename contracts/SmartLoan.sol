@@ -72,7 +72,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
-  function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner remainsSolvent {
+  function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner nonReentrant remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(asset);
     address(token).safeTransfer(msg.sender, amount);
   }
@@ -116,7 +116,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
   * This function can only be accessed by the owner and allows selling all of the assets.
   **/
-  function closeLoan() external payable onlyOwner remainsSolvent {
+  function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
@@ -129,13 +129,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     if (address(this).balance < debt) revert DebtNotRepaidAfterLoanSelout();
     repay(debt);
     emit LoanClosed(debt, address(this).balance, block.timestamp);
-    if (address(this).balance > 0) {
-      withdraw(address(this).balance);
+
+    uint256 balance = address(this).balance;
+    if (balance > 0) {
+      payable(msg.sender).transfer(balance);
+      emit Withdrawn(msg.sender, balance, block.timestamp);
     }
   }
 
 
-  function liquidateLoan(uint256 repayAmount) external payable successfulLiquidation {
+  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
     if(isSolvent()) revert LoanSolvent();
 
     uint256 debt = getDebt();
@@ -171,7 +174,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
   **/
-  function withdraw(uint256 _amount) public onlyOwner remainsSolvent nonReentrant {
+  function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
     if(address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
 
     payable(msg.sender).safeTransferETH(_amount);
@@ -186,7 +189,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _exactERC20AmountOut exact amount of asset to buy
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
   **/
-  function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner remainsSolvent {
+  function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
     if(address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
 
     bool success = exchange.buyAsset{value : _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
@@ -202,7 +205,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _exactERC20AmountIn exact amount of token to sell
    * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
   **/
-  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external onlyOwner remainsSolvent {
+  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
     address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);

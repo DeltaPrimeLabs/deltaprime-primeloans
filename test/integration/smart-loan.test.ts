@@ -1098,7 +1098,7 @@ describe('Smart loan',  () => {
     });
 
     it('should revert on a withdrawal amount being higher than the available balance', async () => {
-      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("200001", usdTokenDecimalPlaces))).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("200001", usdTokenDecimalPlaces))).to.be.revertedWith("TransferHelper::safeTransfer: transfer failed");
     });
 
     it('should revert on a withdrawal resulting in an insolvent loan', async () => {
