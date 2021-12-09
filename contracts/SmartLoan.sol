@@ -85,7 +85,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, exchange.getAssetAddress(asset));
+      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
       if (balance < minSaleAmount) {
         sellAsset(asset, balance, 0);
       } else {
