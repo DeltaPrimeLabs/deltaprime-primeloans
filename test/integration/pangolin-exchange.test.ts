@@ -6,8 +6,7 @@ import {solidity} from "ethereum-waffle";
 import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from '../../typechain';
-import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei} from "../_helpers";
-import { syncTime } from "../../src/utils/blockchain";
+import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei, syncTime} from "../_helpers";
 
 chai.use(solidity);
 

@@ -15,7 +15,7 @@ import {
   toBytes32,
   toWei,
   formatUnits,
-  deployAndInitPangolinExchangeContract, Asset, getSelloutRepayAmount,
+  deployAndInitPangolinExchangeContract, Asset, getSelloutRepayAmount, syncTime
 } from "../_helpers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
@@ -33,7 +33,6 @@ import {
 import {OpenBorrowersRegistry__factory} from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 
