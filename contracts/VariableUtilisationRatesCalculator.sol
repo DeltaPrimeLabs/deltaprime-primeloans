@@ -14,16 +14,15 @@ import "./interfaces/IRatesCalculator.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
 **/
 contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-  uint256 public constant SLOPE_1 = 0.12 ether;
-  uint256 public constant OFFSET = 0.05 ether;
-  // BREAKPOINT must be lower than 1 ether
-  uint256 public constant BREAKPOINT = 0.8 ether;
-  uint256 public constant MAX_RATE = 0.75 ether;
+    uint256 public constant SLOPE_1 = 0.12e18;
+    uint256 public constant OFFSET = 0.05e18;
+    // BREAKPOINT must be lower than 1e18
+    uint256 public constant BREAKPOINT = 0.8e18;
+    uint256 public constant MAX_RATE = 0.75e18;
 
-  // calculated off-chain for gas efficiency with following formula:
-  // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
-  uint256 public constant SLOPE_2 = 3.02 ether;
-
+    // calculated off-chain for gas efficiency with following formula:
+    // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
+    uint256 public constant SLOPE_2 = 3.02e18;
 
 /* ========== VIEW FUNCTIONS ========== */
 
@@ -37,9 +36,8 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
-    return _totalLoans * 1 ether / _totalDeposits;
-  }
-
+        return (_totalLoans * 1e18) / _totalDeposits;
+    }
 
   /**
     * Returns the current deposit rate
@@ -74,14 +72,14 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
 
-    if (poolUtilisation >= 1 ether) {
-      return MAX_RATE;
-    } else if (poolUtilisation <= BREAKPOINT) {
-      return poolUtilisation * SLOPE_1 / 1 ether + OFFSET;
-    } else {
-      // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
-      // unsigned integer safety check)
-      uint256 value = poolUtilisation * SLOPE_2 / 1 ether + MAX_RATE;
+        if (poolUtilisation >= 1e18) {
+            return MAX_RATE;
+        } else if (poolUtilisation <= BREAKPOINT) {
+            return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET;
+        } else {
+            // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
+            // unsigned integer safety check)
+            uint256 value = (poolUtilisation * SLOPE_2) / 1e18 + MAX_RATE;
 
       if(value < SLOPE_2) revert SlopeCalculationOutOfRange();
 
