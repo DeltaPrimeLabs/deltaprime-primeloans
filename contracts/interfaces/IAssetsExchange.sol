@@ -58,7 +58,7 @@ interface IAssetsExchange {
    * Adds or updates supported assets
    * @dev _assets assets to be added or updated
    **/
-  function setAssets(Asset[] memory _assets) external;
+  function updateAssets(Asset[] memory _assets) external;
 
   /**
    * Removes supported assets
