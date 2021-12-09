@@ -1127,7 +1127,8 @@ describe('Smart loan', () => {
             await wrappedLoan.repay(toWei("310"), {value: toWei("290")});
 
             // Initial balance + 150 withdrawn - (initialDebt - loanAvaxBalance)
-            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(debtBeforeRepayment).add(loanAvaxBalanceAfterWithdrawal).add(toWei("150"));
+            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(toWei("290")).add(toWei("150"));
+            let expectedLoanAvaxBalance = loanAvaxBalanceAfterWithdrawal.sub(debtBeforeRepayment).add(toWei("290"));
             let debt = fromWei(await wrappedLoan.getDebt());
 
             // The "normal" loan should be solvent and debt should be equal to 0
@@ -1135,7 +1136,7 @@ describe('Smart loan', () => {
             expect(debt).to.be.equal(0);
 
             // Make sure that the loan returned all of the remaining AVAX after repaying the whole debt
-            expect(await provider.getBalance(loan.address)).to.be.equal(0);
+            expect(fromWei(await provider.getBalance(loan.address))).to.be.closeTo(fromWei(expectedLoanAvaxBalance), 0.00001);
             expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
         });
     });

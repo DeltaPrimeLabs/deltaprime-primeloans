@@ -236,9 +236,6 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
     pool.repay{value : _amount}();
 
-    if (getDebt() == 0) {
-      payable(msg.sender).transfer(address(this).balance);
-    }
     emit Repaid(msg.sender, _amount, block.timestamp);
   }
 
