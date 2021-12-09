@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 
 
 /**
@@ -19,6 +20,8 @@ import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable
  *
  */
 contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+  using TransferHelper for address payable;
+  using TransferHelper for address;
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
   // 10%
@@ -64,14 +67,14 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
-    token.transfer(address(exchange), _amount);
+    address(token).safeTransfer(address(exchange), _amount);
     exchange.sellAsset(asset, _amount, _minAvaxOut);
   }
 
 
   function withdrawAsset(bytes32 asset) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(asset);
-    token.transfer(msg.sender, token.balanceOf(address(this)));
+    address(token).safeTransfer(msg.sender, token.balanceOf(address(this)));
   }
 
 
@@ -105,7 +108,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function payBonus(uint256 _bonus) internal {
-    payable(msg.sender).transfer(Math.min(_bonus, address(this).balance));
+    payable(msg.sender).safeTransferETH(Math.min(_bonus, address(this).balance));
   }
 
 
@@ -171,7 +174,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function withdraw(uint256 _amount) public onlyOwner remainsSolvent nonReentrant {
     if(address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
 
-    payable(msg.sender).transfer(_amount);
+    payable(msg.sender).safeTransferETH(_amount);
 
     emit Withdrawn(msg.sender, _amount, block.timestamp);
   }
@@ -201,7 +204,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    token.transfer(address(exchange), _exactERC20AmountIn);
+    address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
     if(!success) revert RedemptionFailed();
 
