@@ -28,6 +28,9 @@ contract PangolinExchange is
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private map;
 
+  address private constant WAVAX_ADDRESS =
+    0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+
   /* ========= CONSTRUCTOR ========= */
 
   constructor(address _pangolinRouter, Asset[] memory supportedAssets) {
@@ -35,7 +38,6 @@ contract PangolinExchange is
 
     _updateAssets(supportedAssets);
   }
-
 
   /**
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
@@ -116,30 +118,30 @@ contract PangolinExchange is
     return true;
   }
 
-    /**
-     * Adds or updates supported assets
-     * @dev _assets assets to be added or updated
-     **/
-    function updateAssets(Asset[] memory _assets) internal {
-      for (uint256 i = 0; i < _assets.length; i++) {
-          require(_assets[i].asset != "", "Cannot set an empty string asset.");
-          require(
-              _assets[i].assetAddress != address(0),
-              "Cannot set an empty address."
-          );
+  /**
+   * Adds or updates supported assets
+   * @dev _assets assets to be added or updated
+   **/
+  function _updateAssets(Asset[] memory _assets) internal {
+    for (uint256 i = 0; i < _assets.length; i++) {
+      require(_assets[i].asset != "", "Cannot set an empty string asset.");
+      require(
+        _assets[i].assetAddress != address(0),
+        "Cannot set an empty address."
+      );
 
-         EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
-        }
-
-        emit AssetsAdded(_assets);
+      EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
     }
 
-   /**
+    emit AssetsAdded(_assets);
+  }
+
+  /**
    * Adds or updates supported assets
    * @dev _assets assets to be added/updated
    **/
   function updateAssets(Asset[] memory _assets) external override onlyOwner {
-      _updateAssets(_assets);
+    _updateAssets(_assets);
   }
 
   /**
@@ -242,7 +244,7 @@ contract PangolinExchange is
     returns (address[] memory)
   {
     address[] memory path = new address[](2);
-    path[0] = pangolinRouter.WAVAX();
+    path[0] = WAVAX_ADDRESS;
     path[1] = _token;
     return path;
   }
@@ -258,7 +260,7 @@ contract PangolinExchange is
   {
     address[] memory path = new address[](2);
     path[0] = _token;
-    path[1] = pangolinRouter.WAVAX();
+    path[1] = WAVAX_ADDRESS;
     return path;
   }
 

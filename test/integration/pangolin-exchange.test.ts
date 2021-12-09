@@ -145,7 +145,7 @@ describe('PangolinExchange', () => {
     it("should add new assets", async () => {
       let token2 = "TOKEN_2";
 
-      await sut.setAssets([new Asset(toBytes32(token2), token2Address)]);
+      await sut.updateAssets([new Asset(toBytes32(token2), token2Address)]);
 
       await expect((fromBytes32((await sut.getAllAssets())[0])))
         .to.be.equal("TOKEN_1");
@@ -162,7 +162,7 @@ describe('PangolinExchange', () => {
 
 
     it("should correctly remove an asset", async () => {
-      await sut.setAssets([
+      await sut.updateAssets([
         new Asset(toBytes32("TOKEN_1"), token1Address),
         new Asset(toBytes32("TOKEN_2"), token2Address),
         new Asset(toBytes32("TOKEN_3"), token3Address)
@@ -187,7 +187,7 @@ describe('PangolinExchange', () => {
       )).join(","))
         .to.be.equal("TOKEN_1,TOKEN_3");
 
-      await sut.setAssets([new Asset(toBytes32("TOKEN_1"), token1Address)]);
+      await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), token1Address)]);
 
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
@@ -198,7 +198,7 @@ describe('PangolinExchange', () => {
 
     it("should update asset address", async () => {
       const newToken1Address = "0xb794F5eA0ba39494cE839613fffBA74279579268";
-      await sut.setAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
+      await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
 
       await expect((await sut.getAssetAddress(toBytes32("TOKEN_1"))).toString()).to.be.equal(newToken1Address);
     });
@@ -207,7 +207,7 @@ describe('PangolinExchange', () => {
     it("should update one token and a add new one", async () => {
       const newToken2Address = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
       const token4Address = "0xB155f7e2769a24f1D3E76ACdCed934950f5da410";
-      await sut.setAssets([
+      await sut.updateAssets([
         new Asset(toBytes32("TOKEN_2"), newToken2Address),
         new Asset(toBytes32("TOKEN_4"), token4Address)
       ]);
@@ -248,7 +248,7 @@ describe('PangolinExchange', () => {
       )).join(","))
         .to.be.equal("TOKEN_1,TOKEN_4")
 
-      await expect(sut.setAssets([
+      await expect(sut.updateAssets([
         new Asset(toBytes32(""), token1Address),
         new Asset(toBytes32("TOKEN_5"), token1Address)
       ]))
@@ -277,19 +277,19 @@ describe('PangolinExchange', () => {
 
 
     it("should not set an empty string asset", async () => {
-      await expect(sut.setAssets([new Asset(toBytes32(""), token1Address)]))
+      await expect(sut.updateAssets([new Asset(toBytes32(""), token1Address)]))
         .to.be.revertedWith("Cannot set an empty string asset.");
     });
 
 
     it("should revert for a wrong format address", async () => {
-      await expect(sut.setAssets([new Asset(toBytes32("TOKEN_4"), "bad_address")]))
+      await expect(sut.updateAssets([new Asset(toBytes32("TOKEN_4"), "bad_address")]))
         .to.be.reverted;
     });
 
 
     it("should revert for a zero address", async () => {
-      await expect(sut.setAssets([new Asset(toBytes32("TOKEN_4"), "0x")]))
+      await expect(sut.updateAssets([new Asset(toBytes32("TOKEN_4"), "0x")]))
         .to.be.reverted;
     });
 
