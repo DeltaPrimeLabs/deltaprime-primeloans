@@ -30,7 +30,7 @@ describe('Safety tests of pool', () => {
         ratesCalculator: VariableUtilisationRatesCalculator,
         borrowersRegistry: OpenBorrowersRegistry;
 
-    before("Deploy a pool contract and a destructable contract for force funding", async () => {
+    before("Deploy a pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
       nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
@@ -390,7 +390,7 @@ describe('Safety tests of pool', () => {
           variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
           borrowersRegistry: OpenBorrowersRegistry;
 
-      before("should deploy a contract behind a proxy", async () => {
+      before("should deploy a pool", async () => {
         [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
         originalPool = (await deployContract(owner, PoolArtifact)) as Pool;
 
@@ -404,10 +404,11 @@ describe('Safety tests of pool', () => {
 
 
       it("should allow basic actions for a standard Rates calculator ", async () => {
-        await pool.connect(depositor).deposit({value: toWei("1.0")});
-        expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1, 0.000001);
+        await pool.connect(depositor).deposit({value: toWei("1.2")});
+        await pool.connect(depositor).withdraw(toWei("0.2"));
+        await pool.connect(borrower).borrow(toWei("0.7"));
+        await pool.connect(borrower).repay({value: toWei("0.2")});
 
-        await pool.connect(borrower).borrow(toWei("0.5"));
         expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
         expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
         expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
