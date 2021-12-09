@@ -212,6 +212,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /**
    * Repays the message value
    * It updates user borrowed balance, total borrowed amount and rates
+   * @dev It is only meant to be used by the SmartLoan.
   **/
   function repay() payable external nonReentrant {
     _accumulateBorrowingInterest(msg.sender);
@@ -431,7 +432,6 @@ error RecoverAmountExceedsBalance();
 
 /// Trying to recover more funds than current surplus
 error RecoverAmountExceedsSurplus();
-
 
 /// ERC20: cannot mint to the zero address
 error MintZeroAddress();

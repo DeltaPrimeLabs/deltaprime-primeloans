@@ -9,7 +9,6 @@ import OpenBorrowersRegistryArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
-import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 
@@ -18,7 +17,6 @@ const ZERO = ethers.constants.AddressZero;
 const {deployContract, provider} = waffle;
 
 describe('Pool with variable utilisation interest rates', () => {
-
   describe('Single borrowing with interest rates', () => {
     let sut: Pool,
       owner: SignerWithAddress,
