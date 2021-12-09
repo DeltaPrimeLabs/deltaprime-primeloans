@@ -106,10 +106,29 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return _allowed[owner][spender];
   }
 
-  function approve(address spender, uint256 amount) external override returns (bool) {
-    _accumulateDepositInterest(msg.sender);
+  function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
+    if (spender == address(0)) revert SpenderAddressZero();
+    uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
+    _allowed[msg.sender][spender] = newAllowance;
 
-    if(_deposited[msg.sender] < amount) revert ApproveExceedsBalance();
+    emit Approval(msg.sender, spender, newAllowance);
+    return true;
+  }
+
+  function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
+    if (spender == address(0)) revert SpenderAddressZero();
+    uint256 currentAllowance = _allowed[msg.sender][spender];
+    if (currentAllowance < subtractedValue) revert CurrentAllowanceSmallerThanSubtractedValue();
+
+    uint256 newAllowance = currentAllowance - subtractedValue;
+    _allowed[msg.sender][spender] = newAllowance;
+
+    emit Approval(msg.sender, spender, newAllowance);
+    return true;
+  }
+
+  function approve(address spender, uint256 amount) external override returns (bool) {
+    if (spender == address(0)) revert SpenderAddressZero();
     _allowed[msg.sender][spender] = amount;
 
     emit Approval(msg.sender, spender, amount);
@@ -398,9 +417,6 @@ error PoolAddressTransfer();
 /// ERC20: transfer amount exceeds balance
 error TransferExceedsBalance();
 
-/// ERC20: approve amount exceeds balance
-error ApproveExceedsBalance();
-
 /// Not enough tokens allowed to transfer required amount
 error InsufficientAllowance();
 
@@ -437,3 +453,9 @@ error BorrowFromEmptyPool();
 
 /// The pool utilisation cannot be greater than 95%
 error PoolUtilisationTooHighForBorrowing();
+
+// Allowance spender cannot be a zero address
+error SpenderAddressZero();
+
+/// Current allowance is smaller than the subtractedValue
+error CurrentAllowanceSmallerThanSubtractedValue();
