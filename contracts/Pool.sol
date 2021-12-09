@@ -355,14 +355,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   /* ========== MODIFIERS ========== */
 
-  modifier canBorrow() {
-    if (address(_borrowersRegistry) == address(0)) revert BorrowersRegistryNotConfigured();
-    if (!_borrowersRegistry.canBorrow(msg.sender)) revert UnauthorizedBorrower();
-    if (totalSupply() == 0) revert BorrowFromEmptyPool();
-    _;
-    if (totalBorrowed() * 1 ether / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert PoolUtilisationTooHighForBorrowing();
-  }
-
+    modifier canBorrow() {
+        if (address(_borrowersRegistry) == address(0))
+            revert BorrowersRegistryNotConfigured();
+        if (!_borrowersRegistry.canBorrow(msg.sender))
+            revert UnauthorizedBorrower();
+        if (totalSupply() == 0) revert BorrowFromEmptyPool();
+        _;
+        if (
+            (totalBorrowed() * 1e18) / totalSupply() >
+            MAX_POOL_UTILISATION_FOR_BORROWING
+        ) revert PoolUtilisationTooHighForBorrowing();
+    }
 
   /* ========== EVENTS ========== */
 

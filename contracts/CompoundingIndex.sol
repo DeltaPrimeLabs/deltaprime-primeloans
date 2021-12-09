@@ -14,8 +14,8 @@ import "hardhat/console.sol";
 contract CompoundingIndex is Ownable {
     using WadRayMath for uint256;
 
-    uint256 private constant SECONDS_IN_YEAR = 31536000;
-    uint256 private constant BASE_RATE = 1 ether;
+    uint256 private constant SECONDS_IN_YEAR = 365 days;
+    uint256 private constant BASE_RATE = 1e18;
 
     uint256 public start = block.timestamp;
 
