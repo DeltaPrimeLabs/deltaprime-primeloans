@@ -118,7 +118,7 @@ contract MockUpgradedSmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, Ree
   }
 
 
-  function liquidateLoan(uint256 repayAmount) external successfulSellout {
+  function liquidateLoan(uint256 repayAmount) external successfulLiquidation {
     if(isSolvent()) revert LoanSolvent();
 
     uint256 debt = getDebt();
@@ -367,13 +367,13 @@ contract MockUpgradedSmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, Ree
   * It protects the user from an unnecessarily costly liquidation.
   * The loan must be solvent after the liquidateLoan() operation.
   **/
-  modifier successfulSellout() {
+  modifier successfulLiquidation() {
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
       if (LTV < MIN_SELLOUT_LTV) revert PostSelloutLtvTooLow();
     }
-    if (LTV >= MAX_LTV) revert LoanInsolventAfterClosure();
+    if (LTV >= MAX_LTV) revert LoanInsolventAfterLiquidation();
   }
 
 
@@ -484,7 +484,7 @@ error LoanInsolvent();
 error PostSelloutLtvTooLow();
 
 /// This operation would not result in bringing the loan back to a solvent state
-error LoanInsolventAfterClosure();
+error LoanInsolventAfterLiquidation();
 
 /// Investment failed
 error InvestmentFailed();
