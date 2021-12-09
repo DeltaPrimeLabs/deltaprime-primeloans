@@ -9,19 +9,16 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
  * @dev A mock implementation of a Pool to check if upgrade mechanism correctly update contrac logic
  */
 contract MockUpgradedPool is Pool {
+  /**
+   * Dummy implementation recording double deposits
+   * used to test upgrade of contract logic
+   **/
+  function deposit() external payable override {
+    _accumulateDepositInterest(msg.sender);
 
-    /**
-     * Dummy implementation recording double deposits
-     * used to test upgrade of contract logic
-    **/
-    function deposit() payable override external {
-      _accumulateDepositInterest(msg.sender);
+    _mint(msg.sender, msg.value * 2);
+    _updateRates();
 
-      _mint(msg.sender, msg.value * 2);
-      _updateRates();
-
-      emit Deposit(msg.sender, msg.value, block.timestamp);
-    }
-
-
+    emit Deposit(msg.sender, msg.value, block.timestamp);
+  }
 }
