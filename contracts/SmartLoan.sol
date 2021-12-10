@@ -224,11 +224,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * Repays funds to the pool
    * @param _amount of funds to repay
   **/
-  function repay(uint256 _amount) public {
+  function repay(uint256 _amount) payable public {
     if (isSolvent()) {
       require(msg.sender == owner());
     }
 
+    _amount = Math.min(_amount, getDebt());
     if (address(this).balance < _amount) revert InsufficientFundsToRepayDebt();
 
     pool.repay{value : _amount}();
