@@ -68,12 +68,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
       return this.calculateBorrowingRate(_totalLoans, _totalDeposits);
     } else {
       return
-        this
-          .calculateBorrowingRate(_totalLoans, _totalDeposits)
-          .wadToRay()
-          .rayMul(_totalLoans.wadToRay())
-          .rayDiv(_totalDeposits.wadToRay())
-          .rayToWad();
+        this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay().rayMul(_totalLoans.wadToRay()).rayDiv(_totalDeposits.wadToRay()).rayToWad();
     }
   }
 

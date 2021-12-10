@@ -30,11 +30,7 @@ interface IAssetsExchange {
    * @dev _exactERC20AmountIn amount to be bought
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
    **/
-  function sellAsset(
-    bytes32 _asset,
-    uint256 _exactERC20AmountIn,
-    uint256 _minAvaxAmountOut
-  ) external returns (bool);
+  function sellAsset(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external returns (bool);
 
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
