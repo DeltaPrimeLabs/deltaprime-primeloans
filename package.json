@@ -9,7 +9,7 @@
     "start:server": "yarn migrate:server && vercel --prod",
     "build:contracts:hardhat": "yarn hardhat compile",
     "build:contracts:hardhat:force": "yarn hardhat compile --force",
-    "build:contracts:truffle": "ruffle compile",
+    "build:contracts:truffle": "truffle compile",
     "build:contracts:truffle:force": "rm -rf build && truffle compile",
     "build": "yarn build:contracts:truffle && node scripts/build.js",
     "test-local": "yarn hardhat test test/local/*",
