@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./CompoundingIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
@@ -18,6 +19,7 @@ import "./interfaces/IBorrowersRegistry.sol";
  * The interest rates calculation is delegated to the external calculator contract.
  */
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
+  using TransferHelper for address payable;
 
   uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95 ether;
 
@@ -187,7 +189,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     _burn(msg.sender, _amount);
 
-    payable(msg.sender).transfer(_amount);
+    payable(msg.sender).safeTransferETH(_amount);
 
     _updateRates();
 
@@ -208,7 +210,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowed[msg.sender] += _amount;
     borrowed[address(this)]+= _amount;
 
-    payable(msg.sender).transfer(_amount);
+    payable(msg.sender).safeTransferETH(_amount);
 
     _updateRates();
 
@@ -290,7 +292,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     if (amount > address(this).balance) revert RecoverAmountExceedsBalance();
     if (amount > surplus) revert RecoverAmountExceedsSurplus();
 
-    payable(account).transfer(amount);
+    payable(account).safeTransferETH(amount);
   }
 
 
@@ -349,7 +351,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowIndex.updateUser(user);
     borrowIndex.updateUser(address(this));
   }
-
 
 
   /* ========== MODIFIERS ========== */

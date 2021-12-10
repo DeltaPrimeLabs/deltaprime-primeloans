@@ -5,6 +5,7 @@ import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
 
@@ -15,6 +16,9 @@ import "./lib/Bytes32EnumerableMap.sol";
  * This implementation uses the Pangolin DEX
  */
 contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeable {
+  using TransferHelper for address payable;
+  using TransferHelper for address;
+
   /* ========= STATE VARIABLES ========= */
   IPangolinRouter pangolinRouter;
 
@@ -35,7 +39,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   function refundTokenBalance(bytes32 _asset) private  {
     address tokenAddress = getAssetAddress(_asset);
     IERC20 token = IERC20(tokenAddress);
-    token.transfer(msg.sender, token.balanceOf(address(this)));
+    address(token).safeTransfer(msg.sender, token.balanceOf(address(this)));
   }
 
 
@@ -54,7 +58,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
     address[] memory path = getPathForAVAXtoToken(tokenAddress);
     (bool success,) = address(pangolinRouter).call{value : msg.value}(abi.encodeWithSignature("swapAVAXForExactTokens(uint256,address[],address,uint256)", _exactERC20AmountOut, path, msg.sender, block.timestamp));
 
-    payable(msg.sender).transfer(address(this).balance);
+    payable(msg.sender).safeTransferETH(address(this).balance);
     emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp, success);
     return success;
   }
@@ -81,7 +85,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
       refundTokenBalance(_token);
       return false;
     }
-    payable(msg.sender).transfer(address(this).balance);
+    payable(msg.sender).safeTransferETH(address(this).balance);
     emit TokenSell(msg.sender, _exactERC20AmountIn, block.timestamp, success);
     return true;
   }

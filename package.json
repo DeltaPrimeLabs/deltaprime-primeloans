@@ -26,6 +26,7 @@
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.2.0",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
+    "@uniswap/lib": "^4.0.1-alpha",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chart.js": "^2.9.4",
     "countup.js": "^2.0.7",
