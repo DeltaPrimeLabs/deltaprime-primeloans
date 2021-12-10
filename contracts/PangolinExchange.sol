@@ -70,7 +70,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    * @dev _exactERC20AmountIn amount of the ERC20 token to be sold
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override returns(bool){
+  function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override nonReentrant returns(bool){
     if(_exactERC20AmountIn == 0) revert InvalidTokenSaleAmount();
 
     address tokenAddress = getAssetAddress(_token);
