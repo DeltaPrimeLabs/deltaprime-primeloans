@@ -22,10 +22,7 @@ interface IAssetsExchange {
    * @dev _asset asset code
    * @dev _exactERC20AmountOut exact amount of asset to be bought
    **/
-  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut)
-    external
-    payable
-    returns (bool);
+  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut) external payable returns (bool);
 
   /**
    * Sells selected asset for AVAX
@@ -42,17 +39,12 @@ interface IAssetsExchange {
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
    **/
-  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token)
-    external
-    returns (uint256);
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns (uint256);
 
   /**
    * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
    **/
-  function getMinimumERC20TokenAmountForExactAVAX(
-    uint256 _exactAmountOut,
-    address _token
-  ) external returns (uint256);
+  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) external returns (uint256);
 
   /**
    * Adds or updates supported assets

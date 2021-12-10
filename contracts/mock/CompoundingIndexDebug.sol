@@ -35,22 +35,13 @@ contract CompoundingIndexDebug is Ownable {
     //console.log("Updated index to: ", prevIndex[now]);
   }
 
-  function getIndexedValue(uint256 value, address user)
-    public
-    view
-    returns (uint256)
-  {
+  function getIndexedValue(uint256 value, address user) public view returns (uint256) {
     //uint256 lastIndex = prevIndex[getLastUserUpdateTime(user)];
     //console.log("Last time: ", getLastUserUpdateTime(user));
     //console.log("Last index: ", lastIndex);
     //console.log("Start time: ", start);
 
-    return
-      value
-        .wadToRay()
-        .rayMul(getIndex().wadToRay())
-        .rayDiv(prevIndex[getLastUserUpdateTime(user)].wadToRay())
-        .rayToWad();
+    return value.wadToRay().rayMul(getIndex().wadToRay()).rayDiv(prevIndex[getLastUserUpdateTime(user)].wadToRay()).rayToWad();
   }
 
   function updateIndex() internal {
@@ -68,8 +59,7 @@ contract CompoundingIndexDebug is Ownable {
   }
 
   function getCompoundedFactor(uint256 period) internal view returns (uint256) {
-    return
-      ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
+    return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
   }
 
   function getIndex() public view returns (uint256) {

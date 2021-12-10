@@ -14,11 +14,7 @@ import "./lib/Bytes32EnumerableMap.sol";
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinExchange is
-  Ownable,
-  IAssetsExchange,
-  ReentrancyGuardUpgradeable
-{
+contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -28,14 +24,12 @@ contract PangolinExchange is
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private map;
 
-  address private constant WAVAX_ADDRESS =
-    0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+  address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
   /* ========= CONSTRUCTOR ========= */
 
   constructor(address _pangolinRouter, Asset[] memory supportedAssets) {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
-
     _updateAssets(supportedAssets);
   }
 
@@ -45,39 +39,19 @@ contract PangolinExchange is
    * @dev _token ERC20 token's address
    * @dev _exactERC20AmountOut amount of the ERC20 token to be bought
    **/
-  function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut)
-    external
-    payable
-    override
-    nonReentrant
-    returns (bool)
-  {
+  function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) external payable override nonReentrant returns (bool) {
     if (_exactERC20AmountOut == 0) revert InvalidTokenPurchaseAmount();
     address tokenAddress = getAssetAddress(_token);
-    uint256 amountIn = getEstimatedAVAXForERC20Token(
-      _exactERC20AmountOut,
-      tokenAddress
-    );
+    uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
     if (msg.value < amountIn) revert NotEnoughFunds();
 
     address[] memory path = getPathForAVAXtoToken(tokenAddress);
     (bool success, ) = address(pangolinRouter).call{value: msg.value}(
-      abi.encodeWithSignature(
-        "swapAVAXForExactTokens(uint256,address[],address,uint256)",
-        _exactERC20AmountOut,
-        path,
-        msg.sender,
-        block.timestamp
-      )
+      abi.encodeWithSignature("swapAVAXForExactTokens(uint256,address[],address,uint256)", _exactERC20AmountOut, path, msg.sender, block.timestamp)
     );
 
     payable(msg.sender).safeTransferETH(address(this).balance);
-    emit TokenPurchase(
-      msg.sender,
-      _exactERC20AmountOut,
-      block.timestamp,
-      success
-    );
+    emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp, success);
     return success;
   }
 
@@ -87,11 +61,7 @@ contract PangolinExchange is
    * @dev _exactERC20AmountIn amount of the ERC20 token to be sold
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
    **/
-  function sellAsset(
-    bytes32 _token,
-    uint256 _exactERC20AmountIn,
-    uint256 _minAvaxAmountOut
-  ) external override nonReentrant returns (bool) {
+  function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override nonReentrant returns (bool) {
     if (_exactERC20AmountIn == 0) revert InvalidTokenSaleAmount();
 
     address tokenAddress = getAssetAddress(_token);
@@ -99,18 +69,11 @@ contract PangolinExchange is
     token.approve(address(pangolinRouter), _exactERC20AmountIn);
 
     (bool success, ) = address(pangolinRouter).call{value: 0}(
-      abi.encodeWithSignature(
-        "swapExactTokensForAVAX(uint256,uint256,address[],address,uint256)",
-        _exactERC20AmountIn,
-        _minAvaxAmountOut,
-        getPathForTokenToAVAX(tokenAddress),
-        msg.sender,
-        block.timestamp
-      )
+      abi.encodeWithSignature("swapExactTokensForAVAX(uint256,uint256,address[],address,uint256)", _exactERC20AmountIn, _minAvaxAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp)
     );
 
     if (!success) {
-      token.safeTransfer(msg.sender, token.balanceOf(address(this)));
+      address(token).safeTransfer(msg.sender, token.balanceOf(address(this)));
       return false;
     }
     payable(msg.sender).safeTransferETH(address(this).balance);
@@ -125,10 +88,7 @@ contract PangolinExchange is
   function _updateAssets(Asset[] memory _assets) internal {
     for (uint256 i = 0; i < _assets.length; i++) {
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
-      require(
-        _assets[i].assetAddress != address(0),
-        "Cannot set an empty address."
-      );
+      require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
 
       EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
     }
@@ -148,11 +108,7 @@ contract PangolinExchange is
    * Removes supported assets
    * @dev _assets assets to be removed
    **/
-  function removeAssets(bytes32[] calldata _assets)
-    external
-    override
-    onlyOwner
-  {
+  function removeAssets(bytes32[] calldata _assets) external override onlyOwner {
     for (uint256 i = 0; i < _assets.length; i++) {
       EnumerableMap.remove(map, _assets[i]);
     }
@@ -163,24 +119,14 @@ contract PangolinExchange is
   /**
    * Returns all the supported assets keys
    **/
-  function getAllAssets()
-    external
-    view
-    override
-    returns (bytes32[] memory result)
-  {
+  function getAllAssets() external view override returns (bytes32[] memory result) {
     return map._inner._keys._inner._values;
   }
 
   /**
    * Returns address of an asset
    **/
-  function getAssetAddress(bytes32 _asset)
-    public
-    view
-    override
-    returns (address)
-  {
+  function getAssetAddress(bytes32 _asset) public view override returns (address) {
     (, address assetAddress) = EnumerableMap.tryGet(map, _asset);
     require(assetAddress != address(0), "Asset not supported.");
 
@@ -199,10 +145,7 @@ contract PangolinExchange is
   /**
    * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
    **/
-  function getMinimumERC20TokenAmountForExactAVAX(
-    uint256 _exactAmountOut,
-    address _token
-  ) public view override returns (uint256) {
+  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) public view override returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
@@ -211,10 +154,7 @@ contract PangolinExchange is
   /**
    * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
    **/
-  function getEstimatedAVAXForERC20Token(
-    uint256 _exactAmountOut,
-    address _token
-  ) public view returns (uint256) {
+  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
@@ -223,12 +163,7 @@ contract PangolinExchange is
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
    **/
-  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view override returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];
@@ -238,11 +173,7 @@ contract PangolinExchange is
    * Returns a path containing WAVAX token's address and chosen ERC20 token's address
    * @dev _token ERC20 token's address
    **/
-  function getPathForAVAXtoToken(address _token)
-    private
-    view
-    returns (address[] memory)
-  {
+  function getPathForAVAXtoToken(address _token) private view returns (address[] memory) {
     address[] memory path = new address[](2);
     path[0] = WAVAX_ADDRESS;
     path[1] = _token;
@@ -253,11 +184,7 @@ contract PangolinExchange is
    * Returns a path containing chosen ERC20 token's address and WAVAX token's address
    * @dev _token ERC20 token's address
    **/
-  function getPathForTokenToAVAX(address _token)
-    private
-    view
-    returns (address[] memory)
-  {
+  function getPathForTokenToAVAX(address _token) private view returns (address[] memory) {
     address[] memory path = new address[](2);
     path[0] = _token;
     path[1] = WAVAX_ADDRESS;
@@ -271,24 +198,14 @@ contract PangolinExchange is
    * @param buyer the address which bought tokens
    * @param amount the amount of token bought
    **/
-  event TokenPurchase(
-    address indexed buyer,
-    uint256 amount,
-    uint256 timestamp,
-    bool success
-  );
+  event TokenPurchase(address indexed buyer, uint256 amount, uint256 timestamp, bool success);
 
   /**
    * @dev emitted after a tokens were sold
    * @param seller the address which sold tokens
    * @param amount the amount of token sold
    **/
-  event TokenSell(
-    address indexed seller,
-    uint256 amount,
-    uint256 timestamp,
-    bool success
-  );
+  event TokenSell(address indexed seller, uint256 amount, uint256 timestamp, bool success);
 
   /* ========== EVENTS ========== */
 

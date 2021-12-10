@@ -86,11 +86,7 @@ library EnumerableMap {
    *
    * - `index` must be strictly less than {length}.
    */
-  function _at(Map storage map, uint256 index)
-    private
-    view
-    returns (bytes32, bytes32)
-  {
+  function _at(Map storage map, uint256 index) private view returns (bytes32, bytes32) {
     bytes32 key = map._keys.at(index);
     return (key, map._values[key]);
   }
@@ -99,11 +95,7 @@ library EnumerableMap {
    * @dev Tries to returns the value associated with `key`.  O(1).
    * Does not revert if `key` is not in the map.
    */
-  function _tryGet(Map storage map, bytes32 key)
-    private
-    view
-    returns (bool, bytes32)
-  {
+  function _tryGet(Map storage map, bytes32 key) private view returns (bool, bytes32) {
     bytes32 value = map._values[key];
     if (value == bytes32(0)) {
       return (_contains(map, key), bytes32(0));
@@ -121,10 +113,7 @@ library EnumerableMap {
    */
   function _get(Map storage map, bytes32 key) private view returns (bytes32) {
     bytes32 value = map._values[key];
-    require(
-      value != 0 || _contains(map, key),
-      "EnumerableMap: nonexistent key"
-    );
+    require(value != 0 || _contains(map, key), "EnumerableMap: nonexistent key");
     return value;
   }
 
@@ -170,32 +159,21 @@ library EnumerableMap {
    *
    * Returns true if the key was removed from the map, that is if it was present.
    */
-  function remove(Bytes32ToAddressMap storage map, bytes32 key)
-    internal
-    returns (bool)
-  {
+  function remove(Bytes32ToAddressMap storage map, bytes32 key) internal returns (bool) {
     return _remove(map._inner, key);
   }
 
   /**
    * @dev Returns true if the key is in the map. O(1).
    */
-  function contains(Bytes32ToAddressMap storage map, bytes32 key)
-    internal
-    view
-    returns (bool)
-  {
+  function contains(Bytes32ToAddressMap storage map, bytes32 key) internal view returns (bool) {
     return _contains(map._inner, key);
   }
 
   /**
    * @dev Returns the number of elements in the map. O(1).
    */
-  function length(Bytes32ToAddressMap storage map)
-    internal
-    view
-    returns (uint256)
-  {
+  function length(Bytes32ToAddressMap storage map) internal view returns (uint256) {
     return _length(map._inner);
   }
 
@@ -208,11 +186,7 @@ library EnumerableMap {
    *
    * - `index` must be strictly less than {length}.
    */
-  function at(Bytes32ToAddressMap storage map, uint256 index)
-    internal
-    view
-    returns (bytes32, address)
-  {
+  function at(Bytes32ToAddressMap storage map, uint256 index) internal view returns (bytes32, address) {
     (bytes32 key, bytes32 value) = _at(map._inner, index);
     return (key, address(uint160(uint256(value))));
   }
@@ -223,11 +197,7 @@ library EnumerableMap {
    *
    * _Available since v3.4._
    */
-  function tryGet(Bytes32ToAddressMap storage map, bytes32 key)
-    internal
-    view
-    returns (bool, address)
-  {
+  function tryGet(Bytes32ToAddressMap storage map, bytes32 key) internal view returns (bool, address) {
     (bool success, bytes32 value) = _tryGet(map._inner, key);
     return (success, address(uint160(uint256(value))));
   }
@@ -239,11 +209,7 @@ library EnumerableMap {
    *
    * - `key` must be in the map.
    */
-  function get(Bytes32ToAddressMap storage map, bytes32 key)
-    internal
-    view
-    returns (address)
-  {
+  function get(Bytes32ToAddressMap storage map, bytes32 key) internal view returns (address) {
     return address(uint160(uint256(_get(map._inner, key))));
   }
 

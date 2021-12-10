@@ -31,11 +31,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits)
-    public
-    pure
-    returns (uint256)
-  {
+  function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
     return (_totalLoans * 1e18) / _totalDeposits;
@@ -48,20 +44,13 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
       return MAX_RATE;
     } else {
-      return
-        (this.calculateBorrowingRate(_totalLoans, _totalDeposits) *
-          _totalLoans) / _totalDeposits;
+      return (this.calculateBorrowingRate(_totalLoans, _totalDeposits) * _totalLoans) / _totalDeposits;
     }
   }
 
@@ -75,12 +64,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     if (totalDeposits == 0) return OFFSET;
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);

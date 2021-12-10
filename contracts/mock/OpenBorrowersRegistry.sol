@@ -13,21 +13,11 @@ contract OpenBorrowersRegistry is IBorrowersRegistry {
     return true;
   }
 
-  function getLoanForOwner(address _user)
-    external
-    pure
-    override
-    returns (address)
-  {
+  function getLoanForOwner(address _user) external pure override returns (address) {
     return address(0);
   }
 
-  function getOwnerOfLoan(address _loan)
-    external
-    pure
-    override
-    returns (address)
-  {
+  function getOwnerOfLoan(address _loan) external pure override returns (address) {
     return address(0);
   }
 }
