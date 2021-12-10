@@ -155,10 +155,5 @@
         }
       }
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-push": "yarn prettier"
-    }
   }
 }

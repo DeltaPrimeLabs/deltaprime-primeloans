@@ -73,20 +73,11 @@ contract CompoundingIndex is Ownable {
    * Ray operations round up the result, but it is only an issue for very small values (with an order of magnitude
    * of 1 Wei)
    **/
-  function getIndexedValue(uint256 value, address user)
-    public
-    view
-    returns (uint256)
-  {
+  function getIndexedValue(uint256 value, address user) public view returns (uint256) {
     uint256 userTime = userUpdateTime[user];
     uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
 
-    return
-      value
-        .wadToRay()
-        .rayMul(getIndex().wadToRay())
-        .rayDiv(prevUserIndex.wadToRay())
-        .rayToWad();
+    return value.wadToRay().rayMul(getIndex().wadToRay()).rayDiv(prevUserIndex.wadToRay()).rayToWad();
   }
 
   /* ========== INTERNAL FUNCTIONS ========== */
@@ -102,8 +93,7 @@ contract CompoundingIndex is Ownable {
    * Returns compounded factor in Ray
    **/
   function getCompoundedFactor(uint256 period) internal view returns (uint256) {
-    return
-      ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
+    return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
   }
 
   /* ========== EVENTS ========== */

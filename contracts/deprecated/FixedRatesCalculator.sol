@@ -24,10 +24,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
    * @dev _depositRate the value of updated deposit rate
    * @dev _borrowingRate the value of updated borrowing rate
    **/
-  function setRates(uint256 _depositRate, uint256 _borrowingRate)
-    public
-    onlyOwner
-  {
+  function setRates(uint256 _depositRate, uint256 _borrowingRate) public onlyOwner {
     if (_depositRate > _borrowingRate) revert BorrowingRateLTDepositRate();
 
     depositRate = _depositRate;
@@ -42,12 +39,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
    * Returns the current deposit rate
    * The parameters are kept only because of the interface compatibility as they don't affect the rate
    **/
-  function calculateDepositRate(uint256 totalLoans, uint256 totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateDepositRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     return depositRate;
   }
 
@@ -55,12 +47,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
    * Returns the current borrowing rate
    * The parameters are kept only because of the interface compatibility as they don't affect the rate
    **/
-  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     return borrowingRate;
   }
 

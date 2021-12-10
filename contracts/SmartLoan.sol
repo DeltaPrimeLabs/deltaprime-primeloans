@@ -18,11 +18,7 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is
-  OwnableUpgradeable,
-  PriceAwareUpgradeable,
-  ReentrancyGuardUpgradeable
-{
+contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -38,10 +34,7 @@ contract SmartLoan is
   IAssetsExchange public exchange;
   Pool pool;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_)
-    external
-    initializer
-  {
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
@@ -67,16 +60,11 @@ contract SmartLoan is
    * It is used as part of the sellout() function which sells part/all of assets in order to bring the loan back to solvency.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAsset(
-    bytes32 asset,
-    uint256 _amount,
-    uint256 _minAvaxOut
-  ) private {
+  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     address(token).safeTransfer(address(exchange), _amount);
     exchange.sellAsset(asset, _amount, _minAvaxOut);
   }
-
 
   function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner nonReentrant remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(asset);
@@ -89,16 +77,11 @@ contract SmartLoan is
    * is being sold.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount)
-    private
-  {
+  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(
-        targetAvaxAmount,
-        address(token)
-      );
+      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
       if (balance < minSaleAmount) {
         sellAsset(asset, balance, 0);
       } else {
@@ -125,9 +108,7 @@ contract SmartLoan is
   function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
-      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(
-        address(this)
-      );
+      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
         sellAsset(assets[i], balance, 0);
       }
@@ -145,14 +126,8 @@ contract SmartLoan is
     }
   }
 
-
-  function liquidateLoan(uint256 repayAmount)
-    external
-    payable
-    nonReentrant
-    successfulLiquidation
-  {
-    if(isSolvent()) revert LoanSolvent();
+  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
+    if (isSolvent()) revert LoanSolvent();
 
     uint256 debt = getDebt();
     if (repayAmount > debt) {
@@ -175,10 +150,7 @@ contract SmartLoan is
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
-      sellAssetForTargetAvax(
-        assets[i],
-        targetAvaxAmount - address(this).balance
-      );
+      sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
     }
   }
 
@@ -187,14 +159,9 @@ contract SmartLoan is
    * This method could be used to cash out profits from investments
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
-  **/
-  function withdraw(uint256 _amount)
-    public
-    onlyOwner
-    nonReentrant
-    remainsSolvent
-  {
-    if(address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
+   **/
+  function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
+    if (address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
 
     payable(msg.sender).safeTransferETH(_amount);
 
@@ -207,17 +174,10 @@ contract SmartLoan is
    * @param _exactERC20AmountOut exact amount of asset to buy
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
    **/
-  function invest(
-    bytes32 _asset,
-    uint256 _exactERC20AmountOut,
-    uint256 _maxAvaxAmountIn
-  ) external onlyOwner nonReentrant remainsSolvent {
-    if(address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
+  function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
+    if (address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
 
-    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(
-      _asset,
-      _exactERC20AmountOut
-    );
+    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     if (!success) revert InvestmentFailed();
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
@@ -228,20 +188,12 @@ contract SmartLoan is
    * @param _asset code of the asset
    * @param _exactERC20AmountIn exact amount of token to sell
    * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
-  **/
-  function redeem(
-    bytes32 _asset,
-    uint256 _exactERC20AmountIn,
-    uint256 _minAvaxAmountOut
-  ) external nonReentrant onlyOwner remainsSolvent {
+   **/
+  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
     address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
-    bool success = exchange.sellAsset(
-      _asset,
-      _exactERC20AmountIn,
-      _minAvaxAmountOut
-    );
-    if(!success) revert RedemptionFailed();
+    bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    if (!success) revert RedemptionFailed();
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
@@ -259,8 +211,8 @@ contract SmartLoan is
   /**
    * Repays funds to the pool
    * @param _amount of funds to repay
-  **/
-  function repay(uint256 _amount) payable public {
+   **/
+  function repay(uint256 _amount) public payable {
     if (isSolvent()) {
       require(msg.sender == owner());
     }
@@ -295,35 +247,22 @@ contract SmartLoan is
    * @dev _asset the code of an asset
    * @dev _user the address of queried user
    **/
-  function getBalance(address _user, bytes32 _asset)
-    public
-    view
-    returns (uint256)
-  {
+  function getBalance(address _user, bytes32 _asset) public view returns (uint256) {
     IERC20 token = IERC20(exchange.getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
-  function getERC20TokenInstance(bytes32 _asset)
-    internal
-    view
-    returns (IERC20Metadata)
-  {
+  function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
     address assetAddress = exchange.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
 
-
-  function getAssetPriceInAVAXWei(bytes32 _asset)
-    internal
-    view
-    returns (uint256)
-  {
+  function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
     uint256 assetPrice = getPriceFromMsg(_asset);
-    uint256 avaxPrice = getPriceFromMsg(bytes32('AVAX'));
+    uint256 avaxPrice = getPriceFromMsg(bytes32("AVAX"));
     if (assetPrice == 0 || avaxPrice == 0) revert AssetPriceNotFoundInMsg();
-    uint normalizedPrice = (assetPrice * 10 ** 18) / (avaxPrice);
+    uint256 normalizedPrice = (assetPrice * 10**18) / (avaxPrice);
     return normalizedPrice;
   }
 
@@ -351,12 +290,7 @@ contract SmartLoan is
   }
 
   function getFullLoanStatus() public view returns (uint256[4] memory) {
-    return [
-      getTotalValue(),
-      getDebt(),
-      getLTV(),
-      isSolvent() ? uint256(1) : uint256(0)
-    ];
+    return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
   }
 
   /**
@@ -376,8 +310,7 @@ contract SmartLoan is
     IERC20Metadata token = getERC20TokenInstance(_asset);
     uint256 assetBalance = getBalance(address(this), _asset);
     if (assetBalance > 0) {
-      return
-        (getAssetPriceInAVAXWei(_asset) * assetBalance) / 10**token.decimals();
+      return (getAssetPriceInAVAXWei(_asset) * assetBalance) / 10**token.decimals();
     } else {
       return 0;
     }
@@ -460,12 +393,7 @@ contract SmartLoan is
    * @param amount the investment
    * @param time of the investment
    **/
-  event Invested(
-    address indexed investor,
-    bytes32 indexed asset,
-    uint256 amount,
-    uint256 time
-  );
+  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
 
   /**
    * @dev emitted after the investment is sold
@@ -474,12 +402,7 @@ contract SmartLoan is
    * @param amount the investment
    * @param time of the redemption
    **/
-  event Redeemed(
-    address indexed investor,
-    bytes32 indexed asset,
-    uint256 amount,
-    uint256 time
-  );
+  event Redeemed(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
 
   /**
    * @dev emitted when funds are borrowed from the pool
@@ -505,13 +428,7 @@ contract SmartLoan is
    * @param ltv a new LTV after the liquidation operation
    * @param time a time of the liquidation
    **/
-  event Liquidated(
-    address indexed liquidator,
-    uint256 repayAmount,
-    uint256 bonus,
-    uint256 ltv,
-    uint256 time
-  );
+  event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 time);
 
   /**
    * @dev emitted after closing a loan by the owner

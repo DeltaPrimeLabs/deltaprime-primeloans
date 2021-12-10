@@ -17,11 +17,7 @@ import "../Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract MockUpgradedSmartLoan is
-  OwnableUpgradeable,
-  PriceAwareUpgradeable,
-  ReentrancyGuardUpgradeable
-{
+contract MockUpgradedSmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   uint256 public constant PERCENTAGE_PRECISION = 1000;
   // 10%
   uint256 public constant LIQUIDATION_BONUS = 100;
@@ -34,10 +30,7 @@ contract MockUpgradedSmartLoan is
   IAssetsExchange public exchange;
   Pool pool;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_)
-    external
-    initializer
-  {
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
@@ -72,16 +65,11 @@ contract MockUpgradedSmartLoan is
    * is being sold.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount)
-    private
-  {
+  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(
-        targetAvaxAmount,
-        exchange.getAssetAddress(asset)
-      );
+      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, exchange.getAssetAddress(asset));
       if (balance < minSaleAmount) {
         sellAsset(asset, balance, 0);
       } else {
@@ -108,9 +96,7 @@ contract MockUpgradedSmartLoan is
   function closeLoan() external onlyOwner remainsSolvent {
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
-      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(
-        address(this)
-      );
+      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
         sellAsset(assets[i], balance, 0);
       }
@@ -149,10 +135,7 @@ contract MockUpgradedSmartLoan is
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
-      sellAssetForTargetAvax(
-        assets[i],
-        targetAvaxAmount - address(this).balance
-      );
+      sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
     }
   }
 
@@ -162,14 +145,8 @@ contract MockUpgradedSmartLoan is
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
    **/
-  function withdraw(uint256 _amount)
-    public
-    onlyOwner
-    remainsSolvent
-    nonReentrant
-  {
-    if (address(this).balance < _amount)
-      revert InsufficientFundsForWithdrawal();
+  function withdraw(uint256 _amount) public onlyOwner remainsSolvent nonReentrant {
+    if (address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
 
     payable(msg.sender).transfer(_amount);
 
@@ -187,13 +164,9 @@ contract MockUpgradedSmartLoan is
     uint256 _exactERC20AmountOut,
     uint256 _maxAvaxAmountIn
   ) external onlyOwner remainsSolvent {
-    if (address(this).balance < _maxAvaxAmountIn)
-      revert InsufficientFundsForInvestment();
+    if (address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
 
-    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(
-      _asset,
-      _exactERC20AmountOut
-    );
+    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     if (!success) revert InvestmentFailed();
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
@@ -212,11 +185,7 @@ contract MockUpgradedSmartLoan is
   ) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
     token.transfer(address(exchange), _exactERC20AmountIn);
-    bool success = exchange.sellAsset(
-      _asset,
-      _exactERC20AmountIn,
-      _minAvaxAmountOut
-    );
+    bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
     if (!success) revert RedemptionFailed();
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
@@ -264,32 +233,19 @@ contract MockUpgradedSmartLoan is
    * @dev _asset the code of an asset
    * @dev _user the address of queried user
    **/
-  function getBalance(address _user, bytes32 _asset)
-    public
-    view
-    returns (uint256)
-  {
+  function getBalance(address _user, bytes32 _asset) public view returns (uint256) {
     IERC20 token = IERC20(exchange.getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
-  function getERC20TokenInstance(bytes32 _asset)
-    internal
-    view
-    returns (IERC20Metadata)
-  {
+  function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
     address assetAddress = exchange.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
 
-  function getAssetPriceInAVAXWei(bytes32 _asset)
-    internal
-    view
-    returns (uint256)
-  {
-    uint256 normalizedPrice = (getPriceFromMsg(_asset) * 10**18) /
-      getPriceFromMsg(bytes32("AVAX"));
+  function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
+    uint256 normalizedPrice = (getPriceFromMsg(_asset) * 10**18) / getPriceFromMsg(bytes32("AVAX"));
     return normalizedPrice;
   }
 
@@ -317,12 +273,7 @@ contract MockUpgradedSmartLoan is
   }
 
   function getFullLoanStatus() public view returns (uint256[4] memory) {
-    return [
-      getTotalValue(),
-      getDebt(),
-      getLTV(),
-      isSolvent() ? uint256(1) : uint256(0)
-    ];
+    return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
   }
 
   /**
@@ -342,8 +293,7 @@ contract MockUpgradedSmartLoan is
     IERC20Metadata token = getERC20TokenInstance(_asset);
     uint256 assetBalance = getBalance(address(this), _asset);
     if (assetBalance > 0) {
-      return
-        (getAssetPriceInAVAXWei(_asset) * assetBalance) / 10**token.decimals();
+      return (getAssetPriceInAVAXWei(_asset) * assetBalance) / 10**token.decimals();
     } else {
       return 0;
     }
@@ -426,12 +376,7 @@ contract MockUpgradedSmartLoan is
    * @param amount the investment
    * @param time of the investment
    **/
-  event Invested(
-    address indexed investor,
-    bytes32 indexed asset,
-    uint256 amount,
-    uint256 time
-  );
+  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
 
   /**
    * @dev emitted after the investment is sold
@@ -440,12 +385,7 @@ contract MockUpgradedSmartLoan is
    * @param amount the investment
    * @param time of the redemption
    **/
-  event Redeemed(
-    address indexed investor,
-    bytes32 indexed asset,
-    uint256 amount,
-    uint256 time
-  );
+  event Redeemed(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
 
   /**
    * @dev emitted when funds are borrowed from the pool
@@ -471,13 +411,7 @@ contract MockUpgradedSmartLoan is
    * @param ltv a new LTV after the liquidation operation
    * @param time a time of the liquidation
    **/
-  event Liquidated(
-    address indexed liquidator,
-    uint256 repayAmount,
-    uint256 bonus,
-    uint256 ltv,
-    uint256 time
-  );
+  event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 time);
 
   /**
    * @dev emitted after closing a loan by the owner

@@ -33,27 +33,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   CompoundingIndex private depositIndex;
   CompoundingIndex private borrowIndex;
 
-  function initialize(
-    IRatesCalculator ratesCalculator_,
-    IBorrowersRegistry borrowersRegistry_,
-    CompoundingIndex depositIndex_,
-    CompoundingIndex borrowIndex_
-  ) public initializer {
-    if (!Address.isContract(address(borrowersRegistry_)))
-      revert MustBeContract();
+  function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
+    if (!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
     _ratesCalculator = ratesCalculator_;
 
-    depositIndex = address(depositIndex_) == address(0)
-      ? new CompoundingIndex()
-      : depositIndex_;
-    borrowIndex = address(borrowIndex_) == address(0)
-      ? new CompoundingIndex()
-      : borrowIndex_;
+    depositIndex = address(depositIndex_) == address(0) ? new CompoundingIndex() : depositIndex_;
+    borrowIndex = address(borrowIndex_) == address(0) ? new CompoundingIndex() : borrowIndex_;
 
     __Ownable_init();
-
     _updateRates();
   }
 
@@ -65,15 +54,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Only the owner of the Contract can execute this function.
    * @dev _ratesCalculator the address of rates calculator
    **/
-  function setRatesCalculator(IRatesCalculator ratesCalculator_)
-    external
-    onlyOwner
-  {
+  function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     // setting address(0) ratesCalculator_ freezes the pool
-    if (
-      !(Address.isContract(address(ratesCalculator_)) ||
-        address(ratesCalculator_) == address(0))
-    ) revert MustBeContract();
+    if (!(Address.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
     _ratesCalculator = ratesCalculator_;
     if (address(ratesCalculator_) != address(0)) {
       _updateRates();
@@ -86,24 +69,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Only the owner of the Contract can execute this function.
    * @dev _borrowersRegistry the address of borrowers registry
    **/
-  function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_)
-    external
-    onlyOwner
-  {
-    if (address(borrowersRegistry_) == address(0))
-      revert BorrowersRegistryNullAddress();
-    if (!Address.isContract(address(borrowersRegistry_)))
-      revert MustBeContract();
+  function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
+    if (address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
+    if (!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
   }
 
   /* ========== MUTATIVE FUNCTIONS ========== */
-  function transfer(address recipient, uint256 amount)
-    external
-    override
-    returns (bool)
-  {
+  function transfer(address recipient, uint256 amount) external override returns (bool) {
     if (recipient == address(0)) revert ZeroAddressTransfer();
     if (recipient == address(this)) revert PoolAddressTransfer();
 
@@ -124,19 +98,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return true;
   }
 
-  function allowance(address owner, address spender)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function allowance(address owner, address spender) external view override returns (uint256) {
     return _allowed[owner][spender];
   }
 
-  function increaseAllowance(address spender, uint256 addedValue)
-    external
-    returns (bool)
-  {
+  function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
     if (spender == address(0)) revert SpenderAddressZero();
     uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
     _allowed[msg.sender][spender] = newAllowance;
@@ -145,14 +111,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return true;
   }
 
-  function decreaseAllowance(address spender, uint256 subtractedValue)
-    external
-    returns (bool)
-  {
+  function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
     if (spender == address(0)) revert SpenderAddressZero();
     uint256 currentAllowance = _allowed[msg.sender][spender];
-    if (currentAllowance < subtractedValue)
-      revert CurrentAllowanceSmallerThanSubtractedValue();
+    if (currentAllowance < subtractedValue) revert CurrentAllowanceSmallerThanSubtractedValue();
 
     uint256 newAllowance = currentAllowance - subtractedValue;
     _allowed[msg.sender][spender] = newAllowance;
@@ -161,11 +123,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return true;
   }
 
-  function approve(address spender, uint256 amount)
-    external
-    override
-    returns (bool)
-  {
+  function approve(address spender, uint256 amount) external override returns (bool) {
     if (spender == address(0)) revert SpenderAddressZero();
     _allowed[msg.sender][spender] = amount;
 
@@ -174,11 +132,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return true;
   }
 
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external override returns (bool) {
+  function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
     if (amount > _allowed[sender][msg.sender]) revert InsufficientAllowance();
     if (recipient == address(0)) revert ZeroAddressTransfer();
     if (recipient == address(this)) revert PoolAddressTransfer();
@@ -253,8 +207,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Repays the message value
    * It updates user borrowed balance, total borrowed amount and rates
    * @dev It is only meant to be used by the SmartLoan.
-  **/
-  function repay() payable external nonReentrant {
+   **/
+  function repay() external payable nonReentrant {
     _accumulateBorrowingInterest(msg.sender);
 
     if (borrowed[msg.sender] < msg.value) revert RepayAmountExceedsBorrowed();
@@ -300,26 +254,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Returns the current interest rate for deposits
    **/
   function getDepositRate() public view returns (uint256) {
-    return
-      _ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply());
+    return _ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply());
   }
 
   /**
    * Returns the current interest rate for borrowings
    **/
   function getBorrowingRate() public view returns (uint256) {
-    return
-      _ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply());
+    return _ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply());
   }
 
   /**
    * Recovers the surplus funds resultant from difference between deposit and borrowing rates
    **/
-  function recoverSurplus(uint256 amount, address account)
-    public
-    onlyOwner
-    nonReentrant
-  {
+  function recoverSurplus(uint256 amount, address account) public onlyOwner nonReentrant {
     uint256 surplus = address(this).balance + totalBorrowed() - totalSupply();
 
     if (amount > address(this).balance) revert RecoverAmountExceedsBalance();
@@ -341,8 +289,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   function _burn(address account, uint256 amount) internal {
     if (_deposited[account] < amount) revert BurnAmountExceedsUserDeposits();
-    if (_deposited[address(this)] < amount)
-      revert BurnAmountExceedsPoolDeposits();
+    if (_deposited[address(this)] < amount) revert BurnAmountExceedsPoolDeposits();
 
     // verified in "require" above
     unchecked {
@@ -355,12 +302,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   function _updateRates() internal {
     if (address(_ratesCalculator) == address(0)) revert PoolFrozen();
-    depositIndex.setRate(
-      _ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply())
-    );
-    borrowIndex.setRate(
-      _ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply())
-    );
+    depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
+    borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
   }
 
   function _accumulateDepositInterest(address user) internal {
@@ -385,20 +328,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowIndex.updateUser(address(this));
   }
 
-
   /* ========== MODIFIERS ========== */
 
   modifier canBorrow() {
-    if (address(_borrowersRegistry) == address(0))
-      revert BorrowersRegistryNotConfigured();
-    if (!_borrowersRegistry.canBorrow(msg.sender))
-      revert UnauthorizedBorrower();
+    if (address(_borrowersRegistry) == address(0)) revert BorrowersRegistryNotConfigured();
+    if (!_borrowersRegistry.canBorrow(msg.sender)) revert UnauthorizedBorrower();
     if (totalSupply() == 0) revert BorrowFromEmptyPool();
     _;
-    if (
-      (totalBorrowed() * 1e18) / totalSupply() >
-      MAX_POOL_UTILISATION_FOR_BORROWING
-    ) revert PoolUtilisationTooHighForBorrowing();
+    if ((totalBorrowed() * 1e18) / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert PoolUtilisationTooHighForBorrowing();
   }
 
   /* ========== EVENTS ========== */
@@ -441,11 +378,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @param value the amount accumulated interest
    * @param timestamp of the interest accumulation
    **/
-  event InterestCollected(
-    address indexed user,
-    uint256 value,
-    uint256 timestamp
-  );
+  event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
 }
 
 /// Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations

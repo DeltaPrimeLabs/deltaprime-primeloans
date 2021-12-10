@@ -20,10 +20,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     _;
   }
 
-  event SmartLoanCreated(
-    address indexed accountAddress,
-    address indexed creator
-  );
+  event SmartLoanCreated(address indexed accountAddress, address indexed creator);
 
   Pool private pool;
   IAssetsExchange assetsExchange;
@@ -45,11 +42,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   function createLoan() external oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
-      abi.encodeWithSelector(
-        SmartLoan.initialize.selector,
-        address(assetsExchange),
-        address(pool)
-      )
+      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool))
     );
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
@@ -60,19 +53,10 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt)
-    external
-    payable
-    oneLoanPerOwner
-    returns (SmartLoan)
-  {
+  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
-      abi.encodeWithSelector(
-        SmartLoan.initialize.selector,
-        address(assetsExchange),
-        address(pool)
-      )
+      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool))
     );
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
@@ -101,21 +85,11 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return loansToOwners[_account] != address(0);
   }
 
-  function getLoanForOwner(address _user)
-    external
-    view
-    override
-    returns (address)
-  {
+  function getLoanForOwner(address _user) external view override returns (address) {
     return address(ownersToLoans[_user]);
   }
 
-  function getOwnerOfLoan(address _loan)
-    external
-    view
-    override
-    returns (address)
-  {
+  function getOwnerOfLoan(address _loan) external view override returns (address) {
     return loansToOwners[_loan];
   }
 

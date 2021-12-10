@@ -30,14 +30,8 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _utilisationFactor the slope of the rate formula
    * @dev _offset the offset of the rate formula
    **/
-  function setParameters(uint256 _utilisationFactor, uint256 _offset)
-    public
-    onlyOwner
-  {
-    require(
-      _utilisationFactor <= 1e18,
-      "Calculator factor must not be higher than 1."
-    );
+  function setParameters(uint256 _utilisationFactor, uint256 _offset) public onlyOwner {
+    require(_utilisationFactor <= 1e18, "Calculator factor must not be higher than 1.");
     require(_offset <= 1e18, "Calculator offset must not be higher than 1.");
 
     utilisationFactor = _utilisationFactor;
@@ -54,11 +48,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits)
-    public
-    pure
-    returns (uint256)
-  {
+  function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
     return _totalLoans.wadToRay().rayDiv(_totalDeposits.wadToRay()).rayToWad();
@@ -71,12 +61,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
@@ -99,20 +84,11 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateBorrowingRate(uint256 _totalLoans, uint256 _totalDeposits)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function calculateBorrowingRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
     if (_totalLoans >= _totalDeposits) {
       return utilisationFactor + offset;
     } else {
-      return
-        getPoolUtilisation(_totalLoans, _totalDeposits)
-          .wadToRay()
-          .rayMul(utilisationFactor.wadToRay())
-          .rayToWad() + offset;
+      return getPoolUtilisation(_totalLoans, _totalDeposits).wadToRay().rayMul(utilisationFactor.wadToRay()).rayToWad() + offset;
     }
   }
 
