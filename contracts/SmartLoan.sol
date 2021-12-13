@@ -278,8 +278,15 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   * @dev This function uses the redstone-evm-connector
   **/
   function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
-    uint256 assetPrice = getPriceFromMsg(_asset);
-    uint256 avaxPrice = getPriceFromMsg(bytes32("AVAX"));
+    bytes32[] memory symbols = new bytes32[](2);
+    symbols[0] = _asset;
+    symbols[1] = bytes32("AVAX");
+    uint256[] memory prices = getPricesFromMsg(symbols);
+
+    uint256 assetPrice = prices[0];
+    uint256 avaxPrice = prices[1];
+
+
     if (assetPrice == 0 || avaxPrice == 0) revert AssetPriceNotFoundInMsg();
     uint256 normalizedPrice = (assetPrice * 10**18) / (avaxPrice);
     return normalizedPrice;
