@@ -39,6 +39,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
+    __ReentrancyGuard_init();
   }
 
   /**

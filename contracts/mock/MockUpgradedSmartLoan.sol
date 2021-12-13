@@ -35,6 +35,7 @@ contract MockUpgradedSmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, Ree
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
+    __ReentrancyGuard_init();
   }
 
   /**
