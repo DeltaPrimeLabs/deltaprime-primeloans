@@ -67,6 +67,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     exchange.sellAsset(asset, _amount, _minAvaxOut);
   }
 
+  /**
+   * @dev This function uses the redstone-evm-connector
+  **/
   function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner nonReentrant remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(asset);
     address(token).safeTransfer(msg.sender, amount);
@@ -94,6 +97,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * This function attempts to repay the _repayAmount back to the pool.
    * If there is not enough AVAX balance to repay the _repayAmount then the available AVAX balance will be repaid.
+   * @dev This function uses the redstone-evm-connector
    **/
   function attemptRepay(uint256 _repayAmount) internal {
     repay(Math.min(address(this).balance, _repayAmount));
@@ -105,6 +109,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
   /**
    * This function can only be accessed by the owner and allows selling all of the assets.
+   * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
     bytes32[] memory assets = exchange.getAllAssets();
@@ -127,6 +132,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     }
   }
 
+  /**
+  * @dev This function uses the redstone-evm-connector
+  **/
   function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
     if (isSolvent()) revert LoanSolvent();
 
@@ -160,6 +168,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * This method could be used to cash out profits from investments
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
+   * @dev This function uses the redstone-evm-connector
    **/
   function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
     if (address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
@@ -174,6 +183,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _asset code of the asset
    * @param _exactERC20AmountOut exact amount of asset to buy
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
+   * @dev This function uses the redstone-evm-connector
    **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
     if (address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
@@ -189,6 +199,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _asset code of the asset
    * @param _exactERC20AmountIn exact amount of token to sell
    * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
+   * @dev This function uses the redstone-evm-connector
    **/
   function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
@@ -202,6 +213,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * Borrows funds from the pool
    * @param _amount of funds to borrow
+   * @dev This function uses the redstone-evm-connector
    **/
   function borrow(uint256 _amount) external onlyOwner remainsSolvent {
     pool.borrow(_amount);
@@ -212,6 +224,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * Repays funds to the pool
    * @param _amount of funds to repay
+   * @dev This function uses the redstone-evm-connector
    **/
   function repay(uint256 _amount) public payable {
     if (isSolvent()) {
@@ -232,6 +245,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
   /**
    * Returns the current value of a loan including cash and investments
+   * @dev This function uses the redstone-evm-connector
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
@@ -259,6 +273,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     return token;
   }
 
+  /**
+  * @dev This function uses the redstone-evm-connector
+  **/
   function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
     uint256 assetPrice = getPriceFromMsg(_asset);
     uint256 avaxPrice = getPriceFromMsg(bytes32("AVAX"));
@@ -277,6 +294,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * LoanToValue ratio is calculated as the ratio between debt and collateral.
    * The collateral is equal to total loan value takeaway debt.
+   * @dev This function uses the redstone-evm-connector
    **/
   function getLTV() public view returns (uint256) {
     uint256 debt = getDebt();
@@ -298,6 +316,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * Checks if the loan is solvent.
    * It means that the ratio between debt and collateral is below safe level,
    * which is parametrized by the MAX_LTV
+   * @dev This function uses the redstone-evm-connector
    **/
   function isSolvent() public view returns (bool) {
     return getLTV() < MAX_LTV;
@@ -306,6 +325,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * Returns the value held on the loan contract in a given asset
    * @param _asset the code of the given asset
+   * @dev This function uses the redstone-evm-connector
    **/
   function getAssetValue(bytes32 _asset) public view returns (uint256) {
     IERC20Metadata token = getERC20TokenInstance(_asset);
@@ -335,6 +355,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * Returns the prices of all assets served by the price provider
    * It could be used as a helper method for UI
+   * @dev This function uses the redstone-evm-connector
    **/
   function getAllAssetsPrices() public view returns (uint256[] memory) {
     bytes32[] memory assets = exchange.getAllAssets();
@@ -349,6 +370,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
   /* ========== MODIFIERS ========== */
 
+  /**
+  * @dev This modifier uses the redstone-evm-connector
+  **/
   modifier remainsSolvent() {
     _;
     if (!isSolvent()) revert LoanInsolvent();
@@ -359,6 +383,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > MIN_SELLOUT_LTV is applied.
    * It protects the user from an unnecessarily costly liquidation.
    * The loan must be solvent after the liquidateLoan() operation.
+   * @dev This modifier uses the redstone-evm-connector
    **/
   modifier successfulLiquidation() {
     _;
