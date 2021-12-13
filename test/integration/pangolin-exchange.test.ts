@@ -44,7 +44,8 @@ describe('PangolinExchange', () => {
     before('Deploy the PangolinExchange contract', async () => {
       [,owner] = await getFixedGasSigners(10000000);
 
-      sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, [{ asset: toBytes32('DAI'), assetAddress: daiTokenAddress}]]) as PangolinExchange;
+      sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
+      await sut.initialize(pangolinRouterAddress, [{ asset: toBytes32('DAI'), assetAddress: daiTokenAddress}]);
 
       daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
@@ -133,8 +134,8 @@ describe('PangolinExchange', () => {
 
       [owner] = await getFixedGasSigners(10000000);
       let token1 = "TOKEN_1";
-      contract = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, [new Asset(toBytes32(token1), token1Address)]]) as PangolinExchange;
-      sut = contract;
+      sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
+      await sut.initialize(pangolinRouterAddress, [new Asset(toBytes32(token1), token1Address)]);
     });
 
     it("should add asset at a contract deploy", async () => {
@@ -306,7 +307,8 @@ describe('PangolinExchange', () => {
 
       [,owner2] = await getFixedGasSigners(10000000);
 
-      sut2 = await deployContract(owner2, PangolinExchangeArtifact, [pangolinRouterAddress, []]) as PangolinExchange;
+      sut2 = await deployContract(owner2, PangolinExchangeArtifact) as PangolinExchange;
+      await sut2.initialize(pangolinRouterAddress, []);
       expect(await sut2.getAllAssets()).to.be.empty;
     });
   });

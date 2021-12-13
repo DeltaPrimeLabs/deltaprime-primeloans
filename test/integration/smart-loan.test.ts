@@ -843,7 +843,7 @@ describe('Smart loan',  () => {
 
       // Make sure that the loan returned all of the remaining AVAX after repaying the whole debt
       expect(await provider.getBalance(loan.address)).to.be.equal(0);
-      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 2);
     });
   });
 

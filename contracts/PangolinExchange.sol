@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
@@ -14,7 +14,7 @@ import "./lib/Bytes32EnumerableMap.sol";
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -26,11 +26,11 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
   address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-  /* ========= CONSTRUCTOR ========= */
-
-  constructor(address _pangolinRouter, Asset[] memory supportedAssets) {
+  function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
     _updateAssets(supportedAssets);
+    __Ownable_init();
+    __ReentrancyGuard_init();
   }
 
   /**
@@ -154,7 +154,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   /**
    * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
    **/
-  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
+  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view virtual returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
