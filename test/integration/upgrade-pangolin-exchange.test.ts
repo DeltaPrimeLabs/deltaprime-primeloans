@@ -26,6 +26,7 @@ describe('Pangolin Exchange - upgrading',  () => {
         let exchange: PangolinExchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
+            supportedAssets: any,
             proxy: TransparentUpgradeableProxy;
         before("should deploy provider, exchange, loansFactory and pool", async () => {
             [, owner, admin] = await getFixedGasSigners(10000000);
@@ -35,9 +36,11 @@ describe('Pangolin Exchange - upgrading',  () => {
             exchange = await (new PangolinExchange__factory(owner).attach(proxy.address));
 
             await exchange.connect(owner).initialize(pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+
+            supportedAssets = await exchange.getAllAssets();
         });
 
-        it("should not allow to upgrade from non-owner", async () => {
+        it("should not allow to upgrade from non-admin", async () => {
             const exchangeV2 = await (new MockUpgradedPangolinExchange__factory(owner).deploy());
             await expect(proxy.connect(owner).upgradeTo(exchangeV2.address))
                 .to.be.revertedWith("Transaction reverted: function selector was not recognized and there's no fallback function");
@@ -51,8 +54,10 @@ describe('Pangolin Exchange - upgrading',  () => {
 
             let exchangeUpgraded = (await new ethers.Contract(exchange.address, MockPangolinExchangeArtifact.abi)) as MockUpgradedPangolinExchange;
 
-            //The mock exchange has a hardcoded return value of 1337
+            // The mock exchange has a hardcoded return value of 1337
             expect(await exchangeUpgraded.connect(owner).newMockedFunction()).to.be.equal(1337);
+            // The contract's supported assets should remain unchanged
+            expect(await exchange.getAllAssets()).to.be.deep.equal(supportedAssets);
         });
     });
 });

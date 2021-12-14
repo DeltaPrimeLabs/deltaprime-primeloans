@@ -22,7 +22,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   IPangolinRouter pangolinRouter;
 
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
-  EnumerableMap.Bytes32ToAddressMap private map;
+  EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
 
   address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
@@ -90,7 +90,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
 
-      EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
+      EnumerableMap.set(supportedAssetsMap, _assets[i].asset, _assets[i].assetAddress);
     }
 
     emit AssetsAdded(_assets);
@@ -110,7 +110,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    **/
   function removeAssets(bytes32[] calldata _assets) external override onlyOwner {
     for (uint256 i = 0; i < _assets.length; i++) {
-      EnumerableMap.remove(map, _assets[i]);
+      EnumerableMap.remove(supportedAssetsMap, _assets[i]);
     }
 
     emit AssetsRemoved(_assets);
@@ -120,14 +120,14 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * Returns all the supported assets keys
    **/
   function getAllAssets() external view override returns (bytes32[] memory result) {
-    return map._inner._keys._inner._values;
+    return supportedAssetsMap._inner._keys._inner._values;
   }
 
   /**
    * Returns address of an asset
    **/
   function getAssetAddress(bytes32 _asset) public view override returns (address) {
-    (, address assetAddress) = EnumerableMap.tryGet(map, _asset);
+    (, address assetAddress) = EnumerableMap.tryGet(supportedAssetsMap, _asset);
     require(assetAddress != address(0), "Asset not supported.");
 
     return assetAddress;

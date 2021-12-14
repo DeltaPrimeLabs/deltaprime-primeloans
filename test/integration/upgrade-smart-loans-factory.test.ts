@@ -50,7 +50,7 @@ describe('Smart loans factory - upgrading',  () => {
             ownerLoanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
         });
 
-        it("should not allow to upgrade from non-owner", async () => {
+        it("should not allow to upgrade from non-admin", async () => {
             const smartLoansFactoryV2 = await (new MockUpgradedSmartLoansFactory__factory(owner).deploy());
             await expect(proxy.connect(owner).upgradeTo(smartLoansFactoryV2.address))
                 .to.be.revertedWith("Transaction reverted: function selector was not recognized and there's no fallback function");
