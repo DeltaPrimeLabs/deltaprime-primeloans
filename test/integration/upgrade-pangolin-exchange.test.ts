@@ -9,16 +9,15 @@ import MockPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpg
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai, {expect} from "chai";
 import {solidity} from "ethereum-waffle";
-import {ethers, waffle} from "hardhat";
+import {ethers} from "hardhat";
 import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
 
-const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 
-describe('Smart loan - upgrading',  () => {
+describe('Pangolin Exchange - upgrading',  () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
@@ -53,7 +52,7 @@ describe('Smart loan - upgrading',  () => {
             let exchangeUpgraded = (await new ethers.Contract(exchange.address, MockPangolinExchangeArtifact.abi)) as MockUpgradedPangolinExchange;
 
             //The mock exchange has a hardcoded return value of 1337
-            expect(await exchangeUpgraded.connect(owner).newMockedFunction(0, ZERO)).to.be.equal(1337);
+            expect(await exchangeUpgraded.connect(owner).newMockedFunction()).to.be.equal(1337);
         });
     });
 });

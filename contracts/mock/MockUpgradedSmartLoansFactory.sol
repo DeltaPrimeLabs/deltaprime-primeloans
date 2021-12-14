@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "../PangolinExchange.sol";
+import "../SmartLoansFactory.sol";
 
-contract MockUpgradedPangolinExchange is PangolinExchange{
+contract MockUpgradedSmartLoansFactory is SmartLoansFactory{
     /**
    * Returns a mocked 1337 value;
    **/
