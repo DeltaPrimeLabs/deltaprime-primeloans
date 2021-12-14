@@ -1,10 +1,11 @@
 import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
 import {
+    MockUpgradedPangolinExchange,
     MockUpgradedPangolinExchange__factory,
-    PangolinExchange, PangolinExchange__factory, Pool__factory, TransparentUpgradeableProxy,
+    PangolinExchange, PangolinExchange__factory, TransparentUpgradeableProxy,
     TransparentUpgradeableProxy__factory,
-    UpgradeableBeacon
 } from "../../typechain";
+import MockPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai, {expect} from "chai";
 import {solidity} from "ethereum-waffle";
@@ -12,8 +13,6 @@ import {ethers, waffle} from "hardhat";
 import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
-
-const {deployContract, provider} = waffle;
 
 const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
@@ -51,8 +50,10 @@ describe('Smart loan - upgrading',  () => {
 
             await proxy.connect(admin).upgradeTo(exchangeV2.address);
 
+            let exchangeUpgraded = (await new ethers.Contract(exchange.address, MockPangolinExchangeArtifact.abi)) as MockUpgradedPangolinExchange;
+
             //The mock exchange has a hardcoded return value of 1337
-            expect(await exchange.connect(owner).getEstimatedAVAXForERC20Token(0, ZERO)).to.be.equal(1337);
+            expect(await exchangeUpgraded.connect(owner).newMockedFunction(0, ZERO)).to.be.equal(1337);
         });
     });
 });

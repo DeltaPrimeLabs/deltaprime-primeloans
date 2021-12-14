@@ -154,7 +154,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   /**
    * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
    **/
-  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view virtual returns (uint256) {
+  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
