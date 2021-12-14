@@ -79,7 +79,8 @@ describe('Smart loan - upgrading',  () => {
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, exchange.address]) as SmartLoansFactory;
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      smartLoansFactory.initialize(pool.address, exchange.address);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);

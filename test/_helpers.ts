@@ -68,8 +68,8 @@ export const deployAndInitPangolinExchangeContract = async function (
     pangolinRouterAddress: string,
     supportedAssets: Asset[]
   ) {
-  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, supportedAssets]) as PangolinExchange;
-
+  const exchange = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
+  exchange.initialize(pangolinRouterAddress, supportedAssets);
   return exchange
 };
 

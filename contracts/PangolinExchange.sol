@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
@@ -14,7 +14,7 @@ import "./lib/Bytes32EnumerableMap.sol";
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -22,15 +22,15 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   IPangolinRouter pangolinRouter;
 
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
-  EnumerableMap.Bytes32ToAddressMap private map;
+  EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
 
   address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-  /* ========= CONSTRUCTOR ========= */
-
-  constructor(address _pangolinRouter, Asset[] memory supportedAssets) {
+  function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
     _updateAssets(supportedAssets);
+    __Ownable_init();
+    __ReentrancyGuard_init();
   }
 
   /**
@@ -90,7 +90,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
 
-      EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
+      EnumerableMap.set(supportedAssetsMap, _assets[i].asset, _assets[i].assetAddress);
     }
 
     emit AssetsAdded(_assets);
@@ -110,7 +110,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    **/
   function removeAssets(bytes32[] calldata _assets) external override onlyOwner {
     for (uint256 i = 0; i < _assets.length; i++) {
-      EnumerableMap.remove(map, _assets[i]);
+      EnumerableMap.remove(supportedAssetsMap, _assets[i]);
     }
 
     emit AssetsRemoved(_assets);
@@ -120,14 +120,14 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    * Returns all the supported assets keys
    **/
   function getAllAssets() external view override returns (bytes32[] memory result) {
-    return map._inner._keys._inner._values;
+    return supportedAssetsMap._inner._keys._inner._values;
   }
 
   /**
    * Returns address of an asset
    **/
   function getAssetAddress(bytes32 _asset) public view override returns (address) {
-    (, address assetAddress) = EnumerableMap.tryGet(map, _asset);
+    (, address assetAddress) = EnumerableMap.tryGet(supportedAssetsMap, _asset);
     require(assetAddress != address(0), "Asset not supported.");
 
     return assetAddress;

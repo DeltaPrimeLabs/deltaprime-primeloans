@@ -43,6 +43,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowIndex = address(borrowIndex_) == address(0) ? new CompoundingIndex() : borrowIndex_;
 
     __Ownable_init();
+    __ReentrancyGuard_init();
     _updateRates();
   }
 

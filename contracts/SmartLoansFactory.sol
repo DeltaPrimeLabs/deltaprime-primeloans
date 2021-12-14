@@ -5,6 +5,7 @@ import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 /**
@@ -14,7 +15,7 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
  * and could be authorised to access the lending pool.
  *
  */
-contract SmartLoansFactory is IBorrowersRegistry {
+contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   modifier oneLoanPerOwner() {
     if (ownersToLoans[msg.sender] != address(0)) revert TooManyLoans();
     _;
@@ -31,7 +32,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   SmartLoan[] loans;
 
-  constructor(Pool _pool, IAssetsExchange _assetsExchange) {
+  function initialize(Pool _pool, IAssetsExchange _assetsExchange) external initializer {
     pool = _pool;
     assetsExchange = _assetsExchange;
     SmartLoan smartLoanImplementation = new SmartLoan();
