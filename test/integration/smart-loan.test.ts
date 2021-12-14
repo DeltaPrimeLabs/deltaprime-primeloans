@@ -396,7 +396,8 @@ describe('Smart loan',  () => {
     });
 
     it("should deploy a smart loan behind a proxy", async () => {
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, exchange.address]) as SmartLoansFactory;
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(pool.address, exchange.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -778,7 +779,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 20000;
+      let investedAmount = 15000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -843,7 +844,7 @@ describe('Smart loan',  () => {
 
       // Make sure that the loan returned all of the remaining AVAX after repaying the whole debt
       expect(await provider.getBalance(loan.address)).to.be.equal(0);
-      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 2);
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
     });
   });
 
@@ -931,7 +932,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 20000;
+      let investedAmount = 15000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -1083,7 +1084,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 20000;
+      let investedAmount = 15000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -1102,7 +1103,7 @@ describe('Smart loan',  () => {
     });
 
     it('should revert on a withdrawal resulting in an insolvent loan', async () => {
-      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("20000", usdTokenDecimalPlaces))).to.be.revertedWith("LoanInsolvent()");
+      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("15000", usdTokenDecimalPlaces))).to.be.revertedWith("LoanInsolvent()");
     });
 
     it('should withdraw', async () => {
@@ -1196,7 +1197,7 @@ describe('Smart loan',  () => {
             expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
             const slippageTolerance = 0.03;
-            let investedAmount = 20000;
+            let investedAmount = 15000;
             let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
             await wrappedLoan.invest(
