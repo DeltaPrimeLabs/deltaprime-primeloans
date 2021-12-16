@@ -27,10 +27,10 @@ describe('Pool with fixed interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
-      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      fixedRatesCalculator = await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")]) as FixedRatesCalculator;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 
@@ -69,10 +69,10 @@ describe('Pool with fixed interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      fixedRatesCalculator = await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")]) as FixedRatesCalculator;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await sut.connect(depositor).deposit({value: toWei("2.0")});
@@ -117,10 +117,10 @@ describe('Pool with fixed interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      fixedRatesCalculator = await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")]) as FixedRatesCalculator;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await sut.connect(depositor).deposit({value: toWei("1.0")});

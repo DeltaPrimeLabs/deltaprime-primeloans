@@ -1,14 +1,16 @@
 import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
 import {
     MockUpgradedPangolinExchange,
-    MockUpgradedPangolinExchange__factory,
-    PangolinExchange, PangolinExchange__factory, TransparentUpgradeableProxy,
-    TransparentUpgradeableProxy__factory,
+    PangolinExchange, TransparentUpgradeableProxy,
 } from "../../typechain";
 import MockPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
+import TransparentUpgradeableProxyArtifact
+    from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
+import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import MockUpgradedPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai, {expect} from "chai";
-import {solidity} from "ethereum-waffle";
+import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
 import {getFixedGasSigners} from "../_helpers";
 
@@ -32,8 +34,8 @@ describe('Pangolin Exchange - upgrading',  () => {
             [, owner, admin] = await getFixedGasSigners(10000000);
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
-            proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(exchange.address, admin.address, []));
-            exchange = await (new PangolinExchange__factory(owner).attach(proxy.address));
+            proxy = await deployContract(owner, TransparentUpgradeableProxyArtifact, [exchange.address, admin.address, []]) as TransparentUpgradeableProxy;
+            exchange = (await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange).attach(proxy.address);
 
             await exchange.connect(owner).initialize(pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
@@ -41,14 +43,14 @@ describe('Pangolin Exchange - upgrading',  () => {
         });
 
         it("should not allow to upgrade from non-admin", async () => {
-            const exchangeV2 = await (new MockUpgradedPangolinExchange__factory(owner).deploy());
+            const exchangeV2 = await deployContract(owner, MockUpgradedPangolinExchangeArtifact) as MockUpgradedPangolinExchange;
             await expect(proxy.connect(owner).upgradeTo(exchangeV2.address))
                 .to.be.revertedWith("Transaction reverted: function selector was not recognized and there's no fallback function");
         });
 
 
         it("should upgrade", async () => {
-            const exchangeV2 = await (new MockUpgradedPangolinExchange__factory(owner).deploy());
+            const exchangeV2 = await deployContract(owner, MockUpgradedPangolinExchangeArtifact) as MockUpgradedPangolinExchange;
 
             await proxy.connect(admin).upgradeTo(exchangeV2.address);
 

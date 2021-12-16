@@ -20,10 +20,10 @@ describe('UtilisationRatesCalculator', () => {
 
   beforeEach(async () => {
     [owner, nonOwner] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(
+    sut = await deployContract(
       owner,
       UtilisationRatesCalculatorArtifact,
-      [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
+      [toWei("0.5"), toWei("0.05")]) as UtilisationRatesCalculator;
   });
 
   it("should throw if non-owner is trying to set parameters", async () => {

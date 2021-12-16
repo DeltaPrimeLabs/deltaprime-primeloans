@@ -2,12 +2,14 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import FixedRatesCalculatorArtifact
+  from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import OpenBorrowersRegistryArtifact
+  from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
-import {FixedRatesCalculator, Pool} from "../../../typechain";
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../../typechain";
+import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../../typechain";
 
 chai.use(solidity);
 
@@ -24,10 +26,10 @@ describe('Pool with variable interest rates', () => {
     before("Deploy Pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
 
-      ratesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")])) as FixedRatesCalculator;
+      ratesCalculator = await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")]) as FixedRatesCalculator;
 
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -72,9 +74,9 @@ describe('Pool with variable interest rates', () => {
     before("Deploy Pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
 
-      ratesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")])) as FixedRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      let borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")]) as FixedRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });

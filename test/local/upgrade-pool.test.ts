@@ -4,12 +4,19 @@ import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import TransparentUpgradeableProxyArtifact from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import MockUpgradedPoolArtifact from '../../artifacts/contracts/mock/MockUpgradedPool.sol/MockUpgradedPool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
-import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
-import {TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../../typechain";
+import {
+  VariableUtilisationRatesCalculator,
+  OpenBorrowersRegistry,
+  Pool,
+  TransparentUpgradeableProxy,
+  MockUpgradedPool
+} from "../../typechain";
 
 chai.use(solidity);
 
@@ -31,13 +38,13 @@ describe('Upgradeable pool', () => {
 
     it("should deploy a contract behind a proxy", async () => {
       [owner, depositor, borrower, admin, depositor2] = await getFixedGasSigners(10000000);
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
 
-      proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(pool.address, admin.address, []));
-      pool = await (new Pool__factory(owner).attach(proxy.address));
+      proxy = await deployContract(owner, TransparentUpgradeableProxyArtifact, [pool.address, admin.address, []]) as TransparentUpgradeableProxy;
+      pool =  (await deployContract(owner, PoolArtifact) as Pool).attach(proxy.address);
 
-      VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      VariableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -54,14 +61,14 @@ describe('Upgradeable pool', () => {
 
 
     it("should prevent non admin from upgrade", async () => {
-      let mockUpgradedPool = await (new MockUpgradedPool__factory(owner).deploy());
+      let mockUpgradedPool = await deployContract(owner, MockUpgradedPoolArtifact) as MockUpgradedPool;
       await expect(proxy.connect(owner).upgradeTo(mockUpgradedPool.address))
         .to.be.revertedWith("Transaction reverted: function selector was not recognized and there's no fallback function");
     });
 
 
     it("should upgrade keeping old state", async () => {
-      let mockUpgradedPool = await (new MockUpgradedPool__factory(owner).deploy());
+      let mockUpgradedPool = await deployContract(owner, MockUpgradedPoolArtifact) as MockUpgradedPool;
 
       await proxy.connect(admin).upgradeTo(mockUpgradedPool.address);
 
@@ -78,7 +85,7 @@ describe('Upgradeable pool', () => {
     });
 
     it("should allow owner-only functions after upgrade", async () => {
-      let ratesCalculatorV2 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      let ratesCalculatorV2 = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
 
       //Should prevent setting new value from non-owner
       await expect(pool.connect(depositor).setRatesCalculator(ratesCalculatorV2.address))

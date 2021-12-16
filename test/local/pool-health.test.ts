@@ -6,11 +6,11 @@ import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
-import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import OpenBorrowersRegistryArtifact
+  from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
-  OpenBorrowersRegistry__factory,
   Pool,
   VariableUtilisationRatesCalculator,
   DestructableContract,
@@ -33,9 +33,9 @@ describe('Safety tests of pool', () => {
     before("Deploy a pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
       nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
-      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
     });
 
     it("should not allow initializing pool with a non-contract ratesCalculator", async () => {
@@ -70,10 +70,10 @@ describe('Safety tests of pool', () => {
 
     before("Deploy a pool contract and a destructable contract for force funding", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      destructable = await deployContract(user1, DestructableArtifact) as DestructableContract;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -128,9 +128,9 @@ describe('Safety tests of pool', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -194,9 +194,9 @@ describe('Safety tests of pool', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -261,9 +261,9 @@ describe('Safety tests of pool', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
@@ -392,12 +392,12 @@ describe('Safety tests of pool', () => {
 
       before("should deploy a pool", async () => {
         [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
-        originalPool = (await deployContract(owner, PoolArtifact)) as Pool;
+        originalPool = await deployContract(owner, PoolArtifact) as Pool;
 
-        pool = (await deployContract(owner, PoolArtifact)) as Pool;
+        pool = await deployContract(owner, PoolArtifact) as Pool;
 
-        variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-        borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+        variableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+        borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
         await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       });

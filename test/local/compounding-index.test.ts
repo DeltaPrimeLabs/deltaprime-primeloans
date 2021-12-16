@@ -4,8 +4,8 @@ import {solidity} from "ethereum-waffle";
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {CompoundingIndex} from "../../typechain";
-import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 
@@ -18,7 +18,7 @@ describe('CompoundingIndex',() => {
   let owner: SignerWithAddress;
 
   async function init(rate: string, owner: SignerWithAddress): Promise<CompoundingIndex> {
-    const instance = await (new CompoundingIndex__factory(owner).deploy());
+    const instance = await deployContract(owner, CompoundingIndexArtifact) as CompoundingIndex;
     await instance.setRate(toWei(rate));
 
     return instance;
@@ -29,7 +29,7 @@ describe('CompoundingIndex',() => {
 
     before("deploy the Compounding index", async () => {
       [owner] = await getFixedGasSigners(10000000);
-      sut = await (new CompoundingIndex__factory(owner).deploy());
+      sut = await deployContract(owner, CompoundingIndexArtifact) as CompoundingIndex;
     });
 
     it("should set initial index 1", async () => {

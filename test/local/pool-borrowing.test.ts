@@ -25,10 +25,10 @@ describe('Pool with variable utilisation interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      VariableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 
@@ -67,10 +67,10 @@ describe('Pool with variable utilisation interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      VariableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await sut.connect(depositor).deposit({value: toWei("2.0")});
@@ -115,10 +115,10 @@ describe('Pool with variable utilisation interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+      VariableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      sut = await deployContract(owner, PoolArtifact) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await sut.connect(depositor).deposit({value: toWei("1.0")});

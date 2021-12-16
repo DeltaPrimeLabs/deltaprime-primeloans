@@ -6,7 +6,10 @@ import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contract
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
+import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
+import MockUpgradedSmartLoanArtifact from '../../artifacts/contracts/mock/MockUpgradedSmartLoan.sol/MockUpgradedSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Asset, deployAndInitPangolinExchangeContract, fromWei, toBytes32, toWei, syncTime} from "../_helpers";
 import {
@@ -15,10 +18,9 @@ import {
   PangolinExchange,
   MockSmartLoanRedstoneProvider,
   UpgradeableBeacon,
-  OpenBorrowersRegistry__factory,
-  MockUpgradedSmartLoan__factory,
   SmartLoansFactory,
-  MockSmartLoanRedstoneProvider__factory
+  OpenBorrowersRegistry,
+  MockUpgradedSmartLoan
 } from "../../typechain";
 
 import {getFixedGasSigners} from "../_helpers";
@@ -74,18 +76,18 @@ describe('Smart loan - upgrading',  () => {
     before("should deploy provider, exchange, loansFactory and pool", async () => {
       [owner, oracle, depositor, other] = await getFixedGasSigners(10000000);
 
-      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      const variableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       smartLoansFactory.initialize(pool.address, exchange.address);
 
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
-      const mockSmartLoan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      const mockSmartLoan = await deployContract(owner, MockSmartLoanRedstoneProviderArtifact) as MockSmartLoanRedstoneProvider;
       //we need to use mock smart loan in order for PriceAware to work
       await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
@@ -185,7 +187,7 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should upgrade", async () => {
-      const loanV2 = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+      const loanV2 = await deployContract(owner, MockUpgradedSmartLoanArtifact) as MockUpgradedSmartLoan;
 
       await beacon.connect(owner).upgradeTo(loanV2.address);
 

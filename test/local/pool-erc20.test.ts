@@ -33,10 +33,10 @@ describe("Pool ERC20 token functions", () => {
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5, user6] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(owner, PoolArtifact)) as Pool;
+    sut = await deployContract(owner, PoolArtifact) as Pool;
 
-    let VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-    let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+    let VariableUtilisationRatesCalculator = await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
+    let borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
     await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });

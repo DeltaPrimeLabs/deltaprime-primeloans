@@ -30,23 +30,23 @@ describe('FixedRatesCalculator', () => {
   });
 
   it('should create instance if deposit rate lower than borrowing rate', async () => {
-    const calc = (await deployContract(owner,
+    const calc = await deployContract(owner,
       FixedRatesCalculatorArtifact,
-      [toWei("1000"), toWei("1000")])) as FixedRatesCalculator;
+      [toWei("1000"), toWei("1000")]) as FixedRatesCalculator;
     //expect('setRates').to.be.calledOnContractWith(calc,[toWei("999"), toWei("1000")]);
   });
 
   it('should create instance if deposit rate equal to borrowing rate', async () => {
-    const calc = (await deployContract(owner,
+    const calc = await deployContract(owner,
       FixedRatesCalculatorArtifact,
-      [toWei("1000"), toWei("1000")])) as FixedRatesCalculator;
+      [toWei("1000"), toWei("1000")]) as FixedRatesCalculator;
   });
 
   describe("setRates function", () => {
     beforeEach(async () => {
-      sut = (await deployContract(owner,
+      sut = await deployContract(owner,
         FixedRatesCalculatorArtifact,
-        [toWei("999"), toWei("1000")])) as FixedRatesCalculator;
+        [toWei("999"), toWei("1000")]) as FixedRatesCalculator;
     });
 
     it('should throw if called by non-owner', async () => {
@@ -62,9 +62,9 @@ describe('FixedRatesCalculator', () => {
 
   describe("should always calculate the same rate",() => {
     beforeEach(async () => {
-      sut = (await deployContract(owner,
+      sut = await deployContract(owner,
         FixedRatesCalculatorArtifact,
-        [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+        [toWei("0.05"), toWei("0.1")]) as FixedRatesCalculator;
     });
 
     it("for 0% utilisation", async () => {

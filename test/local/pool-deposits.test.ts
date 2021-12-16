@@ -28,9 +28,9 @@ describe('Pool with variable utilisation interest rates', () => {
     await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
     await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
-    sut = (await deployContract(owner, PoolArtifact)) as Pool;
+    sut = await deployContract(owner, PoolArtifact) as Pool;
 
-    const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+    const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
     await sut.initialize(mockVariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });

@@ -5,9 +5,10 @@ import {solidity} from "ethereum-waffle";
 import UtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
+import OpenBorrowersRegistryArtifact from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
-import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
+import {OpenBorrowersRegistry, Pool, UtilisationRatesCalculator} from "../../../typechain";
 
 chai.use(solidity);
 
@@ -27,9 +28,9 @@ describe('Pool with utilisation interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3, user4] = await getFixedGasSigners(10000000);
-      ratesCalculator = (await deployContract(owner, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      ratesCalculator = await deployContract(owner, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")]) as UtilisationRatesCalculator;
+      pool = await deployContract(owner, PoolArtifact) as Pool;
+      const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 

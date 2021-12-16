@@ -66,9 +66,9 @@ describe('VariableUtilisationRatesCalculator', () => {
 
   before(async () => {
     [owner, nonOwner] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(
+    sut = await deployContract(
       owner,
-      VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator;
 
     deposits = 100;
   });

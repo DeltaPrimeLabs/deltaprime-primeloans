@@ -28,9 +28,9 @@ describe('Pool with fixed interest rates', () => {
     await mockFixedRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
     await mockFixedRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
-    sut = (await deployContract(owner, PoolArtifact)) as Pool;
+    sut = await deployContract(owner, PoolArtifact) as Pool;
 
-    const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+    const borrowersRegistry = await deployContract(owner, OpenBorrowersRegistryArtifact) as OpenBorrowersRegistry;
 
     await sut.initialize(mockFixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });

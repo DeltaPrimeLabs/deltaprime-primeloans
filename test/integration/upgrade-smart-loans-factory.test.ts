@@ -1,15 +1,17 @@
 import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
 import {
     MockUpgradedSmartLoansFactory,
-    MockUpgradedSmartLoansFactory__factory,
     PangolinExchange,
     Pool,
     SmartLoansFactory,
-    SmartLoansFactory__factory,
     TransparentUpgradeableProxy,
-    TransparentUpgradeableProxy__factory,
 } from "../../typechain";
-import MockSmartLoansFactoryArtifact from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
+import MockSmartLoansFactoryArtifact
+    from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
+import TransparentUpgradeableProxyArtifact
+    from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
+import MockUpgradedSmartLoansFactoryArtifact from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
+import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import chai, {expect} from "chai";
@@ -37,12 +39,12 @@ describe('Smart loans factory - upgrading',  () => {
             ownerLoanAddress: any;
         before("should deploy provider, exchange, loansFactory and pool", async () => {
             [, owner, admin] = await getFixedGasSigners(10000000);
-            pool = (await deployContract(owner, PoolArtifact)) as Pool;
+            pool = await deployContract(owner, PoolArtifact) as Pool;
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
-            smartLoansFactory = await (new SmartLoansFactory__factory(owner).deploy());
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-            proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
-            smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
+            proxy = await deployContract(owner, TransparentUpgradeableProxyArtifact, [smartLoansFactory.address, admin.address, []]) as TransparentUpgradeableProxy;
+            smartLoansFactory = (await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory).attach(proxy.address);
 
             await smartLoansFactory.connect(owner).initialize(pool.address, exchange.address);
 
@@ -51,14 +53,14 @@ describe('Smart loans factory - upgrading',  () => {
         });
 
         it("should not allow to upgrade from non-admin", async () => {
-            const smartLoansFactoryV2 = await (new MockUpgradedSmartLoansFactory__factory(owner).deploy());
+            const smartLoansFactoryV2 = await deployContract(owner, MockUpgradedSmartLoansFactoryArtifact) as MockUpgradedSmartLoansFactory;
             await expect(proxy.connect(owner).upgradeTo(smartLoansFactoryV2.address))
                 .to.be.revertedWith("Transaction reverted: function selector was not recognized and there's no fallback function");
         });
 
 
         it("should upgrade", async () => {
-            const smartLoansFactoryV2 = await (new MockUpgradedSmartLoansFactory__factory(owner).deploy());
+            const smartLoansFactoryV2 = await deployContract(owner, MockUpgradedSmartLoansFactoryArtifact) as MockUpgradedSmartLoansFactory;
 
             await proxy.connect(admin).upgradeTo(smartLoansFactoryV2.address);
 
