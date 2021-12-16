@@ -1,4 +1,4 @@
-import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
+import {Asset, deployAndInitPangolinExchangeContract, getFixedGasSigners, syncTime, toBytes32} from "../_helpers";
 import {
     MockUpgradedSmartLoansFactory,
     PangolinExchange,
@@ -8,16 +8,16 @@ import {
 } from "../../typechain";
 import MockSmartLoansFactoryArtifact
     from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
+import MockUpgradedSmartLoansFactoryArtifact
+    from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
 import TransparentUpgradeableProxyArtifact
     from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
-import MockUpgradedSmartLoansFactoryArtifact from '../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import chai, {expect} from "chai";
 import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
-import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
 

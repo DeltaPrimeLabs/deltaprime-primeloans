@@ -10,12 +10,7 @@ import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {
-  Pool,
-  VariableUtilisationRatesCalculator,
-  DestructableContract,
-  OpenBorrowersRegistry,
-} from "../../typechain";
+import {DestructableContract, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator,} from "../../typechain";
 
 chai.use(solidity);
 

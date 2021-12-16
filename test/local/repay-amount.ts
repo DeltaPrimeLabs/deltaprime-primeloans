@@ -1,5 +1,5 @@
 import {getSelloutRepayAmount} from "../_helpers";
-import chai, {expect} from 'chai'
+import {expect} from 'chai'
 
 describe('Sellout repay amount calculator', () => {
   it("should calculate repay amount", async function () {

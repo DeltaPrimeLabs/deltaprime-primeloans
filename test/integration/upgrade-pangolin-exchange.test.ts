@@ -1,18 +1,16 @@
-import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
-import {
-    MockUpgradedPangolinExchange,
-    PangolinExchange, TransparentUpgradeableProxy,
-} from "../../typechain";
-import MockPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
+import {Asset, deployAndInitPangolinExchangeContract, getFixedGasSigners, syncTime, toBytes32} from "../_helpers";
+import {MockUpgradedPangolinExchange, PangolinExchange, TransparentUpgradeableProxy,} from "../../typechain";
+import MockPangolinExchangeArtifact
+    from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
+import MockUpgradedPangolinExchangeArtifact
+    from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
 import TransparentUpgradeableProxyArtifact
     from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
 import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
-import MockUpgradedPangolinExchangeArtifact from '../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai, {expect} from "chai";
 import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
-import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
 

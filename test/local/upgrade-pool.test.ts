@@ -2,20 +2,22 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact
+  from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import TransparentUpgradeableProxyArtifact from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
+import TransparentUpgradeableProxyArtifact
+  from '../../artifacts/@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import MockUpgradedPoolArtifact from '../../artifacts/contracts/mock/MockUpgradedPool.sol/MockUpgradedPool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {
-  VariableUtilisationRatesCalculator,
+  MockUpgradedPool,
   OpenBorrowersRegistry,
   Pool,
   TransparentUpgradeableProxy,
-  MockUpgradedPool
+  VariableUtilisationRatesCalculator
 } from "../../typechain";
 
 chai.use(solidity);

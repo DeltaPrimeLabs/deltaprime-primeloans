@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 

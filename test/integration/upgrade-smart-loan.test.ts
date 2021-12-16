@@ -2,28 +2,39 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact
+  from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
+import UpgradeableBeaconArtifact
+  from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import OpenBorrowersRegistryArtifact
+  from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
-import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
-import MockUpgradedSmartLoanArtifact from '../../artifacts/contracts/mock/MockUpgradedSmartLoan.sol/MockUpgradedSmartLoan.json';
+import MockSmartLoanRedstoneProviderArtifact
+  from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
+import MockUpgradedSmartLoanArtifact
+  from '../../artifacts/contracts/mock/MockUpgradedSmartLoan.sol/MockUpgradedSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Asset, deployAndInitPangolinExchangeContract, fromWei, toBytes32, toWei, syncTime} from "../_helpers";
 import {
-  VariableUtilisationRatesCalculator,
-  Pool,
-  PangolinExchange,
+  Asset,
+  deployAndInitPangolinExchangeContract,
+  fromWei,
+  getFixedGasSigners,
+  syncTime,
+  toBytes32,
+  toWei
+} from "../_helpers";
+import {
   MockSmartLoanRedstoneProvider,
-  UpgradeableBeacon,
-  SmartLoansFactory,
+  MockUpgradedSmartLoan,
   OpenBorrowersRegistry,
-  MockUpgradedSmartLoan
+  PangolinExchange,
+  Pool,
+  SmartLoansFactory,
+  UpgradeableBeacon,
+  VariableUtilisationRatesCalculator
 } from "../../typechain";
-
-import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
 

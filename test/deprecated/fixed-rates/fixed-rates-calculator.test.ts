@@ -1,8 +1,9 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import FixedRatesCalculatorArtifact
+  from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import {FixedRatesCalculator} from '../../../typechain/FixedRatesCalculator';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../../_helpers";

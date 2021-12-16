@@ -5,7 +5,8 @@ import {solidity} from "ethereum-waffle";
 import UtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
-import OpenBorrowersRegistryArtifact from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import OpenBorrowersRegistryArtifact
+  from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
 import {OpenBorrowersRegistry, Pool, UtilisationRatesCalculator} from "../../../typechain";
