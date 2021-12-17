@@ -15,8 +15,9 @@ import {
   toBytes32,
   toWei,
   formatUnits,
-  deployAndInitPangolinExchangeContract, Asset, getSelloutRepayAmount, syncTime
+  deployAndInitPangolinExchangeContract, Asset, getSelloutRepayAmount,
 } from "../_helpers";
+import { syncTime } from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   VariableUtilisationRatesCalculator,
@@ -47,7 +48,6 @@ const erc20ABI = [
   'function approve(address _spender, uint256 _value) public returns (bool success)',
   'function allowance(address owner, address spender) public view returns (uint256)'
 ]
-
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
@@ -115,7 +115,6 @@ describe('Smart loan',  () => {
     });
 
     it("should fund a loan", async () => {
-      await wrappedLoan.getTotalValue();
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
@@ -136,7 +135,6 @@ describe('Smart loan',  () => {
     });
 
     it("should buy an asset", async () => {
-      const usdPrice = USD_PRICE;
       const investedAmount = 100;
 
       const slippageTolerance = 0.03;
@@ -147,15 +145,13 @@ describe('Smart loan',  () => {
         parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
         toWei(requiredAvaxAmount.toString())
       );
-      const expectedAssetValueInAVAX = usdPrice * investedAmount / AVAX_PRICE;
 
-      expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValueInAVAX, 0.0001);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.1);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
-    it("should revert with AssetPriceNotFoundInMsg()", async () => {
+    it("should revert with AvaxPriceIsZero()", async () => {
       let wrappedLoanWithoutPrices = WrapperBuilder
           .mockLite(loan)
           .using(
@@ -165,32 +161,30 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(wrappedLoanWithoutPrices.getAssetValue(toBytes32("USD"))).to.be.revertedWith("AssetPriceNotFoundInMsg()");
+      await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("AvaxPriceIsZero()");
     });
 
     it("should provide assets balances and prices", async () => {
-      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
-      const usdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[0];
+      const usdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
       expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
 
-      const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[0];
-      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.001);
+      const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[1];
+      expect(formatUnits(usdTokenPrice, BigNumber.from(8))).to.be.closeTo(USD_PRICE, 0.001);
     });
 
 
     it("should update valuation after price change", async () => {
-      const initialUSDTokenAssetValue = await wrappedLoan.getAssetValue(toBytes32('USD'));
-      const initialLoanTotalValue = await wrappedLoan.getTotalValue();
-
       let UPDATED_MOCK_PRICES = MOCK_PRICES.map(
         (token: any) => {
           if (token.symbol == 'USD') {
-            token.value = 2 * token.value;
+            token.value = 2 * USD_PRICE;
           }
           return token;
         }
       );
 
+      const newUSDTokenAssetValueInAvax = 2 * USD_PRICE / AVAX_PRICE * (await wrappedLoan.getAllAssetsBalances())[1]
+          / 10**parseInt(usdTokenDecimalPlaces.toString());
 
       let updatedLoan = WrapperBuilder
         .mockLite(loan)
@@ -202,18 +196,16 @@ describe('Smart loan',  () => {
             }
           })
 
-      const expectedUSDTokenValue = initialUSDTokenAssetValue.mul(2);
-      const usdTokenValueDifference = expectedUSDTokenValue.sub(initialUSDTokenAssetValue);
+      const newBalance = fromWei(await provider.getBalance(updatedLoan.address));
 
-      expect(await updatedLoan.getAssetValue(toBytes32('USD'))).to.be.closeTo(expectedUSDTokenValue, 100000000000);
-      expect(await updatedLoan.getTotalValue()).to.closeTo(initialLoanTotalValue.add(usdTokenValueDifference), 100000000000);
+      expect(fromWei(await updatedLoan.getTotalValue())).to.closeTo(newUSDTokenAssetValueInAvax + newBalance, 0.00001);
       expect(fromWei(await updatedLoan.getDebt())).to.be.equal(0);
       expect(await updatedLoan.getLTV()).to.be.equal(0);
     });
 
 
     it("should redeem investment", async () => {
-      const initialUSDTokenBalanceInWei = (await wrappedLoan.getAllAssetsBalances())[0];
+      const initialUSDTokenBalanceInWei = (await wrappedLoan.getAllAssetsBalances())[1];
       const usdPrice = USD_PRICE;
 
       const avaxPrice = AVAX_PRICE;
@@ -224,10 +216,9 @@ describe('Smart loan',  () => {
         initialUSDTokenBalanceInWei,
         toWei((formatUnits(initialUSDTokenBalanceInWei, usdTokenDecimalPlaces) * usdPrice / avaxPrice * (1 - slippageTolerance)).toString()));
 
-      const currentUSDTokenBalance = (await wrappedLoan.getAllAssetsBalances())[0];
+      const currentUSDTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
 
       expect(currentUSDTokenBalance).to.be.equal(0);
-      expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.equal(0);
 
       const currentLoanTotalValue = await wrappedLoan.getTotalValue();
 
@@ -243,6 +234,8 @@ describe('Smart loan',  () => {
 
   });
 
+
+    //ten test rozwala closeLoan
   describe('A loan with debt and repayment', () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
@@ -455,8 +448,8 @@ describe('Smart loan',  () => {
 
       let balances = await wrappedLoan.getAllAssetsBalances();
 
-      const currentUSDTokenBalance = balances[0];
-      const currentLINKTokenBalance = balances[1];
+      const currentUSDTokenBalance = balances[1];
+      const currentLINKTokenBalance = balances[2];
 
       expect(currentUSDTokenBalance).to.be.equal(toWei("15000", usdTokenDecimalPlaces));
       expect(currentLINKTokenBalance).to.be.equal(toWei("300", linkTokenDecimalPlaces));
@@ -477,8 +470,8 @@ describe('Smart loan',  () => {
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
       let balances = await wrappedLoan.getAllAssetsBalances();
-      const initialUSDTokenBalance = balances[0];
-      const initialLINKTokenBalance = balances[1];
+      const initialUSDTokenBalance = balances[1];
+      const initialLINKTokenBalance = balances[2];
       const poolAvaxValue = await provider.getBalance(pool.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
@@ -503,8 +496,8 @@ describe('Smart loan',  () => {
 
       balances = await wrappedLoan.getAllAssetsBalances();
 
-      const currentUSDTokenBalance = balances[0];
-      const currentLINKTokenBalance = balances[1];
+      const currentUSDTokenBalance = balances[1];
+      const currentLINKTokenBalance = balances[2];
 
       expect(currentUSDTokenBalance).to.be.lt(initialUSDTokenBalance);
       if (currentUSDTokenBalance == 0) {
@@ -610,7 +603,7 @@ describe('Smart loan',  () => {
       );
 
       let balances = await wrappedLoan.getAllAssetsBalances();
-      const currentUSDTokenBalance = balances[0];
+      const currentUSDTokenBalance = balances[1];
       expect(currentUSDTokenBalance).to.be.equal(toWei("30000", usdTokenDecimalPlaces));
     });
 
@@ -627,7 +620,7 @@ describe('Smart loan',  () => {
       expect(await provider.getBalance(owner.address)).to.be.gt(ownerInitialAvaxBalance);
 
       let balances = await wrappedLoan.getAllAssetsBalances();
-      expect(balances[0]).to.be.equal(0);
+      expect(balances[1]).to.be.equal(0);
     });
 
 
@@ -829,7 +822,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       // Try to close the debt
-      await expect(wrappedLoan.closeLoan()).to.be.revertedWith("DebtNotRepaidAfterLoanSelout()");
+      await expect(wrappedLoan.closeLoan()).to.be.revertedWith("DebtNotRepaidAfterLoanSellout()");
 
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let loanTotalValue = BigNumber.from(await wrappedLoan.getTotalValue());
@@ -1007,7 +1000,6 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
         loan: MockSmartLoanRedstoneProvider,
         wrappedLoan: any,
-        wrappedLoanUpdated: any,
         pool: Pool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -1016,17 +1008,17 @@ describe('Smart loan',  () => {
         usdTokenDecimalPlaces: BigNumber,
         linkTokenDecimalPlaces: BigNumber,
         MOCK_PRICES: any,
-        MOCK_PRICES_UPDATED: any,
         AVAX_PRICE: number,
         LINK_PRICE: number,
         USD_PRICE: number;
 
     before("deploy provider, exchange and pool", async () => {
-      [owner, depositor] = await getFixedGasSigners(10000000);
+      [,,owner, depositor] = await getFixedGasSigners(10000000);
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
@@ -1037,7 +1029,6 @@ describe('Smart loan',  () => {
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;

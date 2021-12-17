@@ -169,9 +169,6 @@ describe('Smart loan - upgrading',  () => {
 
       await rewrappedLoan.authorizeProvider();
 
-      const expectedAssetValue = estimatedAVAXPriceFor1USDToken.mul("100")
-
-      expect(fromWei(await rewrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(fromWei(expectedAssetValue), 0.00001);
       expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
       expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
       expect(await rewrappedLoan.getLTV()).to.be.equal(0);

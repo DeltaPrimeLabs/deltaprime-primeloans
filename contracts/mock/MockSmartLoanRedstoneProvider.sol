@@ -15,4 +15,13 @@ contract MockSmartLoanRedstoneProvider is SmartLoan {
   function getTrustedSigner() public view virtual override returns (address) {
     return 0xFE71e9691B9524BC932C23d0EeD5c9CE41161884; //redstone-provider;
   }
+
+  function executeGetAllAssetsPrices() public returns (uint256[] memory) {
+    return getAllAssetsPrices();
+  }
+
+
+  function executeGetTotalValue() public virtual returns (uint256) {
+    return getTotalValue();
+  }
 }

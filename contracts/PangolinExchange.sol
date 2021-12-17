@@ -28,6 +28,10 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
   function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
+
+    Asset[] memory avaxData = new Asset[](1);
+    avaxData[0] = Asset(bytes32("AVAX"), WAVAX_ADDRESS);
+    _updateAssets(avaxData);
     _updateAssets(supportedAssets);
     __Ownable_init();
     __ReentrancyGuard_init();
