@@ -821,6 +821,7 @@ describe('Smart loan',  () => {
               })
 
       // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
+
       let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
       expect(await wrappedLoan.isSolvent()).to.be.true;
       await wrappedLoanUpdated.withdraw(toWei("150"));
@@ -832,6 +833,7 @@ describe('Smart loan',  () => {
 
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let loanTotalValue = BigNumber.from(await wrappedLoan.getTotalValue());
+      let loanAssetsValue = fromWei(loanTotalValue.sub(BigNumber.from(await provider.getBalance(wrappedLoan.address))));
       let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("150")).sub(debt).add(loanTotalValue);
 
       // Try to close the debt using remaining AVAX and additional 290 AVAX
@@ -844,7 +846,8 @@ describe('Smart loan',  () => {
 
       // Make sure that the loan returned all of the remaining AVAX after repaying the whole debt
       expect(await provider.getBalance(loan.address)).to.be.equal(0);
-      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
+      // Accepted delta is equal to the total value of assets that were sold multiplied by the 3% slippage tolerance
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), loanAssetsValue * 0.03);
     });
   });
 
