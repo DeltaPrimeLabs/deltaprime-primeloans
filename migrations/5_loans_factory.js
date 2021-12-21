@@ -1,23 +1,16 @@
+const {deployProxy} = require('@openzeppelin/truffle-upgrades');
 const ZERO = require("ethers").constants.AddressZero;
-
 const AssetsExchange = artifacts.require("./PangolinExchange.sol");
 const VariableUtilisationRatesCalculator = artifacts.require("./VariableUtilisationRatesCalculator.sol");
 const Pool = artifacts.require("./Pool.sol");
 const SmartLoansFactory = artifacts.require("./SmartLoansFactory.sol");
 
 
-module.exports = function (deployer) {
-    var factory;
-    deployer.deploy(SmartLoansFactory)
-        .then(function (instance) {
-            factory = instance;
-            console.log("SmartLoanFactory deployed: " + factory.address);
-            factory.initialize(Pool.address, AssetsExchange.address);
-            console.log(`Initializing SmartLoanFactory: [${Pool.address}, ${AssetsExchange.address}]`);
-            return Pool.deployed();
-        }).then(function (pool) {
-        console.log(`Initializing Pool: [${VariableUtilisationRatesCalculator.address}, ${factory.address}, ${ZERO}, ${ZERO}]`);
-        return pool.initialize(VariableUtilisationRatesCalculator.address, factory.address, ZERO, ZERO, {gas: 6000000});
-    })
+module.exports = async function (deployer) {
+    const instance = await deployProxy(SmartLoansFactory, [Pool.address, AssetsExchange.address], { deployer: deployer})
+    console.log(`SmartLoanFactory deployed [${instance.address}] and initialized with [${Pool.address}, ${AssetsExchange.address}]`);
+
+    console.log(`Initializing Pool: [${VariableUtilisationRatesCalculator.address}, ${instance.address}, ${ZERO}, ${ZERO}]`);
+    (await Pool.deployed()).initialize(VariableUtilisationRatesCalculator.address, instance.address, ZERO, ZERO, {gas: 6000000});
 
 };
