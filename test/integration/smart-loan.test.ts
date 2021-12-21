@@ -492,7 +492,7 @@ describe('Smart loan',  () => {
         await wrappedLoan.getTotalValue(),
         await wrappedLoan.getDebt(),
         await wrappedLoan.LIQUIDATION_BONUS(),
-        await wrappedLoan.MAX_LTV()
+        await wrappedLoan.get_max_ltv()
       )
 
       await wrappedLoan.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping:false}));

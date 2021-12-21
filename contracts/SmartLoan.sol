@@ -27,9 +27,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   uint256 public constant LIQUIDATION_BONUS = 100;
 
   // 500%
-  uint256 public constant MAX_LTV = 5000;
+  uint256 private constant _MAX_LTV = 5000;
   // 400%
-  uint256 public constant MIN_SELLOUT_LTV = 4000;
+  uint256 private constant _MIN_SELLOUT_LTV = 4000;
+
 
   IAssetsExchange public exchange;
   Pool pool;
@@ -304,7 +305,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     } else if (debt < totalValue) {
       return (debt * PERCENTAGE_PRECISION) / (totalValue - debt);
     } else {
-      return MAX_LTV;
+      return get_max_ltv();
     }
   }
 
@@ -315,11 +316,11 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
    * Checks if the loan is solvent.
    * It means that the ratio between debt and collateral is below safe level,
-   * which is parametrized by the MAX_LTV
+   * which is parametrized by the _MAX_LTV
    * @dev This function uses the redstone-evm-connector
    **/
   function isSolvent() public view returns (bool) {
-    return getLTV() < MAX_LTV;
+    return getLTV() < get_max_ltv();
   }
 
   /**
@@ -368,6 +369,15 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     return prices;
   }
 
+
+  function get_max_ltv() virtual public pure returns(uint256) {
+    return _MAX_LTV;
+  }
+
+  function get_min_sellout_ltv() virtual public pure returns(uint256) {
+    return _MIN_SELLOUT_LTV;
+  }
+
   /* ========== MODIFIERS ========== */
 
   /**
@@ -379,7 +389,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
   /**
-   * This modifier checks if the LTV is between MIN_SELLOUT_LTV and MAX_LTV after performing the liquidateLoan() operation.
+   * This modifier checks if the LTV is between MIN_SELLOUT_LTV and _MAX_LTV after performing the liquidateLoan() operation.
    * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > MIN_SELLOUT_LTV is applied.
    * It protects the user from an unnecessarily costly liquidation.
    * The loan must be solvent after the liquidateLoan() operation.
@@ -389,9 +399,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      if (LTV < MIN_SELLOUT_LTV) revert PostSelloutLtvTooLow();
+      if (LTV < get_min_sellout_ltv()) revert PostSelloutLtvTooLow();
     }
-    if (LTV >= MAX_LTV) revert LoanInsolventAfterLiquidation();
+    if (LTV >= get_max_ltv()) revert LoanInsolventAfterLiquidation();
   }
 
   /* ========== EVENTS ========== */
