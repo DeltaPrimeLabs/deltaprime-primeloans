@@ -24,6 +24,7 @@ import {
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
+import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -31,6 +32,7 @@ const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -61,6 +63,8 @@ describe('Smart loan - upgrading',  () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
+      wrappedSecondLoan: any,
+      mockPrices: any,
       smartLoansFactory: SmartLoansFactory,
       pool: Pool,
       owner: SignerWithAddress,
@@ -77,7 +81,10 @@ describe('Smart loan - upgrading',  () => {
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+          new Asset(toBytes32('USD'), usdTokenAddress)
+      ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       smartLoansFactory.initialize(pool.address, exchange.address);
@@ -109,16 +116,31 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should fund a loan", async () => {
-      expect(fromWei(await loan.connect(owner).getTotalValue())).to.be.equal(0);
-      expect(fromWei(await loan.connect(owner).getDebt())).to.be.equal(0);
-      expect((await loan.connect(owner).getLTV()).toString()).to.be.equal("0");
+      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
 
-      await loan.fund({value: toWei("100")});
+      mockPrices = getMockPrices(estimatedAVAXPriceFor1USDToken);
 
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
-      expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getLTV()).toString()).to.be.equal("0");
+      wrappedLoan = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: mockPrices,
+                  timestamp: Date.now()
+                }
+              })
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
+
+      await wrappedLoan.fund({value: toWei("100")});
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(100);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
+
 
 
     it("should create and fund a loan", async () => {
@@ -126,30 +148,27 @@ describe('Smart loan - upgrading',  () => {
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(other);
-      expect(fromWei(await second_loan.connect(other).getTotalValue())).to.be.equal(12);
-      expect(fromWei(await second_loan.connect(other).getDebt())).to.be.equal(2);
-      expect((await second_loan.connect(other).getLTV()).toString()).to.be.equal("200");
-    });
 
-
-    it("should buy an asset", async () => {
-      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
-
-      const mockPrices = getMockPrices(estimatedAVAXPriceFor1USDToken);
-
-      const investedAmount = 100;
-
-      const slippageTolerance = 0.03;
-      const requiredAvaxAmount = mockPrices[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
-
-      wrappedLoan = WrapperBuilder
-        .mockLite(loan)
+      wrappedSecondLoan = WrapperBuilder
+        .mockLite(second_loan)
         .using(
           () => { return {
             prices: mockPrices,
             timestamp: Date.now()
           }
         })
+
+      expect(fromWei(await wrappedSecondLoan.getTotalValue())).to.be.equal(12);
+      expect(fromWei(await wrappedSecondLoan.getDebt())).to.be.equal(2);
+      expect((await wrappedSecondLoan.getLTV()).toString()).to.be.equal("200");
+    });
+
+
+    it("should buy an asset", async () => {
+      const investedAmount = 100;
+
+      const slippageTolerance = 0.03;
+      const requiredAvaxAmount = mockPrices[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
 
       await wrappedLoan.invest(
         toBytes32('USD'),

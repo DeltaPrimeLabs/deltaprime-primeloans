@@ -158,7 +158,7 @@ describe('Smart loan',  () => {
       loanSinglePriceAware = await (new SmartLoanSinglePriceAware__factory(owner).deploy());
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
       await loanSinglePriceAware.initialize(exchange.address, pool.address);
-      await loan.initialize(exchange.address, pool.address);
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoanSinglePriceAware = WrapperBuilder
           .mockLite(loanSinglePriceAware)
@@ -207,12 +207,8 @@ describe('Smart loan',  () => {
       async function invest(loan: any, token: string, amount: number) {
         let tokenPrice = MOCK_PRICES.find((el: any) => el.symbol == token).value;
         const slippageTolerance = 0.03;
-        console.log('amount: ', amount);
 
         const requiredAvaxAmount = tokenPrice * amount * (1 + slippageTolerance) / AVAX_PRICE;
-
-        console.log('requiredAvaxAmount: ', requiredAvaxAmount);
-        console.log('(decimalPlaces as any)[token].toString(): ', (decimalPlaces as any)[token].toString());
 
         await loan.invest(
             toBytes32(token),

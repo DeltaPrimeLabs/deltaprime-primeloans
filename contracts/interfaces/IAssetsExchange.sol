@@ -44,6 +44,7 @@ interface IAssetsExchange {
 
   /**
    * Adds or updates supported assets
+   * First asset must be a blockchain native currency
    * @dev _assets assets to be added or updated
    **/
   function updateAssets(Asset[] memory _assets) external;

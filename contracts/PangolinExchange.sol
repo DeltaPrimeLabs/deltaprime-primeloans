@@ -26,12 +26,10 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
   address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
+  // first supportedAsset must be a blockchain native currency
   function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
 
-    Asset[] memory avaxData = new Asset[](1);
-    avaxData[0] = Asset(bytes32("AVAX"), WAVAX_ADDRESS);
-    _updateAssets(avaxData);
     _updateAssets(supportedAssets);
     __Ownable_init();
     __ReentrancyGuard_init();

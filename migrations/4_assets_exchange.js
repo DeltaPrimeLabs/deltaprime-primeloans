@@ -6,6 +6,7 @@ module.exports = function(deployer) {
   deployer.deploy(AssetsExchange,
     "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106",
     [
+      { asset: toBytes32('AVAX'), assetAddress: addresses["AVAX"]},
       { asset: toBytes32('ETH'), assetAddress: addresses["ETH"]},
       { asset: toBytes32('BTC'), assetAddress: addresses["BTC"]},
       { asset: toBytes32('USDT'), assetAddress: addresses["USDT"]},

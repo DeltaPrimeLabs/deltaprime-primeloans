@@ -67,7 +67,8 @@ export default {
   actions: {
     async initSupportedAssets({ rootState, commit }) {
       const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGE.networks[rootState.network.chainId].address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
-      let supported = (await pangolinContract.getAllAssets()).map(
+      // the first returned asset is a blockchain native currency, therefore used .slice(1)
+      let supported = ((await pangolinContract.getAllAssets()).slice(1)).map(
         asset => ethers.utils.parseBytes32String(asset)
       );
 

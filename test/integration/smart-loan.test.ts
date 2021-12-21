@@ -28,7 +28,8 @@ import {
   MockSmartLoanRedstoneProvider,
   MockSmartLoanRedstoneProvider__factory,
   MockUpgradedSmartLoan__factory,
-  UpgradeableBeacon, SmartLoansFactory
+  UpgradeableBeacon,
+  SmartLoansFactory
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -42,6 +43,8 @@ const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
+const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -74,7 +77,10 @@ describe('Smart loan',  () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+          new Asset(toBytes32('USD'), usdTokenAddress)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
@@ -100,7 +106,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      await loan.initialize(exchange.address, pool.address);
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -255,7 +261,10 @@ describe('Smart loan',  () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+          new Asset(toBytes32('USD'), usdTokenAddress)
+      ]);
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -277,7 +286,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      await loan.initialize(exchange.address, pool.address);
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -356,6 +365,7 @@ describe('Smart loan',  () => {
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
           new Asset(toBytes32('USD'), usdTokenAddress),
           new Asset(toBytes32('LINK'), linkTokenAddress)
         ]);
@@ -537,8 +547,9 @@ describe('Smart loan',  () => {
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
 [
-        { asset: toBytes32('USD'), assetAddress: usdTokenAddress },
-        { asset: toBytes32('LINK'), assetAddress: linkTokenAddress }
+        new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+        new Asset(toBytes32('USD'), usdTokenAddress),
+        new Asset(toBytes32('LINK'), linkTokenAddress)
       ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -571,7 +582,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address);
+      loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -716,8 +727,9 @@ describe('Smart loan',  () => {
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
           [
-            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
-            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+            new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+            new Asset(toBytes32('USD'), usdTokenAddress),
+            new Asset(toBytes32('LINK'), linkTokenAddress)
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -750,7 +762,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address);
+      loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -871,10 +883,11 @@ describe('Smart loan',  () => {
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
-          [
-            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
-            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
-          ]);
+        [
+          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+          new Asset(toBytes32('USD'), usdTokenAddress),
+          new Asset(toBytes32('LINK'), linkTokenAddress)
+        ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
@@ -906,7 +919,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address);
+      loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -1023,8 +1036,9 @@ describe('Smart loan',  () => {
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
           [
-            {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
-            {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+            new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+            new Asset(toBytes32('USD'), usdTokenAddress),
+            new Asset(toBytes32('LINK'), linkTokenAddress)
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -1056,7 +1070,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address);
+      loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -1135,8 +1149,9 @@ describe('Smart loan',  () => {
 
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
                 [
-                    {asset: toBytes32('USD'), assetAddress: usdTokenAddress},
-                    {asset: toBytes32('LINK'), assetAddress: linkTokenAddress}
+                  new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+                  new Asset(toBytes32('USD'), usdTokenAddress),
+                  new Asset(toBytes32('LINK'), linkTokenAddress)
                 ]);
 
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -1169,7 +1184,7 @@ describe('Smart loan',  () => {
 
         it("should deploy a smart loan, fund, borrow and invest", async () => {
             loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-            loan.initialize(exchange.address, pool.address);
+            loan.initialize(exchange.address, pool.address, toWei("0"));
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)

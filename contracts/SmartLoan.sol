@@ -35,12 +35,18 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   IAssetsExchange public exchange;
   Pool pool;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_, uint256 _initialDebt) external payable initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
     __ReentrancyGuard_init();
+
+    if (_initialDebt > 0) {
+      if (msg.value == 0) revert NoCollateralProvided();
+      if (_initialDebt * PERCENTAGE_PRECISION / msg.value >= _MAX_LTV) revert LoanInsolvent();
+      pool.borrow(_initialDebt);
+    }
   }
 
   /**
@@ -245,15 +251,13 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /* ========== VIEW FUNCTIONS ========== */
 
   /**
-   * Returns the current value of a loan including cash and investments
+   * Returns the current value of a loan in AVAX including cash and investments
    * @dev This function uses the redstone-evm-connector
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
 
     bytes32[] memory assets = exchange.getAllAssets();
-
-    if (assets[0] != bytes32("AVAX")) revert MissingAvaxInAssets();
 
     uint256[] memory prices = getPricesFromMsg(assets);
 
@@ -504,3 +508,6 @@ error AssetPriceIsZero();
 
 /// First returned asset is not AVAX
 error MissingAvaxInAssets();
+
+/// No collateral provided for a loan
+error NoCollateralProvided();
