@@ -45,7 +45,10 @@ describe('PangolinExchange', () => {
       [,owner] = await getFixedGasSigners(10000000);
 
       sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
-      await sut.initialize(pangolinRouterAddress, [{ asset: toBytes32('DAI'), assetAddress: daiTokenAddress}]);
+      await sut.initialize(pangolinRouterAddress,  [
+        new Asset(toBytes32("AVAX"), WAVAXTokenAddress),
+        new Asset(toBytes32("DAI"), daiTokenAddress),
+      ]);
 
       daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
@@ -128,31 +131,43 @@ describe('PangolinExchange', () => {
     const token2Address = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
     const token3Address = '0x5947bb275c521040051d82396192181b413227a3';
 
-    before("deploy a contract with a predefined supported asset", async () => {
+    before("deploy a contract with a predefined supported assets", async () => {
       let contract: PangolinExchange,
         owner: SignerWithAddress;
 
       [owner] = await getFixedGasSigners(10000000);
       let token1 = "TOKEN_1";
       sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
-      await sut.initialize(pangolinRouterAddress, [new Asset(toBytes32(token1), token1Address)]);
+      await sut.initialize(pangolinRouterAddress,
+        [
+          new Asset(toBytes32("AVAX"), WAVAXTokenAddress),
+          new Asset(toBytes32(token1), token1Address)
+        ]);
     });
 
     it("should add asset at a contract deploy", async () => {
       await expect((fromBytes32((await sut.getAllAssets())[0])))
-        .to.be.equal("TOKEN_1");
+        .to.be.equal("AVAX");
+      await expect((fromBytes32((await sut.getAllAssets())[1])))
+          .to.be.equal("TOKEN_1");
     });
 
-    it("should add new assets", async () => {
+    it("should add new assets without changing the sequence of previous ones", async () => {
       let token2 = "TOKEN_2";
 
       await sut.updateAssets([new Asset(toBytes32(token2), token2Address)]);
 
       await expect((fromBytes32((await sut.getAllAssets())[0])))
-        .to.be.equal("TOKEN_1");
+        .to.be.equal("AVAX");
 
       await expect((fromBytes32((await sut.getAllAssets())[1])))
+        .to.be.equal("TOKEN_1");
+
+      await expect((fromBytes32((await sut.getAllAssets())[2])))
         .to.be.equal(token2);
+
+      await expect((await sut.getAssetAddress(toBytes32("AVAX"))))
+        .to.be.equal(WAVAXTokenAddress);
 
       await expect((await sut.getAssetAddress(toBytes32("TOKEN_1"))))
         .to.be.equal(token1Address);
@@ -176,7 +191,7 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_3")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_3")
       await expect(sut.getAssetAddress(toBytes32("TOKEN_2")))
         .to.be.revertedWith("Asset not supported.");
     });
@@ -186,14 +201,14 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_3");
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_3");
 
       await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), token1Address)]);
 
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_3")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_3")
     });
 
 
@@ -222,7 +237,7 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_3,TOKEN_2,TOKEN_4")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_3,TOKEN_2,TOKEN_4")
 
       await sut.removeAssets([toBytes32("TOKEN_2"), toBytes32("TOKEN_3")]);
 
@@ -234,7 +249,7 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_4")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
 
       await expect(sut.getAssetAddress(toBytes32("TOKEN_2")))
         .to.be.revertedWith("Asset not supported.");
@@ -247,7 +262,7 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_4")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
 
       await expect(sut.updateAssets([
         new Asset(toBytes32(""), token1Address),
@@ -258,7 +273,7 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_4")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
     });
 
 
@@ -266,14 +281,14 @@ describe('PangolinExchange', () => {
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1,TOKEN_4")
+        .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
 
       await sut.removeAssets([toBytes32("TOKEN_4"), toBytes32("TOKEN_THAT_NOT_EXISTS")]);
 
       await expect(((await sut.getAllAssets()).map(
         el => fromBytes32(el)
       )).join(","))
-        .to.be.equal("TOKEN_1")
+        .to.be.equal("AVAX,TOKEN_1")
     });
 
 

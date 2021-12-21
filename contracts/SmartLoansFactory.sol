@@ -43,7 +43,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   function createLoan() external oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
-      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool))
+      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
     );
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
@@ -55,20 +55,14 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner returns (SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(
+    BeaconProxy beaconProxy = new BeaconProxy{value: msg.value}(
       payable(address(upgradeableBeacon)),
-      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool))
+      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), _initialDebt)
     );
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
     updateRegistry(smartLoan);
-
-    //Fund account with own funds and credit
-    smartLoan.fund{value: msg.value}();
-    smartLoan.borrow(_initialDebt);
-    require(smartLoan.isSolvent());
-
     smartLoan.transferOwnership(msg.sender);
 
     return smartLoan;
