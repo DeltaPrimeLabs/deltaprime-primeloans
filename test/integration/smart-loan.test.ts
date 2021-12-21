@@ -582,7 +582,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, toWei("0"));
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -762,7 +762,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, toWei("0"));
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -919,7 +919,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, toWei("0"));
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -1070,7 +1070,7 @@ describe('Smart loan',  () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, toWei("0"));
+      await loan.initialize(exchange.address, pool.address, toWei("0"));
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -1184,7 +1184,7 @@ describe('Smart loan',  () => {
 
         it("should deploy a smart loan, fund, borrow and invest", async () => {
             loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-            loan.initialize(exchange.address, pool.address, toWei("0"));
+            await loan.initialize(exchange.address, pool.address, toWei("0"));
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)

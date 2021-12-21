@@ -134,7 +134,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
     uint256 balance = address(this).balance;
     if (balance > 0) {
-      payable(msg.sender).transfer(balance);
+      payable(msg.sender).safeTransferETH(balance);
       emit Withdrawn(msg.sender, balance, block.timestamp);
     }
   }
