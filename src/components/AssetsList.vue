@@ -374,23 +374,25 @@
       async updateAssets(list) {
         this.list = list;
 
-        for (const symbol of Object.keys(list)) {
-          redstone.getHistoricalPrice(symbol, {
-            startDate: Date.now() - 3600 * 1000 * 24 * 7,
-            interval: 3600 * 1000,
-            endDate: Date.now()
-          }).then(
-            (resp) => {
+        if (list) {
+          for (const symbol of Object.keys(list)) {
+            redstone.getHistoricalPrice(symbol, {
+              startDate: Date.now() - 3600 * 1000 * 24 * 7,
+              interval: 3600 * 1000,
+              endDate: Date.now()
+            }).then(
+              (resp) => {
 
-              const [prices, minPrice, maxPrice] = this.chartPoints(
-                resp
-              );
+                const [prices, minPrice, maxPrice] = this.chartPoints(
+                    resp
+                );
 
-              this.updateAsset(symbol, 'prices', prices);
-              this.updateAsset(symbol, 'minPrice', minPrice);
-              this.updateAsset(symbol, 'maxPrice', maxPrice);
-            }
-          )
+                this.updateAsset(symbol, 'prices', prices);
+                this.updateAsset(symbol, 'minPrice', minPrice);
+                this.updateAsset(symbol, 'maxPrice', maxPrice);
+              }
+            )
+          }
         }
       },
       share(asset) {
