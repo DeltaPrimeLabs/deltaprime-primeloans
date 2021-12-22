@@ -123,13 +123,13 @@ export default {
           const symbol = asset[0];
           if (symbol === config.nativeToken) {
             assets[symbol].balance = state.loanBalance;
-            assets[symbol].price = 1;
+            assets[symbol].price = prices[0] / 10**8;
           } else {
-            assets[symbol].price = fromWei(prices[i - 1]);
-            assets[symbol].balance = parseFloat(formatUnits(balances[i - 1].toString(), assets[symbol].decimals));
+            assets[symbol].price = prices[i] / 10**8;
+            assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
-          assets[symbol].share = assets[symbol].value / state.totalValue;
+          assets[symbol].share = assets[symbol].value / (state.totalValue * assets['AVAX'].price);
         }
       )
 
@@ -152,21 +152,23 @@ export default {
     async updateLoanHistory({ commit, state, rootState }) {
       const loan = state.loan;
 
-
       const provider = rootState.network.provider;
 
-      let logs = await provider.getLogs({
-        fromBlock: 0,
-        address: loan.address,
-        topics: [ [
-          loan.iface.getEventTopic("Funded"),
-          loan.iface.getEventTopic("Withdrawn"),
-          loan.iface.getEventTopic("Invested"),
-          loan.iface.getEventTopic("Redeemed"),
-          loan.iface.getEventTopic("Borrowed"),
-          loan.iface.getEventTopic("Repaid"),
-        ] ]
-      });
+      //TODO: check what's wrong
+      // let logs = await provider.getLogs({
+      //   fromBlock: 0,
+      //   address: loan.address,
+      //   topics: [ [
+      //     loan.iface.getEventTopic("Funded"),
+      //     loan.iface.getEventTopic("Withdrawn"),
+      //     loan.iface.getEventTopic("Invested"),
+      //     loan.iface.getEventTopic("Redeemed"),
+      //     loan.iface.getEventTopic("Borrowed"),
+      //     loan.iface.getEventTopic("Repaid"),
+      //   ] ]
+      // });
+
+      let logs = [];
 
 
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);

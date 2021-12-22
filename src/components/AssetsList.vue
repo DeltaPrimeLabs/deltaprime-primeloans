@@ -6,9 +6,9 @@
         <div class="total">
           <span class="total-value-wrapper">
             <span class="total-value">
-              Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
+              Total value: <span class="value">$ {{ totalValue ? totalValue.toFixed(2) || usd : ''}}</span>
               <span class="vertical-line"></span>
-              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">$ {{ getProfit !== null ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
+              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">$ {{ getProfit !== null ? getProfit.toFixed(2) || usd : ''}}</span>
             </span>
           </span>
         </div>
@@ -34,7 +34,7 @@
                 <span class="token-name">{{ asset.name }}</span>
                 </td>
               <td class="right" data-label="Price">
-                <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+                <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
               </td>
               <td class="chart-icon" data-label="Chart">
                 <SimpleChart
@@ -47,7 +47,7 @@
               </td>
               <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance ? asset.balance.toFixed(2) : ''"></LoadedValue></td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
-              <td class="right" data-label="Value"><LoadedValue :value="avaxToUSD(asset.value) | usd"></LoadedValue>
+              <td class="right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
                 <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
                 <img src="src/assets/icons/slash-small.svg"/>
@@ -128,7 +128,7 @@
               <span class="token-name">{{ asset.name }}</span>
             </td>
             <td class="right" data-label="Price">
-              <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+              <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
             </td>
             <td class="chart-icon" data-label="Chart">
               <SimpleChart
@@ -279,9 +279,9 @@
       buySlippageInfo(asset) {
         return (value) =>
           `Cost will be
-          <b>${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)}</b>
+          <b>${(this.usdToAVAX(maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)}</b>
           AVAX ($
-          ${this.avaxToUSD((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)})
+          ${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)})
           with current slippage of ${(asset.buySlippage * 100).toFixed(2)}%
           (max. slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%)
           `
@@ -289,9 +289,9 @@
       sellSlippageInfo(asset) {
         return (value) =>
           `You'll get
-          <b>${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)}</b>
+          <b>${(this.usdToAVAX(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)}</b>
           AVAX ($
-          ${(this.avaxToUSD(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)})
+          ${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)})
           with current slippage of ${(asset.sellSlippage * 100).toFixed(2)}%
           (max. slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%)
           `
@@ -372,6 +372,7 @@
         return [dataPoints, minValue, maxValue ];
       },
       async updateAssets(list) {
+        console.log(list)
         this.list = list;
 
         if (list) {
@@ -379,7 +380,8 @@
             redstone.getHistoricalPrice(symbol, {
               startDate: Date.now() - 3600 * 1000 * 24 * 7,
               interval: 3600 * 1000,
-              endDate: Date.now()
+              endDate: Date.now(),
+              provider: 'redstone-avalanche'
             }).then(
               (resp) => {
 

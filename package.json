@@ -33,7 +33,6 @@
     "countup.js": "^2.0.7",
     "erc-1155": "git+https://github.com/enjin/erc-1155.git",
     "ethers": "^5.4.0",
-    "hardhat-gas-reporter": "^1.0.6",
     "javascript-time-ago": "^2.3.9",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "redstone-api": "^0.4.6",
