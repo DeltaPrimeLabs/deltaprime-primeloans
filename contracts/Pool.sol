@@ -5,7 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "./CompoundingIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
@@ -34,7 +34,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   CompoundingIndex private borrowIndex;
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
-    if (!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
+    if (!AddressUpgradeable.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
     _ratesCalculator = ratesCalculator_;
@@ -57,7 +57,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     // setting address(0) ratesCalculator_ freezes the pool
-    if (!(Address.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
+    if (!(AddressUpgradeable.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
     _ratesCalculator = ratesCalculator_;
     if (address(ratesCalculator_) != address(0)) {
       _updateRates();
@@ -72,7 +72,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
     if (address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
-    if (!Address.isContract(address(borrowersRegistry_))) revert MustBeContract();
+    if (!AddressUpgradeable.isContract(address(borrowersRegistry_))) revert MustBeContract();
 
     _borrowersRegistry = borrowersRegistry_;
   }

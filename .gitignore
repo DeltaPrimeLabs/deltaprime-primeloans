@@ -9,4 +9,5 @@ cache
 /.secret2
 
 .vercel
+.openzeppelin
 typechain
