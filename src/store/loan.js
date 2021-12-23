@@ -103,7 +103,8 @@ export default {
       }
       return true;
     },
-    async updateAssets({ state, commit }) {
+    async updateAssets({ state, commit, dispatch }) {
+      dispatch('updateLoanBalance');
 
       const loan = state.loan;
 
@@ -154,26 +155,43 @@ export default {
 
       const provider = rootState.network.provider;
 
-      //TODO: check what's wrong
-      // let logs = await provider.getLogs({
-      //   fromBlock: 0,
-      //   address: loan.address,
-      //   topics: [ [
-      //     loan.iface.getEventTopic("Funded"),
-      //     loan.iface.getEventTopic("Withdrawn"),
-      //     loan.iface.getEventTopic("Invested"),
-      //     loan.iface.getEventTopic("Redeemed"),
-      //     loan.iface.getEventTopic("Borrowed"),
-      //     loan.iface.getEventTopic("Repaid"),
-      //   ] ]
-      // });
+      const loanFactory =
+          new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
 
-      let logs = [];
+      loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
+      let factoryLogs = await provider.getLogs({
+        fromBlock: 0,
+        address: loanFactory.address,
+        topics: [ [
+          loanFactory.iface.getEventTopic("SmartLoanCreated")
+        ] ]
+      });
+
+      let smartLoanCreatedLog = loanFactory.iface.parseLog(factoryLogs.find(log => {
+        let parsed = loanFactory.iface.parseLog(log);
+        return parsed.args[0] === loan.address
+      }));
+
+      let initialCollateral = 0;
+      if (smartLoanCreatedLog.args[2] !== null) initialCollateral = fromWei(smartLoanCreatedLog.args[2]);
+
+      let logs = await provider.getLogs({
+        fromBlock: 0,
+        address: loan.address,
+        topics: [ [
+          loan.iface.getEventTopic("Funded"),
+          loan.iface.getEventTopic("Withdrawn"),
+          loan.iface.getEventTopic("Invested"),
+          loan.iface.getEventTopic("Redeemed"),
+          loan.iface.getEventTopic("Borrowed"),
+          loan.iface.getEventTopic("Repaid"),
+        ] ]
+      });
 
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 
-      commit('setCollateralFromPayments', collateralFromPayments);
+      commit('setCollateralFromPayments', initialCollateral + collateralFromPayments);
       commit('setLoanEvents', loanEvents);
     },
     async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
@@ -197,6 +215,7 @@ export default {
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -207,6 +226,7 @@ export default {
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -216,6 +236,8 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async withdraw({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -225,6 +247,8 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;

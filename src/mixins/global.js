@@ -35,7 +35,7 @@ export default {
       if (amount > 0) {
         const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
-        const expectedAvax = amount * price;
+        const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
           await exchange.getEstimatedAVAXForERC20Token(
@@ -59,7 +59,7 @@ export default {
       if (amount > 0) {
         const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
-        const expectedAvax = amount * price;
+        const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
           await exchange.getEstimatedAVAXFromERC20Token(

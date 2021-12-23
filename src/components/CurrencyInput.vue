@@ -6,7 +6,7 @@
       <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
       <div class="converted">
         <div v-if="value && (value !== 0)">
-          ~ {{ price * avaxToUSD(value) | usd}}
+          ~ {{ price * value | usd}}
         </div>
       </div>
       <div v-if="max" class="max-wrapper" @click.stop="value = max">

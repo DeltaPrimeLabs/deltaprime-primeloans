@@ -21,7 +21,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     _;
   }
 
-  event SmartLoanCreated(address indexed accountAddress, address indexed creator);
+  event SmartLoanCreated(address indexed accountAddress, address indexed creator, uint256 initialCollateral, uint256 initialDebt);
 
   Pool private pool;
   IAssetsExchange assetsExchange;
@@ -51,6 +51,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     updateRegistry(smartLoan);
     smartLoan.transferOwnership(msg.sender);
 
+    emit SmartLoanCreated(address(smartLoan), msg.sender, 0, 0);
+
     return smartLoan;
   }
 
@@ -60,12 +62,14 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
       ""
     );
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
+    //Update registry and emit event
     updateRegistry(smartLoan);
 
     smartLoan.initialize{value: msg.value}(assetsExchange, pool, _initialDebt);
 
-    //Update registry and emit event
     smartLoan.transferOwnership(msg.sender);
+
+    emit SmartLoanCreated(address(smartLoan), msg.sender, msg.value, _initialDebt);
 
     return smartLoan;
   }
@@ -74,8 +78,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     ownersToLoans[msg.sender] = address(loan);
     loansToOwners[address(loan)] = msg.sender;
     loans.push(loan);
-
-    emit SmartLoanCreated(address(loan), msg.sender);
   }
 
   function canBorrow(address _account) external view override returns (bool) {

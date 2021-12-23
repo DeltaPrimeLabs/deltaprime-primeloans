@@ -45,7 +45,12 @@
                      src="src/assets/icons/enlarge.svg"
                 />
               </td>
-              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance ? asset.balance.toFixed(2) : ''"></LoadedValue></td>
+              <td class="right" data-label="Balance">
+                <LoadedValue
+                    :check="() => asset.balance != null"
+                    :value="formatTokenBalance(asset.balance)">
+                </LoadedValue>
+              </td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
               <td class="right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
@@ -254,7 +259,7 @@
         return [
           {
             require: value => avaxBalance
-                                >= maxAvaxToBeSold(price * value, slippage),
+                                >= maxAvaxToBeSold(this.usdToAVAX(price) * value, slippage),
             message: 'Requested asset value exceeds your available AVAX balance'
           }
         ]
@@ -279,7 +284,7 @@
       buySlippageInfo(asset) {
         return (value) =>
           `Cost will be
-          <b>${(this.usdToAVAX(maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)}</b>
+          <b>${this.usdToAVAX((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)}</b>
           AVAX ($
           ${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)})
           with current slippage of ${(asset.buySlippage * 100).toFixed(2)}%
@@ -318,7 +323,7 @@
           { asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
-            avaxAmount: asset.price * value,
+            avaxAmount: this.usdToAVAX(asset.price * value),
             slippage: asset.buySlippage
           })
           .then(() => {
@@ -335,7 +340,7 @@
           { asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
-            avaxAmount: asset.price * value,
+            avaxAmount: this.usdToAVAX(asset.price * value),
             slippage: asset.sellSlippage
           })
           .then(() => {
@@ -372,7 +377,6 @@
         return [dataPoints, minValue, maxValue ];
       },
       async updateAssets(list) {
-        console.log(list)
         this.list = list;
 
         if (list) {
@@ -417,6 +421,9 @@
 
         this.updateAsset(asset.symbol, 'sellSlippage', slippage);
         this.updateAsset(asset.symbol, 'checkingSlippage', false);
+      },
+      formatTokenBalance(balance) {
+        return balance !== null ? (balance > 1 ? balance.toFixed(2) : balance.toPrecision(2)) : '';
       }
     },
     watch: {

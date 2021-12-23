@@ -110,7 +110,11 @@ export default {
       const provider = rootState.network.provider;
       let logs = await provider.getLogs({
         fromBlock: state.deploymentBlock,
-        address: pool.address
+        address: pool.address,
+        topics: [ [
+          pool.iface.getEventTopic("Deposit"),
+          pool.iface.getEventTopic("Withdrawal")
+        ] ]
       });
 
       logs = logs.filter(item => item.address === pool.address);
@@ -118,8 +122,6 @@ export default {
       const poolHistory = [];
       logs.forEach(log => {
         let parsed = pool.iface.parseLog(log);
-
-        if (parsed.name !== 'Deposit' && parsed.name !== 'Withdrawal') return;
 
         if (parsed.args.user.toLocaleLowerCase() !== account.toLocaleLowerCase()) return;
 
