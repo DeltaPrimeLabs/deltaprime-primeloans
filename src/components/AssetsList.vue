@@ -9,7 +9,7 @@
               Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
               <span class="vertical-line"></span>
               Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">
-              $ {{ getProfit !== null ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
+              $ {{ (getProfit !== null && avaxPrice) ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
             </span>
           </span>
         </div>

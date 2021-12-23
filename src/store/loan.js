@@ -25,7 +25,9 @@ export default {
       return state.totalValue - state.debt;
     },
     getProfit(state, getters) {
-      if (getters.getCurrentCollateral !== null && state.collateralFromPayments !== null) {
+      if (getters.getCurrentCollateral !== null
+          && getters.getCurrentCollateral !== 0
+          && state.collateralFromPayments !== null) {
         return getters.getCurrentCollateral - state.collateralFromPayments;
       } else {
         return 0;
@@ -161,7 +163,7 @@ export default {
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
       let factoryLogs = await provider.getLogs({
-        fromBlock: 0,
+        fromBlock: rootState.pool.deploymentBlock,
         address: loanFactory.address,
         topics: [ [
           loanFactory.iface.getEventTopic("SmartLoanCreated")
@@ -177,7 +179,7 @@ export default {
       if (smartLoanCreatedLog.args[2] !== null) initialCollateral = fromWei(smartLoanCreatedLog.args[2]);
 
       let logs = await provider.getLogs({
-        fromBlock: 0,
+        fromBlock: rootState.pool.deploymentBlock,
         address: loan.address,
         topics: [ [
           loan.iface.getEventTopic("Funded"),

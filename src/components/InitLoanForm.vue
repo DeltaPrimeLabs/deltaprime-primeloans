@@ -33,7 +33,7 @@
   import CurrencyInput from "./CurrencyInput";
   import Slider from "./Slider";
   import Button from "./Button";
-  import {mapState, mapActions} from "vuex";
+  import {mapState, mapActions, mapGetters} from "vuex";
   import config from "@/config";
 
   export default {
@@ -61,7 +61,7 @@
         ],
         loanValidators: [
           {
-            require: value => value <= this.totalSupply,
+            require: value => value <= this.getAvailable,
             message: 'Loan amount exceeds amount available in the pool'
           }
         ],
@@ -74,8 +74,8 @@
       }
     },
     computed: {
-      ...mapState('pool', ['totalSupply']),
       ...mapState('network', ['balance']),
+      ...mapGetters('pool', ['getAvailable']),
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.collateral;
       },

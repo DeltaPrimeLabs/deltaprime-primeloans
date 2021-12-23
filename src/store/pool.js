@@ -49,7 +49,7 @@ export default {
   },
   getters: {
     getAvailable(state) {
-      return state.totalSupply - state.totalBorrowed;
+      return (state.totalSupply * 0.95 - state.totalBorrowed);
     }
   },
   actions: {
