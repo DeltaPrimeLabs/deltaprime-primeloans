@@ -78,12 +78,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
       // unsigned integer safety check)
       uint256 value = (poolUtilisation * SLOPE_2) / 1e18 + MAX_RATE;
 
-      if (value < SLOPE_2) revert SlopeCalculationOutOfRange();
+      require(value >= SLOPE_2, "Out of range value when calculating the borrowing rate. Consider checking if SLOPE_2 is calculated correctly");
 
       return value - SLOPE_2;
     }
   }
 }
-
-/// Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly
-error SlopeCalculationOutOfRange();

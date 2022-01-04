@@ -43,8 +43,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     __ReentrancyGuard_init();
 
     if (_initialDebt > 0) {
-      if (msg.value == 0) revert NoCollateralProvided();
-      if (_initialDebt * PERCENTAGE_PRECISION / msg.value >= _MAX_LTV) revert LoanInsolvent();
+      require(msg.value > 0, "No collateral provided for a loan");
+      require(_initialDebt * PERCENTAGE_PRECISION / msg.value < _MAX_LTV, "The action may cause an account to become insolvent");
       pool.borrow(_initialDebt);
     }
   }
@@ -128,7 +128,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     }
 
     uint256 debt = getDebt();
-    if (address(this).balance < debt) revert DebtNotRepaidAfterLoanSellout();
+    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed");
     repay(debt);
     emit LoanClosed(debt, address(this).balance, block.timestamp);
 
@@ -143,7 +143,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   * @dev This function uses the redstone-evm-connector
   **/
   function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
-    if (isSolvent()) revert LoanSolvent();
+    require(!isSolvent(), "Cannot sellout a solvent account");
 
     uint256 debt = getDebt();
     if (repayAmount > debt) {
@@ -178,7 +178,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @dev This function uses the redstone-evm-connector
    **/
   function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
-    if (address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
+    require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).safeTransferETH(_amount);
 
@@ -193,10 +193,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @dev This function uses the redstone-evm-connector
    **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
-    if (address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
+    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
 
     bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
-    if (!success) revert InvestmentFailed();
+    require(success, "Investment failed");
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
@@ -212,7 +212,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(_asset);
     address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
-    if (!success) revert RedemptionFailed();
+    require(success, "Redemption failed");
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
@@ -239,7 +239,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     }
 
     _amount = Math.min(_amount, getDebt());
-    if (address(this).balance < _amount) revert InsufficientFundsToRepayDebt();
+    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
     pool.repay{value: _amount}();
 
@@ -263,10 +263,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
     uint256 avaxPrice = prices[0];
 
-    if (avaxPrice == 0) revert AvaxPriceIsZero();
+    require(avaxPrice != 0, "Avax price returned from oracle is zero");
 
     for (uint256 i = 1; i < prices.length; i++) {
-      if (prices[i] == 0) revert AssetPriceIsZero();
+      require(prices[i] != 0, "Asset price returned from oracle is zero");
 
       bytes32 _asset = assets[i];
       IERC20Metadata token = getERC20TokenInstance(_asset);
@@ -374,7 +374,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   modifier remainsSolvent() {
     _;
-    if (!isSolvent()) revert LoanInsolvent();
+    require(isSolvent(), "The action may cause an account to become insolvent");
   }
 
   /**
@@ -388,9 +388,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      if (LTV < get_min_sellout_ltv()) revert PostSelloutLtvTooLow();
+      require(LTV >= get_min_sellout_ltv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
     }
-    if (LTV >= get_max_ltv()) revert LoanInsolventAfterLiquidation();
+    require(LTV < get_max_ltv(), "This operation would not result in bringing the loan back to a solvent state");
   }
 
   /* ========== EVENTS ========== */
@@ -463,51 +463,3 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    **/
   event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 time);
 }
-
-/// Only the governor account can change the maximal LTV
-error ChangeMaxLtvAccessDenied();
-
-/// Only the governor account can change the minimal sellout LTV
-error ChangeMinSelloutLTVAccessDenied();
-
-/// Selling out all assets without repaying the whole debt is not allowed
-error DebtNotRepaidAfterLoanSellout();
-
-/// Cannot sellout a solvent account
-error LoanSolvent();
-
-/// There is not enough funds to withdraw
-error InsufficientFundsForWithdrawal();
-
-/// Not enough funds are available to invest in an asset
-error InsufficientFundsForInvestment();
-
-/// There is not enough funds to repay the loan
-error InsufficientFundsToRepayDebt();
-
-/// The action may cause an account to become insolvent
-error LoanInsolvent();
-
-/// This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss
-error PostSelloutLtvTooLow();
-
-/// This operation would not result in bringing the loan back to a solvent state
-error LoanInsolventAfterLiquidation();
-
-/// Investment failed
-error InvestmentFailed();
-
-/// Redemption failed
-error RedemptionFailed();
-
-/// Avax price returned from oracle is zero
-error AvaxPriceIsZero();
-
-/// Asset price returned from oracle is zero
-error AssetPriceIsZero();
-
-/// First returned asset is not AVAX
-error MissingAvaxInAssets();
-
-/// No collateral provided for a loan
-error NoCollateralProvided();

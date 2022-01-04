@@ -125,7 +125,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     }
 
     uint256 debt = getDebt();
-    if (address(this).balance < debt) revert DebtNotRepaidAfterLoanSelout();
+    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed");
     repay(debt);
     emit LoanClosed(debt, address(this).balance, block.timestamp);
 
@@ -137,7 +137,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   }
 
   function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
-    if (isSolvent()) revert LoanSolvent();
+    require(!isSolvent(), "Cannot sellout a solvent account");
 
     uint256 debt = getDebt();
     if (repayAmount > debt) {
@@ -171,7 +171,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @param _amount to be withdrawn
    **/
   function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
-    if (address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
+    require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).safeTransferETH(_amount);
 
@@ -185,10 +185,10 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
    **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
-    if (address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
+    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
 
     bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
-    if (!success) revert InvestmentFailed();
+    require(success, "Investment failed");
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
@@ -203,7 +203,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     IERC20Metadata token = getERC20TokenInstance(_asset);
     address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
-    if (!success) revert RedemptionFailed();
+    require(success, "Redemption failed");
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
@@ -228,7 +228,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     }
 
     _amount = Math.min(_amount, getDebt());
-    if (address(this).balance < _amount) revert InsufficientFundsToRepayDebt();
+    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
     pool.repay{value: _amount}();
 
@@ -271,7 +271,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
     uint256 assetPrice = getPriceFromMsg(_asset);
     uint256 avaxPrice = getPriceFromMsg(bytes32("AVAX"));
-    if (assetPrice == 0 || avaxPrice == 0) revert AssetPriceNotFoundInMsg();
+    require(assetPrice != 0 && avaxPrice != 0, "Price for a chosen asset not found");
     uint256 normalizedPrice = (assetPrice * 10**18) / (avaxPrice);
     return normalizedPrice;
   }
@@ -360,7 +360,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
 
   modifier remainsSolvent() {
     _;
-    if (!isSolvent()) revert LoanInsolvent();
+    require(isSolvent(), "The action may cause an account to become insolvent");
   }
 
   /**
@@ -373,9 +373,9 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      if (LTV < MIN_SELLOUT_LTV) revert PostSelloutLtvTooLow();
+      require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
     }
-    if (LTV >= MAX_LTV) revert LoanInsolventAfterLiquidation();
+    require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state");
   }
 
   /* ========== EVENTS ========== */
@@ -448,42 +448,3 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    **/
   event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 time);
 }
-
-/// Only the governor account can change the maximal LTV
-error ChangeMaxLtvAccessDenied();
-
-/// Only the governor account can change the minimal sellout LTV
-error ChangeMinSelloutLTVAccessDenied();
-
-/// Selling out all assets without repaying the whole debt is not allowed
-error DebtNotRepaidAfterLoanSelout();
-
-/// Cannot sellout a solvent account
-error LoanSolvent();
-
-/// There is not enough funds to withdraw
-error InsufficientFundsForWithdrawal();
-
-/// Not enough funds are available to invest in an asset
-error InsufficientFundsForInvestment();
-
-/// There is not enough funds to repay the loan
-error InsufficientFundsToRepayDebt();
-
-/// The action may cause an account to become insolvent
-error LoanInsolvent();
-
-/// This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss
-error PostSelloutLtvTooLow();
-
-/// This operation would not result in bringing the loan back to a solvent state
-error LoanInsolventAfterLiquidation();
-
-/// Investment failed
-error InvestmentFailed();
-
-/// Redemption failed
-error RedemptionFailed();
-
-/// Price for a chosen asset not found
-error AssetPriceNotFoundInMsg();

@@ -172,9 +172,9 @@ describe('Pool with fixed interest rates', () => {
     it("should not allow to withdraw when user has no deposit", async () => {
       await sut.connect(user).deposit({value: toWei("0.5")});
       await expect(sut.connect(user2).withdraw(toWei("0.5")))
-        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
+        .to.be.revertedWith("ERC20: burn amount exceeds user balance");
       await expect(sut.connect(user2).withdraw(toWei("0.000000001")))
-        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
+        .to.be.revertedWith("ERC20: burn amount exceeds user balance");
       ;
     });
 
@@ -182,7 +182,7 @@ describe('Pool with fixed interest rates', () => {
       await sut.connect(user).deposit({value: toWei("1.0")});
       await sut.connect(user2).deposit({value: toWei("1.0")});
       await expect(sut.connect(user).withdraw(toWei("1.0001")))
-        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
+        .to.be.revertedWith("ERC20: burn amount exceeds user balance");
     });
 
     it("should not allow to withdraw more than already on deposit after accumulating interest", async () => {
@@ -192,7 +192,7 @@ describe('Pool with fixed interest rates', () => {
 
       expect(fromWei(await sut.connect(user).balanceOf(user.address))).to.be.closeTo(1.05127, 0.00001);
       await expect(sut.connect(user).withdraw(toWei("1.0513")))
-        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
+        .to.be.revertedWith("ERC20: burn amount exceeds user balance");
     });
 
     it("should allow to withdraw all deposit", async () => {

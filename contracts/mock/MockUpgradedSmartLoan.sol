@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
-import "../interfaces/IAssetsExchange.sol";
-import "../Pool.sol";
 import "../SmartLoan.sol";
 
 /**

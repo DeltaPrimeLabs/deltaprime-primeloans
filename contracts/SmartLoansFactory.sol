@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
  */
 contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   modifier oneLoanPerOwner() {
-    if (ownersToLoans[msg.sender] != address(0)) revert TooManyLoans();
+    require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
     _;
   }
 
@@ -52,7 +52,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     smartLoan.transferOwnership(msg.sender);
 
     emit SmartLoanCreated(address(smartLoan), msg.sender, 0, 0);
-
     return smartLoan;
   }
 
@@ -96,6 +95,3 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return loans;
   }
 }
-
-/// Only one loan per owner is allowed
-error TooManyLoans();
