@@ -110,8 +110,8 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should check if only one loan per owner is allowed", async () => {
-      await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("TooManyLoans()");
-      await expect(smartLoansFactory.connect(owner).createAndFundLoan(0)).to.be.revertedWith("TooManyLoans()");
+      await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
+      await expect(smartLoansFactory.connect(owner).createAndFundLoan(0)).to.be.revertedWith("Only one loan per owner is allowed");
     });
 
 

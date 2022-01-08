@@ -6,7 +6,7 @@
       <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
       <div class="converted">
         <div v-if="value && (value !== 0)">
-          ~ {{ price * avaxToUSD(value) | usd}}
+          ~ {{ (price ? price : avaxPrice) * value | usd}}
         </div>
       </div>
       <div v-if="max" class="max-wrapper" @click.stop="value = max">
@@ -45,11 +45,12 @@
 
 <script>
 import config from "@/config";
+import {mapState} from "vuex";
 
   export default {
     name: 'CurrencyInput',
     props: {
-      price: { type: Number, default: 1 },
+      price: { type: Number },
       max: { type: Number, default: null },
       symbol: { type: String, default: 'AVAX' },
       flexDirection: { type: String, default: 'column'},
@@ -63,6 +64,9 @@ import config from "@/config";
       info: { type: Function, default: null },
       defaultValue: null,
       waiting: false
+    },
+    computed: {
+      ...mapState('prices', ['avaxPrice'])
     },
     data() {
       return {

@@ -25,7 +25,9 @@ export default {
       return state.totalValue - state.debt;
     },
     getProfit(state, getters) {
-      if (getters.getCurrentCollateral !== null && state.collateralFromPayments !== null) {
+      if (getters.getCurrentCollateral !== null
+          && getters.getCurrentCollateral !== 0
+          && state.collateralFromPayments !== null) {
         return getters.getCurrentCollateral - state.collateralFromPayments;
       } else {
         return 0;
@@ -103,7 +105,8 @@ export default {
       }
       return true;
     },
-    async updateAssets({ state, commit }) {
+    async updateAssets({ state, commit, dispatch }) {
+      dispatch('updateLoanBalance');
 
       const loan = state.loan;
 
@@ -123,13 +126,13 @@ export default {
           const symbol = asset[0];
           if (symbol === config.nativeToken) {
             assets[symbol].balance = state.loanBalance;
-            assets[symbol].price = 1;
+            assets[symbol].price = prices[0] / 10**8;
           } else {
-            assets[symbol].price = fromWei(prices[i - 1]);
-            assets[symbol].balance = parseFloat(formatUnits(balances[i - 1].toString(), assets[symbol].decimals));
+            assets[symbol].price = prices[i] / 10**8;
+            assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
-          assets[symbol].share = assets[symbol].value / state.totalValue;
+          assets[symbol].share = assets[symbol].value / (state.totalValue * assets['AVAX'].price);
         }
       )
 
@@ -152,11 +155,31 @@ export default {
     async updateLoanHistory({ commit, state, rootState }) {
       const loan = state.loan;
 
-
       const provider = rootState.network.provider;
 
+      const loanFactory =
+          new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+
+      loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
+
+      let factoryLogs = await provider.getLogs({
+        fromBlock: rootState.pool.deploymentBlock,
+        address: loanFactory.address,
+        topics: [ [
+          loanFactory.iface.getEventTopic("SmartLoanCreated")
+        ] ]
+      });
+
+      let smartLoanCreatedLog = loanFactory.iface.parseLog(factoryLogs.find(log => {
+        let parsed = loanFactory.iface.parseLog(log);
+        return parsed.args[0] === loan.address
+      }));
+
+      let initialCollateral = 0;
+      if (smartLoanCreatedLog.args[2] !== null) initialCollateral = fromWei(smartLoanCreatedLog.args[2]);
+
       let logs = await provider.getLogs({
-        fromBlock: 0,
+        fromBlock: rootState.pool.deploymentBlock,
         address: loan.address,
         topics: [ [
           loan.iface.getEventTopic("Funded"),
@@ -168,10 +191,9 @@ export default {
         ] ]
       });
 
-
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 
-      commit('setCollateralFromPayments', collateralFromPayments);
+      commit('setCollateralFromPayments', initialCollateral + collateralFromPayments);
       commit('setLoanEvents', loanEvents);
     },
     async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
@@ -195,6 +217,7 @@ export default {
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -205,6 +228,7 @@ export default {
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -214,6 +238,8 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async withdraw({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -223,6 +249,8 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
+      dispatch('updateAssets');
     },
     async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;

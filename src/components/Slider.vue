@@ -105,6 +105,16 @@ export default {
     value(newValue) {
       this.onChange(newValue);
       this.currentValue = newValue;
+    },
+    max(newValue) {
+      this.$refs.input.max = newValue;
+      this.onChange(newValue);
+      this.currentValue = newValue;
+    },
+    min(newValue) {
+      this.$refs.input.min = newValue;
+      this.onChange(newValue);
+      this.currentValue = newValue;
     }
   }
 };

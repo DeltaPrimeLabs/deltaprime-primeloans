@@ -25,7 +25,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
    * @dev _borrowingRate the value of updated borrowing rate
    **/
   function setRates(uint256 _depositRate, uint256 _borrowingRate) public onlyOwner {
-    if (_depositRate > _borrowingRate) revert BorrowingRateLTDepositRate();
+    require(_depositRate <= _borrowingRate, "A borrowing rate cannot be lower than the deposit rate");
 
     depositRate = _depositRate;
     borrowingRate = _borrowingRate;
@@ -60,6 +60,3 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
    **/
   event RatesUpdated(uint256 updatedDepositRate, uint256 updatedBorrowingRate);
 }
-
-/// Borrowing rate cannot be lower than the deposit rate
-error BorrowingRateLTDepositRate();

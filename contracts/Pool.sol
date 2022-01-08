@@ -34,7 +34,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   CompoundingIndex private borrowIndex;
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
-    if (!AddressUpgradeable.isContract(address(borrowersRegistry_))) revert MustBeContract();
+    require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
     _ratesCalculator = ratesCalculator_;
@@ -57,7 +57,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     // setting address(0) ratesCalculator_ freezes the pool
-    if (!(AddressUpgradeable.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0))) revert MustBeContract();
+    require(AddressUpgradeable.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0), "Must be a contract");
     _ratesCalculator = ratesCalculator_;
     if (address(ratesCalculator_) != address(0)) {
       _updateRates();
@@ -71,20 +71,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _borrowersRegistry the address of borrowers registry
    **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
-    if (address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
-    if (!AddressUpgradeable.isContract(address(borrowersRegistry_))) revert MustBeContract();
+    require(address(borrowersRegistry_) != address(0), "The borrowers registry cannot set to a null address");
+    require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
   }
 
   /* ========== MUTATIVE FUNCTIONS ========== */
   function transfer(address recipient, uint256 amount) external override returns (bool) {
-    if (recipient == address(0)) revert ZeroAddressTransfer();
-    if (recipient == address(this)) revert PoolAddressTransfer();
+    require(recipient != address(0), "ERC20: cannot transfer to the zero address");
+    require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
     _accumulateDepositInterest(msg.sender);
 
-    if (_deposited[msg.sender] < amount) revert TransferExceedsBalance();
+    require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
 
     // (this is verified in "require" above)
     unchecked {
@@ -104,7 +104,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
-    if (spender == address(0)) revert SpenderAddressZero();
+    require(spender != address(0), "Allowance spender cannot be a zero address");
     uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
     _allowed[msg.sender][spender] = newAllowance;
 
@@ -113,9 +113,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
-    if (spender == address(0)) revert SpenderAddressZero();
+    require(spender != address(0), "Allowance spender cannot be a zero address");
     uint256 currentAllowance = _allowed[msg.sender][spender];
-    if (currentAllowance < subtractedValue) revert CurrentAllowanceSmallerThanSubtractedValue();
+    require(currentAllowance >= subtractedValue, "Current allowance is smaller than the subtractedValue");
 
     uint256 newAllowance = currentAllowance - subtractedValue;
     _allowed[msg.sender][spender] = newAllowance;
@@ -125,7 +125,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function approve(address spender, uint256 amount) external override returns (bool) {
-    if (spender == address(0)) revert SpenderAddressZero();
+    require(spender != address(0), "Allowance spender cannot be a zero address");
     _allowed[msg.sender][spender] = amount;
 
     emit Approval(msg.sender, spender, amount);
@@ -134,13 +134,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-    if (amount > _allowed[sender][msg.sender]) revert InsufficientAllowance();
-    if (recipient == address(0)) revert ZeroAddressTransfer();
-    if (recipient == address(this)) revert PoolAddressTransfer();
+    require(_allowed[sender][msg.sender] >= amount, "Not enough tokens allowed to transfer required amount");
+    require(recipient != address(0), "ERC20: cannot transfer to the zero address");
+    require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
     _accumulateDepositInterest(msg.sender);
 
-    if (amount > _deposited[sender]) revert TransferExceedsBalance();
+    require(_deposited[sender] >= amount, "ERC20: transfer amount exceeds balance");
 
     _deposited[sender] -= amount;
     _allowed[sender][msg.sender] -= amount;
@@ -171,7 +171,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
    **/
   function withdraw(uint256 _amount) external nonReentrant {
-    if (address(this).balance < _amount) revert InsufficientPoolBalance();
+    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan");
 
     _accumulateDepositInterest(msg.sender);
 
@@ -212,7 +212,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   function repay() external payable nonReentrant {
     _accumulateBorrowingInterest(msg.sender);
 
-    if (borrowed[msg.sender] < msg.value) revert RepayAmountExceedsBorrowed();
+    require(borrowed[msg.sender] >= msg.value, "You are trying to repay more that was borrowed by a user");
 
     borrowed[msg.sender] -= msg.value;
     borrowed[address(this)] -= msg.value;
@@ -271,8 +271,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   function recoverSurplus(uint256 amount, address account) public onlyOwner nonReentrant {
     uint256 surplus = address(this).balance + totalBorrowed() - totalSupply();
 
-    if (amount > address(this).balance) revert RecoverAmountExceedsBalance();
-    if (amount > surplus) revert RecoverAmountExceedsSurplus();
+    require(amount <= address(this).balance, "Trying to recover more surplus funds than pool balance");
+    require(amount <= surplus, "Trying to recover more funds than current surplus");
 
     payable(account).safeTransferETH(amount);
   }
@@ -280,7 +280,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /* ========== INTERNAL FUNCTIONS ========== */
 
   function _mint(address account, uint256 amount) internal {
-    if (account == address(0)) revert MintZeroAddress();
+    require(account != address(0), "ERC20: cannot mint to the zero address");
 
     _deposited[account] += amount;
     _deposited[address(this)] += amount;
@@ -289,8 +289,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _burn(address account, uint256 amount) internal {
-    if (_deposited[account] < amount) revert BurnAmountExceedsUserDeposits();
-    if (_deposited[address(this)] < amount) revert BurnAmountExceedsPoolDeposits();
+    require(_deposited[account] >= amount, "ERC20: burn amount exceeds user balance");
+    require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
 
     // verified in "require" above
     unchecked {
@@ -302,7 +302,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _updateRates() internal {
-    if (address(_ratesCalculator) == address(0)) revert PoolFrozen();
+    require(address(_ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
     depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
     borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
   }
@@ -332,11 +332,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /* ========== MODIFIERS ========== */
 
   modifier canBorrow() {
-    if (address(_borrowersRegistry) == address(0)) revert BorrowersRegistryNotConfigured();
-    if (!_borrowersRegistry.canBorrow(msg.sender)) revert UnauthorizedBorrower();
-    if (totalSupply() == 0) revert BorrowFromEmptyPool();
+    require(address(_borrowersRegistry) != address(0), "Borrowers registry is not configured");
+    require(_borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
+    require(totalSupply() != 0, "Cannot borrow from an empty pool");
     _;
-    if ((totalBorrowed() * 1e18) / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert PoolUtilisationTooHighForBorrowing();
+    require((totalBorrowed() * 1e18) / totalSupply() <= MAX_POOL_UTILISATION_FOR_BORROWING, "The pool utilisation cannot be greater than 95%");
   }
 
   /* ========== EVENTS ========== */
@@ -381,63 +381,3 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    **/
   event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
 }
-
-/// Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations
-error PoolFrozen();
-
-/// The borrowers registry cannot set to a null address
-error BorrowersRegistryNullAddress();
-
-/// ERC20: cannot transfer to the zero address
-error ZeroAddressTransfer();
-
-/// ERC20: cannot transfer to the pool address
-error PoolAddressTransfer();
-
-/// ERC20: transfer amount exceeds balance
-error TransferExceedsBalance();
-
-/// Not enough tokens allowed to transfer required amount
-error InsufficientAllowance();
-
-/// There is not enough funds in the pool to fund the loan
-error InsufficientPoolBalance();
-
-/// You are trying to repay more that was borrowed by a user
-error RepayAmountExceedsBorrowed();
-
-/// Trying to recover more surplus funds than pool balance
-error RecoverAmountExceedsBalance();
-
-/// Trying to recover more funds than current surplus
-error RecoverAmountExceedsSurplus();
-
-/// ERC20: cannot mint to the zero address
-error MintZeroAddress();
-
-/// ERC20: burn amount exceeds current pool indexed balance
-error BurnAmountExceedsPoolDeposits();
-
-/// ERC20: burn amount exceeds user balance
-error BurnAmountExceedsUserDeposits();
-
-/// Borrowers registry is not configured
-error BorrowersRegistryNotConfigured();
-
-/// Only the accounts authorised by borrowers registry may borrow
-error UnauthorizedBorrower();
-
-/// Cannot borrow from an empty pool
-error BorrowFromEmptyPool();
-
-/// The pool utilisation cannot be greater than 95%
-error PoolUtilisationTooHighForBorrowing();
-
-/// Must be a contract
-error MustBeContract();
-
-// Allowance spender cannot be a zero address
-error SpenderAddressZero();
-
-/// Current allowance is smaller than the subtractedValue
-error CurrentAllowanceSmallerThanSubtractedValue();

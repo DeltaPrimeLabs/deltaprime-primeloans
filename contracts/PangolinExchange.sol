@@ -42,10 +42,10 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * @dev _exactERC20AmountOut amount of the ERC20 token to be bought
    **/
   function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) external payable override nonReentrant returns (bool) {
-    if (_exactERC20AmountOut == 0) revert InvalidTokenPurchaseAmount();
+    require(_exactERC20AmountOut != 0, "Amount of tokens to buy has to be greater than 0");
     address tokenAddress = getAssetAddress(_token);
     uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
-    if (msg.value < amountIn) revert NotEnoughFunds();
+    require(msg.value >= amountIn, "Not enough funds were provided");
 
     address[] memory path = getPathForAVAXtoToken(tokenAddress);
     (bool success, ) = address(pangolinRouter).call{value: msg.value}(
@@ -64,7 +64,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
    **/
   function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override nonReentrant returns (bool) {
-    if (_exactERC20AmountIn == 0) revert InvalidTokenSaleAmount();
+    require(_exactERC20AmountIn > 0, "Amount of tokens to sell has to be greater than 0");
 
     address tokenAddress = getAssetAddress(_token);
     IERC20 token = IERC20(tokenAddress);
@@ -223,12 +223,3 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    **/
   event AssetsRemoved(bytes32[] removedAssets);
 }
-
-/// Amount of tokens to buy has to be greater than 0
-error InvalidTokenPurchaseAmount();
-
-/// Amount of tokens to sell has to be greater than 0
-error InvalidTokenSaleAmount();
-
-/// Not enough funds were provided
-error NotEnoughFunds();

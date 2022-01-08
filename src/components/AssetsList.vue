@@ -8,7 +8,8 @@
             <span class="total-value">
               Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
               <span class="vertical-line"></span>
-              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">$ {{ getProfit !== null ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
+              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">
+              $ {{ (getProfit !== null && avaxPrice) ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
             </span>
           </span>
         </div>
@@ -34,7 +35,7 @@
                 <span class="token-name">{{ asset.name }}</span>
                 </td>
               <td class="right" data-label="Price">
-                <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+                <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
               </td>
               <td class="chart-icon" data-label="Chart">
                 <SimpleChart
@@ -45,9 +46,14 @@
                      src="src/assets/icons/enlarge.svg"
                 />
               </td>
-              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance ? asset.balance.toFixed(2) : ''"></LoadedValue></td>
+              <td class="right" data-label="Balance">
+                <LoadedValue
+                    :check="() => asset.balance != null"
+                    :value="formatTokenBalance(asset.balance)">
+                </LoadedValue>
+              </td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
-              <td class="right" data-label="Value"><LoadedValue :value="avaxToUSD(asset.value) | usd"></LoadedValue>
+              <td class="right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
                 <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
                 <img src="src/assets/icons/slash-small.svg"/>
@@ -128,7 +134,7 @@
               <span class="token-name">{{ asset.name }}</span>
             </td>
             <td class="right" data-label="Price">
-              <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+              <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
             </td>
             <td class="chart-icon" data-label="Chart">
               <SimpleChart
@@ -254,7 +260,7 @@
         return [
           {
             require: value => avaxBalance
-                                >= maxAvaxToBeSold(price * value, slippage),
+                                >= maxAvaxToBeSold(this.usdToAVAX(price) * value, slippage),
             message: 'Requested asset value exceeds your available AVAX balance'
           }
         ]
@@ -279,9 +285,9 @@
       buySlippageInfo(asset) {
         return (value) =>
           `Cost will be
-          <b>${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)}</b>
+          <b>${this.usdToAVAX((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)}</b>
           AVAX ($
-          ${this.avaxToUSD((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)})
+          ${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)})
           with current slippage of ${(asset.buySlippage * 100).toFixed(2)}%
           (max. slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%)
           `
@@ -289,9 +295,9 @@
       sellSlippageInfo(asset) {
         return (value) =>
           `You'll get
-          <b>${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)}</b>
+          <b>${(this.usdToAVAX(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)}</b>
           AVAX ($
-          ${(this.avaxToUSD(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)})
+          ${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)})
           with current slippage of ${(asset.sellSlippage * 100).toFixed(2)}%
           (max. slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%)
           `
@@ -318,7 +324,7 @@
           { asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
-            avaxAmount: asset.price * value,
+            avaxAmount: this.usdToAVAX(asset.price * value),
             slippage: asset.buySlippage
           })
           .then(() => {
@@ -335,7 +341,7 @@
           { asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
-            avaxAmount: asset.price * value,
+            avaxAmount: this.usdToAVAX(asset.price * value),
             slippage: asset.sellSlippage
           })
           .then(() => {
@@ -374,23 +380,26 @@
       async updateAssets(list) {
         this.list = list;
 
-        for (const symbol of Object.keys(list)) {
-          redstone.getHistoricalPrice(symbol, {
-            startDate: Date.now() - 3600 * 1000 * 24 * 7,
-            interval: 3600 * 1000,
-            endDate: Date.now()
-          }).then(
-            (resp) => {
+        if (list) {
+          for (const symbol of Object.keys(list)) {
+            redstone.getHistoricalPrice(symbol, {
+              startDate: Date.now() - 3600 * 1000 * 24 * 7,
+              interval: 3600 * 1000,
+              endDate: Date.now(),
+              provider: 'redstone-avalanche'
+            }).then(
+              (resp) => {
 
-              const [prices, minPrice, maxPrice] = this.chartPoints(
-                resp
-              );
+                const [prices, minPrice, maxPrice] = this.chartPoints(
+                    resp
+                );
 
-              this.updateAsset(symbol, 'prices', prices);
-              this.updateAsset(symbol, 'minPrice', minPrice);
-              this.updateAsset(symbol, 'maxPrice', maxPrice);
-            }
-          )
+                this.updateAsset(symbol, 'prices', prices);
+                this.updateAsset(symbol, 'minPrice', minPrice);
+                this.updateAsset(symbol, 'maxPrice', maxPrice);
+              }
+            )
+          }
         }
       },
       share(asset) {
@@ -413,6 +422,9 @@
 
         this.updateAsset(asset.symbol, 'sellSlippage', slippage);
         this.updateAsset(asset.symbol, 'checkingSlippage', false);
+      },
+      formatTokenBalance(balance) {
+        return balance !== null ? (balance > 1 ? balance.toFixed(2) : balance.toPrecision(2)) : '';
       }
     },
     watch: {

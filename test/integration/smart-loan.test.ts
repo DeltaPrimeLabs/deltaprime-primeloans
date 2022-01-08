@@ -157,7 +157,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
-    it("should revert with AvaxPriceIsZero()", async () => {
+    it("should revert with Avax price returned from oracle is zero", async () => {
       let wrappedLoanWithoutPrices = WrapperBuilder
           .mockLite(loan)
           .using(
@@ -167,7 +167,7 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("AvaxPriceIsZero()");
+      await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("Avax price returned from oracle is zero");
     });
 
     it("should provide assets balances and prices", async () => {
@@ -332,7 +332,7 @@ describe('Smart loan',  () => {
 
 
     it("should prevent borrowing too much", async () => {
-      await expect(wrappedLoan.borrow(toWei("500"))).to.be.revertedWith("LoanInsolvent()");
+      await expect(wrappedLoan.borrow(toWei("500"))).to.be.revertedWith("The action may cause an account to become insolvent");
     });
 
   });
@@ -475,7 +475,7 @@ describe('Smart loan',  () => {
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await expect(wrappedLoan.liquidateLoan(toWei("1", 18))).to.be.revertedWith("LoanSolvent()");
+      await expect(wrappedLoan.liquidateLoan(toWei("1", 18))).to.be.revertedWith("Cannot sellout a solvent account");
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
@@ -834,7 +834,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       // Try to close the debt
-      await expect(wrappedLoan.closeLoan()).to.be.revertedWith("DebtNotRepaidAfterLoanSellout()");
+      await expect(wrappedLoan.closeLoan()).to.be.revertedWith("Selling out all assets without repaying the whole debt is not allowed");
 
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let loanTotalValue = BigNumber.from(await wrappedLoan.getTotalValue());
@@ -990,7 +990,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       // Try to liquidate the loan
-      await expect(wrappedLoan.liquidateLoan(toWei("305"))).to.be.revertedWith("LoanInsolventAfterLiquidation()");
+      await expect(wrappedLoan.liquidateLoan(toWei("305"))).to.be.revertedWith("This operation would not result in bringing the loan back to a solvent state");
 
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let liquidationBonus = BigNumber.from(toWei("300")).div(10);
@@ -1111,7 +1111,7 @@ describe('Smart loan',  () => {
     });
 
     it('should revert on a withdrawal resulting in an insolvent loan', async () => {
-      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("15000", usdTokenDecimalPlaces))).to.be.revertedWith("LoanInsolvent()");
+      await expect(wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("15000", usdTokenDecimalPlaces))).to.be.revertedWith("The action may cause an account to become insolvent");
     });
 
     it('should withdraw', async () => {
@@ -1257,7 +1257,7 @@ describe('Smart loan',  () => {
             let loanAvaxBalanceAfterWithdrawal = BigNumber.from(await provider.getBalance(loan.address));
 
             // Try to repay the debt (plus extra 10 AVAX) using remaining AVAX
-            await expect(wrappedLoan.repay(toWei("310"))).to.be.revertedWith("InsufficientFundsToRepayDebt()");
+            await expect(wrappedLoan.repay(toWei("310"))).to.be.revertedWith("There is not enough funds to repay the loan");
 
             // Try to repay the debt (plus extra 10 AVAX) using remaining AVAX and additional 290 AVAX
             await wrappedLoan.repay(toWei("310"), {value: toWei("290")});

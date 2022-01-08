@@ -47,7 +47,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
 
       await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
-        .to.be.revertedWith("TransferExceedsBalance()");
+        .to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
     it("should accumulate user1 interest prior to transferring the funds", async () => {
@@ -85,7 +85,7 @@ describe("Pool ERC20 token functions", () => {
 
   describe("approve", () => {
     it("should revert upon setting an allowance for a zero address", async () => {
-      await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).to.be.revertedWith("SpenderAddressZero()");
+      await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).to.be.revertedWith("Allowance spender cannot be a zero address");
     });
 
     it("should properly assign amount to different spenders within one owner", async () => {
@@ -135,7 +135,7 @@ describe("Pool ERC20 token functions", () => {
 
   describe("increaseAllowance", () => {
     it("should revert upon increasing an allowance for a zero address", async () => {
-      await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("SpenderAddressZero()");
+      await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Allowance spender cannot be a zero address");
     });
 
     it("should increase an allowance", async () => {
@@ -147,7 +147,7 @@ describe("Pool ERC20 token functions", () => {
 
   describe("decreaseAllowance", () => {
     it("should revert upon decreasing an allowance for a zero address", async () => {
-      await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("SpenderAddressZero()");
+      await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Allowance spender cannot be a zero address");
     });
 
     it("should decrease an allowance", async () => {
@@ -158,7 +158,7 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should revert upon decreasing an allowance for below the current allowance level", async () => {
-      await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith("CurrentAllowanceSmallerThanSubtractedValue()");
+      await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith("Current allowance is smaller than the subtractedValue");
     });
 
   });
@@ -170,7 +170,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).withdraw(toWei("1.0"));
 
       await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
-        .to.be.revertedWith("TransferExceedsBalance()");
+        .to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
     it("should revert if caller's allowance for user1's tokens is too low", async () => {
@@ -178,7 +178,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
       await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
-        .to.be.revertedWith("InsufficientAllowance()");
+        .to.be.revertedWith("Not enough tokens allowed to transfer required amount");
     });
 
     it("should decrease allowance by the transfer amount", async () => {

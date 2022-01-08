@@ -12,6 +12,11 @@ export default {
         return avax * this.avaxPrice;
       }
     },
+    usdToAVAX(price) {
+      if (this.avaxPrice) {
+        return price / this.avaxPrice;
+      }
+    },
     toHex(dec) {
       return '0x' + dec.toString(16);
     },
@@ -30,7 +35,7 @@ export default {
       if (amount > 0) {
         const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
-        const expectedAvax = amount * price;
+        const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
           await exchange.getEstimatedAVAXForERC20Token(
@@ -54,7 +59,7 @@ export default {
       if (amount > 0) {
         const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
-        const expectedAvax = amount * price;
+        const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
           await exchange.getEstimatedAVAXFromERC20Token(

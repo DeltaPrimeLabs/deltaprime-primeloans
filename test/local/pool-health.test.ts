@@ -43,7 +43,7 @@ describe('Safety tests of pool', () => {
     });
 
     it("should not allow initializing pool with a non-contract borrowersRegistry", async () => {
-      await expect(pool.initialize(ratesCalculator.address, nonContractAddress, ZERO, ZERO)).to.be.revertedWith("MustBeContract()");
+      await expect(pool.initialize(ratesCalculator.address, nonContractAddress, ZERO, ZERO)).to.be.revertedWith("Must be a contract");
     });
 
     it("should initialize a pool", async () => {
@@ -51,11 +51,11 @@ describe('Safety tests of pool', () => {
     });
 
     it("should not allow setting a non-contract ratesCalculator", async () => {
-      await expect(pool.setRatesCalculator(nonContractAddress)).to.be.revertedWith("MustBeContract()");
+      await expect(pool.setRatesCalculator(nonContractAddress)).to.be.revertedWith("Must be a contract");
     });
 
     it("should not allow setting a non-contract borrowersRegistry", async () => {
-      await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("MustBeContract()");
+      await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("Must be a contract");
     });
   });
 
@@ -333,7 +333,7 @@ describe('Safety tests of pool', () => {
 
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
       expect(receiverBalanceAfterRecover).to.be.closeTo(receiverBalanceBeforeRecover + maxAvailableSurplus, 0.00001);
-      await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("RecoverAmountExceedsBalance()");
+      await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more surplus funds than pool balance");
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(totalSupply, 0.00001);
       expect(fromWei(await pool.getDepositRate())).to.equal(depositRate);
@@ -426,10 +426,10 @@ describe('Safety tests of pool', () => {
 
 
       it("should revert basic actions for a freeze calculator ", async () => {
-        await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).to.be.revertedWith("PoolFrozen()");
-        await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("PoolFrozen()");
-        await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("PoolFrozen()");
-        await expect(pool.connect(borrower).repay({value: toWei("0.5")})).to.be.revertedWith("PoolFrozen()");
+        await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+        await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+        await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+        await expect(pool.connect(borrower).repay({value: toWei("0.5")})).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
 
         expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
         expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);

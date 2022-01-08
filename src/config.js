@@ -3,7 +3,7 @@ import addresses from '../common/token_addresses.json';
 export default {
     DEFAULT_LTV: 4,
     MAX_LTV: 5,
-    chainId: process.env.NODE_ENV === 'development' ? 31337 : 2139,
+    chainId: 31337,
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},
       "ETH": {name: "Ether", symbol: "ETH", decimals: 18, address: addresses.ETH},
