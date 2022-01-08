@@ -201,8 +201,12 @@ export default {
 
       const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
 
+      const wrappedLoanFactory = WrapperBuilder
+          .wrapLite(loanFactory)
+          .usingPriceFeed(config.dataProviderId);
+
       //TODO: find optimal value of gas
-      const tx = await loanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 30000000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 30000000});
 
       await provider.waitForTransaction(tx.hash);
 
