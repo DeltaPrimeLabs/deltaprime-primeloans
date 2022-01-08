@@ -35,18 +35,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   IAssetsExchange public exchange;
   Pool pool;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_, uint256 _initialDebt) external payable initializer {
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
     __ReentrancyGuard_init();
-
-    if (_initialDebt > 0) {
-      require(msg.value > 0, "No collateral provided for a loan");
-      require(_initialDebt * PERCENTAGE_PRECISION / msg.value < _MAX_LTV, "The action may cause an account to become insolvent");
-      pool.borrow(_initialDebt);
-    }
   }
 
   /**

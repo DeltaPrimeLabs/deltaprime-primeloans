@@ -24,7 +24,6 @@ import {
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
-import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -87,7 +86,7 @@ describe('Smart loan - upgrading',  () => {
       ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      smartLoansFactory.initialize(pool.address, exchange.address);
+      await smartLoansFactory.initialize(pool.address, exchange.address);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
@@ -144,9 +143,20 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should create and fund a loan", async () => {
-      await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
 
-      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(other.address);
+      const wrappedSmartLoansFactory = WrapperBuilder
+        .mockLite(smartLoansFactory.connect(other))
+        .using(
+          () => {
+          return {
+            prices: mockPrices,
+            timestamp: Date.now()
+          }
+        })
+
+      await wrappedSmartLoansFactory.createAndFundLoan(toWei("2"), {value: toWei("10"),});
+
+      const loan_proxy_address = await wrappedSmartLoansFactory.getLoanForOwner(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(other);
 
       wrappedSecondLoan = WrapperBuilder
@@ -156,7 +166,7 @@ describe('Smart loan - upgrading',  () => {
             prices: mockPrices,
             timestamp: Date.now()
           }
-        })
+        });
 
       expect(fromWei(await wrappedSecondLoan.getTotalValue())).to.be.equal(12);
       expect(fromWei(await wrappedSecondLoan.getDebt())).to.be.equal(2);
@@ -188,7 +198,7 @@ describe('Smart loan - upgrading',  () => {
 
       await rewrappedLoan.authorizeProvider();
 
-      expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
+      expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.0001);
       expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
       expect(await rewrappedLoan.getLTV()).to.be.equal(0);
     });
@@ -208,8 +218,5 @@ describe('Smart loan - upgrading',  () => {
       //The mock loan has a hardcoded total value of 777
       expect(await wrappedLoan.getTotalValue()).to.be.equal(777);
     });
-
   });
-
-
 });

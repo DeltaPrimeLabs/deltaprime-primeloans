@@ -26,7 +26,7 @@ describe('FixedRatesCalculator', () => {
       owner,
       FixedRatesCalculatorArtifact,
       [toWei("1000"), toWei("500")]))
-      .to.be.revertedWith("Borrowing rate cannot be lower than the deposit rate");
+      .to.be.revertedWith("A borrowing rate cannot be lower than the deposit rate");
   });
 
   it('should create instance if deposit rate lower than borrowing rate', async () => {
@@ -56,7 +56,7 @@ describe('FixedRatesCalculator', () => {
 
     it('should throw if deposit rate higher than borrowing', async () => {
       await expect(sut.setRates(toWei("1001"), toWei("1000")))
-        .to.be.revertedWith("Borrowing rate cannot be lower than the deposit rate");
+        .to.be.revertedWith("A borrowing rate cannot be lower than the deposit rate");
     });
   });
 

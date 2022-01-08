@@ -9,7 +9,10 @@ export default function setupFilters() {
 
   Vue.filter("usd", function (value) {
     if (value == null) return null;
-    return "$ " + value.toFixed(2);
+    return "$ " + value.toLocaleString(
+        undefined, // use the visitor's browser
+        { minimumFractionDigits: 2 }
+    );
   });
 
   Vue.filter("usd-precise", function (value) {

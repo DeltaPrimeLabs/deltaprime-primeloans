@@ -86,28 +86,23 @@
         } catch (switchError) {
           // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
-            try {
-              const walletParams = process.env.NODE_ENV === 'development' ?
-                {
-                  chainName: 'Localhost',
-                  chainId: this.toHex(config.chainId),
-                  rpcUrls:  [ "http://localhost" ]
-                }
-                :
-                {
+            if (process.env.NODE_ENV !== 'development') {
+              try {
+                const walletParams = {
                   chainName: 'Forked Avalanche',
                   chainId: this.toHex(config.chainId),
                   //TODO IMPORTANT: set proper address in production
-                  rpcUrls:  [ "https://207.154.255.139/" ]
+                  rpcUrls: ["https://207.154.255.139/"]
                 }
 
-              await ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: walletParams
-              });
-            } catch (addError) {
-              Vue.$toast.error("Error while adding network");
-            }
+                await ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [walletParams]
+                });
+              } catch (addError) {
+                Vue.$toast.error("Error while adding network");
+              }
+            } 
           }
           Vue.$toast.error("Error while switching network");
         }

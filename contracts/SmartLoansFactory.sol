@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./interfaces/IAssetsExchange.sol";
+import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
@@ -15,7 +16,7 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
  * and could be authorised to access the lending pool.
  *
  */
-contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
+contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
   modifier oneLoanPerOwner() {
     require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
     _;
@@ -56,15 +57,17 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner returns (SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(
-      payable(address(upgradeableBeacon)),
-      ""
-    );
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
+      abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
+
     //Update registry and emit event
     updateRegistry(smartLoan);
 
-    smartLoan.initialize{value: msg.value}(assetsExchange, pool, _initialDebt);
+    //Fund account with own funds and credit
+    smartLoan.fund{value: msg.value}();
+
+    proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
 
     smartLoan.transferOwnership(msg.sender);
 
