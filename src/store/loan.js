@@ -170,14 +170,6 @@ export default {
         ] ]
       });
 
-      let smartLoanCreatedLog = loanFactory.iface.parseLog(factoryLogs.find(log => {
-        let parsed = loanFactory.iface.parseLog(log);
-        return parsed.args[0] === loan.address
-      }));
-
-      let initialCollateral = 0;
-      if (smartLoanCreatedLog.args[2] !== null) initialCollateral = fromWei(smartLoanCreatedLog.args[2]);
-
       let logs = await provider.getLogs({
         fromBlock: rootState.pool.deploymentBlock,
         address: loan.address,
@@ -193,7 +185,7 @@ export default {
 
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 
-      commit('setCollateralFromPayments', initialCollateral + collateralFromPayments);
+      commit('setCollateralFromPayments', collateralFromPayments);
       commit('setLoanEvents', loanEvents);
     },
     async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {

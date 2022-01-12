@@ -19,7 +19,7 @@ export default {
       ])
     },
     async updateAvaxPrice({ commit }) {
-      const avaxPrice = (await redstone.getPrice("AVAX")).value;
+      const avaxPrice = (await redstone.getPrice("AVAX", { provider: 'redstone-avalanche'})).value;
         commit('setAvaxPrice', avaxPrice);
     }
   }

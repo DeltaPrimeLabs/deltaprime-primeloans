@@ -8,9 +8,9 @@
     <div class="ltv">LTC: <b>{{LTVInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
-        :min="0"
+        :min="calculatedLTV(balance)"
         :max="ltv"
-        :value="calculatedLTV"
+        :value="calculatedLTV(fundValue)"
         :step="0.001"
         v-on:input="updateFundFromLTV"
         :validators="ltvValidators"
@@ -76,28 +76,31 @@ import {mapActions, mapState} from "vuex";
       },
       updateFundFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.fundValue = parseFloat(((this.debt * ( 1 / ltv + 1) - this.totalValue)).toFixed(2));
+        this.fundValue = parseFloat(((this.debt * ( 1 / ltv + 1) - this.totalValue)).toFixed(4));
+        if (this.fundValue < 0) {
+          this.fundValue = 0;
+        }
       },
       checkLTV(value) {
         this.errors[2] = value > this.maxLTV;
         this.errors = [...this.errors];
+      },
+      calculatedLTV(fund) {
+        if (fund) {
+          return (this.debt) / (this.totalValue - this.debt + fund);
+        } else {
+          return this.ltv;
+        }
       }
     },
     computed: {
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
       ...mapState('network', ['balance']),
-      calculatedLTV() {
-        if (this.fundValue) {
-          return (this.debt) / (this.totalValue - this.debt + this.fundValue);
-        } else {
-          return this.ltv;
-        }
-      },
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.debt;
       },
       LTVInfo() {
-        return this.$options.filters.percent(this.calculatedLTV);
+        return this.$options.filters.percent(this.calculatedLTV(this.fundValue));
       }
     }
   }

@@ -116,6 +116,13 @@
           }
         );
 
+        dataPoints.unshift(
+            {
+              x: dataPoints[0].x - 1,
+              y: 0
+            }
+        )
+
         dataPoints.push(
           {
             x: Date.now(),

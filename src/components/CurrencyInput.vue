@@ -3,7 +3,7 @@
     <div class="input-wrapper"
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
-      <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
+      <input type="number" ref="input" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
       <div class="converted">
         <div v-if="value && (value !== 0)">
           ~ {{ (price ? price : avaxPrice) * value | usd}}
