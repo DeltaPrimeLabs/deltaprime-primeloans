@@ -9,7 +9,7 @@
   </Banner>
   <div class="top-bar">
     <router-link to="/">
-      <img src="src/assets/icons/delta-prime-logo.svg" class="logo">
+      <img src="src/assets/icons/deltaprime.svg" class="logo">
     </router-link>
     <Navbar></Navbar>
     <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>

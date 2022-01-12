@@ -11,7 +11,7 @@
       <Slider
         :min="0"
         :max="ltv"
-        :value="calculatedLTV"
+        :value="calculatedLTV(repayValue)"
         :step="0.001"
         v-on:input="updateRepayFromLTV"
         :validators="ltvValidators"
@@ -62,7 +62,7 @@ import {mapActions, mapState} from "vuex";
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkLTV(this.calculatedLTV);
+        this.checkLTV(this.calculatedLTV(this.repayValue));
       },
       async submit() {
         if (!this.disabled) {
@@ -76,30 +76,36 @@ import {mapActions, mapState} from "vuex";
       },
       updateRepayFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.repayValue = parseFloat((this.debt - ltv * (this.totalValue - this.debt)).toFixed(2));
+        this.repayValue = parseFloat((this.debt - ltv * (this.totalValue - this.debt)).toFixed(4));
+        if (this.repayValue > this.debt) {
+          this.repayValue = this.debt;
+        }
+        if (this.repayValue < 0) {
+          this.repayValue = 0;
+        }
       },
       checkLTV(value) {
         this.errors[2] = value > this.maxLTV;
         this.errors = [...this.errors];
+      },
+      calculatedLTV(repay) {
+        if (repay) {
+          return (this.debt - repay) / (this.totalValue - this.debt);
+        } else {
+          return this.ltv;
+        }
       }
     },
     computed: {
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
-      calculatedLTV() {
-        if (this.repayValue) {
-          return (this.debt - this.repayValue) / (this.totalValue - this.debt);
-        } else {
-          return this.ltv;
-        }
-      },
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.debt;
       },
       LTVInfo() {
-        if (this.calculatedLTV === Number.POSITIVE_INFINITY) {
+        if (this.calculatedLTV(this.repayValue) === Number.POSITIVE_INFINITY) {
           return 'Loan fully repaid'
         } else {
-          return `LTC: <b>${this.$options.filters.percent(this.calculatedLTV)}</b>`;
+          return `LTC: <b>${this.$options.filters.percent(this.calculatedLTV(this.repayValue))}</b>`;
         }
       }
     }
