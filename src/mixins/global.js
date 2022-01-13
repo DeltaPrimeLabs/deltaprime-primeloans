@@ -24,11 +24,23 @@ export default {
       return parseInt(hex, 16);
     },
     async handleTransaction(fun, args) {
-      try {
-        await fun(args);
-        Vue.$toast.success('Transaction success');
-      } catch(error) {
-        Vue.$toast.error(error.message ? error.message : error);
+      if (this.isAvalancheChain) {
+        try {
+          const tx = await fun(args);
+          await provider.waitForTransaction(tx.hash);
+          Vue.$toast.success('Transaction success');
+        } catch (err) {
+          const fullMessage = JSON.parse(err.error.error.body).error.message;
+          const error = fullMessage.split(fullMessage.indexOf(':') + 1);
+          Vue.$toast.error(error);
+        }
+      } else {
+        try {
+          await fun(args);
+          Vue.$toast.success('Transaction success');
+        } catch(error) {
+          Vue.$toast.error(error.message ? error.message : error);
+        }
       }
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
@@ -88,6 +100,9 @@ export default {
     },
     maxLTV() {
       return config.MAX_LTV;
+    },
+    async isAvalancheChain() {
+      return [43113, 43114].includes(config.chainId);
     }
   },
   data() {
