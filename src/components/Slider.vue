@@ -103,6 +103,9 @@ export default {
   },
   watch: {
     value(newValue) {
+      if (newValue > this.max) {
+        newValue = this.max;
+      }
       this.onChange(newValue);
       this.currentValue = newValue;
     },

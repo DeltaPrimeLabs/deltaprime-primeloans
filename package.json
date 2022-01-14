@@ -16,7 +16,7 @@
     "test-local:deprecated": "yarn hardhat test test/deprecated/*/*",
     "test-integration": "yarn hardhat test test/integration/* --network hardhat-integration",
     "forked-test-node": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
-    "migrate:local": "npx truffle migrate --network local",
+    "migrate:local": "npx truffle compile --all && npx truffle migrate --network local",
     "migrate:server": "npx truffle migrate --network server",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",

@@ -10,7 +10,7 @@
       <Slider
         :min="ltv"
         :max="maxLTV"
-        :value="calculatedLTV"
+        :value="calculatedLTV(this.withdrawValue)"
         :step="0.001"
         v-on:input="updateWithdrawFromLTV"
         :validators="ltvValidators"
@@ -46,8 +46,8 @@ import {mapActions, mapState} from "vuex";
         label: '',
         withdrawValidators: [
           {
-            require: (value) => value <= this.balance,
-            message: 'Withdraw amount exceeds user balance'
+            require: (value) => value <= this.loanBalance,
+            message: 'Withdraw amount exceeds current loan AVAX balance'
           }
         ],
       }
@@ -59,7 +59,7 @@ import {mapActions, mapState} from "vuex";
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkLTV(this.calculatedLTV);
+        this.checkLTV(this.calculatedLTV(this.withdrawValue));
       },
       async submit() {
         if (!this.disabled) {
@@ -75,28 +75,34 @@ import {mapActions, mapState} from "vuex";
       },
       updateWithdrawFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.withdrawValue = parseFloat((this.totalValue - (this.debt * ( 1 / ltv + 1))).toFixed(2));
+        this.withdrawValue = parseFloat((this.totalValue - (this.debt * ( 1 / ltv + 1))).toFixed(4));
+        if (this.withdrawValue < 0) {
+          this.withdrawValue = 0;
+        }
       },
       checkLTV(value) {
         this.errors[2] = value > this.maxLTV;
         this.errors = [...this.errors];
-      }
-    },
-    computed: {
-      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
-      ...mapState('network', ['balance']),
-      calculatedLTV() {
-        if (this.withdrawValue) {
-          return this.debt / (this.totalValue - this.debt - this.withdrawValue);
+      },
+      calculatedLTV(withdraw) {
+        if (withdraw) {
+          return this.debt / (this.totalValue - this.debt - withdraw);
         } else {
           return this.ltv;
         }
-      },
+      }
+    },
+    computed: {
+      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanBalance']),
+      ...mapState('network', ['balance']),
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.debt;
       },
       ltvInfo() {
-        return this.$options.filters.percent(this.calculatedLTV);
+        return this.$options.filters.percent(this.calculatedLTV(this.withdrawValue));
+      },
+      maxLTVFromLoanBalance() {
+        return Math.min(this.maxLTV, this.calculatedLTV(this.loanBalance));
       }
     }
   }
