@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "./CompoundingIndex.sol";
@@ -32,6 +33,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   CompoundingIndex private depositIndex;
   CompoundingIndex private borrowIndex;
+
+  ERC721 private alphaAccessNFT;
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
@@ -75,6 +78,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
+  }
+
+  // Setting the address to a zero address removes the access lock.
+  function setAlphaAccessNFTAddress(address NFTAddress) external onlyOwner {
+    alphaAccessNFT = ERC721(NFTAddress);
   }
 
   /* ========== MUTATIVE FUNCTIONS ========== */
@@ -157,7 +165,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Deposits the message value
    * It updates user deposited balance, total deposited and rates
    **/
-  function deposit() external payable virtual nonReentrant {
+  function deposit() external payable virtual AlphaAccessNFTRequired nonReentrant {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
@@ -337,6 +345,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(totalSupply() != 0, "Cannot borrow from an empty pool");
     _;
     require((totalBorrowed() * 1e18) / totalSupply() <= MAX_POOL_UTILISATION_FOR_BORROWING, "The pool utilisation cannot be greater than 95%");
+  }
+
+  modifier AlphaAccessNFTRequired {
+    if(address(alphaAccessNFT) != address(0)) {
+      require(alphaAccessNFT.balanceOf(msg.sender) > 0, "You do not own the alpha access NFT.");
+    }
+    _;
   }
 
   /* ========== EVENTS ========== */

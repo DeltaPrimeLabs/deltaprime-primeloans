@@ -8,6 +8,7 @@ import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 /**
  * @title SmartLoansFactory
@@ -33,6 +34,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
   SmartLoan[] loans;
 
+  ERC721 private alphaAccessNFT;
+
   function initialize(Pool _pool, IAssetsExchange _assetsExchange) external initializer {
     pool = _pool;
     assetsExchange = _assetsExchange;
@@ -41,7 +44,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     upgradeableBeacon.transferOwnership(msg.sender);
   }
 
-  function createLoan() external oneLoanPerOwner returns (SmartLoan) {
+  function createLoan() external oneLoanPerOwner AlphaAccessNFTRequired returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
@@ -56,7 +59,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner returns (SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner AlphaAccessNFTRequired returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
@@ -74,6 +77,11 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     emit SmartLoanCreated(address(smartLoan), msg.sender, msg.value, _initialDebt);
 
     return smartLoan;
+  }
+
+  // Setting the address to a zero address removes the access lock.
+  function setAlphaAccessNFTAddress(address NFTAddress) external onlyOwner {
+    alphaAccessNFT = ERC721(NFTAddress);
   }
 
   function updateRegistry(SmartLoan loan) internal {
@@ -96,5 +104,12 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
   function getAllLoans() public view returns (SmartLoan[] memory) {
     return loans;
+  }
+
+  modifier AlphaAccessNFTRequired {
+    if(address(alphaAccessNFT) != address(0)) {
+      require(alphaAccessNFT.balanceOf(msg.sender) > 0, "You do not own the alpha access NFT.");
+    }
+    _;
   }
 }
