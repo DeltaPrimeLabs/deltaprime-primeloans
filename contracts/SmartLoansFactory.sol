@@ -3,12 +3,11 @@ pragma solidity ^0.8.4;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
+import "./abstract/NFTAccess.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 /**
  * @title SmartLoansFactory
@@ -17,7 +16,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * and could be authorised to access the lending pool.
  *
  */
-contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
+contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
   modifier oneLoanPerOwner() {
     require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
     _;
@@ -33,8 +32,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
   mapping(address => address) public loansToOwners;
 
   SmartLoan[] loans;
-
-  ERC721 private alphaAccessNFT;
 
   function initialize(Pool _pool, IAssetsExchange _assetsExchange) external initializer {
     pool = _pool;
@@ -79,11 +76,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     return smartLoan;
   }
 
-  // Setting the address to a zero address removes the access lock.
-  function setAlphaAccessNFTAddress(address NFTAddress) external onlyOwner {
-    alphaAccessNFT = ERC721(NFTAddress);
-  }
-
   function updateRegistry(SmartLoan loan) internal {
     ownersToLoans[msg.sender] = address(loan);
     loansToOwners[address(loan)] = msg.sender;
@@ -104,12 +96,5 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
   function getAllLoans() public view returns (SmartLoan[] memory) {
     return loans;
-  }
-
-  modifier AlphaAccessNFTRequired {
-    if(address(alphaAccessNFT) != address(0)) {
-      require(alphaAccessNFT.balanceOf(msg.sender) > 0, "You do not own the alpha access NFT.");
-    }
-    _;
   }
 }
