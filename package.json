@@ -20,7 +20,8 @@
     "migrate:server": "npx truffle migrate --network server",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",
-    "prettier": "prettier --write 'contracts/**/*.sol'"
+    "prettier": "prettier --write 'contracts/**/*.sol'",
+    "upload-file": "node tools/arweave/upload-to-arweave.js"
   },
   "dependencies": {
     "@growthbunker/vuetimeline": "^0.1.17",
@@ -28,6 +29,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
     "@uniswap/lib": "^4.0.1-alpha",
+    "arweave": "^1.10.23",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chart.js": "^2.9.4",
     "countup.js": "^2.0.7",
