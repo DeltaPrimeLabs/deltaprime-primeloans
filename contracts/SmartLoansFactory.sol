@@ -41,7 +41,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
     upgradeableBeacon.transferOwnership(msg.sender);
   }
 
-  function createLoan() external oneLoanPerOwner AlphaAccessNFTRequired returns (SmartLoan) {
+  function createLoan() external oneLoanPerOwner BorrowerNFTRequired returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
@@ -56,7 +56,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner AlphaAccessNFTRequired returns (SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner BorrowerNFTRequired returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));

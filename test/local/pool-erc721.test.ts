@@ -48,11 +48,11 @@ describe('Pool with NFT Alpha access', () => {
     });
 
     it("should fail to set the access NFT address", async () => {
-        await expect(sut.connect(user2).setAlphaAccessNFTAddress(nftAccess.address)).to.be.revertedWith("Ownable: caller is not the owner");
+        await expect(sut.connect(user2).setBorrowerAccessNFT(nftAccess.address)).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("should set the access NFT address", async () => {
-        await sut.connect(owner).setAlphaAccessNFTAddress(nftAccess.address);
+        await sut.connect(owner).setBorrowerAccessNFT(nftAccess.address);
     });
 
     it("should fail to deposit requested value without the access NFT", async () => {

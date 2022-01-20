@@ -2,13 +2,13 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
+import "./abstract/NFTAccess.sol";
 
 /**
  * @title SmartLoan
@@ -18,7 +18,7 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable, NFTAccess {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -136,7 +136,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
   * @dev This function uses the redstone-evm-connector
   **/
-  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
+  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation LiquidatorNFTRequired {
     require(!isSolvent(), "Cannot sellout a solvent account");
 
     uint256 debt = getDebt();

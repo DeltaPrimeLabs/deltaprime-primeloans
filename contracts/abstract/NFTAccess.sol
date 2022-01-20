@@ -5,16 +5,42 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 abstract contract NFTAccess is OwnableUpgradeable {
-    ERC721 private alphaAccessNFT;
+    ERC721 private borrowerAccessNFT;
+    ERC721 private depositorAccessNFT;
+    ERC721 private liquidatorAccessNFT;
 
     // Setting the address to a zero address removes the access lock.
-    function setAlphaAccessNFTAddress(address NFTAddress) external onlyOwner {
-        alphaAccessNFT = ERC721(NFTAddress);
+    function setBorrowerAccessNFT(ERC721 nftAddress) external onlyOwner {
+        borrowerAccessNFT = nftAddress;
     }
 
-    modifier AlphaAccessNFTRequired {
-        if(address(alphaAccessNFT) != address(0)) {
-            require(alphaAccessNFT.balanceOf(msg.sender) > 0, "You do not own the alpha access NFT.");
+    // Setting the address to a zero address removes the access lock.
+    function setDepositorAccessNFT(ERC721 nftAddress) external onlyOwner {
+        depositorAccessNFT = nftAddress;
+    }
+
+    // Setting the address to a zero address removes the access lock.
+    function setLiquidatorAccessNFT(ERC721 nftAddress) external onlyOwner {
+        liquidatorAccessNFT = nftAddress;
+    }
+
+    modifier BorrowerNFTRequired {
+        if(address(borrowerAccessNFT) != address(0)) {
+            require(borrowerAccessNFT.balanceOf(msg.sender) > 0, "Borrower NFT required.");
+        }
+        _;
+    }
+
+    modifier DepositorNFTRequired {
+        if(address(depositorAccessNFT) != address(0)) {
+            require(depositorAccessNFT.balanceOf(msg.sender) > 0, "Depositor NFT required.");
+        }
+        _;
+    }
+
+    modifier LiquidatorNFTRequired {
+        if(address(liquidatorAccessNFT) != address(0)) {
+            require(liquidatorAccessNFT.balanceOf(msg.sender) > 0, "Liquidator NFT required.");
         }
         _;
     }

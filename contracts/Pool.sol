@@ -157,7 +157,7 @@ contract Pool is ReentrancyGuardUpgradeable, IERC20, NFTAccess {
    * Deposits the message value
    * It updates user deposited balance, total deposited and rates
    **/
-  function deposit() external payable virtual AlphaAccessNFTRequired nonReentrant {
+  function deposit() external payable virtual nonReentrant DepositorNFTRequired {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
