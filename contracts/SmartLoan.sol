@@ -136,7 +136,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable, NFTAcce
   /**
   * @dev This function uses the redstone-evm-connector
   **/
-  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation LiquidatorNFTRequired {
+  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation hasLiquidatorNFT {
     require(!isSolvent(), "Cannot sellout a solvent account");
 
     uint256 debt = getDebt();
