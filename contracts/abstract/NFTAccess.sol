@@ -26,21 +26,21 @@ abstract contract NFTAccess is OwnableUpgradeable {
 
     modifier BorrowerNFTRequired {
         if(address(borrowerAccessNFT) != address(0)) {
-            require(borrowerAccessNFT.balanceOf(msg.sender) > 0, "Borrower NFT required.");
+            require(borrowerAccessNFT.balanceOf(msg.sender) > 0, "Borrower NFT required");
         }
         _;
     }
 
     modifier DepositorNFTRequired {
         if(address(depositorAccessNFT) != address(0)) {
-            require(depositorAccessNFT.balanceOf(msg.sender) > 0, "Depositor NFT required.");
+            require(depositorAccessNFT.balanceOf(msg.sender) > 0, "Depositor NFT required");
         }
         _;
     }
 
     modifier LiquidatorNFTRequired {
         if(address(liquidatorAccessNFT) != address(0)) {
-            require(liquidatorAccessNFT.balanceOf(msg.sender) > 0, "Liquidator NFT required.");
+            require(liquidatorAccessNFT.balanceOf(msg.sender) > 0, "Liquidator NFT required");
         }
         _;
     }
