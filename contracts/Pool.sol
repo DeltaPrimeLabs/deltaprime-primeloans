@@ -75,6 +75,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
+    emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
   }
 
   /* ========== MUTATIVE FUNCTIONS ========== */
@@ -380,4 +381,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @param timestamp of the interest accumulation
    **/
   event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
+
+  /**
+  * @dev emitted after changing borrowers registry
+  * @param registry an address of the newly set borrowers registry
+  * @param timestamp of the borrowers registry change
+  **/
+  event BorrowersRegistryChanged(address indexed registry, uint256 timestamp);
 }

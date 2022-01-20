@@ -68,8 +68,8 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
     address tokenAddress = getAssetAddress(_token);
     IERC20 token = IERC20(tokenAddress);
-    token.approve(address(pangolinRouter), 0);
-    token.approve(address(pangolinRouter), _exactERC20AmountIn);
+    address(token).safeApprove(address(pangolinRouter), 0);
+    address(token).safeApprove(address(pangolinRouter), _exactERC20AmountIn);
 
     (bool success, ) = address(pangolinRouter).call{value: 0}(
       abi.encodeWithSignature("swapExactTokensForAVAX(uint256,uint256,address[],address,uint256)", _exactERC20AmountIn, _minAvaxAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp)
