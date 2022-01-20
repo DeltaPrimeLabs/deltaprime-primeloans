@@ -68,6 +68,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
     address tokenAddress = getAssetAddress(_token);
     IERC20 token = IERC20(tokenAddress);
+    token.approve(address(pangolinRouter), 0);
     token.approve(address(pangolinRouter), _exactERC20AmountIn);
 
     (bool success, ) = address(pangolinRouter).call{value: 0}(
