@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 abstract contract NFTAccess is OwnableUpgradeable {
     ERC721 private borrowerAccessNFT;
     ERC721 private depositorAccessNFT;
-    ERC721 private liquidatorAccessNFT;
 
     // Setting the address to a zero address removes the access lock.
     function setBorrowerAccessNFT(ERC721 nftAddress) external onlyOwner {
@@ -17,11 +16,6 @@ abstract contract NFTAccess is OwnableUpgradeable {
     // Setting the address to a zero address removes the access lock.
     function setDepositorAccessNFT(ERC721 nftAddress) external onlyOwner {
         depositorAccessNFT = nftAddress;
-    }
-
-    // Setting the address to a zero address removes the access lock.
-    function setLiquidatorAccessNFT(ERC721 nftAddress) external onlyOwner {
-        liquidatorAccessNFT = nftAddress;
     }
 
     modifier hasBorrowerNFT {
@@ -34,13 +28,6 @@ abstract contract NFTAccess is OwnableUpgradeable {
     modifier hasDepositorNFT {
         if(address(depositorAccessNFT) != address(0)) {
             require(depositorAccessNFT.balanceOf(msg.sender) > 0, "Depositor NFT required");
-        }
-        _;
-    }
-
-    modifier hasLiquidatorNFT {
-        if(address(liquidatorAccessNFT) != address(0)) {
-            require(liquidatorAccessNFT.balanceOf(msg.sender) > 0, "Liquidator NFT required");
         }
         _;
     }

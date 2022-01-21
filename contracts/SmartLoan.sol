@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
-import "./abstract/NFTAccess.sol";
 
 /**
  * @title SmartLoan
@@ -18,7 +18,7 @@ import "./abstract/NFTAccess.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable, NFTAccess {
+contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -136,7 +136,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable, NFTAcce
   /**
   * @dev This function uses the redstone-evm-connector
   **/
-  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation hasLiquidatorNFT {
+  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
     require(!isSolvent(), "Cannot sellout a solvent account");
 
     uint256 debt = getDebt();
