@@ -47,12 +47,12 @@ describe('Pool with ERC721 Alpha access', () => {
         expect(fromWei(currentDeposits)).to.equal(1);
     });
 
-    it("should fail to set the depositor access ERC721 address", async () => {
-        await expect(sut.connect(user2).setDepositorAccessNFT(nftContract.address)).to.be.revertedWith("Ownable: caller is not the owner");
+    it("should fail to set the access ERC721 address", async () => {
+        await expect(sut.connect(user2).setAccessNFT(nftContract.address)).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
-    it("should set the depositor access ERC721 address", async () => {
-        await sut.connect(owner).setDepositorAccessNFT(nftContract.address);
+    it("should set the access ERC721 address", async () => {
+        await sut.connect(owner).setAccessNFT(nftContract.address);
     });
 
     it("should fail to deposit requested value without the depositor access ERC721", async () => {
