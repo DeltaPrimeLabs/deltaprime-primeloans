@@ -75,6 +75,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
+    emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
   }
 
   /* ========== MUTATIVE FUNCTIONS ========== */
@@ -189,7 +190,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * It updates user borrowed balance, total borrowed amount and rates
    * @dev _amount the amount to be borrowed
    **/
-  function borrow(uint256 _amount) external payable canBorrow nonReentrant {
+  function borrow(uint256 _amount) external canBorrow nonReentrant {
     require(address(this).balance >= _amount);
 
     _accumulateBorrowingInterest(msg.sender);
@@ -380,4 +381,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @param timestamp of the interest accumulation
    **/
   event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
+
+  /**
+  * @dev emitted after changing borrowers registry
+  * @param registry an address of the newly set borrowers registry
+  * @param timestamp of the borrowers registry change
+  **/
+  event BorrowersRegistryChanged(address indexed registry, uint256 timestamp);
 }
