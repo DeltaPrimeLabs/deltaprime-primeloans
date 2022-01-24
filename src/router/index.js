@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import Pool from '@/pages/Pool'
 import Loan from '@/pages/Loan'
 import Admin from '@/pages/Admin'
+import Mint from "@/pages/Mint";
 
 
 Vue.use(Router)
@@ -24,6 +25,11 @@ export default new Router({
       path: '/admin',
       name: 'Admin',
       component: Admin
+    },
+    {
+      path: '/mint',
+      name: 'Mint',
+      component: Mint
     },
     {
       path: '*',
