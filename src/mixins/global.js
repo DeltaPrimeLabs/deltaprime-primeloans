@@ -27,7 +27,7 @@ export default {
     async handleTransaction(fun, args) {
       if (this.isAvalancheChain) {
         try {
-          const tx = await fun(args);
+          const tx = await Array.isArray(args) ? fun(...args) : fun(args);
           await provider.waitForTransaction(tx.hash);
           Vue.$toast.success('Transaction success');
         } catch (err) {
@@ -37,10 +37,13 @@ export default {
         }
       } else {
         try {
-          await fun(args);
+          Array.isArray(args) ? await fun(...args) : await fun(args);
           Vue.$toast.success('Transaction success');
         } catch(error) {
-          Vue.$toast.error(error.message ? error.message : error);
+          let message = error.data.message ? error.data.message : error;
+          message = message.replace("Error: VM Exception while processing transaction: reverted with reason string ", "");
+          message = message.substring(1, message.length - 1);
+          Vue.$toast.error(message);
         }
       }
     },
@@ -102,7 +105,7 @@ export default {
     maxLTV() {
       return config.MAX_LTV;
     },
-    async isAvalancheChain() {
+    isAvalancheChain() {
       return [43113, 43114].includes(config.chainId);
     }
   },

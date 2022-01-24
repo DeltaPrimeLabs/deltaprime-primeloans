@@ -145,8 +145,6 @@
 }
 
 .title {
-  font-size: $font-size-xl;
-  font-weight: bold;
   margin-bottom: 20px;
 }
 
