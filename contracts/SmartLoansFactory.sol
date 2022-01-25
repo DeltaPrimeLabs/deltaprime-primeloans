@@ -39,6 +39,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
     SmartLoan smartLoanImplementation = new SmartLoan();
     upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
     upgradeableBeacon.transferOwnership(msg.sender);
+    __Ownable_init();
   }
 
   function createLoan() external oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
