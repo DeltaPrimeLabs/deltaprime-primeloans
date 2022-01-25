@@ -11,9 +11,10 @@
         :secondary="{value: avaxToUSD(totalSupply), type: 'usd'}" />
     </Bar>
     <InfoBubble
-      text="Deposit your AVAX in a pool and get interest rates. <br/>
-        Your deposits will be available for others to borrow."
-      cacheKey="DEPOSIT-INFO"/>
+      cacheKey="DEPOSIT-INFO">
+      "Deposit your AVAX in a pool and get interest rates. <br/>
+      Your deposits will be available for others to borrow."
+    </InfoBubble>
     <Block class="block" :bordered="true">
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
