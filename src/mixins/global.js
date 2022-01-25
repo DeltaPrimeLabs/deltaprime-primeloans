@@ -5,6 +5,7 @@ import { Contract } from "ethers";
 import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
 import EXCHANGE from '@contracts/PangolinExchange.json'
 import {parseUnits, formatUnits} from "../utils/calculate";
+import {parseArweaveURI} from "../utils/blockchain";
 
 export default {
   methods: {
@@ -24,26 +25,30 @@ export default {
     toDec(hex) {
       return parseInt(hex, 16);
     },
-    async handleTransaction(fun, args) {
+    async handleTransaction(fun, args, onSuccess, onFail) {
       if (this.isAvalancheChain) {
         try {
-          const tx = await Array.isArray(args) ? fun(...args) : fun(args);
+          const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
           await provider.waitForTransaction(tx.hash);
           Vue.$toast.success('Transaction success');
+          if (onSuccess) onSuccess();
         } catch (err) {
           const fullMessage = JSON.parse(err.error.error.body).error.message;
           const error = fullMessage.split(fullMessage.indexOf(':') + 1);
           Vue.$toast.error(error);
+          if (onFail) onFail();
         }
       } else {
         try {
           Array.isArray(args) ? await fun(...args) : await fun(args);
           Vue.$toast.success('Transaction success');
+          if (onSuccess) onSuccess();
         } catch(error) {
-          let message = error.data.message ? error.data.message : error;
+          let message = error.data ? error.data.message : (error.message ? error.message : error);
           message = message.replace("Error: VM Exception while processing transaction: reverted with reason string ", "");
-          message = message.substring(1, message.length - 1);
+          message = message.replace("'", "");
           Vue.$toast.error(message);
+          if (onFail) onFail();
         }
       }
     },
@@ -94,6 +99,9 @@ export default {
       } else {
         return 0;
       }
+    },
+    parseArweaveAddress(uri) {
+      return parseArweaveURI(uri);
     }
   },
   computed: {

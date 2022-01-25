@@ -46,7 +46,9 @@
           </div>
       </div>
     </Bar>
-    <InfoBubble v-if="!borrowBlock && !collateralBlock" :text="loanInfo" cacheKey="LOAN-INFO"/>
+    <InfoBubble v-if="!borrowBlock && !collateralBlock" cacheKey="LOAN-INFO">
+      {{ loanInfo }}
+    </InfoBubble>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
       <Tabs :openTabIndex="tabIndex">

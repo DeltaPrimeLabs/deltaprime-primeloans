@@ -2,7 +2,7 @@
   <div class="navbar">
     <div class="links-wrapper" :class="{'mobile': isMobile}">
       <router-link to="/pool"><span title="Pool">Pool</span></router-link>
-      <router-link to="/loan"><span title="Loan">Loan</span></router-link>
+      <router-link to="/loan"><span title="Prime Account">Prime Account</span></router-link>
     </div>
   </div>
 </template>
@@ -44,6 +44,10 @@ a {
   width: 140px;
   display: inline-block;
   color: #696969;
+
+  &:nth-of-type(2) {
+    width: 180px;
+  }
 }
 
 a:not(.router-link-active):hover {

@@ -2,7 +2,8 @@
   <div class="info-bubble-wrapper" v-if="shouldShow">
     <div class="info-bubble">
       <img src="src/assets/icons/info.svg" class="info"/>
-      <div v-html="text" class="text">
+      <div class="text">
+        <slot></slot>
       </div>
       <img src="src/assets/icons/cross.svg" class="cross" v-if="cacheKey" @click="hide">
     </div>
@@ -14,7 +15,6 @@
   export default {
     name: 'InfoBubble',
     props: {
-      text: '',
       cacheKey: '',
       hidden: false
     },
@@ -64,6 +64,11 @@
     .cross {
       align-self: flex-start;
       cursor: pointer;
+    }
+
+    a {
+      color: #7d7d7d;
+      font-weight: 600;
     }
   }
 }

@@ -1,5 +1,6 @@
 <template>
   <div class="init-loan-form-wrapper">
+    <div class="overlay" v-if="!hasBorrowNft"></div>
     <div class="title">Collateral</div>
     <CurrencyInput
       v-on:newValue="updateCollateral"
@@ -75,6 +76,7 @@
     },
     computed: {
       ...mapState('network', ['balance']),
+      ...mapGetters('nft', ['hasBorrowNft']),
       ...mapGetters('pool', ['getAvailable']),
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.collateral;
@@ -113,11 +115,11 @@
           }
 
           this.handleTransaction(this.createNewLoan, {amount: this.loan, collateral: this.collateral})
-          .then(
-            () => {
-              this.waiting = false;
-            }
-          );
+            .then(
+              () => {
+                this.waiting = false;
+              }
+            );
         }
       },
       defaultLoan(value) {
@@ -162,6 +164,16 @@
 .ltv-slider {
   margin-bottom: 50px;
   width: 490px;
+}
+
+.overlay {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255,255,255,0.7);
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  border-radius: 22px;
 }
 </style>
 <style lang="scss">
