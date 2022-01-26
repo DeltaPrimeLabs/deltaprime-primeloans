@@ -29,6 +29,10 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
         }
     }
 
+    function getAvailableUris() external view returns(string[] memory) {
+        return availableUris;
+    }
+
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
     }
@@ -59,7 +63,7 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
         return super.supportsInterface(interfaceId);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPausedMintingExemption(from) override {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPausedMintingExemption(from) override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
