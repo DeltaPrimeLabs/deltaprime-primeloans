@@ -56,15 +56,12 @@ describe('Pool with ERC721 Alpha access', () => {
     });
 
     it("should fail to deposit requested value without the depositor access ERC721", async () => {
-        await expect(sut.deposit({value: toWei("1.0")})).to.be.revertedWith("Depositor NFT required");
-    });
-
-    it("should fail to mint the depositor access ERC721", async () => {
-        await expect(nftContract.connect(user2).safeMint(owner.address)).to.be.revertedWith("Ownable: caller is not the owner");
+        await expect(sut.deposit({value: toWei("1.0")})).to.be.revertedWith("Access NFT required");
     });
 
     it("should mint the depositor access ERC721", async () => {
-        await nftContract.connect(owner).safeMint(owner.address);
+        await nftContract.connect(owner).addAvailableUri(["uri_1", "uri_2"]);
+        await nftContract.connect(owner).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
         expect(await nftContract.balanceOf(owner.address)).to.be.equal(1);
     });
 

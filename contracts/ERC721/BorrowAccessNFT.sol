@@ -12,9 +12,9 @@ contract BorrowAccessNFT is ERC721, ERC721URIStorage, Pausable, Ownable, ECDSAVe
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
-    mapping(string => address) discordIds;
+    mapping(string => address) accessTokens;
     string[] availableUris;
-    address constant discordTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
+    address constant accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
 
     constructor() ERC721("DeltaPrimeBorrowAccess", "DP-01") {}
 
@@ -40,26 +40,26 @@ contract BorrowAccessNFT is ERC721, ERC721URIStorage, Pausable, Ownable, ECDSAVe
         _unpause();
     }
 
-    function safeMint(string memory discordId, bytes memory signature) public returns (uint256) {
-        require(verifyMessage(discordTrustedSigner, discordId, signature), "Signer not authorized");
-        require(discordIds[discordId] == address(0), "Only one NFT per one discord user is allowed");
+    function safeMint(string memory accessToken, bytes memory signature) public returns (uint256) {
+        require(verifyMessage(accessTokenTrustedSigner, accessToken, signature), "Signer not authorized");
+        require(accessTokens[accessToken] == address(0), "Only one NFT per one user is allowed");
         require(availableUris.length > 0, "All available NFTs were already minted");
 
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        discordIds[discordId] = _msgSender();
+        accessTokens[accessToken] = _msgSender();
         _safeMint(_msgSender(), tokenId);
         _setTokenURI(tokenId, availableUris[availableUris.length-1]);
         availableUris.pop();
         return tokenId;
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPausedOwnerExemption override {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPausedMintingExemption(from) override {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    modifier whenNotPausedOwnerExemption {
-        if(_msgSender() != owner()) {
+    modifier whenNotPausedMintingExemption(address from) {
+        if(from != address(0)) {
             require(!paused(), "Pausable: paused");
         }
         _;

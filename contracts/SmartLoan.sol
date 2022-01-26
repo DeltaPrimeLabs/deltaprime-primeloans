@@ -250,13 +250,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
-
     bytes32[] memory assets = exchange.getAllAssets();
-
     uint256[] memory prices = getPricesFromMsg(assets);
-
     uint256 avaxPrice = prices[0];
-
     require(avaxPrice != 0, "Avax price returned from oracle is zero");
 
     for (uint256 i = 1; i < prices.length; i++) {

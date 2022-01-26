@@ -9,6 +9,7 @@ import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
+import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   fromWei,
@@ -30,7 +31,8 @@ import {
   MockSmartLoanRedstoneProvider__factory,
   MockUpgradedSmartLoan__factory,
   UpgradeableBeacon,
-  SmartLoansFactory
+  SmartLoansFactory,
+  BorrowAccessNFT
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -52,11 +54,26 @@ const erc20ABI = [
   'function approve(address _spender, uint256 _value) public returns (bool success)',
   'function allowance(address owner, address spender) public view returns (uint256)'
 ]
+const MOCK_AVAX_PRICE = 100000;
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
     await syncTime();
   });
+
+  function getMockPrices(usdPrice: BigNumber): Array<{symbol: string, value: number}> {
+    return [
+      {
+        symbol: 'USD',
+        value: MOCK_AVAX_PRICE * fromWei(usdPrice)
+      },
+      {
+        symbol: 'AVAX',
+        value: MOCK_AVAX_PRICE
+      }
+    ]
+  }
+
 
   describe('A loan without debt', () => {
     let exchange: PangolinExchange,
@@ -253,8 +270,6 @@ describe('Smart loan',  () => {
 
   });
 
-
-    //ten test rozwala closeLoan
   describe('A loan with debt and repayment', () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
@@ -641,7 +656,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 30000;
+      let investedAmount = 10000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -652,7 +667,7 @@ describe('Smart loan',  () => {
 
       let balances = await wrappedLoan.getAllAssetsBalances();
       const currentUSDTokenBalance = balances[1];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("30000", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("10000", usdTokenDecimalPlaces));
     });
 
 
@@ -1195,7 +1210,7 @@ describe('Smart loan',  () => {
     });
   });
 
-    describe('A loan with extra AVAX repayment', () => {
+  describe('A loan with extra AVAX repayment', () => {
         let exchange: PangolinExchange,
             loan: MockSmartLoanRedstoneProvider,
             smartLoansFactory: SmartLoansFactory,
@@ -1362,5 +1377,110 @@ describe('Smart loan',  () => {
             expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(fromWei(expectedOwnerAvaxBalance), 1);
         });
     });
+
+  describe('A loan with an access NFT', () => {
+    let exchange: PangolinExchange,
+        smartLoansFactory: SmartLoansFactory,
+        nftContract: Contract,
+        pool: Pool,
+        owner: SignerWithAddress,
+        depositor: SignerWithAddress,
+        usdTokenContract: Contract,
+        linkTokenContract: Contract,
+        usdTokenDecimalPlaces: BigNumber,
+        linkTokenDecimalPlaces: BigNumber,
+        MOCK_PRICES: any,
+        AVAX_PRICE: number,
+        LINK_PRICE: number,
+        USD_PRICE: number,
+        beacon: UpgradeableBeacon;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+      nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
+          [
+            new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
+            new Asset(toBytes32('USD'), usdTokenAddress)
+          ]);
+
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      linkTokenDecimalPlaces = await linkTokenContract.decimals();
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.connect(depositor).deposit({value: toWei("1000")});
+
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(pool.address, exchange.address);
+
+      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
+      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
+      const mockSmartLoan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
+      await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
+    });
+
+    it("should fail to create a loan withouth the access NFT", async () => {
+      await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("Access NFT required");
+      await expect(smartLoansFactory.connect(owner).createAndFundLoan(2137)).to.be.revertedWith("Access NFT required");
+    });
+
+    it("should mint the borrower access ERC721", async () => {
+      await nftContract.connect(owner).addAvailableUri(["uri_1", "uri_2"]);
+      await nftContract.connect(owner).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
+      await nftContract.connect(depositor).safeMint("700052663748001973", "0x03eda92dd1684ecfde8c5cefceb75326aad40977430849161bee9627cafa5bb43911440abe7977f3354b25ef3a1058e1332a0b414abcaf7ef960ebab37fb6a671c");
+      expect(await nftContract.balanceOf(owner.address)).to.be.equal(1);
+      expect(await nftContract.balanceOf(depositor.address)).to.be.equal(1);
+    });
+
+    it("should create a loan with the access NFT", async () => {
+      const wrappedSmartLoansFactory = WrapperBuilder
+          .mockLite(smartLoansFactory.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+
+      await wrappedSmartLoansFactory.createAndFundLoan(toWei("2"), {value: toWei("0.400000001")});
+
+      await wrappedSmartLoansFactory.connect(owner).createLoan();
+
+      const loan_proxy_address_owner = await smartLoansFactory.getLoanForOwner(owner.address);
+      const loan_proxy_address_depositor = await smartLoansFactory.getLoanForOwner(depositor.address);
+
+      expect(loan_proxy_address_owner).to.be.not.equal(ZERO);
+      expect(loan_proxy_address_depositor).to.be.not.equal(ZERO);
+    });
+  });
 });
 
