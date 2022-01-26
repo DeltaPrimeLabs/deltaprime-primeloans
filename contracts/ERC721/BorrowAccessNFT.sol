@@ -15,12 +15,17 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
     Counters.Counter private _tokenIdCounter;
     mapping(string => address) accessTokens;
     string[] availableUris;
-    address constant accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
+    address accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
 
     constructor() ERC721("DeltaPrimeBorrowAccess", "DP-01") {}
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         super._burn(tokenId);
+    }
+
+    function setTrustedSigner(address trustedSigner) external onlyOwner {
+        require(trustedSigner != address(0), "Trusted signer cannot be a zero address");
+        accessTokenTrustedSigner = trustedSigner;
     }
 
     function addAvailableUri(string[] memory _uris) external onlyOwner {
