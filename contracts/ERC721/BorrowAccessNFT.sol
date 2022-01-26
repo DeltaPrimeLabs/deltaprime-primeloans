@@ -2,13 +2,14 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../abstract/ECDSAVerify.sol";
 
-contract BorrowAccessNFT is ERC721, ERC721URIStorage, Pausable, Ownable, ECDSAVerify {
+contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ECDSAVerify {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -52,6 +53,10 @@ contract BorrowAccessNFT is ERC721, ERC721URIStorage, Pausable, Ownable, ECDSAVe
         _setTokenURI(tokenId, availableUris[availableUris.length-1]);
         availableUris.pop();
         return tokenId;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPausedMintingExemption(from) override {
