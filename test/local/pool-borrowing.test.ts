@@ -3,17 +3,22 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
+import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, CompoundingIndex} from "../../typechain";
+import {
+  VariableUtilisationRatesCalculator,
+  OpenBorrowersRegistry,
+  Pool,
+  DepositIndex,
+  BorrowingIndex
+} from "../../typechain";
 
 chai.use(solidity);
-
-const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
@@ -30,8 +35,8 @@ describe('Pool with variable utilisation interest rates', () => {
 
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
@@ -79,8 +84,8 @@ describe('Pool with variable utilisation interest rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
@@ -135,8 +140,8 @@ describe('Pool with variable utilisation interest rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
