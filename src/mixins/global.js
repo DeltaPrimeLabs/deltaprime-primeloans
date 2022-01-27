@@ -26,30 +26,36 @@ export default {
       return parseInt(hex, 16);
     },
     async handleTransaction(fun, args, onSuccess, onFail) {
-      if (this.isAvalancheChain) {
-        try {
-          const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
+      try {
+        const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
+        if (tx) {
           await provider.waitForTransaction(tx.hash);
-          Vue.$toast.success('Transaction success');
-          if (onSuccess) onSuccess();
-        } catch (err) {
-          const fullMessage = JSON.parse(err.error.error.body).error.message;
-          const error = fullMessage.split(fullMessage.indexOf(':') + 1);
-          Vue.$toast.error(error);
-          if (onFail) onFail();
         }
-      } else {
-        try {
-          Array.isArray(args) ? await fun(...args) : await fun(args);
-          Vue.$toast.success('Transaction success');
-          if (onSuccess) onSuccess();
-        } catch(error) {
-          let message = error.data ? error.data.message : (error.message ? error.message : error);
-          message = message.replace("Error: VM Exception while processing transaction: reverted with reason string ", "");
-          message = message.replace("'", "");
-          Vue.$toast.error(message);
-          if (onFail) onFail();
+
+        Vue.$toast.success('Transaction success');
+        if (onSuccess) onSuccess();
+      } catch (error) {
+        let message;
+        if (this.isAvalancheChain) {
+          message = JSON.parse(error.error.error.body).error.message;
+          message = message.split(message.indexOf(':') + 1);
+        } else {
+          message = error.data ? error.data.message : (error.message ? error.message : error);
         }
+
+        if (message.startsWith("[ethjs-query]")) {
+          if (message.includes("reason string")) {
+            message = message.split("reason string ")[1].split("\",\"data\":")[0];
+          } else {
+            message = message.split("\"message\":\"")[1].replace(".\"}}}\'", "")
+          }
+        }
+
+        message = message.replace("Error: VM Exception while processing transaction: reverted with reason string ", "");
+        message = message.replace(/'/g, '')
+
+        Vue.$toast.error(message);
+        if (onFail) onFail();
       }
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
