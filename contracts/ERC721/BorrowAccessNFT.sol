@@ -17,7 +17,7 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
     string[] availableUris;
     address accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
 
-    constructor() ERC721("DeltaPrimeBorrowAccess", "DP-01") {}
+    constructor() ERC721("DeltaPrimeBorrowAccess", "DP-BA") {}
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         super._burn(tokenId);
@@ -34,8 +34,12 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
         }
     }
 
-    function getAvailableUris() external view returns(string[] memory) {
-        return availableUris;
+    function getAvailableUri(uint256 index) external view returns(string memory) {
+        return availableUris[index];
+    }
+
+    function getAvailableUrisCount() external view returns(uint256) {
+        return availableUris.length;
     }
 
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
@@ -53,6 +57,7 @@ contract BorrowAccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable
     function safeMint(string memory accessToken, bytes memory signature) public returns (uint256) {
         require(verifyMessage(accessTokenTrustedSigner, accessToken, signature), "Signer not authorized");
         require(accessTokens[accessToken] == address(0), "Only one NFT per one user is allowed");
+        require(balanceOf(_msgSender()) == 0, "Only one NFT per one wallet is allowed");
         require(availableUris.length > 0, "All available NFTs were already minted");
 
         uint256 tokenId = _tokenIdCounter.current();
