@@ -4,16 +4,14 @@ import {solidity} from "ethereum-waffle";
 
 import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import OpenBorrowersRegistryArtifact
   from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
-import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../../typechain";
-import {CompoundingIndex__factory} from "../../../typechain";
+import {CompoundingIndex, FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../../typechain";
 
 chai.use(solidity);
-
-const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
@@ -31,8 +29,15 @@ describe('Pool with fixed interest rates', () => {
 
       fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
-      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          fixedRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
 
       await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
@@ -72,9 +77,16 @@ describe('Pool with fixed interest rates', () => {
       fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          fixedRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
       await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
 
@@ -121,8 +133,15 @@ describe('Pool with fixed interest rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
-      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          fixedRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
 

@@ -5,30 +5,38 @@ import {solidity} from "ethereum-waffle";
 import UtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
-import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
+import {CompoundingIndex, OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with utilisation interest rates', () => {
 
   describe('Deposit, borrow, wait & borrow more', () => {
     let pool: Pool,
+      owner: SignerWithAddress,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
       ratesCalculator: UtilisationRatesCalculator;
 
     before("Deploy Pool contract", async () => {
-      [borrower, depositor] = await getFixedGasSigners(10000000);
+      [owner, borrower, depositor] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(borrower, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
       pool = (await deployContract(borrower, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(borrower).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
 
     });
 

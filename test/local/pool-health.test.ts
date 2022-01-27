@@ -5,6 +5,7 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -14,7 +15,7 @@ import {
   Pool,
   VariableUtilisationRatesCalculator,
   DestructableContract,
-  OpenBorrowersRegistry,
+  OpenBorrowersRegistry, CompoundingIndex,
 } from "../../typechain";
 
 chai.use(solidity);
@@ -28,7 +29,9 @@ describe('Safety tests of pool', () => {
         owner: SignerWithAddress,
         nonContractAddress: string,
         ratesCalculator: VariableUtilisationRatesCalculator,
-        borrowersRegistry: OpenBorrowersRegistry;
+        borrowersRegistry: OpenBorrowersRegistry,
+        depositIndex: CompoundingIndex,
+        borrowingIndex: CompoundingIndex;
 
     before("Deploy a pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
@@ -36,18 +39,37 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     });
 
     it("should not allow initializing pool with a non-contract ratesCalculator", async () => {
-      await expect(pool.initialize(nonContractAddress, borrowersRegistry.address, ZERO, ZERO)).to.be.revertedWith("function call to a non-contract account");
+      await expect(
+        pool.initialize(
+          nonContractAddress,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+        )).to.be.revertedWith("function call to a non-contract account");
     });
 
     it("should not allow initializing pool with a non-contract borrowersRegistry", async () => {
-      await expect(pool.initialize(ratesCalculator.address, nonContractAddress, ZERO, ZERO)).to.be.revertedWith("Must be a contract");
+      await expect(
+        pool.initialize(
+          ratesCalculator.address,
+          nonContractAddress,
+          depositIndex.address,
+          borrowingIndex.address
+        )).to.be.revertedWith("Must be a contract");
     });
 
     it("should initialize a pool", async () => {
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
     it("should not allow setting a non-contract ratesCalculator", async () => {
@@ -74,8 +96,15 @@ describe('Safety tests of pool', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
     it("user1 funds destructable contract with 1ETH", async () => {
@@ -131,8 +160,15 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
     it("surplus for empty pool should be 0", async () => {
@@ -197,8 +233,15 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
     it("multiple recovering surplus should not make pool unbalanced", async () => {
@@ -264,8 +307,15 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        ratesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
     it("keep rates at maximum when pool utilisation is higher than 1", async () => {
@@ -387,8 +437,7 @@ describe('Safety tests of pool', () => {
           depositor: SignerWithAddress,
           borrower: SignerWithAddress,
           admin: SignerWithAddress,
-          variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
-          borrowersRegistry: OpenBorrowersRegistry;
+          variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
 
       before("should deploy a pool", async () => {
         [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
@@ -397,9 +446,16 @@ describe('Safety tests of pool', () => {
         pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
         variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-        borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+        const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-        await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+        await pool.initialize(
+          variableUtilisationRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+        );
       });
 
 

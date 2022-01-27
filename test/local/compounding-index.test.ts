@@ -9,7 +9,6 @@ import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 
-const {deployContract} = waffle;
 const {expect} = chai;
 
 // TODO: refactor and remove dependencies between tests.
@@ -18,7 +17,7 @@ describe('CompoundingIndex',() => {
   let owner: SignerWithAddress;
 
   async function init(rate: string, owner: SignerWithAddress): Promise<CompoundingIndex> {
-    const instance = await (new CompoundingIndex__factory(owner).deploy());
+    const instance = await (new CompoundingIndex__factory(owner).deploy(owner.address));
     await instance.setRate(toWei(rate));
 
     return instance;
@@ -29,7 +28,7 @@ describe('CompoundingIndex',() => {
 
     before("deploy the Compounding index", async () => {
       [owner] = await getFixedGasSigners(10000000);
-      sut = await (new CompoundingIndex__factory(owner).deploy());
+      sut = await (new CompoundingIndex__factory(owner).deploy(owner.address));
     });
 
     it("should set initial index 1", async () => {

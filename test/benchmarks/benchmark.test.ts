@@ -9,6 +9,7 @@ import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFacto
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import SmartLoanSinglePriceAwareArtifact from '../../artifacts/contracts/deprecated/SmartLoanSinglePriceAware.sol/SmartLoanSinglePriceAware.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Asset, deployAndInitPangolinExchangeContract, getFixedGasSigners, toBytes32, toWei,} from "../_helpers";
 import {syncTime} from "../_syncTime"
@@ -21,7 +22,7 @@ import {
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   Pool,
-  VariableUtilisationRatesCalculator, UpgradeableBeacon, SmartLoansFactory
+  VariableUtilisationRatesCalculator, UpgradeableBeacon, SmartLoansFactory, CompoundingIndex, SmartLoan
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -31,7 +32,6 @@ const addresses = require("../../common/token_addresses.json");
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const erc20ABI = [
@@ -71,6 +71,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
       loanSinglePriceAware: SmartLoanSinglePriceAware,
+      smartLoan: SmartLoan,
       smartLoansFactory1: SmartLoansFactory,
       smartLoansFactory2: SmartLoansFactory,
       wrappedLoan: any,
@@ -113,6 +114,8 @@ describe('Smart loan',  () => {
       );
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       ETH_PRICE = (await redstone.getPrice('ETH')).value;
@@ -158,11 +161,18 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+          variableUtilisationRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
+      smartLoan = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
       smartLoansFactory1 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory1.initialize(pool.address, exchange.address);
+      await smartLoansFactory1.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress1 = await smartLoansFactory1.upgradeableBeacon.call(0);
       beacon1 = (await new ethers.Contract(beaconAddress1, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -170,7 +180,7 @@ describe('Smart loan',  () => {
       await beacon1.connect(owner).upgradeTo(mockSmartLoan1.address);
 
       smartLoansFactory2 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory2.initialize(pool.address, exchange.address);
+      await smartLoansFactory2.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress2 = await smartLoansFactory2.upgradeableBeacon.call(0);
       beacon2 = (await new ethers.Contract(beaconAddress2, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
