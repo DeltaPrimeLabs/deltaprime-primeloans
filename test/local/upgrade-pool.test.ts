@@ -1,20 +1,26 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
-import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
+import {
+  VariableUtilisationRatesCalculator,
+  OpenBorrowersRegistry,
+  Pool,
+  TransparentUpgradeableProxy,
+  CompoundingIndex
+} from "../../typechain";
 import {TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ZERO = ethers.constants.AddressZero;
 
 describe('Upgradeable pool', () => {
 
@@ -26,7 +32,6 @@ describe('Upgradeable pool', () => {
       borrower: SignerWithAddress,
       admin: SignerWithAddress,
       VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
-      borrowersRegistry: OpenBorrowersRegistry,
       proxy: TransparentUpgradeableProxy;
 
     it("should deploy a contract behind a proxy", async () => {
@@ -37,9 +42,16 @@ describe('Upgradeable pool', () => {
       pool = await (new Pool__factory(owner).attach(proxy.address));
 
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        VariableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
     });
 
 

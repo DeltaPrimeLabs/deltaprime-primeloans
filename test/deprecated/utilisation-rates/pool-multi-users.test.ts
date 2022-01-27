@@ -5,9 +5,10 @@ import {solidity} from "ethereum-waffle";
 import UtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
-import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
+import {CompoundingIndex, OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
 
 chai.use(solidity);
 
@@ -30,8 +31,15 @@ describe('Pool with utilisation interest rates', () => {
       ratesCalculator = (await deployContract(owner, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+          ratesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
 
     });
 

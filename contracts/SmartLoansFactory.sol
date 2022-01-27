@@ -33,11 +33,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
   SmartLoan[] loans;
 
-  function initialize(Pool _pool, IAssetsExchange _assetsExchange) external initializer {
+  function initialize(Pool _pool, IAssetsExchange _assetsExchange, SmartLoan _smartLoanImplementation) external initializer {
     pool = _pool;
     assetsExchange = _assetsExchange;
-    SmartLoan smartLoanImplementation = new SmartLoan();
-    upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
+    upgradeableBeacon = new UpgradeableBeacon(address(_smartLoanImplementation));
     upgradeableBeacon.transferOwnership(msg.sender);
     __Ownable_init();
   }

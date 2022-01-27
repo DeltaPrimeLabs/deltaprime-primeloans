@@ -3,12 +3,13 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
+import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, CompoundingIndex} from "../../typechain";
 
 chai.use(solidity);
 
@@ -29,8 +30,15 @@ describe('Pool with variable utilisation interest rates', () => {
 
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
-      await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          VariableUtilisationRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
 
       await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
@@ -70,9 +78,17 @@ describe('Pool with variable utilisation interest rates', () => {
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
-      await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          VariableUtilisationRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
+
       await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
 
@@ -118,9 +134,16 @@ describe('Pool with variable utilisation interest rates', () => {
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
-      await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.initialize(
+          VariableUtilisationRatesCalculator.address,
+          borrowersRegistry.address,
+          depositIndex.address,
+          borrowingIndex.address
+      );
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
 

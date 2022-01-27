@@ -6,7 +6,9 @@ import redstone from 'redstone-api';
 import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -30,7 +32,10 @@ import {
   MockSmartLoanRedstoneProvider__factory,
   MockUpgradedSmartLoan__factory,
   UpgradeableBeacon,
-  SmartLoansFactory
+  SmartLoansFactory,
+  BorrowAccessNFT,
+  CompoundingIndex,
+  SmartLoan
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -61,6 +66,7 @@ describe('Smart loan',  () => {
   describe('A loan without debt', () => {
     let exchange: PangolinExchange,
       smartLoansFactory: SmartLoansFactory,
+      smartLoan: SmartLoan,
       loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
@@ -87,6 +93,8 @@ describe('Smart loan',  () => {
       ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
@@ -104,11 +112,17 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -257,6 +271,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
       smartLoansFactory: SmartLoansFactory,
+      smartLoan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -281,7 +296,15 @@ describe('Smart loan',  () => {
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -297,7 +320,8 @@ describe('Smart loan',  () => {
       ]
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -374,6 +398,7 @@ describe('Smart loan',  () => {
       linkTokenDecimalPlaces: BigNumber,
       beacon: UpgradeableBeacon,
       smartLoansFactory: SmartLoansFactory,
+      smartLoan: SmartLoan,
       MOCK_PRICES: any,
       AVAX_PRICE: number,
       LINK_PRICE: number,
@@ -394,6 +419,8 @@ describe('Smart loan',  () => {
         ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -417,13 +444,19 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
     it("should deploy a smart loan behind a proxy", async () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -548,6 +581,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
       smartLoansFactory: SmartLoansFactory,
+      smartLoan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -578,6 +612,8 @@ describe('Smart loan',  () => {
       ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -601,11 +637,17 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -738,6 +780,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
+        smartLoan: SmartLoan,
         wrappedLoan: any,
         wrappedLoanUpdated: any,
         pool: Pool,
@@ -770,6 +813,8 @@ describe('Smart loan',  () => {
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -793,11 +838,17 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -908,6 +959,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
+        smartLoan: SmartLoan,
         wrappedLoan: any,
         wrappedLoanUpdated: any,
         pool: Pool,
@@ -940,6 +992,8 @@ describe('Smart loan',  () => {
         ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -963,11 +1017,17 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -1073,6 +1133,7 @@ describe('Smart loan',  () => {
     let exchange: PangolinExchange,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
+        smartLoan: SmartLoan,
         wrappedLoan: any,
         pool: Pool,
         owner: SignerWithAddress,
@@ -1104,6 +1165,8 @@ describe('Smart loan',  () => {
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
 
@@ -1126,11 +1189,17 @@ describe('Smart loan',  () => {
         }
       ]
 
-      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address
+      );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(pool.address, exchange.address);
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -1197,6 +1266,7 @@ describe('Smart loan',  () => {
         let exchange: PangolinExchange,
             loan: MockSmartLoanRedstoneProvider,
             smartLoansFactory: SmartLoansFactory,
+            smartLoan: SmartLoan,
             wrappedLoan: any,
             wrappedLoanUpdated: any,
             pool: Pool,
@@ -1229,6 +1299,8 @@ describe('Smart loan',  () => {
                 ]);
 
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+            const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+            const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
             usdTokenDecimalPlaces = await usdTokenContract.decimals();
             linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -1252,11 +1324,17 @@ describe('Smart loan',  () => {
                 }
             ]
 
-            await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+            await pool.initialize(
+              variableUtilisationRatesCalculator.address,
+              borrowersRegistry.address,
+              depositIndex.address,
+              borrowingIndex.address
+            );
             await pool.connect(depositor).deposit({value: toWei("1000")});
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(pool.address, exchange.address);
+            smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+            await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
             const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
             beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);

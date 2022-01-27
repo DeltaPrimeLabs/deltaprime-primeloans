@@ -26,6 +26,12 @@ contract CompoundingIndex is Ownable {
 
   uint256 public rate;
 
+  constructor(address owner_) {
+    if (address(owner_) != address(0)) {
+      transferOwnership(owner_);
+    }
+  }
+
   /* ========== SETTERS ========== */
 
   /**

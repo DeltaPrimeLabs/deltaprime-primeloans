@@ -31,17 +31,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   IRatesCalculator private _ratesCalculator;
   IBorrowersRegistry private _borrowersRegistry;
 
-  CompoundingIndex private depositIndex;
-  CompoundingIndex private borrowIndex;
+  CompoundingIndex private _depositIndex;
+  CompoundingIndex private _borrowIndex;
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     _borrowersRegistry = borrowersRegistry_;
     _ratesCalculator = ratesCalculator_;
-
-    depositIndex = address(depositIndex_) == address(0) ? new CompoundingIndex() : depositIndex_;
-    borrowIndex = address(borrowIndex_) == address(0) ? new CompoundingIndex() : borrowIndex_;
+    _depositIndex = depositIndex_;
+    _borrowIndex = borrowIndex_;
 
     __Ownable_init();
     __ReentrancyGuard_init();
@@ -233,7 +232,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _user the address of queried borrower
   **/
   function getBorrowed(address _user) public view returns (uint256) {
-    return borrowIndex.getIndexedValue(borrowed[_user], _user);
+    return _borrowIndex.getIndexedValue(borrowed[_user], _user);
   }
 
   function totalSupply() public view override returns (uint256) {
@@ -250,7 +249,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _user the address of queried depositor
    **/
   function balanceOf(address user) public view override returns (uint256) {
-    return depositIndex.getIndexedValue(_deposited[user], user);
+    return _depositIndex.getIndexedValue(_deposited[user], user);
   }
 
   /**
@@ -305,8 +304,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   function _updateRates() internal {
     require(address(_ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
-    depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
-    borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
+    _depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
+    _borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
   }
 
   function _accumulateDepositInterest(address user) internal {
@@ -317,8 +316,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     emit InterestCollected(user, interest, block.timestamp);
 
-    depositIndex.updateUser(user);
-    depositIndex.updateUser(address(this));
+    _depositIndex.updateUser(user);
+    _depositIndex.updateUser(address(this));
   }
 
   function _accumulateBorrowingInterest(address user) internal {
@@ -327,8 +326,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     borrowed[user] = borrowedWithInterest;
     borrowed[address(this)] += interest;
 
-    borrowIndex.updateUser(user);
-    borrowIndex.updateUser(address(this));
+    _borrowIndex.updateUser(user);
+    _borrowIndex.updateUser(address(this));
   }
 
   /* ========== MODIFIERS ========== */
