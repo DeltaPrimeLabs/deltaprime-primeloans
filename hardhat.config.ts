@@ -10,8 +10,13 @@ export default {
     hardhat: {
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      allowUnlimitedContractSize: true,
       timeout: 1800000,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        }
+      },
       accounts: {
         accountsBalance: "1000000000000000000000000" // 1000.000 ETH
       },
@@ -23,6 +28,12 @@ export default {
     'hardhat-integration': {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
+    },
+    fuji: {
+      url: 'https://api.avax-test.network/ext/bc/C/rpc',
+      gasPrice: 225000000000,
+      chainId: 43113,
+      accounts: ['aad1b64624c3665cbe0720003f83bf8a7aa6dfefdbe88c31a51d9980a7e07839']
     }
   },
   paths: {
