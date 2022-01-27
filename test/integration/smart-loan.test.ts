@@ -6,7 +6,8 @@ import redstone from 'redstone-api';
 import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
+import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
@@ -33,8 +34,8 @@ import {
   MockUpgradedSmartLoan__factory,
   UpgradeableBeacon,
   SmartLoansFactory,
-  BorrowAccessNFT,
-  CompoundingIndex,
+  DepositIndex,
+  BorrowingIndex,
   SmartLoan
 } from "../../typechain";
 
@@ -45,7 +46,6 @@ import {parseUnits} from "ethers/lib/utils";
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
@@ -93,8 +93,8 @@ describe('Smart loan',  () => {
       ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
@@ -296,8 +296,8 @@ describe('Smart loan',  () => {
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       await pool.initialize(
         variableUtilisationRatesCalculator.address,
@@ -419,8 +419,8 @@ describe('Smart loan',  () => {
         ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -612,8 +612,8 @@ describe('Smart loan',  () => {
       ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -813,8 +813,8 @@ describe('Smart loan',  () => {
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -992,8 +992,8 @@ describe('Smart loan',  () => {
         ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
@@ -1165,8 +1165,8 @@ describe('Smart loan',  () => {
           ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
       linkTokenDecimalPlaces = await linkTokenContract.decimals();
 
@@ -1299,8 +1299,8 @@ describe('Smart loan',  () => {
                 ]);
 
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-            const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-            const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+            const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+            const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
 
             usdTokenDecimalPlaces = await usdTokenContract.decimals();
             linkTokenDecimalPlaces = await linkTokenContract.decimals();

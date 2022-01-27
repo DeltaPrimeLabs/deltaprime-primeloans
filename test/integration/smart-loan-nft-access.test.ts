@@ -6,6 +6,9 @@ import redstone from 'redstone-api';
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
+import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
+import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
+import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -25,7 +28,10 @@ import {
     MockSmartLoanRedstoneProvider__factory,
     UpgradeableBeacon,
     SmartLoansFactoryWithAccessNFT,
-    BorrowAccessNFT
+    BorrowAccessNFT,
+    SmartLoan,
+    DepositIndex,
+    BorrowingIndex
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -55,6 +61,7 @@ describe('Smart loan',  () => {
     describe('A loan with an access NFT', () => {
         let exchange: PangolinExchange,
             smartLoansFactory: SmartLoansFactoryWithAccessNFT,
+            smartLoan: SmartLoan,
             nftContract: Contract,
             pool: Pool,
             owner: SignerWithAddress,
@@ -75,6 +82,8 @@ describe('Smart loan',  () => {
 
             const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
+            const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
+            const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
             usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
             linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -108,11 +117,17 @@ describe('Smart loan',  () => {
                 }
             ]
 
-            await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+            await pool.initialize(
+                variableUtilisationRatesCalculator.address,
+                borrowersRegistry.address,
+                depositIndex.address,
+                borrowingIndex.address
+            );
             await pool.connect(depositor).deposit({value: toWei("1000")});
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
-            await smartLoansFactory.initialize(pool.address, exchange.address);
+            smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
+            await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
 
             const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
             beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -121,7 +136,7 @@ describe('Smart loan',  () => {
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
         });
 
-        it("should fail to create a loan withouth the access NFT", async () => {
+        it("should fail to create a loan without the access NFT", async () => {
             await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("Access NFT required");
             await expect(smartLoansFactory.connect(owner).createAndFundLoan(2137)).to.be.revertedWith("Access NFT required");
         });

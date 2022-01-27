@@ -32,8 +32,8 @@ describe('Pool with fixed rates', () => {
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-    const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
-    const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+    const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
+    const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
 
     await sut.initialize(
         mockFixedRatesCalculator.address,

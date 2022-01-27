@@ -6,16 +6,23 @@ import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contract
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
 import PoolWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
+import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
+import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {PoolWithAccessNFT, OpenBorrowersRegistry, BorrowAccessNFT} from "../../typechain";
+import {
+    PoolWithAccessNFT,
+    OpenBorrowersRegistry,
+    BorrowAccessNFT,
+    DepositIndex,
+    BorrowingIndex
+} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with ERC721 Alpha access', () => {
     let sut: PoolWithAccessNFT,
@@ -34,9 +41,18 @@ describe('Pool with ERC721 Alpha access', () => {
 
         sut = (await deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
 
+        const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
+        const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
+
+
         const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
-        await sut.initialize(mockVariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+        await sut.initialize(
+            mockVariableUtilisationRatesCalculator.address,
+            borrowersRegistry.address,
+            depositIndex.address,
+            borrowingIndex.address
+        );
     });
 
     it("should deposit requested value without the access ERC721", async () => {
