@@ -20,8 +20,7 @@
     "migrate:server": "npx truffle migrate --network server",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",
-    "prettier": "prettier --write 'contracts/**/*.sol'",
-    "upload-file": "node tools/arweave/upload-to-arweave.js"
+    "prettier": "prettier --write 'contracts/**/*.sol'"
   },
   "dependencies": {
     "@growthbunker/vuetimeline": "^0.1.17",
