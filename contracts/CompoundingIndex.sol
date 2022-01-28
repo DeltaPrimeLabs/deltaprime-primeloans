@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "./lib/WadRayMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 
 /**
  * CompoundingIndex

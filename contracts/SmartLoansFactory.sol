@@ -6,8 +6,8 @@ import "./Pool.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * @title SmartLoansFactory
@@ -24,7 +24,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
   event SmartLoanCreated(address indexed accountAddress, address indexed creator, uint256 initialCollateral, uint256 initialDebt);
 
-  Pool private pool;
+  Pool internal pool;
   IAssetsExchange assetsExchange;
   UpgradeableBeacon public upgradeableBeacon;
 
@@ -39,9 +39,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     SmartLoan smartLoanImplementation = new SmartLoan();
     upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
     upgradeableBeacon.transferOwnership(msg.sender);
+    __Ownable_init();
   }
 
-  function createLoan() external oneLoanPerOwner returns (SmartLoan) {
+  function createLoan() external virtual oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
@@ -56,7 +57,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner returns (SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) external virtual payable oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));

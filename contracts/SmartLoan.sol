@@ -2,10 +2,10 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
@@ -250,13 +250,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
-
     bytes32[] memory assets = exchange.getAllAssets();
-
     uint256[] memory prices = getPricesFromMsg(assets);
-
     uint256 avaxPrice = prices[0];
-
     require(avaxPrice != 0, "Avax price returned from oracle is zero");
 
     for (uint256 i = 1; i < prices.length; i++) {

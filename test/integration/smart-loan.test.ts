@@ -253,8 +253,6 @@ describe('Smart loan',  () => {
 
   });
 
-
-    //ten test rozwala closeLoan
   describe('A loan with debt and repayment', () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanRedstoneProvider,
@@ -641,7 +639,7 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 30000;
+      let investedAmount = 10000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -652,7 +650,7 @@ describe('Smart loan',  () => {
 
       let balances = await wrappedLoan.getAllAssetsBalances();
       const currentUSDTokenBalance = balances[1];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("30000", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("10000", usdTokenDecimalPlaces));
     });
 
 
@@ -1195,7 +1193,7 @@ describe('Smart loan',  () => {
     });
   });
 
-    describe('A loan with extra AVAX repayment', () => {
+  describe('A loan with extra AVAX repayment', () => {
         let exchange: PangolinExchange,
             loan: MockSmartLoanRedstoneProvider,
             smartLoansFactory: SmartLoansFactory,
