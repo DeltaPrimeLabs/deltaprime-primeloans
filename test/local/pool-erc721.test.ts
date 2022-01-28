@@ -5,11 +5,11 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
-import MockPoolWithAccessNFTArtifact from '../../artifacts/contracts/mock/MockPoolWithAccessNFT.sol/MockPoolWithAccessNFT.json';
+import PoolWithAccessNFTArtifact from '../../artifacts/contracts/mock/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {MockPoolWithAccessNFT, OpenBorrowersRegistry, BorrowAccessNFT} from "../../typechain";
+import {PoolWithAccessNFT, OpenBorrowersRegistry, BorrowAccessNFT} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -18,7 +18,7 @@ const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with ERC721 Alpha access', () => {
-    let sut: MockPoolWithAccessNFT,
+    let sut: PoolWithAccessNFT,
         owner: SignerWithAddress,
         user: SignerWithAddress,
         user2: SignerWithAddress,
@@ -32,7 +32,7 @@ describe('Pool with ERC721 Alpha access', () => {
         await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
-        sut = (await deployContract(owner, MockPoolWithAccessNFTArtifact)) as MockPoolWithAccessNFT;
+        sut = (await deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
 
         const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 

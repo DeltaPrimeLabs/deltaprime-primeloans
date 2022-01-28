@@ -4,7 +4,7 @@ import "../abstract/NFTAccess.sol";
 import "../Pool.sol";
 
 
-contract MockPoolWithAccessNFT is NFTAccess, Pool {
+contract PoolWithAccessNFT is NFTAccess, Pool {
     function deposit() external payable override nonReentrant hasAccessNFT {
         _accumulateDepositInterest(msg.sender);
 

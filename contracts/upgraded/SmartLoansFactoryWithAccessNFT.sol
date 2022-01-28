@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 import "../abstract/NFTAccess.sol";
 import "../SmartLoansFactory.sol";
 
-contract MockSmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
+contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
     function createLoan() external override oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(
             payable(address(upgradeableBeacon)),
