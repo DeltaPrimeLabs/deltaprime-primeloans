@@ -4,7 +4,7 @@ import "../abstract/NFTAccess.sol";
 import "../SmartLoansFactory.sol";
 
 contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
-    function createLoan() external override oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
+    function createLoan() public override oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(
             payable(address(upgradeableBeacon)),
             abi.encodeWithSelector(SmartLoan.initialize.selector, 0)
@@ -19,7 +19,7 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         return smartLoan;
     }
 
-    function createAndFundLoan(uint256 _initialDebt) external override payable oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
+    function createAndFundLoan(uint256 _initialDebt) public override payable oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
             abi.encodeWithSelector(SmartLoan.initialize.selector));
         SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));

@@ -35,7 +35,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     __Ownable_init();
   }
 
-  function createLoan() external virtual oneLoanPerOwner returns (SmartLoan) {
+  function createLoan() public virtual oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, 0)
@@ -50,7 +50,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external virtual payable oneLoanPerOwner returns (SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) public virtual payable oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));

@@ -13,7 +13,7 @@ contract MockUpgradedPool is Pool {
    * Dummy implementation recording double deposits
    * used to test upgrade of contract logic
    **/
-  function deposit() external payable override {
+  function deposit() public payable override {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value * 2);
