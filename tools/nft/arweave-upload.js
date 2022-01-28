@@ -1,13 +1,29 @@
 const Arweave = require('arweave');
 const fs = require("fs");
 
+async function uploadNFTs() {
+    const path = './tools/nft/images';
 
-async function uploadNFT(){
-    console.log("Let's start!")
-    const filePath = process.argv[2]; //check
+    fs.truncate('./tools/nft/uris.txt', 0, function(){console.log('done')})
+
+    fs.readdir(path, function(err, filenames) {
+        if (err) {
+            console.log(err)
+            return;
+        }
+        filenames.forEach(async function(filename) {
+            uploadNFT(path + '/' + filename).then(
+                () => console.log('Success for ' + filename),
+                err => console.log('Error for ' + filename + ', error message: ' + err)
+            )
+        });
+    });
+}
+
+async function uploadNFT(filePath){
     console.log('Loading file from path ', filePath);
     const key = JSON.parse(fs.readFileSync('./.arweave-secret.json', 'utf8'));
-    const metadata = JSON.parse(fs.readFileSync('./tools/arweave/nft-metadata.json', 'utf8'));
+    const metadata = JSON.parse(fs.readFileSync('./tools/nft/metadata.json', 'utf8'));
 
     const file = fs.readFileSync(filePath);
 
@@ -50,8 +66,12 @@ async function uploadNFT(){
 
     await awaitTransaction(arweave, metadataTransaction.id);
 
+    console.log('Successfully uploaded to Arweave! NFT metadata transaction id: ', metadataTransaction.id)
 
-    console.log('Success! NFT metadata transaction id on Arweave: ', metadataTransaction.id)
+    fs.appendFile('./tools/nft/uris.txt', 'ar://' + metadataTransaction.id + '\n', function (err) {
+        if (err) throw err;
+        console.log('Successfully saved to uris.txt to for transaction id: ' + metadataTransaction.id);
+    });
 }
 
 async function awaitTransaction(arweave, id) {
@@ -80,10 +100,11 @@ async function awaitTransaction(arweave, id) {
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 async function sleep(fn) {
     await timeout(3000);
     return fn();
 }
 
-uploadNFT().then(() => console.log('Huyyyah!'));
+uploadNFTs().then(() => console.log('Files uploaded!'));
 
