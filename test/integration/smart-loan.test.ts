@@ -7,6 +7,7 @@ import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/moc
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockSmartLoansFactoryWithAccessNFTArtifact from '../../artifacts/contracts/mock/MockSmartLoansFactoryWithAccessNFT.sol/MockSmartLoansFactoryWithAccessNFT.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
@@ -32,6 +33,7 @@ import {
   MockUpgradedSmartLoan__factory,
   UpgradeableBeacon,
   SmartLoansFactory,
+  MockSmartLoansFactoryWithAccessNFT,
   BorrowAccessNFT
 } from "../../typechain";
 
@@ -1380,7 +1382,7 @@ describe('Smart loan',  () => {
 
   describe('A loan with an access NFT', () => {
     let exchange: PangolinExchange,
-        smartLoansFactory: SmartLoansFactory,
+        smartLoansFactory: MockSmartLoansFactoryWithAccessNFT,
         nftContract: Contract,
         pool: Pool,
         owner: SignerWithAddress,
@@ -1437,7 +1439,7 @@ describe('Smart loan',  () => {
       await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      smartLoansFactory = await deployContract(owner, MockSmartLoansFactoryWithAccessNFTArtifact) as MockSmartLoansFactoryWithAccessNFT;
       await smartLoansFactory.initialize(pool.address, exchange.address);
 
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);

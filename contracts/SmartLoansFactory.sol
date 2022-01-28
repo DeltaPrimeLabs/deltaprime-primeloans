@@ -3,11 +3,11 @@ pragma solidity ^0.8.4;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
-import "./abstract/NFTAccess.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * @title SmartLoansFactory
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
  * and could be authorised to access the lending pool.
  *
  */
-contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
+contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
   modifier oneLoanPerOwner() {
     require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
     _;
@@ -24,7 +24,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
 
   event SmartLoanCreated(address indexed accountAddress, address indexed creator, uint256 initialCollateral, uint256 initialDebt);
 
-  Pool private pool;
+  Pool internal pool;
   IAssetsExchange assetsExchange;
   UpgradeableBeacon public upgradeableBeacon;
 
@@ -42,7 +42,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
     __Ownable_init();
   }
 
-  function createLoan() external oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
+  function createLoan() external virtual oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(
       payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
@@ -57,7 +57,7 @@ contract SmartLoansFactory is IBorrowersRegistry, ProxyConnector, NFTAccess {
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) external virtual payable oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));

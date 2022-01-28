@@ -3,12 +3,13 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./CompoundingIndex.sol";
-import "./abstract/NFTAccess.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
+
 
 /**
  * @title Pool
@@ -17,7 +18,7 @@ import "./interfaces/IBorrowersRegistry.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract Pool is ReentrancyGuardUpgradeable, IERC20, NFTAccess {
+contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   using TransferHelper for address payable;
 
   uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95e18;
@@ -157,7 +158,7 @@ contract Pool is ReentrancyGuardUpgradeable, IERC20, NFTAccess {
    * Deposits the message value
    * It updates user deposited balance, total deposited and rates
    **/
-  function deposit() external payable virtual nonReentrant hasAccessNFT {
+  function deposit() external payable virtual nonReentrant {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
