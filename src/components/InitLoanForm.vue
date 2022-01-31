@@ -1,6 +1,7 @@
 <template>
   <div class="init-loan-form-wrapper">
-    <div class="overlay" v-if="!hasBorrowNft"></div>
+    {{borrowingLocked}}
+    <div class="overlay" v-if="borrowingLocked"></div>
     <div class="title">Collateral</div>
     <CurrencyInput
       v-on:newValue="updateCollateral"
@@ -76,7 +77,7 @@
     },
     computed: {
       ...mapState('network', ['balance']),
-      ...mapGetters('nft', ['hasBorrowNft']),
+      ...mapGetters('nft', ['borrowingLocked']),
       ...mapGetters('pool', ['getAvailable']),
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.collateral;

@@ -7,12 +7,11 @@
           :secondary="{value: avaxToUSD(getAvailable), type: 'usd'}" />
         <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
       </Bar>
-      <InfoBubble v-if="hasBorrowNft">
+      <InfoBubble v-if="!borrowingLocked">
         Create a loan to start your investment adventure. <br/>
         Remember that initial LTC cannot exceed <b>{{initialLTV * 100}}</b>.
       </InfoBubble>
-      <InfoBubble
-          v-if="!hasBorrowNft" >
+      <InfoBubble v-if="borrowingLocked" >
         To create your Prime Account you need a special access NFT. <br/>
         Go to our <a href="https://discord.gg/6HpfcYyVNu" target="_blank">Discord channel</a> to get a link and mint it!
       </InfoBubble>
@@ -54,7 +53,7 @@
       ...mapState('loan', ['isLoanAlreadyCreated']),
       ...mapState('pool', ['borrowingRate']),
       ...mapGetters('pool', ['getAvailable']),
-      ...mapGetters('nft', ['hasBorrowNft']),
+      ...mapGetters('nft', ['borrowingLocked']),
       initialLTV() {
         return config.DEFAULT_LTV;
       }

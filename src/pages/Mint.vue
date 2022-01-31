@@ -3,7 +3,7 @@
     <Block class="block" :bordered="true">
       <div class="title">{{ hasBorrowNft ? 'Your access NFT' : 'Mint your access NFT' }}</div>
       <div class="picture">
-        <img v-if="borrowNftImageUri && hasBorrowNft" :src="borrowNftImageUri" alt="nft example picture"/>
+        <img v-if="borrowNftImageUri" :src="borrowNftImageUri" alt="nft example picture"/>
         <img v-if="!hasBorrowNft && exampleNft" :src="exampleNft" alt="nft picture"/>
         <vue-loaders-ball-beat v-if="!(borrowNftImageUri || exampleNft)" color="#A6A3FF" scale="0.9"></vue-loaders-ball-beat>
       </div>
