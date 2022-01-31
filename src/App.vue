@@ -88,22 +88,52 @@
         } catch (switchError) {
           // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
-            if (process.env.NODE_ENV !== 'development') {
-              try {
-                const walletParams = {
-                  chainName: 'Forked Avalanche',
+            let walletParams;
+            switch(config.chainId) {
+              case 2140:
+              walletParams = {
+                chainName: 'Forked Avalanche',
                   chainId: this.toHex(config.chainId),
-                  //TODO IMPORTANT: set proper address in production
-                  rpcUrls: ["https://207.154.255.139/"]
-                }
-
-                await ethereum.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [walletParams]
-                });
-              } catch (addError) {
-                Vue.$toast.error("Error while adding network");
+                  rpcUrls: ["https://207.154.255.139/"],
+                  nativeCurrency: {
+                    name: 'AVAX',
+                    symbol: 'AVAX',
+                    decimals: 18
+                  }
               }
+              break;
+              case 43114:
+              walletParams =  {
+                chainName: 'Avalanche Mainnet C-Chain',
+                chainId: this.toHex(config.chainId),
+                rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+                nativeCurrency: {
+                name: 'AVAX',
+                    symbol: 'AVAX',
+                    decimals: 18
+                }
+              }
+              break;
+              case 43113:
+                walletParams =  {
+                  chainName: 'Avalanche FUJI C-Chain',
+                  chainId: this.toHex(config.chainId),
+                  rpcUrls: ["https://api.avax-test.network/ext/bc/C/rpc"],
+                  nativeCurrency: {
+                    name: 'AVAX',
+                    symbol: 'AVAX',
+                    decimals: 18
+                  }
+                }
+            }
+
+            try {
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [walletParams]
+              });
+            } catch (addError) {
+              Vue.$toast.error("Error while adding network");
             }
           } else {
             Vue.$toast.error("Error while switching network");
