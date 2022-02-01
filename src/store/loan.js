@@ -200,7 +200,7 @@ export default {
           .usingPriceFeed(config.dataProviderId);
 
       //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 30000000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000});
 
       await provider.waitForTransaction(tx.hash);
 
@@ -210,7 +210,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 3000000});
+      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 8000000});
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
@@ -221,7 +221,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 3000000});
+      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 8000000});
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
@@ -232,7 +232,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 3000000});
+      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 8000000});
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
@@ -243,7 +243,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 3000000});
+      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 8000000});
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
@@ -260,7 +260,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(maxAvaxAmount.toString()),
-        {gasLimit: 3000000}
+        {gasLimit: 8000000}
       );
 
       await provider.waitForTransaction(tx.hash);
@@ -279,7 +279,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(minAvaxAmount.toString()),
-        {gasLimit: 3000000}
+        {gasLimit: 8000000}
       );
       await provider.waitForTransaction(tx.hash);
 

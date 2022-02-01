@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./interfaces/IAssetsExchange.sol";
-import "redstone-evm-connector/lib/contracts/message-based/ProxyConnector.sol";
+import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * and could be authorised to access the lending pool.
  *
  */
-contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
+contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   modifier oneLoanPerOwner() {
     require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
     _;
@@ -67,7 +67,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     //Fund account with own funds and credit
     smartLoan.fund{value: msg.value}();
 
-    proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
 
     smartLoan.transferOwnership(msg.sender);
 

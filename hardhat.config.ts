@@ -22,7 +22,7 @@ export default {
       },
       // mining: {
       //   auto: false,
-      //   interval: 500
+      //   interval: 1000
       // }
     },
     'hardhat-integration': {
