@@ -20,29 +20,16 @@ module.exports = merge(common, {
     target: ['web', 'es5'],
 
     plugins: [
-        // Extracts CSS into separate files
-        // Note: style-loader is for development, MiniCssExtractPlugin is for production
         new MiniCssExtractPlugin({
-            filename: 'styles/[name].[contenthash].css',
-            chunkFilename: '[id].css',
+            filename: "[name].css",
+            chunkFilename: "[id].css"
         }),
     ],
     module: {
         rules: [
             {
-                test: /\.(scss|css)$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            importLoaders: 2,
-                            sourceMap: false,
-                        },
-                    },
-                    'postcss-loader',
-                    'sass-loader',
-                ],
+                test: /\.css$/i,
+                use: [MiniCssExtractPlugin.loader, "css-loader"],
             },
         ],
     },

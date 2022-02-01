@@ -3,6 +3,7 @@ build
 artifacts
 
 public
+dist
 cache
 .idea
 /.secret
