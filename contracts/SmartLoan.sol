@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
@@ -18,7 +17,7 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -30,6 +29,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   uint256 private constant _MAX_LTV = 5000;
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
+
+  //Trusted signers for provided data
+  address constant public AUTHORIZED_SIGNER_1 = 0x3a7d971De367FE15D164CDD952F64205F2D9f10c;
+  address constant public AUTHORIZED_SIGNER_2 = 0x41ed5321B76C045f5439eCf9e73F96c6c25B1D75;
 
 
   IAssetsExchange public exchange;
@@ -44,10 +47,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
   /**
-   * Override trustedSigner getter for safety reasons
+   * Override PriceAware method
    **/
-  function getTrustedSigner() public view virtual override returns (address) {
-    return 0x3a7d971De367FE15D164CDD952F64205F2D9f10c; //redstone-avalanche;
+  function isSignerAuthorized(address _receivedSigner) internal override virtual view returns (bool) {
+    return (_receivedSigner == AUTHORIZED_SIGNER_1) || (_receivedSigner == AUTHORIZED_SIGNER_2);
   }
 
   /**

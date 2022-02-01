@@ -17,7 +17,7 @@ export default {
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8",
+    dataProviderId: "redstone-avalanche",
     borrowNftAddress: "",
     depositNftAddress: ""
 }

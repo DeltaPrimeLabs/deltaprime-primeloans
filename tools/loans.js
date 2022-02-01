@@ -69,7 +69,7 @@ async function loanSellout(loanAddress) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   loan = WrapperBuilder
     .wrapLite(loan)
-    .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8"); // redstone-avalanche
+    .usingPriceFeed("redstone-avalanche"); // redstone-avalanche
   let rawStatus = await loan.getFullLoanStatus();
   let targetLTV = await loan.MAX_LTV();
   let repayAmount = getSelloutRepayAmount(rawStatus[0], rawStatus[1], 100, targetLTV);
@@ -101,7 +101,7 @@ async function selloutSolventLoan(loanAddress) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   loan = WrapperBuilder
     .wrapLite(loan)
-    .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8"); // redstone-avalanche
+    .usingPriceFeed("redstone-avalanche"); // redstone-avalanche
   await loan.selloutLoan({gasLimit: 2000000});
 }
 
@@ -110,7 +110,7 @@ async function getLoanStatus(loanAddress) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   loan = WrapperBuilder
     .wrapLite(loan)
-    .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8"); // redstone-avalanche
+    .usingPriceFeed("redstone-avalanche"); // redstone-avalanche
   let rawStatus = await loan.getFullLoanStatus();
   let status = {
     value: rawStatus[0].toString(),

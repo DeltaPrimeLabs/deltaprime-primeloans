@@ -30,7 +30,7 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         //Fund account with own funds and credit
         smartLoan.fund{value: msg.value}();
 
-        proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
+        ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
 
         smartLoan.transferOwnership(msg.sender);
 
