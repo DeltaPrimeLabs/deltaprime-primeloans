@@ -47,7 +47,8 @@
       </div>
     </Bar>
     <InfoBubble v-if="!borrowBlock && !collateralBlock" cacheKey="LOAN-INFO">
-      {{ loanInfo }}
+      Invest in assets using AVAX from loan and collateral. <br/>
+      Remember to keep LTC below <b>{{maxLTV}}%</b>.
     </InfoBubble>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
@@ -101,9 +102,7 @@
     return {
       borrowBlock: false,
       collateralBlock: false,
-      tabIndex: 0,
-      loanInfo: `Invest in assets using AVAX from loan and collateral. <br/>
-      Remember to keep LTC below <b>${config.MAX_LTV * 100}%</b>.`
+      tabIndex: 0
     }
   },
   components: {
@@ -125,7 +124,10 @@
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
     ...mapState('pool', ['userDepositBalance']),
     ...mapState('network', ['balance']),
-    ...mapGetters('loan', ['getCurrentCollateral'])
+    ...mapGetters('loan', ['getCurrentCollateral']),
+    maxLTV() {
+      return config.MAX_LTV * 100;
+    }
   },
   methods: {
     showBorrowBlock(tabIndex) {

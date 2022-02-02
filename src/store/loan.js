@@ -164,14 +164,6 @@ export default {
 
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
-      let factoryLogs = await provider.getLogs({
-        fromBlock: rootState.pool.deploymentBlock,
-        address: loanFactory.address,
-        topics: [ [
-          loanFactory.iface.getEventTopic("SmartLoanCreated")
-        ] ]
-      });
-
       let logs = await provider.getLogs({
         fromBlock: rootState.pool.deploymentBlock,
         address: loan.address,
@@ -202,7 +194,9 @@ export default {
       //TODO: find optimal value of gas
       const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000});
 
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      console.log(transaction);
 
       dispatch('fetchLoan');
     },
