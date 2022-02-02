@@ -58,9 +58,14 @@ export default {
       if (!state.pool) {
         const provider = rootState.network.provider;
         const deploymentTx = POOL.networks[rootState.network.chainId].transactionHash;
-        const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
+        if (deploymentTx) {
+          const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
 
-        commit('setDeploymentBlock', deploymentReceipt.blockNumber);
+          commit('setDeploymentBlock', deploymentReceipt.blockNumber);
+        } else {
+          console.error('Pool deployment TX not found')
+        }
+
         let pool = new ethers.Contract(POOLTUP.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);
 
