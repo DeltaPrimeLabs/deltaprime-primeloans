@@ -1,5 +1,6 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@contracts/Pool.json';
+import MIGRATIONS from '@contracts/Migrations.json';
 const ethers = require('ethers');
 
 export default {
@@ -57,14 +58,15 @@ export default {
     async initPool({ state, commit, rootState }) {
       if (!state.pool) {
         const provider = rootState.network.provider;
-        const deploymentTx = POOL.networks[rootState.network.chainId].transactionHash;
-        if (deploymentTx) {
-          const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
+        let deploymentTx = POOL.networks[rootState.network.chainId].transactionHash;
 
-          commit('setDeploymentBlock', deploymentReceipt.blockNumber);
-        } else {
-          console.error('Pool deployment TX not found')
+        //TODO: solve problem with lacking transaction hash in a Pool artifact JSON
+        if (!deploymentTx) {
+          deploymentTx = MIGRATIONS.networks[rootState.network.chainId].transactionHash;
         }
+
+        const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
+        commit('setDeploymentBlock', deploymentReceipt.blockNumber);
 
         let pool = new ethers.Contract(POOLTUP.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);

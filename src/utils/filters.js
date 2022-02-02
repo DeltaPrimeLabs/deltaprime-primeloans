@@ -11,7 +11,8 @@ export default function setupFilters() {
     if (value == null) return null;
     return "$ " + value.toLocaleString(
         undefined, // use the visitor's browser
-        { minimumFractionDigits: 2 }
+        { minimumFractionDigits: 2,
+          maximumFractionDigits: 2 }
     );
   });
 

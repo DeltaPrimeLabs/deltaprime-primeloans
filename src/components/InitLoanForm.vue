@@ -14,7 +14,7 @@
       :defaultValue="loan"
       :validators="loanValidators"
     />
-    <div class="ltv">LTC: <span class="LTV-value">{{calculatedLTV | percent}}</span></div>
+    <div class="ltv">LTV: <span class="LTV-value">{{calculatedLTV | percent}}</span></div>
     <div class="ltv-slider">
       <Slider
         :min="0"
@@ -69,7 +69,7 @@
         ],
         ltvValidators: [
           {
-            require: function(value) { return value <= config.DEFAULT_LTV },
+            require: () => this.calculatedLTV <= config.DEFAULT_LTV,
             message: `Maximum initial LTV is ${config.DEFAULT_LTV * 100}%`
           }
         ]
@@ -155,7 +155,7 @@
   color: #7d7d7d;
   font-size: 18px;
   font-weight: 500;
-  margin-bottom: 30px;
+  margin-bottom: 15px;
 
   .ltv-value {
     font-weight: 700;

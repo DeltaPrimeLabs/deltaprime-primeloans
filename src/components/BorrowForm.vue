@@ -5,7 +5,7 @@
       :defaultValue="borrowValue"
       :validators="borrowValidators"
     />
-    <div class="ltv">LTC: <b>{{ltvInfo}}</b></div>
+    <div class="ltv">LTV: <b>{{ltvInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
         :min="ltv"

@@ -51,6 +51,10 @@
       dateFormat: {
         default: 'HH:mm DD/MM/YYYY'
       },
+      currencySymbol: {
+        default: '$',
+        type: String
+      },
       minY: 0,
       maxY: null,
       height: null,
@@ -153,14 +157,14 @@
             bodyFontFamily: 'Montserrat',
             displayColors: false,
             callbacks: {
-              label: function(tooltipItem, data) {
+              label: (tooltipItem, data) => {
                 var label = data.datasets[tooltipItem.datasetIndex].label || '';
 
                 if (label) {
                   label += ': ';
                 }
                 label += (Math.round(tooltipItem.yLabel * 100) / 100).toLocaleString('en-US');
-                return '$' + label;
+                return this.currencySymbol + label;
               }
             }
           }

@@ -21,7 +21,7 @@
       </div>
       <div class="ltv-value">
         <div class="label">
-          LTC
+          LTV
         </div>
         <div class="ltv-bar">
           <LTVBar />
@@ -48,7 +48,7 @@
     </Bar>
     <InfoBubble v-if="!borrowBlock && !collateralBlock" cacheKey="LOAN-INFO">
       Invest in assets using AVAX from loan and collateral. <br/>
-      Remember to keep LTC below <b>{{maxLTV}}%</b>.
+      Remember to keep LTV below <b>{{maxLTV}}%</b>.
     </InfoBubble>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
