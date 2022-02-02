@@ -13,7 +13,8 @@ const supportedAssets = [
     {asset: toBytes32('LINK'), assetAddress: addresses["LINK"]},
     {asset: toBytes32('PNG'), assetAddress: addresses["PNG"]},
     {asset: toBytes32('XAVA'), assetAddress: addresses["XAVA"]},
-    {asset: toBytes32('FRAX'), assetAddress: addresses["FRAX"]}
+    {asset: toBytes32('FRAX'), assetAddress: addresses["FRAX"]},
+    {asset: toBytes32('YAK'), assetAddress: addresses["YAK"]},
 ]
 
 module.exports = async function (deployer, network, accounts) {
