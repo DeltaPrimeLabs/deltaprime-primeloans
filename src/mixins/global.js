@@ -128,7 +128,7 @@ export default {
       ltvValidators: [
         {
           require: function(value) { return value < config.MAX_LTV },
-          message: `LTC should be lower than ${config.MAX_LTV * 100}%`
+          message: `LTV should be lower than ${config.MAX_LTV * 100}%`
         }
       ],
       nonNegativeValidator: {

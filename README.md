@@ -75,7 +75,7 @@ Below user can see deposits history chart and lists of all his deposit-related a
 
 In the top section there are 3 widgets:
 * Loan - the amount of funds borrowed by this loan from the pool denominated in AVAX / USD and the current borrowing costs (APR)
-* LTC - shows a ratio between the total loan value and the collateral (total assets value minus debt)
+* LTV - shows a ratio between the total loan value and the collateral (total assets value minus debt)
 * Collateral - the current value of user collateral (total assets value minus debt)
 
 In the bottom section, there is a table showing the current allocation of the borrowed funds and investment possibilities.

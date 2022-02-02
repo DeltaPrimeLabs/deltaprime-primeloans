@@ -5,7 +5,7 @@
       :defaultValue="fundValue"
       :validators="fundValidators"
     />
-    <div class="ltv">LTC: <b>{{LTVInfo}}</b></div>
+    <div class="ltv">LTV: <b>{{LTVInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
         :min="calculatedLTV(balance)"

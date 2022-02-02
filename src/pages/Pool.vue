@@ -41,7 +41,7 @@
     <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolHistory && poolHistory.length > 0)">
       <div class="history-title">Deposits history</div>
       <div class="chart-wrapper">
-        <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" class="deposit-chart"/>
+        <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
       </div>
       <HistoryList :items="poolHistory" title="Last deposits" class="history-list"/>
     </Block>

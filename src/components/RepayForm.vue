@@ -105,7 +105,7 @@ import {mapActions, mapState} from "vuex";
         if (this.calculatedLTV(this.repayValue) === Number.POSITIVE_INFINITY) {
           return 'Loan fully repaid'
         } else {
-          return `LTC: <b>${this.$options.filters.percent(this.calculatedLTV(this.repayValue))}</b>`;
+          return `LTV: <b>${this.$options.filters.percent(this.calculatedLTV(this.repayValue))}</b>`;
         }
       }
     }

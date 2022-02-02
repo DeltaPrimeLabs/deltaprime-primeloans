@@ -70,6 +70,7 @@
   color: #696969;
   font-weight: 500;
   margin-bottom: 16px;
+  font-size: 16px;
 }
 
 </style>

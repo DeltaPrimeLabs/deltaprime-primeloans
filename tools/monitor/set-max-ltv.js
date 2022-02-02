@@ -1,7 +1,7 @@
 const Loans = require('../loans.js');
 const args = require('yargs').argv;
 
-let maxLTV = args.maxLTC ? args.maxLTC : 4000;
+let maxLTV = args.maxLTV ? args.maxLTV : 4000;
 
 console.log(`Setting maximal LTV of all loans to ${maxLTV}`);
 

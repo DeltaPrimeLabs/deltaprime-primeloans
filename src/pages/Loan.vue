@@ -9,7 +9,7 @@
       </Bar>
       <InfoBubble v-if="!borrowingLocked">
         Create a loan to start your investment adventure. <br/>
-        Remember that initial LTC cannot exceed <b>{{initialLTV * 100}}</b>.
+        Remember that initial LTV cannot exceed <b>{{initialLTV * 100}}%</b>.
       </InfoBubble>
       <InfoBubble v-if="borrowingLocked" >
         To create your Prime Account you need a special access NFT. <br/>
