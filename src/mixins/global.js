@@ -2,6 +2,7 @@ import { mapState } from 'vuex';
 import Vue from "vue";
 import config from "@/config";
 import { Contract } from "ethers";
+import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
 import EXCHANGE from '@contracts/PangolinExchange.json'
 import {parseUnits, formatUnits} from "../utils/calculate";
 
@@ -45,7 +46,7 @@ export default {
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
-        const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
+        const exchange = new Contract(EXCHANGETUP.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
         const expectedAvax = amount * this.usdToAVAX(price);
 

@@ -1,12 +1,19 @@
-const {deployProxy} = require('@openzeppelin/truffle-upgrades');
-const AssetsExchange = artifacts.require("./PangolinExchange.sol");
-const Pool = artifacts.require("./Pool.sol");
+const web3Abi  = require('web3-eth-abi');
+const PangolinExchangeTUP = artifacts.require("./PangolinExchangeTUP.sol");
+const PoolTUP = artifacts.require("./PoolTUP.sol");
 const SmartLoansFactory = artifacts.require("./SmartLoansFactory.sol");
 const SmartLoan = artifacts.require("./SmartLoan.sol");
+const SmartLoansFactoryTUP = artifacts.require("./SmartLoansFactoryTUP.sol");
 
+module.exports = async function (deployer, network, accounts) {
+    await deployer.deploy(SmartLoansFactory);
+    console.log(`Deployed SmartLoansFactory implementation contract at address: ${SmartLoansFactory.address}`);
 
-module.exports = async function (deployer) {
-    const smartLoansFactoryInstance = await deployProxy(SmartLoansFactory, [Pool.address, AssetsExchange.address, SmartLoan.address], { deployer: deployer})
-    console.log(`Deployed SmartLoanFactory (TransparentUpgradeableProxy). Proxy address: ${smartLoansFactoryInstance.address}`);
-    console.log(`Initialized with: [Pool: ${Pool.address}, AssetsExchange: ${AssetsExchange.address}, SmartLoan: ${SmartLoan.address}]`);
+    const calldata = web3Abi.encodeFunctionCall(
+        SmartLoansFactory._json.abi.find(obj => obj.name === "initialize"),
+        [PoolTUP.address, PangolinExchangeTUP.address, SmartLoan.address]
+    )
+    await deployer.deploy(SmartLoansFactoryTUP, SmartLoansFactory.address, accounts[1], calldata);
+    console.log(`Deployed SmartLoansFactory (TransparentUpgradeableProxy). Proxy address: ${SmartLoansFactoryTUP.address}`);
+    console.log(`Initialized with: [Pool: ${PoolTUP.address}, AssetsExchange: ${PangolinExchangeTUP.address}, SmartLoan: ${SmartLoan.address}]`);
 };

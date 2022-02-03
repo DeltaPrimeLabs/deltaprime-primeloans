@@ -51,7 +51,8 @@
     "vue2-filters": "^0.13.0",
     "vuelidate": "^0.7.6",
     "vuex": "^3.6.2",
-    "web3-detect-network": "0.0.18"
+    "web3-detect-network": "0.0.18",
+    "web3-eth-abi": "^1.7.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
