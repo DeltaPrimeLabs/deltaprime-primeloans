@@ -1,3 +1,5 @@
+import {handleCall} from "../utils/blockchain";
+
 const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
@@ -112,8 +114,8 @@ export default {
 
       const loan = state.loan;
 
-      const prices = await loan.getAllAssetsPrices();
-      const balances = await loan.getAllAssetsBalances();
+      const prices = await handleCall(loan.getAllAssetsPrices);
+      const balances = await handleCall(loan.getAllAssetsBalances);
 
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
@@ -142,7 +144,7 @@ export default {
     },
     async updateLoanStats({ state, commit }) {
       const loan = state.loan;
-      const status = await loan.getFullLoanStatus();
+      const status = await handleCall(loan.getFullLoanStatus);
 
       commit('setTotalValue', fromWei(status[0]));
       commit('setDebt', fromWei(status[1]));

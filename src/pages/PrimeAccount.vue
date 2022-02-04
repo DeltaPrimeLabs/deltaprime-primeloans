@@ -36,7 +36,7 @@
   import config from "@/config";
 
   export default {
-    name: 'Invest',
+    name: 'PrimeAccount',
     components: {
       InfoBubble,
       InitLoanForm,

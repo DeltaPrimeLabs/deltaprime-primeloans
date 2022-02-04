@@ -12,8 +12,8 @@
     </Bar>
     <InfoBubble
       cacheKey="DEPOSIT-INFO">
-      "Deposit your AVAX in a pool and get interest rates. <br/>
-      Your deposits will be available for others to borrow."
+      Deposit your AVAX in a pool and get interest rates. <br/>
+      Your deposits will be available for others to borrow.
     </InfoBubble>
     <Block class="block" :bordered="true">
       <Tabs>
