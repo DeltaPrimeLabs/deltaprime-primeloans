@@ -31,7 +31,7 @@ import {
   MockSmartLoan__factory,
   MockSmartLoanRedstoneProvider,
   MockSmartLoanRedstoneProvider__factory,
-  MockUpgradedSmartLoan__factory,
+  MockUpgradedSolvencySmartLoan__factory,
   UpgradeableBeacon,
   SmartLoansFactory,
   DepositIndex,
@@ -542,7 +542,7 @@ describe('Smart loan',  () => {
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
 
-      const mockSmartLoan = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+      const mockSmartLoan = await (new MockUpgradedSolvencySmartLoan__factory(owner).deploy());
       await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -550,8 +550,8 @@ describe('Smart loan',  () => {
       const repayAmount = await getSelloutRepayAmount(
         await wrappedLoan.getTotalValue(),
         await wrappedLoan.getDebt(),
-        await wrappedLoan.LIQUIDATION_BONUS(),
-        await wrappedLoan.get_max_ltv()
+        await wrappedLoan.getLiquidationBonus(),
+        await wrappedLoan.getMaxLtv()
       )
 
       await wrappedLoan.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping:false}));

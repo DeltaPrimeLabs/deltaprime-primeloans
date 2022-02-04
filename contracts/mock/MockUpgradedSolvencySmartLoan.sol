@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "../SmartLoan.sol";
+import "./MockSmartLoanRedstoneProvider.sol";
 
 /**
  * @title SmartLoan
@@ -11,16 +11,8 @@ import "../SmartLoan.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract MockUpgradedSmartLoan is SmartLoan {
-  function get_max_ltv() override public pure returns(uint256) {
+contract MockUpgradedSolvencySmartLoan is MockSmartLoanRedstoneProvider {
+  function getMaxLtv() override public pure returns(uint256) {
     return 200;
-  }
-
-  function get_min_sellout_ltv() override public pure returns(uint256) {
-    return 400;
-  }
-
-  function getTotalValue() override public pure returns (uint256) {
-    return 777;
   }
 }

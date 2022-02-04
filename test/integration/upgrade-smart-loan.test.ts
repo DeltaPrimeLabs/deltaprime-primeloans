@@ -19,9 +19,12 @@ import {
   MockSmartLoanRedstoneProvider,
   UpgradeableBeacon,
   OpenBorrowersRegistry__factory,
-  MockUpgradedSmartLoan__factory,
   SmartLoansFactory,
-  MockSmartLoanRedstoneProvider__factory, CompoundingIndex, SmartLoan, DepositIndex, BorrowingIndex
+  MockSmartLoanRedstoneProvider__factory,
+  SmartLoan,
+  DepositIndex,
+  BorrowingIndex,
+  MockUpgradedGettersSmartLoan__factory
 } from "../../typechain";
 
 import {getFixedGasSigners} from "../_helpers";
@@ -41,6 +44,7 @@ const erc20ABI = [
   'function allowance(address owner, address spender) public view returns (uint256)'
 ]
 const MOCK_AVAX_PRICE = 100000;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Smart loan - upgrading',  () => {
   before("Synchronize blockchain time", async () => {
@@ -69,6 +73,7 @@ describe('Smart loan - upgrading',  () => {
       smartLoansFactory: SmartLoansFactory,
       smartLoan: SmartLoan,
       pool: Pool,
+      newPool: Pool,
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
@@ -82,6 +87,7 @@ describe('Smart loan - upgrading',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      newPool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
           new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
@@ -222,12 +228,17 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should upgrade", async () => {
-      const loanV2 = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+      const loanV2 = await (new MockUpgradedGettersSmartLoan__factory(owner).deploy());
 
       await beacon.connect(owner).upgradeTo(loanV2.address);
 
       //The mock loan has a hardcoded total value of 777
       expect(await wrappedLoan.getTotalValue()).to.be.equal(777);
+      expect(await wrappedLoan.getPercentagePrecision()).to.be.equal(1001);
+      expect(await wrappedLoan.getMinSelloutLtv()).to.be.equal(400);
+      expect(await wrappedLoan.getMaxLtv()).to.be.equal(200);
+      expect(await wrappedLoan.getPool()).to.be.equal(ZERO);
+      expect(await wrappedLoan.getExchange()).to.be.equal(ZERO);
     });
   });
 });
