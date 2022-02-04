@@ -7,7 +7,7 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
     function createLoan() external override oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(
             payable(address(upgradeableBeacon)),
-            abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), 0)
+            abi.encodeWithSelector(SmartLoan.initialize.selector, 0)
         );
         SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
@@ -21,7 +21,7 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
 
     function createAndFundLoan(uint256 _initialDebt) external override payable oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
-            abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
+            abi.encodeWithSelector(SmartLoan.initialize.selector));
         SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
         //Update registry and emit event

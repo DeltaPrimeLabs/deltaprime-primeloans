@@ -26,8 +26,9 @@ contract SmartLoanProperties {
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  IAssetsExchange internal exchange;
-  Pool internal pool;
+  address private constant _EXCHANGE_ADDRESS = 0x4826533B4897376654Bb4d4AD88B7faFD0C98528;
+
+  address private constant _POOL_ADDRESS = 0x95401dc811bb5740090279Ba06cfA8fcF6113778;
 
 
   /* ========== GETTERS ========== */
@@ -50,10 +51,10 @@ contract SmartLoanProperties {
   }
 
   function getExchange() public virtual view returns (IAssetsExchange) {
-    return exchange;
+    return IAssetsExchange(_EXCHANGE_ADDRESS);
   }
 
   function getPool() public virtual view returns (Pool) {
-    return pool;
+    return Pool(_POOL_ADDRESS);
   }
 }

@@ -46,7 +46,7 @@ describe('Smart loans factory - upgrading',  () => {
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
             smartLoan = await (new SmartLoan__factory(owner).attach(proxy.address));
 
-            await smartLoansFactory.connect(owner).initialize(pool.address, exchange.address, smartLoan.address);
+            await smartLoansFactory.connect(owner).initialize(smartLoan.address);
 
             await smartLoansFactory.createLoan();
             ownerLoanAddress = await smartLoansFactory.getLoanForOwner(owner.address);

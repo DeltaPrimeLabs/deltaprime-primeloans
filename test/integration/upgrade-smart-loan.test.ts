@@ -96,7 +96,7 @@ describe('Smart loan - upgrading',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
-      await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
+      await smartLoansFactory.initialize(smartLoan.address);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;

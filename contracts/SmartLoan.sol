@@ -22,9 +22,7 @@ contract SmartLoan is SmartLoanProperties, PriceAwareUpgradeable, ReentrancyGuar
   using TransferHelper for address payable;
   using TransferHelper for address;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
-    exchange = assetsExchange_;
-    pool = pool_;
+  function initialize() external initializer {
     __Ownable_init();
     __PriceAware_init();
     __ReentrancyGuard_init();

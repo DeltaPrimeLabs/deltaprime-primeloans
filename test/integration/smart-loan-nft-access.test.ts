@@ -127,7 +127,7 @@ describe('Smart loan',  () => {
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
             smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
-            await smartLoansFactory.initialize(pool.address, exchange.address, smartLoan.address);
+            await smartLoansFactory.initialize(smartLoan.address);
 
             const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
             beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
