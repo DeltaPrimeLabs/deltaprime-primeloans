@@ -1,11 +1,10 @@
 import { mapState } from 'vuex';
-import Vue from "vue";
 import config from "@/config";
 import { Contract } from "ethers";
 import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
 import EXCHANGE from '@contracts/PangolinExchange.json'
 import {parseUnits, formatUnits} from "../utils/calculate";
-import {parseArweaveURI} from "../utils/blockchain";
+import {handleCall, handleTransaction, parseArweaveURI} from "../utils/blockchain";
 
 export default {
   methods: {
@@ -26,37 +25,10 @@ export default {
       return parseInt(hex, 16);
     },
     async handleTransaction(fun, args, onSuccess, onFail) {
-      try {
-        const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
-        if (tx) {
-          await provider.waitForTransaction(tx.hash);
-        }
-
-        Vue.$toast.success('Transaction success');
-        if (onSuccess) onSuccess();
-      } catch (error) {
-        let message;
-        if (this.isAvalancheChain) {
-          message = JSON.parse(error.error.error.body).error.message;
-          message = message.split(message.indexOf(':') + 1);
-        } else {
-          message = error.data ? error.data.message : (error.message ? error.message : error);
-        }
-
-        if (message.startsWith("[ethjs-query]")) {
-          if (message.includes("reason string")) {
-            message = message.split("reason string ")[1].split("\",\"data\":")[0];
-          } else {
-            message = message.split("\"message\":\"")[1].replace(".\"}}}\'", "")
-          }
-        }
-
-        message = message.replace("Error: VM Exception while processing transaction: reverted with reason string ", "");
-        message = message.replace(/'/g, '')
-
-        Vue.$toast.error(message);
-        if (onFail) onFail();
-      }
+      await handleTransaction(fun, args, onSuccess, onFail)
+    },
+    async handleCall(fun, args, onSuccess, onFail) {
+      await handleCall(fun, args, onSuccess, onFail)
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
@@ -65,9 +37,7 @@ export default {
         const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
-          await exchange.getEstimatedAVAXForERC20Token(
-            parseUnits((amount).toString(), tokenDecimals), tokenAddress
-          );
+            await this.handleCall(exchange.getEstimatedAVAXForERC20Token, [parseUnits((amount).toString(), tokenDecimals), tokenAddress]);
 
         checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
 
@@ -89,9 +59,7 @@ export default {
         const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
-          await exchange.getEstimatedAVAXFromERC20Token(
-            parseUnits((amount).toString(), tokenDecimals), tokenAddress
-          );
+          await this.handleCall(exchange.getEstimatedAVAXFromERC20Token, [parseUnits((amount).toString(), tokenDecimals), tokenAddress]);
 
         checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
 
@@ -118,9 +86,6 @@ export default {
     },
     maxLTV() {
       return config.MAX_LTV;
-    },
-    isAvalancheChain() {
-      return [43113, 43114].includes(config.chainId);
     }
   },
   data() {
