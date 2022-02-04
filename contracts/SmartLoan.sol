@@ -8,6 +8,7 @@ import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
+import "./SmartLoanProperties.sol";
 
 /**
  * @title SmartLoan
@@ -17,26 +18,9 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+contract SmartLoan is SmartLoanProperties, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
-
-  uint256 public constant PERCENTAGE_PRECISION = 1000;
-  // 10%
-  uint256 public constant LIQUIDATION_BONUS = 100;
-
-  // 500%
-  uint256 private constant _MAX_LTV = 5000;
-  // 400%
-  uint256 private constant _MIN_SELLOUT_LTV = 4000;
-
-  //Trusted signers for provided data
-  address constant public AUTHORIZED_SIGNER_1 = 0x3a7d971De367FE15D164CDD952F64205F2D9f10c;
-  address constant public AUTHORIZED_SIGNER_2 = 0x41ed5321B76C045f5439eCf9e73F96c6c25B1D75;
-
-
-  IAssetsExchange public exchange;
-  Pool pool;
 
   function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     exchange = assetsExchange_;
@@ -47,10 +31,10 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   }
 
   /**
-   * Override PriceAware method
+   * Override PriceAware method, addresses below belong to authorized signers of data feeds
    **/
   function isSignerAuthorized(address _receivedSigner) internal override virtual view returns (bool) {
-    return (_receivedSigner == AUTHORIZED_SIGNER_1) || (_receivedSigner == AUTHORIZED_SIGNER_2);
+    return (_receivedSigner == 0x3a7d971De367FE15D164CDD952F64205F2D9f10c) || (_receivedSigner == 0x41ed5321B76C045f5439eCf9e73F96c6c25B1D75);
   }
 
   /**
@@ -67,8 +51,8 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    **/
   function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(address(exchange), _amount);
-    exchange.sellAsset(asset, _amount, _minAvaxOut);
+    address(token).safeTransfer(address(getExchange()), _amount);
+    getExchange().sellAsset(asset, _amount, _minAvaxOut);
   }
 
   /**
@@ -89,7 +73,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
+      uint256 minSaleAmount = getExchange().getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
       if (balance < minSaleAmount) {
         sellAsset(asset, balance, 0);
       } else {
@@ -116,7 +100,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
@@ -146,7 +130,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
     if (repayAmount > debt) {
       repayAmount = debt;
     }
-    uint256 bonus = (repayAmount * LIQUIDATION_BONUS) / PERCENTAGE_PRECISION;
+    uint256 bonus = (repayAmount * getLiquidationBonus()) / getPercentagePrecision();
     uint256 totalRepayAmount = repayAmount + bonus;
 
     sellout(totalRepayAmount);
@@ -160,7 +144,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    *
    **/
   function sellout(uint256 targetAvaxAmount) private {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
       sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
@@ -192,7 +176,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
     require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
 
-    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
+    bool success = getExchange().buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     require(success, "Investment failed");
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
@@ -207,8 +191,8 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    **/
   function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
-    bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    address(token).safeTransfer(address(getExchange()), _exactERC20AmountIn);
+    bool success = getExchange().sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
     require(success, "Redemption failed");
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
@@ -220,7 +204,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * @dev This function uses the redstone-evm-connector
    **/
   function borrow(uint256 _amount) external onlyOwner remainsSolvent {
-    pool.borrow(_amount);
+    getPool().borrow(_amount);
 
     emit Borrowed(msg.sender, _amount, block.timestamp);
   }
@@ -238,7 +222,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
     _amount = Math.min(_amount, getDebt());
     require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
-    pool.repay{value: _amount}();
+    getPool().repay{value: _amount}();
 
     emit Repaid(msg.sender, _amount, block.timestamp);
   }
@@ -253,7 +237,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = getPricesFromMsg(assets);
     uint256 avaxPrice = prices[0];
     require(avaxPrice != 0, "Avax price returned from oracle is zero");
@@ -277,12 +261,12 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * @dev _user the address of queried user
    **/
   function getBalance(address _user, bytes32 _asset) public view returns (uint256) {
-    IERC20 token = IERC20(exchange.getAssetAddress(_asset));
+    IERC20 token = IERC20(getExchange().getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-    address assetAddress = exchange.getAssetAddress(_asset);
+    address assetAddress = getExchange().getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
@@ -291,7 +275,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * Returns the current debt associated with the loan
    **/
   function getDebt() public view virtual returns (uint256) {
-    return pool.getBorrowed(address(this));
+    return getPool().getBorrowed(address(this));
   }
 
   /**
@@ -305,9 +289,9 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
     if (debt == 0) {
       return 0;
     } else if (debt < totalValue) {
-      return (debt * PERCENTAGE_PRECISION) / (totalValue - debt);
+      return (debt * getPercentagePrecision()) / (totalValue - debt);
     } else {
-      return get_max_ltv();
+      return getMaxLtv();
     }
   }
 
@@ -318,11 +302,11 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
   /**
    * Checks if the loan is solvent.
    * It means that the ratio between debt and collateral is below safe level,
-   * which is parametrized by the _MAX_LTV
+   * which is parametrized by the getMaxLtv()
    * @dev This function uses the redstone-evm-connector
    **/
   function isSolvent() public view returns (bool) {
-    return getLTV() < get_max_ltv();
+    return getLTV() < getMaxLtv();
   }
 
   /**
@@ -330,7 +314,7 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * It could be used as a helper method for UI
    **/
   function getAllAssetsBalances() public view returns (uint256[] memory) {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory balances = new uint256[](assets.length);
 
     for (uint256 i = 0; i < assets.length; i++) {
@@ -346,18 +330,9 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
    * @dev This function uses the redstone-evm-connector
    **/
   function getAllAssetsPrices() public view returns (uint256[] memory) {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
 
     return getPricesFromMsg(assets);
-  }
-
-
-  function get_max_ltv() virtual public pure returns(uint256) {
-    return _MAX_LTV;
-  }
-
-  function get_min_sellout_ltv() virtual public pure returns(uint256) {
-    return _MIN_SELLOUT_LTV;
   }
 
   /* ========== MODIFIERS ========== */
@@ -381,9 +356,9 @@ contract SmartLoan is PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      require(LTV >= get_min_sellout_ltv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
     }
-    require(LTV < get_max_ltv(), "This operation would not result in bringing the loan back to a solvent state");
+    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
   }
 
   /* ========== EVENTS ========== */
