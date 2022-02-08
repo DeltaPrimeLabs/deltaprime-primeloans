@@ -12,12 +12,8 @@ contract MockSmartLoanRedstoneProvider is SmartLoan {
   /**
    * Override trustedSigner getter for safety reasons
    **/
-  function getTrustedSigner() public view virtual override returns (address) {
+  function getPriceProvider1() public view virtual override returns (address) {
     return 0xFE71e9691B9524BC932C23d0EeD5c9CE41161884; //redstone-provider;
-  }
-
-  function isSignerAuthorized(address _receivedSigner) internal override virtual view returns (bool) {
-    return _receivedSigner == getTrustedSigner();
   }
 
   function executeGetAllAssetsPrices() public returns (uint256[] memory) {
