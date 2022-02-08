@@ -1,3 +1,4 @@
+import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@contracts/Pool.json';
 const ethers = require('ethers');
 
@@ -60,7 +61,7 @@ export default {
         const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
 
         commit('setDeploymentBlock', deploymentReceipt.blockNumber);
-        let pool = new ethers.Contract(POOL.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
+        let pool = new ethers.Contract(POOLTUP.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);
 
         commit('setPool', pool);

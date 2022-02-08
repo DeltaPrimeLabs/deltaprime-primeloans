@@ -10,6 +10,8 @@ import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.
 import SmartLoanSinglePriceAwareArtifact from '../../artifacts/contracts/deprecated/SmartLoanSinglePriceAware.sol/SmartLoanSinglePriceAware.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
+import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Asset, deployAndInitPangolinExchangeContract, getFixedGasSigners, toBytes32, toWei,} from "../_helpers";
 import {syncTime} from "../_syncTime"
@@ -22,6 +24,8 @@ import {
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   Pool,
+  DepositIndex,
+  BorrowingIndex,
   VariableUtilisationRatesCalculator, UpgradeableBeacon, SmartLoansFactory, CompoundingIndex, SmartLoan
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
@@ -169,7 +173,7 @@ describe('Smart loan',  () => {
       );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      smartLoan = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
 
       smartLoansFactory1 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory1.initialize(pool.address, exchange.address, smartLoan.address);
