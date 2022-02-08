@@ -28,7 +28,7 @@ export default {
       await handleTransaction(fun, args, onSuccess, onFail)
     },
     async handleCall(fun, args, onSuccess, onFail) {
-      await handleCall(fun, args, onSuccess, onFail)
+      return await handleCall(fun, args, onSuccess, onFail)
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
@@ -54,7 +54,7 @@ export default {
     },
     async calculateSlippageForSell(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
-        const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
+        const exchange = new Contract(EXCHANGETUP.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
         const expectedAvax = amount * this.usdToAVAX(price);
 
