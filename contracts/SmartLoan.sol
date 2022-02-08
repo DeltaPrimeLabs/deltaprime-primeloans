@@ -4,7 +4,8 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
@@ -18,21 +19,20 @@ import "./SmartLoanProperties.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is SmartLoanProperties, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
   function initialize() external initializer {
     __Ownable_init();
-    __PriceAware_init();
     __ReentrancyGuard_init();
   }
 
   /**
    * Override PriceAware method, addresses below belong to authorized signers of data feeds
    **/
-  function isSignerAuthorized(address _receivedSigner) internal override virtual view returns (bool) {
-    return (_receivedSigner == 0x3a7d971De367FE15D164CDD952F64205F2D9f10c) || (_receivedSigner == 0x41ed5321B76C045f5439eCf9e73F96c6c25B1D75);
+  function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
+    return (_receivedSigner == getPriceProvider1()) || (_receivedSigner == getPriceProvider2());
   }
 
   /**
