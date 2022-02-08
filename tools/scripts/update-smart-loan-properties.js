@@ -1,5 +1,5 @@
-import POOL from "../../build/contracts/Pool.json";
-import EXCHANGE from "../../build/contracts/PangolinExchange.json";
+import POOL from "../../build/contracts/PoolTUP.json";
+import EXCHANGE from "../../build/contracts/PangolinExchangeTUP.json";
 import config from "../../src/config.js";
 
 export function main() {

@@ -11,7 +11,7 @@ module.exports = async function (deployer, network, accounts) {
 
     const calldata = web3Abi.encodeFunctionCall(
         SmartLoansFactory._json.abi.find(obj => obj.name === "initialize"),
-        [PoolTUP.address, PangolinExchangeTUP.address, SmartLoan.address]
+        [SmartLoan.address]
     )
     await deployer.deploy(SmartLoansFactoryTUP, SmartLoansFactory.address, accounts[1], calldata);
     console.log(`Deployed SmartLoansFactory (TransparentUpgradeableProxy). Proxy address: ${SmartLoansFactoryTUP.address}`);
