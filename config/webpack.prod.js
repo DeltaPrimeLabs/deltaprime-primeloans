@@ -24,6 +24,11 @@ module.exports = merge(common, {
             filename: "[name].css",
             chunkFilename: "[id].css"
         }),
+
+        new webpack.DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify('production'),
+            'process.env.NODE_DEBUG': JSON.stringify('false')
+        })
     ],
     module: {
         rules: [

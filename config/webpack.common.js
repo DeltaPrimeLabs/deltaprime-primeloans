@@ -68,9 +68,16 @@ module.exports = {
     module: {
         rules: [
             // JavaScript: Use Babel to transpile JavaScript files
-            {test: /\.vue$/, loader: 'vue-loader' },
-            {test: /\.js$/, include: /src/, exclude: /node_modules/, use: ['babel-loader']},
-
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader'
+            },
+            {
+                test: /\.js$/,
+                include: /src/,
+                exclude: [/node_modules/, path.resolve(__dirname, '../tools')],
+                use: ['babel-loader']
+            },
             // Styles: Inject CSS into the head with source maps
             {
                 test: /\.(scss|css)$/,
