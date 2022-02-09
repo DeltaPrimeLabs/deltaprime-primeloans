@@ -10,6 +10,7 @@ import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
 import {maxAvaxToBeSold, acceptableSlippage, minAvaxToBeBought, parseLogs} from "../utils/calculate";
 import { WrapperBuilder } from "redstone-evm-connector";
+import { round } from "@/utils/calculate";
 
 export default {
   namespaced: true,
@@ -250,7 +251,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const maxAvaxAmount = maxAvaxToBeSold(avaxAmount, acceptableSlippage(slippage));
+      const maxAvaxAmount = round(maxAvaxToBeSold(avaxAmount, acceptableSlippage(slippage)));
 
       let tx = await loan.invest(
         ethers.utils.formatBytes32String(asset),
@@ -269,7 +270,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const minAvaxAmount = minAvaxToBeBought(avaxAmount, acceptableSlippage(slippage));
+      const minAvaxAmount = round(minAvaxToBeBought(avaxAmount, acceptableSlippage(slippage)));
 
       let tx = await loan.redeem(
         ethers.utils.formatBytes32String(asset),
