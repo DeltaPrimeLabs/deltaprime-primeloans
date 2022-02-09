@@ -9,6 +9,7 @@ import "redstone-evm-connector/lib/contracts/deprecated/message-based/SinglePric
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../Pool.sol";
+import "../SmartLoanProperties.sol";
 
 /**
  * @title SmartLoan
@@ -18,25 +19,11 @@ import "../Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgradeable, ReentrancyGuardUpgradeable {
+contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgradeable, ReentrancyGuardUpgradeable, SmartLoanProperties {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
-  uint256 public constant PERCENTAGE_PRECISION = 1000;
-  // 10%
-  uint256 public constant LIQUIDATION_BONUS = 100;
-
-  // 500%
-  uint256 public constant MAX_LTV = 5000;
-  // 400%
-  uint256 public constant MIN_SELLOUT_LTV = 4000;
-
-  IAssetsExchange public exchange;
-  Pool pool;
-
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
-    exchange = assetsExchange_;
-    pool = pool_;
+  function initialize() external initializer {
     __Ownable_init();
     __PriceAware_init();
   }
@@ -55,7 +42,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * Override trustedSigner getter for safety reasons
    **/
   function getTrustedSigner() public view virtual override returns (address) {
-    return 0xFE71e9691B9524BC932C23d0EeD5c9CE41161884; //redstone-avalanche;
+    return 0xFE71e9691B9524BC932C23d0EeD5c9CE41161884; //redstone-provider;
   }
 
   /**
@@ -72,8 +59,8 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    **/
   function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(address(exchange), _amount);
-    exchange.sellAsset(asset, _amount, _minAvaxOut);
+    address(token).safeTransfer(address(getExchange()), _amount);
+    getExchange().sellAsset(asset, _amount, _minAvaxOut);
   }
 
   function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner nonReentrant remainsSolvent {
@@ -91,7 +78,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
+      uint256 minSaleAmount = getExchange().getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
       if (balance < minSaleAmount) {
         sellAsset(asset, balance, 0);
       } else {
@@ -116,7 +103,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * This function can only be accessed by the owner and allows selling all of the assets.
    **/
   function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
@@ -143,7 +130,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     if (repayAmount > debt) {
       repayAmount = debt;
     }
-    uint256 bonus = (repayAmount * LIQUIDATION_BONUS) / PERCENTAGE_PRECISION;
+    uint256 bonus = (repayAmount * getLiquidationBonus()) / getPercentagePrecision();
     uint256 totalRepayAmount = repayAmount + bonus;
 
     sellout(totalRepayAmount);
@@ -157,7 +144,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    *
    **/
   function sellout(uint256 targetAvaxAmount) private {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
       sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
@@ -187,7 +174,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
     require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
 
-    bool success = exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
+    bool success = getExchange().buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     require(success, "Investment failed");
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
@@ -201,8 +188,8 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    **/
   function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    address(token).safeTransfer(address(exchange), _exactERC20AmountIn);
-    bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    address(token).safeTransfer(address(getExchange()), _exactERC20AmountIn);
+    bool success = getExchange().sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
     require(success, "Redemption failed");
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
@@ -213,7 +200,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @param _amount of funds to borrow
    **/
   function borrow(uint256 _amount) external onlyOwner remainsSolvent {
-    pool.borrow(_amount);
+    getPool().borrow(_amount);
 
     emit Borrowed(msg.sender, _amount, block.timestamp);
   }
@@ -230,7 +217,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     _amount = Math.min(_amount, getDebt());
     require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
-    pool.repay{value: _amount}();
+    getPool().repay{value: _amount}();
 
     emit Repaid(msg.sender, _amount, block.timestamp);
   }
@@ -244,7 +231,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
 
     for (uint256 i = 0; i < assets.length; i++) {
       total = total + getAssetValue(assets[i]);
@@ -258,12 +245,12 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @dev _user the address of queried user
    **/
   function getBalance(address _user, bytes32 _asset) public view returns (uint256) {
-    IERC20 token = IERC20(exchange.getAssetAddress(_asset));
+    IERC20 token = IERC20(getExchange().getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-    address assetAddress = exchange.getAssetAddress(_asset);
+    address assetAddress = getExchange().getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
@@ -280,7 +267,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * Returns the current debt associated with the loan
    **/
   function getDebt() public view virtual returns (uint256) {
-    return pool.getBorrowed(address(this));
+    return getPool().getBorrowed(address(this));
   }
 
   /**
@@ -293,9 +280,9 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     if (debt == 0) {
       return 0;
     } else if (debt < totalValue) {
-      return (debt * PERCENTAGE_PRECISION) / (totalValue - debt);
+      return (debt * getPercentagePrecision()) / (totalValue - debt);
     } else {
-      return MAX_LTV;
+      return getMaxLtv();
     }
   }
 
@@ -306,10 +293,10 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   /**
    * Checks if the loan is solvent.
    * It means that the ratio between debt and collateral is below safe level,
-   * which is parametrized by the MAX_LTV
+   * which is parametrized by the getMaxLtv()
    **/
   function isSolvent() public view returns (bool) {
-    return getLTV() < MAX_LTV;
+    return getLTV() < getMaxLtv();
   }
 
   /**
@@ -331,7 +318,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * It could be used as a helper method for UI
    **/
   function getAllAssetsBalances() public view returns (uint256[] memory) {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory balances = new uint256[](assets.length);
 
     for (uint256 i = 0; i < assets.length; i++) {
@@ -346,7 +333,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * It could be used as a helper method for UI
    **/
   function getAllAssetsPrices() public view returns (uint256[] memory) {
-    bytes32[] memory assets = exchange.getAllAssets();
+    bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = new uint256[](assets.length);
 
     for (uint256 i = 0; i < assets.length; i++) {
@@ -364,8 +351,8 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   }
 
   /**
-   * This modifier checks if the LTV is between MIN_SELLOUT_LTV and MAX_LTV after performing the liquidateLoan() operation.
-   * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > MIN_SELLOUT_LTV is applied.
+   * This modifier checks if the LTV is between getMinSelloutLtv() and getMaxLtv() after performing the liquidateLoan() operation.
+   * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > getMinSelloutLtv() is applied.
    * It protects the user from an unnecessarily costly liquidation.
    * The loan must be solvent after the liquidateLoan() operation.
    **/
@@ -373,9 +360,9 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
     }
-    require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state");
+    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
   }
 
   /* ========== EVENTS ========== */
