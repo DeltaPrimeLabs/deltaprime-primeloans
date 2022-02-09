@@ -3,38 +3,37 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact
+    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import SmartLoansFactoryWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
-import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
+import SmartLoansFactoryWithAccessNFTArtifact
+    from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
 import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
 import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
-import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
+    Asset,
+    deployAndInitPangolinExchangeContract, fromWei,
     getFixedGasSigners,
+    recompileSmartLoan,
     toBytes32,
-    toWei,
-    deployAndInitPangolinExchangeContract,
-    Asset
+    toWei
 } from "../_helpers";
-import { syncTime } from "../_syncTime"
+import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    VariableUtilisationRatesCalculator,
-    PangolinExchange,
-    Pool,
-    MockSmartLoanRedstoneProvider__factory,
-    UpgradeableBeacon,
-    SmartLoansFactoryWithAccessNFT,
     BorrowAccessNFT,
-    SmartLoan,
-    DepositIndex,
-    BorrowingIndex
+    BorrowingIndex,
+    DepositIndex, MockSmartLoanRedstoneProvider,
+    MockSmartLoanRedstoneProvider__factory,
+    OpenBorrowersRegistry__factory,
+    PangolinExchange,
+    Pool, SmartLoan,
+    SmartLoansFactoryWithAccessNFT,
+    VariableUtilisationRatesCalculator
 } from "../../typechain";
-
-import {OpenBorrowersRegistry__factory} from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
@@ -61,7 +60,6 @@ describe('Smart loan',  () => {
     describe('A loan with an access NFT', () => {
         let exchange: PangolinExchange,
             smartLoansFactory: SmartLoansFactoryWithAccessNFT,
-            smartLoan: SmartLoan,
             nftContract: Contract,
             pool: Pool,
             owner: SignerWithAddress,
@@ -73,8 +71,7 @@ describe('Smart loan',  () => {
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             LINK_PRICE: number,
-            USD_PRICE: number,
-            beacon: UpgradeableBeacon;
+            USD_PRICE: number;
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
@@ -126,13 +123,12 @@ describe('Smart loan',  () => {
             await pool.connect(depositor).deposit({value: toWei("1000")});
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
-            smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
-            await smartLoansFactory.initialize(smartLoan.address);
 
-            const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-            beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
-            const mockSmartLoan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-            await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
+            const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, 'mock');
+            let implementation = await deployContract(owner, artifact) as SmartLoan;
+
+            await smartLoansFactory.initialize(implementation.address);
+
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
         });
 
@@ -164,11 +160,21 @@ describe('Smart loan',  () => {
 
             await wrappedSmartLoansFactory.connect(owner).createLoan();
 
-            const loan_proxy_address_owner = await smartLoansFactory.getLoanForOwner(owner.address);
-            const loan_proxy_address_depositor = await smartLoansFactory.getLoanForOwner(depositor.address);
+            const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
+            const loan = ((await new ethers.Contract(loanAddress, MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(owner);
 
-            expect(loan_proxy_address_owner).to.be.not.equal(ZERO);
-            expect(loan_proxy_address_depositor).to.be.not.equal(ZERO);
+            const wrappedLoan = WrapperBuilder
+                .mockLite(loan)
+                .using(
+                    () => {
+                        return {
+                            prices: MOCK_PRICES,
+                            timestamp: Date.now()
+                        }
+                    })
+
+            expect(loan).to.be.not.equal(ZERO);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
         });
     });
 });

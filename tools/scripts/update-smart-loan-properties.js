@@ -1,20 +1,14 @@
-import POOL from "../../build/contracts/PoolTUP.json";
-import EXCHANGE from "../../build/contracts/PangolinExchangeTUP.json";
-import config from "../../src/config.js";
-
-export function main() {
+export function updateContracts(poolAddress, exchangeAddress) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
 
     let result = data.replace(/_POOL_ADDRESS = .*;/g,
-            '_POOL_ADDRESS = ' + POOL.networks[config.chainId].address + ';');
+            '_POOL_ADDRESS = ' + poolAddress + ';');
 
     result = result.replace(/_EXCHANGE_ADDRESS = .*;/g,
-            '_EXCHANGE_ADDRESS = ' + EXCHANGE.networks[config.chainId].address + ';');
+            '_EXCHANGE_ADDRESS = ' + exchangeAddress + ';');
 
     fs.writeFileSync('./contracts/SmartLoanProperties.sol', result, 'utf8');
 
     return 'Properties updated!'
 }
-
-main();

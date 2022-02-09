@@ -4,31 +4,38 @@ import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
-import SmartLoanSinglePriceAwareArtifact from '../../artifacts/contracts/deprecated/SmartLoanSinglePriceAware.sol/SmartLoanSinglePriceAware.json';
+import SmartLoanSinglePriceAwareArtifact
+  from '../../artifacts/contracts/deprecated/SmartLoanSinglePriceAware.sol/SmartLoanSinglePriceAware.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
 import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
-import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Asset, deployAndInitPangolinExchangeContract, getFixedGasSigners, toBytes32, toWei,} from "../_helpers";
+import {
+  Asset,
+  deployAndInitPangolinExchangeContract,
+  getFixedGasSigners,
+  recompileSmartLoan,
+  toBytes32,
+  toWei,
+} from "../_helpers";
 import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
+  BorrowingIndex,
+  DepositIndex,
   MockSmartLoanRedstoneProvider,
-  SmartLoanSinglePriceAware,
-  MockSmartLoanRedstoneProvider__factory,
-  SmartLoanSinglePriceAware__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   Pool,
-  DepositIndex,
-  BorrowingIndex,
-  VariableUtilisationRatesCalculator, UpgradeableBeacon, SmartLoansFactory, CompoundingIndex, SmartLoan
+  SmartLoan,
+  SmartLoansFactory,
+  SmartLoanSinglePriceAware,
+  UpgradeableBeacon,
+  VariableUtilisationRatesCalculator
 } from "../../typechain";
-import {BigNumber, Contract} from "ethers";
+import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 
 const addresses = require("../../common/token_addresses.json");
@@ -173,23 +180,19 @@ describe('Smart loan',  () => {
       );
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      smartLoan = await deployContract(owner, SmartLoanArtifact) as SmartLoan;
-
       smartLoansFactory1 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory1.initialize(pool.address, exchange.address, smartLoan.address);
 
-      const beaconAddress1 = await smartLoansFactory1.upgradeableBeacon.call(0);
-      beacon1 = (await new ethers.Contract(beaconAddress1, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
-      const mockSmartLoan1 = await (new SmartLoanSinglePriceAware__factory(owner).deploy());
-      await beacon1.connect(owner).upgradeTo(mockSmartLoan1.address);
+      const artifact1 = await recompileSmartLoan("SmartLoanSinglePriceAware", pool.address, exchange.address, 'deprecated');
+      let implementation1 = await deployContract(owner, artifact1) as SmartLoan;
+
+      await smartLoansFactory1.initialize(implementation1.address);
 
       smartLoansFactory2 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory2.initialize(pool.address, exchange.address, smartLoan.address);
 
-      const beaconAddress2 = await smartLoansFactory2.upgradeableBeacon.call(0);
-      beacon2 = (await new ethers.Contract(beaconAddress2, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
-      const mockSmartLoan2 = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
-      await beacon2.connect(owner).upgradeTo(mockSmartLoan2.address);
+      const artifact2 = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, 'mock');
+      let implementation2 = await deployContract(owner, artifact2) as SmartLoan;
+
+      await smartLoansFactory2.initialize(implementation2.address);
     });
 
     it("should deploy a smart loan", async () => {
