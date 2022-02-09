@@ -45,6 +45,15 @@ export function parseLogs(loan, logs) {
   return [loanEvents, collateralFromPayments]
 }
 
+export function roundWithPrecision(num, precision) {
+  var multiplier = Math.pow(10, precision);
+  return Math.round( num * multiplier ) / multiplier;
+}
+
+export function round(num) {
+  return roundWithPrecision(num, 18);
+}
+
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
 export const parseUnits = ethers.utils.parseUnits;
