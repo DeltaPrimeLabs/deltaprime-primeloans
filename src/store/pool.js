@@ -63,10 +63,11 @@ export default {
         //TODO: solve problem with lacking transaction hash in a Pool artifact JSON
         if (!deploymentTx) {
           deploymentTx = MIGRATIONS.networks[rootState.network.chainId].transactionHash;
+          const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
+
+          if (deploymentReceipt) commit('setDeploymentBlock', deploymentReceipt.blockNumber);
         }
 
-        const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
-        commit('setDeploymentBlock', deploymentReceipt.blockNumber);
 
         let pool = new ethers.Contract(POOLTUP.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);
