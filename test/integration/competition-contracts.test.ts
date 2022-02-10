@@ -4,15 +4,21 @@ import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 import {Contract} from "ethers";
 
-import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact
+    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
 import DepositAccessNFTArtifact from '../../artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json';
-import PoolWithAccessNFTAndLimitedBorrowArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFTAndLimitedBorrow.sol/PoolWithAccessNFTAndLimitedBorrow.json';
+import PoolWithAccessNFTAndLimitedBorrowArtifact
+    from '../../artifacts/contracts/upgraded/PoolWithAccessNFTAndLimitedBorrow.sol/PoolWithAccessNFTAndLimitedBorrow.json';
 import PoolTUPArtifact from '../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import SmartLoansFactoryTUPArtifact from '../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
+import MockSmartLoanRedstoneProviderArtifact
+    from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
+import MockSmartLoanRedstoneProviderLimitedCollateralArtifact
+    from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProviderLimitedCollateral.sol/MockSmartLoanRedstoneProviderLimitedCollateral.json';
+import SmartLoansFactoryTUPArtifact
+    from '../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
 import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
 import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -27,25 +33,26 @@ import {
 } from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
-    SmartLoansFactory,
-    SmartLoan,
-    SmartLoanLimitedCollateral,
-    Pool,
-    PoolWithAccessNFTAndLimitedBorrow,
-    OpenBorrowersRegistry,
     BorrowAccessNFT,
-    DepositIndex,
     BorrowingIndex,
-    SmartLoansFactoryTUP,
+    DepositAccessNFT,
+    DepositIndex,
+    MockSmartLoanRedstoneProvider,
+    MockSmartLoanRedstoneProviderLimitedCollateral,
     PangolinExchange,
-    SmartLoansFactory__factory,
+    Pool,
     Pool__factory,
     PoolTUP,
+    PoolWithAccessNFTAndLimitedBorrow,
     PoolWithAccessNFTAndLimitedBorrow__factory,
-    DepositAccessNFT, SmartLoan__factory, UpgradeableBeacon__factory, SmartLoanLimitedCollateral__factory
+    SmartLoan,
+    SmartLoanLimitedCollateral,
+    SmartLoansFactory,
+    SmartLoansFactory__factory,
+    SmartLoansFactoryTUP,
+    UpgradeableBeacon__factory,
 } from "../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
-import {deploy} from "@openzeppelin/truffle-upgrades/dist/utils";
 
 chai.use(solidity);
 
@@ -127,6 +134,7 @@ describe('Trading competition upgraded contracts test', () => {
         SLFImpl = (await deployContract(owner, SmartLoansFactoryArtifact)) as SmartLoansFactory;
         SLFTUP = (await deployContract(owner, SmartLoansFactoryTUPArtifact, [SLFImpl.address, admin.address, []])) as SmartLoansFactoryTUP;
         SLF = await new SmartLoansFactory__factory(owner).attach(SLFTUP.address);
+
         await SLF.connect(owner).initialize(SLImpl.address);
 
         await pool.initialize(
@@ -168,7 +176,7 @@ describe('Trading competition upgraded contracts test', () => {
 
     it("should require 2 AVAX borrow on first loan only", async () => {
         SLF = WrapperBuilder
-            .mockLite(SLF)
+            .mockLite(SLF.connect(user))
             .using(
                 () => {
                     return {
@@ -178,14 +186,25 @@ describe('Trading competition upgraded contracts test', () => {
                 })
 
         await expect(SLF.createAndFundLoan(toWei("3"), {value: toWei("0.1")})).to.be.revertedWith("Initial loan has to be equal to 2 AVAX")
-        await SLF.connect(user).createAndFundLoan(toWei("2"), {value: toWei("1")});
+        await SLF.createAndFundLoan(toWei("2"), {value: toWei("1")});
     });
 
     it("should add and withdraw more than 1.25 collateral in total with the base SL contract version", async () => {
         const SLAddress = await SLF.getLoanForOwner(user.address);
-        SL = await (new SmartLoan__factory(user)).attach(SLAddress);
-        await SL.connect(user).fund({value: toWei("2")});
-        await SL.connect(user).withdraw(toWei("2"));
+        SL = ((await new ethers.Contract(SLAddress, MockSmartLoanRedstoneProviderArtifact.abi)) as MockSmartLoanRedstoneProvider);
+
+        SL = WrapperBuilder
+            .mockLite(SL.connect(user))
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
+
+        await SL.fund({value: toWei("2")});
+        await SL.withdraw(toWei("2"));
     });
 
     it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
@@ -194,7 +213,17 @@ describe('Trading competition upgraded contracts test', () => {
         const beaconAddress = await SLF.connect(owner).upgradeableBeacon();
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(SLImpl.address);
-        SLUpgraded = await (new SmartLoanLimitedCollateral__factory(user)).attach(SL.address);
+        SLUpgraded = ((await new ethers.Contract(SL.address, MockSmartLoanRedstoneProviderLimitedCollateralArtifact.abi)) as MockSmartLoanRedstoneProviderLimitedCollateral);
+
+        SLUpgraded = WrapperBuilder
+            .mockLite(SLUpgraded.connect(user))
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
 
         await expect(SLUpgraded.fund({value: toWei("1.5")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
 
