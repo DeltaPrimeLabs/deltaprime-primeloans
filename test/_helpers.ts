@@ -101,6 +101,7 @@ export async function recompileSmartLoan(contractName: string, poolAddress: stri
     execSync(`node -r esm -e "require('./tools/scripts/update-smart-loan-properties.js')` +
         `.updateContracts('${poolAddress}','${exchangeAddress}')"`, { encoding: 'utf-8' });
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
+    await syncTime();
     return require(artifactsDirectory);
 }
 

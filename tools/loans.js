@@ -2,6 +2,7 @@ const config = require('./network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
 const FACTORY = require('../build/contracts/SmartLoansFactory.json');
+const FACTORY_TUP = require('../build/contracts/SmartLoansFactoryTUP.json');
 const LOAN = require('../build/contracts/SmartLoan.json');
 const {WrapperBuilder} = require("redstone-evm-connector");
 
@@ -10,11 +11,12 @@ let privateKeyWallet = new ethers.Wallet(mnemonic);
 
 var provider;
 
-provider = new ethers.providers.JsonRpcProvider("https://207.154.255.139/");    // Digital Ocean forked node, leave blank for localhost
+// provider = new ethers.providers.JsonRpcProvider("https://207.154.255.139/");    // Digital Ocean forked node, leave blank for localhost
+provider = new ethers.providers.JsonRpcProvider();
 
 
 let wallet = privateKeyWallet.connect(provider);
-let factory = new ethers.Contract(FACTORY.networks[config["network-id"]].address, FACTORY.abi, wallet);
+let factory = new ethers.Contract(FACTORY_TUP.networks[config["network-id"]].address, FACTORY.abi, wallet);
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = ethers.utils.parseEther;
