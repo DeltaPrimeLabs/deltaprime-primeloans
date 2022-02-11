@@ -8,8 +8,8 @@ import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
 import DepositAccessNFTArtifact from '../../artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json';
-import PoolWithAccessNFTAndLimitedBorrowArtifact
-    from '../../artifacts/contracts/upgraded/PoolWithAccessNFTAndLimitedBorrow.sol/PoolWithAccessNFTAndLimitedBorrow.json';
+import PoolWithAccessNFTArtifact
+    from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import PoolTUPArtifact from '../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
@@ -43,8 +43,8 @@ import {
     Pool,
     Pool__factory,
     PoolTUP,
-    PoolWithAccessNFTAndLimitedBorrow,
-    PoolWithAccessNFTAndLimitedBorrow__factory,
+    PoolWithAccessNFT,
+    PoolWithAccessNFT__factory,
     SmartLoan,
     SmartLoanLimitedCollateral,
     SmartLoansFactory,
@@ -72,7 +72,7 @@ describe('Trading competition upgraded contracts test', () => {
         SLFTUP: SmartLoansFactoryTUP,
         pool: Pool,
         poolTUP: PoolTUP,
-        poolUpgraded: PoolWithAccessNFTAndLimitedBorrow,
+        poolUpgraded: PoolWithAccessNFT,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         user: SignerWithAddress,
@@ -157,9 +157,9 @@ describe('Trading competition upgraded contracts test', () => {
 
     it("should deposit requested value only with the access ERC721", async () => {
         // Upgrade the pool
-        const poolUpgradedImpl = await (deployContract(owner, PoolWithAccessNFTAndLimitedBorrowArtifact)) as PoolWithAccessNFTAndLimitedBorrow;
+        const poolUpgradedImpl = await (deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
         await poolTUP.connect(admin).upgradeTo(poolUpgradedImpl.address);
-        poolUpgraded = await new PoolWithAccessNFTAndLimitedBorrow__factory(owner).attach(poolTUP.address);
+        poolUpgraded = await new PoolWithAccessNFT__factory(owner).attach(poolTUP.address);
         
         // Set NFT access
         await poolUpgraded.connect(owner).setAccessNFT(borrowNFT.address);
@@ -172,21 +172,6 @@ describe('Trading competition upgraded contracts test', () => {
         await poolUpgraded.deposit({value: toWei("10.0")});
 
         expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("10"));
-    });
-
-    it("should require 2 AVAX borrow on first loan only", async () => {
-        SLF = WrapperBuilder
-            .mockLite(SLF.connect(user))
-            .using(
-                () => {
-                    return {
-                        prices: MOCK_PRICES,
-                        timestamp: Date.now()
-                    }
-                })
-
-        await expect(SLF.createAndFundLoan(toWei("3"), {value: toWei("0.1")})).to.be.revertedWith("Initial loan has to be equal to 2 AVAX")
-        await SLF.createAndFundLoan(toWei("2"), {value: toWei("1")});
     });
 
     it("should add and withdraw more than 1.25 collateral in total with the base SL contract version", async () => {

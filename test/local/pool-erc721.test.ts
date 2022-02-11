@@ -5,14 +5,14 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
-import PoolWithAccessNFTAndLimitedBorrowArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFTAndLimitedBorrow.sol/PoolWithAccessNFTAndLimitedBorrow.json';
+import PoolWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
 import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
-    PoolWithAccessNFTAndLimitedBorrow,
+    PoolWithAccessNFT,
     OpenBorrowersRegistry,
     BorrowAccessNFT,
     DepositIndex,
@@ -25,7 +25,7 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 
 describe('Pool with ERC721 Alpha access', () => {
-    let sut: PoolWithAccessNFTAndLimitedBorrow,
+    let sut: PoolWithAccessNFT,
         owner: SignerWithAddress,
         user: SignerWithAddress,
         user2: SignerWithAddress,
@@ -39,7 +39,7 @@ describe('Pool with ERC721 Alpha access', () => {
         await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
-        sut = (await deployContract(owner, PoolWithAccessNFTAndLimitedBorrowArtifact)) as PoolWithAccessNFTAndLimitedBorrow;
+        sut = (await deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
 
         const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
         const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;

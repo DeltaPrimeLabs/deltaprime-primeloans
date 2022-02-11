@@ -17,7 +17,9 @@ abstract contract AccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausa
     string[] availableUris;
     address accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
 
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {
+        _pause();
+    }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         super._burn(tokenId);
