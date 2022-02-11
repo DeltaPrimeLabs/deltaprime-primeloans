@@ -53,119 +53,6 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   }
 
   /**
-   * This function allows selling assets without checking if the loan will remain solvent after this operation.
-   * It is used as part of the sellout() function which sells part/all of assets in order to bring the loan back to solvency.
-   * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
-   **/
-  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
-    IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(address(getExchange()), _amount);
-    getExchange().sellAsset(asset, _amount, _minAvaxOut);
-  }
-
-  function withdrawAsset(bytes32 asset, uint256 amount) external onlyOwner nonReentrant remainsSolvent {
-    IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(msg.sender, amount);
-  }
-
-  /**
-   * This function attempts to sell just enough asset to receive targetAvaxAmount.
-   * If there is not enough asset's balance to cover the whole targetAvaxAmount then the whole asset's balance
-   * is being sold.
-   * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
-   **/
-  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount) private {
-    IERC20Metadata token = getERC20TokenInstance(asset);
-    uint256 balance = token.balanceOf(address(this));
-    if (balance > 0) {
-      uint256 minSaleAmount = getExchange().getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
-      if (balance < minSaleAmount) {
-        sellAsset(asset, balance, 0);
-      } else {
-        sellAsset(asset, minSaleAmount, targetAvaxAmount);
-      }
-    }
-  }
-
-  /**
-   * This function attempts to repay the _repayAmount back to the pool.
-   * If there is not enough AVAX balance to repay the _repayAmount then the available AVAX balance will be repaid.
-   **/
-  function attemptRepay(uint256 _repayAmount) internal {
-    repay(Math.min(address(this).balance, _repayAmount));
-  }
-
-  function payBonus(uint256 _bonus) internal {
-    payable(msg.sender).safeTransferETH(Math.min(_bonus, address(this).balance));
-  }
-
-  /**
-   * This function can only be accessed by the owner and allows selling all of the assets.
-   **/
-  function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
-    bytes32[] memory assets = getExchange().getAllAssets();
-    for (uint256 i = 0; i < assets.length; i++) {
-      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
-      if (balance > 0) {
-        sellAsset(assets[i], balance, 0);
-      }
-    }
-
-    uint256 debt = getDebt();
-    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed");
-    repay(debt);
-    emit LoanClosed(debt, address(this).balance, block.timestamp);
-
-    uint256 balance = address(this).balance;
-    if (balance > 0) {
-      payable(msg.sender).transfer(balance);
-      emit Withdrawn(msg.sender, balance, block.timestamp);
-    }
-  }
-
-  function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
-    require(!isSolvent(), "Cannot sellout a solvent account");
-
-    uint256 debt = getDebt();
-    if (repayAmount > debt) {
-      repayAmount = debt;
-    }
-    uint256 bonus = (repayAmount * getLiquidationBonus()) / getPercentagePrecision();
-    uint256 totalRepayAmount = repayAmount + bonus;
-
-    sellout(totalRepayAmount);
-    attemptRepay(repayAmount);
-    payBonus(bonus);
-    emit Liquidated(msg.sender, repayAmount, bonus, getLTV(), block.timestamp);
-  }
-
-  /**
-   * This function role is to sell part/all of the available assets in order to receive the targetAvaxAmount.
-   *
-   **/
-  function sellout(uint256 targetAvaxAmount) private {
-    bytes32[] memory assets = getExchange().getAllAssets();
-    for (uint256 i = 0; i < assets.length; i++) {
-      if (address(this).balance >= targetAvaxAmount) break;
-      sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
-    }
-  }
-
-  /**
-   * Withdraws an amount from the loan
-   * This method could be used to cash out profits from investments
-   * The loan needs to remain solvent after the withdrawal
-   * @param _amount to be withdrawn
-   **/
-  function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= _amount, "There is not enough funds to withdraw");
-
-    payable(msg.sender).safeTransferETH(_amount);
-
-    emit Withdrawn(msg.sender, _amount, block.timestamp);
-  }
-
-  /**
    * Invests an amount to buy an asset
    * @param _asset code of the asset
    * @param _exactERC20AmountOut exact amount of asset to buy
@@ -180,20 +67,6 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
 
-  /**
-   * Redeem an investment by selling an asset
-   * @param _asset code of the asset
-   * @param _exactERC20AmountIn exact amount of token to sell
-   * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
-   **/
-  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
-    IERC20Metadata token = getERC20TokenInstance(_asset);
-    address(token).safeTransfer(address(getExchange()), _exactERC20AmountIn);
-    bool success = getExchange().sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
-    require(success, "Redemption failed");
-
-    emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
-  }
 
   /**
    * Borrows funds from the pool
@@ -205,22 +78,6 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     emit Borrowed(msg.sender, _amount, block.timestamp);
   }
 
-  /**
-   * Repays funds to the pool
-   * @param _amount of funds to repay
-   **/
-  function repay(uint256 _amount) public payable {
-    if (isSolvent()) {
-      require(msg.sender == owner());
-    }
-
-    _amount = Math.min(_amount, getDebt());
-    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
-
-    getPool().repay{value: _amount}();
-
-    emit Repaid(msg.sender, _amount, block.timestamp);
-  }
 
   receive() external payable {}
 
@@ -350,20 +207,6 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
     require(isSolvent(), "The action may cause an account to become insolvent");
   }
 
-  /**
-   * This modifier checks if the LTV is between getMinSelloutLtv() and getMaxLtv() after performing the liquidateLoan() operation.
-   * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > getMinSelloutLtv() is applied.
-   * It protects the user from an unnecessarily costly liquidation.
-   * The loan must be solvent after the liquidateLoan() operation.
-   **/
-  modifier successfulLiquidation() {
-    _;
-    uint256 LTV = getLTV();
-    if (msg.sender != owner()) {
-      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
-    }
-    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
-  }
 
   /* ========== EVENTS ========== */
 
@@ -376,14 +219,6 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   event Funded(address indexed funder, uint256 amount, uint256 time);
 
   /**
-   * @dev emitted after the funds are withdrawn from the loan
-   * @param owner the address which withdraws funds from the loan
-   * @param amount the amount of funds withdrawn
-   * @param time of the withdrawal
-   **/
-  event Withdrawn(address indexed owner, uint256 amount, uint256 time);
-
-  /**
    * @dev emitted after the funds are invested into an asset
    * @param investor the address of investor making the purchase
    * @param asset bought by the investor
@@ -393,45 +228,10 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
   event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
 
   /**
-   * @dev emitted after the investment is sold
-   * @param investor the address of investor selling the asset
-   * @param asset sold by the investor
-   * @param amount the investment
-   * @param time of the redemption
-   **/
-  event Redeemed(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
-
-  /**
    * @dev emitted when funds are borrowed from the pool
    * @param borrower the address of borrower
    * @param amount of the borrowed funds
    * @param time of the borrowing
    **/
   event Borrowed(address indexed borrower, uint256 amount, uint256 time);
-
-  /**
-   * @dev emitted when funds are repaid to the pool
-   * @param borrower the address initiating repayment
-   * @param amount of repaid funds
-   * @param time of the repayment
-   **/
-  event Repaid(address indexed borrower, uint256 amount, uint256 time);
-
-  /**
-   * @dev emitted after a successful liquidation operation
-   * @param liquidator the address that initiated the liquidation operation
-   * @param repayAmount requested amount (AVAX) of liquidation
-   * @param bonus an amount of bonus (AVAX) received by the liquidator
-   * @param ltv a new LTV after the liquidation operation
-   * @param time a time of the liquidation
-   **/
-  event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 time);
-
-  /**
-   * @dev emitted after closing a loan by the owner
-   * @param debtRepaid the amount of a borrowed AVAX that was repaid back to the pool
-   * @param withdrawalAmount the amount of AVAX that was withdrawn by the owner after closing the loan
-   * @param time a time of the loan's closure
-   **/
-  event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 time);
 }
