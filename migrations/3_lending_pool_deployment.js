@@ -1,7 +1,7 @@
 const PoolFactory = artifacts.require("./PoolFactory.sol");
 const PoolTUP = artifacts.require("./PoolTUP.sol");
 
-module.exports = async function(deployer, accounts) {
+module.exports = async function(deployer, network, accounts) {
   await deployer.deploy(PoolFactory);
 
   const factory = await PoolFactory.deployed();

@@ -19,8 +19,8 @@ import MockSmartLoanRedstoneProviderLimitedCollateralArtifact
     from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProviderLimitedCollateral.sol/MockSmartLoanRedstoneProviderLimitedCollateral.json';
 import SmartLoansFactoryTUPArtifact
     from '../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
-import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -34,9 +34,8 @@ import {
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
     BorrowAccessNFT,
-    BorrowingIndex,
+    CompoundingIndex,
     DepositAccessNFT,
-    DepositIndex,
     MockSmartLoanRedstoneProvider,
     MockSmartLoanRedstoneProviderLimitedCollateral,
     PangolinExchange,
@@ -118,8 +117,8 @@ describe('Trading competition upgraded contracts test', () => {
         pool = await new Pool__factory(owner).attach(poolTUP.address);
 
         // Borrow/Deposit indices
-        const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
-        const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
+        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
         // Assets exchange (without TUP)
         exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [

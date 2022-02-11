@@ -2,15 +2,17 @@ import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
-import OpenBorrowersRegistryArtifact from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
-import DepositIndexArtifact from '../../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import FixedRatesCalculatorArtifact
+  from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import OpenBorrowersRegistryArtifact
+  from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {Pool, OpenBorrowersRegistry, DepositIndex, BorrowingIndex} from "../../../typechain";
+import {CompoundingIndex, OpenBorrowersRegistry, Pool} from "../../../typechain";
 
 chai.use(solidity);
 
@@ -33,8 +35,8 @@ describe('Pool with fixed rates', () => {
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-    const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
-    const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
+    const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+    const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
     await sut.initialize(
         mockFixedRatesCalculator.address,
