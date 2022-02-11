@@ -13,6 +13,7 @@ module.exports = async function (deployer, network, accounts) {
         SmartLoansFactory._json.abi.find(obj => obj.name === "initialize"),
         [SmartLoan.address]
     )
+
     await deployer.deploy(SmartLoansFactoryTUP, SmartLoansFactory.address, accounts[1], calldata);
     console.log(`Deployed SmartLoansFactory (TransparentUpgradeableProxy). Proxy address: ${SmartLoansFactoryTUP.address}`);
     console.log(`Initialized with: [Pool: ${PoolTUP.address}, AssetsExchange: ${PangolinExchangeTUP.address}, SmartLoan: ${SmartLoan.address}]`);

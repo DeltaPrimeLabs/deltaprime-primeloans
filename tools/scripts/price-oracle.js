@@ -1,9 +1,8 @@
-const config = require('./network/config-fuji.json');
+const config = require('../network/config-fuji.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const PRICE_PROVIDER = require('../build/contracts/SimplePriceProvider.json');
+const PRICE_PROVIDER = require('../../build/contracts/SimplePriceProvider.json');
 
-const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = ethers.utils.parseEther;
 
 const mnemonic = fs.readFileSync("./.secret").toString().trim();

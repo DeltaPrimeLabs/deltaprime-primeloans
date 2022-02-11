@@ -1,5 +1,5 @@
-const Loans = require('../loans.js');
-const PriceOracle = require('../price-oracle.js');
+const Loans = require('./loans.js');
+const PriceOracle = require('./price-oracle.js');
 
 
 async function run() {

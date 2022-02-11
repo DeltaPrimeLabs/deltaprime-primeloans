@@ -3,6 +3,9 @@ import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import "hardhat-watcher";
 
+const fs = require('fs');
+const deployerKey = fs.readFileSync(".secret-deployer").toString().trim();
+
 export default {
   solidity: "0.8.4",
   defaultNetwork: "hardhat",
@@ -26,14 +29,16 @@ export default {
       //   interval: 1000
       // }
     },
-    'hardhat-integration': {
+    local: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
+      chainId: 1337
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
-      chainId: 43113
+      chainId: 43113,
+      accounts: [deployerKey]
     }
   },
   paths: {

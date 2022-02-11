@@ -9,6 +9,8 @@ cache
 /.secret
 /.secret2
 /.arweave-secret.json
+/.secret-admin
+/.secret-deployer
 
 .vercel
 .openzeppelin

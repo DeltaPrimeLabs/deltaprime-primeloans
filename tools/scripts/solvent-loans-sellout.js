@@ -1,4 +1,4 @@
-const Loans = require('../loans.js');
+const Loans = require('./loans.js');
 
 async function selloutAllLoans() {
   let loans = await Loans.findAllLoans();

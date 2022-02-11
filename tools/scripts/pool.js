@@ -1,7 +1,7 @@
-const config = require('./network/config-local.json');
+const config = require('../network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const POOL = require('../build/contracts/Pool.json');
+const POOL = require('../../build/contracts/Pool.json');
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = ethers.utils.parseEther;

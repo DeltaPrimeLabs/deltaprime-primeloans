@@ -1,12 +1,12 @@
-const config = require('./network/config-local.json');
+const config = require('../network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const FACTORY = require('../build/contracts/SmartLoansFactory.json');
-const FACTORY_TUP = require('../build/contracts/SmartLoansFactoryTUP.json');
-const LOAN = require('../build/contracts/SmartLoan.json');
+const FACTORY = require('../../build/contracts/SmartLoansFactory.json');
+const FACTORY_TUP = require('../../build/contracts/SmartLoansFactoryTUP.json');
+const LOAN = require('../../build/contracts/SmartLoan.json');
 const {WrapperBuilder} = require("redstone-evm-connector");
 
-const mnemonic = fs.readFileSync("./.secret2").toString().trim();
+const mnemonic = fs.readFileSync(".secret").toString().trim();
 let privateKeyWallet = new ethers.Wallet(mnemonic);
 
 var provider;

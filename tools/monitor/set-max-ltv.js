@@ -1,4 +1,4 @@
-const Loans = require('../loans.js');
+const Loans = require('../scripts/loans.js');
 const args = require('yargs').argv;
 
 let maxLTV = args.maxLTV ? args.maxLTV : 4000;
