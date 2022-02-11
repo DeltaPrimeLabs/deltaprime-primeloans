@@ -75,9 +75,7 @@ describe('Smart loan',  () => {
       MOCK_PRICES: any,
       AVAX_PRICE: number,
       USD_PRICE: number,
-      artifact: any,
-      beacon: UpgradeableBeacon;
-
+      artifact: any;
 
     before("deploy factory, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -124,9 +122,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan", async () => {
@@ -278,8 +273,7 @@ describe('Smart loan',  () => {
       usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
       AVAX_PRICE: number,
-      artifact: any,
-      beacon: UpgradeableBeacon;
+      artifact: any;
 
     before("deploy factory, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -325,9 +319,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan", async () => {
@@ -595,8 +586,7 @@ describe('Smart loan',  () => {
       LINK_PRICE: number,
       USD_PRICE: number,
       artifact: any,
-      implementation: any,
-      beacon: UpgradeableBeacon;
+      implementation: any;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -653,9 +643,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
@@ -796,8 +783,7 @@ describe('Smart loan',  () => {
         LINK_PRICE: number,
         USD_PRICE: number,
         artifact: any,
-        implementation: any,
-        beacon: UpgradeableBeacon;
+        implementation: any;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -854,9 +840,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
@@ -975,8 +958,7 @@ describe('Smart loan',  () => {
         LINK_PRICE: number,
         USD_PRICE: number,
         artifact: any,
-        implementation: any,
-        beacon: UpgradeableBeacon;
+        implementation: any;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -1033,9 +1015,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
@@ -1147,8 +1126,7 @@ describe('Smart loan',  () => {
         LINK_PRICE: number,
         USD_PRICE: number,
         artifact: any,
-        implementation: any,
-        beacon: UpgradeableBeacon;
+        implementation: any;
 
     before("deploy provider, exchange and pool", async () => {
       [,,owner, depositor] = await getFixedGasSigners(10000000);
@@ -1205,9 +1183,6 @@ describe('Smart loan',  () => {
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
@@ -1282,8 +1257,7 @@ describe('Smart loan',  () => {
             LINK_PRICE: number,
             USD_PRICE: number,
             artifact: any,
-            implementation: any,
-            beacon: UpgradeableBeacon;
+            implementation: any;
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
@@ -1340,9 +1314,6 @@ describe('Smart loan',  () => {
             implementation = await deployContract(owner, artifact) as SmartLoan;
 
             await smartLoansFactory.initialize(implementation.address);
-
-            const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-            beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
         });
 
         it("should deploy a smart loan, fund, borrow and invest", async () => {

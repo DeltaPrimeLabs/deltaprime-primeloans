@@ -98,8 +98,8 @@ export async function recompileSmartLoan(contractName: string, poolAddress: stri
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    execSync(`node -r esm -e 'require("./tools/scripts/update-smart-loan-properties.js")` +
-        `.updateContracts("${poolAddress}","${exchangeAddress}")'`, { encoding: 'utf-8' });
+    execSync(`node -r esm -e "require('./tools/scripts/update-smart-loan-properties.js')` +
+        `.updateContracts('${poolAddress}','${exchangeAddress}')"`, { encoding: 'utf-8' });
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }

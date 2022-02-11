@@ -158,7 +158,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Deposits the message value
    * It updates user deposited balance, total deposited and rates
    **/
-  function deposit() external payable virtual nonReentrant {
+  function deposit() public payable virtual nonReentrant {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
@@ -190,7 +190,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * It updates user borrowed balance, total borrowed amount and rates
    * @dev _amount the amount to be borrowed
    **/
-  function borrow(uint256 _amount) external canBorrow nonReentrant {
+  function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
     require(address(this).balance >= _amount);
 
     _accumulateBorrowingInterest(msg.sender);

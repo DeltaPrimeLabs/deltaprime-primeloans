@@ -37,7 +37,7 @@ describe('Smart loans factory - upgrading',  () => {
             proxy: TransparentUpgradeableProxy,
             ownerLoanAddress: any;
         before("should deploy provider, exchange, loansFactory and pool", async () => {
-            [, owner, admin] = await getFixedGasSigners(10000000);
+            [owner, admin] = await getFixedGasSigners(10000000);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).deploy());

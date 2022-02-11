@@ -38,7 +38,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   /**
    * Funds a loan with the value attached to the transaction
    **/
-  function fund() external payable {
+  function fund() public virtual payable {
     emit Funded(msg.sender, msg.value, block.timestamp);
   }
 
@@ -156,7 +156,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @param _amount to be withdrawn
    * @dev This function uses the redstone-evm-connector
    **/
-  function withdraw(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
+  function withdraw(uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
     require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).safeTransferETH(_amount);

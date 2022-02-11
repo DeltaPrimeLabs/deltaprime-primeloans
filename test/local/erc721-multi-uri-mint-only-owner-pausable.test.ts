@@ -11,7 +11,7 @@ chai.use(solidity);
 
 const {deployContract} = waffle;
 
-describe('ERC721 with single URI, owner-only minting and pausability', () => {
+describe('ERC721 with multi URI, owner-only minting and pausability', () => {
     let owner: SignerWithAddress,
         user: SignerWithAddress,
         user2: SignerWithAddress,
@@ -53,6 +53,23 @@ describe('ERC721 with single URI, owner-only minting and pausability', () => {
         await expect(nftContract.connect(user2).safeMint("874568844935561227", "0xaf000c20a538dcd1e68ab4582a46c12e9ef50291eb6d83521314b24f21b3c91263bac46788640854938367e311139c4ca8d5ec29cf3332f3ef8f98b96c2d2cd81b")).to.be.revertedWith("All available NFTs were already minted");
     });
 
+    it("should unpause contract", async () => {
+        await expect(nftContract.connect(user).unpause()).to.be.revertedWith("Ownable: caller is not the owner");
+        await nftContract.connect(owner).unpause()
+        expect(await nftContract.connect(owner).paused()).to.be.false;
+        await expect(nftContract.connect(owner).unpause()).to.be.revertedWith("Pausable: not paused")
+    });
+
+    it("should allow transferring tokens from and to all users", async () => {
+        await nftContract.connect(owner)["safeTransferFrom(address,address,uint256)"](owner.address, user.address, 0);
+        expect(await nftContract.balanceOf(owner.address)).to.be.equal(0);
+        expect(await nftContract.balanceOf(user.address)).to.be.equal(2);
+
+        await nftContract.connect(user)["safeTransferFrom(address,address,uint256)"](user.address, owner.address, 0);
+        expect(await nftContract.balanceOf(owner.address)).to.be.equal(1);
+        expect(await nftContract.balanceOf(user.address)).to.be.equal(1);
+    });
+
     it("should pause contract", async () => {
         await expect(nftContract.connect(user).pause()).to.be.revertedWith("Ownable: caller is not the owner");
         await nftContract.connect(owner).pause()
@@ -69,22 +86,5 @@ describe('ERC721 with single URI, owner-only minting and pausability', () => {
         await nftContract.connect(user2).safeMint("874568844935561227", "0xaf000c20a538dcd1e68ab4582a46c12e9ef50291eb6d83521314b24f21b3c91263bac46788640854938367e311139c4ca8d5ec29cf3332f3ef8f98b96c2d2cd81b");
         expect(await nftContract.balanceOf(user2.address)).to.be.equal(1);
         expect(await nftContract.tokenURI(2)).to.be.equal("uri_3");
-    });
-
-    it("should unpause contract", async () => {
-        await expect(nftContract.connect(user).unpause()).to.be.revertedWith("Ownable: caller is not the owner");
-        await nftContract.connect(owner).unpause()
-        expect(await nftContract.connect(owner).paused()).to.be.false;
-        await expect(nftContract.connect(owner).unpause()).to.be.revertedWith("Pausable: not paused")
-    });
-
-    it("should allow transferring tokens from and to all users", async () => {
-        await nftContract.connect(owner)["safeTransferFrom(address,address,uint256)"](owner.address, user.address, 0);
-        expect(await nftContract.balanceOf(owner.address)).to.be.equal(0);
-        expect(await nftContract.balanceOf(user.address)).to.be.equal(2);
-
-        await nftContract.connect(user)["safeTransferFrom(address,address,uint256)"](user.address, owner.address, 0);
-        expect(await nftContract.balanceOf(owner.address)).to.be.equal(1);
-        expect(await nftContract.balanceOf(user.address)).to.be.equal(1);
     });
 });
