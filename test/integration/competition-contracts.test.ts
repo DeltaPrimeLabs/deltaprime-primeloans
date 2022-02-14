@@ -71,6 +71,7 @@ describe('Trading competition upgraded contracts test', () => {
         SLF: SmartLoansFactory,
         SLFTUP: SmartLoansFactoryTUP,
         pool: Pool,
+        poolImpl: Pool,
         poolTUP: PoolTUP,
         poolUpgraded: PoolWithAccessNFT,
         owner: SignerWithAddress,
@@ -112,7 +113,7 @@ describe('Trading competition upgraded contracts test', () => {
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
         // Not upgraded Pool with TUP
-        const poolImpl = (await deployContract(owner, PoolArtifact)) as Pool;
+        poolImpl = (await deployContract(owner, PoolArtifact)) as Pool;
         poolTUP = (await deployContract(owner, PoolTUPArtifact, [poolImpl.address, admin.address, []])) as PoolTUP;
         pool = await new Pool__factory(owner).attach(poolTUP.address);
 
@@ -218,6 +219,12 @@ describe('Trading competition upgraded contracts test', () => {
 
         await SLUpgraded.withdraw(toWei("0.5"));
         await SLUpgraded.fund({value: toWei("0.1")});
+    });
+
+    it("should downgrade to old pool implementation and not require NFT access for deposit", async() => {
+       await poolTUP.connect(admin).upgradeTo(poolImpl.address);
+       await pool.deposit({value: toWei("10.0")});
+       expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("10"));
     });
 
 });
