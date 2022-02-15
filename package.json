@@ -22,7 +22,7 @@
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",
     "prettier": "prettier --write 'contracts/**/*.sol'",
-    "deploy-contract": "npx hardhat run --network fuji tools/scripts/deploy-contract.js",
+    "deploy-contract": "npx hardhat run --network fuji tools/scripts/deploy-contract.js"
   },
   "dependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",

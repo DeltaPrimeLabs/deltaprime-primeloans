@@ -39,13 +39,33 @@ describe('NFT Access test', () => {
         await expect(accessContract.setAccessNFT(nonERC721Contract.address)).to.be.revertedWith("Contract has to support the ERC721 balanceOf() interface");
     });
 
+    it("should not require access NFT to access a function with NFT lock modifier", async () => {
+        expect(await accessContract.connect(other).nftAccessFunction()).to.be.equal(777);
+    });
+
     it("should set accessNFT to a contract address as the owner", async () => {
         await accessContract.connect(owner).setAccessNFT(nftContract.address);
+    });
+
+    it("should require access NFT to access a function with NFT lock modifier", async () => {
+        await expect(accessContract.connect(other).nftAccessFunction()).to.be.revertedWith("Access NFT required");
+    });
+
+    it("should access mock function after minting an NFT", async () => {
+        await nftContract.connect(owner).addAvailableUri(["uri_1"]);
+        await nftContract.connect(other).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
+        expect(await accessContract.connect(other).nftAccessFunction()).to.be.equal(777);
     });
 
     it("should get previously set nftAccess address as a non-owner", async () => {
         accessContract.connect(other);
         const nftAddress = await accessContract.getAccessNFT();
         expect(nftAddress).to.be.equal(nftContract.address);
+    });
+
+    it("should set the NFT access address to 0 and remove the lock from mock function", async () => {
+        await expect(accessContract.connect(owner).nftAccessFunction()).to.be.revertedWith("Access NFT required");
+        await accessContract.connect(owner).setAccessNFT(ethers.constants.AddressZero);
+        expect(await accessContract.connect(owner).nftAccessFunction()).to.be.equal(777);
     });
 });
