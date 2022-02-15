@@ -4,7 +4,7 @@ const fs = require("fs");
 async function uploadNFTs() {
     const path = './tools/scripts/nft/images';
 
-    fs.truncate('./tools/scripts/nft/uris.txt', 0, function(){console.log('done')})
+    fs.truncate('./tools/scripts/nft/uris.txt', 0, function(){console.log('File truncated')})
 
     fs.readdir(path, function(err, filenames) {
         if (err) {

@@ -13,10 +13,12 @@ export default {
   namespaced: true,
   state: {
     borrowNftContract: null,
+    borrowNftContractSet: false,
     hasBorrowNft: false,
     borrowNftId: null,
     borrowNftImageUri: null,
     depositNftContract: null,
+    depositNftContractSet: false,
     hasDepositNft: false,
     depositNftId: null,
     depositNftImageUri: null
@@ -25,8 +27,8 @@ export default {
     setBorrowNftContract(state, contract) {
       state.borrowNftContract = contract;
     },
-    setHasBorrowNft(state, has) {
-      state.hasBorrowNft = has;
+    setBorrowNftContractSet(state, has) {
+      state.borrowNftContractSet = has;
     },
     setBorrowNftId(state, id) {
       state.borrowNftId = id;
@@ -37,8 +39,8 @@ export default {
     setDepositNftContract(state, contract) {
       state.depositNftContract = contract;
     },
-    setHasDepositNft(state, has) {
-      state.hasDepositNft = has;
+    setDepositNftContractSet(state, has) {
+      state.depositNftContractSet = has;
     },
     setDepositNftId(state, id) {
       state.depositNftId = id;
@@ -51,11 +53,14 @@ export default {
     hasBorrowNft(state) {
       return state.borrowNftId !== null;
     },
+    hasDepositNft(state) {
+      return state.depositNftId !== null;
+    },
     borrowingLocked(state) {
-      return state.hasBorrowNft && state.borrowNftId === null;
+      return state.borrowNftContractSet && state.borrowNftId === null;
     },
     depositLocked(state) {
-      return state.hasDepositNft && state.depositNftId === null;
+      return state.depositNftContractSet && state.depositNftId === null;
     }
   },
   actions: {
@@ -67,7 +72,8 @@ export default {
         factory.iface = new ethers.utils.Interface(FACTORY_NFT.abi);
 
         const address = await factory.getAccessNFT();
-        commit('setHasBorrowNft', address !== ZERO);
+        //TODO: simplify
+        commit('setBorrowNftContractSet', address !== ZERO);
 
         const borrowContract = new Contract(address, NFT.abi, provider.getSigner());
 
@@ -81,7 +87,7 @@ export default {
       try {
         const pool = new Contract(POOL_TUP.networks[config.chainId].address, POOL_NFT.abi, provider.getSigner());
         const address = await pool.getAccessNFT();
-        commit('setHasDepositNft', address !== ZERO);
+        commit('setDepositNftContractSet', address !== ZERO);
 
         const depositContract = new Contract(address, NFT.abi, provider.getSigner());
 
@@ -100,6 +106,15 @@ export default {
 
       commit('setBorrowNftImageUri', uri);
     },
+    async updateDepositNftFromId({ commit, state }, { id }) {
+      console.log(await state.depositNftContract.tokenURI(0))
+      const jsonUri = parseArweaveURI(await state.depositNftContract.tokenURI(id));
+      const response = await fetch(jsonUri);
+      const json = await response.json();
+      const uri = parseArweaveURI(json.image);
+
+      commit('setDepositNftImageUri', uri);
+    },
     async getBorrowNftId({ state, rootState, dispatch, commit }) {
       const balance = (await state.borrowNftContract.balanceOf(rootState.network.account)).toNumber();
       if (balance > 0) {
@@ -110,7 +125,9 @@ export default {
       }
     },
     async getDepositNftId({ state, rootState, dispatch, commit }) {
+      console.log((await state.depositNftContract.balanceOf(rootState.network.account)).toNumber())
       const balance = (await state.depositNftContract.balanceOf(rootState.network.account)).toNumber();
+
       if (balance > 0) {
         const id = (await state.depositNftContract.tokenOfOwnerByIndex(rootState.network.account, 0)).toNumber();
 
