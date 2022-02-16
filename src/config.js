@@ -1,7 +1,7 @@
 import addresses from '../common/token_addresses.json';
 
 export default {
-    DEFAULT_LTV: 4,
+    DEFAULT_LTV: 2,
     MAX_LTV: 5,
     chainId: 1337,
     ASSETS_CONFIG: {
@@ -17,7 +17,5 @@ export default {
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche",
-    borrowNftAddress: "",
-    depositNftAddress: ""
+    dataProviderId: "redstone-avalanche"
 }

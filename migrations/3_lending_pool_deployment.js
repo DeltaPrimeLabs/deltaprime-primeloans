@@ -12,5 +12,5 @@ module.exports = async function(deployer, network, accounts) {
   console.log(`Deployed Pool implementation by factory at address: ${poolAddress}`);
 
   await deployer.deploy(PoolTUP, poolAddress, accounts[1], []);
-  console.log(`Deployed Pool (TransparentUpgradeableProxy). Proxy address: ${poolAddress}`);
+  console.log(`Deployed Pool (TransparentUpgradeableProxy). Proxy address: ${PoolTUP.address}`);
 };

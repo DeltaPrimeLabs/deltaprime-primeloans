@@ -127,7 +127,6 @@ export default {
       }
     },
     async getDepositNftId({ state, rootState, dispatch, commit }) {
-      console.log((await state.depositNftContract.balanceOf(rootState.network.account)).toNumber())
       const balance = (await state.depositNftContract.balanceOf(rootState.network.account)).toNumber();
 
       if (balance > 0) {

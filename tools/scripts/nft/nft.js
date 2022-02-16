@@ -32,7 +32,7 @@ function setNft(networkName, nftAddress, proxy, contractWithNFT) {
         );
 }
 
-function addNFTs(networkName, address, nftContract) {
+function populateNftUris(networkName, address, nftContract) {
     const wallet = initWallet(networkName);
     const uris = fs.readFileSync("./tools/scripts/nft/uris.txt").toString().split("\n");
 
@@ -67,12 +67,12 @@ module.exports.setDepositAccessNFT = function setDepositAccessNFT(networkName, a
     setNft(networkName, address, POOL_TUP, POOL_NFT);
 }
 
-module.exports.addDepositNFTs = function addDepositNFTs(networkName, address) {
-    addNFTs(networkName, address, DEPOSIT_NFT);
+module.exports.populateDepositNftUris = function populateDepositNftUris(networkName, address) {
+    populateNftUris(networkName, address, DEPOSIT_NFT);
 }
 
-module.exports.addBorrowNFTs = function addBorrowNFTs(networkName,address) {
-    addNFTs(networkName, address, BORROW_NFT);
+module.exports.populateBorrowNftUris = function populateBorrowNftUris(networkName,address) {
+    populateNftUris(networkName, address, BORROW_NFT);
 }
 
 module.exports.getBorrowNFTsLeft = function getBorrowNFTsLeft(address) {

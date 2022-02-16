@@ -195,13 +195,13 @@ export default {
           .usingPriceFeed(config.dataProviderId);
 
       //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 2000000});
 
       const transaction = await provider.waitForTransaction(tx.hash);
-
-      console.log(transaction);
+      if (transaction.status === 0) throw Error('Failed to create a loan');
 
       dispatch('fetchLoan');
+      return tx;
     },
     async borrow({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -219,7 +219,9 @@ export default {
       const loan = state.loan;
 
       const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 8000000});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to repay');
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -230,7 +232,9 @@ export default {
       const loan = state.loan;
 
       const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 8000000});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to fund');
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -241,7 +245,9 @@ export default {
       const loan = state.loan;
 
       const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 8000000});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to withdraw');
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -260,7 +266,9 @@ export default {
         {gasLimit: 8000000}
       );
 
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to invest');
 
       dispatch('updateLoanStats');
       dispatch('updateLoanBalance');

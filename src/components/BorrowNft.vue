@@ -1,5 +1,7 @@
 <template>
-  <Mint :hasNft="hasBorrowNft" :nftContract="borrowNftContract" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
+  <div>
+    <Mint :hasNft="hasBorrowNft" :nftContract="borrowNftContract" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
+  </div>
 </template>
 
 <script>
@@ -18,7 +20,7 @@ export default {
     ...mapGetters('nft', ['hasBorrowNft'])
   },
   methods: {
-    ...mapActions('nft', ['getDepositNftId'])
+    ...mapActions('nft', ['getBorrowNftId'])
   }
 }
 </script>

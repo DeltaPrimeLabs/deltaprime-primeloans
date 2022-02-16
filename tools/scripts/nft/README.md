@@ -20,22 +20,22 @@ NFT address as string in double quotes
 
 Windows:
 
-    node -r esm -e 'require("./tools/scripts/nft/nft").addBorrowNFTs("NETWORK_NAME", "NFT_ADDRESS_HERE_AS_STRING")'
+    node -r esm -e 'require("./tools/scripts/nft/nft").populateBorrowNftUris("NETWORK_NAME", "NFT_ADDRESS_HERE_AS_STRING")'
 
 MacOS:
 
-    node -r esm -e "require('./tools/scripts/nft/nft').addBorrowNFTs('NETWORK_NAME', 'NFT_ADDRESS_HERE_AS_STRING')"
+    node -r esm -e "require('./tools/scripts/nft/nft').populateBorrowNftUris('NETWORK_NAME', 'NFT_ADDRESS_HERE_AS_STRING')"
 
 
 ##Pool
 
 MacOS:
 
-    node -r esm -e 'require("./tools/scripts/nft/nft").addDepositNFTs("NETWORK_NAME", "NFT_ADDRESS_HERE_AS_STRING")'
+    node -r esm -e 'require("./tools/scripts/nft/nft").populateDepositNftUris("NETWORK_NAME", "NFT_ADDRESS_HERE_AS_STRING")'
 
 Windows:
 
-    node -r esm -e "require('./tools/scripts/nft/nft').addDepositNFTs('NETWORK_NAME', 'NFT_ADDRESS_HERE_AS_STRING')"
+    node -r esm -e "require('./tools/scripts/nft/nft').populateDepositNftUris('NETWORK_NAME', 'NFT_ADDRESS_HERE_AS_STRING')"
 
 
 
