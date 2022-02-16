@@ -6,8 +6,8 @@ import {Contract} from "ethers";
 
 import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
-import DepositAccessNFTArtifact from '../../artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json';
+import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
+import MockDepositAccessNFTArtifact from '../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
 import PoolWithAccessNFTArtifact
     from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import PoolTUPArtifact from '../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
@@ -29,9 +29,9 @@ import {
 } from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
-    BorrowAccessNFT,
+    MockBorrowAccessNFT,
     CompoundingIndex,
-    DepositAccessNFT,
+    MockDepositAccessNFT,
     MockSmartLoanRedstoneProvider,
     MockSmartLoanRedstoneProviderLimitedCollateral, MockSmartLoanRedstoneProviderLimitedCollateral__factory,
     MockSmartLoanRedstoneProvider__factory,
@@ -101,8 +101,8 @@ describe('Trading competition upgraded contracts test', () => {
         ]
 
         // Access NFTs
-        borrowNFT = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
-        depositNFT = (await deployContract(owner, DepositAccessNFTArtifact)) as DepositAccessNFT;
+        borrowNFT = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
+        depositNFT = (await deployContract(owner, MockDepositAccessNFTArtifact)) as MockDepositAccessNFT;
 
         // Variable Rate Calculator
         mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);

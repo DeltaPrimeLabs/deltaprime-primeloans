@@ -6,7 +6,7 @@ import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import MockDepositAccessNFTArtifact from '../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
 import PoolWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -14,7 +14,7 @@ import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
     OpenBorrowersRegistry,
-    BorrowAccessNFT,
+    MockDepositAccessNFT,
     CompoundingIndex,
     PoolWithAccessNFT
 } from "../../typechain";
@@ -34,7 +34,7 @@ describe('Pool with ERC721 Alpha access', () => {
 
     before(async () => {
         [owner, user, user2] = await getFixedGasSigners(10000000);
-        nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+        nftContract = (await deployContract(owner, MockDepositAccessNFTArtifact)) as MockDepositAccessNFT;
         mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);
         await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));

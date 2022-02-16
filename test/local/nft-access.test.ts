@@ -2,8 +2,8 @@ import chai, {expect} from 'chai'
 import {ethers} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
-    BorrowAccessNFT,
-    BorrowAccessNFT__factory,
+    MockBorrowAccessNFT,
+    MockBorrowAccessNFT__factory,
     MockNFTAccess,
     MockNFTAccess__factory, OpenBorrowersRegistry,
     OpenBorrowersRegistry__factory
@@ -14,14 +14,14 @@ chai.use(solidity);
 
 describe('NFT Access test', () => {
     let accessContract: MockNFTAccess,
-        nftContract: BorrowAccessNFT,
+        nftContract: MockBorrowAccessNFT,
         nonERC721Contract: OpenBorrowersRegistry,
         owner: SignerWithAddress,
         other: SignerWithAddress;
 
     before(async() => {
         [owner, other] = await getFixedGasSigners(10000000);
-        nftContract = await (new BorrowAccessNFT__factory(owner).deploy());
+        nftContract = await (new MockBorrowAccessNFT__factory(owner).deploy());
         nonERC721Contract = await (new OpenBorrowersRegistry__factory(owner).deploy());
         accessContract = (await (new MockNFTAccess__factory(owner).deploy())).connect(owner);
         await accessContract.initialize();

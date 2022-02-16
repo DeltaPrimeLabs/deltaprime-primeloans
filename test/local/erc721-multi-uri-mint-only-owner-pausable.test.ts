@@ -1,9 +1,9 @@
 import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {getFixedGasSigners, toBytes32} from "../_helpers";
+import {getFixedGasSigners} from "../_helpers";
 import {BorrowAccessNFT} from "../../typechain";
 import {Contract} from "ethers";
 
@@ -19,7 +19,7 @@ describe('ERC721 with multi URI, owner-only minting and pausability', () => {
 
     before(async () => {
         [owner, user, user2] = await getFixedGasSigners(10000000);
-        nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+        nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as BorrowAccessNFT;
     });
 
     it("should fail to add new available uris as a non-owner", async () => {

@@ -10,7 +10,7 @@ import SmartLoansFactoryWithAccessNFTArtifact
     from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
 import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -25,7 +25,7 @@ import {
 import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    BorrowAccessNFT,
+    MockBorrowAccessNFT,
     CompoundingIndex,
     MockSmartLoanRedstoneProvider,
     OpenBorrowersRegistry__factory,
@@ -76,7 +76,7 @@ describe('Smart loan',  () => {
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+            nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
             const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
