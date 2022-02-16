@@ -13,12 +13,12 @@ export default {
   namespaced: true,
   state: {
     borrowNftContract: null,
-    borrowNftContractSet: false,
+    borrowNftContractSet: true,
     hasBorrowNft: false,
     borrowNftId: null,
     borrowNftImageUri: null,
     depositNftContract: null,
-    depositNftContractSet: false,
+    depositNftContractSet: true,
     hasDepositNft: false,
     depositNftId: null,
     depositNftImageUri: null
@@ -82,6 +82,7 @@ export default {
       } catch(e) {
         console.error(e)
         console.log('No access NFT for borrow required')
+        commit('setBorrowNftContractSet', false);
       }
 
       try {
@@ -96,6 +97,7 @@ export default {
       } catch(e) {
         console.error(e)
         console.log('No access NFT for deposit required')
+        commit('setDepositNftContractSet', false);
       }
     },
     async updateBorrowNftFromId({ commit, state }, { id }) {

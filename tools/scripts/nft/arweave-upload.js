@@ -17,6 +17,7 @@ async function uploadNFTs() {
                 err => console.log('Error for ' + filename + ', error message: ' + err)
             )
         });
+
     });
 }
 
@@ -30,7 +31,8 @@ async function uploadNFT(filePath){
     const arweave = Arweave.init({
         host: 'arweave.net',
         port: 443,
-        protocol: 'https'
+        protocol: 'https',
+        timeout: 60000
     });
 
 
@@ -68,7 +70,11 @@ async function uploadNFT(filePath){
 
     console.log('Successfully uploaded to Arweave! NFT metadata transaction id: ', metadataTransaction.id)
 
-    fs.appendFile('./tools/scripts/nft/uris.txt', 'ar://' + metadataTransaction.id + '\n', function (err) {
+    if (fs.readFileSync('./tools/scripts/nft/uris.txt').length !== 0) {
+        fs.appendFileSync('./tools/scripts/nft/uris.txt', '\n');
+    }
+
+    fs.appendFile('./tools/scripts/nft/uris.txt', 'ar://' + metadataTransaction.id, function (err) {
         if (err) throw err;
         console.log('Successfully saved to uris.txt to for transaction id: ' + metadataTransaction.id);
     });
@@ -102,7 +108,7 @@ function timeout(ms) {
 }
 
 async function sleep(fn) {
-    await timeout(3000);
+    await timeout(30000);
     return fn();
 }
 
