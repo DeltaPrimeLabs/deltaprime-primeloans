@@ -3,10 +3,7 @@
     <Block class="block" :bordered="true">
       <div class="title">{{ hasNft ? 'Your access NFT' : 'Mint your access NFT' }}</div>
       <div class="nft">
-        <video autoplay muted loop>
-          <source v-if="nftImageUri" :src="nftImageUri"/>
-          <source v-if="!nftImageUri" :src="previewUri" />
-        </video>
+        <video muted autoplay loop :src="videoUri" />
       </div>
       <div class="description" v-html="description"></div>
       <Button :disabled="hasNft" label="Mint" v-on:click="mint"/>
@@ -67,8 +64,8 @@ export default {
         return this.notMintedYetMessage;
       }
     },
-    previewUri() {
-      return this.parseArweaveAddress('bn88OSxK6mtLWjPTPZnDBsINwY-9L07rlRwcLHmWfOo');
+    videoUri() {
+      return this.nftImageUri ? this.nftImageUri : this.parseArweaveAddress('bn88OSxK6mtLWjPTPZnDBsINwY-9L07rlRwcLHmWfOo');
     }
   },
   methods: {
@@ -98,6 +95,14 @@ export default {
         }
       },
       immediate: true
+    },
+    nftImageUri: {
+      handler(value) {
+        if (value) {
+          console.log(value)
+          this.$refs.videoRef.play();
+        }
+      }
     }
   }
 }

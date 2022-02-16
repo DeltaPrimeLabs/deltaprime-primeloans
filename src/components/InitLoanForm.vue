@@ -123,7 +123,7 @@
         }
       },
       defaultLoan(value) {
-        return (value && !isNaN(value)) ? value * 4 : 0;
+        return (value && !isNaN(value)) ? value * 2 : 0;
       },
       updateLoanFromLTV(ltv) {
         this.checkLTV(ltv);
