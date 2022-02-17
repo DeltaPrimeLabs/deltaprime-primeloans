@@ -6,7 +6,7 @@
         <video muted autoplay loop :src="videoUri" />
       </div>
       <div class="description" v-html="description"></div>
-      <Button :disabled="hasNft" label="Mint" v-on:click="mint"/>
+      <Button :disabled="hasNft || waiting" label="Mint" v-on:click="mint"/>
     </Block>
   </div>
 </template>
@@ -50,7 +50,8 @@ export default {
       mintedMessage: "Your unique access NFT is minted!",
       noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted. But you can still join our" +
           "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord channel</a> to not miss the next opportunity!",
-      intervalId: null
+      intervalId: null,
+      waiting: true
     }
   },
   computed: {
@@ -61,6 +62,7 @@ export default {
       } else if (this.noAvailableNfts) {
         return this.noNftsAnymoreMessage;
       } else {
+        this.waiting = false;
         return this.notMintedYetMessage;
       }
     },
@@ -71,12 +73,13 @@ export default {
   methods: {
     async mint() {
       if (!this.hasNft) {
+        this.waiting = true;
         const query = this.$route.query;
 
         await this.handleTransaction(this.nftContract.safeMint, [query.id, query.signature],
             async () => {
               await this.getNftId();
-              clearInterval(this.intervalId);
+              this.waiting = false;
             }
         );
       }
@@ -95,14 +98,6 @@ export default {
         }
       },
       immediate: true
-    },
-    nftImageUri: {
-      handler(value) {
-        if (value) {
-          console.log(value)
-          this.$refs.videoRef.play();
-        }
-      }
     }
   }
 }
