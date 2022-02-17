@@ -24,7 +24,7 @@ Change contract name in `./tools/scripts/deploy.js`
 
     npx hardhat run --network NETWORK_NAME ./tools/scripts/deploy.js
 
-    node -r esm -e 'require("./tools/scripts/upgrade/upgrade-pool.js").upgradePool("NETWORK_NAME", "POOL_ADDRESS")'
+    node -r esm -e 'require("./tools/scripts/upgrade/upgrade-1_pool.js").upgradePool("NETWORK_NAME", "POOL_ADDRESS")'
 
 ####5. Set access NFT for Pool
 
@@ -46,7 +46,7 @@ Change contract name in `./tools/scripts/deploy.js`
 
 MacOS:
 
-    node -r esm -e 'require("./tools/scripts/upgrade/upgrade-smart-loans-factory.js").upgradeSmartLoansFactory("NETWORK_NAME", "FACTORY_ADDRESS")'
+    npx truffle migrate --network local --migrations_directory=upgrade/smart-loans-factory/upgrade --reset SmartLoansFactoryWithAccessNft
 
 Windows:
 
