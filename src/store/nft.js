@@ -1,12 +1,12 @@
 import {Contract} from "ethers";
 const ethers = require('ethers');
-import NFT from '@contracts/BorrowAccessNFT.json'
-const FACTORY_TUP = require('../../build/contracts/SmartLoansFactoryTUP.json');
-const POOL_TUP = require('../../build/contracts/PoolTUP.json');
+import BORROW_NFT from '@artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json'
+import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
+const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
+const POOL_TUP = require('@contracts/PoolTUP.json');
 import {parseArweaveURI} from "../utils/blockchain";
-import config from "@/config";
-import FACTORY_NFT from "../../build/contracts/SmartLoansFactoryWithAccessNFT.json";
-import POOL_NFT from "../../build/contracts/PoolWithAccessNFT.json";
+import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
+import POOL_NFT from '@artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json'
 const ZERO = ethers.constants.AddressZero;
 
 export default {
@@ -68,14 +68,14 @@ export default {
       const provider = rootState.network.provider;
 
       try {
-        const factory = new Contract(FACTORY_TUP.networks[config.chainId].address, FACTORY_NFT.abi, provider.getSigner());
+        const factory = new Contract(FACTORY_TUP.address, FACTORY_NFT.abi, provider.getSigner());
         factory.iface = new ethers.utils.Interface(FACTORY_NFT.abi);
 
         const address = await factory.getAccessNFT();
         //TODO: simplify
         commit('setBorrowNftContractSet', address !== ZERO);
 
-        const borrowContract = new Contract(address, NFT.abi, provider.getSigner());
+        const borrowContract = new Contract(address, BORROW_NFT.abi, provider.getSigner());
 
         commit('setBorrowNftContract', borrowContract);
         dispatch('getBorrowNftId');
@@ -86,11 +86,11 @@ export default {
       }
 
       try {
-        const pool = new Contract(POOL_TUP.networks[config.chainId].address, POOL_NFT.abi, provider.getSigner());
+        const pool = new Contract(POOL_TUP.address, POOL_NFT.abi, provider.getSigner());
         const address = await pool.getAccessNFT();
         commit('setDepositNftContractSet', address !== ZERO);
 
-        const depositContract = new Contract(address, NFT.abi, provider.getSigner());
+        const depositContract = new Contract(address, DEPOSIT_NFT.abi, provider.getSigner());
 
         commit('setDepositNftContract', depositContract);
         dispatch('getDepositNftId');
@@ -109,7 +109,6 @@ export default {
       commit('setBorrowNftImageUri', uri);
     },
     async updateDepositNftFromId({ commit, state }, { id }) {
-      console.log(await state.depositNftContract.tokenURI(0))
       const jsonUri = parseArweaveURI(await state.depositNftContract.tokenURI(id));
       const response = await fetch(jsonUri);
       const json = await response.json();

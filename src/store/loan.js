@@ -73,7 +73,7 @@ export default {
   },
   actions: {
     async initSupportedAssets({ rootState, commit }) {
-      const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.networks[rootState.network.chainId].address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
+      const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
       // the first returned asset is a blockchain native currency, therefore used .slice(1)
       let supported = ((await pangolinContract.getAllAssets()).slice(1)).map(
         asset => ethers.utils.parseBytes32String(asset)
@@ -87,7 +87,7 @@ export default {
       const provider = rootState.network.provider;
       const account = rootState.network.account;
 
-      const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+      const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
 
       const userLoan = await loanFactory.getLoanForOwner(account);
 
@@ -163,7 +163,7 @@ export default {
       const provider = rootState.network.provider;
 
       const loanFactory =
-          new ethers.Contract(LOAN_FACTORYTUP.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+          new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
 
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
@@ -188,7 +188,7 @@ export default {
     async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
       const provider = rootState.network.provider;
 
-      const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+      const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
 
       const wrappedLoanFactory = WrapperBuilder
           .wrapLite(loanFactory)

@@ -63,7 +63,7 @@
     methods: {
       loadLoansInfo() {
         const loanFactory = new ethers.Contract(
-          LOAN_FACTORY.networks[config.chainId].address,
+          LOAN_FACTORY.address,
           LOAN_FACTORY.abi,
           this.provider.getSigner()
         );

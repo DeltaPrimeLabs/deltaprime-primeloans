@@ -1,9 +1,9 @@
 const config = require('../network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const FACTORY = require('../../build/contracts/SmartLoansFactory.json');
-const FACTORY_TUP = require('../../build/contracts/SmartLoansFactoryTUP.json');
-const LOAN = require('../../build/contracts/SmartLoan.json');
+const FACTORY = require('@contracts/SmartLoansFactory.json');
+const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
+const LOAN = require('@contracts/SmartLoan.json');
 const {WrapperBuilder} = require("redstone-evm-connector");
 
 const mnemonic = fs.readFileSync(".secret").toString().trim();

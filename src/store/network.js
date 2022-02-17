@@ -6,7 +6,6 @@ import Vue from "vue";
 export default {
   namespaced: true,
   state: {
-    chainId: config.chainId,
     provider: null,
     account: null,
     balance: null

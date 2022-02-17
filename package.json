@@ -5,7 +5,9 @@
   "author": "DeltaPrimeLoans <mbare@deltaprime.io>",
   "scripts": {
     "start": "yarn migrate:local && yarn serve",
-    "serve": "webpack serve --config config/webpack.dev.js --progress",
+    "serve:local": "webpack serve --config config/webpack.dev.js --progress",
+    "serve:fuji": "webpack serve --config config/webpack.dev.js --progress --env network=fuji",
+    "serve:avalanche_c": "webpack serve --config config/webpack.dev.js --progress --env network=avalanche_c",
     "build": "yarn build:contracts:hardhat && yarn build:contracts:truffle && webpack --config config/webpack.prod.js",
     "build:contracts:hardhat": "yarn hardhat compile",
     "build:contracts:hardhat:force": "rm -rf build && yarn hardhat compile --force",
@@ -26,9 +28,11 @@
   "dependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@growthbunker/vuetimeline": "^0.1.17",
+    "@nomiclabs/hardhat-etherscan": "^3.0.1",
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
+    "@tenderly/hardhat-tenderly": "^1.0.13",
     "@uniswap/lib": "^4.0.1-alpha",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chart.js": "^2.9.4",
@@ -37,6 +41,7 @@
     "css-minimizer-webpack-plugin": "^3.4.1",
     "erc-1155": "git+https://github.com/enjin/erc-1155.git",
     "ethers": "^5.5.4",
+    "hardhat-deploy": "^0.10.5",
     "javascript-time-ago": "^2.3.9",
     "mini-css-extract-plugin": "^2.5.3",
     "postcss-loader": "^6.2.1",
@@ -65,7 +70,7 @@
     "web3-eth-abi": "^1.7.0"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
