@@ -2,9 +2,12 @@ import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import "hardhat-watcher";
+import "@nomiclabs/hardhat-etherscan";
+require('hardhat-deploy');
 
 const fs = require('fs');
 const deployerKey = fs.readFileSync(".secret-deployer").toString().trim();
+const adminKey = fs.readFileSync(".secret-admin").toString().trim();
 
 export default {
   solidity: "0.8.4",
@@ -38,7 +41,7 @@ export default {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
       chainId: 43113,
-      accounts: [deployerKey]
+      accounts: [deployerKey, adminKey]
     }
   },
   paths: {
@@ -65,5 +68,14 @@ export default {
   },
   mocha: {
     "allow-uncaught": true
+  },
+  namedAccounts: {
+      deployer: 0,
+      admin: 1
+  },
+  etherscan: {
+    apiKey: {
+      avalancheFujiTestnet: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4",
+    }
   }
 };

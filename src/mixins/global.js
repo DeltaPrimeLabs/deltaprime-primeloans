@@ -32,7 +32,7 @@ export default {
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
-        const exchange = new Contract(EXCHANGETUP.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
+        const exchange = new Contract(EXCHANGETUP.address, EXCHANGE.abi, provider.getSigner());
 
         const expectedAvax = amount * this.usdToAVAX(price);
 
@@ -54,7 +54,7 @@ export default {
     },
     async calculateSlippageForSell(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
-        const exchange = new Contract(EXCHANGETUP.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
+        const exchange = new Contract(EXCHANGETUP.address, EXCHANGE.abi, provider.getSigner());
 
         const expectedAvax = amount * this.usdToAVAX(price);
 
@@ -80,7 +80,7 @@ export default {
   },
   computed: {
     ...mapState('prices', ['avaxPrice']),
-    ...mapState('network', ['chainId', 'provider']),
+    ...mapState('network', ['provider']),
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
