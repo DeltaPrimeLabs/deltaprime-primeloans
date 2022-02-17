@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
@@ -6,39 +6,35 @@ import {Contract} from "ethers";
 
 import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
-import DepositAccessNFTArtifact from '../../artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json';
+import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
+import MockDepositAccessNFTArtifact from '../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
 import PoolWithAccessNFTArtifact
     from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
 import PoolTUPArtifact from '../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import MockSmartLoanRedstoneProviderArtifact
-    from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
-import MockSmartLoanRedstoneProviderLimitedCollateralArtifact
-    from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProviderLimitedCollateral.sol/MockSmartLoanRedstoneProviderLimitedCollateral.json';
 import SmartLoansFactoryTUPArtifact
     from '../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
-import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
     deployAndInitPangolinExchangeContract,
     fromWei,
     getFixedGasSigners,
-    recompileSmartLoan,
+    recompileSmartLoan, syncTime,
     toBytes32,
     toWei
 } from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
-    BorrowAccessNFT,
-    BorrowingIndex,
-    DepositAccessNFT,
-    DepositIndex,
+    MockBorrowAccessNFT,
+    CompoundingIndex,
+    MockDepositAccessNFT,
     MockSmartLoanRedstoneProvider,
-    MockSmartLoanRedstoneProviderLimitedCollateral,
+    MockSmartLoanRedstoneProviderLimitedCollateral, MockSmartLoanRedstoneProviderLimitedCollateral__factory,
+    MockSmartLoanRedstoneProvider__factory,
     PangolinExchange,
     Pool,
     Pool__factory,
@@ -87,6 +83,7 @@ describe('Trading competition upgraded contracts test', () => {
         USD_PRICE: number;
 
     before(async () => {
+        await syncTime();
         [owner, admin, depositor, user] = await getFixedGasSigners(10000000);
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -104,8 +101,8 @@ describe('Trading competition upgraded contracts test', () => {
         ]
 
         // Access NFTs
-        borrowNFT = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
-        depositNFT = (await deployContract(owner, DepositAccessNFTArtifact)) as DepositAccessNFT;
+        borrowNFT = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
+        depositNFT = (await deployContract(owner, MockDepositAccessNFTArtifact)) as MockDepositAccessNFT;
 
         // Variable Rate Calculator
         mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);
@@ -118,8 +115,8 @@ describe('Trading competition upgraded contracts test', () => {
         pool = await new Pool__factory(owner).attach(poolTUP.address);
 
         // Borrow/Deposit indices
-        const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
-        const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
+        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
         // Assets exchange (without TUP)
         exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
@@ -147,13 +144,13 @@ describe('Trading competition upgraded contracts test', () => {
     });
 
     it("should deposit requested value without the access ERC721", async () => {
-        await pool.deposit({value: toWei("1.0")});
+        await pool.connect(depositor).deposit({value: toWei("1.0")});
         expect(await provider.getBalance(pool.address)).to.equal(toWei("1"));
 
-        const currentDeposits = await pool.balanceOf(owner.address);
+        const currentDeposits = await pool.balanceOf(depositor.address);
         expect(fromWei(currentDeposits)).to.equal(1);
 
-        await pool.withdraw(toWei("1.0"));
+        await pool.connect(depositor).withdraw(toWei("1.0"));
     });
 
     it("should deposit requested value only with the access ERC721", async () => {
@@ -165,20 +162,20 @@ describe('Trading competition upgraded contracts test', () => {
         // Set NFT access
         await poolUpgraded.connect(owner).setAccessNFT(borrowNFT.address);
 
-        await expect(poolUpgraded.deposit({value: toWei("10.0")})).to.be.revertedWith("Access NFT required");
+        await expect(poolUpgraded.connect(depositor).deposit({value: toWei("10.0")})).to.be.revertedWith("Access NFT required");
 
         await borrowNFT.connect(owner).addAvailableUri(["uri_1", "uri_2"]);
-        await borrowNFT.connect(owner).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
+        await borrowNFT.connect(depositor).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
 
-        await poolUpgraded.deposit({value: toWei("10.0")});
+        await poolUpgraded.connect(depositor).deposit({value: toWei("10.0")});
 
         expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("10"));
     });
 
     it("should add and withdraw more than 1.25 collateral in total with the base SL contract version", async () => {
+        await SLF.connect(user).createLoan();
         const SLAddress = await SLF.getLoanForOwner(user.address);
-        SL = ((await new ethers.Contract(SLAddress, MockSmartLoanRedstoneProviderArtifact.abi)) as MockSmartLoanRedstoneProvider);
-
+        SL = await (new MockSmartLoanRedstoneProvider__factory(user).attach(SLAddress));
         SL = WrapperBuilder
             .mockLite(SL.connect(user))
             .using(
@@ -195,36 +192,29 @@ describe('Trading competition upgraded contracts test', () => {
 
     it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
         const artifact = await recompileSmartLoan(SMART_LOAN_MOCK_UPGRADED, pool.address, exchange.address, 'mock');
+
         SLImpl = await deployContract(owner, artifact) as SmartLoan;
-        const beaconAddress = await SLF.connect(owner).upgradeableBeacon();
+        const beaconAddress = await SLF.connect(owner).upgradeableBeacon.call(0);
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(SLImpl.address);
-        SLUpgraded = ((await new ethers.Contract(SL.address, MockSmartLoanRedstoneProviderLimitedCollateralArtifact.abi)) as MockSmartLoanRedstoneProviderLimitedCollateral);
 
-        SLUpgraded = WrapperBuilder
-            .mockLite(SLUpgraded.connect(user))
-            .using(
-                () => {
-                    return {
-                        prices: MOCK_PRICES,
-                        timestamp: Date.now()
-                    }
-                })
+        await expect(SL.fund({value: toWei("1.5")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
 
-        await expect(SLUpgraded.fund({value: toWei("1.5")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
+        await SL.fund({value: toWei("1.25")});
 
-        await SLUpgraded.fund({value: toWei("1.25")});
+        await expect(SL.fund({value: toWei("0.1")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
 
-        await expect(SLUpgraded.fund({value: toWei("0.1")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
-
-        await SLUpgraded.withdraw(toWei("0.5"));
-        await SLUpgraded.fund({value: toWei("0.1")});
+        await SL.withdraw(toWei("0.5"));
+        await SL.fund({value: toWei("0.1")});
     });
 
     it("should downgrade to old pool implementation and not require NFT access for deposit", async() => {
+       await expect(pool.connect(owner).deposit({value: toWei("10.0")})).to.be.revertedWith("Access NFT required");
+
        await poolTUP.connect(admin).upgradeTo(poolImpl.address);
-       await pool.deposit({value: toWei("10.0")});
-       expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("10"));
+
+       await pool.connect(owner).deposit({value: toWei("10.0")});
+       expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("20"));
     });
 
 });

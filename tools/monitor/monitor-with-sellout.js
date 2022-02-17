@@ -1,5 +1,6 @@
-const Loans = require('../loans.js');
+const Loans = require('../scripts/loans.js');
 const args = require('yargs').argv;
+const config = require('../network/config-local.json');
 
 let interval = args.interval ? args.interval : 10;
 

@@ -15,7 +15,7 @@ abstract contract AccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausa
     Counters.Counter private _tokenIdCounter;
     mapping(string => address) accessTokens;
     string[] availableUris;
-    address accessTokenTrustedSigner = 0xdD2FD4581271e230360230F9337D5c0430Bf44C0;
+    address accessTokenTrustedSigner;
 
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {
         _pause();

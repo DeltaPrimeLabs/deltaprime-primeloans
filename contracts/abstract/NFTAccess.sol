@@ -9,11 +9,14 @@ abstract contract NFTAccess is OwnableUpgradeable {
     bytes32 internal constant ACCESS_NFT_SLOT = bytes32(uint256(keccak256('ACCESS_NFT_SLOT')) - 1);
 
     function setAccessNFT(ERC721 nftAddress) external onlyOwner {
-        require(AddressUpgradeable.isContract(address(nftAddress)), "Cannot set nftAddress to a non-contract instance");
-        (bool success, bytes memory result) = address(nftAddress).call(
-            abi.encodeWithSignature("balanceOf(address)", msg.sender)
-        );
-        require(success && result.length > 0, "Contract has to support the ERC721 balanceOf() interface");
+        // Setting nftAddress to a address(0) removes the lock
+        if (address(nftAddress) != address(0)) {
+            require(AddressUpgradeable.isContract(address(nftAddress)), "Cannot set nftAddress to a non-contract instance");
+            (bool success, bytes memory result) = address(nftAddress).call(
+                abi.encodeWithSignature("balanceOf(address)", msg.sender)
+            );
+            require(success && result.length > 0, "Contract has to support the ERC721 balanceOf() interface");
+        }
 
         bytes32 slot = ACCESS_NFT_SLOT;
         assembly {

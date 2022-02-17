@@ -58,7 +58,7 @@ export default {
     async initPool({ state, commit, rootState }) {
       if (!state.pool) {
         const provider = rootState.network.provider;
-        let deploymentTx = POOL.networks[rootState.network.chainId].transactionHash;
+        let deploymentTx = POOLTUP.networks[rootState.network.chainId].transactionHash;
 
         //TODO: solve problem with lacking transaction hash in a Pool artifact JSON
         if (!deploymentTx) {

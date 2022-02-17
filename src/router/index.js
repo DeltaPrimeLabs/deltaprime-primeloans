@@ -2,7 +2,9 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Pool from '@/pages/Pool'
 import Admin from '@/pages/Admin'
-import Mint from "@/pages/Mint";
+import Nft from "@/pages/Nft";
+import BorrowNft from "@/components/BorrowNft";
+import DepositNft from "@/components/DepositNft";
 import PrimeAccount from "@/pages/PrimeAccount";
 
 
@@ -27,9 +29,19 @@ export default new Router({
       component: Admin
     },
     {
-      path: '/mint',
-      name: 'Mint',
-      component: Mint
+      path: '/nft',
+      name: 'Nft',
+      component: Nft,
+      children: [
+        {
+          path: 'borrow',
+          component: BorrowNft
+        },
+        {
+          path: 'deposit',
+          component: DepositNft
+        },
+      ],
     },
     {
       path: '*',

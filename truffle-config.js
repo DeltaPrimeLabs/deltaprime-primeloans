@@ -22,9 +22,17 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const infuraKey = "4151b2d00d774670adf72249002fae04";
 
 const fs = require('fs');
-const mnemonic = fs.readFileSync(".secret-deployer").toString().trim();
+const deployerKey = fs.readFileSync(".secret-deployer").toString().trim();
+const adminKey = fs.readFileSync(".secret-admin").toString().trim();
 
 //Main account: 0x21d0c79c5be59af6d61c262286809d0b78d1e156
+
+const privateKeys = [
+  //deployer
+  deployerKey,
+  //admin
+  adminKey
+]
 
 module.exports = {
   /**
@@ -66,13 +74,13 @@ module.exports = {
     // },
 
     kovan: {
-      provider: () => new HDWalletProvider(mnemonic, "https://kovan.infura.io/v3/" + infuraKey),
+      provider: () => new HDWalletProvider(privateKeys, "https://kovan.infura.io/v3/" + infuraKey),
       network_id: 42,      // Kovan id
       gas: 6000000,
       gasPrice: 2000000000 // 2 gwei
     },
     fuji: {
-      provider: () => new HDWalletProvider([mnemonic], "https://api.avax-test.network/ext/bc/C/rpc"),
+      provider: () => new HDWalletProvider(privateKeys, "https://api.avax-test.network/ext/bc/C/rpc"),
       network_id: 43113,
       gas: 8000000,
       gasPrice: 470000000000

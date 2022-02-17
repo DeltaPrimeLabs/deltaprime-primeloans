@@ -9,8 +9,8 @@ import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.
 import SmartLoanSinglePriceAwareArtifact
   from '../../artifacts/contracts/deprecated/SmartLoanSinglePriceAware.sol/SmartLoanSinglePriceAware.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
@@ -23,8 +23,7 @@ import {
 import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  BorrowingIndex,
-  DepositIndex,
+  CompoundingIndex,
   MockSmartLoanRedstoneProvider,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
@@ -125,8 +124,8 @@ describe('Smart loan',  () => {
       );
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
-      const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
+      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       ETH_PRICE = (await redstone.getPrice('ETH')).value;

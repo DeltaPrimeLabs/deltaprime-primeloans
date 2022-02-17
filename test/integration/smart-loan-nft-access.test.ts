@@ -8,14 +8,15 @@ import VariableUtilisationRatesCalculatorArtifact
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SmartLoansFactoryWithAccessNFTArtifact
     from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
-import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+
+import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
-    deployAndInitPangolinExchangeContract, fromWei,
+    deployAndInitPangolinExchangeContract,
+    fromWei,
     getFixedGasSigners,
     recompileSmartLoan,
     toBytes32,
@@ -24,13 +25,13 @@ import {
 import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    BorrowAccessNFT,
-    BorrowingIndex,
-    DepositIndex, MockSmartLoanRedstoneProvider,
-    MockSmartLoanRedstoneProvider__factory,
+    MockBorrowAccessNFT,
+    CompoundingIndex,
+    MockSmartLoanRedstoneProvider,
     OpenBorrowersRegistry__factory,
     PangolinExchange,
-    Pool, SmartLoan,
+    Pool,
+    SmartLoan,
     SmartLoansFactoryWithAccessNFT,
     VariableUtilisationRatesCalculator
 } from "../../typechain";
@@ -75,12 +76,12 @@ describe('Smart loan',  () => {
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+            nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
             const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            const depositIndex = (await deployContract(owner, DepositIndexArtifact, [pool.address])) as DepositIndex;
-            const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [pool.address])) as BorrowingIndex;
+            const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+            const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
             usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
             linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 

@@ -13,17 +13,15 @@
     "build:contracts:truffle:force": "rm -rf build && truffle compile --all",
     "test-local": "yarn hardhat test test/local/*",
     "test-local:all": "yarn hardhat test test/local/* test/deprecated/*/*",
-    "test-integration": "yarn hardhat test test/integration/* --network hardhat-integration",
-    "test-integration:all": "yarn hardhat test test/integration/*  test/benchmarks/* --network hardhat-integration",
+    "test-integration": "yarn hardhat test test/integration/* --network local",
+    "test-integration:all": "yarn hardhat test test/integration/*  test/benchmarks/* --network local",
     "fork:mainnet": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
     "fork:fuji": "yarn hardhat node --fork https://api.avax-test.network/ext/bc/C/rpc",
     "migrate:local": "npx truffle compile --all && npx truffle migrate --network local",
     "migrate:server": "npx truffle migrate --network server",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",
-    "prettier": "prettier --write 'contracts/**/*.sol'",
-    "deploy-contract": "npx hardhat run --network fuji tools/scripts/deploy-contract.js",
-    "upgrade-loan": "npx hardhat run --network fuji tools/scripts/upgrade-smart-loan.js"
+    "prettier": "prettier --write 'contracts/**/*.sol'"
   },
   "dependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",

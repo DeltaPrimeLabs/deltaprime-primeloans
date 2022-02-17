@@ -1,6 +1,5 @@
 <template>
   <div class="init-loan-form-wrapper">
-    {{borrowingLocked}}
     <div class="overlay" v-if="borrowingLocked"></div>
     <div class="title">Collateral</div>
     <CurrencyInput
@@ -124,7 +123,7 @@
         }
       },
       defaultLoan(value) {
-        return (value && !isNaN(value)) ? value * 4 : 0;
+        return (value && !isNaN(value)) ? value * 2 : 0;
       },
       updateLoanFromLTV(ltv) {
         this.checkLTV(ltv);
@@ -165,16 +164,6 @@
 .ltv-slider {
   margin-bottom: 50px;
   width: 490px;
-}
-
-.overlay {
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255,255,255,0.7);
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  border-radius: 22px;
 }
 </style>
 <style lang="scss">

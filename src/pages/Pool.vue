@@ -16,6 +16,7 @@
       Your deposits will be available for others to borrow.
     </InfoBubble>
     <Block class="block" :bordered="true">
+      <div class="overlay" v-if="depositLocked"></div>
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
           <CurrencyForm
@@ -58,7 +59,7 @@
   import HistoryList from "@/components/HistoryList.vue";
   import InfoBubble from "@/components/InfoBubble.vue";
   import Chart from "@/components/Chart.vue";
-  import { mapState, mapActions } from 'vuex';
+  import {mapState, mapActions, mapGetters} from 'vuex';
 
   export default {
     name: 'Deposit',
@@ -94,6 +95,7 @@
     },
     computed: {
       ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolHistory']),
+      ...mapGetters('nft', ['depositLocked']),
       ...mapState('network', ['balance']),
       chartPoints() {
         if (this.poolHistory == null || this.poolHistory.length === 0) {

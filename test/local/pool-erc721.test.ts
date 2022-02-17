@@ -1,22 +1,22 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
-import BorrowAccessNFTArtifact from '../../artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json';
+import VariableUtilisationRatesCalculatorArtifact
+    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import OpenBorrowersRegistryArtifact
+    from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import MockDepositAccessNFTArtifact from '../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
 import PoolWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
-import DepositIndexArtifact from '../../artifacts/contracts/DepositIndex.sol/DepositIndex.json';
-import BorrowingIndexArtifact from '../../artifacts/contracts/BorrowingIndex.sol/BorrowingIndex.json';
+import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
-    PoolWithAccessNFT,
     OpenBorrowersRegistry,
-    BorrowAccessNFT,
-    DepositIndex,
-    BorrowingIndex
+    MockDepositAccessNFT,
+    CompoundingIndex,
+    PoolWithAccessNFT
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -34,15 +34,15 @@ describe('Pool with ERC721 Alpha access', () => {
 
     before(async () => {
         [owner, user, user2] = await getFixedGasSigners(10000000);
-        nftContract = (await deployContract(owner, BorrowAccessNFTArtifact)) as BorrowAccessNFT;
+        nftContract = (await deployContract(owner, MockDepositAccessNFTArtifact)) as MockDepositAccessNFT;
         mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);
         await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
         sut = (await deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
 
-        const depositIndex = (await deployContract(owner, DepositIndexArtifact, [sut.address])) as DepositIndex;
-        const borrowingIndex = (await deployContract(owner, BorrowingIndexArtifact, [sut.address])) as BorrowingIndex;
+        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
+        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
 
 
         const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;

@@ -1,7 +1,7 @@
 import addresses from '../common/token_addresses.json';
 
 export default {
-    DEFAULT_LTV: 4,
+    DEFAULT_LTV: 2,
     MAX_LTV: 5,
     chainId: 1337,
     ASSETS_CONFIG: {
@@ -13,11 +13,9 @@ export default {
       "PNG": {name: "Pangolin", symbol: "PNG", decimals: 18, address: addresses.PNG, logoExt: "jpg"},
       "XAVA": {name: "Avalaunch", symbol: "XAVA", decimals: 18, address: addresses.XAVA, logoExt: "png"},
       "FRAX": {name: "Frax", symbol: "FRAX", decimals: 18, address: addresses.FRAX},
-      "YAK": {name: "Yak", symbol: "YAK", decimals: 18, address: addresses.YAK}
+      "YAK": {name: "Yak", symbol: "YAK", decimals: 18, address: addresses.YAK, logoExt: "png"}
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche",
-    borrowNftAddress: "",
-    depositNftAddress: ""
+    dataProviderId: "redstone-avalanche"
 }

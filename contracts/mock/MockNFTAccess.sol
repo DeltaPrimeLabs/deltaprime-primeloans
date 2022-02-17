@@ -7,4 +7,8 @@ contract MockNFTAccess is NFTAccess {
     function initialize() external initializer {
         __Ownable_init();
     }
+
+    function nftAccessFunction() public view hasAccessNFT returns(uint256 mockResult) {
+        mockResult = 777;
+    }
 }
