@@ -161,7 +161,9 @@ export default {
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
       const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
-      await rootState.network.provider.waitForTransaction(tx.hash);
+      const transaction = await rootState.network.provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to deposit');
 
       dispatch('updatePoolHistory');
       dispatch('updatePoolData');
@@ -170,14 +172,18 @@ export default {
     async repay({ state, dispatch }, { amount }) {
 
       const tx = await state.pool.repay({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to repay');
 
       dispatch('updateUserBorrowed');
       dispatch('updatePoolData');
     },
     async withdraw({ state, dispatch, commit }, { amount }) {
       const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to withdraw');
 
       dispatch('updatePoolHistory');
       dispatch('updatePoolData');
@@ -185,7 +191,9 @@ export default {
     },
     async borrow({ state, dispatch }, { amount }) {
       const tx = await state.pool.borrow(ethers.utils.parseEther(amount), {gasLimit: 500000});
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to withdraw');
 
       dispatch('updatePoolHistory');
       dispatch('updatePoolData');
