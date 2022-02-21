@@ -43,4 +43,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['Upgrade'];
+module.exports.tags = ['competition'];
