@@ -79,3 +79,5 @@ module.exports = async ({
     console.log(`PangolinExchangeTUP deployed at address: ${resultTup.address} by a factory`);
 
 };
+
+module.exports.tags = ['Main'];

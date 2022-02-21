@@ -34,3 +34,5 @@ module.exports = async ({
     console.log(`Deployed SmartLoan default implementation at address: ${result.address}`);
 
 };
+
+module.exports.tags = ['Main'];
