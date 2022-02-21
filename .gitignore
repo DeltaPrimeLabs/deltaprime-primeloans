@@ -11,6 +11,8 @@ cache
 /.arweave-secret.json
 /.secret-admin
 /.secret-deployer
+deployments/local
+deployments/localhost
 
 .vercel
 .openzeppelin

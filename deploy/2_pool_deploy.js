@@ -30,3 +30,5 @@ module.exports = async ({
   console.log(`PoolTUP deployed at address: ${result.address}`);
 
 };
+
+module.exports.tags = ['Main'];

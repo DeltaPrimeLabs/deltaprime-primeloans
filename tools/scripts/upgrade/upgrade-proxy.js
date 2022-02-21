@@ -8,15 +8,17 @@ let privateKeyWallet = new ethers.Wallet(key);
 
 var provider;
 
-module.exports.upgradeProxy = async function upgradeProxy(networkName, address, proxy, contractName) {
+module.exports.upgradeProxy = async function upgradeProxy(networkName, contractName, proxy, proxyName) {
+    const address = require(`../../../deployments/${networkName}/${contractName}.json`).address;
+
     provider = new ethers.providers.JsonRpcProvider(getUrlForNetwork(networkName));
 
     let wallet = privateKeyWallet.connect(provider);
 
-    const factory = new ethers.Contract(proxy.networks[getChainIdForNetwork(networkName)].address, proxy.abi, wallet);
+    const factory = new ethers.Contract(proxy.address, proxy.abi, wallet, {gasLimit: 8000000});
 
     await factory.upgradeTo(address)
 
-    return `New ${contractName} implementation address: ${address}`;
+    return `${proxyName} upgraded to ${contractName} at address: ${address}`;
 }
 

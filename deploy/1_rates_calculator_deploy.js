@@ -8,7 +8,9 @@ module.exports = async ({
   let result = await deploy('VariableUtilisationRatesCalculator', {
     from: deployer,
     gasLimit: 8000000,
-    args: [],
+    args: []
   });
   console.log(`Deployed VariableUtilisationRatesCalculator at address: ${result.address}`);
 };
+
+module.exports.tags = ['Main'];
