@@ -1,4 +1,8 @@
 const {ethers} = require("hardhat");
+import hre from 'hardhat'
+const networkName = hre.network.name
+import createMigrationArtifact from "../tools/scripts/create-migration-artifact"
+
 module.exports = async ({
   getNamedAccounts,
   deployments
@@ -21,6 +25,8 @@ module.exports = async ({
 
   console.log(`Pool deployed at address: ${poolAddress} by a factory`);
 
+  createMigrationArtifact(networkName, './artifacts/contracts/Pool.sol/Pool.json', `./deployments/${networkName}/Pool.json`, poolAddress, receipt.transactionHash);
+
   let result = await deploy('PoolTUP', {
     from: deployer,
     gasLimit: 8000000,
@@ -31,4 +37,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['Main'];
+module.exports.tags = ['init'];

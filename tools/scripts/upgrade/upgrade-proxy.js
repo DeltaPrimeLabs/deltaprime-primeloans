@@ -1,4 +1,4 @@
-import {getChainIdForNetwork, getUrlForNetwork} from "../helpers";
+import {getUrlForNetwork} from "../helpers";
 
 const {ethers} = require("hardhat");
 
@@ -15,9 +15,9 @@ module.exports.upgradeProxy = async function upgradeProxy(networkName, contractN
 
     let wallet = privateKeyWallet.connect(provider);
 
-    const factory = new ethers.Contract(proxy.address, proxy.abi, wallet, {gasLimit: 8000000});
+    const proxyContract = new ethers.Contract(proxy.address, proxy.abi, wallet);
 
-    await factory.upgradeTo(address)
+    await proxyContract.upgradeTo(address)
 
     return `${proxyName} upgraded to ${contractName} at address: ${address}`;
 }

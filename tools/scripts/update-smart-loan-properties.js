@@ -1,4 +1,4 @@
-export function updateContracts(poolAddress, exchangeAddress) {
+export default function updateSmartLoanProperties(poolAddress, exchangeAddress) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
 

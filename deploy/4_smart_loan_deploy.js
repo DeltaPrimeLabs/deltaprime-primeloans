@@ -1,5 +1,7 @@
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
+import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
+
 module.exports = async ({
     getNamedAccounts,
     deployments
@@ -7,23 +9,13 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    let output1;
-    //checking if Windows
-
     const poolTUP = await ethers.getContract("PoolTUP");
     const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
 
-    if (process.platform === "win32") {
-        output1 = execSync(`node -r esm -e "require('./tools/scripts/update-smart-loan-properties.js')` +
-            `.updateContracts('${poolTUP.address.toString()}','${exchangeTUP.address.toString()}')"`, { encoding: 'utf-8' });
-    } else {
-        output1 = execSync(`node -r esm -e 'require("./tools/scripts/update-smart-loan-properties.js")` +
-            `.updateContracts("${poolTUP.address.toString()}","${exchangeTUP.address.toString()}")'`, { encoding: 'utf-8' });
-    }
+    updateSmartLoanProperties(poolTUP.address, exchangeTUP.address);
 
-    console.log(output1);
-    const output2 = execSync('npx hardhat compile', { encoding: 'utf-8' });
-    console.log(output2);
+    const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
+    console.log(output);
 
     let result = await deploy('SmartLoan', {
         from: deployer,
@@ -35,4 +27,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['Main'];
+module.exports.tags = ['init'];

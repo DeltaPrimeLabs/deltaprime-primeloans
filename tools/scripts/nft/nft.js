@@ -1,11 +1,5 @@
-import {getChainIdForNetwork, getUrlForNetwork} from "../helpers";
+import {getUrlForNetwork} from "../helpers";
 
-const FACTORY_NFT = require('../../../build/contracts/SmartLoansFactoryWithAccessNFT.json');
-const POOL_NFT = require('../../../build/contracts/PoolWithAccessNFT.json');
-const FACTORY_TUP = require('../../../build/contracts/SmartLoansFactoryTUP.json');
-const POOL_TUP = require('../../../build/contracts/PoolTUP.json');
-const BORROW_NFT = require('../../../build/contracts/BorrowAccessNFT.json');
-const DEPOSIT_NFT = require('../../../build/contracts/DepositAccessNFT.json');
 const fs = require("fs");
 const ethers = require("ethers");
 
@@ -16,15 +10,15 @@ function initWallet(networkName) {
     return new ethers.Wallet(key, provider);
 }
 
-function initContract(networkName, proxy, contractWithNFT) {
+function initContract(networkName, PROXY, IMPLEMENTATION_CONTRACT) {
     const wallet = initWallet(networkName);
 
-    return new ethers.Contract(proxy.networks[getChainIdForNetwork(networkName)].address, contractWithNFT.abi, wallet);
+    return new ethers.Contract(PROXY.address, IMPLEMENTATION_CONTRACT.abi, wallet);
 }
 
-function setNft(networkName, nftAddress, proxy, contractWithNFT) {
-    initContract(networkName, proxy, contractWithNFT)
-        .setAccessNFT(nftAddress)
+function setNft(networkName, NFT, PROXY, CONTRACT_WITH_NFT_ACCESS) {
+    initContract(networkName, PROXY, CONTRACT_WITH_NFT_ACCESS)
+        .setAccessNFT(NFT.address)
         .then(
             (re) => {
                 console.log(re)
@@ -32,11 +26,11 @@ function setNft(networkName, nftAddress, proxy, contractWithNFT) {
         );
 }
 
-function populateNftUris(networkName, address, nftContract) {
+function populateNFTUris(networkName, NFT) {
     const wallet = initWallet(networkName);
     const uris = fs.readFileSync("./tools/scripts/nft/uris.txt").toString().split("\n");
 
-    const contract = new ethers.Contract(address, nftContract.abi, wallet);
+    const contract = new ethers.Contract(NFT.address, NFT.abi, wallet);
 
     contract.addAvailableUri(uris).then(
         () => {
@@ -45,10 +39,10 @@ function populateNftUris(networkName, address, nftContract) {
     )
 }
 
-function getNFTsLeft(address, nftContract) {
+function getNFTsLeft(networkName, NFT) {
     const wallet = initWallet();
 
-    const contract = new ethers.Contract(address, nftContract.abi, wallet);
+    const contract = new ethers.Contract(NFT.address, NFT.abi, wallet);
 
     contract.getAvailableUrisCount().then(
         (resp) => {
@@ -59,38 +53,23 @@ function getNFTsLeft(address, nftContract) {
 
 /// EXPORTED FUNCTIONS
 
-module.exports.setBorrowAccessNFT = function setBorrowAccessNFT(networkName, address) {
-    setNft(networkName, address, FACTORY_TUP, FACTORY_NFT);
+module.exports.setAccessNFT = function setAccessNFT(networkName, nftContractName, proxyContract, contractWithAccessNft) {
+    const CONTRACT_WITH_ACCESS_NFT = require(`../../../deployments/${networkName}/${contractWithAccessNft}.json`);
+    const PROXY_CONTRACT = require(`../../../deployments/${networkName}/${proxyContract}.json`);
+    const NFT = require(`../../../deployments/${networkName}/${nftContractName}.json`);
+
+    setNft(networkName, NFT, PROXY_CONTRACT, CONTRACT_WITH_ACCESS_NFT);
 }
 
-module.exports.setDepositAccessNFT = function setDepositAccessNFT(networkName, address) {
-    setNft(networkName, address, POOL_TUP, POOL_NFT);
+module.exports.populateNftUris = function populateNftUris(networkName, contractName) {
+    const NFT = require(`../../../deployments/${networkName}/${contractName}.json`);
+
+    populateNFTUris(networkName, NFT);
 }
 
-module.exports.populateDepositNftUris = function populateDepositNftUris(networkName, address) {
-    populateNftUris(networkName, address, DEPOSIT_NFT);
+module.exports.getNftsLeft = function getNftsLeft(networkName, contractName) {
+    const NFT = require(`../../../deployments/${networkName}/${contractName}.json`);
+
+    getNFTsLeft(contractName, NFT);
 }
 
-module.exports.populateBorrowNftUris = function populateBorrowNftUris(networkName,address) {
-    populateNftUris(networkName, address, BORROW_NFT);
-}
-
-module.exports.getBorrowNFTsLeft = function getBorrowNFTsLeft(address) {
-    getNFTsLeft(address, BORROW_NFT);
-}
-
-module.exports.getDepositNFTsLeft = function getDepositNFTsLeft(address) {
-    getNFTsLeft(address, DEPOSIT_NFT);
-}
-
-module.exports.getNFT = function getNFT(address, id) {
-    const wallet = initWallet();
-
-    const contract = new ethers.Contract(address, BORROW_NFT.abi, wallet);
-
-    contract.getAvailableUri(id).then(
-        (resp) => {
-            console.log(resp)
-        }
-    )
-}
