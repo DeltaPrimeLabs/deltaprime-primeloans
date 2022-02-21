@@ -1,7 +1,7 @@
 import {getChainIdForNetwork, getUrlForNetwork} from "../helpers";
 
 const {ethers} = require("hardhat");
-const UPGRADEABLE_BEACON = require("../../../build/contracts/UpgradeableBeacon.json")
+const UPGRADEABLE_BEACON = require("../../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json")
 
 const fs = require('fs');
 const key = fs.readFileSync("./.secret-deployer").toString().trim();
@@ -18,13 +18,13 @@ async function upgradeBeacon(networkName, implementationName) {
     const FACTORY = require(`../../../deployments/${networkName}/SmartLoansFactory.json`);
     const IMPLEMENTATION = require(`../../../deployments/${networkName}/${implementationName}.json`);
 
-    const factory = new ethers.Contract(FACTORY_TUP.networks[getChainIdForNetwork(networkName)].address, FACTORY.abi, wallet);
+    const factory = new ethers.Contract(FACTORY_TUP.address, FACTORY.abi, wallet);
 
     const beaconAddress = await factory.upgradeableBeacon.call(0);
     const beacon = (await new ethers.Contract(beaconAddress, UPGRADEABLE_BEACON.abi)).connect(wallet);
-    await beacon.upgradeTo(IMPLEMENTATION.address, { gasLimit: 8000000});
+    await beacon.upgradeTo(IMPLEMENTATION.address);
 
-    return "New implementation address " + address;
+    return "New implementation address " + IMPLEMENTATION.address;
 }
 
 module.exports.upgradeSmartLoan = function upgradeSmartLoan(networkName, address) {

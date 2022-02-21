@@ -80,4 +80,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['Main'];
+module.exports.tags = ['init'];

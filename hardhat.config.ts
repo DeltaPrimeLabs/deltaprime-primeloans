@@ -32,10 +32,11 @@ export default {
       //   interval: 1000
       // }
     },
-    local: {
+    localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
-      chainId: 1337
+      chainId: 1337,
+      // accounts: [deployerKey, adminKey]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
