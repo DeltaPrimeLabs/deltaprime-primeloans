@@ -14,7 +14,7 @@ module.exports = async ({
         args: []
     });
 
-    console.log(`SmartLoansFactory implementation deployed at address: ${result.address} by a factory`);
+    console.log(`SmartLoansFactory implementation deployed at address: ${result.address}`);
 
 
     const initializeInterface =   {
@@ -49,3 +49,5 @@ module.exports = async ({
     console.log(`SmartLoansFactoryTUP deployed at address: ${resultTup.address}`);
 
 };
+
+module.exports.tags = ['Main'];

@@ -1,9 +1,10 @@
-const POOL_TUP = require("../../../build/contracts/PoolTUP.json");
 const {upgradeProxy} = require("./upgrade-proxy");
 
 
-module.exports.upgradeSmartLoansFactory = function upgradeSmartLoansFactory(networkName, address) {
-    upgradeProxy(networkName, address, POOL_TUP, "Pool").then(
+module.exports.upgradePool = function upgradePool(networkName, contractName) {
+    const POOL_TUP = require(`../../../deployments/${networkName}/PoolTUP.json`);
+
+    upgradeProxy(networkName, contractName, POOL_TUP, "Pool").then(
         res => console.log(res),
         err => console.error(err)
     )

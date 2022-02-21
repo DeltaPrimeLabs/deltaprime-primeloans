@@ -77,5 +77,8 @@ export default {
     apiKey: {
       avalancheFujiTestnet: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4",
     }
+  },
+  deploy: {
+    skipIfAlreadyDeployed: true
   }
 };

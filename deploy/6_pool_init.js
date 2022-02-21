@@ -40,3 +40,5 @@ module.exports = async ({
     `borrowersRegistry: ${smartLoansFactoryTUP.address}, depositIndex: ${depositIndexAddress}, borrowIndex: ${borrowIndexAddress}]`);
 
 };
+
+module.exports.tags = ['Main'];
