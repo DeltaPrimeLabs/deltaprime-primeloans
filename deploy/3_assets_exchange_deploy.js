@@ -1,6 +1,7 @@
 const web3Abi  = require('web3-eth-abi');
 const addresses = require("../common/token_addresses.json");
 const {ethers} = require("hardhat");
+const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
 const toBytes32 = require("ethers").utils.formatBytes32String;
 
 const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
@@ -22,6 +23,9 @@ module.exports = async ({
 }) => {
     const {deploy} = deployments;
     const {deployer, admin} = await getNamedAccounts();
+
+    embedCommitHash('PangolinExchange');
+    embedCommitHash('PangolinExchangeTUP', './contracts/proxies');
 
     let resultImpl = await deploy('PangolinExchange', {
         from: deployer,

@@ -1,3 +1,5 @@
+import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+
 const {ethers} = require("hardhat");
 import hre from 'hardhat'
 const networkName = hre.network.name
@@ -10,6 +12,10 @@ module.exports = async ({
   const {deploy} = deployments;
   const {deployer, admin} = await getNamedAccounts();
 
+  embedCommitHash('PoolFactory', './contracts/deployment');
+  embedCommitHash('Pool', './contracts');
+  embedCommitHash('PoolTUP', './contracts/proxies');
+
   await deploy('PoolFactory', {
     from: deployer,
     gasLimit: 8000000,
@@ -18,6 +24,7 @@ module.exports = async ({
 
 
   const factory = await ethers.getContract("PoolFactory");
+
 
   const tx = await factory.deployPool();
   const receipt = await tx.wait();

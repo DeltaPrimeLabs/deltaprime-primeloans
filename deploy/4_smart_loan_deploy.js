@@ -1,3 +1,5 @@
+import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
 import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
@@ -8,6 +10,8 @@ module.exports = async ({
 }) => {
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
+
+    embedCommitHash('SmartLoan');
 
     const poolTUP = await ethers.getContract("PoolTUP");
     const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
