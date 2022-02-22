@@ -26,9 +26,12 @@ contract SmartLoanProperties {
   address private constant _POOL_ADDRESS = 0x5322471a7E37Ac2B8902cFcba84d266b37D811A0;
 
   // redstone-evm-connector price providers
-  address private constant _PRICE_PROVIDER_1 = 0x3a7d971De367FE15D164CDD952F64205F2D9f10c;
+  address private constant _PRICE_PROVIDER_1 = 0x981bdA8276ae93F567922497153de7A5683708d3;
 
-  address private constant _PRICE_PROVIDER_2 = 0x41ed5321B76C045f5439eCf9e73F96c6c25B1D75;
+  address private constant _PRICE_PROVIDER_2 = 0x3BEFDd935b50F172e696A5187DBaCfEf0D208e48;
+
+  // redstone-evm-connector max block.timestamp acceptable delay
+  uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
 
 
   /* ========== GETTERS ========== */

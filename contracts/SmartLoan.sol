@@ -29,6 +29,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
+   * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
+   **/
+  function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
+    return MAX_BLOCK_TIMESTAMP_DELAY;
+  }
+
+  /**
    * Override PriceAware method, addresses below belong to authorized signers of data feeds
    **/
   function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
