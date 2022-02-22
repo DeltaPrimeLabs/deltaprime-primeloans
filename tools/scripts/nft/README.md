@@ -16,28 +16,13 @@ This method will take all addresses from `uris.txt` file and add them to NFT Acc
 
 NFT address as string in double quotes
 
-##SmartLoansFactory
-
 Windows:
 
-    node -r esm -e 'require("./tools/scripts/nft/nft").populateBorrowNftUris("NETWORK_NAME", "BORROW_NFT_ADDRESS")'
+    node -r esm -e 'require("./tools/scripts/nft/nft").populateNftUris("NETWORK_NAME", "NFT_CONTRACT_NAME")'
 
 MacOS:
 
-    node -r esm -e "require('./tools/scripts/nft/nft').populateBorrowNftUris('NETWORK_NAME', 'BORROW_NFT_ADDRESS')"
-
-
-##Pool
-
-MacOS:
-
-    node -r esm -e 'require("./tools/scripts/nft/nft").populateDepositNftUris("NETWORK_NAME", "DEPOSIT_NFT_ADDRESS")'
-
-Windows:
-
-    node -r esm -e "require('./tools/scripts/nft/nft').populateDepositNftUris('NETWORK_NAME', 'DEPOSIT_NFT_ADDRESS')"
-
-
+    node -r esm -e "require('./tools/scripts/nft/nft').populateNftUris('NETWORK_NAME', 'NFT_CONTRACT_NAME')"
 
 
 
