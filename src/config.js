@@ -17,5 +17,5 @@ export default {
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche"
+    dataProviderId: "redstone-avalanche-prod"
 }
