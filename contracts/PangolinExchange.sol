@@ -25,7 +25,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
 
-  address private constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+  address private constant WAVAX_ADDRESS = 0xd00ae08403B9bbb9124bB305C09058E32C39A48c;
 
   // first supportedAsset must be a blockchain native currency
   function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
