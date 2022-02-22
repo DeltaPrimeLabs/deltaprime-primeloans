@@ -5,9 +5,7 @@
   "author": "DeltaPrimeLoans <mbare@deltaprime.io>",
   "scripts": {
     "start": "yarn migrate:local && yarn serve",
-    "serve:local": "webpack serve --config config/webpack.dev.js --progress",
-    "serve:fuji": "webpack serve --config config/webpack.dev.js --progress --env network=fuji",
-    "serve:avalanche_c": "webpack serve --config config/webpack.dev.js --progress --env network=avalanche_c",
+    "serve": "webpack serve --config config/webpack.dev.js --progress",
     "test-local": "yarn hardhat test test/local/*",
     "test-local:all": "yarn hardhat test test/local/* test/deprecated/*/*",
     "test-integration": "yarn hardhat test test/integration/* --network localhost",
@@ -61,7 +59,7 @@
     "web3-eth-abi": "^1.7.0"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.11",

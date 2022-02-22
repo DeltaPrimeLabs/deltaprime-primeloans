@@ -1,9 +1,16 @@
+const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 module.exports = async ({
     getNamedAccounts,
     deployments
 }) => {
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
+
+    embedCommitHash('PoolWithAccessNFT', './contracts/upgraded');
+    embedCommitHash('SmartLoansFactoryWithAccessNFT', './contracts/upgraded');
+    embedCommitHash('SmartLoanLimitedCollateral', './contracts/upgraded');
+    embedCommitHash('BorrowAccessNFT', './contracts/ERC721');
+    embedCommitHash('DepositAccessNFT', './contracts/ERC721');
 
     let result = await deploy('PoolWithAccessNFT', {
         from: deployer,

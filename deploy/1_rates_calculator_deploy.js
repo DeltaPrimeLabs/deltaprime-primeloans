@@ -1,9 +1,12 @@
+const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
 module.exports = async ({
   getNamedAccounts,
   deployments
 }) => {
   const {deploy} = deployments;
   const {deployer} = await getNamedAccounts();
+
+  embedCommitHash('VariableUtilisationRatesCalculator');
 
   let result = await deploy('VariableUtilisationRatesCalculator', {
     from: deployer,

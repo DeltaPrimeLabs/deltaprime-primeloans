@@ -1,5 +1,6 @@
 const web3Abi  = require('web3-eth-abi');
 const {ethers} = require("hardhat");
+const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
 
 module.exports = async ({
     getNamedAccounts,
@@ -7,6 +8,9 @@ module.exports = async ({
 }) => {
     const {deploy} = deployments;
     const {deployer, admin} = await getNamedAccounts();
+
+    embedCommitHash('SmartLoansFactory');
+    embedCommitHash('SmartLoansFactoryTUP', './contracts/proxies');
 
     let result = await deploy('SmartLoansFactory', {
         from: deployer,

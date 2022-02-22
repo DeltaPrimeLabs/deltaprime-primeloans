@@ -1,3 +1,5 @@
+import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+
 const {ethers} = require("hardhat");
 import createMigrationArtifact from "../tools/scripts/create-migration-artifact";
 import hre from 'hardhat';
@@ -9,6 +11,9 @@ module.exports = async ({
 }) => {
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
+
+    embedCommitHash('CompoundingIndexFactory', './contracts/deployment');
+    embedCommitHash('CompoundingIndex');
 
     await deploy('CompoundingIndexFactory', {
         from: deployer,
