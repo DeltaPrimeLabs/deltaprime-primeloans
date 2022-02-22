@@ -3,6 +3,8 @@ import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
 import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
+import hre from "hardhat";
+import verifyContract from "../tools/scripts/verify-contract";
 
 module.exports = async ({
     getNamedAccounts,
@@ -26,6 +28,10 @@ module.exports = async ({
         gasLimit: 8000000,
         args: [],
     });
+
+    await verifyContract(hre, {
+        address: result.address
+    })
 
     console.log(`Deployed SmartLoan default implementation at address: ${result.address}`);
 

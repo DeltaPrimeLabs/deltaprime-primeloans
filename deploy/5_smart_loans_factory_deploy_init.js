@@ -1,6 +1,8 @@
 const web3Abi  = require('web3-eth-abi');
 const {ethers} = require("hardhat");
 const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
+const hre = require("hardhat");
+import verifyContract from "../tools/scripts/verify-contract";
 
 module.exports = async ({
     getNamedAccounts,
@@ -17,6 +19,10 @@ module.exports = async ({
         gasLimit: 8000000,
         args: []
     });
+
+    await verifyContract(hre, {
+        address: result.address
+    })
 
     console.log(`SmartLoansFactory implementation deployed at address: ${result.address}`);
 
@@ -49,6 +55,17 @@ module.exports = async ({
         gasLimit: 8000000,
         args: [factory.address, admin, calldata],
     });
+
+    await verifyContract(hre, {
+        address: resultTup.address,
+        contract: "contracts/proxies/SmartLoansFactoryTUP.sol:SmartLoansFactoryTUP",
+        constructorArguments: [
+            factory.address,
+            admin,
+            calldata
+        ]
+    })
+
 
     console.log(`SmartLoansFactoryTUP deployed at address: ${resultTup.address}`);
 

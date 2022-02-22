@@ -1,8 +1,9 @@
 import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
 
 const {ethers} = require("hardhat");
-import createMigrationArtifact from "../tools/scripts/create-migration-artifact";
+import createMigrationFile from "../tools/scripts/create-migration-file";
 import hre from 'hardhat';
+import verifyContract from "../tools/scripts/verify-contract";
 const networkName = hre.network.name;
 
 module.exports = async ({
@@ -15,10 +16,14 @@ module.exports = async ({
     embedCommitHash('CompoundingIndexFactory', './contracts/deployment');
     embedCommitHash('CompoundingIndex');
 
-    await deploy('CompoundingIndexFactory', {
+    let resultFactory = await deploy('CompoundingIndexFactory', {
         from: deployer,
         gasLimit: 8000000
     });
+
+    await verifyContract(hre, {
+        address: resultFactory.address
+    })
 
     const compoundingIndexFactory = await ethers.getContract("CompoundingIndexFactory");
     const poolTUP = await ethers.getContract("PoolTUP");
@@ -31,22 +36,35 @@ module.exports = async ({
 
     let depositIndexAddress = receiptDeposit.events[2].args[0];
 
-    createMigrationArtifact(networkName, './artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json', `./deployments/${networkName}/DepositIndex.json`, depositIndexAddress, receiptDeposit.transactionHash);
+    createMigrationFile(networkName, 'DepositIndex', depositIndexAddress, receiptDeposit.transactionHash);
+
+    await verifyContract(hre, {
+        address: depositIndexAddress,
+        constructorArguments: [
+            poolTUP.address
+        ]
+    })
 
     let txBorrowIndex = await compoundingIndexFactory.deployIndex(poolTUP.address);
     const receiptBorrow = await txBorrowIndex.wait();
 
     let borrowIndexAddress = receiptBorrow.events[2].args[0];
 
-    createMigrationArtifact(networkName, './artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json', `./deployments/${networkName}/BorrowIndex.json`, borrowIndexAddress, receiptBorrow.transactionHash);
+    createMigrationFile(networkName, 'BorrowIndex', borrowIndexAddress, receiptBorrow.transactionHash);
+
+    await verifyContract(hre, {
+        address: borrowIndexAddress,
+        constructorArguments: [
+            poolTUP.address
+        ]
+    })
 
     await pool.attach(poolTUP.address).initialize(
         variableUtilisationRatesCalculator.address,
         smartLoansFactoryTUP.address,
         depositIndexAddress,
-        borrowIndexAddress);
-
-
+        borrowIndexAddress
+    );
 
     console.log(`Initialized lending pool with: [ratesCalculator: ${variableUtilisationRatesCalculator.address}, ` +
     `borrowersRegistry: ${smartLoansFactoryTUP.address}, depositIndex: ${depositIndexAddress}, borrowIndex: ${borrowIndexAddress}]`);
