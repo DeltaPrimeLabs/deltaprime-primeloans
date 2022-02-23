@@ -22,7 +22,7 @@ const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = ethers.utils.parseEther;
 
 async function createLoan() {
-  let tx = await factory.createLoan({gasLimit: 3000000});
+  let tx = await factory.createLoan({gasLimit: 8000000});
   console.log("Loan created: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   let loanAddress = receipt.logs[0].address;
@@ -33,7 +33,7 @@ async function createLoan() {
 async function fundLoan(loanAddress, val) {
   console.log("Funding loan: " + val);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  let tx = await loan.fund({value: toWei(val.toString()), gasLimit: 3000000});
+  let tx = await loan.fund({value: toWei(val.toString()), gasLimit: 8000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Funding processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -43,7 +43,7 @@ async function fundLoan(loanAddress, val) {
 async function borrowFromPool(loanAddress, amount) {
   console.log("Borrowing funds: " + amount);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  let tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 3000000});
+  let tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 8000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Borrowing processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -52,7 +52,7 @@ async function borrowFromPool(loanAddress, amount) {
 
 async function setMaxLTV(loanAddress, maxLTV) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  let tx = await loan.setMaxLTV(maxLTV, {gasLimit: 2000000});
+  let tx = await loan.setMaxLTV(maxLTV, {gasLimit: 8000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Setting maximal LTV processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -76,7 +76,7 @@ async function loanSellout(loanAddress) {
   let targetLTV = await loan.MAX_LTV();
   let repayAmount = getSelloutRepayAmount(rawStatus[0], rawStatus[1], 100, targetLTV);
   console.log(`Attempting to sellout a loan under ${loanAddress} address to bring it below ${targetLTV} LTV level. Repay amount: ${repayAmount}`);
-  let tx = await loan.sellout(repayAmount.toString(), {gasLimit: 2000000});
+  let tx = await loan.sellout(repayAmount.toString(), {gasLimit: 8000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -86,7 +86,7 @@ async function loanSellout(loanAddress) {
 async function invest(loanAddress, asset, amount) {
   console.log("Investing: " + amount);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  let tx = await loan.invest(ethers.utils.formatBytes32String(asset), toWei(amount.toString()), {gasLimit: 3000000});
+  let tx = await loan.invest(ethers.utils.formatBytes32String(asset), toWei(amount.toString()), {gasLimit: 8000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Investing processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -104,7 +104,7 @@ async function selloutSolventLoan(loanAddress) {
   loan = WrapperBuilder
     .wrapLite(loan)
     .usingPriceFeed("redstone-avalanche"); // redstone-avalanche
-  await loan.selloutLoan({gasLimit: 2000000});
+  await loan.selloutLoan({gasLimit: 8000000});
 }
 
 
