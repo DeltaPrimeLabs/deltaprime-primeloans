@@ -195,7 +195,7 @@ export default {
           .usingPriceFeed(config.dataProviderId);
 
       //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 2000000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000});
 
       const transaction = await provider.waitForTransaction(tx.hash);
       if (transaction.status === 0) throw Error('Failed to create a loan');
