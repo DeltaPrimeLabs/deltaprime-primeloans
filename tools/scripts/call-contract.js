@@ -1,22 +1,22 @@
-const loans = require('./loans');
-const LOAN = require('../../build/contracts/SmartLoan.json');
+const contractName = "contract_name";
+const contractAddress = "contract_address";
+const contractMethod = "method_name";
+const jsonRPC = "https_address";
+
+const ARTIFACT = require(`../../artifacts/contracts/${contractName}.sol/${contractName}.json`);
 const ethers = require("ethers");
 const fs = require("fs");
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
-provider = new ethers.providers.JsonRpcProvider();
+provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 let wallet = mnemonicWallet.connect(provider);
 
-loans.findAllLoans().then(
-    loans => {
-        let loan1 = loans[0];
-        let loan = new ethers.Contract(loan1, LOAN.abi, wallet);
-        loan.getMaxLtv().then(
-            res => {
-                console.log(res.toString());
-            }
-        )
+let contract = new ethers.Contract(contractAddress, ARTIFACT.abi, wallet);
+
+contract[contractMethod]().then(
+    res => {
+        console.log(res);
     }
 )
 

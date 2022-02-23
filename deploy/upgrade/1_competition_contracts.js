@@ -1,4 +1,6 @@
 const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
+import verifyContract from "../../tools/scripts/verify-contract";
+const hre = require("hardhat");
 module.exports = async ({
     getNamedAccounts,
     deployments
@@ -17,11 +19,19 @@ module.exports = async ({
         gasLimit: 8000000
     });
 
+    await verifyContract(hre, {
+        address: result.address
+    });
+
     console.log(`Deployed PoolWithAccessNFT implementation at address: ${result.address}`);
 
     result = await deploy('SmartLoansFactoryWithAccessNFT', {
         from: deployer,
         gasLimit: 8000000
+    });
+
+    await verifyContract(hre, {
+        address: result.address
     });
 
     console.log(`Deployed SmartLoansFactoryWithAccessNFT implementation at address: ${result.address}`);
@@ -31,6 +41,10 @@ module.exports = async ({
         gasLimit: 8000000
     });
 
+    await verifyContract(hre, {
+        address: result.address
+    });
+
     console.log(`Deployed SmartLoanLimitedCollateral implementation at address: ${result.address}`);
 
     result = await deploy('BorrowAccessNFT', {
@@ -38,12 +52,19 @@ module.exports = async ({
         gasLimit: 8000000
     });
 
-    console.log(`Deployed BorrowAccessNFT at address: ${result.address}`);
+    await verifyContract(hre, {
+        address: result.address
+    });
 
+    console.log(`Deployed BorrowAccessNFT at address: ${result.address}`);
 
     result = await deploy('DepositAccessNFT', {
         from: deployer,
         gasLimit: 8000000
+    });
+
+    await verifyContract(hre, {
+        address: result.address
     });
 
     console.log(`Deployed DepositAccessNFT at address: ${result.address}`);
