@@ -63,3 +63,13 @@ MacOS:
 Windows:
 
     node -r esm -e "require('./tools/scripts/upgrade/upgrade-smart-loan.js').upgradeSmartLoan('NETWORK_NAME', 'UPGRADE_CONTRACT_NAME')"
+
+####10. Upgrade PangolinExchange
+
+MacOS:
+
+    node -r esm -e 'require("./tools/scripts/upgrade/upgrade-pangolin-exchange.js").upgradePangolinExchange("NETWORK_NAME", "UPGRADE_CONTRACT_NAME")'
+
+Windows:
+
+    node -r esm -e "require('./tools/scripts/upgrade/upgrade-pangolin-exchange.js').upgradePangolinExchange('NETWORK_NAME', 'UPGRADE_CONTRACT_NAME')"
