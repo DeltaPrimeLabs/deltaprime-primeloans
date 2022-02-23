@@ -5,7 +5,7 @@ import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
-import PANGOLIN_EXCHANGE from '@contracts/PangolinExchange.json'
+import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
 import {maxAvaxToBeSold, acceptableSlippage, minAvaxToBeBought, parseLogs} from "../utils/calculate";
@@ -195,7 +195,7 @@ export default {
           .usingPriceFeed(config.dataProviderId);
 
       //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 8000000, gasPrice: 200000000000});
 
       const transaction = await provider.waitForTransaction(tx.hash);
       if (transaction.status === 0) throw Error('Failed to create a loan');
@@ -207,7 +207,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 8000000});
+      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 8000000, gasPrice: 300000000000});
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
@@ -218,7 +218,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 8000000});
+      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 8000000, gasPrice: 300000000000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to repay');
@@ -231,7 +231,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 8000000});
+      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 8000000, gasPrice: 300000000000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to fund');
@@ -244,7 +244,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 8000000});
+      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 8000000, gasPrice: 300000000000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
@@ -263,7 +263,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(maxAvaxAmount.toString()),
-        {gasLimit: 8000000}
+        {gasLimit: 8000000, gasPrice: 300000000000}
       );
 
       const transaction = await provider.waitForTransaction(tx.hash);
@@ -284,7 +284,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(minAvaxAmount.toString()),
-        {gasLimit: 8000000}
+        {gasLimit: 8000000, gasPrice: 300000000000}
       );
       await provider.waitForTransaction(tx.hash);
 

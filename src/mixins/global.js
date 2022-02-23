@@ -1,8 +1,8 @@
 import { mapState } from 'vuex';
 import config from "@/config";
 import { Contract } from "ethers";
-import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
-import EXCHANGE from '@contracts/PangolinExchange.json'
+import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
+import EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
 import {parseUnits, formatUnits} from "../utils/calculate";
 import {handleCall, handleTransaction, parseArweaveURI} from "../utils/blockchain";
 

@@ -1,3 +1,5 @@
+import verifyContract from "../../tools/scripts/verify-contract";
+const hre = require("hardhat");
 module.exports = async ({
     getNamedAccounts,
     deployments
@@ -5,10 +7,14 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    const contractName = 'CONTRACT_NAME';
+    const contractName = 'SmartLoan';
     let result = await deploy(contractName, {
         from: deployer,
         gasLimit: 8000000
+    });
+
+    await verifyContract(hre, {
+        address: result.address
     });
 
     console.log(`Deployed ${contractName} implementation at address: ${result.address}`);
