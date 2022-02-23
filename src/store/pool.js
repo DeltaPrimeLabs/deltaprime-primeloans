@@ -63,9 +63,8 @@ export default {
 
         if (deploymentReceipt) commit('setDeploymentBlock', deploymentReceipt.blockNumber);
 
-
-
         let pool = new ethers.Contract(POOLTUP.address, POOL.abi, provider.getSigner());
+        pool.iface = new ethers.utils.Interface(POOL.abi);
 
         commit('setPool', pool);
       }
