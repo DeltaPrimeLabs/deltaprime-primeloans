@@ -17,3 +17,4 @@ deployments/localhost
 .vercel
 .openzeppelin
 typechain
+tenderly.yaml
