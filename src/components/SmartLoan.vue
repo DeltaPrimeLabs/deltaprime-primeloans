@@ -241,8 +241,8 @@
 
 .collateral-block {
   &:before {
-    left: 582px;
-    border-color: #DFCDDB;
+    left: 750px;
+    border-color: #E0CEDB;
   }
 }
 
