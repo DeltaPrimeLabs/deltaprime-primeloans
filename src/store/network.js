@@ -1,6 +1,5 @@
 const ethers = require('ethers');
 let ethereum = window.ethereum;
-import config from "@/config";
 import Vue from "vue";
 
 export default {

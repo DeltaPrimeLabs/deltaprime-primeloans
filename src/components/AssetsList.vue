@@ -72,7 +72,7 @@
                     v-on:changedValue="(value) => checkBuySlippage(asset, value)"
                     :waiting="asset.checkingSlippage || asset.waiting"
                     :flexDirection="isMobile ? 'column' : 'row'"
-                    :validators="investValidators(asset.price, asset.buySlippage, list[nativeToken].balance)"
+                    :validators="investValidators(asset.price, acceptableSlippage(asset.buySlippage), list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
                   />
@@ -162,7 +162,7 @@
                   v-on:changedValue="(value) => checkBuySlippage(asset, value)"
                   :waiting="asset.checkingSlippage || asset.waiting"
                   :flexDirection="isMobile ? 'column' : 'row'"
-                  :validators="investValidators(asset.price, asset.buySlippage, list[nativeToken].balance)"
+                  :validators="investValidators(asset.price, acceptableSlippage(asset.buySlippage), list[nativeToken].balance)"
                   :warnings="investWarnings(asset.buySlippage)"
                   :info="buySlippageInfo(asset)"
                 />

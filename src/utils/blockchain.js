@@ -17,7 +17,7 @@ export function isAvalancheChain() {
 export function startingBlock() {
     switch (config.chainId) {
         case 43113:
-            return 6524252;
+            return 6490771;
         case 43114:
             return 11333837;
         default:

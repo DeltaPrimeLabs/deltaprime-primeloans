@@ -3,7 +3,7 @@ import config from "@/config";
 import { Contract } from "ethers";
 import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
 import EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
-import {parseUnits, formatUnits} from "../utils/calculate";
+import {parseUnits, formatUnits, acceptableSlippage} from "../utils/calculate";
 import {handleCall, handleTransaction, parseArweaveURI} from "../utils/blockchain";
 
 export default {
@@ -76,6 +76,9 @@ export default {
     },
     parseArweaveAddress(uri) {
       return parseArweaveURI(uri);
+    },
+    acceptableSlippage(slippage) {
+      return acceptableSlippage(slippage);
     }
   },
   computed: {
