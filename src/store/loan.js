@@ -1,4 +1,4 @@
-import {handleCall} from "../utils/blockchain";
+import {handleCall, startingBlock} from "../utils/blockchain";
 
 const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
@@ -33,6 +33,10 @@ export default {
       if (getters.getCurrentCollateral !== null
           && getters.getCurrentCollateral !== 0
           && state.collateralFromPayments !== null) {
+        console.log('totalValue: ', state.totalValue);
+        console.log('debt: ', state.debt);
+        console.log('collateralFromPayments: ', state.collateralFromPayments);
+
         return getters.getCurrentCollateral - state.collateralFromPayments;
       } else {
         return 0;
@@ -168,7 +172,7 @@ export default {
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
       let logs = await provider.getLogs({
-        fromBlock: rootState.pool.deploymentBlock,
+        fromBlock: startingBlock(),
         address: loan.address,
         topics: [ [
           loan.iface.getEventTopic("Funded"),

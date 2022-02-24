@@ -2,7 +2,7 @@ import Vue from "vue";
 import config from "@/config";
 
 export function transactionUrl(tx) {
-    return 'https://explorer.avax-test.network/tx/' + tx;
+    return 'https://testnet.snowtrace.io/tx/' + tx;
 }
 
 export function parseArweaveURI(uri) {
@@ -11,6 +11,18 @@ export function parseArweaveURI(uri) {
 
 export function isAvalancheChain() {
     return [43113, 43114].includes(config.chainId);
+}
+
+//block number from which events are considered, to increase loading of events information
+export function startingBlock() {
+    switch (config.chainId) {
+        case 43113:
+            return 6524252;
+        case 43114:
+            return 11333837;
+        default:
+            return 0;
+    }
 }
 
 export async function handleTransaction(fun, args, onSuccess, onFail) {
