@@ -9,11 +9,20 @@ const toBytes32 = require("ethers").utils.formatBytes32String;
 const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
 const supportedAssets = [
-    { asset: toBytes32('AVAX'), assetAddress: addresses["AVAX"]},
-    {asset: toBytes32('ETH'), assetAddress: addresses["ETH"]},
-    {asset: toBytes32('BTC'), assetAddress: addresses["BTC"]},
-    {asset: toBytes32('USDT'), assetAddress: addresses["USDT"]}
+    asset('AVAX'),
+    asset('ETH'),
+    asset('BTC'),
+    asset('USDT'),
+    asset('LINK'),
+    asset('PNG'),
+    asset('XAVA'),
+    asset('YAK')
 ]
+
+function asset(symbol) {
+    return { asset: toBytes32(symbol), assetAddress: addresses[symbol] }
+}
+
 module.exports = async ({
     getNamedAccounts,
     deployments
