@@ -243,6 +243,7 @@ export default {
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root:true})
     },
     async withdraw({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -256,6 +257,7 @@ export default {
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root:true})
     },
     async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
