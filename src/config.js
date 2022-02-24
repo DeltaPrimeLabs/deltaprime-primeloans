@@ -12,7 +12,6 @@ export default {
       "LINK": {name: "Link", symbol: "LINK", decimals: 18, address: addresses.LINK},
       "PNG": {name: "Pangolin", symbol: "PNG", decimals: 18, address: addresses.PNG, logoExt: "jpg"},
       "XAVA": {name: "Avalaunch", symbol: "XAVA", decimals: 18, address: addresses.XAVA, logoExt: "png"},
-      "FRAX": {name: "Frax", symbol: "FRAX", decimals: 18, address: addresses.FRAX},
       "YAK": {name: "Yak", symbol: "YAK", decimals: 18, address: addresses.YAK, logoExt: "png"}
     },
     nativeToken: "AVAX",
