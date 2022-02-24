@@ -6,7 +6,7 @@ const hre = require("hardhat");
 import verifyContract from "../tools/scripts/verify-contract";
 const toBytes32 = require("ethers").utils.formatBytes32String;
 
-const pangolinRouter = "0xefa94DE7a4656D787667C749f7E1223D71E9FD88";
+const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
 const supportedAssets = [
     { asset: toBytes32('AVAX'), assetAddress: addresses["AVAX"]},
