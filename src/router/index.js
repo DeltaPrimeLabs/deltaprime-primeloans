@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Pool from '@/pages/Pool'
-import Admin from '@/pages/Admin'
+import Ranking from '@/pages/Ranking'
 import Nft from "@/pages/Nft";
 import BorrowNft from "@/components/BorrowNft";
 import DepositNft from "@/components/DepositNft";
@@ -24,9 +24,9 @@ export default new Router({
       component: PrimeAccount
     },
     {
-      path: '/admin',
-      name: 'Admin',
-      component: Admin
+      path: '/ranking',
+      name: 'Ranking',
+      component: Ranking
     },
     {
       path: '/nft',

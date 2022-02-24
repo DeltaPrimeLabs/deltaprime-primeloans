@@ -9,7 +9,7 @@
 import SmartLoanList from "../components/SmartLoanList";
 
 export default {
-    name: 'Admin',
+    name: 'Ranking',
     components: {
       SmartLoanList
     },

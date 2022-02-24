@@ -1,5 +1,6 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
+import {startingBlock} from "../utils/blockchain";
 const ethers = require('ethers');
 
 export default {
@@ -13,8 +14,7 @@ export default {
     poolHistory: null,
     depositInterest: null,
     userBorrowed: null,
-    userDepositBalance: null,
-    deploymentBlock: null
+    userDepositBalance: null
   },
   mutations: {
     setPool(state, pool) {
@@ -38,9 +38,6 @@ export default {
     setDepositInterest(state, depositInterest) {
       state.depositInterest = depositInterest;
     },
-    setDeploymentBlock(state, deploymentBlock) {
-      state.deploymentBlock = deploymentBlock;
-    },
     setUserBorrowed(state, userBorrowed) {
       state.userBorrowed = userBorrowed;
     },
@@ -57,11 +54,6 @@ export default {
     async initPool({ state, commit, rootState }) {
       if (!state.pool) {
         const provider = rootState.network.provider;
-        let deploymentTx = POOLTUP.transactionHash;
-
-        const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
-
-        if (deploymentReceipt) commit('setDeploymentBlock', deploymentReceipt.blockNumber);
 
         let pool = new ethers.Contract(POOLTUP.address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);
@@ -112,7 +104,7 @@ export default {
       let totalWithdrawn = 0;
       const provider = rootState.network.provider;
       let logs = await provider.getLogs({
-        fromBlock: state.deploymentBlock,
+        fromBlock: startingBlock(),
         address: pool.address,
         topics: [ [
           pool.iface.getEventTopic("Deposit"),

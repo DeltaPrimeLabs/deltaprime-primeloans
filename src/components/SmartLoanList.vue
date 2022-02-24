@@ -1,11 +1,11 @@
 <template>
   <div>
     <Block class="block" :bordered="true">
-      <div class="title">Smart loans</div>
+      <div class="title">Prime Accounts</div>
       <table id="investmentsTable">
         <thead>
           <tr>
-            <th>Smart Loan</th>
+            <th>Prime Account</th>
             <th>Owner</th>
             <th>Total Value</th>
             <th>Profit</th>
@@ -29,6 +29,7 @@
 
 
 <script>
+  import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
   import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
   import LOAN from '@contracts/SmartLoan.json'
   import { ethers } from "ethers";
@@ -38,6 +39,7 @@
   import {mapState} from "vuex";
   import {WrapperBuilder} from "redstone-evm-connector";
   import { fromWei } from "@/utils/calculate";
+  import {startingBlock} from "../utils/blockchain";
 
   export default {
     name: 'SmartLoanList',
@@ -59,11 +61,12 @@
     },
     computed: {
       ...mapState('network', ['provider']),
+      ...mapState('pool', ['deploymentBlock']),
     },
     methods: {
       loadLoansInfo() {
         const loanFactory = new ethers.Contract(
-          LOAN_FACTORY.address,
+          LOAN_FACTORYTUP.address,
           LOAN_FACTORY.abi,
           this.provider.getSigner()
         );
@@ -81,9 +84,10 @@
                     .wrapLite(loan)
                     .usingPriceFeed(config.dataProviderId);
 
+                  console.log()
                   Promise.all([
                     provider.getLogs({
-                    fromBlock: 0,
+                    fromBlock: startingBlock(),
                     address: loan.address,
                     topics: [
                       [
@@ -117,6 +121,7 @@
                             }
                           )
 
+                          this.loans.sort((a, b) => b.profit - a.profit)
                           this.loading = false;
                         }
                       );
