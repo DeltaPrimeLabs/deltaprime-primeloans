@@ -17,7 +17,7 @@
         :labels="['Safer', 'Riskier']"
       />
     </div>
-    <Button label="Withdraw" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>
+    <Button label="Reduce" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>
   </div>
 </template>
 

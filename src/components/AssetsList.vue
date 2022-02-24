@@ -99,9 +99,11 @@
               <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
                 <SmallBlock
                   v-on:close="() => { asset.showChart = false; }">
-                  <Chart
-                  :dataPoints="asset.prices"
-                  :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
+                  <div class="big-chart">
+                    <Chart
+                        :dataPoints="asset.prices"
+                        :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
+                  </div>
                 </SmallBlock>
               </td>
             </tr>
@@ -169,11 +171,13 @@
             <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
               <SmallBlock
                 v-on:close="() => { asset.showChart = false;  }">
-                <Chart
-                  :dataPoints="asset.prices"
-                  :minY="asset.minPrice"
-                  :maxY="asset.maxPrice"
-                  :lineWidth="3"/>
+                <div class="big-chart">
+                  <Chart
+                    :dataPoints="asset.prices"
+                    :minY="asset.minPrice"
+                    :maxY="asset.maxPrice"
+                    :lineWidth="3"/>
+                </div>
               </SmallBlock>
             </td>
           </tr>
@@ -588,7 +592,12 @@ tbody tr {
    grid-column: 1/-1;
    margin-top: 2rem;
    margin-bottom: 2rem;
-   height: 180px;
+   height: 230px;
+}
+
+.big-chart {
+  width: 86%;
+  align-self: center;
 }
 
 @media screen and (max-width: $md - 1) {
@@ -624,18 +633,20 @@ tbody tr {
 
 #investmentsTable, #optionsTable {
   .small-block-wrapper {
-    height: 215px;
+    height: 230px;
   }
 
   .currency-form-wrapper {
     width: 100%;
     flex-wrap: wrap;
-    margin-top: 42px;
+    margin-top: 50px;
     align-items: center;
 
     @media screen and (min-width: $md) {
       flex-wrap: nowrap;
       align-items: flex-start;
+      align-self: center;
+      width: min-content;
     }
 
     .input-wrapper {
@@ -668,7 +679,7 @@ tbody tr {
     }
 
     .btn {
-      padding: 10px 20px;
+      padding: 11px 20px;
       margin-left: 20px;
       font-size: 17px;
 
