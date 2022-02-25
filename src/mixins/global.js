@@ -37,7 +37,7 @@ export default {
         const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
-            await this.handleCall(exchange.getEstimatedAVAXForERC20Token, [parseUnits((amount).toString(), tokenDecimals), tokenAddress]);
+            await exchange.getEstimatedAVAXForERC20Token(parseUnits((amount).toString(), tokenDecimals), tokenAddress);
 
         checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
 
@@ -95,13 +95,19 @@ export default {
     return {
       ltvValidators: [
         {
-          require: function(value) { return value < config.MAX_LTV },
-          message: `LTV should be lower than ${config.MAX_LTV * 100}%`
+          validate: function (value) {
+            if (value > config.MAX_LTV) {
+              return`LTV should be lower than ${config.MAX_LTV * 100}%`
+            }
+          }
         }
       ],
       nonNegativeValidator: {
-        require: function(value) { return value >= 0 },
-        message: `Value cannot be smaller than 0`
+        validate: function(value) {
+          if (value < 0) {
+            return `Value cannot be smaller than 0`;
+          }
+        }
       }
     }
   }

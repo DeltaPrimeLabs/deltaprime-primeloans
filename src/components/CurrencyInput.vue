@@ -21,11 +21,11 @@
          v-if="!error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <div
-        v-if="info && value && !isNaN(value)"
+        v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
         v-html="info(value)"></div>
     </div>
     <div class="warning"
-         v-if="!error && warning">
+         v-if="!error && warning && !waiting && !ongoingErrorCheck">
       <span>
         <img src="src/assets/icons/warning.svg"/>
         {{warning}}
@@ -74,7 +74,8 @@ import {mapState} from "vuex";
         warning: '',
         value: null,
         defaultValidators: [],
-        asset: config.ASSETS_CONFIG[this.symbol]
+        asset: config.ASSETS_CONFIG[this.symbol],
+        ongoingErrorCheck: false
       }
     },
     created() {
@@ -82,7 +83,7 @@ import {mapState} from "vuex";
     },
     watch: {
       value: function (newValue) {
-        this.runChecks(newValue);
+        this.updateValue(newValue);
       },
       defaultValue: function(newValue) {
         this.value = newValue;
@@ -95,40 +96,42 @@ import {mapState} from "vuex";
       },
     },
     methods: {
-      runChecks(value) {
-        this.checkErrors(value);
-        this.checkWarnings(value);
+      async updateValue(value) {
+        this.ongoingErrorCheck = true;
+        this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
+        await this.checkErrors(value);
+        this.ongoingErrorCheck = false;
+        this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
+
+        await this.checkWarnings(value);
 
         const hasError = this.error.length > 0;
+
         this.$emit('newValue', {value: value, error: hasError});
       },
-      checkWarnings(newValue) {
+      async checkWarnings(newValue) {
         this.warning = '';
 
-        this.warnings.find(
-          check => {
-            let value = typeof newValue === "number" ? newValue : 0;
-            if (!check.require(value)) {
-              this.warning = check.message;
-              return true;
-            }
-            return false;
+        for (const validator of [...this.warnings]) {
+          let value = typeof newValue === "number" ? newValue : 0;
+
+          let validatorResult = await validator.validate(value);
+          if (validatorResult) {
+            this.warning = validatorResult;
           }
-        )
+        }
       },
-      checkErrors(newValue) {
+      async checkErrors(newValue) {
         this.error = '';
 
-        [...this.validators, ...this.defaultValidators].find(
-          check => {
-            let value = typeof newValue === "number" ? newValue : 0;
-            if (!check.require(value)) {
-              this.error = check.message;
-              return true;
-            }
-            return false;
+        for (const validator of [...this.validators, ...this.defaultValidators]) {
+          let value = typeof newValue === "number" ? newValue : 0;
+
+          let validatorResult = await validator.validate(value);
+          if (validatorResult) {
+            this.error = validatorResult;
           }
-        )
+        }
       }
     }
   }

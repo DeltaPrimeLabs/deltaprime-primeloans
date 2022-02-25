@@ -46,8 +46,11 @@ import {mapActions, mapState} from "vuex";
         label: '',
         withdrawValidators: [
           {
-            require: (value) => value <= this.loanBalance,
-            message: 'Withdraw amount exceeds current loan AVAX balance'
+            validate: (value) => {
+              if (value > this.loanBalance) {
+                return 'Withdraw amount exceeds current loan AVAX balance';
+              }
+            },
           }
         ],
       }

@@ -12,7 +12,8 @@
       height: null,
       width: null,
       lineWidth: null,
-      stepped: 'none'
+      stepped: 'none',
+      isStableCoin: false
     },
     data() {
       return {
@@ -47,7 +48,7 @@
           hover: {
             mode: null
           },
-          aspectRatio: 1.2,
+          aspectRatio: this.isStableCoin ? 10 : 1.2,
           height: null,
           width: null,
           legend: {

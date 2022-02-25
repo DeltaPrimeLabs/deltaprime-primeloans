@@ -80,21 +80,19 @@ export default {
           + ' 100%';
       }
     },
-    onChange(newValue) {
+    async onChange(newValue) {
       this.restyleInput(this.$refs.input, newValue)
 
       this.error = '';
 
-      this.validators.find(
-        check => {
-          let value = parseFloat(newValue);
-          if (!check.require(value)) {
-            this.error = check.message;
-            return true;
-          }
-          return false;
+      for (const validator of [...this.validators]) {
+        let value = typeof newValue === "number" ? newValue : 0;
+
+        let validatorResult = await validator.validate(value);
+        if (validatorResult) {
+          this.error = validatorResult;
         }
-      )
+      }
 
       const hasError = this.error.length > 0;
 

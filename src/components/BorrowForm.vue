@@ -46,8 +46,11 @@ import {mapActions, mapGetters, mapState} from "vuex";
         label: '',
         borrowValidators: [
           {
-            require: value => value <= this.getAvailable,
-            message: 'Borrow amount exceeds amount available in the pool'
+            validate: value => {
+              if (value > this.getAvailable) {
+                return 'Borrow amount exceeds amount available in the pool'
+              }
+            }
           }
         ],
       }

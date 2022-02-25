@@ -41,7 +41,7 @@ export default {
       }
     },
     width() {
-      return this.ltv / 5 * 100 + '%';
+      return `${Math.max(this.ltv / 5 * 100, 7)}%`;
     }
   }
 }

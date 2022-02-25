@@ -48,8 +48,11 @@ import {mapActions, mapState} from "vuex";
         label: '',
         repayValidators: [
           {
-            require: (value) => value <= this.debt,
-            message: 'Repay amount exceeds borrowed amount'
+            validate: (value) => {
+              if (value > this.debt) {
+                return 'Repay amount exceeds borrowed amount';
+              }
+            }
           }
         ]
 

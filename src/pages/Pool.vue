@@ -81,14 +81,20 @@
         waitingForWithdraw: false,
         depositValidators: [
           {
-            require: value => value <= this.balance,
-            message: 'Deposit amount exceeds your account balance'
+            validate: value => {
+              if (value > this.balance) {
+                return 'Deposit amount exceeds your account balance';
+              }
+            }
           }
         ],
         withdrawValidators: [
           {
-            require: value => value <= this.userDepositBalance,
-            message: 'Withdraw amount exceeds your account deposit'
+            validate: value => {
+              if (value > this.userDepositBalance) {
+                return 'Withdraw amount exceeds your account deposit';
+              }
+            }
           }
         ]
       }

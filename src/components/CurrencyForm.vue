@@ -12,6 +12,7 @@
       :waiting="waiting"
       :info="info"
       v-on:newValue="updateValue"
+      v-on:ongoingErrorCheck="ongoingErrorCheck"
     />
     <Button :label="label" :disabled="disabled" :waiting="waiting" class="form-button" v-on:click="emitValue(true)"/>
   </div>
@@ -46,12 +47,13 @@
     data() {
       return {
         value: null,
-        error: false
+        error: false,
+        checkingInput: false
       }
     },
     computed: {
       disabled() {
-        return this.waiting || this.error;
+        return this.waiting || this.error || this.checkingInput;
       }
     },
     methods: {
@@ -59,6 +61,9 @@
         this.value = result.value;
         this.error = result.error;
         this.$emit('changedValue', this.value);
+      },
+      ongoingErrorCheck(checking) {
+        this.checkingInput = checking;
       },
       emitValue() {
         if (!this.disabled) {
