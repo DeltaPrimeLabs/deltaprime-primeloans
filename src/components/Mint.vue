@@ -62,7 +62,6 @@ export default {
       } else if (this.noAvailableNfts) {
         return this.noNftsAnymoreMessage;
       } else {
-        this.waiting = false;
         return this.notMintedYetMessage;
       }
     },
