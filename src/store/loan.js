@@ -33,9 +33,6 @@ export default {
       if (getters.getCurrentCollateral !== null
           && getters.getCurrentCollateral !== 0
           && state.collateralFromPayments !== null) {
-        console.log('totalValue: ', state.totalValue);
-        console.log('debt: ', state.debt);
-        console.log('collateralFromPayments: ', state.collateralFromPayments);
 
         return getters.getCurrentCollateral - state.collateralFromPayments;
       } else {

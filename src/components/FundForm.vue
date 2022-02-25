@@ -46,8 +46,11 @@ export default {
         label: '',
         fundValidators: [
           {
-            require: (value) => value <= this.balance,
-            message: 'Fund amount exceeds user balance'
+            validate: (value) => {
+              if (value > this.balance) {
+                return 'Fund amount exceeds user balance';
+              }
+            }
           }
         ],
       }

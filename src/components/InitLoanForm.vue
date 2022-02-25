@@ -56,20 +56,29 @@
         errors: [false, false, false],
         collateralValidators: [
           {
-            require: value => value <= this.balance,
-            message: 'Collateral amount exceeds your account balance'
+            validate: value => {
+              if (value > this.balance) {
+                return 'Collateral amount exceeds your account balance'
+              }
+            }
           },
         ],
         loanValidators: [
           {
-            require: value => value <= this.getAvailable,
-            message: 'Loan amount exceeds amount available in the pool'
+            validate: value => {
+              if (value > this.getAvailable) {
+                return 'Loan amount exceeds amount available in the pool';
+              }
+            }
           }
         ],
         ltvValidators: [
           {
-            require: () => this.calculatedLTV <= config.DEFAULT_LTV,
-            message: `Maximum initial LTV is ${config.DEFAULT_LTV * 100}%`
+            validate: () => {
+              if (this.calculatedLTV > config.DEFAULT_LTV) {
+                `Maximum initial LTV is ${config.DEFAULT_LTV * 100}%`
+              }
+            }
           }
         ]
       }

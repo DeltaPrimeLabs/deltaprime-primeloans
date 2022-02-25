@@ -41,6 +41,7 @@
                 <SimpleChart
                   class="simple-chart"
                   :dataPoints="asset.prices"
+                  :isStableCoin="asset.symbol === 'USDT'"
                   :lineWidth="1.5"/>
                 <img @click.stop="toggleChart(asset.symbol)"
                      src="src/assets/icons/enlarge.svg"
@@ -69,10 +70,9 @@
                     :price="asset.price"
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
-                    v-on:changedValue="(value) => checkBuySlippage(asset, value)"
-                    :waiting="asset.checkingSlippage || asset.waiting"
+                    :waiting="asset.waiting"
                     :flexDirection="isMobile ? 'column' : 'row'"
-                    :validators="investValidators(asset.price, acceptableSlippage(asset.buySlippage), list[nativeToken].balance)"
+                    :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
                   />
@@ -87,11 +87,11 @@
                     :price="asset.price"
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => redeemValue(asset, value)"
-                    v-on:changedValue="(value) => checkSellSlippage(asset, value)"
                     :max="asset.balance"
                     :waiting="asset.waiting"
                     :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="redeemValidators(asset.balance)"
+                    :warnings="redeemWarnings(asset)"
                     :info="sellSlippageInfo(asset)"
                   />
                 </SmallBlock>
@@ -141,6 +141,7 @@
             <td class="chart-icon" data-label="Chart">
               <SimpleChart
                 :dataPoints="asset.prices"
+                :isStableCoin="asset.symbol === 'USDT'"
                 :lineWidth="1.5"/>
               <img @click.stop="toggleChart(asset.symbol)" src="src/assets/icons/enlarge.svg"/>
             </td>
@@ -160,9 +161,9 @@
                   :hasSecondButton="true"
                   v-on:submitValue="(value) => investValue(asset, value)"
                   v-on:changedValue="(value) => checkBuySlippage(asset, value)"
-                  :waiting="asset.checkingSlippage || asset.waiting"
+                  :waiting="asset.waiting"
                   :flexDirection="isMobile ? 'column' : 'row'"
-                  :validators="investValidators(asset.price, acceptableSlippage(asset.buySlippage), list[nativeToken].balance)"
+                  :validators="investValidators(asset, list[nativeToken].balance)"
                   :warnings="investWarnings(asset.buySlippage)"
                   :info="buySlippageInfo(asset)"
                 />
@@ -260,28 +261,57 @@
     },
     methods: {
       ...mapActions('loan', ['invest', 'redeem']),
-      investValidators(price, slippage, avaxBalance) {
+      investValidators(asset, avaxBalance) {
         return [
           {
-            require: value => avaxBalance
-                                >= maxAvaxToBeSold(this.usdToAVAX(price) * value, slippage),
-            message: 'Requested asset value exceeds your available AVAX balance'
+            validate: async(value) => {
+              let slippage;
+              try {
+                slippage = await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, value);
+                this.updateAsset(asset.symbol, 'buySlippage', slippage);
+              } catch (e) {
+                return 'Error when calculating slippage';
+              }
+
+              if (avaxBalance < maxAvaxToBeSold(this.usdToAVAX(asset.price) * value, slippage)) {
+                return 'Requested asset value exceeds your available AVAX balance';
+              }
+            }
           }
         ]
       },
       investWarnings(slippage) {
         return [
           {
-            require: () => slippage == null || slippage <= .03,
-            message: 'Current slippage above 3%'
+            validate: () => {
+              if (slippage !== null && slippage > .03) {
+                return 'Current slippage above 3%';
+              }
+            }
           }
         ]
       },
       redeemValidators(balance) {
         return [
           {
-            require: value => balance >= value,
-            message: 'Requested amount exceeds your asset balance'
+            validate: (value) => {
+              if (value > balance) {
+                return 'Requested amount exceeds your asset balance';
+              }
+            }
+          }
+        ]
+      },
+      redeemWarnings(asset) {
+        return [
+          {
+            validate: async (value) => {
+              let slippage = await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, value);
+              this.updateAsset(asset.symbol, 'sellSlippage', slippage);
+              if (slippage > .03) {
+                return 'Current slippage above 3%';
+              }
+            }
           }
         ]
       },
@@ -410,22 +440,19 @@
         return asset.price * asset.balance;
       },
       async checkBuySlippage(asset, amount) {
-        this.updateAsset(asset.symbol, 'checkingSlippage', true);
-
-        const slippage =
-          await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, amount);
-
-        this.updateAsset(asset.symbol, 'buySlippage', slippage);
-        this.updateAsset(asset.symbol, 'checkingSlippage', false);
+        try {
+          const slippage =
+              await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, amount);
+          this.updateAsset(asset.symbol, 'buySlippage', slippage);
+        } catch (e) {}
       },
       async checkSellSlippage(asset, amount) {
-        this.updateAsset(asset.symbol, 'checkingSlippage', true);
+        try {
+          const slippage =
+            await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, amount);
 
-        const slippage =
-          await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, amount);
-
-        this.updateAsset(asset.symbol, 'sellSlippage', slippage);
-        this.updateAsset(asset.symbol, 'checkingSlippage', false);
+          this.updateAsset(asset.symbol, 'sellSlippage', slippage);
+        } catch (e) {}
       },
       formatTokenBalance(balance) {
         return balance !== null ? (balance > 1 ? balance.toFixed(2) : balance.toPrecision(2)) : '';

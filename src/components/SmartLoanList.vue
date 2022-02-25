@@ -84,7 +84,6 @@
                     .wrapLite(loan)
                     .usingPriceFeed(config.dataProviderId);
 
-                  console.log()
                   Promise.all([
                     provider.getLogs({
                     fromBlock: startingBlock(),
