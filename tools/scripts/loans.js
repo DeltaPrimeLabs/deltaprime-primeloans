@@ -58,31 +58,6 @@ async function setMaxLTV(loanAddress, maxLTV) {
   console.log("Setting maximal LTV processed with " + (receipt.status == 1 ? "success" : "failure"));
 }
 
-function getSelloutRepayAmount(totalValue, debt, bonus, targetLTV) {
-  targetLTV = targetLTV / 1000;
-  bonus = bonus / 1000;
-  let repayAmount = (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1);
-  console.log(`The repay amount for ${totalValue} totalValue, ${debt} debt and ${targetLTV} targetLTV with ${bonus} bonus is ${repayAmount}`);
-  return repayAmount * 1.04;
-}
-
-
-async function loanSellout(loanAddress) {
-  let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  loan = WrapperBuilder
-    .wrapLite(loan)
-    .usingPriceFeed("redstone-avalanche"); // redstone-avalanche
-  let rawStatus = await loan.getFullLoanStatus();
-  let targetLTV = await loan.MAX_LTV();
-  let repayAmount = getSelloutRepayAmount(rawStatus[0], rawStatus[1], 100, targetLTV);
-  console.log(`Attempting to sellout a loan under ${loanAddress} address to bring it below ${targetLTV} LTV level. Repay amount: ${repayAmount}`);
-  let tx = await loan.sellout(repayAmount.toString(), {gasLimit: 8000000});
-  console.log("Waiting for tx: " + tx.hash);
-  let receipt = await provider.waitForTransaction(tx.hash);
-  console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
-}
-
-
 async function invest(loanAddress, asset, amount) {
   console.log("Investing: " + amount);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
