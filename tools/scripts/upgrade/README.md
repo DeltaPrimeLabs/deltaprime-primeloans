@@ -28,11 +28,11 @@ Windows:
 
 MacOS:
 
-    node -r esm -e 'require("./tools/scripts/nft/nft.js").setAccessNFT("NETWORK_NAME", "NFT_CONTRACT_NAME", "PoolTUP", "PoolWithAccessNFT")'
+    node -r esm -e 'require("./tools/scripts/nft/nft.js").setAccessNFT("NETWORK_NAME", "DepositAccessNFT", "PoolTUP", "PoolWithAccessNFT")'
 
 Windows:
 
-    node -r esm -e "require('./tools/scripts/nft/nft.js').setAccessNFT('NETWORK_NAME', 'NFT_CONTRACT_NAME', 'PoolTUP', 'PoolWithAccessNFT')"
+    node -r esm -e "require('./tools/scripts/nft/nft.js').setAccessNFT('NETWORK_NAME', 'DepositAccessNFT', 'PoolTUP', 'PoolWithAccessNFT')"
 
 ####7. Upgrade SmartLoansFactory
 
@@ -48,11 +48,11 @@ Windows:
 
 MacOS:
 
-    node -r esm -e 'require("./tools/scripts/nft/nft.js").setAccessNFT("NETWORK_NAME", "NFT_CONTRACT_NAME", "SmartLoansFactoryTUP", "SmartLoansFactoryWithAccessNFT")'
+    node -r esm -e 'require("./tools/scripts/nft/nft.js").setAccessNFT("NETWORK_NAME", "BorrowAccessNFT", "SmartLoansFactoryTUP", "SmartLoansFactoryWithAccessNFT")'
 
 Windows:
 
-    node -r esm -e "require('./tools/scripts/nft/nft.js').setAccessNFT('NETWORK_NAME', 'NFT_CONTRACT_NAME', 'SmartLoansFactoryTUP', 'SmartLoansFactoryWithAccessNFT')"
+    node -r esm -e "require('./tools/scripts/nft/nft.js').setAccessNFT('NETWORK_NAME', 'BorrowAccessNFT', 'SmartLoansFactoryTUP', 'SmartLoansFactoryWithAccessNFT')"
 
 ####9. Deploy new Smart Loan implementation
 

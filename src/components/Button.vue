@@ -18,7 +18,9 @@
     },
     methods: {
       clicked() {
-        this.$emit('click', true);
+        if (!(this.disabled || this.waiting)) {
+          this.$emit('click', true);
+        }
       }
     },
   }

@@ -20,7 +20,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: result.address
+        address: result.address,
+        contract: "contracts/upgraded/PoolWithAccessNFT.sol:PoolWithAccessNFT"
     });
 
     console.log(`Deployed PoolWithAccessNFT implementation at address: ${result.address}`);
@@ -53,7 +54,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: result.address
+        address: result.address,
+        contract: "contracts/ERC721/BorrowAccessNFT.sol:BorrowAccessNFT"
     });
 
     console.log(`Deployed BorrowAccessNFT at address: ${result.address}`);
@@ -64,7 +66,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: result.address
+        address: result.address,
+        contract: "contracts/ERC721/DepositAccessNFT.sol:DepositAccessNFT"
     });
 
     console.log(`Deployed DepositAccessNFT at address: ${result.address}`);
