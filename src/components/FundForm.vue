@@ -99,7 +99,7 @@ export default {
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true) || !this.debt;
+        return this.waiting || this.errors.includes(true);
       },
       LTVInfo() {
         return this.$options.filters.percent(this.calculatedLTV(this.fundValue));

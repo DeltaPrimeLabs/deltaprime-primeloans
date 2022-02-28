@@ -99,7 +99,7 @@ import {mapActions, mapState} from "vuex";
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanBalance']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true) || !this.debt;
+        return this.waiting || this.errors.includes(true);
       },
       ltvInfo() {
         return this.$options.filters.percent(this.calculatedLTV(this.withdrawValue));
