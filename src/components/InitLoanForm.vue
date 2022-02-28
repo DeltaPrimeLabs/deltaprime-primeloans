@@ -178,7 +178,7 @@
 <style lang="scss">
 .init-loan-form-wrapper {
   .currency-input-wrapper {
-    width: 490px;
+    width: 530px;
     margin-bottom: 35px;
   }
 }

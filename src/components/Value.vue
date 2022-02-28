@@ -82,17 +82,12 @@
 .value {
   margin: 5px 0;
   font-size: $font-size-mlg;
-
-  @media screen and (min-width: $md) {
-    font-size: $font-size-lg;
-  }
 }
 
 .sub-value {
   margin-left: 5px;
-  color: #696969;
+  color: #7d7d7d;
   font-size: $font-size-xsm;
-  opacity: 0.6;
 }
 
 .values {

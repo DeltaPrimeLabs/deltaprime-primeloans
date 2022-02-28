@@ -285,7 +285,7 @@
           {
             validate: () => {
               if (slippage !== null && slippage > .03) {
-                return 'Current slippage above 3%';
+                return `Be careful, current slippage is above ${(slippage * 100).toFixed(0)}%`;
               }
             }
           }
@@ -677,7 +677,7 @@ tbody tr {
     }
 
     .input-wrapper {
-      height: 50px;
+      height: 60px;
 
       @media screen and (min-width: $md) {
         width: 90%;

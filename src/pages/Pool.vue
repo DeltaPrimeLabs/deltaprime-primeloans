@@ -183,7 +183,7 @@
 }
 
 .history-title {
-  font-size: $font-size-mlg;
+  font-size: $font-size-lg;
   color: #7d7d7d;
   font-weight: 500;
 }
@@ -197,7 +197,7 @@
     width: 100%;
 
     @media screen and (min-width: $md) {
-      width: 490px;
+      width: 530px;
     }
   }
 
