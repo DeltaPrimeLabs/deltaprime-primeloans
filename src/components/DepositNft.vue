@@ -14,8 +14,7 @@ export default {
   },
   computed: {
     ...mapState('network', ['provider']),
-    ...mapState('nft', ['depositNftContract', 'depositNftImageUri']),
-    ...mapGetters('nft', ['hasDepositNft'])
+    ...mapState('nft', ['depositNftContract', 'depositNftImageUri', 'hasDepositNft'])
   },
   methods: {
     ...mapActions('nft', ['getDepositNftId'])

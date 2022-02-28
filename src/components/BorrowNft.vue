@@ -16,8 +16,7 @@ export default {
   },
   computed: {
     ...mapState('network', ['provider']),
-    ...mapState('nft', ['borrowNftContract', 'borrowNftImageUri']),
-    ...mapGetters('nft', ['hasBorrowNft'])
+    ...mapState('nft', ['borrowNftContract', 'borrowNftImageUri', 'hasBorrowNft']),
   },
   methods: {
     ...mapActions('nft', ['getBorrowNftId'])
