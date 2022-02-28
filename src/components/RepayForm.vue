@@ -4,7 +4,7 @@
       v-on:newValue="updateRepay"
       :defaultValue="repayValue"
       :validators="repayValidators"
-      :max="debt"
+      :max="maxRepay"
     />
     <div class="ltv" v-html="LTVInfo"></div>
     <div class="ltv-slider-wrapper">
@@ -52,10 +52,12 @@ import {mapActions, mapState} from "vuex";
               if (value > this.debt) {
                 return 'Repay amount exceeds borrowed amount';
               }
+              if (value > this.loanBalance) {
+                return 'Repay amount exceeds current AVAX balance for Prime Account'
+              }
             }
           }
         ]
-
       }
     },
     methods: {
@@ -100,9 +102,9 @@ import {mapActions, mapState} from "vuex";
       }
     },
     computed: {
-      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
+      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanBalance']),
       disabled() {
-        return this.waiting || this.errors.includes(true) || !this.debt;
+        return this.waiting || this.errors.includes(true);
       },
       LTVInfo() {
         if (this.calculatedLTV(this.repayValue) === Number.POSITIVE_INFINITY) {
@@ -110,6 +112,9 @@ import {mapActions, mapState} from "vuex";
         } else {
           return `LTV: <b>${this.$options.filters.percent(this.calculatedLTV(this.repayValue))}</b>`;
         }
+      },
+      maxRepay() {
+        return Math.min(this.loanBalance, this.debt);
       }
     }
   }
