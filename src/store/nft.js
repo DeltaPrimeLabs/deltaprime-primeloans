@@ -14,12 +14,12 @@ export default {
   state: {
     borrowNftContract: null,
     borrowNftContractSet: true,
-    hasBorrowNft: false,
+    hasBorrowNft: null,
     borrowNftId: null,
     borrowNftImageUri: null,
     depositNftContract: null,
     depositNftContractSet: true,
-    hasDepositNft: false,
+    hasDepositNft: null,
     depositNftId: null,
     depositNftImageUri: null
   },
@@ -33,6 +33,9 @@ export default {
     setBorrowNftId(state, id) {
       state.borrowNftId = id;
     },
+    setHasBorrowNft(state, has) {
+      state.hasBorrowNft = has;
+    },
     setBorrowNftImageUri(state, uri) {
       state.borrowNftImageUri = uri;
     },
@@ -45,17 +48,14 @@ export default {
     setDepositNftId(state, id) {
       state.depositNftId = id;
     },
+    setHasDepositNft(state, has) {
+      state.hasDepositNft = has;
+    },
     setDepositNftImageUri(state, uri) {
       state.depositNftImageUri = uri;
     },
   },
   getters: {
-    hasBorrowNft(state) {
-      return state.borrowNftId !== null;
-    },
-    hasDepositNft(state) {
-      return state.depositNftId !== null;
-    },
     borrowingLocked(state) {
       return state.borrowNftContractSet && state.borrowNftId === null;
     },
@@ -121,8 +121,11 @@ export default {
       if (balance > 0) {
         const id = (await state.borrowNftContract.tokenOfOwnerByIndex(rootState.network.account, 0)).toNumber();
 
+        commit('setHasBorrowNft', true);
         commit('setBorrowNftId', id);
         dispatch('updateBorrowNftFromId', {id: id})
+      } else {
+        commit('setHasBorrowNft', false);
       }
     },
     async getDepositNftId({ state, rootState, dispatch, commit }) {
@@ -131,8 +134,11 @@ export default {
       if (balance > 0) {
         const id = (await state.depositNftContract.tokenOfOwnerByIndex(rootState.network.account, 0)).toNumber();
 
+        commit('setHasDepositNft', true);
         commit('setDepositNftId', id);
         dispatch('updateDepositNftFromId', {id: id})
+      } else {
+        commit('setHasDepositNft', false);
       }
     }
   }

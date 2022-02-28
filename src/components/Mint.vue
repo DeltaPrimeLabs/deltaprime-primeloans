@@ -5,8 +5,11 @@
       <div class="nft">
         <video muted autoplay loop :src="videoUri" />
       </div>
-      <div class="description" v-html="description"></div>
-      <Button :disabled="hasNft || waiting" label="Mint" v-on:click="mint"/>
+      <div class="description">
+        <div v-html="description" v-if="description"></div>
+        <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+      </div>
+      <Button :disabled="hasNft || waiting || noAvailableNfts" label="Mint" v-on:click="mint"/>
     </Block>
   </div>
 </template>
@@ -26,8 +29,7 @@ export default {
   },
   props: {
     hasNft: {
-      type: Boolean,
-      default: false,
+      type: Boolean
     },
     nftImageUri: {
       type: String,
@@ -43,13 +45,13 @@ export default {
   },
   data() {
     return {
-      noAvailableNfts: false,
+      noAvailableNfts: null,
       exampleNft: "",
       userNft: "",
       notMintedYetMessage: "Get your own unique NFT to participate in our trading competition!",
       mintedMessage: "Your unique access NFT is minted!",
-      noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted. But you can still join our" +
-          "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord channel</a> to not miss the next opportunity!",
+      noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted.<br/> But you can still join our " +
+          "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> not to miss the next opportunity!",
       intervalId: null,
       waiting: true
     }
@@ -57,11 +59,19 @@ export default {
   computed: {
     ...mapState('network', ['provider']),
     description() {
-      if (this.hasNft) {
-        return this.mintedMessage;
-      } else if (this.noAvailableNfts) {
+      if (this.noAvailableNfts === null) {
+        return;
+      }
+      if (this.noAvailableNfts) {
         return this.noNftsAnymoreMessage;
-      } else {
+      }
+
+      if (this.hasNft === true) {
+        return this.mintedMessage;
+      }
+
+      if (this.hasNft === false) {
+        this.waiting = false;
         return this.notMintedYetMessage;
       }
     },
@@ -87,10 +97,10 @@ export default {
   watch: {
     nftContract: {
       handler(value) {
-        if (value && !this.hasNft) {
+        if (value) {
           value.getAvailableUrisCount().then(
             count => {
-              this.noAvailableNfts = count === 0;
+              this.noAvailableNfts = count.toNumber() === 0;
             }
           )
           .catch(er => console.log(er));
