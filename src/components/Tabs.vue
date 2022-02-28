@@ -71,7 +71,7 @@ export default {
     font-size: $font-size-md;
 
     @media screen and (min-width: $md) {
-      font-size: $font-size-xl;
+      font-size: $font-size-xxl;
     }
   }
 

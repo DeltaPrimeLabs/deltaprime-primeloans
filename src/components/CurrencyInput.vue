@@ -24,19 +24,19 @@
         v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
         v-html="info(value)"></div>
     </div>
-    <div class="warning"
-         v-if="!error && warning && !waiting && !ongoingErrorCheck">
-      <span>
-        <img src="src/assets/icons/warning.svg"/>
-        {{warning}}
-      </span>
-    </div>
     <div class="error"
          v-if="error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <span>
         <img src="src/assets/icons/error.svg"/>
         {{error}}
+      </span>
+    </div>
+    <div class="warning"
+         v-if="warning && !waiting && !ongoingErrorCheck">
+      <span>
+        <img src="src/assets/icons/warning.svg"/>
+        {{warning}}
       </span>
     </div>
   </div>

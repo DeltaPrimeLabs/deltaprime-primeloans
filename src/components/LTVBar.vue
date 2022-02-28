@@ -41,6 +41,9 @@ export default {
       }
     },
     width() {
+      if (this.ltv === 0) {
+        return "0%"
+      }
       return `${Math.max(this.ltv / 5 * 100, 7)}%`;
     }
   }
@@ -60,7 +63,7 @@ export default {
   }
 
   .ltv-value {
-    font-size: 23px;
+    font-size: 20px;
   }
 
   .ltv-info {
@@ -91,6 +94,8 @@ export default {
     .range {
       display: flex;
       justify-content: space-between;
+      font-size: 10px;
+      color: #7d7d7d
     }
 
     .ltv-state {

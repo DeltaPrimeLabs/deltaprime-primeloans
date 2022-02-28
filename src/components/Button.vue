@@ -51,7 +51,7 @@
 
   @media screen and (min-width: $md) {
     padding: 17px 40px;
-    font-size: $font-size-lg;
+    font-size: $font-size-xl;
   }
 
   .btn-label {

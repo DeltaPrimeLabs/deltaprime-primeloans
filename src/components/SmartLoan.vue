@@ -266,7 +266,7 @@
 
     @media screen and (min-width: $md) {
       margin-top: 0px;
-      width: 500px;
+      width: 530px;
     }
   }
 
