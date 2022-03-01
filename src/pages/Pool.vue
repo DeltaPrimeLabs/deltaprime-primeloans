@@ -39,12 +39,12 @@
         </Tab>
       </Tabs>
     </Block>
-    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolHistory && poolHistory.length > 0)">
+    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolEvents && poolEvents.length > 0)">
       <div class="history-title">Deposits history</div>
       <div class="chart-wrapper">
         <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
       </div>
-      <HistoryList :items="poolHistory" title="Last deposits" class="history-list"/>
+      <PoolHistoryList :items="poolEvents" title="Last deposits" class="history-list"/>
     </Block>
   </div>
 </template>
@@ -56,7 +56,7 @@
   import Value from "@/components/Value.vue";
   import Block from "@/components/Block.vue";
   import Bar from "@/components/Bar.vue";
-  import HistoryList from "@/components/HistoryList.vue";
+  import PoolHistoryList from "@/components/PoolHistoryList.vue";
   import InfoBubble from "@/components/InfoBubble.vue";
   import Chart from "@/components/Chart.vue";
   import {mapState, mapActions, mapGetters} from 'vuex';
@@ -70,7 +70,7 @@
       Value,
       Block,
       Bar,
-      HistoryList,
+      PoolHistoryList,
       Chart,
       InfoBubble
     },
@@ -100,18 +100,18 @@
       }
     },
     computed: {
-      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolHistory']),
+      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents']),
       ...mapGetters('nft', ['depositLocked']),
       ...mapState('network', ['balance']),
       chartPoints() {
-        if (this.poolHistory == null || this.poolHistory.length === 0) {
+        if (this.poolEvents == null || this.poolEvents.length === 0) {
           return [];
         }
 
         let currentDeposit = 0;
         let maxDeposit = 0;
 
-        let dataPoints = this.poolHistory.slice().reverse().map(
+        let dataPoints = this.poolEvents.slice().reverse().map(
           (e) => {
             let value = e.type === "Deposit" ? e.value : -e.value;
             currentDeposit += value;
@@ -180,12 +180,6 @@
   border-radius: 25px;
   box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
   background-color: rgba(255, 255, 255, 0.3);
-}
-
-.history-title {
-  font-size: $font-size-lg;
-  color: #7d7d7d;
-  font-weight: 500;
 }
 
 </style>

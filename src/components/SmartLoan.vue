@@ -79,6 +79,10 @@
     <Block class="block" :bordered="true" >
       <AssetsList class="assets-list"/>
     </Block>
+    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(loanEvents && loanEvents.length > 0)">
+      <div class="history-title">Prime Account history</div>
+      <LoanHistoryList :items="loanEvents" title="Prime Account History" class="history-list"/>
+    </Block>
   </div>
 </template>
 
@@ -92,6 +96,7 @@
   import Tab from "@/components/Tab.vue";
   import LTVBar from "@/components/LTVBar.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
+  import LoanHistoryList from "@/components/LoanHistoryList.vue";
   import {mapGetters, mapState} from "vuex";
   import RepayForm from "./RepayForm";
   import BorrowForm from "./BorrowForm";
@@ -122,7 +127,8 @@
     Tab,
     Tabs,
     LTVBar,
-    InfoBubble
+    InfoBubble,
+    LoanHistoryList
   },
   computed: {
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanEvents']),

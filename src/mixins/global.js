@@ -79,6 +79,10 @@ export default {
     },
     acceptableSlippage(slippage) {
       return acceptableSlippage(slippage);
+    },
+    logoSrc(asset) {
+      asset = asset ? asset : 'avax';
+      return `src/assets/logo/${asset.toLowerCase()}.svg`;
     }
   },
   computed: {
@@ -89,7 +93,7 @@ export default {
     },
     maxLTV() {
       return config.MAX_LTV;
-    }
+    },
   },
   data() {
     return {
