@@ -1,13 +1,24 @@
+const args = require('yargs').argv;
+const network = args.network ? args.network : 'localhost';
+const interval = args.interval ? args.interval : 10;
+
 const ethers = require('ethers');
 const {WrapperBuilder} = require("redstone-evm-connector");
 
-const FACTORY_ABI = require("../../deployments/localhost/SmartLoansFactory.json").abi;
-const FACTORY_ADDRESS = require("../../deployments/localhost/SmartLoansFactoryTUP.json").address;
+const FACTORY_ABI = require(`../../deployments/${network}/SmartLoansFactory.json`).abi;
+const FACTORY_ADDRESS = require(`../../deployments/${network}/SmartLoansFactoryTUP.json`).address;
 
-const LOAN_ABI = require("../../deployments/localhost/SmartLoan.json").abi;
+const LOAN_ABI = require(`../../deployments/${network}/SmartLoan.json`).abi;
 
 const PRIVATE_KEY = '0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa';
-const RPC_URL = ''
+let RPC_URL;
+if(network === 'mainnet') {
+    RPC_URL = 'https://api.avax.network/ext/bc/C/rpc'
+} else if(network === 'fuji') {
+    RPC_URL = 'https://api.avax-test.network/ext/bc/C/rpc'
+} else {
+    RPC_URL = ''
+}
 let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
 let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);
 const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, wallet);
@@ -71,15 +82,18 @@ function getSelloutRepayAmount(totalValue, debt, bonus, targetLTV) {
 }
 
 async function liquidateInsolventLoans() {
+
     let loans = await getInsolventLoans();
     console.log(`INSOLVENT LOANS: ${loans}`)
     for(const x in loans) {
-        liquidateLoan(loans[x]);
+        await liquidateLoan(loans[x]);
     }
+    setTimeout(liquidateInsolventLoans, interval * 10)
 }
 
 module.exports = {
     liquidateInsolventLoans
 };
 
+console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}`);
 liquidateInsolventLoans()
