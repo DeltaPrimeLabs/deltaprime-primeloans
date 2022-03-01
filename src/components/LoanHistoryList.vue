@@ -2,7 +2,7 @@
   <div class="list">
     <div class="elements">
       <template v-for="item in items">
-        <div v-bind:key="item.time.toString()" class="element">
+        <div v-bind:key="item.type + item.tx" class="element">
           <div>{{ item.type }}</div>
           <div>{{ item.time | date }}<a :href="getTransactionUrl(item.tx)" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a></div>
           <div>{{ item.value}}<img class="logo" :src="logoSrc(item.asset)"/></div>

@@ -3,7 +3,7 @@
     <div class="title">{{ title }}</div>
     <div class="elements">
       <template v-for="item in items">
-        <div v-bind:key="item.time.toString()" class="element">
+        <div v-bind:key="item.tx" class="element">
           <div>{{ item.time | date }}<a :href="getTransactionUrl(item.tx)" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a></div>
           <div>{{ item.type === "Withdrawal" ? "-" : ""}}{{ item.value | avax}}<img class="logo" :src="`src/assets/icons/avax-icon.svg`"/></div>
         </div>
