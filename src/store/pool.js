@@ -146,7 +146,7 @@ export default {
       commit('setUserBorrowed', userBorrowed);
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
-      const tx = await state.pool.deposit({gasLimit: 8000000, value: ethers.utils.parseEther(amount.toString())});
+      const tx = await state.pool.deposit({gasLimit: 400000, value: ethers.utils.parseEther(amount.toString())});
       const transaction = await rootState.network.provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to deposit');
@@ -155,18 +155,8 @@ export default {
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
-    async repay({ state, dispatch }, { amount }) {
-
-      const tx = await state.pool.repay({gasLimit: 8000000, value: ethers.utils.parseEther(amount.toString())});
-      const transaction = await provider.waitForTransaction(tx.hash);
-
-      if (transaction.status === 0) throw Error('Failed to repay');
-
-      dispatch('updateUserBorrowed');
-      dispatch('updatePoolData');
-    },
     async withdraw({ state, dispatch, commit }, { amount }) {
-      const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 8000000});
+      const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 400000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
@@ -174,15 +164,6 @@ export default {
       dispatch('updatePoolEvents');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
-    },
-    async borrow({ state, dispatch }, { amount }) {
-      const tx = await state.pool.borrow(ethers.utils.parseEther(amount), {gasLimit: 8000000});
-      const transaction = await provider.waitForTransaction(tx.hash);
-
-      if (transaction.status === 0) throw Error('Failed to withdraw');
-
-      dispatch('updatePoolEvents');
-      dispatch('updatePoolData');
     }
   },
 };

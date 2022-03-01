@@ -68,7 +68,6 @@
       emitValue() {
         if (!this.disabled) {
           this.$emit('submitValue', this.value);
-          this.value = null;
         }
       }
     }
