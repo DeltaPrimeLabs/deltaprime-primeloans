@@ -215,24 +215,24 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @dev emitted after a loan is funded
    * @param funder the address which funded the loan
    * @param amount the amount of funds
-   * @param time of funding
+   * @param timestamp time of funding
    **/
-  event Funded(address indexed funder, uint256 amount, uint256 time);
+  event Funded(address indexed funder, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after the funds are invested into an asset
    * @param investor the address of investor making the purchase
    * @param asset bought by the investor
    * @param amount the investment
-   * @param time of the investment
+   * @param timestamp time of the investment
    **/
-  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
+  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted when funds are borrowed from the pool
    * @param borrower the address of borrower
    * @param amount of the borrowed funds
-   * @param time of the borrowing
+   * @param timestamp time of the borrowing
    **/
-  event Borrowed(address indexed borrower, uint256 amount, uint256 time);
+  event Borrowed(address indexed borrower, uint256 amount, uint256 timestamp);
 }
