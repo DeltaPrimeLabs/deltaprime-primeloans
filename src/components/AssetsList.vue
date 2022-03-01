@@ -717,8 +717,8 @@ tbody tr {
       font-size: 20px;
 
       &.waiting .ball-beat:not(.active) {
-        margin-top: 2px;
-        margin-bottom: 3px;
+        margin-top: 4px;
+        margin-bottom: 5px;
       }
     }
 

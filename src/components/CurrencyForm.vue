@@ -53,7 +53,7 @@
     },
     computed: {
       disabled() {
-        return this.waiting || this.error || this.checkingInput;
+        return this.value === null || this.value === 0 || this.waiting || this.error || this.checkingInput;
       }
     },
     methods: {
