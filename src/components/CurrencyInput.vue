@@ -13,7 +13,7 @@
         <div class="max">MAX</div>
       </div>
       <div class="logo-wrapper">
-        <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`"/>
+        <img class="logo" :src="logoSrc(symbol)"/>
         <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
       </div>
     </div>

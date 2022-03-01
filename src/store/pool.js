@@ -11,7 +11,7 @@ export default {
     totalBorrowed: null,
     depositRate: null,
     borrowingRate: null,
-    poolHistory: null,
+    poolEvents: null,
     depositInterest: null,
     userBorrowed: null,
     userDepositBalance: null
@@ -32,8 +32,8 @@ export default {
     setBorrowingRate(state, borrowingRate) {
       state.borrowingRate = borrowingRate;
     },
-    setPoolHistory(state, poolHistory) {
-      state.poolHistory = poolHistory;
+    setPoolEvents(state, poolEvents) {
+      state.poolEvents = poolEvents;
     },
     setDepositInterest(state, depositInterest) {
       state.depositInterest = depositInterest;
@@ -69,7 +69,7 @@ export default {
         dispatch('updateBorrowingRate'),
         dispatch('updateUserDepositBalance'),
         dispatch('updateUserBorrowed'),
-        dispatch('updatePoolHistory')
+        dispatch('updatePoolEvents')
       ])
     },
     async updateTotalSupply({ state, commit }) {
@@ -93,7 +93,7 @@ export default {
       const borrowingRate = parseFloat(ethers.utils.formatEther(await state.pool.getBorrowingRate()));
       commit('setBorrowingRate', borrowingRate);
     },
-    async updatePoolHistory({ commit, state, rootState }) {
+    async updatePoolEvents({ commit, state, rootState }) {
       const pool = state.pool;
       const account = rootState.network.account;
       const poolDepositorBalance = await pool.balanceOf(account);
@@ -114,7 +114,7 @@ export default {
 
       logs = logs.filter(item => item.address === pool.address);
 
-      const poolHistory = [];
+      const poolEvents = [];
       logs.forEach(log => {
         let parsed = pool.iface.parseLog(log);
 
@@ -130,10 +130,10 @@ export default {
         if (event.type === 'Deposit') totalSupply += event.value;
         if (event.type === 'Withdrawal') totalWithdrawn += event.value;
 
-        poolHistory.unshift(event);
+        poolEvents.unshift(event);
       });
 
-      commit('setPoolHistory', poolHistory);
+      commit('setPoolEvents', poolEvents);
 
       const depositInterest = pool.myDeposits - totalSupply + totalWithdrawn;
 
@@ -151,7 +151,7 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to deposit');
 
-      dispatch('updatePoolHistory');
+      dispatch('updatePoolEvents');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
@@ -171,7 +171,7 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
 
-      dispatch('updatePoolHistory');
+      dispatch('updatePoolEvents');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
@@ -181,7 +181,7 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
 
-      dispatch('updatePoolHistory');
+      dispatch('updatePoolEvents');
       dispatch('updatePoolData');
     }
   },
