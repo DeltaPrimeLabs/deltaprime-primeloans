@@ -32,9 +32,13 @@ export function parseLogs(loan, logs) {
     let event = {
       type: parsed.name,
       timestamp: parsed.args.time.toString() * 1000,
-      value: parseFloat(ethers.utils.formatEther(parsed.args.amount)),
       tx: log.transactionHash
     };
+
+    let value;
+
+    value = event.type === 'Liquidated' ? parsed.args.repayAmount : parsed.args.amount;
+    event.value = parseFloat(ethers.utils.formatEther(value));
 
     if (event.type === 'Funded') collateralFromPayments += event.value;
     if (event.type === 'Withdrawn') collateralFromPayments -= event.value;

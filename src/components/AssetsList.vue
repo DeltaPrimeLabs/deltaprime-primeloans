@@ -8,8 +8,8 @@
             <span class="total-value">
               Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
               <span class="vertical-line"></span>
-              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">
-              $ {{ (getProfit !== null && avaxPrice) ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
+              Your {{ profit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': profit < 0}">
+              $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : ''}}</span>
             </span>
           </span>
         </div>
@@ -252,6 +252,12 @@
       },
       nativeToken() {
         return config.nativeToken;
+      },
+      profit() {
+        if (Math.abs(this.getProfit) < 0.01) {
+          return 0;
+        }
+        return this.getProfit;
       }
     },
     data() {
@@ -706,9 +712,9 @@ tbody tr {
     }
 
     .btn {
-      padding: 11px 20px;
+      padding: 13px 20px;
       margin-left: 20px;
-      font-size: 17px;
+      font-size: 20px;
 
       &.waiting .ball-beat:not(.active) {
         margin-top: 2px;

@@ -200,6 +200,11 @@ input[type=number] {
   width: 140px;
   font-size: $font-size-sm;
   opacity: 0.6;
+
+  > div {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
 }
 
 .symbol {
