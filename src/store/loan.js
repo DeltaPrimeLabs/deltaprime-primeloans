@@ -8,7 +8,12 @@ import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
 import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
-import {maxAvaxToBeSold, acceptableSlippage, minAvaxToBeBought, parseLogs} from "../utils/calculate";
+import {
+  maxAvaxToBeSold,
+  acceptableSlippage,
+  minAvaxToBeBought,
+  parseLogs
+} from "../utils/calculate";
 import { WrapperBuilder } from "redstone-evm-connector";
 import { round } from "@/utils/calculate";
 
@@ -178,6 +183,7 @@ export default {
           loan.iface.getEventTopic("Redeemed"),
           loan.iface.getEventTopic("Borrowed"),
           loan.iface.getEventTopic("Repaid"),
+          loan.iface.getEventTopic("Liquidated")
         ] ]
       });
 

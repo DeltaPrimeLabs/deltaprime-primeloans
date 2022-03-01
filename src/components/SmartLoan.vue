@@ -50,6 +50,10 @@
       Invest in assets using AVAX from loan and collateral. <br/>
       Remember to keep LTV below <b>{{maxLTV}}%</b>.
     </InfoBubble>
+    <InfoBubble v-if="liquidatedEvent" :cacheKey="`LIQUIDATION-INFO-${liquidatedEvent.tx}`">
+      Your account has been recently liquidated. <br/>
+      Remember to keep LTV below <b>{{maxLTV}}%</b> to avoid losses.
+    </InfoBubble>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
       <Tabs :openTabIndex="tabIndex">
@@ -121,12 +125,19 @@
     InfoBubble
   },
   computed: {
-    ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
+    ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanEvents']),
     ...mapState('pool', ['userDepositBalance']),
     ...mapState('network', ['balance']),
     ...mapGetters('loan', ['getCurrentCollateral']),
     maxLTV() {
       return config.MAX_LTV * 100;
+    },
+    liquidatedEvent() {
+      if (!this.loanEvents) {
+        return null;
+      }
+
+      return this.loanEvents.find(event => event.type === "Liquidated");
     }
   },
   methods: {
