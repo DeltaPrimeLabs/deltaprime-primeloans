@@ -56,7 +56,6 @@
       await this.metamaskChecks();
       await this.initNetwork();
       await this.initNfts();
-      await this.initPrices();
       await this.initPool();
       await this.fetchLoan();
       await this.updatePoolData();
@@ -68,7 +67,6 @@
       ...mapActions("network", ["initNetwork"]),
       ...mapActions("pool", ["initPool", "updatePoolData"]),
       ...mapActions("loan", ["fetchLoan"]),
-      ...mapActions("prices", ["initPrices"]),
       ...mapActions("nft", ["initNfts"]),
       async checkConnectedChain() {
         const chainId = await ethereum.request({ method: 'eth_chainId' });

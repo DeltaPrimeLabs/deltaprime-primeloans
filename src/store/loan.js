@@ -28,7 +28,8 @@ export default {
     ltv: null,
     loanBalance: null,
     loanEvents: null,
-    collateralFromPayments: null
+    collateralFromPayments: null,
+    avaxPrice: null
   },
   getters: {
     getCurrentCollateral(state) {
@@ -75,7 +76,10 @@ export default {
     },
     setCollateralFromPayments(state, collateral) {
       state.collateralFromPayments = collateral;
-    }
+    },
+    setAvaxPrice(state, price) {
+      state.avaxPrice = price;
+    },
   },
   actions: {
     async initSupportedAssets({ rootState, commit }) {
@@ -138,6 +142,7 @@ export default {
           if (symbol === config.nativeToken) {
             assets[symbol].balance = state.loanBalance;
             assets[symbol].price = prices[0] / 10**8;
+            commit('setAvaxPrice', assets[symbol].price);
           } else {
             assets[symbol].price = prices[i] / 10**8;
             assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
