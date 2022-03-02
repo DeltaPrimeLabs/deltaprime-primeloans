@@ -51,7 +51,7 @@ export default {
                 return 'Fund amount exceeds user balance';
               }
               if (this.collateralFromPayments + value > 1.25) {
-                return 'Collateral amount higher than the maximum of 1.25 allowed for the competition';
+                return 'Collateral amount higher than the maximum of 1.25 allowed';
               }
             }
           }
