@@ -38,11 +38,15 @@ export function parseLogs(loan, logs) {
     let value;
 
     value = event.type === 'Liquidated' ? parsed.args.repayAmount : parsed.args.amount;
-    event.value = parseFloat(ethers.utils.formatEther(value));
 
-    if (event.type === 'Invested') {
-      event.asset = ethers.utils.parseBytes32String(parsed.args.asset)
+    if (event.type === 'Invested' || event.type === 'Redeemed') {
+      event.asset = ethers.utils.parseBytes32String(parsed.args.asset);
+      event.value = parseFloat(ethers.utils.formatUnits(value, config.ASSETS_CONFIG[event.asset].decimals));
+    } else {
+      event.value = parseFloat(ethers.utils.formatEther(value));
     }
+
+
 
     if (event.type === 'Funded') collateralFromPayments += event.value;
     if (event.type === 'Withdrawn') collateralFromPayments -= event.value;

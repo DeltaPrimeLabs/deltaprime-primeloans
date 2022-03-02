@@ -86,3 +86,7 @@ export async function handleCall(fun, args, onSuccess, onFail) {
         if (onFail) onFail();
     }
 }
+
+export function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
