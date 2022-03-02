@@ -1,6 +1,7 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
-import {startingBlock} from "../utils/blockchain";
+import {sleep, startingBlock} from "../utils/blockchain";
+import config from "../config";
 const ethers = require('ethers');
 
 export default {
@@ -146,20 +147,24 @@ export default {
       commit('setUserBorrowed', userBorrowed);
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
-      const tx = await state.pool.deposit({gasLimit: 400000, value: ethers.utils.parseEther(amount.toString())});
+      const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
       const transaction = await rootState.network.provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to deposit');
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updatePoolEvents');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
     async withdraw({ state, dispatch, commit }, { amount }) {
-      const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 400000});
+      const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updatePoolEvents');
       dispatch('updatePoolData');

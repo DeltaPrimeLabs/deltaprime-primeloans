@@ -1,4 +1,4 @@
-import {handleCall, startingBlock} from "../utils/blockchain";
+import {handleCall, sleep, startingBlock} from "../utils/blockchain";
 
 const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
@@ -117,11 +117,13 @@ export default {
       return true;
     },
     async updateAssets({ state, commit, dispatch }) {
+      console.log('updating assets')
       dispatch('updateLoanBalance');
 
       const loan = state.loan;
 
       const prices = await handleCall(loan.getAllAssetsPrices);
+      console.log(prices);
       const balances = await handleCall(loan.getAllAssetsBalances);
 
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
@@ -141,6 +143,7 @@ export default {
           } else {
             assets[symbol].price = prices[i] / 10**8;
             assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
+            console.log(`${symbol}  ${assets[symbol].balance}`);
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
           assets[symbol].share = assets[symbol].value / (state.totalValue * assets['AVAX'].price);
@@ -207,6 +210,8 @@ export default {
       const transaction = await provider.waitForTransaction(tx.hash);
       if (transaction.status === 0) throw Error('Failed to create a loan');
 
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
+
       dispatch('fetchLoan');
       return tx;
     },
@@ -214,8 +219,10 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 600000});
+      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 1000000});
       await provider.waitForTransaction(tx.hash);
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -225,10 +232,12 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 600000});
+      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 1000000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to repay');
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -243,6 +252,8 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to fund');
 
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
+
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateAssets');
@@ -256,6 +267,8 @@ export default {
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
@@ -279,7 +292,10 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to invest');
 
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
+
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
     },
@@ -295,9 +311,14 @@ export default {
         toWei(minAvaxAmount.toString()),
         {gasLimit: 500000}
       );
-      await provider.waitForTransaction(tx.hash);
+      const transaction = await provider.waitForTransaction(tx.hash);
+
+      if (transaction.status === 0) throw Error('Failed to redeem');
+
+      await sleep(config.BLOCKCHAIN_STATE_DELAY);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
     }
