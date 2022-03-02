@@ -117,13 +117,11 @@ export default {
       return true;
     },
     async updateAssets({ state, commit, dispatch }) {
-      console.log('updating assets')
       dispatch('updateLoanBalance');
 
       const loan = state.loan;
 
       const prices = await handleCall(loan.getAllAssetsPrices);
-      console.log(prices);
       const balances = await handleCall(loan.getAllAssetsBalances);
 
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
@@ -143,7 +141,6 @@ export default {
           } else {
             assets[symbol].price = prices[i] / 10**8;
             assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
-            console.log(`${symbol}  ${assets[symbol].balance}`);
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
           assets[symbol].share = assets[symbol].value / (state.totalValue * assets['AVAX'].price);
