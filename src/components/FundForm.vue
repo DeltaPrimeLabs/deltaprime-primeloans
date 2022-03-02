@@ -50,6 +50,9 @@ export default {
               if (value > this.balance) {
                 return 'Fund amount exceeds user balance';
               }
+              if (this.collateralFromPayments + value > 1.25) {
+                return 'Collateral amount higher than the maximum of 1.25 allowed for the competition';
+              }
             }
           }
         ],
@@ -96,7 +99,7 @@ export default {
       }
     },
     computed: {
-      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
+      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'collateralFromPayments']),
       ...mapState('network', ['balance']),
       disabled() {
         return this.waiting || this.errors.includes(true);

@@ -48,9 +48,9 @@
     },
     data() {
       return {
-        loan: null,
+        loan: 2,
         maxInitialLTV: config.DEFAULT_LTV,
-        collateral: null,
+        collateral: 1,
         waiting: false,
         userChangedLoan: false,
         errors: [false, false, false],
@@ -60,13 +60,16 @@
               if (value > this.balance) {
                 return 'Collateral amount exceeds your account balance'
               }
+              if (value > 1) {
+                return 'Maximum initial collateral is 1 AVAX'
+              }
             }
           },
         ],
         loanValidators: [
           {
             validate: value => {
-              if (value > this.getAvailable) {
+              if (this.getAvailable && value > this.getAvailable) {
                 return 'Loan amount exceeds amount available in the pool';
               }
             }
