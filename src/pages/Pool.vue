@@ -197,6 +197,7 @@
 
   .chart-wrapper {
     width: 100%;
+    margin-bottom: 60px;
   }
 }
 </style>

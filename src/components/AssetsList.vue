@@ -632,7 +632,11 @@ td {
   justify-content: space-between;
 
   @media screen and (min-width: $md) {
-    justify-content: initial;
+    justify-content: center;
+
+    &.right {
+      justify-content: flex-end;
+    }
   }
 }
 
