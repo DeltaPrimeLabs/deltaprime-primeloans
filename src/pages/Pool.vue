@@ -171,7 +171,7 @@
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.block, .history-list, .deposit-chart {
+.block, .deposit-chart {
   margin-top: 30px;
 }
 

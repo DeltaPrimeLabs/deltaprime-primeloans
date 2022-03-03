@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan container">
     <Bar>
-      <div>
+      <div class="loan">
         <Value label="Loan"
           :primary="{value: debt, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
@@ -11,7 +11,7 @@
                  class="plus"
                  v-tooltip="'Borrow'"
             />
-            <img src="src/assets/icons/slash-small.svg"/>
+            <img class="slash" src="src/assets/icons/slash-small.svg"/>
             <img @click="showBorrowBlock(1)"
                  src="src/assets/icons/minus.svg"
                  class="minus"
@@ -37,7 +37,7 @@
                  class="plus"
                  v-tooltip="'Add collateral'"
             />
-            <img src="src/assets/icons/slash-small.svg"/>
+            <img class="slash" src="src/assets/icons/slash-small.svg"/>
             <img @click="showCollateralBlock(1)"
                  src="src/assets/icons/minus.svg"
                  class="minus"
@@ -175,19 +175,35 @@
   font-weight: bold;
 }
 
+.loan, .collateral {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @media screen and (min-width: $md) {
+    display: block;
+    justify-content: initial;
+    align-items: initial;
+  }
+}
+
 .borrow-buttons, .fund-buttons {
   display: flex;
-  padding-left: 50px;
-  padding-right: 50px;
-  margin-top: 10px;
-  justify-content: flex-end;
-  position: absolute;
-  transform: translate(155px, -27px);
+  flex-direction: column;
 
   @media screen and (min-width: $md) {
     justify-content: center;
     position: initial;
     transform: initial;
+    flex-direction: initial;
+  }
+
+  .slash {
+    display: none;
+
+    @media screen and (min-width: $md) {
+      display: block;
+    }
   }
 
   .plus, .minus {
@@ -292,9 +308,11 @@
 
     .label {
       text-align: start;
+      width: 120px;
 
       @media screen and (min-width: $md) {
         text-align: center;
+        width: initial;
       }
     }
   }
@@ -305,6 +323,10 @@
         width: 330px !important;
       }
     }
+  }
+
+  .ltv-info {
+    font-size: 14px;
   }
 }
 

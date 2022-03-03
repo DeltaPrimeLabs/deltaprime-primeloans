@@ -149,8 +149,8 @@ import {mapState} from "vuex";
   background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
   height: 68px;
   border-radius: 15px;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 15px;
+  padding-right: 15px;
   border: none;
   width: 100%;
 
@@ -201,6 +201,11 @@ input[type=number] {
   width: 140px;
   font-size: $font-size-sm;
   opacity: 0.6;
+  display: none;
+
+  @media screen and (min-width: $md) {
+    display: block;
+  }
 
   > div {
     text-overflow: ellipsis;
