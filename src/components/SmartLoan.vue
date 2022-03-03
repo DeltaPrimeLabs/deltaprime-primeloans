@@ -196,6 +196,7 @@
     position: initial;
     transform: initial;
     flex-direction: initial;
+    margin-top: 10px;
   }
 
   .slash {

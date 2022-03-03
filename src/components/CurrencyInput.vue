@@ -67,7 +67,7 @@ import {mapState} from "vuex";
       disabled: false
     },
     computed: {
-      ...mapState('prices', ['avaxPrice'])
+      ...mapState('loan', ['avaxPrice'])
     },
     data() {
       return {
