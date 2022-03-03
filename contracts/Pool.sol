@@ -173,7 +173,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
    **/
   function withdraw(uint256 _amount) external nonReentrant {
-    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan");
+    require(address(this).balance >= _amount, "There is not enough available funds to withdraw");
 
     _accumulateDepositInterest(msg.sender);
 
@@ -192,7 +192,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be borrowed
    **/
   function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
-    require(address(this).balance >= _amount);
+    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan");
 
     _accumulateBorrowingInterest(msg.sender);
 
