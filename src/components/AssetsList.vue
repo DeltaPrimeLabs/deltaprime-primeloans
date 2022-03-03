@@ -291,7 +291,7 @@
           {
             validate: () => {
               if (slippage !== null && slippage > .03) {
-                return `Be careful, current slippage is above ${(slippage * 100).toFixed(0)}%`;
+                return `Be careful, current slippage is above ${Math.floor(slippage * 100)}%`;
               }
             }
           }
@@ -512,15 +512,26 @@
     background-image: linear-gradient(117deg, #dfe0ff 39%, #ffe1c2 62%, #ffd3e0 82%);
     border-radius: 25px;
     display: inline-block;
-    height: 44px;
-    padding: 12px 2px 2px;
+    height: 41px;
+    padding: 9px 2px 3px;
+
+    @media screen and (min-width: $md) {
+      height: 44px;
+      padding: 12px 2px 2px;
+
+    }
   }
 
   .total-value {
     background: white;
-    padding: 9px 20px;
+    padding: 10px 2px;
     border-radius: 21px;
-    font-size: 18px;
+    font-size: 14px;
+
+    @media screen and (min-width: $md) {
+      font-size: 18px;
+      padding: 9px 20px;
+    }
 
     .value {
       font-weight: 500;
@@ -533,8 +544,12 @@
     .vertical-line {
       width: 3px;
       height: 17px;
-      margin: 3px 18px 2px 19px;
+      margin: 3px 5px 2px 5px;
       border-left: solid 2px #dadada;
+
+      @media screen and (min-width: $md) {
+        margin: 3px 18px 2px 19px;
+      }
     }
   }
 }
@@ -547,6 +562,11 @@
   text-align: right;
   margin-right: 15px;
   margin-left: 15px;
+  display: none;
+
+  @media screen and (min-width: $md) {
+    display: flex;
+  }
 
   img {
     height: 22px;
@@ -599,12 +619,21 @@
 
 tr {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(1, 1fr);
+
+  @media screen and (min-width: $md) {
+    grid-template-columns: repeat(7, 1fr);
+  }
 }
 
 td {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+
+  @media screen and (min-width: $md) {
+    justify-content: initial;
+  }
 }
 
 thead tr {
@@ -634,10 +663,14 @@ tbody tr {
 }
 
 @media screen and (max-width: $md - 1) {
-  .chart-icon, .invest-buttons {
+  .invest-buttons {
     display: inline-block;
     border-bottom: none;
     text-align: start;
+  }
+
+  .chart-icon {
+    display: none;
   }
 
   .invest-buttons {
@@ -652,6 +685,11 @@ tbody tr {
 
   .asset-input {
     border: none;
+    justify-content: center;
+
+    @media screen and (min-width: $md) {
+      justify-content: inherit;
+    }
   }
 }
 
@@ -666,9 +704,12 @@ tbody tr {
 
 #investmentsTable, #optionsTable {
   .small-block-wrapper {
-    height: 230px;
-  }
+    height: 260px;
 
+    @media screen and (min-width: $md) {
+      height: 230px;
+    }
+  }
   .currency-form-wrapper {
     width: 100%;
     flex-wrap: wrap;
