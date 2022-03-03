@@ -10,7 +10,7 @@ const FACTORY_ADDRESS = require(`../../deployments/${network}/SmartLoansFactoryT
 
 const LOAN_ABI = require(`../../deployments/${network}/SmartLoan.json`).abi;
 
-const PRIVATE_KEY = '0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa';
+const PRIVATE_KEY = '2bdc7a1522c58e1b4cfb4d2558be47af9046cae98f660ad9add7ddb6366d55d4';
 let RPC_URL;
 if(network === 'mainnet') {
     RPC_URL = 'https://api.avax.network/ext/bc/C/rpc'
@@ -60,13 +60,20 @@ async function getInsolventLoans() {
 
 async function liquidateLoan(loanAddress) {
     let loanContract = getLoanContract(loanAddress);
-    let rawStatus = await loanContract.getFullLoanStatus();
+    [totalVal, debt] = await loanContract.getFullLoanStatus();
     let targetLTV = (await loanContract.getMinSelloutLtv()).toNumber() + 100;
     let liquidationBonus = await loanContract.getLiquidationBonus();
+    if (debt > totalVal) {
+        console.log("The debt is greater than Total Value - impossible to rescue");
+        return;
+    }
+    let repayAmount = getSelloutRepayAmount(totalVal, debt, liquidationBonus, targetLTV);
 
-    let repayAmount = getSelloutRepayAmount(rawStatus[0], rawStatus[1], liquidationBonus, targetLTV);
+    if (repayAmount > totalVal) {
+        console.log("The repayment amount is greater than Total Value - impossible to rescue");
+        return;
+    }
 
-    console.log(`Attempting to sellout a loan under ${loanAddress} address to bring to below ${targetLTV} LTV level. Repay amount: ${repayAmount}`);
     let tx = await loanContract.liquidateLoan(repayAmount.toString(), {gasLimit: 8000000});
     console.log("Waiting for tx: " + tx.hash);
     let receipt = await provider.waitForTransaction(tx.hash);
@@ -76,8 +83,12 @@ async function liquidateLoan(loanAddress) {
 function getSelloutRepayAmount(totalValue, debt, bonus, targetLTV) {
     targetLTV = targetLTV / 1000;
     bonus = bonus / 1000;
+    currentLTV = debt / (totalValue - debt)
     let repayAmount = (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1);
-    console.log(`The repay amount for ${totalValue} totalValue, ${debt} debt and ${targetLTV} targetLTV with ${bonus} bonus is ${repayAmount}`);
+    console.log(`LTV:  ${currentLTV}`);
+    console.log(`Total value:  ${ethers.utils.formatEther(totalValue.toString())}`);
+    console.log(`Debt:  ${ethers.utils.formatEther(debt.toString())}`);
+    console.log(`Repayment amount:  ${ethers.utils.formatEther(repayAmount.toString())}`);
     return repayAmount;
 }
 
@@ -85,6 +96,7 @@ async function liquidateInsolventLoans() {
 
     let loans = await getInsolventLoans();
     console.log(`INSOLVENT LOANS: ${loans}`)
+
     for(const x in loans) {
         await liquidateLoan(loans[x]);
     }
