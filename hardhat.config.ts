@@ -43,6 +43,12 @@ export default {
       gasPrice: 225000000000,
       chainId: 43113,
       accounts: [deployerKey, adminKey]
+    },
+    mainnet: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      gasPrice: 100000000000,
+      chainId: 43114,
+      accounts: [deployerKey, adminKey]
     }
   },
   paths: {
