@@ -54,7 +54,7 @@ Windows:
 
     node -r esm -e "require('./tools/scripts/nft/nft.js').setAccessNFT('NETWORK_NAME', 'BorrowAccessNFT', 'SmartLoansFactoryTUP', 'SmartLoansFactoryWithAccessNFT')"
 
-####9. Deploy new Smart Loan implementation
+####9. Upgrade Smart Loan to a new implementation
 
 MacOS:
 
