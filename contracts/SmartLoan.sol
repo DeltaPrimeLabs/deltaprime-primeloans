@@ -130,8 +130,6 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   * @dev This function uses the redstone-evm-connector
   **/
   function liquidateLoan(uint256 repayAmount) external payable nonReentrant successfulLiquidation {
-    require(!isSolvent(), "Cannot sellout a solvent account");
-
     uint256 debt = getDebt();
     if (repayAmount > debt) {
       repayAmount = debt;
@@ -221,7 +219,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This function uses the redstone-evm-connector
    **/
   function repay(uint256 _amount) public payable {
-    if (isSolvent()) {
+    if (isSolvent() && _liquidationInProgress == false) {
       require(msg.sender == owner());
     }
 
@@ -359,12 +357,17 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This modifier uses the redstone-evm-connector
    **/
   modifier successfulLiquidation() {
+    require(!isSolvent(), "Cannot sellout a solvent account");
+    _liquidationInProgress = true;
+
     _;
+
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
       require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
     }
     require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+    _liquidationInProgress = false;
   }
 
   /* ========== EVENTS ========== */
@@ -373,51 +376,51 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev emitted after a loan is funded
    * @param funder the address which funded the loan
    * @param amount the amount of funds
-   * @param time of funding
+   * @param timestamp time of funding
    **/
-  event Funded(address indexed funder, uint256 amount, uint256 time);
+  event Funded(address indexed funder, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after the funds are withdrawn from the loan
    * @param owner the address which withdraws funds from the loan
    * @param amount the amount of funds withdrawn
-   * @param time of the withdrawal
+   * @param timestamp of the withdrawal
    **/
-  event Withdrawn(address indexed owner, uint256 amount, uint256 time);
+  event Withdrawn(address indexed owner, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after the funds are invested into an asset
    * @param investor the address of investor making the purchase
    * @param asset bought by the investor
    * @param amount the investment
-   * @param time of the investment
+   * @param timestamp time of the investment
    **/
-  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
+  event Invested(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after the investment is sold
    * @param investor the address of investor selling the asset
    * @param asset sold by the investor
    * @param amount the investment
-   * @param time of the redemption
+   * @param timestamp of the redemption
    **/
-  event Redeemed(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 time);
+  event Redeemed(address indexed investor, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted when funds are borrowed from the pool
    * @param borrower the address of borrower
    * @param amount of the borrowed funds
-   * @param time of the borrowing
+   * @param timestamp time of the borrowing
    **/
-  event Borrowed(address indexed borrower, uint256 amount, uint256 time);
+  event Borrowed(address indexed borrower, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted when funds are repaid to the pool
    * @param borrower the address initiating repayment
    * @param amount of repaid funds
-   * @param time of the repayment
+   * @param timestamp of the repayment
    **/
-  event Repaid(address indexed borrower, uint256 amount, uint256 time);
+  event Repaid(address indexed borrower, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after a successful liquidation operation
@@ -425,15 +428,15 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @param repayAmount requested amount (AVAX) of liquidation
    * @param bonus an amount of bonus (AVAX) received by the liquidator
    * @param ltv a new LTV after the liquidation operation
-   * @param time a time of the liquidation
+   * @param timestamp a time of the liquidation
    **/
-  event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 time);
+  event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 timestamp);
 
   /**
    * @dev emitted after closing a loan by the owner
    * @param debtRepaid the amount of a borrowed AVAX that was repaid back to the pool
    * @param withdrawalAmount the amount of AVAX that was withdrawn by the owner after closing the loan
-   * @param time a time of the loan's closure
+   * @param timestamp a time of the loan's closure
    **/
-  event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 time);
+  event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 timestamp);
 }

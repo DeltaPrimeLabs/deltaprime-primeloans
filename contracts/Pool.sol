@@ -363,7 +363,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev emitted after the user borrows funds
    * @param user the address that borrows
    * @param value the amount borrowed
-   * @param timestamp of the borrowing
+   * @param timestamp time of the borrowing
    **/
   event Borrowing(address indexed user, uint256 value, uint256 timestamp);
 

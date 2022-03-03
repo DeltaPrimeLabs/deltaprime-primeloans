@@ -34,6 +34,8 @@ contract SmartLoanProperties {
   // redstone-evm-connector max block.timestamp acceptable delay
   uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
 
+  bool internal _liquidationInProgress = false;
+
 
   /* ========== GETTERS ========== */
 
