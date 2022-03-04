@@ -7,11 +7,8 @@ dist
 cache
 /artifacts/
 .idea
-/.secrets
-/.secret2
-/.arweave-secret.json
-/.secret-admin
-/.secret-deployer
+.secrets
+.secret
 deployments/local
 deployments/localhost
 

@@ -6,7 +6,7 @@ const POOL = require('../../build/contracts/Pool.json');
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = ethers.utils.parseEther;
 
-const mnemonic = fs.readFileSync("./.secret2").toString().trim();
+const mnemonic = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
 
 var provider;
