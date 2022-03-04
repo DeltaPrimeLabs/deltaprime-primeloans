@@ -31,7 +31,7 @@ export function parseLogs(loan, logs) {
 
     let event = {
       type: parsed.name,
-      time: new Date(parseInt(parsed.args.time.toString()) * 1000),
+      time: new Date(parseInt(parsed.args.timestamp.toString()) * 1000),
       tx: log.transactionHash
     };
 

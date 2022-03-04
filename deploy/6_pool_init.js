@@ -63,7 +63,8 @@ module.exports = async ({
         variableUtilisationRatesCalculator.address,
         smartLoansFactoryTUP.address,
         depositIndexAddress,
-        borrowIndexAddress
+        borrowIndexAddress,
+        { gasLimit: 8000000 }
     );
 
     console.log(`Initialized lending pool with: [ratesCalculator: ${variableUtilisationRatesCalculator.address}, ` +
