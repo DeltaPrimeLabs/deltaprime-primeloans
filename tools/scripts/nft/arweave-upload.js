@@ -56,7 +56,7 @@ async function uploadNFT(filePath){
     //uploading JSON metadata
     console.log('Metadata transaction');
 
-    metadata.image = 'ar://' + transaction.id;
+    metadata.image = 'https://arweave.net/' + transaction.id;
 
     const metadataTransaction = await arweave.createTransaction({
         data: JSON.stringify(metadata)
@@ -74,7 +74,7 @@ async function uploadNFT(filePath){
         fs.appendFileSync('./tools/scripts/nft/uris.txt', '\n');
     }
 
-    fs.appendFile('./tools/scripts/nft/uris.txt', 'ar://' + metadataTransaction.id, function (err) {
+    fs.appendFile('./tools/scripts/nft/uris.txt', 'https://arweave.net/' + metadataTransaction.id, function (err) {
         if (err) throw err;
         console.log('Successfully saved to uris.txt to for transaction id: ' + metadataTransaction.id);
     });

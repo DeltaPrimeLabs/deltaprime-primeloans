@@ -14,8 +14,6 @@ JSON files to `uris.txt`
 
 This method will take all addresses from `uris.txt` file and add them to NFT Access contract.
 
-NFT address as string in double quotes
-
 Windows:
 
     node -r esm -e 'require("./tools/scripts/nft/nft").populateNftUris("NETWORK_NAME", "NFT_CONTRACT_NAME")'

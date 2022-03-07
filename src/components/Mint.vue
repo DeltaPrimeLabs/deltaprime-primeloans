@@ -59,15 +59,15 @@ export default {
   computed: {
     ...mapState('network', ['provider']),
     description() {
+      if (this.hasNft === true) {
+        return this.mintedMessage;
+      }
+
       if (this.noAvailableNfts === null) {
         return;
       }
       if (this.noAvailableNfts) {
         return this.noNftsAnymoreMessage;
-      }
-
-      if (this.hasNft === true) {
-        return this.mintedMessage;
       }
 
       if (this.hasNft === false) {
@@ -88,7 +88,6 @@ export default {
         await this.handleTransaction(this.nftContract.safeMint, [query.id, query.signature],
             async () => {
               await this.getNftId();
-              this.waiting = false;
             }
         );
       }
