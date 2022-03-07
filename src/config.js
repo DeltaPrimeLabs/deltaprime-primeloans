@@ -17,6 +17,5 @@ export default {
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche-prod",
-    BLOCKCHAIN_STATE_DELAY: 2000
+    dataProviderId: "redstone-avalanche-prod"
 }

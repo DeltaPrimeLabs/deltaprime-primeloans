@@ -210,72 +210,76 @@ export default {
       const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 1400000});
 
       const transaction = await provider.waitForTransaction(tx.hash);
+
       if (transaction.status === 0) throw Error('Failed to create a loan');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('fetchLoan');
+      });
 
-      dispatch('fetchLoan');
       return tx;
     },
     async borrow({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 1000000});
+      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 750000});
+
       await provider.waitForTransaction(tx.hash);
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateAssets');
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateAssets');
+      });
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 1000000});
+      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 750000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to repay');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateAssets');
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateAssets');
+      });
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 550000});
+      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 100000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to fund');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateAssets');
-      dispatch('network/updateBalance', {}, {root:true})
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateAssets');
+        dispatch('network/updateBalance', {}, {root: true})
+      });
     },
     async withdraw({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 550000});
+      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 500000});
+
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateAssets');
-      dispatch('network/updateBalance', {}, {root:true})
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateAssets');
+        dispatch('network/updateBalance', {}, {root: true})
+      });
     },
     async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
@@ -294,12 +298,12 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to invest');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateLoanBalance');
-      dispatch('updateAssets');
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateLoanBalance');
+        dispatch('updateAssets');
+      });
     },
     async redeem({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
@@ -317,12 +321,12 @@ export default {
 
       if (transaction.status === 0) throw Error('Failed to redeem');
 
-      await sleep(config.BLOCKCHAIN_STATE_DELAY);
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateLoanBalance');
-      dispatch('updateAssets');
+      provider.waitForTransaction(tx.hash, 2).then(() => {
+        dispatch('updateLoanStats');
+        dispatch('updateLoanHistory');
+        dispatch('updateLoanBalance');
+        dispatch('updateAssets');
+      });
     }
   }
 }
