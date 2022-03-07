@@ -265,7 +265,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 250000});
+      const tx = await loan.withdraw(toWei(amount.toString()), {gasLimit: 550000});
       const transaction = await provider.waitForTransaction(tx.hash);
 
       if (transaction.status === 0) throw Error('Failed to withdraw');
@@ -287,7 +287,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(maxAvaxAmount.toString()),
-        {gasLimit: 450000}
+        {gasLimit: 600000}
       );
 
       const transaction = await provider.waitForTransaction(tx.hash);
@@ -311,7 +311,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(minAvaxAmount.toString()),
-        {gasLimit: 500000}
+        {gasLimit: 600000}
       );
       const transaction = await provider.waitForTransaction(tx.hash);
 

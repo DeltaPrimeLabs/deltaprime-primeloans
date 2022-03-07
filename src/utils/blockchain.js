@@ -2,7 +2,7 @@ import Vue from "vue";
 import config from "@/config";
 
 export function transactionUrl(tx) {
-    return 'https://testnet.snowtrace.io/tx/' + tx;
+    return 'https://snowtrace.io/tx/' + tx;
 }
 
 export function parseArweaveURI(uri) {
