@@ -23,7 +23,7 @@ export default function setupFilters() {
 
   Vue.filter("avax", function (value) {
     if (value == null) return null;
-    return value.toFixed(2);
+    return value.toFixed(3);
   });
 
   Vue.filter("full", function (value, avaxPrice) {

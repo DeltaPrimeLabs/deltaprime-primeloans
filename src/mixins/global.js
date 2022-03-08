@@ -109,6 +109,13 @@ export default {
             return `Value cannot be smaller than 0`;
           }
         }
+      },
+      wrongFormatValidator: {
+        validate: function(value) {
+          if (!value.toString().match(/^[0-9.,]+$/)) {
+            return `Incorrect formatting. Please use only alphanumeric values.`;
+          }
+        }
       }
     }
   }

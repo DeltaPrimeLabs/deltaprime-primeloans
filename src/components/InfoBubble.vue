@@ -42,7 +42,7 @@
   margin-top: 30px;
 
   .info-bubble {
-    background-image: url("../assets/icons/bubble.svg");
+    background-image: url("../assets/icons/bubble-mobile.svg");
     background-repeat: no-repeat;
     display: flex;
     align-items: center;
@@ -51,7 +51,17 @@
     font-weight: 500;
     color: #7d7d7d;
     line-height: 24px;
-    min-width: 550px;
+    font-size: 16px;
+    background-size:cover;
+    min-height: 230px;
+
+    @media screen and (min-width: $md) {
+      background-image: url("../assets/icons/bubble.svg");
+      background-size: initial;
+      min-height: initial;
+      font-size: 14px;
+      min-width: 550px;
+    }
 
     .info {
       margin-right: 20px;

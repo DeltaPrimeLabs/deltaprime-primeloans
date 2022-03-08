@@ -28,8 +28,9 @@
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
           <CurrencyForm
             label="Deposit"
-            v-on:submitValue="depositValue"
+            v-on:submitValue="handleDeposit"
             :waiting="waitingForDeposit"
+            :defaultValue="depositValue"
             flexDirection="column"
             :validators="depositValidators"
           />
@@ -37,8 +38,9 @@
         <Tab title="Withdraw" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right" titleWidth="140px">
           <CurrencyForm
             label="Withdraw"
-            v-on:submitValue="withdrawValue"
+            v-on:submitValue="handleWithdraw"
             :waiting="waitingForWithdraw"
+            :defaultValue="withdrawValue"
             flexDirection="column"
             :max="userDepositBalance"
             :validators="withdrawValidators"
@@ -67,6 +69,7 @@
   import InfoBubble from "@/components/InfoBubble.vue";
   import Chart from "@/components/Chart.vue";
   import {mapState, mapActions, mapGetters} from 'vuex';
+  import {fromWei} from "../utils/calculate";
 
   export default {
     name: 'Deposit',
@@ -84,6 +87,8 @@
     data() {
       return {
         maximumDeposit: 0,
+        depositValue: null,
+        withdrawValue: null,
         waitingForDeposit: false,
         waitingForWithdraw: false,
         depositValidators: [
@@ -97,9 +102,12 @@
         ],
         withdrawValidators: [
           {
-            validate: value => {
+            validate: async (value) => {
               if (value > this.userDepositBalance) {
                 return 'Withdraw amount exceeds your account deposit';
+              }
+              if (value > fromWei(await provider.getBalance(this.pool.address))) {
+                return 'Withdraw amount exceeds amount available in pool';
               }
             }
           }
@@ -107,7 +115,7 @@
       }
     },
     computed: {
-      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents']),
+      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents', 'pool']),
       ...mapGetters('nft', ['depositLocked']),
       ...mapState('network', ['balance']),
       chartPoints() {
@@ -153,21 +161,25 @@
     },
     methods: {
       ...mapActions('pool', ['sendDeposit', 'withdraw']),
-      async depositValue(value) {
+      async handleDeposit(value) {
         this.waitingForDeposit = true;
+        this.depositValue = value;
         this.handleTransaction(this.sendDeposit, {amount: value})
         .then(
           () => {
             this.waitingForDeposit = false;
+            this.depositValue = null;
           }
         );
       },
-      async withdrawValue(value) {
+      async handleWithdraw(value) {
         this.waitingForWithdraw = true;
+        this.withdrawValue = value;
         this.handleTransaction(this.withdraw, {amount: value})
         .then(
           () => {
             this.waitingForWithdraw = false;
+            this.withdrawValue = null;
           }
         );
       }

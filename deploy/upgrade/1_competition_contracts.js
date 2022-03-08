@@ -1,5 +1,6 @@
-const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 import verifyContract from "../../tools/scripts/verify-contract";
+
+const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 const hre = require("hardhat");
 module.exports = async ({
     getNamedAccounts,

@@ -107,8 +107,10 @@
               type: 'time',
               time: {
                 displayFormats: {
-                  minute: this.dateFormat,
-                  hour: this.dateFormat
+                  day: 'MMM DD',
+                  hour: 'MMM DD',
+                  minute: 'MMM DD',
+
                 }
               },
               gridLines: {
@@ -117,9 +119,7 @@
                 lineWidth: 0,
               },
               ticks: {
-                beginAtZero: false,
-                min: this.minX - (this.maxX - this.minX) / 50,
-                max: this.maxX + (this.maxX - this.minX) / 50,
+                beginAtZero: true,
                 maxTicksLimit: 1,
                 maxRotation: 0,
                 minRotation: 0,

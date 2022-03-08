@@ -3,7 +3,7 @@
     <div class="input-wrapper"
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
-      <input type="number" ref="input" :disabled="disabled" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
+      <input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
       <div class="converted">
         <div v-if="value && (value !== 0)">
           ~ {{ (price ? price : avaxPrice) * value | usd}}
@@ -80,7 +80,7 @@ import {mapState} from "vuex";
       }
     },
     created() {
-      this.defaultValidators.push(this.nonNegativeValidator);
+      this.defaultValidators.push(this.nonNegativeValidator, this.wrongFormatValidator);
     },
     watch: {
       value: function (newValue) {
