@@ -7,7 +7,7 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    const contractName = 'SmartLoan';
+    const contractName = 'DepositAccessNFT';
     let result = await deploy(contractName, {
         from: deployer,
         gasLimit: 8000000
