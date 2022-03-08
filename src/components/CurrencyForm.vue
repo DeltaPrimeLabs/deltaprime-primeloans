@@ -11,6 +11,7 @@
       :warnings="warnings"
       :waiting="waiting"
       :info="info"
+      :defaultValue="defaultValue"
       v-on:newValue="updateValue"
       v-on:ongoingErrorCheck="ongoingErrorCheck"
     />
@@ -38,7 +39,8 @@
       warnings: {
         type: Array, default: () => []
       },
-      info: { type: Function, default: null }
+      info: { type: Function, default: null },
+      defaultValue: { type: Number, default: null }
     },
     components: {
       CurrencyInput,

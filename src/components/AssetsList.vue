@@ -18,7 +18,7 @@
             <tr>
               <th class="left">Asset</th>
               <th class="right">Price</th>
-              <th class="left">Trend</th>
+              <th class="trend left">Trend</th>
               <th class="right">Balance</th>
               <th class="right">Share</th>
               <th class="right">Value</th>
@@ -37,14 +37,16 @@
               <td class="right" data-label="Price">
                 <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
               </td>
-              <td class="chart-icon" data-label="Chart">
+              <td class="chart-icon"
+                  data-label="Chart"
+                  @click.stop="toggleChart(asset.symbol)"
+              >
                 <SimpleChart
                   class="simple-chart"
                   :dataPoints="asset.prices"
                   :isStableCoin="asset.symbol === 'USDT'"
                   :lineWidth="1.5"/>
-                <img @click.stop="toggleChart(asset.symbol)"
-                     src="src/assets/icons/enlarge.svg"
+                <img src="src/assets/icons/enlarge.svg"
                 />
               </td>
               <td class="right" data-label="Balance">
@@ -54,7 +56,7 @@
                 </LoadedValue>
               </td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
-              <td class="right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
+              <td class="value right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
                 <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
                 <img src="src/assets/icons/slash-small.svg"/>
@@ -119,7 +121,7 @@
           <tr>
             <th class="left">Asset</th>
             <th class="right">Price</th>
-            <th class="left">Trend</th>
+            <th class="trend p.left">Trend</th>
             <th></th>
             <th></th>
             <th></th>
@@ -138,12 +140,14 @@
             <td class="right" data-label="Price">
               <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
             </td>
-            <td class="chart-icon" data-label="Chart">
+            <td class="chart-icon" data-label="Chart"
+                @click.stop="toggleChart(asset.symbol)"
+            >
               <SimpleChart
                 :dataPoints="asset.prices"
                 :isStableCoin="asset.symbol === 'USDT'"
                 :lineWidth="1.5"/>
-              <img @click.stop="toggleChart(asset.symbol)" src="src/assets/icons/enlarge.svg"/>
+              <img src="src/assets/icons/enlarge.svg"/>
             </td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
@@ -560,9 +564,9 @@
 
 .chart-icon {
   text-align: right;
-  margin-right: 15px;
-  margin-left: 15px;
+  margin-left: 40px;
   display: none;
+  cursor: pointer;
 
   @media screen and (min-width: $md) {
     display: flex;
@@ -571,7 +575,6 @@
   img {
     height: 22px;
     margin-left: 5px;
-    cursor: pointer;
   }
 }
 
@@ -580,9 +583,8 @@
   justify-content: center;
 
   .buy, .sell {
-    height: 20px;
+    height: 22px;
     cursor: pointer;
-    opacity: 0.7;
     transition: transform .4s ease-in-out;
 
     @media screen and (max-width: $md) {
@@ -647,7 +649,7 @@ td {
 
 thead tr {
   margin-bottom: 1rem;
-  padding: 0 5px 0 5px;
+  padding: 0 10px 0 10px;
 }
 
 tbody tr {
@@ -655,7 +657,7 @@ tbody tr {
   border-width: 2px 0 0 0;
   border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
   border-image-slice: 1;
-  padding: 16px 5px 16px 5px;
+  padding: 0 10px 0 10px;
 }
 
 .chart, .asset-input {
@@ -664,6 +666,10 @@ tbody tr {
    margin-top: 2rem;
    margin-bottom: 2rem;
    height: 230px;
+}
+
+.asset-input {
+  display: block;
 }
 
 .big-chart {
@@ -712,6 +718,14 @@ tbody tr {
 @import "~@/styles/variables";
 
 #investmentsTable, #optionsTable {
+  th {
+    font-weight: 500;
+  }
+
+  .trend {
+    margin-left: 40px;
+  }
+
   .small-block-wrapper {
     height: 260px;
 
@@ -722,7 +736,7 @@ tbody tr {
   .currency-form-wrapper {
     width: 100%;
     flex-wrap: wrap;
-    margin-top: 50px;
+    margin-top: 45px;
     align-items: center;
 
     @media screen and (min-width: $md) {
@@ -734,10 +748,6 @@ tbody tr {
 
     .input-wrapper {
       height: 60px;
-
-      @media screen and (min-width: $md) {
-        width: 90%;
-      }
     }
 
     input {
@@ -763,11 +773,11 @@ tbody tr {
 
     .btn {
       padding: 13px 20px;
-      margin-left: 20px;
+      margin-left: 30px;
       font-size: 20px;
 
       &.waiting .ball-beat:not(.active) {
-        margin-top: 4px;
+        margin-top: 5px;
         margin-bottom: 5px;
       }
     }
@@ -775,6 +785,10 @@ tbody tr {
     .value-wrapper .label {
       text-align: start;
     }
+  }
+
+  .value {
+    font-weight: 600;
   }
 }
 </style>
