@@ -4,7 +4,6 @@ import BORROW_NFT from '@artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAc
 import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
 const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
 const POOL_TUP = require('@contracts/PoolTUP.json');
-import {parseArweaveURI} from "../utils/blockchain";
 import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
 import POOL_NFT from '@artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json'
 const ZERO = ethers.constants.AddressZero;
@@ -101,18 +100,18 @@ export default {
       }
     },
     async updateBorrowNftFromId({ commit, state }, { id }) {
-      const jsonUri = parseArweaveURI(await state.borrowNftContract.tokenURI(id));
+      const jsonUri = await state.borrowNftContract.tokenURI(id);
       const response = await fetch(jsonUri);
       const json = await response.json();
-      const uri = parseArweaveURI(json.image);
+      const uri = json.image;
 
       commit('setBorrowNftImageUri', uri);
     },
     async updateDepositNftFromId({ commit, state }, { id }) {
-      const jsonUri = parseArweaveURI(await state.depositNftContract.tokenURI(id));
+      const jsonUri = await state.depositNftContract.tokenURI(id);
       const response = await fetch(jsonUri);
       const json = await response.json();
-      const uri = parseArweaveURI(json.image);
+      const uri = json.image;
 
       commit('setDepositNftImageUri', uri);
     },

@@ -17,7 +17,7 @@
 
 <script>
   export default {
-    name: 'Value',
+    name: 'Value2',
     props: {
       label: String,
       primary: {},

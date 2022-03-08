@@ -67,7 +67,7 @@ import {mapState} from "vuex";
       disabled: false
     },
     computed: {
-      ...mapState('loan', ['avaxPrice'])
+      ...mapState('network', ['avaxPrice'])
     },
     data() {
       return {
@@ -265,7 +265,7 @@ img {
 }
 
 .warning {
-  color: #FFD166;
+  color: #F5A200;
 }
 
 .error, .warning {
