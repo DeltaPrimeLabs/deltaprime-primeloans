@@ -1,18 +1,19 @@
 const Arweave = require('arweave');
 const fs = require("fs");
+const path = require('path');
 
 async function uploadNFTs() {
-    const path = './tools/scripts/nft/images';
+    const base_path = './tools/scripts/nft/images';
 
     fs.truncate('./tools/scripts/nft/uris.txt', 0, function(){console.log('File truncated')})
 
-    fs.readdir(path, function(err, filenames) {
+    fs.readdir(base_path, function(err, filenames) {
         if (err) {
             console.log(err)
             return;
         }
         filenames.forEach(async function(filename) {
-            uploadNFT(path + '/' + filename).then(
+            uploadNFT(base_path + '/' + filename).then(
                 () => console.log('Success for ' + filename),
                 err => console.log('Error for ' + filename + ', error message: ' + err)
             )
@@ -24,7 +25,10 @@ async function uploadNFTs() {
 async function uploadNFT(filePath){
     console.log('Loading file from path ', filePath);
     const key = JSON.parse(fs.readFileSync('./.arweave-secret.json', 'utf8'));
-    const metadata = JSON.parse(fs.readFileSync('./tools/scripts/nft/metadata.json', 'utf8'));
+    const filename = path.parse(path.basename(filePath)).name;
+    const metadataPath = `./tools/scripts/nft/metadata/${filename}.json`;
+    console.log(`Reading metadata from path: ${metadataPath}`);
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
 
     const file = fs.readFileSync(filePath);
 
@@ -74,7 +78,7 @@ async function uploadNFT(filePath){
         fs.appendFileSync('./tools/scripts/nft/uris.txt', '\n');
     }
 
-    fs.appendFile('./tools/scripts/nft/uris.txt', 'https://arweave.net/' + metadataTransaction.id, function (err) {
+    fs.appendFile('./tools/scripts/nft/uris.txt', 'https://arweave.net/' + metadataTransaction.id + `|${filename}`, function (err) {
         if (err) throw err;
         console.log('Successfully saved to uris.txt to for transaction id: ' + metadataTransaction.id);
     });

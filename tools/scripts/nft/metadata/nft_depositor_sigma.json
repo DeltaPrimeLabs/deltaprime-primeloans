@@ -1,0 +1,43 @@
+{
+  "description": "This CryptoWolf is a true Wolf of DeFi. He puts his liquidity where his mouth is.",
+  "external_url": "https://deltaprime.io/",
+  "name": "THE PROVIDER - Original Depositor",
+  "attributes": [
+    {
+      "trait_type": "body",
+      "value": "Charcoal grey"
+    },
+    {
+      "trait_type": "head",
+      "value": "Charcoal grey"
+    },
+    {
+      "trait_type": "shirt",
+      "value": "White"
+    },
+    {
+      "trait_type": "tie",
+      "value": "Red"
+    },
+    {
+      "trait_type": "suit",
+      "value": "Blue"
+    },
+    {
+      "trait_type": "jewelry",
+      "value": "none"
+    },
+    {
+      "trait_type": "glasses",
+      "value": "none"
+    },
+    {
+      "trait_type": "wearables",
+      "value": "none"
+    },
+    {
+      "trait_type": "extras",
+      "value": "DeltaPrime pin"
+    }
+  ]
+}
