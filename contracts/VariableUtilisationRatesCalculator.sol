@@ -24,6 +24,8 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
   uint256 public constant SLOPE_2 = 3.02e18;
 
+  uint256 public depositRateOffset = 1e9;
+
   /* ========== VIEW FUNCTIONS ========== */
 
   /**
@@ -49,9 +51,14 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
-      return MAX_RATE;
+      return MAX_RATE - depositRateOffset;
     } else {
-      return (this.calculateBorrowingRate(_totalLoans, _totalDeposits) * _totalLoans) / _totalDeposits;
+      uint256 rate = (this.calculateBorrowingRate(_totalLoans, _totalDeposits) * _totalLoans) / _totalDeposits;
+      if (rate > depositRateOffset) {
+        return rate - depositRateOffset;
+      } else {
+        return rate;
+      }
     }
   }
 
@@ -83,5 +90,15 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
       return value - SLOPE_2;
     }
+  }
+
+  /* ========== SETTERS ========== */
+  /**
+   * Sets deposit rate offset
+   * This offset is needed to account for arithmetic inaccuracy and keep pool balanced
+   * @dev _newRate total value of loans
+   **/
+  function setDepositRateOffset(uint256 offset) external onlyOwner {
+    depositRateOffset = offset;
   }
 }

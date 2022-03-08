@@ -32,7 +32,9 @@ contract LinearIndex is OwnableUpgradeable {
         indexUpdateTime = start;
 
         __Ownable_init();
-        transferOwnership(owner_);
+        if (address(owner_) != address(0)) {
+            transferOwnership(owner_);
+        }
     }
 
     /* ========== SETTERS ========== */
