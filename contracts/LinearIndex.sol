@@ -32,7 +32,9 @@ contract LinearIndex is OwnableUpgradeable {
         indexUpdateTime = start;
 
         __Ownable_init();
-        transferOwnership(owner_);
+        if (address(owner_) != address(0)) {
+            transferOwnership(owner_);
+        }
     }
 
     /* ========== SETTERS ========== */
@@ -110,4 +112,5 @@ contract LinearIndex is OwnableUpgradeable {
      * @dev updatedRate the value of updated rate
    **/
     event RateUpdated(uint256 updatedRate);
+<<<<<<< HEAD
 }
