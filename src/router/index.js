@@ -45,7 +45,7 @@ export default new Router({
     },
     {
       path: '*',
-      redirect: { name: 'Pool' }
+      redirect: { name: 'Prime Account' }
     },
   ]
 })

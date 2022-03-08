@@ -11,7 +11,14 @@
         :secondary="{value: avaxToUSD(totalSupply), type: 'usd'}" />
     </Bar>
     <InfoBubble
-      cacheKey="DEPOSIT-INFO">
+        v-if="depositLocked"
+        cacheKey="LOAN-INFO">
+      Depositing is not available during the tournament. <br/>
+      But you will be able to check it out in our Beta version!
+    </InfoBubble>
+    <InfoBubble
+        v-if="!depositLocked"
+        cacheKey="DEPOSIT-INFO">
       Deposit your AVAX in a pool and get interest rates. <br/>
       Your deposits will be available for others to borrow.
     </InfoBubble>

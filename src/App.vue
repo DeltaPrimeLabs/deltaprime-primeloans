@@ -7,6 +7,9 @@
     Please download and activate
     <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask plugin</b></a>.
   </Banner>
+  <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner">
+    Gas prices are high at the moment. Be careful with your transactions.
+  </Banner>
   <div class="top-bar">
     <router-link to="/">
       <img src="src/assets/icons/deltaprime.svg" class="logo">
@@ -39,7 +42,9 @@
     data: () => {
       return {
         showNetworkBanner: false,
-        showMetamaskBanner: false
+        showMetamaskBanner: false,
+        highGasPrice: false,
+        gasPriceIntervalId: null
       }
     },
     async created() {
@@ -59,9 +64,10 @@
       await this.initPool();
       await this.fetchLoan();
       await this.updatePoolData();
+      this.initGasPrices();
     },
     computed: {
-      ...mapState('network', ['account'])
+      ...mapState('network', ['account', 'provider'])
     },
     methods: {
       ...mapActions("network", ["initNetwork"]),
@@ -142,7 +148,21 @@
         window.ethereum.on('accountsChanged', function () {
           window.location.reload();
         })
+      },
+      initGasPrices() {
+        this.gasPriceIntervalId = setInterval(async () => {
+          this.checkGasPrices();
+        }, 2000);
+      },
+      async checkGasPrices() {
+        const resp = await fetch('https://gavax.blockscan.com/gasapi.ashx?apikey=key&method=gasoracle');
+        const blockchainData = await resp.json();
+
+        this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
       }
+    },
+    destroyed() {
+      clearInterval(this.gasPriceIntervalId);
     }
   }
 </script>

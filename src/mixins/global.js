@@ -1,10 +1,10 @@
-import { mapState } from 'vuex';
+import {mapState} from 'vuex';
 import config from "@/config";
-import { Contract } from "ethers";
+import {Contract} from "ethers";
 import EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
 import EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
-import {parseUnits, formatUnits, acceptableSlippage} from "../utils/calculate";
-import {handleCall, handleTransaction, parseArweaveURI} from "../utils/blockchain";
+import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
+import {handleCall, handleTransaction} from "../utils/blockchain";
 
 export default {
   methods: {
@@ -74,20 +74,17 @@ export default {
         return 0;
       }
     },
-    parseArweaveAddress(uri) {
-      return parseArweaveURI(uri);
-    },
     acceptableSlippage(slippage) {
       return acceptableSlippage(slippage);
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      return `src/assets/logo/${asset.toLowerCase()}.svg`;
+      const assetData = config.ASSETS_CONFIG[asset.toUpperCase()];
+      return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
     }
   },
   computed: {
-    ...mapState('loan', ['avaxPrice']),
-    ...mapState('network', ['provider']),
+    ...mapState('network', ['provider', 'avaxPrice']),
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },

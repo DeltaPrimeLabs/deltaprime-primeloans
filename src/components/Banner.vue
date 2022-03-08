@@ -25,7 +25,6 @@
 @import "~@/styles/variables";
 
 .banner {
-  position: fixed;
   top: 0;
   height: 60px;
   display: flex;

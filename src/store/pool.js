@@ -1,7 +1,7 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
-import {sleep, startingBlock} from "../utils/blockchain";
-import config from "../config";
+import {awaitConfirmation, startingBlock} from "../utils/blockchain";
+
 const ethers = require('ethers');
 
 export default {
@@ -148,27 +148,23 @@ export default {
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
       const tx = await state.pool.deposit({gasLimit: 600000, value: ethers.utils.parseEther(amount.toString())});
-      const transaction = await rootState.network.provider.waitForTransaction(tx.hash);
+      const provider = rootState.network.provider;
 
-      if (transaction.status === 0) throw Error('Failed to deposit');
+      await awaitConfirmation(tx, provider, 'deposit');
 
-      provider.waitForTransaction(tx.hash, 2).then(() => {
-        dispatch('updatePoolEvents');
-        dispatch('updatePoolData');
-        dispatch('network/updateBalance', {}, {root: true})
-      });
+      dispatch('updatePoolEvents');
+      dispatch('updatePoolData');
+      dispatch('network/updateBalance', {}, {root: true})
     },
-    async withdraw({ state, dispatch, commit }, { amount }) {
+    async withdraw({ state, dispatch, commit, rootState }, { amount }) {
       const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
-      const transaction = await provider.waitForTransaction(tx.hash);
+      const provider = rootState.network.provider;
 
-      if (transaction.status === 0) throw Error('Failed to withdraw');
+      await awaitConfirmation(tx, provider, 'withdraw');
 
-      provider.waitForTransaction(tx.hash, 2).then(() => {
-        dispatch('updatePoolEvents');
-        dispatch('updatePoolData');
-        dispatch('network/updateBalance', {}, {root: true})
-      });
+      dispatch('updatePoolEvents');
+      dispatch('updatePoolData');
+      dispatch('network/updateBalance', {}, {root: true})
     }
   },
 };

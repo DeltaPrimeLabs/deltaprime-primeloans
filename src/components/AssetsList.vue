@@ -16,9 +16,9 @@
         <table id="investmentsTable">
           <thead>
             <tr>
-              <th>Asset</th>
+              <th class="left">Asset</th>
               <th class="right">Price</th>
-              <th>Trend</th>
+              <th class="left">Trend</th>
               <th class="right">Balance</th>
               <th class="right">Share</th>
               <th class="right">Value</th>
@@ -28,9 +28,9 @@
           <tbody>
             <tr v-for="asset in investments"
               v-bind:key="asset.symbol">
-              <td data-label="Asset">
+              <td class="left" data-label="Asset">
                 <div class="token-logo-wrapper">
-                  <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`" class="token-logo"/>
+                  <img :src="logoSrc(asset.symbol)" class="token-logo"/>
                 </div>
                 <span class="token-name">{{ asset.name }}</span>
                 </td>
@@ -117,9 +117,9 @@
         <table id="optionsTable">
           <thead>
           <tr>
-            <th>Asset</th>
+            <th class="left">Asset</th>
             <th class="right">Price</th>
-            <th>Trend</th>
+            <th class="left">Trend</th>
             <th></th>
             <th></th>
             <th></th>
@@ -129,9 +129,9 @@
           <tbody>
           <tr v-for="asset in investmentOptions"
               v-bind:key="asset.symbol">
-            <td data-label="Asset">
+            <td data-label="Asset" class="left">
               <div class="token-logo-wrapper">
-                <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`" class="token-logo"/>
+                <img :src="logoSrc(asset.symbol)" class="token-logo"/>
               </div>
               <span class="token-name">{{ asset.name }}</span>
             </td>
@@ -630,6 +630,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 55px;
 
   @media screen and (min-width: $md) {
     justify-content: center;
@@ -637,11 +638,16 @@ td {
     &.right {
       justify-content: flex-end;
     }
+
+    &.left {
+      justify-content: flex-start;
+    }
   }
 }
 
 thead tr {
-  margin-bottom: 1rem;;
+  margin-bottom: 1rem;
+  padding: 0 5px 0 5px;
 }
 
 tbody tr {
@@ -649,8 +655,7 @@ tbody tr {
   border-width: 2px 0 0 0;
   border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
   border-image-slice: 1;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: 16px 5px 16px 5px;
 }
 
 .chart, .asset-input {
