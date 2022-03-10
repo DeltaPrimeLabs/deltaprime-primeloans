@@ -293,6 +293,7 @@ export default {
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
+      dispatch('updateAssets');
     }
   }
 }
