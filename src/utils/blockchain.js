@@ -34,7 +34,7 @@ export async function awaitConfirmation(tx, provider, actionName) {
 
     if (transaction.status === 0) {
         Vue.$toast.error(`Failed to ${actionName}. Check Metamask for more info.`)
-    } else Vue.$toast.success('Transaction success');
+    } else Vue.$toast.success('Transaction success! Waiting for confirmations...');
 
     await provider.waitForTransaction(tx.hash, 3);
 }
