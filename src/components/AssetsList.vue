@@ -6,7 +6,7 @@
         <div class="total">
           <span class="total-value-wrapper">
             <span class="total-value">
-              Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
+              Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
               <span class="vertical-line"></span>
               Your {{ profit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': profit < 0}">
               $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : ''}}</span>
@@ -190,6 +190,9 @@
         </table>
       </div>
     </div>
+    <div class="close-loan-button">
+      <Button label="Close the loan" :waiting="waitingForClose" v-on:click="closeTheLoan()"/>
+    </div>
   </div>
 </template>
 
@@ -201,6 +204,7 @@
   import CurrencyForm from "@/components/CurrencyForm.vue";
   import SmallBlock from "@/components/SmallBlock.vue";
   import LoadedValue from "@/components/LoadedValue.vue";
+  import Button from "@/components/Button.vue";
   import {mapState, mapActions, mapGetters} from "vuex";
   import redstone from 'redstone-api';
   import Vue from 'vue'
@@ -217,7 +221,8 @@
       CurrencyForm,
       SimpleChart,
       SmallBlock,
-      LoadedValue
+      LoadedValue,
+      Button
     },
     props: {
       fields: [
@@ -266,11 +271,12 @@
     },
     data() {
       return {
-        list: config.ASSETS_CONFIG
+        list: config.ASSETS_CONFIG,
+        waitingForClose: false
       }
     },
     methods: {
-      ...mapActions('loan', ['invest', 'redeem']),
+      ...mapActions('loan', ['invest', 'redeem', 'closeLoan']),
       investValidators(asset, avaxBalance) {
         return [
           {
@@ -466,6 +472,14 @@
       },
       formatTokenBalance(balance) {
         return balance !== null ? (balance > 1 ? balance.toFixed(2) : balance.toPrecision(2)) : '';
+      },
+      async closeTheLoan() {
+        this.waitingForClose = true;
+        this.handleTransaction(this.closeLoan)
+            .then(() => {
+              this.waitingForClose = false;
+              this.repayValue = null;
+            });
       }
     },
     watch: {
@@ -711,6 +725,10 @@ tbody tr {
 .chart-loader {
   display: flex;
   justify-content: center;
+}
+
+.close-loan-button {
+  margin-top: 20px;
 }
 </style>
 

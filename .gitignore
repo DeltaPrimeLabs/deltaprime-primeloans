@@ -5,6 +5,7 @@ build
 public
 dist
 cache
+/artifacts/
 .idea
 /.secret
 /.secret2

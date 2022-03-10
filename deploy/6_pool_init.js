@@ -59,13 +59,15 @@ module.exports = async ({
         ]
     })
 
-    await pool.attach(poolTUP.address).initialize(
+    let initializeTx = await pool.attach(poolTUP.address).initialize(
         variableUtilisationRatesCalculator.address,
         smartLoansFactoryTUP.address,
         depositIndexAddress,
         borrowIndexAddress,
         { gasLimit: 8000000 }
     );
+
+    await initializeTx.wait();
 
     console.log(`Initialized lending pool with: [ratesCalculator: ${variableUtilisationRatesCalculator.address}, ` +
     `borrowersRegistry: ${smartLoansFactoryTUP.address}, depositIndex: ${depositIndexAddress}, borrowIndex: ${borrowIndexAddress}]`);
