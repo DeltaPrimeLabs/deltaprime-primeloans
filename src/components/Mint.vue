@@ -18,6 +18,7 @@
 import Block from "../components/Block";
 import Button from "../components/Button";
 import {mapState} from "vuex";
+import Vue from "vue";
 
 const ethers = require('ethers');
 
@@ -76,7 +77,7 @@ export default {
       }
     },
     videoUri() {
-      return this.nftImageUri ? this.nftImageUri : this.parseArweaveAddress('bn88OSxK6mtLWjPTPZnDBsINwY-9L07rlRwcLHmWfOo');
+      return this.nftImageUri ? this.nftImageUri : 'https://arweave.net/D4S3C6_cfvid7uRduzs95OhBw0jbruxnnljXX4P54yw';
     }
   },
   methods: {
@@ -87,7 +88,11 @@ export default {
 
         await this.handleTransaction(this.nftContract.safeMint, [query.id, query.signature],
             async () => {
+              Vue.$toast.success('Minting successful! The NFT will soon show up on the page. If not refresh it after few seconds');
               await this.getNftId();
+            },
+            async () => {
+              Vue.$toast.error('Minting failed. Check Metamask for more info');
             }
         );
       }
