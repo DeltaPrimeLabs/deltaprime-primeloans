@@ -138,7 +138,7 @@ export default {
             assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
-          assets[symbol].share = assets[symbol].value / (state.totalValue * assets['AVAX'].price);
+          assets[symbol].share = state.totalValue ? assets[symbol].value / (state.totalValue * assets['AVAX'].price) : 0;
         }
       )
 
@@ -289,6 +289,19 @@ export default {
       );
 
       await awaitConfirmation(tx, provider, 'redeem');
+
+      dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
+      dispatch('updateLoanBalance');
+      dispatch('updateAssets');
+    },
+    async closeLoan({ state, rootState, dispatch}) {
+      const provider = rootState.network.provider;
+      const loan = state.loan;
+
+      let tx = await loan.closeLoan({gasLimit: 5000000});
+
+      await awaitConfirmation(tx, provider, 'closing the loan');
 
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
