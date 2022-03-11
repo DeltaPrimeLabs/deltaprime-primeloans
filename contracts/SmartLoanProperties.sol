@@ -22,9 +22,9 @@ contract SmartLoanProperties {
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  address private constant _EXCHANGE_ADDRESS = 0x0278438423f433e277F65D14c0E002b8828702ba;
+  address private constant _EXCHANGE_ADDRESS = 0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb;
 
-  address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
+  address private constant _POOL_ADDRESS = 0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E;
 
   // redstone-evm-connector price providers
   address private constant _PRICE_PROVIDER_1 = 0x981bdA8276ae93F567922497153de7A5683708d3;

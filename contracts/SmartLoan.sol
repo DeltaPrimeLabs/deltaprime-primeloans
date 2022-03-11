@@ -11,6 +11,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
 import "./SmartLoanProperties.sol";
+import "hardhat/console.sol";
 
 /**
  * @title SmartLoan
@@ -55,7 +56,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * It is used as part of the sellout() function which sells part/all of assets in order to bring the loan back to solvency.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
+  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) internal {
     IERC20Metadata token = getERC20TokenInstance(asset);
     address(token).safeTransfer(address(getExchange()), _amount);
     getExchange().sellAsset(asset, _amount, _minAvaxOut);
@@ -105,7 +106,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * This function can only be accessed by the owner and allows selling all of the assets.
    * @dev This function uses the redstone-evm-connector
    **/
-  function closeLoan() external payable onlyOwner nonReentrant remainsSolvent {
+  function closeLoan() external virtual payable onlyOwner nonReentrant remainsSolvent {
+    console.log('IN CLOSE');
     bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
