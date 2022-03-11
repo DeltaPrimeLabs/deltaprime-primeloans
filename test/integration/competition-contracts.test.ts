@@ -208,6 +208,13 @@ describe('Trading competition upgraded contracts test', () => {
         await SL.fund({value: toWei("0.1")});
     });
 
+    it("should test resetting collateral after closeLoan()", async () => {
+        expect(fromWei(await SL.getTotalValue())).to.be.greaterThan(0);
+        await SL.closeLoan();
+        expect(fromWei(await SL.getTotalValue())).to.be.equal(0);
+        await SL.fund({value: toWei("1")});
+    });
+
     it("should downgrade to old pool implementation and not require NFT access for deposit", async() => {
        await expect(pool.connect(owner).deposit({value: toWei("10.0")})).to.be.revertedWith("Access NFT required");
 
