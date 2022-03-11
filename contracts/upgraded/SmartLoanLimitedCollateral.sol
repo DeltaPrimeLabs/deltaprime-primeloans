@@ -56,4 +56,18 @@ contract SmartLoanLimitedCollateral is SmartLoan {
             sstore(slot, collateralSum)
         }
     }
+
+
+    /**
+   * This function can only be accessed by the owner and allows selling all of the assets.
+   * @dev This function uses the redstone-evm-connector
+   **/
+    function closeLoan() public override payable {
+        super.closeLoan();
+
+        bytes32 slot = COLLATERAL_SUM_SLOT;
+        assembly {
+            sstore(slot, 0)
+        }
+    }
 }
