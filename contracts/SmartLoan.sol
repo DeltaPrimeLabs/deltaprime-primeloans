@@ -106,8 +106,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * This function can only be accessed by the owner and allows selling all of the assets.
    * @dev This function uses the redstone-evm-connector
    **/
-  function closeLoan() external virtual payable onlyOwner nonReentrant remainsSolvent {
-    console.log('IN CLOSE');
+  function closeLoan() public virtual payable onlyOwner nonReentrant remainsSolvent {
     bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
