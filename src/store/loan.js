@@ -202,6 +202,7 @@ export default {
       await awaitConfirmation(tx, provider, 'create a Prime Account');
 
       dispatch('fetchLoan');
+      dispatch('network/updateBalance', {}, {root: true})
 
       return tx;
     },
@@ -216,6 +217,7 @@ export default {
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root: true})
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -228,6 +230,7 @@ export default {
       dispatch('updateLoanStats');
       dispatch('updateLoanHistory');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root: true})
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -274,6 +277,7 @@ export default {
       dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root: true})
     },
     async redeem({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
@@ -294,6 +298,7 @@ export default {
       dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root: true})
     },
     async closeLoan({ state, rootState, dispatch}) {
       const provider = rootState.network.provider;
@@ -307,6 +312,7 @@ export default {
       dispatch('updateLoanHistory');
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
+      dispatch('network/updateBalance', {}, {root: true})
     }
   }
 }

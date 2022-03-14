@@ -48,7 +48,7 @@
           hover: {
             mode: null
           },
-          aspectRatio: this.isStableCoin ? 10 : 1.2,
+          aspectRatio: this.isStableCoin ? 10 : 1.4,
           height: null,
           width: null,
           legend: {

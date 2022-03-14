@@ -11,7 +11,7 @@
         :min="calculatedLTV(balance)"
         :max="ltv"
         :value="calculatedLTV(fundValue)"
-        :step="0.001"
+        :step="0.0001"
         v-on:input="updateFundFromLTV"
         :validators="ltvValidators"
         :labels="['Safer', 'Riskier']"
