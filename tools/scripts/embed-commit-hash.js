@@ -13,7 +13,7 @@ export function embedCommitHash(contractName, contractPath = './contracts/') {
         const commitHash = require('child_process')
             .execSync('git rev-parse HEAD')
             .toString().trim();
-        let result = data.replace(/\/\/ Last deployed using commit: .*;/g, `// Last deployed from commit: ${commitHash};`);
+        let result = data.replace(/\/\/ Last deployed from commit: .*;/g, `// Last deployed from commit: ${commitHash};`);
 
         fs.writeFileSync(filePath, result, 'utf8');
 
