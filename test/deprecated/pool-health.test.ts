@@ -354,7 +354,7 @@ describe('Safety tests of pool', () => {
       borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
       expect(depositUser1).to.be.below(borrowedUser2 + poolBalance);
-      expect(fromWei(await pool.getDepositRate())).to.equal(0.75);
+      expect(fromWei(await pool.getDepositRate())).to.equal(0.749999999);
       expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
     });
 
@@ -393,7 +393,7 @@ describe('Safety tests of pool', () => {
     it("check condition of pool after a year", async () => {
       await time.increase(time.duration.years(1));
 
-      expect(fromWei(await pool.getDepositRate())).to.equal(0.75);
+      expect(fromWei(await pool.getDepositRate())).to.equal(0.749999999);
       expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
 
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);

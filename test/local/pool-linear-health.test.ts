@@ -42,8 +42,10 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
-      borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
+      depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
     });
 
     it("should not allow initializing pool with a non-contract ratesCalculator", async () => {
@@ -99,8 +101,10 @@ describe('Safety tests of pool', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
 
       await pool.initialize(
         ratesCalculator.address,
@@ -163,8 +167,10 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
 
       await pool.initialize(
         ratesCalculator.address,
@@ -271,8 +277,10 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as CompoundingIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
 
       await pool.initialize(
           ratesCalculator.address,
@@ -344,8 +352,10 @@ describe('Safety tests of pool', () => {
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
 
       await pool.initialize(
         ratesCalculator.address,
@@ -495,8 +505,10 @@ describe('Safety tests of pool', () => {
 
       variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [pool.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(pool.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(pool.address);
 
       await pool.initialize(
         variableUtilisationRatesCalculator.address,

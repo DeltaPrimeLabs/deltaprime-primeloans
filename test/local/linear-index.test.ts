@@ -12,13 +12,14 @@ chai.use(solidity);
 const {expect} = chai;
 
 // TODO: refactor and remove dependencies between tests.
-describe('CompoundingIndex',() => {
+describe('LinearIndex',() => {
 
     let owner: SignerWithAddress;
 
     async function init(rate: string, owner: SignerWithAddress): Promise<LinearIndex> {
 
-        const instance = await (new LinearIndex__factory(owner).deploy(owner.address));
+        const instance = await (new LinearIndex__factory(owner).deploy());
+        await instance.initialize(owner.address);
         await instance.setRate(toWei(rate));
 
         return instance;

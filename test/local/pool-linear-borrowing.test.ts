@@ -29,8 +29,10 @@ describe('Pool with variable utilisation interest rates', () => {
 
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(sut.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(sut.address);
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
@@ -78,8 +80,10 @@ describe('Pool with variable utilisation interest rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(sut.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(sut.address);
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
@@ -134,8 +138,10 @@ describe('Pool with variable utilisation interest rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
-      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [sut.address])) as LinearIndex;
+      const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await depositIndex.initialize(sut.address);
+      const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+      await borrowingIndex.initialize(sut.address);
 
       await sut.initialize(
           VariableUtilisationRatesCalculator.address,
