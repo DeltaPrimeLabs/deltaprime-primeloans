@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-// Last deployed using commit: ;
+// Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
 import "./interfaces/IAssetsExchange.sol";
