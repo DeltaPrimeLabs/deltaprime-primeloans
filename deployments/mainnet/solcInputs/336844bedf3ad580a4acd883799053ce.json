@@ -5,7 +5,7 @@
       "content": "// SPDX-License-Identifier: UNLICENSED\n// Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;\npragma solidity 0.6.6;\n\nimport \"../mock/SimpleContract.sol\";\n\n\n/**\n * @title PoolFactory\n * @dev Contract factory allowing anyone to deploy a pool contract\n */\ncontract SimpleFactory {\n  function deployPool() public {\n    SimpleContract pool = new SimpleContract();\n    emit SimpleContractDeployed(address(pool));\n  }\n\n  /**\n   * @dev emitted after pool is deployed by any user\n   * @param poolAddress of deployed pool\n   **/\n  event SimpleContractDeployed(address poolAddress);\n}"
     },
     "contracts/mock/SimpleContract.sol": {
-      "content": "// SPDX-License-Identifier: UNLICENSED\n// Last deployed using commit: ;\npragma solidity ^0.6.6;\n\n/**\n * @title SimpleContract\n * @dev A mock implementation of a SmartLoan to check if upgrade mechanism correctly update contract logic\n */\ncontract SimpleContract {\n  function getHello() public view  returns (string memory) {\n    return \"Hello world\";\n  }\n}\n"
+      "content": "// SPDX-License-Identifier: UNLICENSED\n// Last deployed from commit: ;\npragma solidity ^0.6.6;\n\n/**\n * @title SimpleContract\n * @dev A mock implementation of a SmartLoan to check if upgrade mechanism correctly update contract logic\n */\ncontract SimpleContract {\n  function getHello() public view  returns (string memory) {\n    return \"Hello world\";\n  }\n}\n"
     }
   },
   "settings": {
