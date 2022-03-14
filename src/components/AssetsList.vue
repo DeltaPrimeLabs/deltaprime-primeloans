@@ -191,7 +191,7 @@
       </div>
     </div>
     <div class="close-loan-button">
-      <Button label="Close the loan" :waiting="waitingForClose" v-on:click="closeTheLoan()"/>
+      <Button label="Close the loan" :disabled="waitingForClose" :waiting="waitingForClose" v-on:click="closeTheLoan()"/>
     </div>
   </div>
 </template>
