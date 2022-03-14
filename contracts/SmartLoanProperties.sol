@@ -61,7 +61,7 @@ contract SmartLoanProperties {
   }
 
   function getPool() public virtual view returns (Pool) {
-    return Pool(_POOL_ADDRESS);
+    return Pool(0x431290dF15777d46174b83C9E01F87d7b70D3073);
   }
 
   function getPriceProvider1() public virtual view returns (address) {
