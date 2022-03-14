@@ -1,7 +1,7 @@
 <template>
   <div>
     <Block class="block" :bordered="true">
-      <div class="title">Prime Accounts</div>
+      <div class="title">Ranking</div>
       <table id="investmentsTable">
         <thead>
           <tr>
@@ -13,8 +13,8 @@
         </thead>
         <tbody>
           <tr v-for="loan in loans">
-            <td>{{loan.account | tx}}</td>
-            <td>{{loan.owner | tx}}</td>
+            <td v-tooltip="loan.account">{{loan.account | tx}}</td>
+            <td v-tooltip="loan.owner">{{loan.owner | tx}}</td>
             <td>{{avaxToUSD(loan.totalValue) | usd}}</td>
             <td><b class="profit" :class="{'red': loan.profit < 0}">{{avaxToUSD(loan.profit) | usd}}</b></td>
           </tr>

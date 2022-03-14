@@ -9,10 +9,10 @@
     <div class="ltv" v-html="LTVInfo"></div>
     <div class="ltv-slider-wrapper">
       <Slider
-        :min="0"
+        :min="minLtv"
         :max="ltv"
         :value="calculatedLTV(repayValue)"
-        :step="0.001"
+        :step="0.0001"
         v-on:input="updateRepayFromLTV"
         :validators="ltvValidators"
         :labels="['Safer', 'Riskier']"
@@ -115,6 +115,9 @@ import {mapActions, mapState} from "vuex";
       },
       maxRepay() {
         return Math.min(this.loanBalance, this.debt);
+      },
+      minLtv() {
+        return this.calculatedLTV(Math.min(this.debt, this.loanBalance));
       }
     }
   }

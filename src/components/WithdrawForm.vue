@@ -11,7 +11,7 @@
         :min="ltv"
         :max="maxLTV"
         :value="calculatedLTV(this.withdrawValue)"
-        :step="0.001"
+        :step="0.0001"
         v-on:input="updateWithdrawFromLTV"
         :validators="ltvValidators"
         :labels="['Safer', 'Riskier']"

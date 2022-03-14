@@ -50,7 +50,7 @@ export default {
       exampleNft: "",
       userNft: "",
       notMintedYetMessage: "Get your own unique NFT to participate in our trading competition!",
-      mintedMessage: "Your unique access NFT is minted!",
+      mintedMessage: "Your unique access NFT is minted! Go to <a href='/#/prime-account'>Prime Account</a> to start trading.",
       noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted.<br/> But you can still join our " +
           "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> not to miss the next opportunity!",
       intervalId: null,

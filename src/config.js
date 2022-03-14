@@ -2,7 +2,8 @@ import addresses from '../common/token_addresses.json';
 
 export default {
     DEFAULT_LTV: 2,
-    MAX_LTV: 5,
+    MAX_ALLOWED_LTV: 4.5,
+    LIQUIDATION_LTV: 5,
     chainId: 43114,
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},

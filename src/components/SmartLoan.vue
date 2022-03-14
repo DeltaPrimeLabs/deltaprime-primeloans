@@ -52,7 +52,7 @@
     </InfoBubble>
     <InfoBubble v-if="liquidatedEvent" :cacheKey="`LIQUIDATION-INFO-${liquidatedEvent.tx}`">
       Your account has been recently liquidated. <br/>
-      Remember to keep LTV below <b>{{maxLTV}}%</b> to avoid losses.
+      Remember to keep LTV below <b>{{maxLTV}}%</b> to avoid liquidation.
     </InfoBubble>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
@@ -136,7 +136,7 @@
     ...mapState('network', ['balance']),
     ...mapGetters('loan', ['getCurrentCollateral']),
     maxLTV() {
-      return config.MAX_LTV * 100;
+      return config.LIQUIDATION_LTV * 100;
     },
     liquidatedEvent() {
       if (!this.loanEvents) {

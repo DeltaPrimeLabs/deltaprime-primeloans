@@ -4,7 +4,7 @@
       <template v-for="item in items">
         <div v-bind:key="item.type + item.tx" class="element">
           <div>{{ item.type }}</div>
-          <div>{{ item.time | date }}<a :href="getTransactionUrl(item.tx)" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a></div>
+          <div class="center">{{ item.time | date }}<a :href="getTransactionUrl(item.tx)" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a></div>
           <div>{{ item.value}}<img class="logo" :src="logoSrc(item.asset)"/></div>
         </div>
       </template>
@@ -44,6 +44,10 @@
 
     &:last-of-type {
       text-align: right;
+    }
+
+    &.center {
+      text-align: center;
     }
   }
 }

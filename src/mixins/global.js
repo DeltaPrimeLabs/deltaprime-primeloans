@@ -89,7 +89,7 @@ export default {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
     maxLTV() {
-      return config.MAX_LTV;
+      return config.MAX_ALLOWED_LTV;
     },
   },
   data() {
@@ -97,8 +97,8 @@ export default {
       ltvValidators: [
         {
           validate: function (value) {
-            if (value > config.MAX_LTV) {
-              return`LTV should be lower than ${config.MAX_LTV * 100}%`
+            if (value > config.MAX_ALLOWED_LTV) {
+              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`
             }
           }
         }

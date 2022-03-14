@@ -191,7 +191,7 @@
       </div>
     </div>
     <div class="close-loan-button">
-      <Button label="Close the loan" :disabled="waitingForClose" :waiting="waitingForClose" v-on:click="closeTheLoan()"/>
+      <Button label="Close the loan" :disabled="waitingForClose" :waiting="waitingForClose" v-on:click="closeTheLoan()" v-tooltip="'Sells all the assets, repays the loan and withdraws all funds'"/>
     </div>
   </div>
 </template>
@@ -471,7 +471,7 @@
         } catch (e) {}
       },
       formatTokenBalance(balance) {
-        return balance !== null ? (balance > 1 ? balance.toFixed(2) : balance.toPrecision(2)) : '';
+        return balance !== null ? balance.toPrecision(4) : '';
       },
       async closeTheLoan() {
         this.waitingForClose = true;
