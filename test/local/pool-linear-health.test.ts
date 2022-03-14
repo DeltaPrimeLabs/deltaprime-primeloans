@@ -12,7 +12,6 @@ import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBo
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
-  CompoundingIndex,
   DestructableContract,
   LinearIndex,
   OpenBorrowersRegistry,

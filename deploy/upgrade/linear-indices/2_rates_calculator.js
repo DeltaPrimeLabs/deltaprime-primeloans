@@ -1,6 +1,6 @@
-import verifyContract from "../../tools/scripts/verify-contract";
+import verifyContract from "../../../tools/scripts/verify-contract";
 
-const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
+const {embedCommitHash} = require("../../../tools/scripts/embed-commit-hash");
 import hre from 'hardhat'
 
 module.exports = async ({
@@ -26,4 +26,4 @@ module.exports = async ({
     console.log(`Deployed VariableUtilisationRatesCalculator at address: ${result.address}`);
 };
 
-module.exports.tags = ['init'];
+module.exports.tags = ['rates-offset'];
