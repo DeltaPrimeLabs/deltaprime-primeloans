@@ -1,4 +1,4 @@
-import {awaitConfirmation, handleCall, startingBlock} from "../utils/blockchain";
+import {awaitConfirmation, fetchEventsInBatches, handleCall, startingBlock} from "../utils/blockchain";
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
@@ -168,19 +168,17 @@ export default {
 
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
-      let logs = await provider.getLogs({
-        fromBlock: startingBlock(),
-        address: loan.address,
-        topics: [ [
-          loan.iface.getEventTopic("Funded"),
-          loan.iface.getEventTopic("Withdrawn"),
-          loan.iface.getEventTopic("Invested"),
-          loan.iface.getEventTopic("Redeemed"),
-          loan.iface.getEventTopic("Borrowed"),
-          loan.iface.getEventTopic("Repaid"),
-          loan.iface.getEventTopic("Liquidated")
-        ] ]
-      });
+      const topics = [
+        loan.iface.getEventTopic("Funded"),
+        loan.iface.getEventTopic("Withdrawn"),
+        loan.iface.getEventTopic("Invested"),
+        loan.iface.getEventTopic("Redeemed"),
+        loan.iface.getEventTopic("Borrowed"),
+        loan.iface.getEventTopic("Repaid"),
+        loan.iface.getEventTopic("Liquidated")
+      ];
+
+      const logs = (await fetchEventsInBatches(loan.address, topics, provider)).flat();
 
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 

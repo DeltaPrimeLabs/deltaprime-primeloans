@@ -29,19 +29,19 @@
 
 
 <script>
-  import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
-  import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
-  import LOAN from '@contracts/SmartLoan.json'
-  import { ethers } from "ethers";
-  import config from "@/config";
-  import {parseLogs} from "../utils/calculate";
-  import Block from "@/components/Block.vue";
-  import {mapState} from "vuex";
-  import {WrapperBuilder} from "redstone-evm-connector";
-  import { fromWei } from "@/utils/calculate";
-  import {startingBlock} from "../utils/blockchain";
+import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
+import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
+import LOAN from '@contracts/SmartLoan.json'
+import {ethers} from "ethers";
+import config from "@/config";
+import {parseLogs} from "../utils/calculate";
+import Block from "@/components/Block.vue";
+import {mapState} from "vuex";
+import {WrapperBuilder} from "redstone-evm-connector";
+import {fromWei} from "@/utils/calculate";
+import {fetchEventsInBatches} from "../utils/blockchain";
 
-  export default {
+export default {
     name: 'SmartLoanList',
     components: {
       Block
@@ -84,25 +84,21 @@
                     .wrapLite(loan)
                     .usingPriceFeed(config.dataProviderId);
 
+                  const topics = [
+                      loan.iface.getEventTopic("Funded"),
+                      loan.iface.getEventTopic("Withdrawn"),
+                      loan.iface.getEventTopic("Invested"),
+                      loan.iface.getEventTopic("Redeemed"),
+                      loan.iface.getEventTopic("Borrowed"),
+                      loan.iface.getEventTopic("Repaid"),
+                    ];
+
                   Promise.all([
-                    provider.getLogs({
-                    fromBlock: startingBlock(),
-                    address: loan.address,
-                    topics: [
-                      [
-                        loan.iface.getEventTopic("Funded"),
-                        loan.iface.getEventTopic("Withdrawn"),
-                        loan.iface.getEventTopic("Invested"),
-                        loan.iface.getEventTopic("Redeemed"),
-                        loan.iface.getEventTopic("Borrowed"),
-                        loan.iface.getEventTopic("Repaid"),
-                      ]
-                    ]
-                  }),
-                  wrappedLoan.owner()]
+                    fetchEventsInBatches(loan.address, topics, provider),
+                    wrappedLoan.owner()]
                   ).then(
                     res => {
-                      const [loanEvents, collateralFromPayments] = parseLogs(wrappedLoan, res[0]);
+                      const [loanEvents, collateralFromPayments] = parseLogs(wrappedLoan, res[0].flat());
 
                       wrappedLoan.getFullLoanStatus().then(
                         status => {
