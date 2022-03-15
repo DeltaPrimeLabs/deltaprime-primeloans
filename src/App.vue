@@ -192,7 +192,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 40px 0;
+    padding: 20px 0 30px 0;
   }
 
   .logo {

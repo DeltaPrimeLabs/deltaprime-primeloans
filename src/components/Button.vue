@@ -63,8 +63,9 @@
   }
 
   &.disabled {
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: initial;
+    box-shadow: none;
   }
 
   &.waiting {
@@ -85,7 +86,7 @@
   opacity: 0.8;
 }
 
-.btn:active {
+.btn:active:not(.waiting):not(.disabled) {
   opacity: 0.5;
 }
 

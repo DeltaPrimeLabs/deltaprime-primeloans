@@ -22,7 +22,7 @@
               <th class="right">Balance</th>
               <th class="right">Share</th>
               <th class="right">Value</th>
-              <th>Buy/Sell</th>
+              <th class="right">Buy/Sell</th>
             </tr>
           </thead>
           <tbody>
@@ -57,12 +57,12 @@
               </td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
               <td class="value right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
-              <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
+              <td class="invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
                 <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
                 <img src="src/assets/icons/slash-small.svg"/>
                 <img @click="showSellInput(asset.symbol)" src="src/assets/icons/minus.svg" class="sell"/>
               </td>
-              <td v-else class="center">-</td>
+              <td v-else class="no-buy">-</td>
               <td class="asset-input" v-if="asset.buyInput" @click.stop>
                 <SmallBlock
                   v-on:close="() => { asset.buyInput = false; }">
@@ -77,6 +77,7 @@
                     :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
+                    :denominationButtons="true"
                   />
                 </SmallBlock>
               </td>
@@ -95,6 +96,7 @@
                     :validators="redeemValidators(asset.balance)"
                     :warnings="redeemWarnings(asset)"
                     :info="sellSlippageInfo(asset)"
+                    :denominationButtons="true"
                   />
                 </SmallBlock>
               </td>
@@ -125,7 +127,7 @@
             <th></th>
             <th></th>
             <th></th>
-            <th>Buy</th>
+            <th class="right">Buy</th>
           </tr>
           </thead>
           <tbody>
@@ -152,7 +154,7 @@
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
-            <td class="invest-buttons" @click.stop>
+            <td class="invest-buttons right" @click.stop>
               <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
             </td>
             <td class="asset-input" v-if="asset.buyInput" @click.stop>
@@ -170,6 +172,7 @@
                   :validators="investValidators(asset, list[nativeToken].balance)"
                   :warnings="investWarnings(asset.buySlippage)"
                   :info="buySlippageInfo(asset)"
+                  :denominationButtons="true"
                 />
               </SmallBlock>
             </td>
@@ -612,6 +615,11 @@
   }
 }
 
+.no-buy {
+  margin-right: 30px;
+  justify-content: flex-end;
+}
+
 .clickable {
   cursor: pointer;
 }
@@ -669,8 +677,7 @@ thead tr {
 tbody tr {
   border-style: solid;
   border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
-  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);  border-image-slice: 1;
   padding: 0 10px 0 10px;
 }
 

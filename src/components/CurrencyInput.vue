@@ -6,8 +6,14 @@
       <input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
       <div class="converted">
         <div v-if="value && (value !== 0)">
-          ~ {{ (price ? price : avaxPrice) * value | usd}}
+          <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * value | usd}}</span>
+          <span v-else>{{ (value * price / avaxPrice).toPrecision(8) }}</span>
         </div>
+      </div>
+      <div class="denomination" v-if="denominationButtons">
+        <img class="icon" :src="`src/assets/logo/${usdDenominated ? 'grey/' : ''}avax.svg`"  @click="usdDenominated = false"/>
+        <img class="slash" src="src/assets/icons/slash-small.svg"/>
+        <img class="icon" :src="`src/assets/logo/${!usdDenominated ? 'grey/' : ''}usd.svg`" @click="usdDenominated = true"/>
       </div>
       <div v-if="max" class="max-wrapper" @click.stop="value = max">
         <div class="max">MAX</div>
@@ -64,7 +70,8 @@ import {mapState} from "vuex";
       info: { type: Function, default: null },
       defaultValue: null,
       waiting: false,
-      disabled: false
+      disabled: false,
+      denominationButtons: false
     },
     computed: {
       ...mapState('network', ['avaxPrice'])
@@ -76,7 +83,8 @@ import {mapState} from "vuex";
         value: this.defaultValue,
         defaultValidators: [],
         asset: config.ASSETS_CONFIG[this.symbol],
-        ongoingErrorCheck: false
+        ongoingErrorCheck: false,
+        usdDenominated: true
       }
     },
     created() {
@@ -241,7 +249,11 @@ input[type=number] {
     line-height: 24px;
     color: #8986fe;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.9);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
   }
 }
 
@@ -277,5 +289,19 @@ img {
 }
 .error {
   color: $red;
+}
+
+.denomination {
+  min-width: 90px;
+
+  .icon {
+    width: 20px;
+    cursor: pointer;
+  }
+
+  .slash {
+    height: 24px;
+    width: 12px;
+  }
 }
 </style>

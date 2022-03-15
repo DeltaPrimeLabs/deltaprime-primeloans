@@ -10,6 +10,7 @@
           :min="min"
           :max="max"
           class="slider"
+          :class="{'error': error}"
           @input="onInput"
         >
       </div>
@@ -145,30 +146,44 @@ export default {
   background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
   background-size: 0% 100%;
   background-repeat: no-repeat;
+
+  &.error {
+    background: $red;
+  }
+
+  &::-webkit-slider-thumb  {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 23px;
+    height: 23px;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 50%;
+    border: solid 3px #c0a6ff;
+  }
+
+  &.error::-webkit-slider-thumb {
+    border-color: $red;
+  }
+
+  &::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 23px;
+    height: 23px;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 50%;
+    border: solid 3px #c0a6ff;
+  }
+
+  &.error::-moz-range-thumb {
+    border-color: $red;
+  }
 }
 
 .slider-component .slide-container .slider:hover {
   opacity: 1;
-}
-
-.slider-component .slide-container .slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 23px;
-  height: 23px;
-  background: #fff;
-  cursor: pointer;
-  border-radius: 50%;
-  border: solid 3px #c0a6ff;
-}
-
-.slider-component .slide-container .slider::-moz-range-thumb {
-  width: 23px;
-  height: 23px;
-  cursor: pointer;
-  border-radius: 50%;
-  border: solid 3px #c0a6ff;
-  background: #fff;
 }
 
 .labels {
