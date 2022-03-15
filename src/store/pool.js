@@ -1,6 +1,6 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
-import {awaitConfirmation, startingBlock} from "../utils/blockchain";
+import {awaitConfirmation, fetchEventsInBatches} from "../utils/blockchain";
 
 const ethers = require('ethers');
 
@@ -104,14 +104,12 @@ export default {
       let totalSupply = 0;
       let totalWithdrawn = 0;
       const provider = rootState.network.provider;
-      let logs = await provider.getLogs({
-        fromBlock: startingBlock(),
-        address: pool.address,
-        topics: [ [
-          pool.iface.getEventTopic("Deposit"),
-          pool.iface.getEventTopic("Withdrawal")
-        ] ]
-      });
+      const topics =  [
+        pool.iface.getEventTopic("Deposit"),
+        pool.iface.getEventTopic("Withdrawal")
+      ];
+
+      let logs = (await fetchEventsInBatches(pool.address, topics, provider)).flat();
 
       logs = logs.filter(item => item.address === pool.address);
 

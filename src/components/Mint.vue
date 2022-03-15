@@ -88,7 +88,7 @@ export default {
 
         await this.handleTransaction(this.nftContract.safeMint, [query.id, query.signature],
             async () => {
-              Vue.$toast.success('Minting successful! The NFT will soon show up on the page. If not refresh it after few seconds');
+              Vue.$toast.success('Minting successful! The NFT will soon show up on the page. If not refresh it after few seconds', { timeout: 3000 });
               await this.getNftId();
             },
             async () => {
