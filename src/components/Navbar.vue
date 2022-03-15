@@ -1,10 +1,10 @@
 <template>
   <div class="navbar">
     <div class="links-wrapper" :class="{'mobile': isMobile}">
-      <router-link to="/pool"><span title="Pool">Pool</span></router-link>
-      <router-link to="/prime-account"><span title="Prime Account">Prime Account</span></router-link>
-      <router-link to="/ranking"><span title="Ranking">Ranking</span></router-link>
-      <router-link to="/nft/borrow"><span title="NFT">NFT</span></router-link>
+      <router-link to="/pool" style="width: 104px"><span title="Pool">Pool</span></router-link>
+      <router-link to="/prime-account" style="width: 193px"><span title="Prime Account">Prime Account</span></router-link>
+      <router-link to="/ranking" style="width: 138px"><span title="Ranking">Ranking</span></router-link>
+      <router-link to="/nft/borrow" style="width: 100px"><span title="NFT">NFT</span></router-link>
     </div>
   </div>
 </template>
@@ -41,15 +41,10 @@
 }
 
 a {
-  padding: 8px 20px 8px 20px;
+  padding: 8px 30px 8px 30px;
   text-decoration: none !important;
-  width: 140px;
   display: inline-block;
   color: #696969;
-
-  &:nth-of-type(2) {
-    width: 180px;
-  }
 }
 
 a:not(.router-link-active):hover {

@@ -12,6 +12,7 @@
       :waiting="waiting"
       :info="info"
       :defaultValue="defaultValue"
+      :denominationButtons="denominationButtons"
       v-on:newValue="updateValue"
       v-on:ongoingErrorCheck="ongoingErrorCheck"
     />
@@ -40,7 +41,8 @@
         type: Array, default: () => []
       },
       info: { type: Function, default: null },
-      defaultValue: { type: Number, default: null }
+      defaultValue: { type: Number, default: null },
+      denominationButtons: { type: Boolean, default: false }
     },
     components: {
       CurrencyInput,

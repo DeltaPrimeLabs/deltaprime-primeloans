@@ -41,6 +41,7 @@ export async function awaitConfirmation(tx, provider, actionName) {
 
 export async function handleCall(fun, args, onSuccess, onFail) {
     try {
+        // await Promise.any([fetch('fdasfdsa').then(response => response.json()), fetch('fdasfdsa').then(response => response.json())])
         if (!args) {
             return await fun();
         } else {
@@ -49,6 +50,7 @@ export async function handleCall(fun, args, onSuccess, onFail) {
 
         if (onSuccess) onSuccess();
     } catch (error) {
+        console.log(error);
         let message = error.data ? error.data.message : (error.message ? error.message : error);
 
         if (message.startsWith("[ethjs-query]")) {
@@ -79,8 +81,7 @@ export async function fetchEventsInBatches(address, topics, provider) {
 
     let endBatch = 0;
 
-    let bool = true;
-    while (bool) {
+    while (endBatch < currentBlock) {
         endBatch = startBatch + 2047;
 
         if (endBatch > currentBlock) {
@@ -96,8 +97,6 @@ export async function fetchEventsInBatches(address, topics, provider) {
             }));
 
         startBatch = endBatch + 1;
-
-        bool = endBatch < currentBlock;
     }
 
     return Promise.all(logsPromises);

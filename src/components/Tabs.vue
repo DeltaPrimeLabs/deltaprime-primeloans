@@ -65,7 +65,7 @@ export default {
   ul.tabs-header {
     display: flex;
     list-style: none;
-    margin: 0 0 0 20px;
+    margin: 0 0 20px 20px;
     padding: 0;
     justify-content: center;
     font-size: $font-size-md;
@@ -84,13 +84,13 @@ export default {
     align-items: center;
 
     @media screen and (min-width: $md) {
-      padding: 15px 30px;
+      padding: 15px;
     }
   }
 
   .tab-button {
     display: inline-block;
-    color: black;
+    color: #7d7d7d;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     border-radius: 10px;
@@ -106,6 +106,7 @@ export default {
 
   .tab-selected .tab-button {
     font-weight: bold;
+    color: black;
   }
 
   li {
@@ -113,15 +114,21 @@ export default {
   }
 
   li:not(.tab-selected):hover {
-    font-weight: 500;
+    .tab-button {
+      color: black;
+    }
   }
 
   .tab-button > img {
-    width: 45px;
+    width: 73px;
+    margin-right: 5px;
   }
 
   .img-right .tab-button {
     flex-direction: row-reverse;
+    & > img {
+      margin-left: 5px;
+    }
   }
 
   .tab-button:not(.img-right) {
