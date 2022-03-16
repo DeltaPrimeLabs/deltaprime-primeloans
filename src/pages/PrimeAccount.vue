@@ -2,10 +2,12 @@
   <div class="invest container">
     <div v-if="isLoanAlreadyCreated === false">
       <Bar>
-        <Value label="Available in pool"
-          :primary="{value: getAvailable, type: 'avax', showIcon: true}"
-          :secondary="{value: avaxToUSD(getAvailable), type: 'usd'}" />
-        <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
+        <div class="stats">
+          <Value label="Available in pool"
+                 :primary="{value: getAvailable, type: 'avax', showIcon: true}"
+                 :secondary="{value: avaxToUSD(getAvailable), type: 'usd'}" />
+          <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
+        </div>
       </Bar>
       <InfoBubble v-if="!borrowingLocked">
         Create a loan to start your investment adventure. <br/>
@@ -65,7 +67,7 @@
 
 <style lang="scss" scoped>
 .block {
-  margin-top: 30px;
+  margin-top: 10px;
 }
 
 .bars {
@@ -83,6 +85,22 @@
 
 .invest {
   text-align: center;
+}
+
+.stats {
+  padding-top: 20px;
+}
+</style>
+<style lang="scss" scoped>
+.invest {
+  .bar {
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+
+    .stats {
+      justify-content: space-around;
+    }
+  }
 }
 </style>
 
