@@ -69,6 +69,7 @@
                   <CurrencyForm
                     label="Buy"
                     :symbol="asset.symbol"
+                    :slippage="asset.buySlippage"
                     :price="asset.price"
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
@@ -89,6 +90,7 @@
                     :symbol="asset.symbol"
                     :price="asset.price"
                     :hasSecondButton="true"
+                    :slippage="-asset.sellSlippage"
                     v-on:submitValue="(value) => redeemValue(asset, value)"
                     :max="asset.balance"
                     :waiting="asset.waiting"
@@ -165,6 +167,7 @@
                   :symbol="asset.symbol"
                   :price="asset.price"
                   :hasSecondButton="true"
+                  :slippage="asset.buySlippage"
                   v-on:submitValue="(value) => investValue(asset, value)"
                   v-on:changedValue="(value) => checkBuySlippage(asset, value)"
                   :waiting="asset.waiting"
@@ -337,23 +340,11 @@
       //TODO: add optional chaining
       buySlippageInfo(asset) {
         return (value) =>
-          `Cost will be
-          <b>${this.usdToAVAX((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)}</b>
-          AVAX ($
-          ${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)})
-          with current slippage of ${(asset.buySlippage * 100).toFixed(2)}%
-          (max. slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%)
-          `
+          `Current slippage ${(asset.buySlippage * 100).toFixed(2)}%, maximum slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%`
       },
       sellSlippageInfo(asset) {
         return (value) =>
-          `You'll get
-          <b>${(this.usdToAVAX(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)}</b>
-          AVAX ($
-          ${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)})
-          with current slippage of ${(asset.sellSlippage * 100).toFixed(2)}%
-          (max. slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%)
-          `
+          `Current slippage ${(asset.sellSlippage * 100).toFixed(2)}%, maximum slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%`
       },
       toggleChart(symbol) {
         this.updateAsset(symbol, 'showChart', !this.list[symbol].showChart);
