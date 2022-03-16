@@ -13,6 +13,7 @@
       :info="info"
       :defaultValue="defaultValue"
       :denominationButtons="denominationButtons"
+      :slippage="slippage"
       v-on:newValue="updateValue"
       v-on:ongoingErrorCheck="ongoingErrorCheck"
     />
@@ -42,7 +43,8 @@
       },
       info: { type: Function, default: null },
       defaultValue: { type: Number, default: null },
-      denominationButtons: { type: Boolean, default: false }
+      denominationButtons: { type: Boolean, default: false },
+      slippage: { type: Number, default: 0 }
     },
     components: {
       CurrencyInput,

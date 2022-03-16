@@ -6,8 +6,8 @@
       <input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
       <div class="converted">
         <div v-if="value && (value !== 0)">
-          <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * value | usd}}</span>
-          <span v-else>{{ (value * price / avaxPrice).toPrecision(8) }}</span>
+          <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd}}</span>
+          <span v-else>{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }}</span>
         </div>
       </div>
       <div class="denomination" v-if="denominationButtons">
@@ -71,7 +71,8 @@ import {mapState} from "vuex";
       defaultValue: null,
       waiting: false,
       disabled: false,
-      denominationButtons: false
+      denominationButtons: false,
+      slippage: { type: Number, default: 0 }
     },
     computed: {
       ...mapState('network', ['avaxPrice'])
