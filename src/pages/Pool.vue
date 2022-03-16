@@ -1,6 +1,6 @@
 <template>
   <div class="pool container">
-    <Bar class="bar">
+    <Bar>
       <div>
         <div class="rate-wrapper">
           Current APR: <span class="rate">{{depositRate | percent}}</span>
@@ -59,7 +59,7 @@
     <Block class="block history-block" background="rgba(255, 255, 255, 0.3)" v-if="(poolEvents && poolEvents.length > 0)">
       <div class="history-title">Deposits history</div>
       <div class="chart-wrapper">
-        <Chart :dataPoints="chartPoints" :minY="0.01" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
+        <Chart :dataPoints="chartPoints" :minY="0.0001" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
       </div>
       <PoolHistoryList :items="poolEvents" title="Last deposits" class="history-list"/>
     </Block>
