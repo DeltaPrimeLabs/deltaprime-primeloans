@@ -5,6 +5,7 @@ import Ranking from '@/pages/Ranking'
 import Nft from "@/pages/Nft";
 import BorrowNft from "@/components/BorrowNft";
 import DepositNft from "@/components/DepositNft";
+import Admin from "@/pages/Admin";
 import PrimeAccount from "@/pages/PrimeAccount";
 
 
@@ -27,6 +28,11 @@ export default new Router({
       path: '/ranking',
       name: 'Ranking',
       component: Ranking
+    },
+    {
+      path: '/admin',
+      name: 'Admin',
+      component: Admin
     },
     {
       path: '/nft',
