@@ -63,7 +63,6 @@
   }
 
   &.disabled {
-    opacity: 0.3;
     cursor: initial;
     box-shadow: none;
   }
@@ -82,22 +81,18 @@
   }
 }
 
-.btn:hover:not(.waiting):not(.disabled) {
-  opacity: 0.8;
-}
-
-.btn:active:not(.waiting):not(.disabled) {
-  opacity: 0.5;
-}
-
 .purple {
   color: #ffffff;
-  background-image: linear-gradient(99deg, #4f56e6 2%, #7f84ff 64%, #a28aff);
+  background-image: linear-gradient(104deg, #6267ea 6%, #8187fa 65%, #a695ff);
   box-shadow: 5px 5px 8px 0 rgba(191, 188, 255, 0.5);
 }
 
 .purple:hover {
-  background-color: #ff788a;
+  background-image: linear-gradient(104deg, #94a3ff 6%, #ab95ff 65%, #bf9aff);
+}
+
+.purple.disabled {
+  background-image: linear-gradient(104deg, #d4d5ee 6%, #c0c2ec);
 }
 </style>
 

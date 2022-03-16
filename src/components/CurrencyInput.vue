@@ -3,7 +3,7 @@
     <div class="input-wrapper"
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
-      <input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US">
+      <span class="input"><input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US"></span>
       <div class="converted">
         <div v-if="value && (value !== 0)">
           <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd}}</span>
@@ -169,6 +169,20 @@ import {mapState} from "vuex";
   }
 }
 
+.input {
+  position: relative;
+  &:after {
+    content: ' ';
+    position: absolute;
+    width: 25px;
+    right: 0;
+    height: 100%;
+    top: 0;
+    background: linear-gradient(to right, rgba(244, 244, 255, 0), rgba(244, 244, 255, 0.95) 50%);
+    z-index: 1;
+  }
+}
+
 input {
   background: transparent;
   border: none;
@@ -250,10 +264,10 @@ input[type=number] {
     line-height: 24px;
     color: #8986fe;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.2);
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: rgba(255, 255, 255, 0.9);
     }
   }
 }

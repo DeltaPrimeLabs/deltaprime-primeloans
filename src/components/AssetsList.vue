@@ -495,7 +495,7 @@
 }
 
 .element {
-  padding: 16px 0;
+  padding: 15px 0;
   border-style: solid;
   border-width: 2px 0 0 0;
   border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
@@ -769,7 +769,6 @@ tbody tr {
     input {
       height: 30px;
       line-height: 30px;
-      width: 60%;
     }
 
     .error, .info, .warning {
