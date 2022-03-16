@@ -1,6 +1,6 @@
 <template>
   <div class="bar"> 
-    <div v-if="title" class="title"></div>
+    <div v-if="title" class="title">{{title}}</div>
     <div class="elements">
       <slot></slot>
     </div>  
@@ -59,6 +59,13 @@
     display: flex;
     justify-content: space-between;
   }
+}
+
+.title {
+  margin: auto;
+  text-align: center;
+  padding-top: 20px;
+  margin-bottom: 20px;
 }
 </style>
 
