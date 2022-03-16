@@ -7,12 +7,12 @@ TimeAgo.addDefaultLocale(en)
 export default function setupFilters() {
   const timeAgo = new TimeAgo('en')
 
-  Vue.filter("usd", function (value) {
+  Vue.filter("usd", function (value, precision = 2) {
     if (value == null) return null;
     return "$ " + value.toLocaleString(
         undefined, // use the visitor's browser
         { minimumFractionDigits: 2,
-          maximumFractionDigits: 2 }
+          maximumFractionDigits: precision }
     );
   });
 
@@ -21,9 +21,9 @@ export default function setupFilters() {
     return "$" + value.toFixed(12);
   });
 
-  Vue.filter("avax", function (value) {
+  Vue.filter("avax", function (value, precision = 2) {
     if (value == null) return null;
-    return value.toFixed(3);
+    return value.toFixed(precision);
   });
 
   Vue.filter("full", function (value, avaxPrice) {

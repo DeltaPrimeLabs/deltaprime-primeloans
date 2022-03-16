@@ -4,11 +4,11 @@
     <div class="values" v-if="primary.value !== null">
       <div class="value">
         <img class="logo" v-if="primary.showIcon" :src="`src/assets/icons/${primary.type}-icon.svg`"/>
-        <div>{{format(primary.value, primary.type)}}</div>
+        <div>{{format(primary.value, primary.type, primary.arg)}}</div>
       </div>
       <div v-if="secondary" class="sub-value">
         <img class="logo" v-if="secondary.showIcon" :src="`src/assets/icons/${secondary.type}-icon.svg`"/>
-        <div v-if="secondary.value != null">{{secondary.showIcon ? secondary.value : format(secondary.value, secondary.type)}}</div>
+        <div v-if="secondary.value != null">{{secondary.showIcon ? secondary.value : format(secondary.value, secondary.type, primary.arg)}}</div>
       </div>
     </div>
     <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
@@ -28,8 +28,8 @@
       }
     },
     methods: {
-      format(value, filter) {
-        return this.$options.filters[filter](value);
+      format(value, filter, arg) {
+        return this.$options.filters[filter](value, arg);
       }
     }
   }

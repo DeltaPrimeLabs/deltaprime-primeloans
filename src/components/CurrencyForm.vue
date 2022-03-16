@@ -90,7 +90,7 @@
 }
 
 .form-button {
-  margin-top: 1px;
+  margin-top: 20px;
 }
 </style>
 <style lang="scss">

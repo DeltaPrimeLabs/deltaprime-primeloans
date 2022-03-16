@@ -33,17 +33,31 @@
   padding: 1rem 1.5rem;
 
   @media screen and (min-width: $md) {
-      padding: 14px 110px 14px 110px;
+      padding: 0 110px 30px 110px;
   }
-}
 
-.elements {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
+  .rate-wrapper {
+    width: max-content;
+    height: 35px;
+    margin: auto;
+    margin-bottom: 18px;
+    padding: 8px 40px;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    box-shadow: 0 2px 6px 0 rgba(191, 188, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    color: #696969;
+    font-weight: 400;
 
-  @media screen and (min-width: $md) {
-      flex-direction: row;
+    .rate {
+      font-weight: 600;
+    }
+  }
+
+  .stats {
+    display: flex;
+    justify-content: space-between;
   }
 }
 </style>

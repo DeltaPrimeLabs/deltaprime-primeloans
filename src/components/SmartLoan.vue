@@ -1,10 +1,16 @@
 <template>
   <div class="smart-loan container">
-    <Bar>
-      <div class="loan">
-        <Value label="Loan"
-          :primary="{value: debt, type: 'avax', showIcon: true}"
-          :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
+    <Bar class="loan-bar">
+      <div>
+        <div class="rate-wrapper">
+          Current APY: <span class="rate">{{borrowingRate | percent}}</span>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="loan">
+          <Value label="Loan"
+                 :primary="{value: debt, type: 'avax', showIcon: true}"
+                 :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
           <div class="borrow-buttons">
             <img @click="showBorrowBlock(0)"
                  src="src/assets/icons/plus.svg"
@@ -18,19 +24,19 @@
                  v-tooltip="'Repay'"
             />
           </div>
-      </div>
-      <div class="ltv-value">
-        <div class="label">
-          LTV
         </div>
-        <div class="ltv-bar">
-          <LTVBar />
+        <div class="ltv-value">
+          <div class="label">
+            LTV
+          </div>
+          <div class="ltv-bar">
+            <LTVBar />
+          </div>
         </div>
-      </div>
-      <div class="collateral">
-        <Value label="Collateral"
-          :primary="{value: getCurrentCollateral, type: 'avax', showIcon: true}"
-          :secondary="{value: avaxToUSD(getCurrentCollateral), type: 'usd'}" />
+        <div class="collateral">
+          <Value label="Collateral"
+                 :primary="{value: getCurrentCollateral, type: 'avax', showIcon: true}"
+                 :secondary="{value: avaxToUSD(getCurrentCollateral), type: 'usd'}" />
           <div class="fund-buttons">
             <img @click="showCollateralBlock(0)"
                  src="src/assets/icons/plus.svg"
@@ -44,6 +50,7 @@
                  v-tooltip="'Reduce collateral'"
             />
           </div>
+        </div>
       </div>
     </Bar>
     <InfoBubble v-if="!borrowBlock && !collateralBlock" cacheKey="LOAN-INFO">
@@ -79,7 +86,7 @@
     <Block class="block assets-list" :bordered="true" >
       <AssetsList/>
     </Block>
-    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(loanEvents && loanEvents.length > 0)">
+    <Block class="block history-block" background="rgba(255, 255, 255, 0.3)" v-if="(loanEvents && loanEvents.length > 0)">
       <div class="history-title">Prime Account history</div>
       <LoanHistoryList :items="loanEvents" title="Prime Account History" class="history-list"/>
     </Block>
@@ -132,7 +139,7 @@
   },
   computed: {
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanEvents']),
-    ...mapState('pool', ['userDepositBalance']),
+    ...mapState('pool', ['userDepositBalance', 'borrowingRate']),
     ...mapState('network', ['balance']),
     ...mapGetters('loan', ['getCurrentCollateral']),
     maxLTV() {
@@ -163,16 +170,15 @@
 
 <style lang="scss" scoped>
 @import "~@/styles/variables";
-
-.block  {
-  margin-top: 30px;
-}
-
 .block-title {
   margin-top: 15px;
   margin-bottom: 30px;
   font-size: 24px;
   font-weight: bold;
+}
+
+.loan-bar {
+  margin-bottom: 28px;
 }
 
 .loan, .collateral {
@@ -210,11 +216,9 @@
   .plus, .minus {
     height: 24px;
     cursor: pointer;
-    opacity: 0.7;
     transition: transform .4s ease-in-out;
 
     &:hover {
-      opacity: 1;
       transform: scale(1.05);
     }
   }
@@ -244,6 +248,9 @@
 }
 
 .collateral-block, .borrow-block {
+  top: 6px;
+  margin-bottom: 44px;
+
   &:before {
     position: absolute;
     transform: rotate(45deg);
@@ -285,6 +292,10 @@
   position: absolute;
   right: 20px;
   top: 20px;
+}
+
+.history-block {
+  margin-top: 34px;
 }
 </style>
 

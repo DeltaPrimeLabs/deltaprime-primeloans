@@ -20,7 +20,7 @@
          ctx.beginPath();
          ctx.moveTo(x, topY);
          ctx.lineTo(x, bottomY);
-         ctx.lineWidth = 1;
+         ctx.lineWidth = 1.5;
          ctx.strokeStyle = '#b9b7ff';
          ctx.stroke();
 
@@ -28,7 +28,7 @@
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.strokeStyle = '#6b70ed';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
         ctx.closePath();
         ctx.fill();
@@ -110,7 +110,6 @@
                   day: 'MMM DD',
                   hour: 'MMM DD',
                   minute: 'MMM DD',
-
                 }
               },
               gridLines: {
@@ -119,11 +118,11 @@
                 lineWidth: 0,
               },
               ticks: {
+                backdropPadding: 10,
                 beginAtZero: true,
                 maxTicksLimit: 1,
                 maxRotation: 0,
                 minRotation: 0,
-                align: 'center',
                 padding: 15,
                 fontFamily: 'Montserrat'
               }
@@ -135,14 +134,13 @@
                 borderDash: [8, 4],
                 drawOnChartArea: true,
                 tickMarkLength: 0,
-                drawBorder: false,
-                // borderColor: this.getLineGradient,
+                drawBorder: false
               },
               ticks: {
                 display: true,
                 maxTicksLimit: 1,
                 min: this.minY,
-                max: this.maxY,
+                max: this.maxY + 0.01 * this.maxY,
                 fontFamily: 'Montserrat',
                 padding: 10,
               }
@@ -156,6 +154,7 @@
             titleFontFamily: 'Montserrat',
             bodyFontFamily: 'Montserrat',
             displayColors: false,
+            caretPadding: 6,
             callbacks: {
               label: (tooltipItem, data) => {
                 var label = data.datasets[tooltipItem.datasetIndex].label || '';
@@ -163,7 +162,7 @@
                 if (label) {
                   label += ': ';
                 }
-                label += (Math.round(tooltipItem.yLabel * 100) / 100).toLocaleString('en-US');
+                label += tooltipItem.yLabel.toPrecision(6);
                 return this.currencySymbol + label;
               }
             }

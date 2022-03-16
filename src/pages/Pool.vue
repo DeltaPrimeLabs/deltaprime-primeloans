@@ -1,14 +1,22 @@
 <template>
   <div class="pool container">
-    <Bar>
-      <Value label="Your deposits"
-        :primary="{value: userDepositBalance, type: 'avax', showIcon: true}"
-        :secondary="{value: avaxToUSD(userDepositBalance), type: 'usd'}" />
-      <Value label="Current APR"
-        :primary="{value: depositRate, type: 'percent'}"/>
-      <Value label="All deposits"
-        :primary="{value: totalSupply, type: 'avax', showIcon: true}"
-        :secondary="{value: avaxToUSD(totalSupply), type: 'usd'}" />
+    <Bar class="bar">
+      <div>
+        <div class="rate-wrapper">
+          Current APR: <span class="rate">{{depositRate | percent}}</span>
+        </div>
+      </div>
+      <div class="stats">
+        <Value label="Your deposits"
+               :primary="{value: userDepositBalance, type: 'avax', showIcon: true}"
+               :secondary="{value: avaxToUSD(userDepositBalance), type: 'usd'}" />
+        <Value label="Your profit"
+               :primary="{value: depositInterest, type: 'avax', showIcon: true, arg: 5}"
+               :secondary="{value: avaxToUSD(depositInterest), type: 'usd', arg: 5}" />
+        <Value label="All deposits"
+               :primary="{value: totalSupply, type: 'avax', showIcon: true}"
+               :secondary="{value: avaxToUSD(totalSupply), type: 'usd'}" />
+      </div>
     </Bar>
     <InfoBubble
         v-if="depositLocked"
@@ -48,10 +56,10 @@
         </Tab>
       </Tabs>
     </Block>
-    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolEvents && poolEvents.length > 0)">
+    <Block class="block history-block" background="rgba(255, 255, 255, 0.3)" v-if="(poolEvents && poolEvents.length > 0)">
       <div class="history-title">Deposits history</div>
       <div class="chart-wrapper">
-        <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
+        <Chart :dataPoints="chartPoints" :minY="0.01" :maxY="maximumDeposit" stepped="before" currencySymbol="AVAX " class="deposit-chart"/>
       </div>
       <PoolHistoryList :items="poolEvents" title="Last deposits" class="history-list"/>
     </Block>
@@ -115,7 +123,7 @@
       }
     },
     computed: {
-      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents', 'pool']),
+      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents', 'pool', 'depositInterest']),
       ...mapGetters('nft', ['depositLocked']),
       ...mapState('network', ['balance']),
       chartPoints() {
@@ -190,15 +198,16 @@
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.block, .deposit-chart {
+.deposit-chart {
   margin-top: 30px;
 }
 
 .history-block {
-  padding: 25px 53.5px 20px;
-  border-radius: 25px;
-  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.3);
+  margin-top: 34px;
+}
+
+.bar {
+  margin-bottom: 28px;
 }
 
 </style>

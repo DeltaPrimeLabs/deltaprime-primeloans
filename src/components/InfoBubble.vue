@@ -39,7 +39,7 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 30px;
+  margin-bottom: 10px;
 
   .info-bubble {
     background-image: url("../assets/icons/bubble-mobile.svg");
