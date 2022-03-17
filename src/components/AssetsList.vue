@@ -46,8 +46,7 @@
                   :dataPoints="asset.prices"
                   :isStableCoin="asset.symbol === 'USDT'"
                   :lineWidth="1.5"/>
-                <img src="src/assets/icons/enlarge.svg"
-                />
+                <img class="enlarge clickable-icon"/>
               </td>
               <td class="right" data-label="Balance">
                 <LoadedValue
@@ -58,9 +57,9 @@
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
               <td class="value right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
               <td class="invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
-                <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
+                <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
                 <img src="src/assets/icons/slash-small.svg"/>
-                <img @click="showSellInput(asset.symbol)" src="src/assets/icons/minus.svg" class="sell"/>
+                <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
               </td>
               <td v-else class="no-buy">-</td>
               <td class="asset-input" v-if="asset.buyInput" @click.stop>
@@ -151,13 +150,13 @@
                 :dataPoints="asset.prices"
                 :isStableCoin="asset.symbol === 'USDT'"
                 :lineWidth="1.5"/>
-              <img src="src/assets/icons/enlarge.svg"/>
+              <img class="enlarge clickable-icon"/>
             </td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
             <td class="invest-buttons right" @click.stop>
-              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
+              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
             </td>
             <td class="asset-input" v-if="asset.buyInput" @click.stop>
               <SmallBlock
@@ -195,9 +194,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-    <div class="close-loan-button">
-      <Button label="Close the loan" :disabled="waitingForClose" :waiting="waitingForClose" v-on:click="closeTheLoan()" v-tooltip="'Sells all the assets, repays the loan and withdraws all funds'"/>
     </div>
   </div>
 </template>
@@ -277,12 +273,11 @@
     },
     data() {
       return {
-        list: config.ASSETS_CONFIG,
-        waitingForClose: false
+        list: config.ASSETS_CONFIG
       }
     },
     methods: {
-      ...mapActions('loan', ['invest', 'redeem', 'closeLoan']),
+      ...mapActions('loan', ['invest', 'redeem']),
       investValidators(asset, avaxBalance) {
         return [
           {
@@ -466,14 +461,6 @@
       },
       formatTokenBalance(balance) {
         return balance !== null ? balance.toPrecision(4) : '';
-      },
-      async closeTheLoan() {
-        this.waitingForClose = true;
-        this.handleTransaction(this.closeLoan)
-            .then(() => {
-              this.waitingForClose = false;
-              this.repayValue = null;
-            });
       }
     },
     watch: {
@@ -590,19 +577,28 @@
   display: flex;
   justify-content: center;
 
-  .buy, .sell {
-    height: 22px;
-    cursor: pointer;
-    transition: transform .4s ease-in-out;
-
-    @media screen and (max-width: $md) {
-      height: 44px;
-    }
+  .plus {
+    content: url(../assets/icons/plus.svg);
 
     &:hover {
-      opacity: 1;
-      transform: scale(1.05);
+      content: url(../assets/icons/hover/plus.svg);
     }
+  }
+
+  .minus {
+    content: url(../assets/icons/minus.svg);
+
+    &:hover {
+      content: url(../assets/icons/hover/minus.svg);
+    }
+  }
+}
+
+.enlarge {
+  content: url(../assets/icons/enlarge.svg);
+
+  &:hover {
+    content: url(../assets/icons/hover/enlarge.svg);
   }
 }
 
@@ -723,10 +719,6 @@ tbody tr {
 .chart-loader {
   display: flex;
   justify-content: center;
-}
-
-.close-loan-button {
-  margin-top: 20px;
 }
 </style>
 

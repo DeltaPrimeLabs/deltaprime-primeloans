@@ -88,9 +88,12 @@ export default {
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
-    maxLTV() {
+    maxAllowedLTV() {
       return config.MAX_ALLOWED_LTV;
     },
+    liquidationLTV() {
+      return config.LIQUIDATION_LTV;
+    }
   },
   data() {
     return {
@@ -103,10 +106,10 @@ export default {
           }
         }
       ],
-      nonNegativeValidator: {
+      positiveValidator: {
         validate: function(value) {
-          if (value < 0) {
-            return `Value cannot be smaller than 0`;
+          if (value <= 0) {
+            return `Value must be higher than 0`;
           }
         }
       },

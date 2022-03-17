@@ -1,7 +1,7 @@
 <template>
   <div class="small-block-wrapper">
     <div class="small-block">
-      <img src="src/assets/icons/cross.svg" class="cross" @click="onClose"/>
+      <img class="cross clickable-icon" @click="onClose"/>
       <slot />
     </div>
   </div>
@@ -33,9 +33,13 @@ export default {
     border-radius: 23px;
     height: 100%;
 
-    img {
+    .cross {
       align-self: flex-end;
-      cursor: pointer;
+      content: url(../assets/icons/cross.svg);
+
+      &:hover {
+        content: url(../assets/icons/hover/cross.svg);
+      }
     }
   }
 }

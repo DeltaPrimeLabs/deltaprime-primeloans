@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div class="ltv-wrapper" :class="{ 'close-to-insolvent': closeToInsolvent, 'insolvent': insolvent }">
     <div class="ltv-value">
       <LoadedValue :value="ltv | percent"></LoadedValue>
     </div>
@@ -15,8 +15,8 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
 import LoadedValue from "@/components/LoadedValue.vue";
+import {mapState} from "vuex";
 
 export default {
   name: 'LTVBar',
@@ -31,11 +31,17 @@ export default {
   },
   computed: {
     ...mapState('loan', ['ltv']),
+    closeToInsolvent() {
+      return this.liquidationLTV > this.ltv && this.ltv > this.maxAllowedLTV;
+    },
+    insolvent() {
+      return this.ltv >= this.liquidationLTV;
+    },
     info() {
-      if (this.ltv > this.maxLTV) {
-        return "Your loan is insolvent."
-      } else if (this.ltv > 4.5) {
-        return "Be careful!"
+      if (this.insolvent) {
+        return "Loan is insolvent and can be liquidated"
+      } else if (this.closeToInsolvent) {
+        return "Loan is close to liquidation"
       } else {
         return "You are doing great!"
       }
@@ -53,7 +59,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.wrapper {
+.ltv-wrapper {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -70,6 +76,31 @@ export default {
     color: #7d7d7d;
     margin-top: 7px;
     margin-bottom: 9px;
+  }
+
+  &.close-to-insolvent {
+    .ltv-info, .ltv-value {
+      color: #FC6AB0;
+    }
+
+    .bar {
+      .ltv-state {
+        background-image: linear-gradient(to left, #f590e6 54%, #ff61a4 91%);
+      }
+    }
+  }
+
+  &.insolvent {
+    .ltv-info, .ltv-value {
+      color: #F64254;
+    }
+
+    .bar {
+      .ltv-state {
+        background-image: none;
+        background-color: #f64254;
+      }
+    }
   }
 }
 
@@ -90,6 +121,7 @@ export default {
     box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
     background-color: rgba(191, 188, 255, 0.2);
     margin-bottom: 10px;
+    clip-path: inset(0 0 0 0 round 9.5px);
 
     .range {
       display: flex;

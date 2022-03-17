@@ -63,11 +63,13 @@
   }
 
   &.disabled {
-    cursor: initial;
+    cursor: not-allowed;
     box-shadow: none;
   }
 
   &.waiting {
+    cursor: wait;
+
     .btn-label {
       visibility: hidden;
       height: 0;
