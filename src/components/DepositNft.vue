@@ -1,5 +1,5 @@
 <template>
-  <Mint :hasNft="hasDepositNft" :nftContract="depositNftContract" :nftImageUri="depositNftImageUri" :getNftId="getDepositNftId"/>
+  <Mint :hasNft="hasDepositNft" :nftContract="depositNftContract" :mintNFT="mintDepositNft" :nftImageUri="depositNftImageUri"/>
 </template>
 
 <script>
@@ -17,7 +17,7 @@ export default {
     ...mapState('nft', ['depositNftContract', 'depositNftImageUri', 'hasDepositNft'])
   },
   methods: {
-    ...mapActions('nft', ['getDepositNftId'])
+    ...mapActions('nft', ['getDepositNftId', 'mintDepositNft'])
   }
 }
 </script>

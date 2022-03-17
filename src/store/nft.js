@@ -6,6 +6,7 @@ const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
 const POOL_TUP = require('@contracts/PoolTUP.json');
 import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
 import POOL_NFT from '@artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json'
+import {awaitConfirmation} from "../utils/blockchain";
 const ZERO = ethers.constants.AddressZero;
 
 export default {
@@ -139,6 +140,22 @@ export default {
       } else {
         commit('setHasDepositNft', false);
       }
+    },
+    async mintBorrowNft({ dispatch, state, rootState }, {id, signature}) {
+      const provider = rootState.network.provider;
+      let tx = await state.borrowNftContract.safeMint(id, signature);
+
+      await awaitConfirmation(tx, provider, 'mint');
+
+      dispatch('getBorrowNftId', {id: id})
+    },
+    async mintDepositNft({ dispatch, state, rootState }, {id, signature}) {
+      const provider = rootState.network.provider;
+      let tx = await state.depositNftContract.safeMint(id, signature);
+
+      await awaitConfirmation(tx, provider, 'mint');
+
+      dispatch('getDepositNftId', {id: id})
     }
   }
 };
