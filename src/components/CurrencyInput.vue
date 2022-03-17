@@ -89,7 +89,7 @@ import {mapState} from "vuex";
       }
     },
     created() {
-      this.defaultValidators.push(this.nonNegativeValidator, this.wrongFormatValidator);
+      this.defaultValidators.push(this.positiveValidator, this.wrongFormatValidator);
     },
     watch: {
       value: function (newValue) {
@@ -312,6 +312,10 @@ img {
   .icon {
     width: 20px;
     cursor: pointer;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .slash {

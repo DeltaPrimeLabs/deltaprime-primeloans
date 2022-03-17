@@ -42,7 +42,7 @@ import {mapActions, mapState} from "vuex";
     },
     data() {
       return {
-        repayValue: 0,
+        repayValue: null,
         errors: [false, false],
         waiting: false,
         label: '',
@@ -90,7 +90,7 @@ import {mapActions, mapState} from "vuex";
         }
       },
       checkLTV(value) {
-        this.errors[2] = value > this.maxLTV;
+        this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
       calculatedLTV(repay) {
@@ -104,7 +104,7 @@ import {mapActions, mapState} from "vuex";
     computed: {
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanBalance']),
       disabled() {
-        return this.waiting || this.errors.includes(true);
+        return this.repayValue == null || this.waiting || this.errors.includes(true);
       },
       LTVInfo() {
         if (this.calculatedLTV(this.repayValue) === Number.POSITIVE_INFINITY) {

@@ -40,7 +40,7 @@ export default {
     },
     data() {
       return {
-        fundValue: 0,
+        fundValue: null,
         errors: [false, false],
         waiting: false,
         label: '',
@@ -87,7 +87,7 @@ export default {
         }
       },
       checkLTV(value) {
-        this.errors[2] = value > this.maxLTV;
+        this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
       calculatedLTV(fund) {
@@ -102,7 +102,7 @@ export default {
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'collateralFromPayments']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true);
+        return this.fundValue == null || this.waiting || this.errors.includes(true);
       },
       LTVInfo() {
         return this.$options.filters.percent(this.calculatedLTV(this.fundValue));

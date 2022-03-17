@@ -88,10 +88,6 @@
   align-items: center;
   width: 100%;
 }
-
-.form-button {
-  margin-top: 20px;
-}
 </style>
 <style lang="scss">
 </style>

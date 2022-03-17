@@ -5,7 +5,7 @@
       <div class="text">
         <slot></slot>
       </div>
-      <img src="src/assets/icons/cross.svg" class="cross" v-if="cacheKey" @click="hide">
+      <img class="cross clickable-icon" v-if="cacheKey" @click="hide">
     </div>
   </div>
 </template>
@@ -74,6 +74,11 @@
     .cross {
       align-self: flex-start;
       cursor: pointer;
+      content: url(../assets/icons/cross.svg);
+
+      &:hover {
+        content: url(../assets/icons/hover/cross.svg);
+      }
     }
 
     a {

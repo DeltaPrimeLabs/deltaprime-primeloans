@@ -9,7 +9,7 @@
     <div class="ltv-slider-wrapper">
       <Slider
         :min="ltv"
-        :max="maxLTV"
+        :max="maxAllowedLTV"
         :value="calculatedLTV(borrowValue)"
         :step="0.0001"
         v-on:input="updateBorrowFromLTV"
@@ -40,7 +40,7 @@ import {mapActions, mapGetters, mapState} from "vuex";
     },
     data() {
       return {
-        borrowValue: 0,
+        borrowValue: null,
         errors: [false, false],
         waiting: false,
         label: '',
@@ -84,7 +84,7 @@ import {mapActions, mapGetters, mapState} from "vuex";
         }
       },
       checkLTV(value) {
-        this.errors[2] = value > this.maxLTV;
+        this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
       calculatedLTV(borrow) {
@@ -99,7 +99,7 @@ import {mapActions, mapGetters, mapState} from "vuex";
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
       ...mapGetters('pool', ['getAvailable']),
       disabled() {
-        return this.waiting || this.errors.includes(true);
+        return this.borrowValue == null || this.waiting || this.errors.includes(true);
       },
       ltvInfo() {
         return this.$options.filters.percent(this.calculatedLTV(this.borrowValue));

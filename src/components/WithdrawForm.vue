@@ -9,7 +9,7 @@
     <div class="ltv-slider-wrapper">
       <Slider
         :min="ltv"
-        :max="maxLTV"
+        :max="maxAllowedLTV"
         :value="calculatedLTV(this.withdrawValue)"
         :step="0.0001"
         v-on:input="updateWithdrawFromLTV"
@@ -40,7 +40,7 @@ import {mapActions, mapState} from "vuex";
     },
     data() {
       return {
-        withdrawValue: 0,
+        withdrawValue: null,
         errors: [false, false],
         waiting: false,
         label: '',
@@ -84,7 +84,7 @@ import {mapActions, mapState} from "vuex";
         }
       },
       checkLTV(value) {
-        this.errors[2] = value > this.maxLTV;
+        this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
       calculatedLTV(withdraw) {
@@ -99,13 +99,13 @@ import {mapActions, mapState} from "vuex";
       ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'loanBalance']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true);
+        return this.withdrawValue == null || this.waiting || this.errors.includes(true);
       },
       ltvInfo() {
         return this.$options.filters.percent(this.calculatedLTV(this.withdrawValue));
       },
       maxLTVFromLoanBalance() {
-        return Math.min(this.maxLTV, this.calculatedLTV(this.loanBalance));
+        return Math.min(this.maxAllowedLTV, this.calculatedLTV(this.loanBalance));
       }
     }
   }
