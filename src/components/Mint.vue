@@ -9,7 +9,7 @@
         <div v-html="description" v-if="description"></div>
         <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
       </div>
-      <Button :disabled="hasNft || waiting || noAvailableNfts" label="Mint" v-on:click="mint"/>
+      <Button :waiting="waiting" :disabled="nftInfoLoading || hasNft || waiting || noAvailableNfts || !correctLink" label="Mint" v-on:click="mint"/>
     </Block>
   </div>
 </template>
@@ -39,9 +39,8 @@ export default {
     nftContract: {
       default: null
     },
-    getNftId: {
-      type: Function,
-      default: null
+    mintNFT: {
+      type: Function
     }
   },
   data() {
@@ -53,13 +52,19 @@ export default {
       mintedMessage: "Your unique access NFT is minted! Go to <a href='/#/prime-account'>Prime Account</a> to start trading.",
       noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted.<br/> But you can still join our " +
           "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> not to miss the next opportunity!",
+      wrongLinkMessage: "Go to our <a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> to get NFT link!",
       intervalId: null,
-      waiting: true
+      waiting: false,
+      nftInfoLoading: true
     }
   },
   computed: {
     ...mapState('network', ['provider']),
     description() {
+      if (!this.correctLink) {
+        return this.wrongLinkMessage;
+      }
+
       if (this.hasNft === true) {
         return this.mintedMessage;
       }
@@ -72,12 +77,16 @@ export default {
       }
 
       if (this.hasNft === false) {
-        this.waiting = false;
         return this.notMintedYetMessage;
       }
     },
     videoUri() {
       return this.nftImageUri ? this.nftImageUri : 'https://arweave.net/D4S3C6_cfvid7uRduzs95OhBw0jbruxnnljXX4P54yw';
+    },
+    correctLink() {
+      const query = this.$route.query;
+
+      return query.id && query.signature;
     }
   },
   methods: {
@@ -86,10 +95,10 @@ export default {
         this.waiting = true;
         const query = this.$route.query;
 
-        await this.handleTransaction(this.nftContract.safeMint, [query.id, query.signature],
+        await this.handleTransaction(this.mintNFT, {id: query.id, signature: query.signature},
             async () => {
-              Vue.$toast.success('Minting successful! The NFT will soon show up on the page. If not refresh it after few seconds', { timeout: 3000 });
-              await this.getNftId();
+              this.waiting = false;
+              this.hasNft = true;
             },
             async () => {
               Vue.$toast.error('Minting failed. Check Metamask for more info');
@@ -105,6 +114,7 @@ export default {
           value.getAvailableUrisCount().then(
             count => {
               this.noAvailableNfts = count.toNumber() === 0;
+              this.nftInfoLoading = false;
             }
           )
           .catch(er => console.log(er));
