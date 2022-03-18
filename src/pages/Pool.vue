@@ -20,7 +20,7 @@
     </Bar>
     <InfoBubble
         v-if="depositLocked"
-        cacheKey="LOAN-INFO">
+        cacheKey="DEPOSIT-LOCKED">
       Depositing is not available during the tournament. <br/>
       But you will be able to check it out in our Beta version!
     </InfoBubble>
@@ -217,6 +217,7 @@
 .pool {
   .currency-input-wrapper {
     width: 100%;
+    margin-bottom: 20px;
 
     @media screen and (min-width: $md) {
       width: 530px;

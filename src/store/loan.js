@@ -178,7 +178,7 @@ export default {
         loan.iface.getEventTopic("Liquidated")
       ];
 
-      const logs = (await fetchEventsInBatches(loan.address, topics, provider)).flat();
+      const logs = (await fetchEventsInBatches(loan.address, topics, provider, config.COMPETITION_START_BLOCK)).flat();
 
       const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 

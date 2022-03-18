@@ -74,9 +74,9 @@ export function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
 
-export async function fetchEventsInBatches(address, topics, provider) {
+export async function fetchEventsInBatches(address, topics, provider, block = startingBlock()) {
     const logsPromises = [];
-    let startBatch = startingBlock();
+    let startBatch = block;
     const currentBlock = await provider.getBlockNumber();
 
     let endBatch = 0;

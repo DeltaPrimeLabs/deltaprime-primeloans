@@ -8,7 +8,7 @@
           type="range"
           :step="step"
           :min="min"
-          :max="max"
+          :max="max - 0.0001"
           class="slider"
           :class="{'error': error}"
           @input="onInput"
