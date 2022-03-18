@@ -5,18 +5,20 @@
       <table id="investmentsTable">
         <thead>
           <tr>
-            <th>Position</th>
-            <th>Prime Account</th>
-            <th>Owner</th>
-            <th>Total Value</th>
+            <th>Nickname / Prime Account</th>
+            <th>Value</th>
             <th>Profit</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(loan, index) in loans">
-            <td>{{index + 1}}</td>
-            <td v-tooltip="loan.account">{{loan.account | tx}}</td>
-            <td v-tooltip="loan.owner">{{loan.owner | tx}}</td>
+          <tr v-for="(loan) in loans">
+            <td class="account" :class="{user: loan.owner === account}" @mouseover="() => {loan.showFullAddress = true}">
+              <div class="nft">
+                <img v-if="loan.nftId" :src="`src/assets/wolves/${loan.nftId}.png`" />
+              </div>
+              <span v-if="loan.owner === account">You</span><span v-else>{{loan.account | tx}}</span>
+              <img v-if="loan.owner !== account" class="copy" @click="copyToClipboard(loan.account)" src="src/assets/icons/copy.png"/>
+            </td>
             <td>{{avaxToUSD(loan.totalValue) | usd}}</td>
             <td><b class="profit" :class="{'red': loan.profit < 0}">{{avaxToUSD(loan.profit) | usd}}</b></td>
           </tr>
@@ -42,6 +44,7 @@ import {mapState} from "vuex";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {fromWei} from "@/utils/calculate";
 import {fetchEventsInBatches} from "../utils/blockchain";
+import Vue from "vue";
 
 export default {
     name: 'Ranking',
@@ -62,8 +65,9 @@ export default {
       }
     },
     computed: {
-      ...mapState('network', ['provider']),
+      ...mapState('network', ['provider', 'account']),
       ...mapState('pool', ['deploymentBlock']),
+      ...mapState('nft', ['borrowNftContract']),
     },
     methods: {
       loadLoansInfo() {
@@ -96,38 +100,49 @@ export default {
                     ];
 
                   Promise.all([
-                    fetchEventsInBatches(loan.address, topics, provider),
+                    fetchEventsInBatches(loan.address, topics, provider, config.COMPETITION_START_BLOCK),
                     wrappedLoan.owner()]
                   ).then(
                     res => {
                       const [loanEvents, collateralFromPayments] = parseLogs(wrappedLoan, res[0].flat());
 
-                      wrappedLoan.getFullLoanStatus().then(
-                        status => {
-                          const totalValue = fromWei(status[0]);
-                          const debt = fromWei(status[1]);
+                      Promise.all(
+                        [
+                          wrappedLoan.getFullLoanStatus(),
+                          this.borrowNftContract.tokenOfOwnerByIndex(res[1], 0),
+                        ]
+                      ).then(
+                          (res2) => {
+                            const status = res2[0];
 
-                          const profit = (totalValue - debt) - collateralFromPayments;
+                            const totalValue = fromWei(status[0]);
+                            const debt = fromWei(status[1]);
 
-                          this.loans.push(
-                            {
-                              account: wrappedLoan.address,
-                              owner: res[1],
-                              totalValue: totalValue,
-                              profit: profit
-                            }
-                          )
+                            const profit = (totalValue - debt) - collateralFromPayments;
 
-                          this.loans.sort((a, b) => b.profit - a.profit)
-                          this.loading = false;
+                            this.loans.push(
+                                {
+                                  nftId: parseInt(res2[1]) + 1,
+                                  account: wrappedLoan.address,
+                                  owner: res[1],
+                                  totalValue: totalValue,
+                                  profit: profit
+                                }
+                            )
+
+                            this.loans.sort((a, b) => b.profit - a.profit)
+                            this.loading = false;
+                          }
+                      )
                         }
                       );
                     }
                   )
                 }
-              )
-            }
           );
+      },
+      copyToClipboard(data) {
+        navigator.clipboard.writeText(data);
       }
     },
     watch: {
@@ -164,10 +179,83 @@ table {
 }
 
 .profit {
-  color: $green;
+  color: #00bf68;
 
   &.red {
-    color: $red;
+    color: #f64254;
+  }
+}
+
+table {
+  border-collapse: collapse;
+
+  tr {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  thead {
+    tr th {
+      padding-bottom: 8px;
+    }
+  }
+
+  tbody {
+
+    td {
+      display: flex;
+      align-items: center;
+    }
+
+    tr {
+      border-style: solid;
+      border-width: 2px 0 0 0;
+      border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+      border-image-slice: 1;
+      height: 51px;
+    }
+  }
+
+  td:nth-of-type(2), th:nth-of-type(2) {
+    text-align: right;
+    justify-content: right;
+    padding-right: 40%;
+  }
+
+  td:nth-of-type(3), th:nth-of-type(3) {
+    text-align: right;
+    justify-content: flex-end;
+  }
+}
+
+.nft {
+  height: 40px;
+  width: 40px;
+  border: solid 2px white;
+  box-shadow: 4px 4px 14px 0 rgba(191, 188, 255, 0.25);
+  border-radius: 9999999px;
+  object-fit: cover;
+  margin-right: 14px;
+
+  img {
+    border-radius: 9999px;
+    background-image: url("../assets/images/wolf-background.png");
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+}
+
+.copy {
+  cursor: pointer;
+  height: 12px;
+  margin-left: 5px;
+}
+
+.account {
+  &.user {
+    font-weight: 700;
   }
 }
 </style>

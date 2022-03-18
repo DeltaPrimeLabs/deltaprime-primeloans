@@ -9,12 +9,12 @@
           <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
         </div>
       </Bar>
-      <InfoBubble v-if="!borrowingLocked">
+      <InfoBubble v-if="!borrowingLocked" cacheKey="LOAN-INIT">
         Create a loan to start your investment adventure. <br/>
         Remember that initial LTV cannot exceed <b>{{initialLTV * 100}}%</b>.
       </InfoBubble>
-      <InfoBubble v-if="borrowingLocked" >
-        To create your Prime Account you need a special access NFT. <br/>
+      <InfoBubble v-if="borrowingLocked" cacheKey="BORROW-LOCKED">
+        To create your Prime Account you need an access NFT. <br/>
         Go to our <a href="https://discord.gg/6HpfcYyVNu" target="_blank">Discord channel</a> to get a link and mint it!
       </InfoBubble>
       <Block class="block" :bordered="true">

@@ -52,7 +52,6 @@ export default {
       mintedMessage: "Your unique access NFT is minted! Go to <a href='/#/prime-account'>Prime Account</a> to start trading.",
       noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted.<br/> But you can still join our " +
           "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> not to miss the next opportunity!",
-      wrongLinkMessage: "Go to our <a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> to get NFT link!",
       intervalId: null,
       waiting: false,
       nftInfoLoading: true
@@ -61,10 +60,6 @@ export default {
   computed: {
     ...mapState('network', ['provider']),
     description() {
-      if (!this.correctLink) {
-        return this.wrongLinkMessage;
-      }
-
       if (this.hasNft === true) {
         return this.mintedMessage;
       }
