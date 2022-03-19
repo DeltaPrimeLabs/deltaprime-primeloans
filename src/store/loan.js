@@ -208,7 +208,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 850000});
+      const tx = await loan.borrow(toWei(amount.toString()), {gasLimit: 700000});
 
       await awaitConfirmation(tx, provider, 'borrow');
 
@@ -221,7 +221,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 850000});
+      const tx = await loan.repay(toWei(amount.toString()), {gasLimit: 700000});
 
       await awaitConfirmation(tx, provider, 'repay');
 
