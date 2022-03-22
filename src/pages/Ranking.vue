@@ -38,13 +38,11 @@ import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import LOAN from '@contracts/SmartLoan.json'
 import {ethers} from "ethers";
 import config from "@/config";
-import {parseLogs} from "../utils/calculate";
 import Block from "@/components/Block.vue";
 import {mapState} from "vuex";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {fromWei} from "@/utils/calculate";
-import {fetchEventsInBatches} from "../utils/blockchain";
-import Vue from "vue";
+import ApolloClient, {gql} from 'apollo-boost'
 
 export default {
     name: 'Ranking',
@@ -90,41 +88,43 @@ export default {
                     .wrapLite(loan)
                     .usingPriceFeed(config.dataProviderId);
 
-                  const topics = [
-                      loan.iface.getEventTopic("Funded"),
-                      loan.iface.getEventTopic("Withdrawn"),
-                      loan.iface.getEventTopic("Invested"),
-                      loan.iface.getEventTopic("Redeemed"),
-                      loan.iface.getEventTopic("Borrowed"),
-                      loan.iface.getEventTopic("Repaid"),
-                    ];
+                  let query = `{
+                    smartLoanEntity(id: "${wrappedLoan.address.toString()}") {
+                      creator
+                      collateralFromPayments
+                    }
+                  }`;
 
-                  Promise.all([
-                    fetchEventsInBatches(loan.address, topics, provider, config.COMPETITION_START_BLOCK),
-                    wrappedLoan.owner()]
-                  ).then(
-                    res => {
-                      const [loanEvents, collateralFromPayments] = parseLogs(wrappedLoan, res[0].flat());
+                  const client = new ApolloClient({
+                    uri: "https://api.thegraph.com/subgraphs/name/mbare0/delta-prime"
+                  })
+
+                  client
+                    .query({
+                      query: gql(query),
+                    }).then(
+                        graphRes => {
+                      const entity = graphRes.data.smartLoanEntity;
 
                       Promise.all(
                         [
                           wrappedLoan.getFullLoanStatus(),
-                          this.borrowNftContract.tokenOfOwnerByIndex(res[1], 0),
+                          this.borrowNftContract.tokenOfOwnerByIndex(entity.creator, 0),
                         ]
                       ).then(
-                          (res2) => {
-                            const status = res2[0];
+                          (result) => {
+                            const status = result[0];
 
                             const totalValue = fromWei(status[0]);
                             const debt = fromWei(status[1]);
 
-                            const profit = (totalValue - debt) - collateralFromPayments;
+                            const profit = (totalValue - debt) - fromWei(entity.collateralFromPayments);
 
                             this.loans.push(
                                 {
-                                  nftId: parseInt(res2[1]) + 1,
+                                  nftId: parseInt(result[1]) + 1,
                                   account: wrappedLoan.address,
-                                  owner: res[1],
+                                  owner: entity.creator,
                                   totalValue: totalValue,
                                   profit: profit
                                 }
