@@ -101,7 +101,7 @@ Below user can see an account history chart and lists of all his loan-related ac
 
 # Smart-contracts architecture
 
-![Smart contracts diagram](https://github.com/ava-loan/avaloan/blob/master/static/smart-contracts-diagram.jpeg)
+![Smart contracts diagram](https://github.com/ava-loan/avaloan/blob/master/static/smart-contracts-diagram.png)
 
 The smart contracts could be divided into two main groups:
 
