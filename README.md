@@ -5,7 +5,7 @@ Lending is by far one of the most popular use case in the currently booming Dece
 PrimeLoans are the next generation lending platform on Avalanche that will allow under-collateral borrowing from pooled deposits. The core innovation is lending funds not to a personal account but a special purpose smart-contract. The contract automatically guards solvency and every activity needs to undergo a series of checks. This mechanism blocks transactions which could cause the smart-loan valuation to drop below a safe threshold. The insolvency risk is further mitigated by a decentralised liquidation mechanism allowing anyone to forcibly repay part of the loan due to assets price movements caused by external factors. Wrapping loans with smart contracts reduces the collateral need, improving the money supply in the entire Avalanche ecosystem. Patient capital holders will earn interest on the funds provided, while borrowers could use extra capital for investment in high-grow assets.
 
 # The protocol
-![Pool UI](https://raw.githubusercontent.com/DeltaPrimeLabs/deltaprime-primeloans/src/assets/pictures/deltaprime_protocol.png)
+![Protocol](https://raw.githubusercontent.com/DeltaPrimeLabs/deltaprime-primeloans/main/src/assets/pictures/deltaprime_protocol.png)
 
 The core idea of DeltaPrime protocol is similar to current lending protocols. There is a common lending pool, to which
 some users can deposit their funds collecting deposit rate, while the others use it to borrow funds and pay borrowing rate.
@@ -68,7 +68,7 @@ The UI was designed to be as simple and intuitive as possible. It contains of tw
 
 ## Pool dashboard
 
-![Pool UI](https://raw.githubusercontent.com/DeltaPrimeLabs/deltaprime-primeloans/src/assets/pictures/ui_primepool.png)
+![Pool UI](https://raw.githubusercontent.com/DeltaPrimeLabs/deltaprime-primeloans/main/src/assets/pictures/ui-primepool.jpeg)
 
 In the top section the dashboard contains a bar showing **global state** of the pool:
 * APR - current APR in the pool
@@ -84,7 +84,7 @@ Below user can see deposits history chart and lists of all his deposit-related a
 
 ## Prime Account view
 
-![Prime Account UI](https://raw.githubusercontent.com/DeltaPrimeLabs/deltaprime-primeloans/src/assets/pictures/ui_primeaccount.png)
+![Prime Account UI](https://github.com/DeltaPrimeLabs/deltaprime-primeloans/blob/main/src/assets/pictures/ui-primeaccount.jpeg)
 
 In the top section there are 4 main information show:
 * APY - current APY of the pool
@@ -101,7 +101,7 @@ Below user can see an account history chart and lists of all his loan-related ac
 
 # Smart-contracts architecture
 
-![Smart contracts diagram](https://github.com/ava-loan/avaloan/blob/master/static/smart-contracts-diagram.png)
+![Smart contracts diagram](https://github.com/ava-loan/avaloan/blob/master/static/smart-contracts-diagram.jpeg)
 
 The smart contracts could be divided into two main groups:
 
