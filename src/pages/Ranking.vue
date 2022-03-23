@@ -12,12 +12,12 @@
         </thead>
         <tbody>
           <tr v-for="(loan) in loans">
-            <td class="account" :class="{user: loan.owner === account}" @mouseover="() => {loan.showFullAddress = true}">
+            <td class="account" :class="{user: loan.owner === account.toLowerCase()}" @mouseover="() => {loan.showFullAddress = true}">
               <div class="nft">
                 <img v-if="loan.nftId" :src="`src/assets/wolves/${loan.nftId}.png`" />
               </div>
-              <span v-if="loan.owner === account">You</span><span v-else>{{loan.account | tx}}</span>
-              <img v-if="loan.owner !== account" class="copy" @click="copyToClipboard(loan.account)" src="src/assets/icons/copy.png"/>
+              <span v-if="loan.owner === account.toLowerCase()">You</span><span v-else>{{loan.account | tx}}</span>
+              <img v-if="loan.owner !== account.toLowerCase()" class="copy" @click="copyToClipboard(loan.account)" src="src/assets/icons/copy.png"/>
             </td>
             <td>{{avaxToUSD(loan.totalValue) | usd}}</td>
             <td><b class="profit" :class="{'red': loan.profit < 0}">{{avaxToUSD(loan.profit) | usd}}</b></td>
