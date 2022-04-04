@@ -1,4 +1,4 @@
-export default function updateSmartLoanProperties(poolAddress, exchangeAddress, yieldYakRouter) {
+export default function updateSmartLoanProperties(poolAddress, dpRouterAddress, yieldYakRouter) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
 
@@ -8,8 +8,8 @@ export default function updateSmartLoanProperties(poolAddress, exchangeAddress, 
     result = result.replace(/return IYieldYakRouter(.*);/g,
         'return IYieldYakRouter(' + yieldYakRouter + ');');
 
-    result = result.replace(/_EXCHANGE_ADDRESS = .*;/g,
-        '_EXCHANGE_ADDRESS = ' + exchangeAddress + ';');
+    result = result.replace(/return DPRouterV1(.*);/g,
+        'return DPRouterV1(' + dpRouterAddress + ');');
 
     fs.writeFileSync('./contracts/SmartLoanProperties.sol', result, 'utf8');
 

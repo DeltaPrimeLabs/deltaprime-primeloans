@@ -27,6 +27,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   function initialize() external initializer {
     __Ownable_init();
     __ReentrancyGuard_init();
+    addOwnedSwapAsset("AVAX", "PANGOLINV1");
   }
 
   /**
@@ -34,6 +35,11 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    **/
   function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
     return MAX_BLOCK_TIMESTAMP_DELAY;
+  }
+
+  function addOwnedSwapAsset(bytes32 _asset, bytes32 _integration) internal {
+    // Research possibility to use EnumerableMap._set as a struct-member method
+    EnumerableMap._set(swapOwnedAssetsToIntegration, _asset, _integration);
   }
 
   /**
@@ -55,10 +61,15 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * It is used as part of the sellout() function which sells part/all of assets in order to bring the loan back to solvency.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) internal {
-    IERC20Metadata token = getERC20TokenInstance(asset);
-    address(token).safeTransfer(address(getExchange()), _amount);
-    getExchange().sellAsset(asset, _amount, _minAvaxOut);
+  function sellAsset(bytes32 _asset, uint256 _amount, uint256 _minAvaxOut) internal {
+    IERC20Metadata token = getERC20TokenInstance(_asset);
+    DPRouterV1 dpRouter = getDPRouterV1();
+    address(token).safeTransfer(address(dpRouter), _amount);
+
+    bool success = dpRouter.sell(EnumerableMap._get(swapOwnedAssetsToIntegration, _asset), _asset, _amount, _minAvaxOut);
+    if (success) {
+      emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
+    }
   }
 
   /**
@@ -75,15 +86,15 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * is being sold.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
    **/
-  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount) private {
-    IERC20Metadata token = getERC20TokenInstance(asset);
+  function sellAssetForTargetAvax(bytes32 _asset, uint256 targetAvaxAmount) private {
+    IERC20Metadata token = getERC20TokenInstance(_asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = getExchange().getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, address(token));
+      uint256 minSaleAmount = getDPRouterV1().getMinimumERC20TokenAmountForExactAVAX(EnumerableMap._get(swapOwnedAssetsToIntegration, _asset), _asset, targetAvaxAmount);
       if (balance < minSaleAmount) {
-        sellAsset(asset, balance, 0);
+        sellAsset(_asset, balance, 0);
       } else {
-        sellAsset(asset, minSaleAmount, targetAvaxAmount);
+        sellAsset(_asset, minSaleAmount, targetAvaxAmount);
       }
     }
   }
@@ -106,7 +117,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan() public virtual payable onlyOwner nonReentrant remainsSolvent {
-    bytes32[] memory assets = getExchange().getAllAssets();
+    bytes32[] memory assets = getAllOwnedSwapAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
@@ -159,10 +170,10 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    *
    **/
   function sellout(uint256 targetAvaxAmount) private {
-    bool stakingSelloutSuccess = selloutStakedAVAX(targetAvaxAmount);
+//    bool stakingSelloutSuccess = selloutStakedAVAX(targetAvaxAmount);
     if (address(this).balance >= targetAvaxAmount) return;
 
-    bytes32[] memory assets = getExchange().getAllAssets();
+    bytes32[] memory assets = getAllOwnedSwapAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
       sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
@@ -191,12 +202,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
    * @dev This function uses the redstone-evm-connector
    **/
-  function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
+  function invest(bytes32 _integration, bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
     require(address(this).balance >= _maxAvaxAmountIn, "Insufficient funds");
 
-    bool success = getExchange().buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
+    bool success = getDPRouterV1().buy{value: _maxAvaxAmountIn}(_integration, _asset, _exactERC20AmountOut);
     require(success, "Investment failed");
 
+    addOwnedSwapAsset(_asset, _integration);
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
 
@@ -219,10 +231,12 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
    * @dev This function uses the redstone-evm-connector
    **/
-  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
+  function redeem(bytes32 _integration, bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external nonReentrant onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    address(token).safeTransfer(address(getExchange()), _exactERC20AmountIn);
-    bool success = getExchange().sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    DPRouterV1 dpRouter = getDPRouterV1();
+    address(token).safeTransfer(address(dpRouter), _exactERC20AmountIn);
+
+    bool success = dpRouter.sell(_integration, _asset, _exactERC20AmountIn, _minAvaxAmountOut);
     require(success, "Redemption failed");
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
@@ -261,13 +275,18 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /* ========== VIEW FUNCTIONS ========== */
 
+  function getAllOwnedSwapAssets() public view returns (bytes32[] memory result) {
+    return swapOwnedAssetsToIntegration._keys._inner._values;
+  }
+
   /**
    * Returns the current value of a loan in AVAX including cash and investments
    * @dev This function uses the redstone-evm-connector
    **/
   function getTotalValue() public view virtual returns (uint256) {
     uint256 total = address(this).balance;
-    bytes32[] memory assets = getExchange().getAllAssets();
+    bytes32[] memory assets = getAllOwnedSwapAssets();
+    // TODO: Ensure that assets' prices are returned in the order of the assets passed as an argument
     uint256[] memory prices = getPricesFromMsg(assets);
     uint256 avaxPrice = prices[0];
     require(avaxPrice != 0, "Avax price returned from oracle is zero");
@@ -288,18 +307,23 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     return total;
   }
 
+  function getSwapAssetAddress(bytes32 _asset) internal view returns(address) {
+    return getDPRouterV1().getSwapAssetAddress(EnumerableMap._get(swapOwnedAssetsToIntegration, _asset), _asset);
+  }
+
   /**
    * Returns the current balance of the asset held by a given user
    * @dev _asset the code of an asset
    * @dev _user the address of queried user
    **/
+
   function getBalance(address _user, bytes32 _asset) public view returns (uint256) {
-    IERC20 token = IERC20(getExchange().getAssetAddress(_asset));
+    IERC20 token = IERC20(getSwapAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-    address assetAddress = getExchange().getAssetAddress(_asset);
+    address assetAddress = getSwapAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
@@ -347,7 +371,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * It could be used as a helper method for UI
    **/
   function getAllAssetsBalances() public view returns (uint256[] memory) {
-    bytes32[] memory assets = getExchange().getAllAssets();
+    bytes32[] memory assets = getAllOwnedSwapAssets();
     uint256[] memory balances = new uint256[](assets.length);
 
     for (uint256 i = 0; i < assets.length; i++) {
@@ -363,7 +387,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This function uses the redstone-evm-connector
    **/
   function getAllAssetsPrices() public view returns (uint256[] memory) {
-    bytes32[] memory assets = getExchange().getAllAssets();
+    bytes32[] memory assets = getAllOwnedSwapAssets();
 
     return getPricesFromMsg(assets);
   }

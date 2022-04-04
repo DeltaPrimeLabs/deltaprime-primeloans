@@ -15,12 +15,11 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     using TransferHelper for address;
 
     address private constant YAKStakingAVAXAAVEV1Address = 0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0;
-    bytes32 private constant AVAXBytes32 = bytes32(uint256(0x41564158));
 
     function stakeAVAX(uint256 amount) public payable override nonReentrant{
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).depositFor{value: amount}(msg.sender);
     
-        emit Staked(msg.sender, AVAXBytes32, amount, block.timestamp);
+        emit Staked(msg.sender, "AVAX", amount, block.timestamp);
     }
 
     function unstakeAVAX(uint256 amount) public override nonReentrant returns(bool) {
@@ -38,7 +37,7 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
         }
         payable(msg.sender).safeTransferETH(address(this).balance);
 
-        emit Unstaked(msg.sender, AVAXBytes32, amount, block.timestamp);
+        emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
         return true;
     }
 

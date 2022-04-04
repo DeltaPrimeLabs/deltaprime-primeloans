@@ -6,6 +6,8 @@ import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
 import "./interfaces/IYieldYakRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./lib/Bytes32EnumerableMap.sol";
+import "./routers/DPRouterV1.sol";
 
 /**
  * @title SmartLoanProperties
@@ -14,7 +16,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  *
  */
 contract SmartLoanProperties {
-
   uint256 private constant _PERCENTAGE_PRECISION = 1000;
   // 10%
   uint256 private constant _LIQUIDATION_BONUS = 100;
@@ -24,7 +25,7 @@ contract SmartLoanProperties {
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  address private constant _EXCHANGE_ADDRESS = 0x0278438423f433e277F65D14c0E002b8828702ba;
+  address private constant _EXCHANGE_ADDRESS = 0xD6b040736e948621c5b6E0a494473c47a6113eA8;
 
   address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
@@ -38,6 +39,11 @@ contract SmartLoanProperties {
 
   bool internal _liquidationInProgress = false;
 
+  using EnumerableMap for EnumerableMap.Map;
+
+  EnumerableMap.Map internal swapOwnedAssetsToIntegration;
+  EnumerableMap.Map internal stakingOwnedAssetsToIntegration;
+  EnumerableMap.Map internal lpOwnedAssetsToIntegration;
 
   /* ========== GETTERS ========== */
 
@@ -63,15 +69,19 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x4C4a2f8c81640e47606d3fd77B353E87Ba015584);
+    return IYieldYakRouter(0xFE5f411481565fbF70D8D33D992C78196E014b90);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
     return IERC20(0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0);
   }
 
+  function getDPRouterV1() public virtual view returns (DPRouterV1) {
+    return DPRouterV1(0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9);
+  }
+
   function getPool() public virtual view returns (Pool) {
-    return Pool(0x431290dF15777d46174b83C9E01F87d7b70D3073);
+    return Pool(0x2625760C4A8e8101801D3a48eE64B2bEA42f1E96);
   }
 
   function getPriceProvider1() public virtual view returns (address) {

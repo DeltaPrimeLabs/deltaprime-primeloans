@@ -101,11 +101,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoan(contractName: string, poolAddress: string, exchangeAddress: string, yieldYakAddress: string, subpath?: string) {
+export async function recompileSmartLoan(contractName: string, poolAddress: string, dpRouterAddress: string, yieldYakAddress: string, subpath?: string) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    updateSmartLoanProperties(poolAddress, exchangeAddress, yieldYakAddress);
+    updateSmartLoanProperties(poolAddress, dpRouterAddress, yieldYakAddress);
 
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
@@ -121,3 +121,12 @@ export class Asset {
   }
 }
 
+export class Integration {
+    integrationID: string;
+    integrationAddress: string;
+
+    constructor(integrationID: string, integrationAddress: string) {
+        this.integrationID = integrationID;
+        this.integrationAddress = integrationAddress;
+    }
+}
