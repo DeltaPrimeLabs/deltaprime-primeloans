@@ -14,29 +14,29 @@
           </span>
         </div>
 
-        <div class="investments-table">
-          <div class="investments-table__header">
-            <div class="table-cell left">Asset</div>
-            <div class="table-cell right">Price</div>
-            <div class="table-cell trend left">Trend</div>
-            <div class="table-cell right">Balance</div>
-            <div class="table-cell right">Share</div>
-            <div class="table-cell right">Value</div>
-            <div class="table-cell right">Buy/Sell</div>
+        <div class="table">
+          <div class="table__header">
+            <div class="table__cell left">Asset</div>
+            <div class="table__cell right">Price</div>
+            <div class="table__cell trend left">Trend</div>
+            <div class="table__cell right">Balance</div>
+            <div class="table__cell right">Share</div>
+            <div class="table__cell right">Value</div>
+            <div class="table__cell right">Buy/Sell</div>
           </div>
-          <div class="investments-table__body">
-            <div class="investments-table__row" v-for="asset in investments"
+          <div class="table__body">
+            <div class="table__row" v-for="asset in investments"
                  v-bind:key="asset.symbol">
-              <div class="table-cell left" data-label="Asset">
+              <div class="table__cell left" data-label="Asset">
                 <div class="token-logo-wrapper">
                   <img :src="logoSrc(asset.symbol)" class="token-logo"/>
                 </div>
                 <span class="token-name">{{ asset.name }}</span>
               </div>
-              <div class="table-cell right" data-label="Price">
+              <div class="table__cell right" data-label="Price">
                 <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
               </div>
-              <div class="table-cell center chart-icon"
+              <div class="table__cell center chart-icon"
                    data-label="Chart"
                    @click.stop="toggleChart(asset.symbol)"
               >
@@ -47,25 +47,25 @@
                     :lineWidth="1.5"/>
                 <img class="enlarge clickable-icon"/>
               </div>
-              <div class="table-cell right" data-label="Balance">
+              <div class="table__cell right" data-label="Balance">
                 <LoadedValue
                     :check="() => asset.balance != null"
                     :value="formatTokenBalance(asset.balance)">
                 </LoadedValue>
               </div>
-              <div class="table-cell right" data-label="Share">
+              <div class="table__cell right" data-label="Share">
                 <LoadedValue :value="asset.share | percent"></LoadedValue>
               </div>
-              <div class="table-cell value right" data-label="Value">
+              <div class="table__cell value right" data-label="Value">
                 <LoadedValue :value="asset.value | usd"></LoadedValue>
               </div>
               <div>
-                <div class="table-cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
+                <div class="table__cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
                   <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
                   <img src="src/assets/icons/slash-small.svg"/>
                   <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
                 </div>
-                <div v-else class="table-cell right no-buy">-</div>
+                <div v-else class="table__cell right no-buy">-</div>
               </div>
               <div class="asset-input" v-if="asset.buyInput" @click.stop>
                 <SmallBlock
@@ -124,81 +124,79 @@
     <div class="list options" v-if="investmentOptions && investmentOptions.length > 0">
       <div class="elements">
         <div class="title">Investment possibilities</div>
-        <table id="optionsTable">
-          <thead>
-          <tr>
-            <th class="left">Asset</th>
-            <th class="right">Price</th>
-            <th class="trend p.left">Trend</th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th class="right">Buy</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="asset in investmentOptions"
-              v-bind:key="asset.symbol">
-            <td data-label="Asset" class="left">
-              <div class="token-logo-wrapper">
-                <img :src="logoSrc(asset.symbol)" class="token-logo"/>
-              </div>
-              <span class="token-name">{{ asset.name }}</span>
-            </td>
-            <td class="right" data-label="Price">
-              <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
-            </td>
-            <td class="chart-icon" data-label="Chart"
-                @click.stop="toggleChart(asset.symbol)"
-            >
-              <SimpleChart
-                  :dataPoints="asset.prices"
-                  :isStableCoin="asset.symbol === 'USDT'"
-                  :lineWidth="1.5"/>
-              <img class="enlarge clickable-icon"/>
-            </td>
-            <td v-if="!isMobile"></td>
-            <td v-if="!isMobile"></td>
-            <td v-if="!isMobile"></td>
-            <td class="invest-buttons right" @click.stop>
-              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
-                   class="plus clickable-icon"/>
-            </td>
-            <td class="asset-input" v-if="asset.buyInput" @click.stop>
-              <SmallBlock
-                  v-on:close="() => { asset.buyInput = false;  }">
-                <CurrencyForm
-                    label="Buy"
-                    :symbol="asset.symbol"
-                    :price="asset.price"
-                    :hasSecondButton="true"
-                    :slippage="asset.buySlippage"
-                    v-on:submitValue="(value) => investValue(asset, value)"
-                    v-on:changedValue="(value) => checkBuySlippage(asset, value)"
-                    :waiting="asset.waiting"
-                    :flexDirection="isMobile ? 'column' : 'row'"
-                    :validators="investValidators(asset, list[nativeToken].balance)"
-                    :warnings="investWarnings(asset.buySlippage)"
-                    :info="buySlippageInfo(asset)"
-                    :denominationButtons="true"
-                />
-              </SmallBlock>
-            </td>
-            <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
-              <SmallBlock
-                  v-on:close="() => { asset.showChart = false;  }">
-                <div class="big-chart">
-                  <Chart
-                      :dataPoints="asset.prices"
-                      :minY="asset.minPrice"
-                      :maxY="asset.maxPrice"
-                      :lineWidth="3"/>
+        <div class="table">
+          <div class="table__header">
+            <div class="table__cell left">Asset</div>
+            <div class="table__cell right">Price</div>
+            <div class="table__cell trend p.left">Trend</div>
+            <div class="table__cell"></div>
+            <div class="table__cell"></div>
+            <div class="table__cell"></div>
+            <div class="table__cell right">Buy</div>
+          </div>
+          <div class="table__body">
+            <div class="table__row" v-for="asset in investmentOptions"
+                 v-bind:key="asset.symbol">
+              <div data-label="Asset" class="table__cell left">
+                <div class="token-logo-wrapper">
+                  <img :src="logoSrc(asset.symbol)" class="token-logo"/>
                 </div>
-              </SmallBlock>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+                <span class="token-name">{{ asset.name }}</span>
+              </div>
+              <div data-label="Price" class="table__cell right">
+                <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
+              </div>
+              <div data-label="Chart" class="table__cell chart-icon"
+                   @click.stop="toggleChart(asset.symbol)"
+              >
+                <SimpleChart
+                    :dataPoints="asset.prices"
+                    :isStableCoin="asset.symbol === 'USDT'"
+                    :lineWidth="1.5"/>
+                <img class="enlarge clickable-icon"/>
+              </div>
+              <div class="table__cell" v-if="!isMobile"></div>
+              <div class="table__cell" v-if="!isMobile"></div>
+              <div class="table__cell" v-if="!isMobile"></div>
+              <div class="table__cell invest-buttons right" @click.stop>
+                <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
+                     class="plus clickable-icon"/>
+              </div>
+              <div class="asset-input" v-if="asset.buyInput" @click.stop>
+                <SmallBlock
+                    v-on:close="() => { asset.buyInput = false;  }">
+                  <CurrencyForm
+                      label="Buy"
+                      :symbol="asset.symbol"
+                      :price="asset.price"
+                      :hasSecondButton="true"
+                      :slippage="asset.buySlippage"
+                      v-on:submitValue="(value) => investValue(asset, value)"
+                      v-on:changedValue="(value) => checkBuySlippage(asset, value)"
+                      :waiting="asset.waiting"
+                      :flexDirection="isMobile ? 'column' : 'row'"
+                      :validators="investValidators(asset, list[nativeToken].balance)"
+                      :warnings="investWarnings(asset.buySlippage)"
+                      :info="buySlippageInfo(asset)"
+                      :denominationButtons="true"
+                  />
+                </SmallBlock>
+              </div>
+              <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
+                <SmallBlock
+                    v-on:close="() => { asset.showChart = false;  }">
+                  <div class="big-chart">
+                    <Chart
+                        :dataPoints="asset.prices"
+                        :minY="asset.minPrice"
+                        :maxY="asset.maxPrice"
+                        :lineWidth="3"/>
+                  </div>
+                </SmallBlock>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -486,6 +484,13 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
+.lists {
+  @media screen and (max-width: $md) {
+    width: 70%;
+    min-width: 300px;
+  }
+}
+
 .list {
   width: 100%;
 }
@@ -637,47 +642,6 @@ export default {
   font-weight: 500;
 }
 
-tr {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-
-  @media screen and (min-width: $md) {
-    grid-template-columns: repeat(7, 1fr);
-  }
-}
-
-td {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 55px;
-
-  @media screen and (min-width: $md) {
-    justify-content: center;
-
-    &.right {
-      justify-content: flex-end;
-    }
-
-    &.left {
-      justify-content: flex-start;
-    }
-  }
-}
-
-thead tr {
-  margin-bottom: 1rem;
-  padding: 0 10px 0 10px;
-}
-
-tbody tr {
-  border-style: solid;
-  border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-  border-image-slice: 1;
-  padding: 0 10px 0 10px;
-}
-
 .chart, .asset-input {
   display: grid;
   grid-column: 1/-1;
@@ -730,17 +694,18 @@ tbody tr {
   display: flex;
   justify-content: center;
 }
+
 </style>
 
 <style lang="scss">
 @import "~@/styles/variables";
 
-.investments-table {
+.table {
   display: flex;
   flex-direction: column;
   margin-top: 45px;
 
-  .investments-table__header {
+  .table__header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     padding: 0 10px 0 10px;
@@ -753,11 +718,11 @@ tbody tr {
     }
   }
 
-  .investments-table__body {
+  .table__body {
     display: flex;
     flex-direction: column;
 
-    .investments-table__row {
+    .table__row {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       padding: 0 10px 0 10px;
@@ -771,7 +736,7 @@ tbody tr {
         margin-bottom: 1.5em;
       }
 
-      .table-cell {
+      .table__cell {
         min-height: 55px;
 
         @media screen and (max-width: $md) {
@@ -813,7 +778,7 @@ tbody tr {
   }
 }
 
-.table-cell {
+.table__cell {
   flex-grow: 1;
   box-sizing: border-box;
   display: flex;
@@ -846,71 +811,65 @@ tbody tr {
   }
 }
 
-
-.currency-form-wrapper {
-  width: 100%;
-  flex-wrap: wrap;
-  margin-top: 45px;
-  align-items: center;
-
-  @media screen and (min-width: $md) {
-    flex-wrap: nowrap;
+.asset-input {
+  .currency-form-wrapper {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: flex-start;
-    align-self: center;
-    width: min-content;
-  }
 
-  .input-wrapper {
-    height: 60px;
-  }
+    @media screen and (min-width: $md) {
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      align-self: center;
+      width: min-content;
+      margin-top: 45px;
+    }
 
-  input {
-    height: 30px;
-    line-height: 30px;
-  }
 
-  .error, .info, .warning {
-    text-align: left;
-  }
+    .input-wrapper {
+      height: 60px;
+    }
 
-  .logo {
-    height: 30px;
-    width: 30px;
-    min-width: 30px;
-    min-height: 30px;
-  }
+    input {
+      height: 30px;
+      line-height: 30px;
+    }
 
-  .symbol {
-    font-size: 16px;
-  }
+    .error, .info, .warning {
+      text-align: left;
+    }
 
-  .btn {
-    padding: 13px 20px;
-    margin-left: 30px;
-    font-size: 20px;
+    .logo {
+      height: 30px;
+      width: 30px;
+      min-width: 30px;
+      min-height: 30px;
+    }
 
-    &.waiting .ball-beat:not(.active) {
-      margin-top: 5px;
-      margin-bottom: 5px;
+    .symbol {
+      font-size: 16px;
+    }
+
+    .btn {
+      padding: 13px 20px;
+      margin-left: 30px;
+      font-size: 20px;
+
+      &.waiting .ball-beat:not(.active) {
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
+    }
+
+    .value-wrapper .label {
+      text-align: start;
+    }
+
+    .form-button {
+      margin-bottom: 30px;
     }
   }
-
-  .value-wrapper .label {
-    text-align: start;
-  }
 }
 
-#investmentsTable, #optionsTable {
-  th {
-    font-weight: 500;
-  }
-
-  .trend {
-    margin-left: 40px;
-  }
-
-  .value {
-    font-weight: 600;
-  }
-}
 </style>

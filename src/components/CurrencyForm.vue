@@ -85,13 +85,8 @@
 
 .currency-form-wrapper {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  align-items: center;
   width: 100%;
-
-  .form-button {
-    margin-bottom: 30px;
-  }
 }
 </style>
 <style lang="scss">
