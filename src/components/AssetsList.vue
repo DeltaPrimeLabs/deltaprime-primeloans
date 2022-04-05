@@ -8,112 +8,117 @@
             <span class="total-value">
               Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
               <span class="vertical-line"></span>
-              Your {{ profit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': profit < 0}">
-              $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : ''}}</span>
+              Your {{ profit >= 0 ? 'profit' : 'loss' }}: <span class="value" :class="{'red': profit < 0}">
+              $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : '' }}</span>
             </span>
           </span>
         </div>
-        <table id="investmentsTable">
-          <thead>
-            <tr>
-              <th class="left">Asset</th>
-              <th class="right">Price</th>
-              <th class="trend left">Trend</th>
-              <th class="right">Balance</th>
-              <th class="right">Share</th>
-              <th class="right">Value</th>
-              <th class="right">Buy/Sell</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="asset in investments"
-              v-bind:key="asset.symbol">
-              <td class="left" data-label="Asset">
+
+        <div class="investments-table">
+          <div class="investments-table__header">
+            <div class="table-cell left">Asset</div>
+            <div class="table-cell right">Price</div>
+            <div class="table-cell trend left">Trend</div>
+            <div class="table-cell right">Balance</div>
+            <div class="table-cell right">Share</div>
+            <div class="table-cell right">Value</div>
+            <div class="table-cell right">Buy/Sell</div>
+          </div>
+          <div class="investments-table__body">
+            <div class="investments-table__row" v-for="asset in investments"
+                 v-bind:key="asset.symbol">
+              <div class="table-cell left" data-label="Asset">
                 <div class="token-logo-wrapper">
                   <img :src="logoSrc(asset.symbol)" class="token-logo"/>
                 </div>
                 <span class="token-name">{{ asset.name }}</span>
-                </td>
-              <td class="right" data-label="Price">
+              </div>
+              <div class="table-cell right" data-label="Price">
                 <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
-              </td>
-              <td class="chart-icon"
-                  data-label="Chart"
-                  @click.stop="toggleChart(asset.symbol)"
+              </div>
+              <div class="table-cell center chart-icon"
+                   data-label="Chart"
+                   @click.stop="toggleChart(asset.symbol)"
               >
                 <SimpleChart
-                  class="simple-chart"
-                  :dataPoints="asset.prices"
-                  :isStableCoin="asset.symbol === 'USDT'"
-                  :lineWidth="1.5"/>
+                    class="simple-chart"
+                    :dataPoints="asset.prices"
+                    :isStableCoin="asset.symbol === 'USDT'"
+                    :lineWidth="1.5"/>
                 <img class="enlarge clickable-icon"/>
-              </td>
-              <td class="right" data-label="Balance">
+              </div>
+              <div class="table-cell right" data-label="Balance">
                 <LoadedValue
                     :check="() => asset.balance != null"
                     :value="formatTokenBalance(asset.balance)">
                 </LoadedValue>
-              </td>
-              <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
-              <td class="value right" data-label="Value"><LoadedValue :value="asset.value | usd"></LoadedValue>
-              <td class="invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
-                <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
-                <img src="src/assets/icons/slash-small.svg"/>
-                <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
-              </td>
-              <td v-else class="no-buy">-</td>
-              <td class="asset-input" v-if="asset.buyInput" @click.stop>
+              </div>
+              <div class="table-cell right" data-label="Share">
+                <LoadedValue :value="asset.share | percent"></LoadedValue>
+              </div>
+              <div class="table-cell value right" data-label="Value">
+                <LoadedValue :value="asset.value | usd"></LoadedValue>
+              </div>
+              <div>
+                <div class="table-cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
+                  <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
+                  <img src="src/assets/icons/slash-small.svg"/>
+                  <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
+                </div>
+                <div v-else class="table-cell right no-buy">-</div>
+              </div>
+              <div class="asset-input" v-if="asset.buyInput" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.buyInput = false; }">
+                    v-on:close="() => { asset.buyInput = false; }">
                   <CurrencyForm
-                    label="Buy"
-                    :symbol="asset.symbol"
-                    :slippage="asset.buySlippage"
-                    :price="asset.price"
-                    :hasSecondButton="true"
-                    v-on:submitValue="(value) => investValue(asset, value)"
-                    :waiting="asset.waiting"
-                    :flexDirection="isMobile ? 'column' : 'row'"
-                    :validators="investValidators(asset, list[nativeToken].balance)"
-                    :warnings="investWarnings(asset.buySlippage)"
-                    :info="buySlippageInfo(asset)"
-                    :denominationButtons="true"
+                      label="Buy"
+                      :symbol="asset.symbol"
+                      :slippage="asset.buySlippage"
+                      :price="asset.price"
+                      :hasSecondButton="true"
+                      :waiting="asset.waiting"
+                      :flexDirection="isMobile ? 'column' : 'row'"
+                      :validators="investValidators(asset, list[nativeToken].balance)"
+                      :warnings="investWarnings(asset.buySlippage)"
+                      :info="buySlippageInfo(asset)"
+                      :denominationButtons="true"
+                      v-on:submitValue="(value) => investValue(asset, value)"
                   />
                 </SmallBlock>
-              </td>
-              <td class="asset-input" v-if="asset.sellInput" @click.stop>
+              </div>
+              <div class="asset-input" v-if="asset.sellInput" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.sellInput = false; }">
+                    v-on:close="() => { asset.sellInput = false; }">
                   <CurrencyForm
-                    label="Sell"
-                    :symbol="asset.symbol"
-                    :price="asset.price"
-                    :hasSecondButton="true"
-                    :slippage="-asset.sellSlippage"
-                    v-on:submitValue="(value) => redeemValue(asset, value)"
-                    :max="asset.balance"
-                    :waiting="asset.waiting"
-                    :flexDirection="isMobile ? 'column' : 'row'"
-                    :validators="redeemValidators(asset.balance)"
-                    :warnings="redeemWarnings(asset)"
-                    :info="sellSlippageInfo(asset)"
-                    :denominationButtons="true"
+                      label="Sell"
+                      :symbol="asset.symbol"
+                      :slippage="-asset.sellSlippage"
+                      :price="asset.price"
+                      :hasSecondButton="true"
+                      :waiting="asset.waiting"
+                      :flexDirection="isMobile ? 'column' : 'row'"
+                      :validators="redeemValidators(asset.balance)"
+                      :warnings="redeemWarnings(asset)"
+                      :info="sellSlippageInfo(asset)"
+                      :denominationButtons="true"
+                      :max="asset.balance"
+                      v-on:submitValue="(value) => redeemValue(asset, value)"
                   />
                 </SmallBlock>
-              </td>
-              <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
+              </div>
+              <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.showChart = false; }">
+                    v-on:close="() => { asset.showChart = false; }">
                   <div class="big-chart">
                     <Chart
                         :dataPoints="asset.prices"
                         :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
                   </div>
                 </SmallBlock>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="list options" v-if="investmentOptions && investmentOptions.length > 0">
@@ -147,46 +152,47 @@
                 @click.stop="toggleChart(asset.symbol)"
             >
               <SimpleChart
-                :dataPoints="asset.prices"
-                :isStableCoin="asset.symbol === 'USDT'"
-                :lineWidth="1.5"/>
+                  :dataPoints="asset.prices"
+                  :isStableCoin="asset.symbol === 'USDT'"
+                  :lineWidth="1.5"/>
               <img class="enlarge clickable-icon"/>
             </td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
             <td v-if="!isMobile"></td>
             <td class="invest-buttons right" @click.stop>
-              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
+              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
+                   class="plus clickable-icon"/>
             </td>
             <td class="asset-input" v-if="asset.buyInput" @click.stop>
               <SmallBlock
-                v-on:close="() => { asset.buyInput = false;  }">
+                  v-on:close="() => { asset.buyInput = false;  }">
                 <CurrencyForm
-                  label="Buy"
-                  :symbol="asset.symbol"
-                  :price="asset.price"
-                  :hasSecondButton="true"
-                  :slippage="asset.buySlippage"
-                  v-on:submitValue="(value) => investValue(asset, value)"
-                  v-on:changedValue="(value) => checkBuySlippage(asset, value)"
-                  :waiting="asset.waiting"
-                  :flexDirection="isMobile ? 'column' : 'row'"
-                  :validators="investValidators(asset, list[nativeToken].balance)"
-                  :warnings="investWarnings(asset.buySlippage)"
-                  :info="buySlippageInfo(asset)"
-                  :denominationButtons="true"
+                    label="Buy"
+                    :symbol="asset.symbol"
+                    :price="asset.price"
+                    :hasSecondButton="true"
+                    :slippage="asset.buySlippage"
+                    v-on:submitValue="(value) => investValue(asset, value)"
+                    v-on:changedValue="(value) => checkBuySlippage(asset, value)"
+                    :waiting="asset.waiting"
+                    :flexDirection="isMobile ? 'column' : 'row'"
+                    :validators="investValidators(asset, list[nativeToken].balance)"
+                    :warnings="investWarnings(asset.buySlippage)"
+                    :info="buySlippageInfo(asset)"
+                    :denominationButtons="true"
                 />
               </SmallBlock>
             </td>
             <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
               <SmallBlock
-                v-on:close="() => { asset.showChart = false;  }">
+                  v-on:close="() => { asset.showChart = false;  }">
                 <div class="big-chart">
                   <Chart
-                    :dataPoints="asset.prices"
-                    :minY="asset.minPrice"
-                    :maxY="asset.maxPrice"
-                    :lineWidth="3"/>
+                      :dataPoints="asset.prices"
+                      :minY="asset.minPrice"
+                      :maxY="asset.maxPrice"
+                      :lineWidth="3"/>
                 </div>
               </SmallBlock>
             </td>
@@ -200,167 +206,167 @@
 
 
 <script>
-  import Chart from "@/components/Chart.vue";
-  import SimpleChart from "@/components/SimpleChart.vue";
-  import Block from "@/components/Block.vue";
-  import CurrencyForm from "@/components/CurrencyForm.vue";
-  import SmallBlock from "@/components/SmallBlock.vue";
-  import LoadedValue from "@/components/LoadedValue.vue";
-  import Button from "@/components/Button.vue";
-  import {mapState, mapActions, mapGetters} from "vuex";
-  import redstone from 'redstone-api';
-  import Vue from 'vue'
-  import config from "@/config";
-  import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
-  import {minAvaxToBeBought} from "../utils/calculate";
+import Chart from "@/components/Chart.vue";
+import SimpleChart from "@/components/SimpleChart.vue";
+import Block from "@/components/Block.vue";
+import CurrencyForm from "@/components/CurrencyForm.vue";
+import SmallBlock from "@/components/SmallBlock.vue";
+import LoadedValue from "@/components/LoadedValue.vue";
+import Button from "@/components/Button.vue";
+import {mapState, mapActions, mapGetters} from "vuex";
+import redstone from 'redstone-api';
+import Vue from 'vue'
+import config from "@/config";
+import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
 
 
-  export default {
-    name: 'AssetsList',
-    components: {
-      Chart,
-      Block,
-      CurrencyForm,
-      SimpleChart,
-      SmallBlock,
-      LoadedValue,
-      Button
-    },
-    props: {
-      fields: [
-        'Asset',
-        'Price',
-        'Balance',
-        'Value',
-        'Share',
-        { key: 'actions', label: ''}
-      ]
-    },
-    computed: {
-      ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
-      ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
-      investments() {
-        if (this.list) {
-          return Object.values(this.list).filter(
+export default {
+  name: 'AssetsList',
+  components: {
+    Chart,
+    Block,
+    CurrencyForm,
+    SimpleChart,
+    SmallBlock,
+    LoadedValue,
+    Button
+  },
+  props: {
+    fields: [
+      'Asset',
+      'Price',
+      'Balance',
+      'Value',
+      'Share',
+      {key: 'actions', label: ''}
+    ]
+  },
+  computed: {
+    ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
+    ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
+    investments() {
+      if (this.list) {
+        return Object.values(this.list).filter(
             asset => {
               return asset.balance > 0 || asset.symbol === this.nativeToken
             }
-          )
-        } else {
-          return [];
-        }
-      },
-      investmentOptions() {
-        if (this.list) {
-          return Object.values(this.list).filter(
+        )
+      } else {
+        return [];
+      }
+    },
+    investmentOptions() {
+      if (this.list) {
+        return Object.values(this.list).filter(
             asset => {
               return (!asset.balance || asset.balance === 0) && asset.symbol !== this.nativeToken
             }
-          )
-        } else {
-          return [];
-        }
-      },
-      nativeToken() {
-        return config.nativeToken;
-      },
-      profit() {
-        if (Math.abs(this.getProfit) < 0.01) {
-          return 0;
-        }
-        return this.getProfit;
+        )
+      } else {
+        return [];
       }
     },
-    data() {
-      return {
-        list: config.ASSETS_CONFIG
-      }
+    nativeToken() {
+      return config.nativeToken;
     },
-    methods: {
-      ...mapActions('loan', ['invest', 'redeem']),
-      investValidators(asset, avaxBalance) {
-        return [
-          {
-            validate: async(value) => {
-              let slippage;
-              try {
-                slippage = await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, value);
-                this.updateAsset(asset.symbol, 'buySlippage', slippage);
-              } catch (e) {
-                return 'Error when calculating slippage';
-              }
+    profit() {
+      if (Math.abs(this.getProfit) < 0.01) {
+        return 0;
+      }
+      return this.getProfit;
+    }
+  },
+  data() {
+    return {
+      list: config.ASSETS_CONFIG
+    }
+  },
+  methods: {
+    ...mapActions('loan', ['invest', 'redeem']),
+    investValidators(asset, avaxBalance) {
+      return [
+        {
+          validate: async (value) => {
+            let slippage;
+            try {
+              slippage = await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, value);
+              this.updateAsset(asset.symbol, 'buySlippage', slippage);
+            } catch (e) {
+              return 'Error when calculating slippage';
+            }
 
-              if (avaxBalance < maxAvaxToBeSold(this.usdToAVAX(asset.price) * value, slippage)) {
-                return 'Requested asset value exceeds your available AVAX balance';
-              }
+            if (avaxBalance < maxAvaxToBeSold(this.usdToAVAX(asset.price) * value, slippage)) {
+              return 'Requested asset value exceeds your available AVAX balance';
             }
           }
-        ]
-      },
-      investWarnings(slippage) {
-        return [
-          {
-            validate: () => {
-              if (slippage !== null && slippage > .03) {
-                return `Be careful, current slippage is above ${Math.floor(slippage * 100)}%`;
-              }
+        }
+      ]
+    },
+    investWarnings(slippage) {
+      return [
+        {
+          validate: () => {
+            if (slippage !== null && slippage > .03) {
+              return `Be careful, current slippage is above ${Math.floor(slippage * 100)}%`;
             }
           }
-        ]
-      },
-      redeemValidators(balance) {
-        return [
-          {
-            validate: (value) => {
-              if (value > balance) {
-                return 'Requested amount exceeds your asset balance';
-              }
+        }
+      ]
+    },
+    redeemValidators(balance) {
+      return [
+        {
+          validate: (value) => {
+            if (value > balance) {
+              return 'Requested amount exceeds your asset balance';
             }
           }
-        ]
-      },
-      redeemWarnings(asset) {
-        return [
-          {
-            validate: async (value) => {
-              let slippage = await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, value);
-              this.updateAsset(asset.symbol, 'sellSlippage', slippage);
-              if (slippage > .03) {
-                return 'Current slippage above 3%';
-              }
+        }
+      ]
+    },
+    redeemWarnings(asset) {
+      return [
+        {
+          validate: async (value) => {
+            let slippage = await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, value);
+            this.updateAsset(asset.symbol, 'sellSlippage', slippage);
+            if (slippage > .03) {
+              return 'Current slippage above 3%';
             }
           }
-        ]
-      },
-      //TODO: add optional chaining
-      buySlippageInfo(asset) {
-        return (value) =>
+        }
+      ]
+    },
+    //TODO: add optional chaining
+    buySlippageInfo(asset) {
+      return (value) =>
           `Current slippage ${(asset.buySlippage * 100).toFixed(2)}%, maximum slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%`
-      },
-      sellSlippageInfo(asset) {
-        return (value) =>
+    },
+    sellSlippageInfo(asset) {
+      return (value) =>
           `Current slippage ${(asset.sellSlippage * 100).toFixed(2)}%, maximum slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%`
-      },
-      toggleChart(symbol) {
-        this.updateAsset(symbol, 'showChart', !this.list[symbol].showChart);
-        this.updateAsset(symbol, 'buyInput', false);
-        this.updateAsset(symbol, 'sellInput', false);
-      },
-      showBuyInput(symbol) {
-        this.updateAsset(symbol, 'buyInput', true);
-        this.updateAsset(symbol, 'sellInput', false);
-        this.updateAsset(symbol, 'showChart', false);
-      },
-      showSellInput(symbol) {
-        this.updateAsset(symbol, 'sellInput', true);
-        this.updateAsset(symbol, 'buyInput', false);
-        this.updateAsset(symbol, 'showChart', false);
-      },
-      investValue(asset, value) {
-        this.updateAsset(asset.symbol, 'waiting', true);
-        this.handleTransaction(
+    },
+    toggleChart(symbol) {
+      this.updateAsset(symbol, 'showChart', !this.list[symbol].showChart);
+      this.updateAsset(symbol, 'buyInput', false);
+      this.updateAsset(symbol, 'sellInput', false);
+    },
+    showBuyInput(symbol) {
+      this.updateAsset(symbol, 'buyInput', true);
+      this.updateAsset(symbol, 'sellInput', false);
+      this.updateAsset(symbol, 'showChart', false);
+    },
+    showSellInput(symbol) {
+      this.updateAsset(symbol, 'sellInput', true);
+      this.updateAsset(symbol, 'buyInput', false);
+      this.updateAsset(symbol, 'showChart', false);
+    },
+    investValue(asset, value) {
+      this.updateAsset(asset.symbol, 'waiting', true);
+      this.handleTransaction(
           this.invest,
-          { asset: asset.symbol,
+          {
+            asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
             avaxAmount: this.usdToAVAX(asset.price * value),
@@ -372,12 +378,13 @@
             this.updateAsset(asset.symbol, 'buyInput', false);
             this.updateAsset(asset.symbol, 'showChart', false);
           });
-      },
-      redeemValue(asset, value) {
-        this.updateAsset(asset.symbol, 'waiting', true);
-        this.handleTransaction(
+    },
+    redeemValue(asset, value) {
+      this.updateAsset(asset.symbol, 'waiting', true);
+      this.handleTransaction(
           this.redeem,
-          { asset: asset.symbol,
+          {
+            asset: asset.symbol,
             decimals: asset.decimals,
             amount: value,
             avaxAmount: this.usdToAVAX(asset.price * value),
@@ -389,19 +396,19 @@
             this.updateAsset(asset.symbol, 'buyInput', false);
             this.updateAsset(asset.symbol, 'showChart', false);
           });
-      },
-      updateAsset(symbol, key, value) {
-        Vue.set(this.list[symbol], key, value);
-      },
-      chartPoints(points) {
-        if (points == null || points.length === 0) {
-          return [];
-        }
+    },
+    updateAsset(symbol, key, value) {
+      Vue.set(this.list[symbol], key, value);
+    },
+    chartPoints(points) {
+      if (points == null || points.length === 0) {
+        return [];
+      }
 
-        let maxValue = 0;
-        let minValue = points[0].value;
+      let maxValue = 0;
+      let minValue = points[0].value;
 
-        let dataPoints = points.map(
+      let dataPoints = points.map(
           item => {
             if (item.value > maxValue) maxValue = item.value;
 
@@ -412,21 +419,21 @@
               y: item.value
             }
           }
-        );
+      );
 
-        return [dataPoints, minValue, maxValue ];
-      },
-      async updateAssets(list) {
-        this.list = list;
+      return [dataPoints, minValue, maxValue];
+    },
+    async updateAssets(list) {
+      this.list = list;
 
-        if (list) {
-          for (const symbol of Object.keys(list)) {
-            redstone.getHistoricalPrice(symbol, {
-              startDate: Date.now() - 3600 * 1000 * 24 * 7,
-              interval: 3600 * 1000,
-              endDate: Date.now(),
-              provider: 'redstone-avalanche'
-            }).then(
+      if (list) {
+        for (const symbol of Object.keys(list)) {
+          redstone.getHistoricalPrice(symbol, {
+            startDate: Date.now() - 3600 * 1000 * 24 * 7,
+            interval: 3600 * 1000,
+            endDate: Date.now(),
+            provider: 'redstone-avalanche'
+          }).then(
               (resp) => {
 
                 const [prices, minPrice, maxPrice] = this.chartPoints(
@@ -437,41 +444,43 @@
                 this.updateAsset(symbol, 'minPrice', minPrice);
                 this.updateAsset(symbol, 'maxPrice', maxPrice);
               }
-            )
-          }
+          )
         }
-      },
-      share(asset) {
-        return asset.price * asset.balance;
-      },
-      async checkBuySlippage(asset, amount) {
-        try {
-          const slippage =
-              await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, amount);
-          this.updateAsset(asset.symbol, 'buySlippage', slippage);
-        } catch (e) {}
-      },
-      async checkSellSlippage(asset, amount) {
-        try {
-          const slippage =
-            await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, amount);
-
-          this.updateAsset(asset.symbol, 'sellSlippage', slippage);
-        } catch (e) {}
-      },
-      formatTokenBalance(balance) {
-        return balance !== null ? balance.toPrecision(4) : '';
       }
     },
-    watch: {
-      assets: {
-        handler(newVal) {
-          this.updateAssets(newVal);
-        },
-        immediate: true
+    share(asset) {
+      return asset.price * asset.balance;
+    },
+    async checkBuySlippage(asset, amount) {
+      try {
+        const slippage =
+            await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, amount);
+        this.updateAsset(asset.symbol, 'buySlippage', slippage);
+      } catch (e) {
       }
+    },
+    async checkSellSlippage(asset, amount) {
+      try {
+        const slippage =
+            await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, amount);
+
+        this.updateAsset(asset.symbol, 'sellSlippage', slippage);
+      } catch (e) {
+      }
+    },
+    formatTokenBalance(balance) {
+      return balance !== null ? balance.toPrecision(4) : '';
+    }
+  },
+  watch: {
+    assets: {
+      handler(newVal) {
+        this.updateAssets(newVal);
+      },
+      immediate: true
     }
   }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -664,16 +673,17 @@ thead tr {
 tbody tr {
   border-style: solid;
   border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+  border-image-slice: 1;
   padding: 0 10px 0 10px;
 }
 
 .chart, .asset-input {
-   display: grid;
-   grid-column: 1/-1;
-   margin-top: 2rem;
-   margin-bottom: 2rem;
-   height: 230px;
+  display: grid;
+  grid-column: 1/-1;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  height: 230px;
 }
 
 .asset-input {
@@ -725,6 +735,171 @@ tbody tr {
 <style lang="scss">
 @import "~@/styles/variables";
 
+.investments-table {
+  display: flex;
+  flex-direction: column;
+  margin-top: 45px;
+
+  .investments-table__header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 10px 0 10px;
+    font-weight: 500;
+    color: $dark-gray;
+    margin-bottom: 1rem;
+
+    @media screen and (max-width: $md) {
+      display: none;
+    }
+  }
+
+  .investments-table__body {
+    display: flex;
+    flex-direction: column;
+
+    .investments-table__row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 0 10px 0 10px;
+      border-style: solid;
+      border-width: 2px 0 0 0;
+      border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+      border-image-slice: 1;
+
+      @media screen and (max-width: $md) {
+        grid-template-columns: repeat(1, 1fr);
+        margin-bottom: 1.5em;
+      }
+
+      .table-cell {
+        min-height: 55px;
+
+        @media screen and (max-width: $md) {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          border-bottom: 1px solid $light-gray;
+          font-size: .8em;
+          text-align: right;
+          padding: 0.5rem 0;
+
+          &.chart-icon {
+            display: none;
+          }
+
+          &::before {
+            content: attr(data-label);
+            float: left;
+            font-weight: bold;
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+        }
+
+        &.invest-buttons {
+          @media screen and (max-width: $md) {
+            justify-content: center;
+          }
+        }
+      }
+
+      .asset-input .small-block-wrapper {
+        height: 100%;
+      }
+    }
+  }
+}
+
+.table-cell {
+  flex-grow: 1;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-weight: 500;
+  padding: 1px;
+
+  &.trend {
+    margin-left: 40px;
+  }
+
+  &.value {
+    font-weight: 600;
+  }
+
+  &.right {
+    text-align: right;
+    justify-content: flex-end;
+  }
+
+  &.left {
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  &.center {
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+
+.currency-form-wrapper {
+  width: 100%;
+  flex-wrap: wrap;
+  margin-top: 45px;
+  align-items: center;
+
+  @media screen and (min-width: $md) {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    align-self: center;
+    width: min-content;
+  }
+
+  .input-wrapper {
+    height: 60px;
+  }
+
+  input {
+    height: 30px;
+    line-height: 30px;
+  }
+
+  .error, .info, .warning {
+    text-align: left;
+  }
+
+  .logo {
+    height: 30px;
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+
+  .symbol {
+    font-size: 16px;
+  }
+
+  .btn {
+    padding: 13px 20px;
+    margin-left: 30px;
+    font-size: 20px;
+
+    &.waiting .ball-beat:not(.active) {
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+  }
+
+  .value-wrapper .label {
+    text-align: start;
+  }
+}
+
 #investmentsTable, #optionsTable {
   th {
     font-weight: 500;
@@ -732,66 +907,6 @@ tbody tr {
 
   .trend {
     margin-left: 40px;
-  }
-
-  .small-block-wrapper {
-    height: 260px;
-
-    @media screen and (min-width: $md) {
-      height: 230px;
-    }
-  }
-  .currency-form-wrapper {
-    width: 100%;
-    flex-wrap: wrap;
-    margin-top: 45px;
-    align-items: center;
-
-    @media screen and (min-width: $md) {
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      align-self: center;
-      width: min-content;
-    }
-
-    .input-wrapper {
-      height: 60px;
-    }
-
-    input {
-      height: 30px;
-      line-height: 30px;
-    }
-
-    .error, .info, .warning {
-      text-align: left;
-    }
-
-    .logo {
-      height: 30px;
-      width: 30px;
-      min-width: 30px;
-      min-height: 30px;
-    }
-
-    .symbol {
-      font-size: 16px;
-    }
-
-    .btn {
-      padding: 13px 20px;
-      margin-left: 30px;
-      font-size: 20px;
-
-      &.waiting .ball-beat:not(.active) {
-        margin-top: 5px;
-        margin-bottom: 5px;
-      }
-    }
-
-    .value-wrapper .label {
-      text-align: start;
-    }
   }
 
   .value {

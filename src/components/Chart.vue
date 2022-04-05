@@ -57,8 +57,8 @@
       },
       minY: 0,
       maxY: null,
-      height: null,
-      width: null,
+      height: 170,
+      width: 688,
       lineWidth: null,
       stepped: false
     },
@@ -67,7 +67,11 @@
       }
     },
     mounted() {
-      this.renderChart(this.chartData, this.options)
+      this.renderChart(this.chartData, this.options);
+      this.triggerChartRepaint();
+    },
+    updated() {
+      console.log('updated');
     },
     computed: {
       minX() {
@@ -92,8 +96,9 @@
       options() {
         return {
           aspectRatio: this.isMobile ? 2 : 4,
-          height: null,
-          width: null,
+          onResize: () => {
+            console.log('onResize');
+          },
           legend: {
             display: false
           },
@@ -180,6 +185,7 @@
     },
     methods: {
       getLineGradient(ctx, chartArea) {
+
         let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
         gradient.addColorStop(0, '#fa91bf');
         gradient.addColorStop(1, '#babafe');
@@ -193,9 +199,14 @@
         if (!chartArea) {
           // This case happens on initial chart load
           return null;
+        } else {
+          // chart.resize();
+          // console.log(chart);
         }
 
         return fun(ctx, chartArea);
+      },
+      triggerChartRepaint() {
       }
     }
   }
