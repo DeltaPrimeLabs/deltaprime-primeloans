@@ -75,6 +75,7 @@ export default {
             () => {
               this.waiting = false;
               this.fundValue = null;
+              this.$store.dispatch('network/updateBalance', {}, {root: true})
             }
           );
         }
