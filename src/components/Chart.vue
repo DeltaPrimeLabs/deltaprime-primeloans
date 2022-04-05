@@ -191,6 +191,7 @@
         let {ctx, chartArea} = chart;
 
         if (!chartArea) {
+          // This case happens on initial chart load
           return null;
         }
         return fun(ctx, chartArea);
