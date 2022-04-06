@@ -143,10 +143,15 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     emit Liquidated(msg.sender, repayAmount, bonus, getLTV(), block.timestamp);
   }
 
-  function selloutStakedAVAX(uint256 targetAvaxAmount) private {
-    IYieldYakRouter yakRouter = getYieldYakRouter();
-    getYakAvaxStakingContract().approve(address(yakRouter), getYakAvaxStakingContract().balanceOf(address(this)));
-    yakRouter.unstakeAVAXForASpecifiedAmount(targetAvaxAmount);
+  function selloutStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
+    address yakRouterAddress = address(getYieldYakRouter());
+    (bool successApprove, ) = address(getYakAvaxStakingContract()).call(
+      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
+    );
+    (bool successUnstake, ) = yakRouterAddress.call(
+      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
+    );
+    return successApprove && successUnstake;
   }
 
   /**
@@ -154,7 +159,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    *
    **/
   function sellout(uint256 targetAvaxAmount) private {
-    selloutStakedAVAX(targetAvaxAmount);
+    bool stakingSelloutSuccess = selloutStakedAVAX(targetAvaxAmount);
     if (address(this).balance >= targetAvaxAmount) return;
 
     bytes32[] memory assets = getExchange().getAllAssets();
@@ -202,10 +207,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
     IYieldYakRouter yakRouter = getYieldYakRouter();
-    getYakAvaxStakingContract().approve(address(yakRouter), amount);
+    address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
 
-    bool success = yakRouter.unstakeAVAX(amount);
-    require(success, "Unstaking failed");
+    require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
   }
 
   /**
