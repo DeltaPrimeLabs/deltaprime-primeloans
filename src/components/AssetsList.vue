@@ -43,7 +43,7 @@
                 <SimpleChart
                     class="simple-chart"
                     :dataPoints="asset.prices"
-                    :isStableCoin="asset.symbol === 'USDT'"
+                    :isStableCoin="asset.isStableCoin"
                     :lineWidth="1.5"/>
                 <img class="enlarge clickable-icon"/>
               </div>
@@ -151,7 +151,7 @@
               >
                 <SimpleChart
                     :dataPoints="asset.prices"
-                    :isStableCoin="asset.symbol === 'USDT'"
+                    :isStableCoin="asset.isStableCoin"
                     :lineWidth="1.5"/>
                 <img class="enlarge clickable-icon"/>
               </div>
