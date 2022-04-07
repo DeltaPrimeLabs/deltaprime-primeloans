@@ -89,6 +89,9 @@
     <Block class="block assets-list" :bordered="true" >
       <AssetsList/>
     </Block>
+<!--    <Block class="block assets-list staking-list" :bordered="true" >
+      <StakingList/>
+    </Block>-->
     <Block class="block history-block" background="rgba(255, 255, 255, 0.3)" v-if="(loanEvents && loanEvents.length > 0)">
       <div class="history-title">Prime Account history</div>
       <LoanHistoryList :items="loanEvents" title="Prime Account History" class="history-list"/>
@@ -97,7 +100,9 @@
 </template>
 
 
-<script>var showMenu;
+<script>
+import StakingList from "./StakingList";
+var showMenu;
 
 import Bar from "@/components/Bar.vue";
 import Value from "@/components/Value.vue";
@@ -128,6 +133,7 @@ export default {
     }
   },
   components: {
+    StakingList,
     BorrowForm,
     RepayForm,
     FundForm,
@@ -399,6 +405,10 @@ export default {
 
 .assets-list.block.bordered::after {
   background-image: linear-gradient(145deg, #c9cbff 24%, #ffd8b1 38%, #fcb7cc 52%);
+}
+
+.staking-list {
+  margin-top: 34px;
 }
 
 </style>
