@@ -10,53 +10,51 @@
     </div>
 
     <div class="table">
-      <div class="table__header">
-        <div class="table__cell left">Pool</div>
+      <div class="table__header protocols__row">
+        <div class="table__cell left">Protocol</div>
         <div class="table__cell right">Total staked</div>
-        <div class="table__cell trend left">APR</div>
-        <div class="table__cell"></div>
+        <div class="table__cell right">Max APR</div>
         <div class="table__cell"></div>
         <div class="table__cell"></div>
         <div class="table__cell right">View</div>
       </div>
       <div class="table__body">
-        <div class="table__row" v-for="pool in pools"
-             v-bind:key="pool.poolName">
+        <div class="table__row protocols__row" v-for="protocol in protocols"
+             v-bind:key="protocol.key">
           <div class="table__cell left" data-label="Pool">
             <div class="token-logo-wrapper">
-              <img :src="logoSrc(pool.symbol)" class="token-logo"/>
+              <img :src="logoSrc(protocol.symbol)" class="token-logo"/>
             </div>
-            <span class="token-name">{{ pool.name }}</span>
+            <span class="token-name">{{ protocol.name }}</span>
           </div>
           <div class="table__cell right" data-label="Total Staked">
-            <span>{{pool.totalStaked}}</span>
+            <span>{{protocol.totalStaked}}</span>
           </div>
-          <div class="table__cell center" data-label="APR">
-            <span>{{pool.apr | percent}}</span>
+          <div class="table__cell right" data-label="Max APR">
+            <span>{{protocol.maxApr | percent}}</span>
           </div>
-          <div class="table__cell" v-if="!isMobile"></div>
           <div class="table__cell" v-if="!isMobile"></div>
           <div class="table__cell" v-if="!isMobile"></div>
           <div>
             <div class="table__cell invest-buttons right" @click.stop>
-              <img @click="showStakingOptions(pool.poolName)" class="chevron clickable-icon"/>
+              <img @click="showStakingOptions(protocol)" class="chevron clickable-icon"/>
             </div>
           </div>
 
-          <div class="staking-table" v-if="pool.showStakingOptions" @click.stop>
+          <div class="staking-table" v-if="protocol.showStakingOptions" @click.stop>
             <div class="staking-options-table">
               <div class="table nested-table">
                 <div class="table__header">
                   <div class="table__cell left">Asset</div>
                   <div class="table__cell right">Price</div>
-                  <div class="table__cell trend left">Staked</div>
-                  <div class="table__cell right"></div>
-                  <div class="table__cell right"></div>
+                  <div class="table__cell right">Staked</div>
+                  <div class="table__cell right">APR</div>
+                  <div class="table__cell right">Available</div>
                   <div class="table__cell right"></div>
                   <div class="table__cell right">Stake/Unstake</div>
                 </div>
                 <div class="table__body">
-                  <div class="table__row" v-for="asset in pool.stakingOptions"
+                  <div class="table__row" v-for="asset in protocol.stakingOptions"
                        v-bind:key="asset.symbol">
                     <div class="table__cell left" data-label="Asset">
                       <div class="token-logo-wrapper">
@@ -67,18 +65,48 @@
                     <div class="table__cell right" data-label="Price">
                       <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
                     </div>
-                    <div class="table__cell center" data-label="Staked">
+                    <div class="table__cell right" data-label="Staked">
                       <span>11.235</span>
                     </div>
-                    <div class="table__cell" v-if="!isMobile"></div>
-                    <div class="table__cell" v-if="!isMobile"></div>
+                    <div class="table__cell right" data-label="APR">
+                      <span>{{0.053 | percent}}</span>
+                    </div>
+                    <div class="table__cell right">4.21</div>
                     <div class="table__cell" v-if="!isMobile"></div>
                     <div>
                       <div class="table__cell invest-buttons right" @click.stop>
-                        <img class="plus clickable-icon"/>
+                        <img class="plus clickable-icon" @click="showStakeForm(protocol, asset)"/>
                         <img src="src/assets/icons/slash-small.svg"/>
-                        <img class="minus clickable-icon"/>
+                        <img class="minus clickable-icon" @click="showUnstakeForm(protocol, asset)"/>
                       </div>
+                    </div>
+
+                    <div class="staking-currency-input" v-if="asset.showStakeForm">
+                      <SmallBlock
+                          v-on:close="() => { asset.showStakeForm = false;  }">
+                        <CurrencyForm
+                            label="Stake"
+                            :symbol="asset.symbol"
+                            :price="asset.price"
+                            :hasSecondButton="true"
+                            v-on:submitValue="(value) => stake(protocol, asset, value)"
+                            :denominationButtons="true"
+                        />
+                      </SmallBlock>
+                    </div>
+
+                    <div class="staking-currency-input" v-if="asset.showUnstakeForm">
+                      <SmallBlock
+                          v-on:close="() => { asset.showUnstakeForm = false;  }">
+                        <CurrencyForm
+                            label="Unstake"
+                            :symbol="asset.symbol"
+                            :price="asset.price"
+                            :hasSecondButton="true"
+                            v-on:submitValue="(value) => unstake(protocol, asset, value)"
+                            :denominationButtons="true"
+                        />
+                      </SmallBlock>
                     </div>
                   </div>
                 </div>
@@ -127,25 +155,44 @@ export default {
   data() {
     return {
       list: config.ASSETS_CONFIG,
-      pools: {
+      protocols: {
         'YAK_POOL': {
-          poolName: 'YAK_POOL',
+          key: 'YAK_POOL',
           symbol: 'YAK',
-          name: 'Yak',
+          name: 'Protocol Yak Yield',
           totalStaked: 1.2,
           balance: 1,
-          apr: 0.053,
+          maxApr: 0.053,
           showStakingOptions: false,
-          stakingOptions: [
-              config.ASSETS_CONFIG.AVAX
-          ]
+          stakingOptions: {
+            AVAX: config.ASSETS_CONFIG.AVAX
+          }
         }
       }
     }
   },
   methods: {
-    showStakingOptions(poolName) {
-      Vue.set(this.pools[poolName], 'showStakingOptions', !this.pools[poolName].showStakingOptions);
+    showStakingOptions(protocol) {
+      Vue.set(this.protocols[protocol.key], 'showStakingOptions', !this.protocols[protocol.key].showStakingOptions);
+    },
+
+    showStakeForm(protocol, asset) {
+      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showStakeForm', true);
+      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showUnstakeForm', false);
+
+    },
+
+    showUnstakeForm(protocol, asset) {
+      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showUnstakeForm', true);
+      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showStakeForm', false);
+    },
+
+    stake(protocol, asset, value) {
+      console.log(`stake ${value}${asset.symbol} in ${protocol.name}`);
+    },
+
+    unstake(protocol, asset, value) {
+      console.log(`unstake ${value}${asset.symbol} in ${protocol.name}`);
     },
   },
 }
@@ -153,6 +200,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "~@/styles/variables";
+
+.protocols__row {
+  grid-template-columns: 2fr repeat(5, 1fr) !important;
+}
 
 .list-wrapper {
   @media screen and (max-width: $md) {
@@ -170,7 +221,8 @@ export default {
 }
 
 .nested-table {
-  padding: 0 20px ;
+  padding: 0 20px;
+  margin-top: 0;
 
   .table__header {
     margin-bottom: 0;
@@ -383,185 +435,9 @@ export default {
   justify-content: center;
 }
 
-</style>
-
-<style lang="scss">
-@import "~@/styles/variables";
-
-.table {
-  display: flex;
-  flex-direction: column;
-  margin-top: 45px;
-
-  &.nested-table {
-    margin-top: 0;
-  }
-
-  .table__header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    padding: 0 10px 0 10px;
-    font-weight: 500;
-    color: $dark-gray;
-    margin-bottom: 1rem;
-
-    @media screen and (max-width: $md) {
-      display: none;
-    }
-  }
-
-  .table__body {
-    display: flex;
-    flex-direction: column;
-
-    .table__row {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      padding: 0 10px 0 10px;
-      border-style: solid;
-      border-width: 2px 0 0 0;
-      border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-      border-image-slice: 1;
-
-      @media screen and (max-width: $md) {
-        grid-template-columns: repeat(1, 1fr);
-        margin-bottom: 1.5em;
-      }
-
-      .table__cell {
-        min-height: 55px;
-
-        @media screen and (max-width: $md) {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          border-bottom: 1px solid $light-gray;
-          font-size: .8em;
-          text-align: right;
-          padding: 0.5rem 0;
-
-          &.chart-icon {
-            display: none;
-          }
-
-          &::before {
-            content: attr(data-label);
-            float: left;
-            font-weight: bold;
-          }
-
-          &:last-child {
-            border-bottom: none;
-          }
-
-        }
-
-        &.invest-buttons {
-          @media screen and (max-width: $md) {
-            justify-content: center;
-          }
-        }
-      }
-
-      .asset-input .small-block-wrapper {
-        height: 100%;
-      }
-    }
-  }
-}
-
-.table__cell {
-  flex-grow: 1;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  font-weight: 500;
-  padding: 1px;
-
-  &.trend {
-    margin-left: 40px;
-  }
-
-  &.value {
-    font-weight: 600;
-  }
-
-  &.right {
-    text-align: right;
-    justify-content: flex-end;
-  }
-
-  &.left {
-    text-align: left;
-    justify-content: flex-start;
-  }
-
-  &.center {
-    text-align: center;
-    justify-content: center;
-  }
-}
-
-.asset-input {
-  .currency-form-wrapper {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-
-    @media screen and (min-width: $md) {
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      align-self: center;
-      width: min-content;
-      margin-top: 45px;
-    }
-
-
-    .input-wrapper {
-      height: 60px;
-    }
-
-    input {
-      height: 30px;
-      line-height: 30px;
-    }
-
-    .error, .info, .warning {
-      text-align: left;
-    }
-
-    .logo {
-      height: 30px;
-      width: 30px;
-      min-width: 30px;
-      min-height: 30px;
-    }
-
-    .symbol {
-      font-size: 16px;
-    }
-
-    .btn {
-      padding: 13px 20px;
-      margin-left: 30px;
-      font-size: 20px;
-
-      &.waiting .ball-beat:not(.active) {
-        margin-top: 5px;
-        margin-bottom: 5px;
-      }
-    }
-
-    .value-wrapper .label {
-      text-align: start;
-    }
-
-    .form-button {
-      margin-bottom: 30px;
-    }
-  }
+.staking-currency-input {
+  grid-column: 1/-1;
 }
 
 </style>
+
