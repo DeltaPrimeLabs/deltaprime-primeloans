@@ -32,7 +32,7 @@ import {
   SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -82,6 +82,7 @@ describe('Smart loan - upgrading',  () => {
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
+      yakRouterContract: Contract,
       other: SignerWithAddress,
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
@@ -94,6 +95,7 @@ describe('Smart loan - upgrading',  () => {
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       newPool = (await deployContract(owner, PoolArtifact)) as Pool;
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
           new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
@@ -109,7 +111,7 @@ describe('Smart loan - upgrading',  () => {
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
       const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, 'mock');
+      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, yakRouterContract.address, 'mock');
       let implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 
 import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
+import "./interfaces/IYieldYakRouter.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title SmartLoanProperties
@@ -58,6 +60,14 @@ contract SmartLoanProperties {
 
   function getExchange() public virtual view returns (IAssetsExchange) {
     return IAssetsExchange(_EXCHANGE_ADDRESS);
+  }
+
+  function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
+    return IYieldYakRouter(0x4C4a2f8c81640e47606d3fd77B353E87Ba015584);
+  }
+
+  function getYakAvaxStakingContract() public virtual view returns (IERC20) {
+    return IERC20(0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0);
   }
 
   function getPool() public virtual view returns (Pool) {
