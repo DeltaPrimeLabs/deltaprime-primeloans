@@ -1,4 +1,4 @@
-<template>
+6<template>
   <div class="form-wrapper">
     <CurrencyInput
       v-on:newValue="updateFund"
@@ -60,6 +60,7 @@ export default {
     },
     methods: {
       ...mapActions('loan', ['fund']),
+      ...mapActions('network', ['updateBalance']),
       updateFund(result) {
         this.fundValue = result.value;
         this.errors[0] = result.error;
@@ -72,9 +73,10 @@ export default {
           this.waiting = true;
           this.handleTransaction(this.fund, {amount: this.fundValue})
           .then(
-            () => {
+            async () => {
               this.waiting = false;
               this.fundValue = null;
+              await this.updateBalance();
             }
           );
         }
