@@ -46,7 +46,7 @@ import {
     SmartLoansFactory,
     SmartLoansFactory__factory,
     SmartLoansFactoryTUP,
-    UpgradeableBeacon__factory,
+    UpgradeableBeacon__factory, YieldYakRouter__factory,
 } from "../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
 
@@ -69,6 +69,7 @@ describe('Trading competition upgraded contracts test', () => {
         pool: Pool,
         poolImpl: Pool,
         poolTUP: PoolTUP,
+        yakRouterContract: Contract,
         poolUpgraded: PoolWithAccessNFT,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -113,6 +114,7 @@ describe('Trading competition upgraded contracts test', () => {
         poolImpl = (await deployContract(owner, PoolArtifact)) as Pool;
         poolTUP = (await deployContract(owner, PoolTUPArtifact, [poolImpl.address, admin.address, []])) as PoolTUP;
         pool = await new Pool__factory(owner).attach(poolTUP.address);
+        yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
         // Borrow/Deposit indices
         const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -125,7 +127,7 @@ describe('Trading competition upgraded contracts test', () => {
         ]);
 
         // Smart Loan Implementation
-        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, exchange.address, 'mock');
+        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, exchange.address, yakRouterContract.address, 'mock');
         SLImpl = await deployContract(owner, artifact) as SmartLoan;
 
         // Not upgraded SLF with TUP
@@ -191,7 +193,7 @@ describe('Trading competition upgraded contracts test', () => {
     });
 
     it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
-        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK_UPGRADED, pool.address, exchange.address, 'mock');
+        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK_UPGRADED, pool.address, exchange.address, yakRouterContract.address, 'mock');
 
         SLImpl = await deployContract(owner, artifact) as SmartLoan;
         const beaconAddress = await SLF.connect(owner).upgradeableBeacon.call(0);

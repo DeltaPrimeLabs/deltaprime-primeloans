@@ -177,7 +177,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * Returns a path containing WAVAX token's address and chosen ERC20 token's address
    * @dev _token ERC20 token's address
    **/
-  function getPathForAVAXtoToken(address _token) private view returns (address[] memory) {
+  function getPathForAVAXtoToken(address _token) private pure returns (address[] memory) {
     address[] memory path = new address[](2);
     path[0] = WAVAX_ADDRESS;
     path[1] = _token;
@@ -188,7 +188,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * Returns a path containing chosen ERC20 token's address and WAVAX token's address
    * @dev _token ERC20 token's address
    **/
-  function getPathForTokenToAVAX(address _token) private view returns (address[] memory) {
+  function getPathForTokenToAVAX(address _token) private pure returns (address[] memory) {
     address[] memory path = new address[](2);
     path[0] = _token;
     path[1] = WAVAX_ADDRESS;

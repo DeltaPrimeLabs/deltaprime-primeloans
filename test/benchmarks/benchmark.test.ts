@@ -32,7 +32,7 @@ import {
   SmartLoansFactory,
   SmartLoanSinglePriceAware,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -88,6 +88,7 @@ describe('Smart loan',  () => {
       wrappedLoanSinglePriceAware: any,
       pool: Pool,
       owner: SignerWithAddress,
+      yakRouterContract: Contract,
       depositor: SignerWithAddress,
       usdTokenContract: Contract,
       MOCK_PRICES: any,
@@ -110,6 +111,7 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
@@ -181,14 +183,14 @@ describe('Smart loan',  () => {
 
       smartLoansFactory1 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      const artifact1 = await recompileSmartLoan("SmartLoanSinglePriceAware", pool.address, exchange.address, 'deprecated');
+      const artifact1 = await recompileSmartLoan("SmartLoanSinglePriceAware", pool.address, exchange.address, yakRouterContract.address, 'deprecated');
       let implementation1 = await deployContract(owner, artifact1) as SmartLoan;
 
       await smartLoansFactory1.initialize(implementation1.address);
 
       smartLoansFactory2 = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      const artifact2 = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, 'mock');
+      const artifact2 = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, yakRouterContract.address, 'mock');
       let implementation2 = await deployContract(owner, artifact2) as SmartLoan;
 
       await smartLoansFactory2.initialize(implementation2.address);

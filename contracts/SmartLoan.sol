@@ -115,7 +115,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     }
 
     uint256 debt = getDebt();
-    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed");
+    require(address(this).balance >= debt, "Debt not repaid fully");
     repay(debt);
     emit LoanClosed(debt, address(this).balance, block.timestamp);
 
@@ -143,11 +143,25 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     emit Liquidated(msg.sender, repayAmount, bonus, getLTV(), block.timestamp);
   }
 
+  function selloutStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
+    address yakRouterAddress = address(getYieldYakRouter());
+    (bool successApprove, ) = address(getYakAvaxStakingContract()).call(
+      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
+    );
+    (bool successUnstake, ) = yakRouterAddress.call(
+      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
+    );
+    return successApprove && successUnstake;
+  }
+
   /**
    * This function role is to sell part/all of the available assets in order to receive the targetAvaxAmount.
    *
    **/
   function sellout(uint256 targetAvaxAmount) private {
+    bool stakingSelloutSuccess = selloutStakedAVAX(targetAvaxAmount);
+    if (address(this).balance >= targetAvaxAmount) return;
+
     bytes32[] memory assets = getExchange().getAllAssets();
     for (uint256 i = 0; i < assets.length; i++) {
       if (address(this).balance >= targetAvaxAmount) break;
@@ -163,7 +177,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This function uses the redstone-evm-connector
    **/
   function withdraw(uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= _amount, "There is not enough funds to withdraw");
+    require(address(this).balance >= _amount, "Insufficient funds");
 
     payable(msg.sender).safeTransferETH(_amount);
 
@@ -178,12 +192,24 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @dev This function uses the redstone-evm-connector
    **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
+    require(address(this).balance >= _maxAvaxAmountIn, "Insufficient funds");
 
     bool success = getExchange().buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     require(success, "Investment failed");
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
+  }
+
+  function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    require(address(this).balance >= amount, "Not enough AVAX available");
+    getYieldYakRouter().stakeAVAX{value: amount}(amount);
+  }
+
+  function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    IYieldYakRouter yakRouter = getYieldYakRouter();
+    address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
+
+    require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
   }
 
   /**
@@ -224,7 +250,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     }
 
     _amount = Math.min(_amount, getDebt());
-    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
+    require(address(this).balance >= _amount, "Not enough funds to repay the loan");
 
     getPool().repay{value: _amount}();
 
@@ -255,6 +281,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
       total = total + (prices[i] * 10**18 * assetBalance) / (avaxPrice * 10**token.decimals());
     }
+
+    // Get total value of assets staked in Yield Yak
+    total += getYieldYakRouter().getTotalStakedValue();
 
     return total;
   }
@@ -346,6 +375,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   **/
   modifier remainsSolvent() {
     _;
+
     require(isSolvent(), "The action may cause an account to become insolvent");
   }
 

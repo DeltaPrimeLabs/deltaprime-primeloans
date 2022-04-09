@@ -1,5 +1,5 @@
 import {ethers, network, waffle} from "hardhat";
-import {BigNumber} from "ethers";
+import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from "../typechain";
 const {provider} = waffle;
@@ -75,6 +75,12 @@ export const deployAndInitPangolinExchangeContract = async function (
   return exchange
 };
 
+export async function calculateStakingTokensAmountBasedOnAvaxValue(yakContract: Contract, avaxAmount: BigNumber) {
+    let totalSupply = await yakContract.totalSupply();
+    let totalDeposits = await yakContract.totalDeposits();
+    return avaxAmount.mul(totalSupply).div(totalDeposits);
+}
+
 export async function syncTime() {
     const now = Math.ceil(new Date().getTime() / 1000);
     try {
@@ -95,11 +101,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoan(contractName: string, poolAddress: string, exchangeAddress: string, subpath?: string) {
+export async function recompileSmartLoan(contractName: string, poolAddress: string, exchangeAddress: string, yieldYakAddress: string, subpath?: string) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    updateSmartLoanProperties(poolAddress, exchangeAddress);
+    updateSmartLoanProperties(poolAddress, exchangeAddress, yieldYakAddress);
 
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);

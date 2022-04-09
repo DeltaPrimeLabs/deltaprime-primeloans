@@ -33,7 +33,7 @@ import {
     Pool,
     SmartLoan,
     SmartLoansFactoryWithAccessNFT,
-    VariableUtilisationRatesCalculator
+    VariableUtilisationRatesCalculator, YieldYakRouter, YieldYakRouter__factory
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 
@@ -62,6 +62,7 @@ describe('Smart loan',  () => {
         let exchange: PangolinExchange,
             smartLoansFactory: SmartLoansFactoryWithAccessNFT,
             nftContract: Contract,
+            yakRouterContract: YieldYakRouter,
             pool: Pool,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
@@ -78,6 +79,7 @@ describe('Smart loan',  () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
             nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
+            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
             const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -125,7 +127,7 @@ describe('Smart loan',  () => {
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
 
-            const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, 'mock');
+            const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, yakRouterContract.address, 'mock');
             let implementation = await deployContract(owner, artifact) as SmartLoan;
 
             await smartLoansFactory.initialize(implementation.address);

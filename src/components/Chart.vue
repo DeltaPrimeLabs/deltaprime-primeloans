@@ -67,7 +67,7 @@
       }
     },
     mounted() {
-      this.renderChart(this.chartData, this.options)
+      this.renderChart(this.chartData, this.options);
     },
     computed: {
       minX() {
@@ -194,7 +194,6 @@
           // This case happens on initial chart load
           return null;
         }
-
         return fun(ctx, chartArea);
       }
     }
