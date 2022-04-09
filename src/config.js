@@ -10,7 +10,7 @@ export default {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},
       "ETH": {name: "Ether", symbol: "ETH", decimals: 18, address: addresses.ETH},
       "BTC": {name: "Bitcoin", symbol: "BTC", decimals: 8, address: addresses.BTC},
-      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT},
+      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true},
       "PNG": {name: "Pangolin", symbol: "PNG", decimals: 18, address: addresses.PNG},
       "XAVA": {name: "Avalaunch", symbol: "XAVA", decimals: 18, address: addresses.XAVA, logoExt: "png"},
       "LINK": {name: "Link", symbol: "LINK", decimals: 18, address: addresses.LINK},
