@@ -3,7 +3,9 @@
     <div class="input-wrapper"
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
-      <span class="input"><input type="number" ref="input" pattern="[0-9]+" v-model.number="value" step="0.0001" placeholder="0" min="0" max="999999" lang="en-US"></span>
+      <span class="input">
+        <input type="number" ref="input" pattern="[0-9]+" v-model="value" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
+      </span>
       <div class="converted">
         <div v-if="value && (value !== 0)">
           <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd}}</span>
@@ -142,7 +144,15 @@ import {mapState} from "vuex";
             this.error = validatorResult;
           }
         }
-      }
+      },
+      valueChange() {
+        const match = this.value.match(/^\d*[\.|\,]?\d{1,8}$/);
+        if (match) {
+          this.value = match;
+        } else {
+          this.value = this.value.substring(0, this.value.length - 1);
+        }
+      },
     }
   }
 </script>
