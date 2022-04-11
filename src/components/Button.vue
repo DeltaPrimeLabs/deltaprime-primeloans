@@ -38,7 +38,7 @@
   user-select: none;
   background-color: transparent;
   line-height: 1.5;
-  border-width: 1px;
+  border-width: 0;
   border-style: solid;
   border-color: transparent;
   border-image: initial;
@@ -50,7 +50,7 @@
   padding: 0.75rem 1.5rem;
 
   @media screen and (min-width: $md) {
-    padding: 17px 40px;
+    padding: 18px 41px;
     font-size: $font-size-xl;
   }
 
