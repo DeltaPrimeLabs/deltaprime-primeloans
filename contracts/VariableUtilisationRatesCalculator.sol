@@ -72,7 +72,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external pure override returns (uint256) {
     if (totalDeposits == 0) return OFFSET;
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);

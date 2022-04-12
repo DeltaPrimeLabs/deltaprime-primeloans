@@ -60,7 +60,7 @@ contract SmartLoanSinglePriceAware is OwnableUpgradeable, SinglePriceAwareUpgrad
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
    **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds are available to invest in an asset");
+    require(address(this).balance >= _maxAvaxAmountIn, "Insufficient funds");
 
     bool success = getExchange().buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
     require(success, "Investment failed");
