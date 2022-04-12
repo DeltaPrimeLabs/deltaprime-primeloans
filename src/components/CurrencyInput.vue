@@ -6,23 +6,27 @@
       <span class="input">
         <input type="number" ref="input" pattern="[0-9]+" v-model="value" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
       </span>
-      <div class="converted">
-        <div v-if="value && (value !== 0)">
-          <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd}}</span>
-          <span v-else>{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }}</span>
+      <div class="input-extras-wrapper">
+        <div class="converted">
+          <div v-if="value && (value !== 0)">
+            <span v-if="usdDenominated">{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd }}</span>
+            <span v-else>{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }}</span>
+          </div>
         </div>
-      </div>
-      <div class="denomination" v-if="denominationButtons">
-        <img class="icon" :src="`src/assets/logo/${usdDenominated ? 'grey/' : ''}avax.svg`"  @click="usdDenominated = false"/>
-        <img class="slash" src="src/assets/icons/slash-small.svg"/>
-        <img class="icon" :src="`src/assets/logo/${!usdDenominated ? 'grey/' : ''}usd.svg`" @click="usdDenominated = true"/>
-      </div>
-      <div v-if="max" class="max-wrapper" @click.stop="value = max">
-        <div class="max">MAX</div>
-      </div>
-      <div class="logo-wrapper">
-        <img class="logo" :src="logoSrc(symbol)"/>
-        <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
+        <div class="denomination" v-if="denominationButtons">
+          <img class="icon" :src="`src/assets/logo/${usdDenominated ? 'grey/' : ''}avax.svg`"
+               @click="usdDenominated = false"/>
+          <img class="slash" src="src/assets/icons/slash-small.svg"/>
+          <img class="icon" :src="`src/assets/logo/${!usdDenominated ? 'grey/' : ''}usd.svg`"
+               @click="usdDenominated = true"/>
+        </div>
+        <div v-if="max" class="max-wrapper" @click.stop="value = max">
+          <div class="max">MAX</div>
+        </div>
+        <div class="logo-wrapper">
+          <img class="logo" :src="logoSrc(symbol)"/>
+          <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
+        </div>
       </div>
     </div>
     <div class="info"
@@ -176,6 +180,11 @@ import {mapState} from "vuex";
   @media screen and (min-width: $md) {
     padding-left: 30px;
     padding-right: 20px;
+  }
+
+  .input-extras-wrapper {
+    display: flex;
+    align-items: center;
   }
 }
 
