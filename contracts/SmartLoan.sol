@@ -23,6 +23,7 @@ import "./SmartLoanProperties.sol";
 contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
+  using EnumerableMap for EnumerableMap.Map;
 
   function initialize() external initializer {
     __Ownable_init();
@@ -37,9 +38,24 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     return MAX_BLOCK_TIMESTAMP_DELAY;
   }
 
+  // TODO: Implement for LP, staking, and swap
   function addOwnedSwapAsset(bytes32 _asset, bytes32 _integration) internal {
     // Research possibility to use EnumerableMap._set as a struct-member method
     EnumerableMap._set(swapOwnedAssetsToIntegration, _asset, _integration);
+  }
+
+  function addOwnedStakingAsset(bytes32 _asset, bytes32 _integration) internal {
+    // Research possibility to use EnumerableMap._set as a struct-member method
+    EnumerableMap._set(stakingOwnedAssetsToIntegration, _asset, _integration);
+  }
+
+  // TODO: currently it doesn't manage properly scenario in which one stakes the same asset through different integrations
+  function removeOwnedStakingAsset(bytes32 _asset) internal {
+    EnumerableMap._remove(stakingOwnedAssetsToIntegration, _asset);
+  }
+
+  function removeOwnedSwapAsset(bytes32 _asset) internal {
+    EnumerableMap._remove(swapOwnedAssetsToIntegration, _asset);
   }
 
   /**
@@ -154,16 +170,18 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     emit Liquidated(msg.sender, repayAmount, bonus, getLTV(), block.timestamp);
   }
 
-  function selloutStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
-    address yakRouterAddress = address(getYieldYakRouter());
-    (bool successApprove, ) = address(getYakAvaxStakingContract()).call(
-      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
-    );
-    (bool successUnstake, ) = yakRouterAddress.call(
-      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
-    );
-    return successApprove && successUnstake;
-  }
+//  // TODO: Implement
+//  function selloutStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
+//    address yakRouterAddress = address(getYieldYakRouter());
+//    uint256 integrationID = EnumerableMap._get(stakingOwnedAssetsToIntegration, _asset);
+//    (bool successApprove, ) = address(dpRouter.getStakingContract(integrationID, _asset)).call(
+//      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
+//    );
+//    (bool successUnstake, ) = yakRouterAddress.call(
+//      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
+//    );
+//    return successApprove && successUnstake;
+//  }
 
   /**
    * This function role is to sell part/all of the available assets in order to receive the targetAvaxAmount.
@@ -212,16 +230,26 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
 
-  function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= amount, "Not enough AVAX available");
-    getYieldYakRouter().stakeAVAX{value: amount}(amount);
+  function stake(bytes32 _integrationID, bytes32 _asset, uint256 _amount) public payable onlyOwner nonReentrant remainsSolvent {
+    DPRouterV1 dpRouter = getDPRouterV1();
+    if(_asset == "AVAX") {
+      require(address(this).balance >= _amount, "Not enough AVAX available");
+    } else {
+      address(dpRouter.getStakingContract(_integrationID, _asset)).safeApprove(address(dpRouter), _amount);
+    }
+    require(dpRouter.stakeFor{value: _amount}(_integrationID, _asset, _amount), "Staking failed");
+    addOwnedStakingAsset(_asset, _integrationID);
   }
 
-  function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-    IYieldYakRouter yakRouter = getYieldYakRouter();
-    address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
+  function unstake(bytes32 _integrationID, bytes32 _asset, uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    DPRouterV1 dpRouter = getDPRouterV1();
+    StakingToken stakingContract = dpRouter.getStakingContract(_integrationID, _asset);
+    address(stakingContract).safeTransfer(address(dpRouter), amount);
 
-    require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
+    require(dpRouter.unstake(_integrationID, _asset, amount), "Unstaking failed");
+    if(stakingContract.balanceOf(address(this)) == 0) {
+      removeOwnedStakingAsset(_asset);
+    }
   }
 
   /**
@@ -238,6 +266,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
     bool success = dpRouter.sell(_integration, _asset, _exactERC20AmountIn, _minAvaxAmountOut);
     require(success, "Redemption failed");
+    if (token.balanceOf(address(this)) == 0) {
+      removeOwnedSwapAsset(_asset);
+    }
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }

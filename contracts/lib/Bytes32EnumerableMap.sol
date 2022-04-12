@@ -58,7 +58,7 @@ library EnumerableMap {
    *
    * Returns true if the key was removed from the map, that is if it was present.
    */
-  function _remove(Map storage map, bytes32 key) private returns (bool) {
+  function _remove(Map storage map, bytes32 key) internal returns (bool) {
     delete map._values[key];
     return map._keys.remove(key);
   }

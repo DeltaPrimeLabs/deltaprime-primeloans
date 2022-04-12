@@ -62,6 +62,10 @@ contract DPRouterV1 is OwnableUpgradeable {
         return _getIntegration(_integration).getSwapAssetAddress(_asset);
     }
 
+    function getStakingAssetAddress(bytes32 _integration, bytes32 _asset) public view returns(address) {
+        return _getIntegration(_integration).getStakingAssetAddress(_asset);
+    }
+
     // TODO: Replace with swap() once ERC20 pools are implemented
     function buy(bytes32 _integrationID, bytes32 _asset, uint256 _exactERC20AmountOut) external payable supportsAction(_integrationID, IDPIntegration.supportedActions.BUY) returns(bool) {
         (bool success, ) = address(_getIntegration(_integrationID)).call{value: msg.value}(
@@ -82,14 +86,26 @@ contract DPRouterV1 is OwnableUpgradeable {
         return success;
     }
 
-    function stake(bytes32 _integrationID, bytes32 _asset) internal supportsAction(_integrationID, IDPIntegration.supportedActions.STAKE) returns(bool) {
-        // TODO: implement
-        return false;
+    function stakeFor(bytes32 _integrationID, bytes32 _asset, uint256 _amount) external payable supportsAction(_integrationID, IDPIntegration.supportedActions.STAKE) returns(bool) {
+        IDPIntegration integration = _getIntegration(_integrationID);
+        bool success = integration.stakeFor{value: _amount}(_asset, _amount, msg.sender);
+        return success;
     }
 
-    function unstake(bytes32 _integrationID, bytes32 _asset, uint256 _amount) internal supportsAction(_integrationID, IDPIntegration.supportedActions.UNSTAKE) returns(bool) {
-        // TODO: implement
-        return false;
+    function getStakingContract(bytes32 _integrationID, bytes32 _asset) public view returns (StakingToken) {
+        IDPIntegration integration = _getIntegration(_integrationID);
+        return integration.getStakingContract(_asset);
+    }
+
+    function unstake(bytes32 _integrationID, bytes32 _asset, uint256 _amount) external supportsAction(_integrationID, IDPIntegration.supportedActions.UNSTAKE) returns(bool) {
+        IDPIntegration integration = _getIntegration(_integrationID);
+        StakingToken stakingContract = getStakingContract(_integrationID, _asset);
+        stakingContract.approve(address(integration), _amount);
+        bool success = integration.stakeFor{value: _amount}(_asset, _amount, msg.sender);
+        if (!success) {
+            address(stakingContract).safeTransfer(msg.sender, _amount);
+        }
+        return success;
     }
 
     function addLiquidity(bytes32 _integrationID, bytes32 _asset1, bytes32 _asset2) internal supportsAction(_integrationID, IDPIntegration.supportedActions.ADD_LIQUIDITY) returns(bool) {

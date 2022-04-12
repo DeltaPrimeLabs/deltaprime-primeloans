@@ -6,7 +6,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../interfaces/IYakStakingAVAXAAVEV1.sol";
+import "../interfaces/StakingToken.sol";
 import "hardhat/console.sol";
 import "../interfaces/IYieldYakRouter.sol";
 
@@ -17,13 +17,13 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     address private constant YAKStakingAVAXAAVEV1Address = 0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0;
 
     function stakeAVAX(uint256 amount) public payable override nonReentrant{
-        IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).depositFor{value: amount}(msg.sender);
+        StakingToken(YAKStakingAVAXAAVEV1Address).depositFor{value: amount}(msg.sender);
     
         emit Staked(msg.sender, "AVAX", amount, block.timestamp);
     }
 
     function unstakeAVAX(uint256 amount) public override nonReentrant returns(bool) {
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
+        StakingToken yakStakingContract = StakingToken(YAKStakingAVAXAAVEV1Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(msg.sender);
         uint256 allowanceForRouter = yakStakingContract.allowance(msg.sender, address(this));
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
@@ -42,7 +42,7 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     }
 
     function getTotalStakedValue() public view override returns (uint256 totalValue) {
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
+        StakingToken yakStakingContract = StakingToken(YAKStakingAVAXAAVEV1Address);
         uint256 stakedBalance = yakStakingContract.balanceOf(msg.sender);
         if (stakedBalance == 0) {
             totalValue = 0;
@@ -54,7 +54,7 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     }
 
     function unstakeAVAXForASpecifiedAmount(uint256 amount) public override {
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
+        StakingToken yakStakingContract = StakingToken(YAKStakingAVAXAAVEV1Address);
         uint256 stakedBalance = yakStakingContract.balanceOf(msg.sender);
 
         if (stakedBalance != 0) {

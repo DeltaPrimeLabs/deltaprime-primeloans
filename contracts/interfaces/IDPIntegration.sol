@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "../lib/Bytes32EnumerableMap.sol";
+import "../interfaces/StakingToken.sol";
 
 interface IDPIntegration{
     enum supportedActions {
@@ -26,7 +27,17 @@ interface IDPIntegration{
 
     function buy(bytes32 _asset, uint256 _exactERC20AmountOut, address recipient) external payable returns (bool);
 
+    function stakeFor(bytes32 _asset, uint256 _amount, address _recipient) external payable returns (bool);
+
+    function unstake(bytes32 _asset, uint256 _amount) external returns (bool);
+
+    function getTotalStakedValue() external view returns (uint256 totalValue);
+
+    function getStakingContract(bytes32 _asset) external view returns (StakingToken);
+
     function isActionSupported(supportedActions _action) external view returns(bool);
+
+    function isActionSupported(supportedActions _action, bytes32 _asset) external view returns(bool);
 
     function getSwapSupportedAssets() external view returns (bytes32[] memory);
 
