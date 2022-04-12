@@ -3,25 +3,25 @@
     <div class="slider-component">
       <div class="slide-container">
         <input
-          ref="input"
-          v-model="currentValue"
-          type="range"
-          :step="step"
-          :min="min"
-          :max="max"
-          class="slider"
-          :class="{'error': error}"
-          @input="onInput"
+            ref="input"
+            v-model="currentValue"
+            type="range"
+            :step="step"
+            :min="min"
+            :max="max"
+            class="slider"
+            :class="{'error': error}"
+            @input="onInput"
         >
       </div>
     </div>
     <div class="labels" v-if="labels">
-      <div v-for="label in labels" :key="label">{{label}}</div>
+      <div v-for="label in labels" :key="label">{{ label }}</div>
     </div>
     <div class="error">
       <span v-if="error">
         <img src="src/assets/icons/error.svg"/>
-        {{error}}
+        {{ error }}
       </span>
     </div>
   </div>
@@ -30,10 +30,6 @@
 <script>
 export default {
   props: {
-    value: {
-      type: Number,
-      required: true
-    },
     min: {
       type: Number,
       required: true
@@ -49,23 +45,27 @@ export default {
     validators: {
       type: Array, default: () => []
     },
-    labels : {
+    labels: {
       type: Array, default: null
     }
   },
-  data(){
+  data() {
     return {
       currentValue: this.value,
-      error: ''
+      error: '',
+      value: null,
     };
-  },
-  mounted() {
-    this.restyleInput(this.$refs.input, this.value);
   },
   methods: {
     onInput() {
-      this.onChange(this.currentValue);
-      this.$emit('input', parseFloat(this.currentValue));
+      this.currentValue = Number(this.currentValue);
+      if (this.currentValue >= this.max) {
+        this.onChange(this.max, false);
+        this.$emit('input', this.max);
+      } else {
+        this.onChange(this.currentValue, false);
+        this.$emit('input', this.currentValue);
+      }
     },
     restyleInput(element, value) {
       const min = parseFloat(element.min);
@@ -77,11 +77,17 @@ export default {
         let size = (value - min) / (max - min);
         //calculated this way to account for a thumb width
         element.style.backgroundSize =
-          'calc(' + size * 100 + '% - ' + (size - 0.5) * 23 + 'px)'
-          + ' 100%';
+            'calc(' + size * 100 + '% - ' + (size - 0.5) * 23 + 'px)'
+            + ' 100%';
       }
     },
-    async onChange(newValue) {
+    async onChange(newValue, externalChange) {
+      if (!externalChange) {
+        if (newValue >= this.max) {
+          newValue = this.max;
+        }
+      }
+      this.currentValue = newValue;
       this.restyleInput(this.$refs.input, newValue)
 
       this.error = '';
@@ -97,14 +103,10 @@ export default {
 
       const hasError = this.error.length > 0;
 
-      this.$emit('newValue', {value: newValue, error: hasError});
+      this.$emit('newValue', {value: this.currentValue, error: hasError});
     }
   },
   watch: {
-    value(newValue) {
-      this.onChange(newValue);
-      this.currentValue = newValue;
-    },
     max(newValue) {
       this.$refs.input.max = newValue;
       this.onChange(newValue);
@@ -133,7 +135,6 @@ export default {
   appearance: none;
   width: 100%;
   outline: none;
-  //opacity: 0.7;
   -webkit-transition: .2s;
   transition: opacity .2s;
   height: 21px;
@@ -151,7 +152,7 @@ export default {
     background: $red;
   }
 
-  &::-webkit-slider-thumb  {
+  &::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 23px;

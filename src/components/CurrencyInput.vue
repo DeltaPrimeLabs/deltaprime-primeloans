@@ -146,12 +146,13 @@ import {mapState} from "vuex";
         }
       },
       valueChange() {
-        const match = this.value.match(/^\d*[\.|\,]?\d{1,8}$/);
+        const match = this.value.match(/^\d*[\.|\,]?[0-9]{1,8}$/);
         if (match) {
           this.value = Number(this.value);
         } else {
           this.value = Number(this.value.substring(0, this.value.length - 1));
         }
+        this.$emit('inputChange', this.value);
       },
     }
   }
