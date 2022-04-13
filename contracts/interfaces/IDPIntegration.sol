@@ -29,9 +29,9 @@ interface IDPIntegration{
 
     function stakeFor(bytes32 _asset, uint256 _amount, address _recipient) external payable returns (bool);
 
-    function unstake(bytes32 _asset, uint256 _amount) external returns (bool);
+    function unstake(bytes32 _asset, uint256 _amount, address _recipient) external returns (bool);
 
-    function getTotalStakedValue() external view returns (uint256 totalValue);
+    function getTotalStakedValue(address _owner) external view returns (uint256);
 
     function getStakingContract(bytes32 _asset) external view returns (StakingToken);
 
@@ -64,4 +64,6 @@ interface IDPIntegration{
     function updateStakingSupportedAssets(Asset[] memory _assets) external;
 
     function getMinimumERC20TokenAmountForExactAVAX(bytes32 _asset, uint256 targetAVAXAmount) external returns(uint256);
+
+    function unstakeAssetForASpecifiedAmount(bytes32 _asset, uint256 amount, address _recipient) external;
 }

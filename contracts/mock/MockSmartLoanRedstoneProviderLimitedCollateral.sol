@@ -16,15 +16,17 @@ contract MockSmartLoanRedstoneProviderLimitedCollateral is SmartLoanLimitedColla
   function getPriceProvider1() public view virtual override returns (address) {
     return 0xFE71e9691B9524BC932C23d0EeD5c9CE41161884; //redstone-provider;
   }
-
-  function executeGetAllAssetsPrices() public returns (uint256[] memory) {
-    return getAllAssetsPrices();
-  }
-
-
-  function executeGetTotalValue() public virtual returns (uint256) {
-    return getTotalValue();
-  }
+//
+//  function executeGetAllAssetsPrices() public returns (uint256[] memory) {
+////    return getAllAssetsPrices();
+//    return [1,2];
+//  }
+//
+//
+//  function executeGetTotalValue() public virtual returns (uint256) {
+////    return getTotalValue();
+//    return 0;
+//  }
 
   function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
     return 5 * 60;

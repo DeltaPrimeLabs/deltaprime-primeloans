@@ -16,23 +16,23 @@ import {
   Asset,
   deployAndInitPangolinExchangeContract,
   fromWei,
-  getFixedGasSigners,
+  getFixedGasSigners, Integration,
   recompileSmartLoan,
   syncTime,
   toBytes32,
   toWei
 } from "../_helpers";
 import {
-  CompoundingIndex,
+  CompoundingIndex, DPRouterV1, DPRouterV1__factory,
   MockSmartLoanRedstoneProvider,
   MockUpgradedGettersSmartLoan__factory,
   OpenBorrowersRegistry__factory,
-  PangolinExchange,
+  PangolinExchange, PangolinIntegrationV1, PangolinIntegrationV1__factory,
   Pool,
   SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator, YieldYakRouter__factory
+  VariableUtilisationRatesCalculator, YieldYakIntegration, YieldYakIntegration__factory, YieldYakRouter__factory
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -43,6 +43,7 @@ const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+const yakStakingTokenAddress = "0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0";
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -71,7 +72,9 @@ describe('Smart loan - upgrading',  () => {
   }
 
   describe('Check basic logic before and after upgrade', () => {
-    let exchange: PangolinExchange,
+    let pangolinIntegrationContract: PangolinIntegrationV1,
+      yieldYakIntegrationContract: YieldYakIntegration,
+      dpRouter: DPRouterV1,
       loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       wrappedSecondLoan: any,
@@ -82,7 +85,6 @@ describe('Smart loan - upgrading',  () => {
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
-      yakRouterContract: Contract,
       other: SignerWithAddress,
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
@@ -95,15 +97,31 @@ describe('Smart loan - upgrading',  () => {
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       newPool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
-          new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
-          new Asset(toBytes32('USD'), usdTokenAddress)
+      pangolinIntegrationContract = await (new PangolinIntegrationV1__factory(owner).deploy());
+      await pangolinIntegrationContract.initialize(
+          pangolinRouterAddress,
+          [new Asset(toBytes32('AVAX'), WAVAXTokenAddress), new Asset(toBytes32('USD'), usdTokenAddress)],
+          [],
+          []
+      );
+
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
+      dpRouter = await (new DPRouterV1__factory(owner).deploy());
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
       ]);
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
-      estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
+      estimatedAVAXPriceFor1USDToken = await pangolinIntegrationContract.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
@@ -111,7 +129,7 @@ describe('Smart loan - upgrading',  () => {
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
       const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
 
-      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, yakRouterContract.address, 'mock');
+      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, dpRouter.address,  'mock');
       let implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -217,6 +235,7 @@ describe('Smart loan - upgrading',  () => {
       const requiredAvaxAmount = mockPrices[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
 
       await wrappedLoan.invest(
+        toBytes32('PANGOLINV1'),
         toBytes32('USD'),
         toWei("100", usdTokenDecimalPlaces),
         toWei(requiredAvaxAmount.toString())
@@ -255,7 +274,6 @@ describe('Smart loan - upgrading',  () => {
       expect(await wrappedLoan.getMinSelloutLtv()).to.be.equal(400);
       expect(await wrappedLoan.getMaxLtv()).to.be.equal(200);
       expect(await wrappedLoan.getPool()).to.be.equal(ZERO);
-      expect(await wrappedLoan.getExchange()).to.be.equal(ZERO);
     });
   });
 });

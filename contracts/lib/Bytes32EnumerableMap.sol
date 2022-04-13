@@ -18,7 +18,6 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * - Entries are enumerated in O(n). No guarantees are made on the ordering.
  *
  */
-// TODO: refactor to a separate EnumerableBytes32ToAddress and EnumerableBytes32toBYtes32 map libraries
 library EnumerableMap {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -48,7 +47,7 @@ library EnumerableMap {
     Map storage map,
     bytes32 key,
     bytes32 value
-  ) internal returns (bool) {
+  ) private returns (bool) {
     map._values[key] = value;
     return map._keys.add(key);
   }
@@ -58,7 +57,7 @@ library EnumerableMap {
    *
    * Returns true if the key was removed from the map, that is if it was present.
    */
-  function _remove(Map storage map, bytes32 key) internal returns (bool) {
+  function _remove(Map storage map, bytes32 key) private returns (bool) {
     delete map._values[key];
     return map._keys.remove(key);
   }
@@ -112,7 +111,7 @@ library EnumerableMap {
    *
    * - `key` must be in the map.
    */
-  function _get(Map storage map, bytes32 key) internal view returns (bytes32) {
+  function _get(Map storage map, bytes32 key) private view returns (bytes32) {
     bytes32 value = map._values[key];
     require(value != 0 || _contains(map, key), "EnumerableMap: nonexistent key");
     return value;

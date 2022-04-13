@@ -149,11 +149,11 @@ abstract contract DPIntegration is OwnableUpgradeable, IDPIntegration{
         return false;
     }
 
-    function unstake(bytes32 _asset, uint256 _amount) external override virtual returns (bool) {
+    function unstake(bytes32 _asset, uint256 _amount, address _recipient) external override virtual returns (bool) {
         return false;
     }
 
-    function getTotalStakedValue() public view override virtual returns (uint256 totalValue) {
+    function getTotalStakedValue(address _owner) public view override virtual returns (uint256 totalValue) {
         return 0;
     }
 
@@ -168,6 +168,9 @@ abstract contract DPIntegration is OwnableUpgradeable, IDPIntegration{
 
     function getMinimumERC20TokenAmountForExactAVAX(bytes32 _asset, uint256 targetAVAXAmount) override virtual public returns(uint256){
         return 0;
+    }
+
+    function unstakeAssetForASpecifiedAmount(bytes32 _asset, uint256 amount, address _recipient) override virtual public {
     }
 
     // LIQUIDITY PROVISION METHODS

@@ -32,8 +32,4 @@ contract MockUpgradedGettersSmartLoan is MockSmartLoanRedstoneProvider {
   function getPool() override public view returns (Pool) {
     return Pool(address(0));
   }
-
-  function getExchange() override public view returns (IAssetsExchange) {
-    return IAssetsExchange(address(0));
-  }
 }

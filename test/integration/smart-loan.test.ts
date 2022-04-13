@@ -15,12 +15,13 @@ import UpgradeableBeaconArtifact
   from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-  Asset, calculateStakingTokensAmountBasedOnAvaxValue,
-  deployAndInitPangolinExchangeContract,
+  Asset,
+  calculateStakingTokensAmountBasedOnAvaxValue,
   formatUnits,
   fromWei,
   getFixedGasSigners,
-  getSelloutRepayAmount, Integration,
+  getSelloutRepayAmount,
+  Integration,
   recompileSmartLoan,
   toBytes32,
   toWei,
@@ -28,21 +29,25 @@ import {
 import {syncTime} from "../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  CompoundingIndex, DPRouterV1, DPRouterV1__factory,
+  CompoundingIndex,
+  DPRouterV1,
+  DPRouterV1__factory,
   MockSmartLoan,
   MockSmartLoan__factory,
   MockSmartLoanRedstoneProvider,
   OpenBorrowersRegistry__factory,
-  PangolinExchange, PangolinIntegrationV1, PangolinIntegrationV1__factory,
+  PangolinIntegrationV1,
+  PangolinIntegrationV1__factory,
   Pool,
   SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator, YieldYakRouter__factory
+  VariableUtilisationRatesCalculator,
+  YieldYakIntegration,
+  YieldYakIntegration__factory
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import PangolinExchangeArtifact from "../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json";
 
 chai.use(solidity);
 
@@ -71,10 +76,10 @@ describe('Smart loan',  () => {
 
   describe('A loan without debt', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+      yieldYakIntegrationContract: YieldYakIntegration,
       dpRouter: DPRouterV1,
       smartLoansFactory: SmartLoansFactory,
       implementation: SmartLoan,
-      yakRouterContract: Contract,
       loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
@@ -92,7 +97,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
       pangolinIntegrationContract = await (new PangolinIntegrationV1__factory(owner).deploy());
@@ -103,8 +107,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -135,7 +150,7 @@ describe('Smart loan',  () => {
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, 'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -209,14 +224,6 @@ describe('Smart loan',  () => {
       await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("Avax price returned from oracle is zero");
     });
 
-    it("should provide assets balances and prices", async () => {
-      const usdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
-      expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
-
-      const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[1];
-      expect(formatUnits(usdTokenPrice, BigNumber.from(8))).to.be.closeTo(USD_PRICE, 0.001);
-    });
-
 
     it("should update valuation after price change", async () => {
       let UPDATED_MOCK_PRICES = MOCK_PRICES.map(
@@ -228,8 +235,7 @@ describe('Smart loan',  () => {
         }
       );
 
-      const newUSDTokenAssetValueInAvax = 2 * USD_PRICE / AVAX_PRICE * (await wrappedLoan.getAllAssetsBalances())[1]
-          / 10**parseInt(usdTokenDecimalPlaces.toString());
+      const newUSDTokenAssetValueInAvax = 2 * USD_PRICE / AVAX_PRICE * (await usdTokenContract.balanceOf(wrappedLoan.address)) / 10**parseInt(usdTokenDecimalPlaces.toString());
 
       let updatedLoan = WrapperBuilder
         .mockLite(loan)
@@ -250,7 +256,7 @@ describe('Smart loan',  () => {
 
 
     it("should redeem investment", async () => {
-      const initialUSDTokenBalanceInWei = (await wrappedLoan.getAllAssetsBalances())[1];
+      const initialUSDTokenBalanceInWei = await usdTokenContract.balanceOf(wrappedLoan.address);
       const usdPrice = USD_PRICE;
 
       const avaxPrice = AVAX_PRICE;
@@ -262,7 +268,7 @@ describe('Smart loan',  () => {
         initialUSDTokenBalanceInWei,
         toWei((formatUnits(initialUSDTokenBalanceInWei, usdTokenDecimalPlaces) * usdPrice / avaxPrice * (1 - slippageTolerance)).toString()));
 
-      const currentUSDTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
+      const currentUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
 
       expect(currentUSDTokenBalance).to.be.equal(0);
 
@@ -281,11 +287,11 @@ describe('Smart loan',  () => {
 
   describe('A loan with debt and repayment', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+      yieldYakIntegrationContract: YieldYakIntegration,
       dpRouter: DPRouterV1,
       loan: MockSmartLoanRedstoneProvider,
       smartLoansFactory: SmartLoansFactory,
       implementation: SmartLoan,
-      yakRouterContract: Contract,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -302,7 +308,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
       pangolinIntegrationContract = await (new PangolinIntegrationV1__factory(owner).deploy());
@@ -313,8 +318,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -344,7 +360,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
 
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
@@ -408,11 +424,11 @@ describe('Smart loan',  () => {
 
   describe('A loan with sellout and proxy upgradeability', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+      yieldYakIntegrationContract: YieldYakIntegration,
       dpRouter: DPRouterV1,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
-      yakRouterContract: Contract,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       admin: SignerWithAddress,
@@ -434,7 +450,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -446,8 +461,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -487,7 +513,7 @@ describe('Smart loan',  () => {
     it("should deploy a smart loan behind a proxy", async () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -543,10 +569,8 @@ describe('Smart loan',  () => {
         toWei(requiredAvaxAmount.toString())
       );
 
-      let balances = await wrappedLoan.getAllAssetsBalances();
-
-      const currentUSDTokenBalance = balances[1];
-      const currentLINKTokenBalance = balances[2];
+      const currentUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
+      const currentLINKTokenBalance = await linkTokenContract.balanceOf(wrappedLoan.address);
 
       expect(currentUSDTokenBalance).to.be.equal(toWei("15000", usdTokenDecimalPlaces));
       expect(currentLINKTokenBalance).to.be.equal(toWei("300", linkTokenDecimalPlaces));
@@ -566,14 +590,13 @@ describe('Smart loan',  () => {
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
-      let balances = await wrappedLoan.getAllAssetsBalances();
-      const initialUSDTokenBalance = balances[1];
-      const initialLINKTokenBalance = balances[2];
+      const initialUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
+      const initialLINKTokenBalance = await linkTokenContract.balanceOf(wrappedLoan.address);
       const poolAvaxValue = await provider.getBalance(pool.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
 
-      artifact = await recompileSmartLoan("MockUpgradedSolvencySmartLoan", pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan("MockUpgradedSolvencySmartLoan", pool.address, dpRouter.address,  'mock');
       let newImplementation = await deployContract(owner, artifact) as SmartLoan;
 
       await beacon.connect(owner).upgradeTo(newImplementation.address);
@@ -593,10 +616,8 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
 
-      balances = await wrappedLoan.getAllAssetsBalances();
-
-      const currentUSDTokenBalance = balances[1];
-      const currentLINKTokenBalance = balances[2];
+      const currentUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
+      const currentLINKTokenBalance = await linkTokenContract.balanceOf(wrappedLoan.address);
 
       expect(currentUSDTokenBalance).to.be.lt(initialUSDTokenBalance);
       if (currentUSDTokenBalance == 0) {
@@ -610,12 +631,12 @@ describe('Smart loan',  () => {
 
   describe('A loan with owner sellout', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+      yieldYakIntegrationContract: YieldYakIntegration,
       dpRouter: DPRouterV1,
       loan: MockSmartLoanRedstoneProvider,
       smartLoansFactory: SmartLoansFactory,
       wrappedLoan: any,
       pool: Pool,
-      yakRouterContract: Contract,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       usdTokenContract: Contract,
@@ -634,7 +655,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -646,8 +666,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -685,7 +716,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -725,8 +756,7 @@ describe('Smart loan',  () => {
         toWei(requiredAvaxAmount.toString())
       );
 
-      let balances = await wrappedLoan.getAllAssetsBalances();
-      const currentUSDTokenBalance = balances[1];
+      const currentUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
       expect(currentUSDTokenBalance).to.be.equal(toWei("10000", usdTokenDecimalPlaces));
     });
 
@@ -742,8 +772,8 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getDebt()).to.be.equal(0);
       expect(await provider.getBalance(owner.address)).to.be.gt(ownerInitialAvaxBalance);
 
-      let balances = await wrappedLoan.getAllAssetsBalances();
-      expect(balances[1]).to.be.equal(0);
+      const currentUSDTokenBalance = await usdTokenContract.balanceOf(wrappedLoan.address);
+      expect(currentUSDTokenBalance).to.be.equal(0);
     });
 
 
@@ -751,12 +781,10 @@ describe('Smart loan',  () => {
 
   describe('A loan with edge LTV cases', () => {
     let loan: MockSmartLoan,
-      yakRouterContract: Contract,
       owner: SignerWithAddress;
 
     before("deploy provider, exchange and pool", async () => {
       [owner] = await getFixedGasSigners(10000000);
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
     });
 
     it("should deploy a smart loan", async () => {
@@ -815,11 +843,11 @@ describe('Smart loan',  () => {
 
   describe('A loan with closeLoan() and additional AVAX supplied', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+        yieldYakIntegrationContract: YieldYakIntegration,
         dpRouter: DPRouterV1,
         loan: SmartLoan,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
-        yakRouterContract: Contract,
         wrappedLoanUpdated: any,
         pool: Pool,
         owner: SignerWithAddress,
@@ -841,7 +869,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -853,8 +880,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -892,7 +930,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -998,11 +1036,11 @@ describe('Smart loan',  () => {
 
   describe('A loan with liquidateLoan() and additional AVAX supplied', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+        yieldYakIntegrationContract: YieldYakIntegration,
         dpRouter: DPRouterV1,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
-        yakRouterContract: Contract,
         wrappedLoanUpdated: any,
         pool: Pool,
         owner: SignerWithAddress,
@@ -1024,7 +1062,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -1036,8 +1073,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -1075,7 +1123,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -1176,11 +1224,11 @@ describe('Smart loan',  () => {
 
   describe('A loan with debt and withdrawAsset()', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+        yieldYakIntegrationContract: YieldYakIntegration,
         dpRouter: DPRouterV1,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
-        yakRouterContract: Contract,
         pool: Pool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -1202,7 +1250,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
       pangolinIntegrationContract = await (new PangolinIntegrationV1__factory(owner).deploy());
@@ -1213,8 +1260,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -1251,7 +1309,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -1313,6 +1371,7 @@ describe('Smart loan',  () => {
 
   describe('A loan with extra AVAX repayment', () => {
         let pangolinIntegrationContract: PangolinIntegrationV1,
+            yieldYakIntegrationContract: YieldYakIntegration,
             dpRouter: DPRouterV1,
             loan: MockSmartLoanRedstoneProvider,
             smartLoansFactory: SmartLoansFactory,
@@ -1320,7 +1379,6 @@ describe('Smart loan',  () => {
             wrappedLoanUpdated: any,
             pool: Pool,
             owner: SignerWithAddress,
-            yakRouterContract: Contract,
             depositor: SignerWithAddress,
             usdTokenContract: Contract,
             linkTokenContract: Contract,
@@ -1339,7 +1397,6 @@ describe('Smart loan',  () => {
 
             const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
             usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
             linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -1351,8 +1408,19 @@ describe('Smart loan',  () => {
                 []
             );
 
-            dpRouter = await (new DPRouterV1__factory(owner).deploy());
-            await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+          yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+          await yieldYakIntegrationContract.initialize(
+              [],
+              // TODO: Treat it as a YRT token?
+              [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+              []
+          );
+
+          dpRouter = await (new DPRouterV1__factory(owner).deploy());
+          await dpRouter.initialize([
+            new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+            new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+          ]);
 
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -1390,7 +1458,7 @@ describe('Smart loan',  () => {
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-            artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+            artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
             implementation = await deployContract(owner, artifact) as SmartLoan;
 
             await smartLoansFactory.initialize(implementation.address);
@@ -1494,10 +1562,10 @@ describe('Smart loan',  () => {
 
   describe('A loan with staking operations', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+        yieldYakIntegrationContract: YieldYakIntegration,
         dpRouter: DPRouterV1,
         smartLoansFactory: SmartLoansFactory,
         implementation: SmartLoan,
-        yakRouterContract: Contract,
         loan: MockSmartLoanRedstoneProvider,
         wrappedLoan: any,
         pool: Pool,
@@ -1516,7 +1584,6 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
       pangolinIntegrationContract = await (new PangolinIntegrationV1__factory(owner).deploy());
@@ -1527,8 +1594,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -1560,7 +1638,7 @@ describe('Smart loan',  () => {
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address,  'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -1601,12 +1679,12 @@ describe('Smart loan',  () => {
       let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
       expect(initialStakedBalance).to.be.equal(0);
 
-      await expect(wrappedLoan.stakeAVAXYak(toWei("9999"))).to.be.revertedWith("Not enough AVAX available");
+      await expect(wrappedLoan.stake(toBytes32("YIELDYAKV1"), toBytes32("AVAX"), toWei("9999"))).to.be.revertedWith("Not enough AVAX available");
 
       const stakedAvaxAmount = 50;
-      await wrappedLoan.stakeAVAXYak(
-          toWei(stakedAvaxAmount.toString())
-      );
+      console.log(`YRT before stake: ${await yakStakingContract.balanceOf(wrappedLoan.address)}`);
+      await wrappedLoan.stake(toBytes32("YIELDYAKV1"), toBytes32("AVAX"), toWei(stakedAvaxAmount.toString()));
+      console.log(`YRT after stake: ${await yakStakingContract.balanceOf(wrappedLoan.address)}`);
 
       let afterStakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
       let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, toWei(stakedAvaxAmount.toString()));
@@ -1625,7 +1703,9 @@ describe('Smart loan',  () => {
 
       let expectedAfterUnstakeTokenBalance = initialStakedTokensBalance.sub(tokenAmountToUnstake);
 
-      await wrappedLoan.unstakeAVAXYak(tokenAmountToUnstake);
+      console.log(`YRT before unstake: ${await yakStakingContract.balanceOf(wrappedLoan.address)}`);
+      console.log(`YRT add: ${yakStakingContract.address}`);
+      await wrappedLoan.unstake(toBytes32("YIELDYAKV1"), toBytes32("AVAX"), tokenAmountToUnstake);
 
       expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakStakingContract.balanceOf(wrappedLoan.address));
       expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.1);
@@ -1633,17 +1713,19 @@ describe('Smart loan',  () => {
     });
 
     it("should fail to unstake more than was initially staked", async() => {
-      await expect(wrappedLoan.unstakeAVAXYak(toWei("999999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+      // This test only makes sense if we switch to an approval pattern in SmartLoan->DProuter instead of YRT transfer.
+      // I'm leaving it commented out here as possibly we will make this switch really soon.
+      // await expect(wrappedLoan.unstake(toBytes32("YIELDYAKV1"), toBytes32("AVAX"), toWei("999999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
     });
   });
 
   describe('A loan with staking liquidation', () => {
     let pangolinIntegrationContract: PangolinIntegrationV1,
+        yieldYakIntegrationContract: YieldYakIntegration,
         dpRouter: DPRouterV1,
         loan: MockSmartLoanRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
-        yakRouterContract: Contract,
         wrappedLoanUpdated: any,
         pool: Pool,
         owner: SignerWithAddress,
@@ -1667,7 +1749,6 @@ describe('Smart loan',  () => {
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
@@ -1679,8 +1760,19 @@ describe('Smart loan',  () => {
           []
       );
 
+      yieldYakIntegrationContract = await (new YieldYakIntegration__factory(owner).deploy());
+      await yieldYakIntegrationContract.initialize(
+          [],
+          // TODO: Treat it as a YRT token?
+          [new Asset(toBytes32('AVAX'), yakStakingTokenAddress)],
+          []
+      );
+
       dpRouter = await (new DPRouterV1__factory(owner).deploy());
-      await dpRouter.initialize([new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address)]);
+      await dpRouter.initialize([
+        new Integration(await pangolinIntegrationContract.getIntegrationID(), pangolinIntegrationContract.address),
+        new Integration(await yieldYakIntegrationContract.getIntegrationID(), yieldYakIntegrationContract.address)
+      ]);
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
       const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -1716,8 +1808,7 @@ describe('Smart loan',  () => {
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, yakRouterContract.address,  'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, pool.address, dpRouter.address, 'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);
@@ -1751,13 +1842,15 @@ describe('Smart loan',  () => {
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
-          toBytes32('PANGOLINV1'),
+          await pangolinIntegrationContract.getIntegrationID(),
           toBytes32('USD'),
           parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
           toWei(requiredAvaxAmount.toString())
       );
 
-      await wrappedLoan.stakeAVAXYak(
+      await wrappedLoan.stake(
+          toBytes32("YIELDYAKV1"),
+          toBytes32("AVAX"),
           toWei("270")
       );
     });
@@ -1793,7 +1886,7 @@ describe('Smart loan',  () => {
               })
       // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoanUpdated.withdraw(toWei("60"));
+      await wrappedLoanUpdated.withdraw(toWei("50"));
       expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
       expect(await wrappedLoan.isSolvent()).to.be.false;
 

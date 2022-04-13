@@ -5,7 +5,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../enums/IntegrationEnums.sol";
 import "../lib/Bytes32EnumerableMap.sol";
 import "../interfaces/IDPIntegration.sol";
 
@@ -28,6 +27,17 @@ contract DPRouterV1 is OwnableUpgradeable {
 
     function _getIntegration(bytes32 _integration) private view returns(IDPIntegration) {
         return IDPIntegration(supportedIntegrations.get(_integration));
+    }
+
+    function getIntegrationIDSupportingAsset(bytes32 _asset, IDPIntegration.supportedActions _action) internal view returns (bytes32){
+        for(uint i=0; i<supportedIntegrations.length(); i++) {
+            (bytes32 integrationID, address integrationAddress) = supportedIntegrations.at(i);
+            IDPIntegration integration = IDPIntegration(integrationAddress);
+            if (integration.isActionSupported(_action, _asset)) {
+                return integrationID;
+            }
+        }
+        revert("Asset & action not supported");
     }
 
     function validateIntegration(Integration memory _integration) internal {
@@ -57,17 +67,20 @@ contract DPRouterV1 is OwnableUpgradeable {
     }
 
 
-    // TODO: implement for staking and LP
-    function getSwapAssetAddress(bytes32 _integration, bytes32 _asset) public view returns(address) {
-        return _getIntegration(_integration).getSwapAssetAddress(_asset);
+    // TODO: implement for LP
+    function getSwapAssetAddress(bytes32 _asset) public view returns(address) {
+        return _getIntegration(getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.BUY)).getSwapAssetAddress(_asset);
     }
 
-    function getStakingAssetAddress(bytes32 _integration, bytes32 _asset) public view returns(address) {
-        return _getIntegration(_integration).getStakingAssetAddress(_asset);
+    function getStakingAssetAddress(bytes32 _asset) public view returns(address) {
+        return _getIntegration(getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.STAKE)).getStakingAssetAddress(_asset);
     }
 
     // TODO: Replace with swap() once ERC20 pools are implemented
     function buy(bytes32 _integrationID, bytes32 _asset, uint256 _exactERC20AmountOut) external payable supportsAction(_integrationID, IDPIntegration.supportedActions.BUY) returns(bool) {
+        if (_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.BUY);
+        }
         (bool success, ) = address(_getIntegration(_integrationID)).call{value: msg.value}(
             abi.encodeWithSignature("buy(bytes32,uint256,address)", _asset, _exactERC20AmountOut, msg.sender)
         );
@@ -76,6 +89,9 @@ contract DPRouterV1 is OwnableUpgradeable {
 
     // TODO: Replace with swap() once ERC20 pools are implemented
     function sell(bytes32 _integrationID, bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external supportsAction(_integrationID, IDPIntegration.supportedActions.SELL) returns(bool) {
+        if (_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.SELL);
+        }
         IDPIntegration integration = _getIntegration(_integrationID);
         IERC20Metadata token = IERC20Metadata(integration.getSwapAssetAddress(_asset));
         address(token).safeTransfer(address(integration), _exactERC20AmountIn);
@@ -87,26 +103,52 @@ contract DPRouterV1 is OwnableUpgradeable {
     }
 
     function stakeFor(bytes32 _integrationID, bytes32 _asset, uint256 _amount) external payable supportsAction(_integrationID, IDPIntegration.supportedActions.STAKE) returns(bool) {
+        if (_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.STAKE);
+        }
         IDPIntegration integration = _getIntegration(_integrationID);
         bool success = integration.stakeFor{value: _amount}(_asset, _amount, msg.sender);
         return success;
     }
 
     function getStakingContract(bytes32 _integrationID, bytes32 _asset) public view returns (StakingToken) {
+        if (_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.STAKE);
+        }
         IDPIntegration integration = _getIntegration(_integrationID);
         return integration.getStakingContract(_asset);
     }
 
+    function getTotalStakedValue(bytes32 _integrationID) external view returns (uint256 totalValue) {
+        return _getIntegration(_integrationID).getTotalStakedValue(msg.sender);
+    }
+
     function unstake(bytes32 _integrationID, bytes32 _asset, uint256 _amount) external supportsAction(_integrationID, IDPIntegration.supportedActions.UNSTAKE) returns(bool) {
+        if (_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.UNSTAKE);
+        }
         IDPIntegration integration = _getIntegration(_integrationID);
         StakingToken stakingContract = getStakingContract(_integrationID, _asset);
         stakingContract.approve(address(integration), _amount);
-        bool success = integration.stakeFor{value: _amount}(_asset, _amount, msg.sender);
+        bool success = integration.unstake(_asset, _amount, msg.sender);
         if (!success) {
             address(stakingContract).safeTransfer(msg.sender, _amount);
         }
+        payable(msg.sender).safeTransferETH(address(this).balance);
         return success;
     }
+
+    function unstakeAssetForASpecifiedAmount(bytes32 _asset, uint256 _amount) external {
+        IDPIntegration integration = _getIntegration(getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.UNSTAKE));
+        StakingToken stakingContract = getStakingContract(integration.getIntegrationID(), _asset);
+        stakingContract.approve(address(integration), stakingContract.balanceOf(address(this)));
+
+        integration.unstakeAssetForASpecifiedAmount(_asset, _amount, msg.sender);
+
+        address(stakingContract).safeTransfer(msg.sender, stakingContract.balanceOf(address(this)));
+    }
+
+    receive() external payable {}
 
     function addLiquidity(bytes32 _integrationID, bytes32 _asset1, bytes32 _asset2) internal supportsAction(_integrationID, IDPIntegration.supportedActions.ADD_LIQUIDITY) returns(bool) {
         // TODO: implement
@@ -118,7 +160,7 @@ contract DPRouterV1 is OwnableUpgradeable {
         return false;
     }
 
-    function getSwapIntegrations() external view returns(bytes32[] memory) {
+    function getSwapIntegrations() public view returns(bytes32[] memory) {
         // TODO: Variable length arrays not available in memory
         bytes32[] memory swapIntegrations = new bytes32[](supportedIntegrations.length());
         for(uint i=0; i<supportedIntegrations.length(); i++) {
@@ -132,7 +174,7 @@ contract DPRouterV1 is OwnableUpgradeable {
         return swapIntegrations;
     }
 
-    function getLPIntegrations() external view returns(bytes32[] memory) {
+    function getLPIntegrations() public view returns(bytes32[] memory) {
         // TODO: Variable length arrays not available in memory
         bytes32[] memory lpIntegrations = new bytes32[](supportedIntegrations.length());
         for(uint i=0; i<supportedIntegrations.length(); i++) {
@@ -145,7 +187,7 @@ contract DPRouterV1 is OwnableUpgradeable {
         return lpIntegrations;
     }
 
-    function getStakingIntegrations() external view returns(bytes32[] memory) {
+    function getStakingIntegrations() public view returns(bytes32[] memory) {
         // TODO: Variable length arrays not available in memory
         bytes32[] memory stakingIntegrations = new bytes32[](supportedIntegrations.length());
         for(uint i=0; i<supportedIntegrations.length(); i++) {
@@ -159,11 +201,16 @@ contract DPRouterV1 is OwnableUpgradeable {
     }
 
     function getMinimumERC20TokenAmountForExactAVAX(bytes32 _integrationID, bytes32 _asset, uint256 targetAVAXAmount) public returns(uint256){
+        if(_integrationID == "ANY") {
+            _integrationID = getIntegrationIDSupportingAsset(_asset, IDPIntegration.supportedActions.BUY);
+        }
         return _getIntegration(_integrationID).getMinimumERC20TokenAmountForExactAVAX(_asset, targetAVAXAmount);
     }
 
-    modifier supportsAction(bytes32 _integration, IDPIntegration.supportedActions _action) {
-        require(_getIntegration(_integration).isActionSupported(_action), "Action not supported");
+    modifier supportsAction(bytes32 _integrationID, IDPIntegration.supportedActions _action) {
+        if(_integrationID != "ANY") {
+            require(_getIntegration(_integrationID).isActionSupported(_action), "Action not supported");
+        }
         _;
     }
 }
