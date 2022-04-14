@@ -4,7 +4,7 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
       <span class="input">
-        <input type="number" ref="input" pattern="[0-9]+" v-model="value" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
+        <input type="number" ref="input" pattern="[0-9]+" v-model="internalValue" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
         <div class="converted">
@@ -91,7 +91,8 @@ import {mapState} from "vuex";
         defaultValidators: [],
         asset: config.ASSETS_CONFIG[this.symbol],
         ongoingErrorCheck: false,
-        usdDenominated: true
+        usdDenominated: true,
+        internalValue: this.defaultValue,
       }
     },
     created() {
@@ -113,6 +114,7 @@ import {mapState} from "vuex";
     },
     methods: {
       async updateValue(value) {
+        this.internalValue = this.value;
         this.ongoingErrorCheck = true;
         this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
         await this.checkErrors(value);
@@ -123,7 +125,7 @@ import {mapState} from "vuex";
 
         const hasError = this.error.length > 0;
 
-        this.$emit('newValue', {value: value, error: hasError});
+        this.$emit('newValue', {value: Number(value), error: hasError});
       },
       async checkWarnings(newValue) {
         this.warning = '';
@@ -150,11 +152,12 @@ import {mapState} from "vuex";
         }
       },
       valueChange() {
-        const match = this.value.match(/^\d*[\.|\,]?\d{1,8}$/);
+        const match = this.internalValue.match(/^\d*[\.|\,]?\d{1,8}$/);
         if (match) {
-          this.value = match;
+          this.value = Number(this.internalValue);
         } else {
-          this.value = this.value.substring(0, this.value.length - 1);
+          this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1)
+          this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
         }
       },
     }
