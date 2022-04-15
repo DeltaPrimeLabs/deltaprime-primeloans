@@ -81,7 +81,6 @@
                       :validators="investValidators(asset, list[nativeToken].balance)"
                       :warnings="investWarnings(asset.buySlippage)"
                       :info="buySlippageInfo(asset)"
-                      :denominationButtons="true"
                       v-on:submitValue="(value) => investValue(asset, value)"
                   />
                 </SmallBlock>
@@ -100,7 +99,6 @@
                       :validators="redeemValidators(asset.balance)"
                       :warnings="redeemWarnings(asset)"
                       :info="sellSlippageInfo(asset)"
-                      :denominationButtons="true"
                       :max="asset.balance"
                       v-on:submitValue="(value) => redeemValue(asset, value)"
                   />
@@ -178,7 +176,6 @@
                       :validators="investValidators(asset, list[nativeToken].balance)"
                       :warnings="investWarnings(asset.buySlippage)"
                       :info="buySlippageInfo(asset)"
-                      :denominationButtons="true"
                   />
                 </SmallBlock>
               </div>
