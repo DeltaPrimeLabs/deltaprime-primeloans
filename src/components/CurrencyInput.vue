@@ -159,6 +159,7 @@ import {mapState} from "vuex";
           this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1)
           this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
         }
+        this.$emit('inputChange', this.value);
       },
     }
   }

@@ -2,15 +2,16 @@
   <div class="form-wrapper">
     <CurrencyInput
       v-on:newValue="updateBorrow"
+      v-on:inputChange="currencyInputChange"
       :defaultValue="borrowValue"
       :validators="borrowValidators"
     />
-    <div class="ltv">LTV: <b>{{ltvInfo}}</b></div>
+    <div class="ltv">LTV: <b>{{ calculateLTV(borrowValue) | percent }}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
+        ref="slider"
         :min="ltv"
         :max="maxAllowedLTV"
-        :value="calculatedLTV(borrowValue)"
         :step="0.0001"
         v-on:input="updateBorrowFromLTV"
         :validators="ltvValidators"
@@ -55,6 +56,9 @@ import {mapActions, mapGetters, mapState} from "vuex";
         ],
       }
     },
+    mounted() {
+      this.$refs.slider.onChange(this.calculateLTV(this.borrowValue), true);
+    },
     methods: {
       ...mapActions('loan', ['borrow']),
       updateBorrow(result) {
@@ -62,7 +66,7 @@ import {mapActions, mapGetters, mapState} from "vuex";
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkLTV(this.calculatedLTV(this.borrowValue));
+        this.checkLTV(this.calculateLTV(this.borrowValue));
       },
       async submit() {
         if (!this.disabled) {
@@ -78,7 +82,7 @@ import {mapActions, mapGetters, mapState} from "vuex";
       },
       updateBorrowFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.borrowValue = parseFloat((ltv * (this.totalValue - this.debt) - this.debt).toFixed(4));
+        this.borrowValue = parseFloat((ltv * (this.totalValue - this.debt) - this.debt).toFixed(6));
         if (this.borrowValue < 0) {
           this.borrowValue = 0;
         }
@@ -87,12 +91,17 @@ import {mapActions, mapGetters, mapState} from "vuex";
         this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
-      calculatedLTV(borrow) {
+      calculateLTV(borrow) {
+        let ltv;
         if (borrow) {
-          return (this.debt + borrow) / (this.totalValue - this.debt);
+          ltv = (this.debt + borrow) / (this.totalValue - this.debt);
         } else {
-          return this.ltv;
+          ltv = this.ltv;
         }
+        return Math.round(ltv * 10000) / 10000;
+      },
+      currencyInputChange(inputValue) {
+        this.$refs.slider.onChange(this.calculateLTV(inputValue), true);
       }
     },
     computed: {
@@ -101,9 +110,6 @@ import {mapActions, mapGetters, mapState} from "vuex";
       disabled() {
         return this.borrowValue == null || this.waiting || this.errors.includes(true);
       },
-      ltvInfo() {
-        return this.$options.filters.percent(this.calculatedLTV(this.borrowValue));
-      }
     }
   }
 </script>
