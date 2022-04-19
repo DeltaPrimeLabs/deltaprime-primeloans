@@ -40,6 +40,15 @@ export default {
         {
           url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
         },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
       ];
       this.setupNumberOfPlaceholders(nfts.length);
       return nfts
@@ -49,9 +58,9 @@ export default {
     setupNumberOfPlaceholders(numberOfNfts) {
       let innerWidth = window.innerWidth;
       if (innerWidth > LG_BRAKEPOINT) {
-        this.numberOfPlaceholders = 3 - numberOfNfts;
+        this.numberOfPlaceholders = (6 - numberOfNfts) % 3;
       } else if (innerWidth < LG_BRAKEPOINT && innerWidth > SM_BRAKEPOINT) {
-        this.numberOfPlaceholders = 2 - numberOfNfts;
+        this.numberOfPlaceholders = (6 - numberOfNfts) % 2;
       } else {
         this.numberOfPlaceholders = 0;
       }
@@ -84,6 +93,7 @@ export default {
   grid-template-columns: repeat(3, 1fr);
   column-gap: 40px;
   row-gap: 40px;
+  padding-bottom: 40px;
 
   @media screen and (max-width: $lg) {
     grid-template-columns: repeat(2, 1fr);
