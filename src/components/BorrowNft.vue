@@ -1,7 +1,7 @@
 <template>
   <div>
     <Mint v-if="showMintBox" :hasNft="hasBorrowNft" :nftContract="borrowNftContract" :mintNFT="mintBorrowNft" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
-    <NftList></NftList>
+    <NftList :nfts="nfts"></NftList>
   </div>
 </template>
 
@@ -28,6 +28,23 @@ export default {
   data() {
     return {
       showMintBox: true,
+      nfts : [
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+        {
+          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
+        },
+      ]
     }
   },
   mounted() {

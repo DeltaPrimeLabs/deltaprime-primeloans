@@ -5,7 +5,7 @@
     </div>
 
     <div class="nfts-grid">
-      <div class="nft nft-video" v-for="nft in getNfts">
+      <div class="nft nft-video" v-for="nft in nfts">
         <video class="video" muted autoplay loop :src="nft.url"></video>
       </div>
       <div v-for="placeholder in numberOfPlaceholders" class="nft nft-placeholder"></div>
@@ -26,46 +26,40 @@ export default {
   components: {
     SmallBlock
   },
+  props: {
+    nfts: {
+      default: []
+    }
+  },
   data() {
     return {
       numberOfPlaceholders: 3,
     }
   },
   computed: {
-    getNfts() {
-      const nfts = [
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-      ];
-      this.setupNumberOfPlaceholders(nfts.length);
-      return nfts
-    },
   },
   methods: {
-    setupNumberOfPlaceholders(numberOfNfts) {
+    setupNumberOfPlaceholders() {
       let innerWidth = window.innerWidth;
       if (innerWidth > LG_BRAKEPOINT) {
-        this.numberOfPlaceholders = (6 - numberOfNfts) % 3;
+        this.numberOfPlaceholders = (6 - this.nfts.length) % 3;
       } else if (innerWidth < LG_BRAKEPOINT && innerWidth > SM_BRAKEPOINT) {
-        this.numberOfPlaceholders = (6 - numberOfNfts) % 2;
+        this.numberOfPlaceholders = (6 - this.nfts.length) % 2;
       } else {
         this.numberOfPlaceholders = 0;
       }
     }
   },
+  watch: {
+    nfts: {
+      handler() {
+        this.setupNumberOfPlaceholders();
+      }
+    }
+  },
+  mounted() {
+    this.setupNumberOfPlaceholders()
+  }
 }
 </script>
 <style lang="scss" scoped>
