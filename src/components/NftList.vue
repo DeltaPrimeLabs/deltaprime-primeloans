@@ -6,7 +6,7 @@
 
     <div class="nfts-grid">
       <div class="nft nft-video" v-for="nft in nfts">
-        <video class="video" muted autoplay loop :src="nft.url"></video>
+        <video class="video" muted autoplay loop :src="nft"></video>
       </div>
       <div v-for="placeholder in numberOfPlaceholders" class="nft nft-placeholder"></div>
     </div>
@@ -54,11 +54,13 @@ export default {
     nfts: {
       handler() {
         this.setupNumberOfPlaceholders();
+        console.log(this.nfts);
+
       }
     }
   },
   mounted() {
-    this.setupNumberOfPlaceholders()
+    this.setupNumberOfPlaceholders();
   }
 }
 </script>

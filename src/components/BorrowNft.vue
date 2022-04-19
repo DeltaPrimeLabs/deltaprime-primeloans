@@ -1,6 +1,7 @@
 <template>
   <div>
-    <Mint v-if="showMintBox" :hasNft="hasBorrowNft" :nftContract="borrowNftContract" :mintNFT="mintBorrowNft" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
+    {{nfts.length}}
+    <Mint v-if="showMintBox" :hasNft="hasEapNft" :nftContract="eapNftContract" :mintNFT="mintBorrowNft" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
     <NftList :nfts="nfts"></NftList>
   </div>
 </template>
@@ -20,35 +21,18 @@ export default {
   },
   computed: {
     ...mapState('network', ['provider']),
-    ...mapState('nft', ['borrowNftContract', 'borrowNftImageUri', 'hasBorrowNft']),
+    ...mapState('nft', ['eapNftContract', 'borrowNftImageUri', 'hasEapNft', 'nfts']),
   },
   methods: {
     ...mapActions('nft', ['getBorrowNftId', 'mintBorrowNft'])
   },
   data() {
     return {
-      showMintBox: true,
-      nfts : [
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-        {
-          url: 'https://arweave.net/Ga5-ypvTdKRG2YUYIxWjVDlgSzJgWgbeMIoge6kpeOs'
-        },
-      ]
+      showMintBox: true
     }
   },
   mounted() {
     this.showMintBox = this.$route.query.signature
-  }
+  },
 }
 </script>
