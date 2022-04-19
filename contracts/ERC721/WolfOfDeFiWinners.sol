@@ -12,7 +12,7 @@ contract WolfOfDeFiWinners is ERC721, ERC721Enumerable, ERC721URIStorage, Ownabl
 
     Counters.Counter public _tokenIdCounter;
 
-    constructor() ERC721("WolfOfDeFiWinners", "DP-WODW") {}
+    constructor() ERC721("Wolf of DeFi Winners", "DP-WODW") {}
 
     function safeMint(address to, string memory uri) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();

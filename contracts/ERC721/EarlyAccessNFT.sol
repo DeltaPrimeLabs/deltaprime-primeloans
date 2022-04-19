@@ -16,7 +16,7 @@ contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify  {
     address public accessTokenTrustedSigner;
 
 
-    constructor(string memory _baseUri) ERC721("DeltaPrimeEarlyAccess", "DP-EA") {
+    constructor(string memory _baseUri) ERC721("Delta Prime Early Access", "DP-EA") {
         _pause();
         baseURI = _baseUri;
     }
