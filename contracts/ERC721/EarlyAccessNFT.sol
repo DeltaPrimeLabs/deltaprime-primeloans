@@ -57,12 +57,14 @@ contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify  {
 
     function airdropMint(address[] memory _accounts) external onlyOwner returns (uint256 _NFTsMinted){
         uint256 tokenId;
+        _NFTsMinted = 0;
         for (uint i=0; i< _accounts.length; i++) {
+            if (balanceOf(_accounts[i]) > 0) continue;
             tokenId = _tokenIdCounter.current();
             _tokenIdCounter.increment();
             _safeMint(_accounts[i], tokenId);
+            _NFTsMinted += 1;
         }
-        _NFTsMinted = _accounts.length;
     }
 
     modifier whenNotPausedMintingExemption(address from) {
