@@ -1,6 +1,6 @@
 import {Contract} from "ethers";
 const ethers = require('ethers');
-import BORROW_NFT from '@artifacts/contracts/ERC721/BorrowAccessNFT.sol/BorrowAccessNFT.json'
+import BORROW_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessNFT.json'
 import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
 const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
 const POOL_TUP = require('@contracts/PoolTUP.json');
@@ -57,7 +57,7 @@ export default {
   },
   getters: {
     borrowingLocked(state) {
-      return state.borrowNftContractSet && state.borrowNftId === null;
+      return state.borrowNftContractSet && !state.hasBorrowNft;
     },
     depositLocked(state) {
       return state.depositNftContractSet && state.depositNftId === null;
@@ -78,7 +78,7 @@ export default {
         const borrowContract = new Contract(address, BORROW_NFT.abi, provider.getSigner());
 
         commit('setBorrowNftContract', borrowContract);
-        dispatch('getBorrowNftId');
+        dispatch('checkBorrowNftBalance');
       } catch(e) {
         console.error(e)
         console.log('No access NFT for borrow required')
@@ -100,8 +100,8 @@ export default {
         commit('setDepositNftContractSet', false);
       }
     },
-    async updateBorrowNftFromId({ commit, state }, { id }) {
-      const jsonUri = await state.borrowNftContract.tokenURI(id);
+    async updateBorrowNft({ commit, state }) {
+      const jsonUri = await state.borrowNftContract.baseURI();
       const response = await fetch(jsonUri);
       const json = await response.json();
       const uri = json.image;
@@ -116,14 +116,11 @@ export default {
 
       commit('setDepositNftImageUri', uri);
     },
-    async getBorrowNftId({ state, rootState, dispatch, commit }) {
+    async checkBorrowNftBalance({ state, rootState, dispatch, commit }) {
       const balance = (await state.borrowNftContract.balanceOf(rootState.network.account)).toNumber();
       if (balance > 0) {
-        const id = (await state.borrowNftContract.tokenOfOwnerByIndex(rootState.network.account, 0)).toNumber();
-
         commit('setHasBorrowNft', true);
-        commit('setBorrowNftId', id);
-        dispatch('updateBorrowNftFromId', {id: id})
+        dispatch('updateBorrowNft')
       } else {
         commit('setHasBorrowNft', false);
       }
@@ -147,7 +144,7 @@ export default {
 
       await awaitConfirmation(tx, provider, 'mint');
 
-      dispatch('getBorrowNftId', {id: id})
+      dispatch('checkBorrowNftBalance', {id: id})
     },
     async mintDepositNft({ dispatch, state, rootState }, {id, signature}) {
       const provider = rootState.network.provider;

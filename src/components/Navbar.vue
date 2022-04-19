@@ -3,7 +3,6 @@
     <div class="links-wrapper" :class="{'mobile': isMobile}">
       <router-link to="/pool" style="width: 104px"><span title="Pool">Pool</span></router-link>
       <router-link to="/prime-account" style="width: 193px"><span title="Prime Account">Prime Account</span></router-link>
-      <router-link to="/ranking" style="width: 138px"><span title="Ranking">Ranking</span></router-link>
       <router-link to="/nft/borrow" style="width: 100px"><span title="NFT">NFT</span></router-link>
     </div>
   </div>

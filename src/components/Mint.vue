@@ -1,7 +1,7 @@
 <template>
   <div class="mint container">
     <Block class="block" :bordered="true">
-      <div class="title">{{ hasNft ? 'Your access NFT' : 'Mint your access NFT' }}</div>
+      <div class="title">{{ hasNft ? 'Your access NFT' : 'Early Access Program NFT' }}</div>
       <div class="nft">
         <video muted autoplay loop :src="videoUri" />
       </div>
@@ -9,7 +9,7 @@
         <div v-html="description" v-if="description"></div>
         <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
       </div>
-      <Button :waiting="waiting" :disabled="nftInfoLoading || hasNft || waiting || noAvailableNfts || !correctLink" label="Mint" v-on:click="mint"/>
+      <Button :waiting="waiting" :disabled="hasNft || waiting || !correctLink" label="Mint" v-on:click="mint"/>
     </Block>
   </div>
 </template>
@@ -45,35 +45,21 @@ export default {
   },
   data() {
     return {
-      noAvailableNfts: null,
       exampleNft: "",
       userNft: "",
-      notMintedYetMessage: "Get your own unique NFT to participate in our trading competition!",
+      incorrectLink: "Go to our " +
+          "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> to get your link for minting!",
+      notMintedYetMessage: "Get your own unique NFT to try out our platform!",
       mintedMessage: "Your unique access NFT is minted! Go to <a href='/#/prime-account'>Prime Account</a> to start trading.",
-      noNftsAnymoreMessage: "We are sorry, but you are a little late... All access NFTs are already minted.<br/> But you can still join our " +
-          "<a href='https://discord.gg/57EdDsvhxK' target='_blank'>Discord server</a> not to miss the next opportunity!",
       intervalId: null,
-      waiting: false,
-      nftInfoLoading: true
+      waiting: false
     }
   },
   computed: {
     ...mapState('network', ['provider']),
     description() {
-      if (this.hasNft === true) {
-        return this.mintedMessage;
-      }
-
-      if (this.noAvailableNfts === null) {
-        return;
-      }
-      if (this.noAvailableNfts) {
-        return this.noNftsAnymoreMessage;
-      }
-
-      if (this.hasNft === false) {
-        return this.notMintedYetMessage;
-      }
+      if (!this.correctLink && !this.hasNft) return this.incorrectLink;
+      return this.hasNft ?  this.mintedMessage : this.notMintedYetMessage;
     },
     videoUri() {
       return this.nftImageUri ? this.nftImageUri : 'https://arweave.net/D4S3C6_cfvid7uRduzs95OhBw0jbruxnnljXX4P54yw';
@@ -100,22 +86,6 @@ export default {
             }
         );
       }
-    }
-  },
-  watch: {
-    nftContract: {
-      handler(value) {
-        if (value) {
-          value.getAvailableUrisCount().then(
-            count => {
-              this.noAvailableNfts = count.toNumber() === 0;
-              this.nftInfoLoading = false;
-            }
-          )
-          .catch(er => console.log(er));
-        }
-      },
-      immediate: true
     }
   }
 }
