@@ -8,16 +8,13 @@
 
 <script>
 import Mint from "../components/Mint";
-import NftList from "../components/NftList";
-
 const ethers = require('ethers');
 import {mapActions, mapState} from "vuex";
 
 export default {
   name: 'BorrowNft',
   components: {
-    Mint,
-    NftList
+    Mint
   },
   computed: {
     ...mapState('network', ['provider']),
