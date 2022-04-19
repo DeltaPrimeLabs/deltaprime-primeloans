@@ -54,8 +54,6 @@ export default {
     nfts: {
       handler() {
         this.setupNumberOfPlaceholders();
-        console.log(this.nfts);
-
       }
     }
   },
