@@ -170,7 +170,41 @@ abstract contract DPIntegration is OwnableUpgradeable, IDPIntegration{
         return 0;
     }
 
-    function unstakeAssetForASpecifiedAmount(bytes32 _asset, uint256 amount, address _recipient) override virtual public {
+    // SELLOUT
+
+    // TODO: Pass owned assets as a parameter not to loop through all supported assets
+    function selloutForTargetAvax(uint256 _amount) external returns (uint256 soldOutAvax){
+        soldOutAvax = 0;
+        if (isActionSupported(supportedActions.SELL)) {
+            soldOutAvax += selloutSwapAssetsForTargetAvax(_amount - soldOutAvax);
+            if (soldOutAvax >= _amount) return soldOutAvax;
+        }
+        if (isActionSupported(supportedActions.UNSTAKE)) {
+            soldOutAvax += selloutStakingAssetsForTargetAvax(_amount - soldOutAvax);
+            if (soldOutAvax >= _amount) return soldOutAvax;
+        }
+        if (isActionSupported(supportedActions.REMOVE_LIQUIDITY)) {
+            soldOutAvax += selloutLPAssetsForTargetAvax(_amount - soldOutAvax);
+            if (soldOutAvax >= _amount) return soldOutAvax;
+        }
+    }
+
+    function selloutSwapAssetsForTargetAvax(bytes32 _asset, uint256 amount, address _recipient) override virtual public returns (uint256 soldOutAvax) {
+        bytes32 key;
+        address assetAddress;
+        soldOutAvax = 0;
+        for(uint256 i=0; i < swapSupportedAssets.length(); i++) {
+            (key, assetAddress) = swapSupportedAssets.get(i);
+            sell(key, IERC20(assetAddress).balanceOf())
+        }
+    }
+
+    function selloutStakingAssetsForTargetAvax(bytes32 _asset, uint256 amount, address _recipient) override virtual public returns (uint256) {
+        return 0;
+    }
+
+    function selloutLPAssetsForTargetAvax(bytes32 _asset, uint256 amount, address _recipient) override virtual public returns (uint256) {
+        return 0;
     }
 
     // LIQUIDITY PROVISION METHODS
