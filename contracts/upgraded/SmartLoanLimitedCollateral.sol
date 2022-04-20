@@ -10,7 +10,7 @@ contract SmartLoanLimitedCollateral is SmartLoan {
 
    /**
     * Funds a loan with the value attached to the transaction
-    * Allows to add up to 1.25 AVAX of collateral in total
+    * Allows to add up to 7 AVAX of collateral in total
    **/
     function fund() public override payable {
         bytes32 slot = COLLATERAL_SUM_SLOT;
@@ -21,7 +21,7 @@ contract SmartLoanLimitedCollateral is SmartLoan {
         }
         collateralSum += msg.value;
 
-        require(collateralSum <= 1.25 ether, "Adding more than 1.25 AVAX is not allowed");
+        require(collateralSum <= 7 ether, "Adding more collateral than 7 AVAX in total is not allowed");
 
         assembly {
             sstore(slot, collateralSum)

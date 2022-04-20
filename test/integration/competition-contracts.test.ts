@@ -200,11 +200,11 @@ describe('Trading competition upgraded contracts test', () => {
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(SLImpl.address);
 
-        await expect(SL.fund({value: toWei("1.5")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
+        await expect(SL.fund({value: toWei("7.5")})).to.be.revertedWith("Adding more collateral than 7 AVAX in total is not allowed");
 
-        await SL.fund({value: toWei("1.25")});
+        await SL.fund({value: toWei("7")});
 
-        await expect(SL.fund({value: toWei("0.1")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
+        await expect(SL.fund({value: toWei("0.1")})).to.be.revertedWith("Adding more collateral than 7 AVAX in total is not allowed");
 
         await SL.withdraw(toWei("0.5"));
         await SL.fund({value: toWei("0.1")});
