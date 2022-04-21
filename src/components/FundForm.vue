@@ -50,8 +50,8 @@ export default {
             if (value > this.balance) {
               return 'Fund amount exceeds user balance';
             }
-            if (this.collateralFromPayments + value > 1.25) {
-              return 'Collateral amount higher than the maximum of 1.25 allowed';
+            if (this.collateralFromPayments + value > config.MAX_COLLATERAL) {
+              return `Collateral amount higher than the maximum of ${config.MAX_COLLATERAL} allowed`;
             }
           }
         }
