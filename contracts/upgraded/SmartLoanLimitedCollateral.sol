@@ -10,7 +10,11 @@ contract SmartLoanLimitedCollateral is SmartLoan {
     * Allows to add up to 7 AVAX of collateral in total
    **/
     function fund() public override payable {
-        require(getTotalValue() - getDebt() <= 7 ether, "Adding more collateral than 7 AVAX in total is not allowed");
+        uint256 debt = getDebt();
+        uint256 totalValue = getTotalValue();
+        if (totalValue > debt) {
+            require(totalValue - debt <= 6 ether, "Adding more collateral than 6 AVAX in total is not allowed");
+        }
         super.fund();
     }
 }
