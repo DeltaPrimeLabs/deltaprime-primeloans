@@ -24,7 +24,8 @@ export default {
     hasDepositNft: null,
     depositNftId: null,
     depositNftImageUri: null,
-    nfts: []
+    nfts: [],
+    numberOfNfts: 0,
   },
   mutations: {
     setEapNftContract(state, contract) {
@@ -59,6 +60,9 @@ export default {
     },
     setNfts(state, nfts) {
       state.nfts = nfts;
+    },
+    setNumberOfNfts(state, number) {
+      state.numberOfNfts = number;
     },
   },
   getters: {
@@ -127,6 +131,7 @@ export default {
     },
     async checkEapNftBalance({ state, rootState, dispatch, commit }) {
       const balance = (await state.eapNftContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
       if (balance > 0) {
         commit('setHasEapNft', true);
         dispatch('updateEapNft')
@@ -138,6 +143,7 @@ export default {
       const wolfsContractAddress = '0xf9a12a4759500df05983fd3ebd7f8a8f262a2967';
       const wolfsContract = new Contract(wolfsContractAddress, WOLF_OF_DEFI_WINNERS_NFT.abi, provider.getSigner());
       const balance = (await wolfsContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
       for (let i = 0; i < balance; i++) {
         const id = (await wolfsContract.tokenOfOwnerByIndex(rootState.network.account, i)).toNumber();
         const tokenUri = await wolfsContract.tokenURI(id);
@@ -150,6 +156,7 @@ export default {
       const borrowNftContractAddress = '0xF8d1b34651f2c9230beB9b83B2260529769FDeA4';
       const borrowNftContract = new Contract(borrowNftContractAddress, WOLF_OF_DEFI_WINNERS_NFT.abi, provider.getSigner());
       const balance = (await borrowNftContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
       if (balance > 0) {
         const tokenId = (await borrowNftContract.tokenOfOwnerByIndex(rootState.network.account, 0));
         const tokenUri = await borrowNftContract.tokenURI(tokenId);

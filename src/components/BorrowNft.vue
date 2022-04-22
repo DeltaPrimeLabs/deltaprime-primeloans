@@ -1,8 +1,7 @@
 <template>
   <div>
-    {{nfts.length}}
     <Mint v-if="showMintBox" :hasNft="hasEapNft" :nftContract="eapNftContract" :mintNFT="mintBorrowNft" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
-    <NftList :nfts="nfts"></NftList>
+    <NftList :nfts="nfts" :numberOfNfts="numberOfNfts"></NftList>
   </div>
 </template>
 
@@ -20,7 +19,7 @@ export default {
   },
   computed: {
     ...mapState('network', ['provider']),
-    ...mapState('nft', ['eapNftContract', 'borrowNftImageUri', 'hasEapNft', 'nfts']),
+    ...mapState('nft', ['eapNftContract', 'borrowNftImageUri', 'hasEapNft', 'nfts', 'numberOfNfts']),
   },
   methods: {
     ...mapActions('nft', ['getBorrowNftId', 'mintBorrowNft'])

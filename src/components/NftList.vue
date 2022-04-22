@@ -5,10 +5,27 @@
     </div>
 
     <div class="nfts-grid">
-      <div class="nft nft-video" v-for="nft in nfts">
-        <video class="video" muted autoplay loop :src="nft"></video>
+      <div class="nft nft-video" v-for="(nft, index) in numberOfNfts">
+        <div class="nft nft-placeholder" v-if="numberOfNftVideosLoaded !== numberOfNfts">
+          <Loader class="loader"></Loader>
+          <div class="nft-placeholder-background"></div>
+          <div class="nft-placeholder-white-box"></div>
+        </div>
+        <video :id="'nft-video-' + index"
+               class="video"
+               v-bind:class="{ hidden: numberOfNftVideosLoaded !== numberOfNfts }"
+               :src="nfts[index]"
+               muted
+               loop
+               v-on:mouseover="pauseVideo(index)"
+               v-on:mouseleave="playVideo(index)"
+               v-on:loadeddata="setupVideo()">
+        </video>
       </div>
-      <div v-for="placeholder in numberOfPlaceholders" class="nft nft-placeholder"></div>
+      <div v-for="placeholder in numberOfPlaceholders" class="nft nft-placeholder">
+        <div class="nft-placeholder-background"></div>
+        <div class="nft-placeholder-white-box"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -16,7 +33,7 @@
 <script>
 
 
-import SmallBlock from "./SmallBlock";
+import Loader from "./Loader";
 
 export const LG_BRAKEPOINT = 992;
 export const SM_BRAKEPOINT = 576;
@@ -24,31 +41,67 @@ export const SM_BRAKEPOINT = 576;
 export default {
   name: 'NftList',
   components: {
-    SmallBlock
+    Loader
   },
   props: {
     nfts: {
-      default: []
+      default: [],
+    },
+    numberOfNfts: {
+      type: Number,
+      default: 0,
     }
   },
   data() {
     return {
       numberOfPlaceholders: 3,
+      allNftsLoaded: false,
+      numberOfNftVideosLoaded: 0,
     }
   },
-  computed: {
-  },
+  computed: {},
   methods: {
     setupNumberOfPlaceholders() {
       let innerWidth = window.innerWidth;
-      if (innerWidth > LG_BRAKEPOINT) {
-        this.numberOfPlaceholders = (6 - this.nfts.length) % 3;
-      } else if (innerWidth < LG_BRAKEPOINT && innerWidth > SM_BRAKEPOINT) {
-        this.numberOfPlaceholders = (6 - this.nfts.length) % 2;
+      if (this.numberOfNfts === 0) {
+        if (innerWidth > LG_BRAKEPOINT) {
+          this.numberOfPlaceholders = 3;
+        } else if (innerWidth < LG_BRAKEPOINT && innerWidth > SM_BRAKEPOINT) {
+          this.numberOfPlaceholders = 2;
+        } else {
+          this.numberOfPlaceholders = 1;
+        }
       } else {
-        this.numberOfPlaceholders = 0;
+        if (innerWidth > LG_BRAKEPOINT) {
+          this.numberOfPlaceholders = (6 - this.numberOfNfts) % 3;
+        } else if (innerWidth < LG_BRAKEPOINT && innerWidth > SM_BRAKEPOINT) {
+          this.numberOfPlaceholders = (6 - this.numberOfNfts) % 2;
+        } else {
+          this.numberOfPlaceholders = 0;
+        }
       }
-    }
+    },
+
+    setupVideo() {
+      this.numberOfNftVideosLoaded++;
+      this.setupNumberOfPlaceholders();50
+      if (this.numberOfNftVideosLoaded === this.numberOfNfts) {
+        for (let i = 0; i < this.numberOfNftVideosLoaded; i++) {
+          const videoPlayer = document.getElementById(`nft-video-${i}`)
+          videoPlayer.play();
+        }
+      }
+    },
+
+    playVideo(index) {
+      const videoPlayer = document.getElementById(`nft-video-${index}`)
+      videoPlayer.play();
+    },
+
+    pauseVideo(index) {
+      const videoPlayer = document.getElementById(`nft-video-${index}`)
+      videoPlayer.pause();
+    },
   },
   watch: {
     nfts: {
@@ -104,16 +157,59 @@ export default {
     border-radius: 23px;
   }
 
+  .nft-video {
+    position: relative;
+
+    .nft-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  }
+
   .video {
     width: 100%;
     height: 450px;
     object-fit: cover;
     border-radius: 23px;
+
+    &.hidden {
+     visibility: hidden;
+    }
   }
 
   .nft-placeholder {
-    opacity: 0.08;
-    background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    .loader {
+      z-index: 2;
+    }
+
+    .nft-placeholder-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.10;
+      background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
+      z-index: 1;
+      border-radius: 23px;
+    }
+
+    .nft-placeholder-white-box {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      border-radius: 23px;
+    }
   }
 }
 </style>
