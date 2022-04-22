@@ -29,6 +29,7 @@ import {mapActions, mapState} from "vuex";
 import CurrencyInput from "./CurrencyInput";
 import Slider from "./Slider";
 import Button from "./Button";
+import config from "@/config";
 
 export default {
   name: 'FundForm',
