@@ -39,7 +39,7 @@
         <div class="collateral">
           <Value label="Collateral"
                  :primary="{value: getCurrentCollateral, type: 'avax', showIcon: true}"
-                 :secondary="{value: avaxToUSD(getCurrentCollateral), type: 'usd'}" />
+                 :secondary="{value: avaxToUSD(getCurrentCollateral), type: 'usd'}" :tooltip="'Total value - debt'" />
           <div class="fund-buttons">
             <img @click="showCollateralBlock(0)"
                  src="src/assets/icons/plus.svg"

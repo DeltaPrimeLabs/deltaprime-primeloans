@@ -1,14 +1,19 @@
 <template>
   <div class="value-wrapper">
-    <div class="label">{{label}}</div>
+    <div class="label-wrapper">
+      <div class="label">{{ label }}</div>
+      <img v-if="tooltip" class="info-icon" src="src/assets/icons/info.svg" v-tooltip="tooltip">
+    </div>
     <div class="values" v-if="primary.value !== null">
       <div class="value">
         <img class="logo" v-if="primary.showIcon" :src="`src/assets/icons/${primary.type}-icon.svg`"/>
-        <div>{{format(primary.value, primary.type, primary.arg)}}</div>
+        <div>{{ format(primary.value, primary.type, primary.arg) }}</div>
       </div>
       <div v-if="secondary" class="sub-value">
         <img class="logo" v-if="secondary.showIcon" :src="`src/assets/icons/${secondary.type}-icon.svg`"/>
-        <div v-if="secondary.value != null">{{secondary.showIcon ? secondary.value : format(secondary.value, secondary.type, primary.arg)}}</div>
+        <div v-if="secondary.value != null">
+          {{ secondary.showIcon ? secondary.value : format(secondary.value, secondary.type, primary.arg) }}
+        </div>
       </div>
     </div>
     <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
@@ -16,23 +21,26 @@
 </template>
 
 <script>
-  export default {
-    name: 'Value2',
-    props: {
-      label: String,
-      primary: {},
-      secondary: {}
-    },
-    data() {
-      return {
-      }
-    },
-    methods: {
-      format(value, filter, arg) {
-        return this.$options.filters[filter](value, arg);
-      }
+export default {
+  name: 'Value2',
+  props: {
+    label: String,
+    primary: {},
+    secondary: {},
+    tooltip: {
+      type: String,
+      default: null
+    }
+  },
+  data() {
+    return {}
+  },
+  methods: {
+    format(value, filter, arg) {
+      return this.$options.filters[filter](value, arg);
     }
   }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -61,16 +69,28 @@
   }
 }
 
-.label {
-  white-space: nowrap;
-  width: 50%;
-  margin-top: 10px;
-  height: 50px;
+.label-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 
-  @media screen and (min-width: $md) {
-    margin-top: 0;
-    width: initial;
-    height: initial;
+  .info-icon {
+    width: 18px;
+    height: 18px;
+    margin-left: 5px;
+  }
+
+  .label {
+    white-space: nowrap;
+    width: 50%;
+    margin-top: 10px;
+    height: 50px;
+
+    @media screen and (min-width: $md) {
+      margin-top: 0;
+      width: initial;
+      height: initial;
+    }
   }
 }
 
