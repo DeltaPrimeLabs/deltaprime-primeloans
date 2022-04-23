@@ -42,7 +42,7 @@
               <SimpleChart
                   class="simple-chart"
                   :dataPoints="asset.prices"
-                  :isStableCoin="asset.symbol === 'USDT'"
+                  :isStableCoin="asset.isStableCoin"
                   :lineWidth="1.5"/>
               <img class="enlarge clickable-icon"/>
             </div>
@@ -80,7 +80,6 @@
                     :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
-                    :denominationButtons="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
                 />
               </SmallBlock>
@@ -99,7 +98,6 @@
                     :validators="redeemValidators(asset.balance)"
                     :warnings="redeemWarnings(asset)"
                     :info="sellSlippageInfo(asset)"
-                    :denominationButtons="true"
                     :max="asset.balance"
                     v-on:submitValue="(value) => redeemValue(asset, value)"
                 />
@@ -133,7 +131,7 @@
             >
               <SimpleChart
                   :dataPoints="asset.prices"
-                  :isStableCoin="asset.symbol === 'USDT'"
+                  :isStableCoin="asset.isStableCoin"
                   :lineWidth="1.5"/>
               <img class="enlarge clickable-icon"/>
             </div>
@@ -160,7 +158,6 @@
                     :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
-                    :denominationButtons="true"
                 />
               </SmallBlock>
             </div>
