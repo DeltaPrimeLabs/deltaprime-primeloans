@@ -2,6 +2,7 @@
   <div class="form-wrapper">
     <CurrencyInput
       v-on:newValue="updateRepay"
+      v-on:inputChange="currencyInputChange"
       :defaultValue="repayValue"
       :validators="repayValidators"
       :max="maxRepay"
@@ -9,9 +10,9 @@
     <div class="ltv" v-html="LTVInfo"></div>
     <div class="ltv-slider-wrapper">
       <Slider
+        ref="slider"
         :min="minLtv"
         :max="ltv"
-        :value="calculatedLTV(repayValue)"
         :step="0.0001"
         v-on:input="updateRepayFromLTV"
         :validators="ltvValidators"
@@ -60,6 +61,9 @@ import {mapActions, mapState} from "vuex";
         ]
       }
     },
+    mounted() {
+      this.$refs.slider.onChange(this.calculateLTV(this.repayValue), true);
+    },
     methods: {
       ...mapActions('loan', ['repay']),
       updateRepay(result) {
@@ -67,7 +71,7 @@ import {mapActions, mapState} from "vuex";
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkLTV(this.calculatedLTV(this.repayValue));
+        this.checkLTV(this.calculateLTV(this.repayValue));
       },
       async submit() {
         if (!this.disabled) {
@@ -81,7 +85,7 @@ import {mapActions, mapState} from "vuex";
       },
       updateRepayFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.repayValue = parseFloat((this.debt - ltv * (this.totalValue - this.debt)).toFixed(4));
+        this.repayValue = parseFloat((this.debt - ltv * (this.totalValue - this.debt)).toFixed(6));
         if (this.repayValue > this.debt) {
           this.repayValue = this.debt;
         }
@@ -93,12 +97,17 @@ import {mapActions, mapState} from "vuex";
         this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
-      calculatedLTV(repay) {
+      calculateLTV(repay) {
+        let ltv;
         if (repay) {
-          return (this.debt - repay) / (this.totalValue - this.debt);
+          ltv = (this.debt - repay) / (this.totalValue - this.debt);
         } else {
-          return this.ltv;
+          ltv = this.ltv;
         }
+        return Math.round(ltv * 10000) / 10000;
+      },
+      currencyInputChange(inputValue) {
+        this.$refs.slider.onChange(this.calculateLTV(inputValue), true);
       }
     },
     computed: {
@@ -107,17 +116,17 @@ import {mapActions, mapState} from "vuex";
         return this.repayValue == null || this.waiting || this.errors.includes(true);
       },
       LTVInfo() {
-        if (this.calculatedLTV(this.repayValue) === Number.POSITIVE_INFINITY) {
+        if (this.calculateLTV(this.repayValue) === Number.POSITIVE_INFINITY) {
           return 'Loan fully repaid'
         } else {
-          return `LTV: <b>${this.$options.filters.percent(this.calculatedLTV(this.repayValue))}</b>`;
+          return `LTV: <b>${this.$options.filters.percent(this.calculateLTV(this.repayValue))}</b>`;
         }
       },
       maxRepay() {
         return Math.min(this.loanBalance, this.debt);
       },
       minLtv() {
-        return this.calculatedLTV(Math.min(this.debt, this.loanBalance));
+        return this.calculateLTV(Math.min(this.debt, this.loanBalance));
       }
     }
   }

@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 import {Contract} from "ethers";
-
+import config from '../../src/config';
 import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
@@ -58,6 +58,7 @@ const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+const MAX_COLLATERAL = config.MAX_COLLATERAL;
 
 describe('Trading competition upgraded contracts test', () => {
     let SLImpl: SmartLoan,
@@ -200,11 +201,11 @@ describe('Trading competition upgraded contracts test', () => {
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(SLImpl.address);
 
-        await expect(SL.fund({value: toWei("1.5")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
+        await expect(SL.fund({value: toWei((MAX_COLLATERAL + 0.5).toString())})).to.be.revertedWith("Adding more collateral than 7 AVAX in total is not allowed");
 
-        await SL.fund({value: toWei("1.25")});
+        await SL.fund({value: toWei(MAX_COLLATERAL.toString())});
 
-        await expect(SL.fund({value: toWei("0.1")})).to.be.revertedWith("Adding more than 1.25 AVAX is not allowed");
+        await expect(SL.fund({value: toWei("0.1")})).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} AVAX in total is not allowed`);
 
         await SL.withdraw(toWei("0.5"));
         await SL.fund({value: toWei("0.1")});

@@ -2,15 +2,16 @@
   <div class="form-wrapper">
     <CurrencyInput
       v-on:newValue="updateWithdraw"
+      v-on:inputChange="currencyInputChange"
       :defaultValue="withdrawValue"
       :validators="withdrawValidators"
     />
-    <div class="ltv">LTV: <b>{{ltvInfo}}</b></div>
+    <div class="ltv">LTV: <b>{{this.calculateLTV(this.withdrawValue) | percent}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
+        ref="slider"
         :min="ltv"
         :max="maxAllowedLTV"
-        :value="calculatedLTV(this.withdrawValue)"
         :step="0.0001"
         v-on:input="updateWithdrawFromLTV"
         :validators="ltvValidators"
@@ -55,6 +56,9 @@ import {mapActions, mapState} from "vuex";
         ],
       }
     },
+    mounted() {
+      this.$refs.slider.onChange(this.calculateLTV(this.withdrawValue), true);
+    },
     methods: {
       ...mapActions('loan', ['withdraw']),
       updateWithdraw(result) {
@@ -62,7 +66,7 @@ import {mapActions, mapState} from "vuex";
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkLTV(this.calculatedLTV(this.withdrawValue));
+        this.checkLTV(this.calculateLTV(this.withdrawValue));
       },
       async submit() {
         if (!this.disabled) {
@@ -78,7 +82,7 @@ import {mapActions, mapState} from "vuex";
       },
       updateWithdrawFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.withdrawValue = parseFloat((this.totalValue - (this.debt * ( 1 / ltv + 1))).toFixed(4));
+        this.withdrawValue = parseFloat((this.totalValue - (this.debt * ( 1 / ltv + 1))).toFixed(6));
         if (this.withdrawValue < 0) {
           this.withdrawValue = 0;
         }
@@ -87,12 +91,15 @@ import {mapActions, mapState} from "vuex";
         this.errors[2] = value > this.maxAllowedLTV;
         this.errors = [...this.errors];
       },
-      calculatedLTV(withdraw) {
+      calculateLTV(withdraw) {
         if (withdraw) {
           return this.debt / (this.totalValue - this.debt - withdraw);
         } else {
           return this.ltv;
         }
+      },
+      currencyInputChange(inputValue) {
+        this.$refs.slider.onChange(this.calculateLTV(inputValue), true);
       }
     },
     computed: {
@@ -101,11 +108,8 @@ import {mapActions, mapState} from "vuex";
       disabled() {
         return this.withdrawValue == null || this.waiting || this.errors.includes(true);
       },
-      ltvInfo() {
-        return this.$options.filters.percent(this.calculatedLTV(this.withdrawValue));
-      },
       maxLTVFromLoanBalance() {
-        return Math.min(this.maxAllowedLTV, this.calculatedLTV(this.loanBalance));
+        return Math.min(this.maxAllowedLTV, this.calculateLTV(this.loanBalance));
       }
     }
   }
