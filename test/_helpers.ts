@@ -1,13 +1,7 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {
-    CompoundingIndex,
-    MockToken,
-    OpenBorrowersRegistry__factory,
-    Pool,
-    VariableUtilisationRatesCalculator
-} from "../typechain";
+import {CompoundingIndex, MockToken, Pool, VariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
@@ -21,9 +15,7 @@ import updateConstants from "../tools/scripts/update-constants"
 import redstone from "redstone-api";
 import {JsonRpcSigner} from "@ethersproject/providers";
 
-const {provider} = waffle;
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
-const {deployContract} = waffle;
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -50,6 +42,10 @@ interface MockTokenPriceObject {
 
 export {PoolInitializationObject, MockTokenPriceObject};
 
+
+const {provider} = waffle;
+
+const {deployContract} = waffle;
 
 export const toWei = ethers.utils.parseUnits;
 export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
