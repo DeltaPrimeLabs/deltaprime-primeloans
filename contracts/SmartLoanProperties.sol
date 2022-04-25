@@ -28,7 +28,7 @@ contract SmartLoanProperties {
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  address private constant _EXCHANGE_ADDRESS = 0xC9a43158891282A2B1475592D5719c001986Aaec;
+  address private constant _EXCHANGE_ADDRESS = 0x0278438423f433e277F65D14c0E002b8828702ba;
 
   address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
@@ -67,7 +67,7 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-  return IYieldYakRouter(0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5);
+    return IYieldYakRouter(0x70952A912Fa50E04c608eb49E48afC975Eb91F21);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {

@@ -1,13 +1,10 @@
 export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
-
     let fileArray = data.split('\n');
 
 
-
     //getPoolsAssetsIndices()
-
     let lineWithFunctionDeclaration = fileArray.findIndex(
         line => line.includes('getPoolsAssetsIndices')
     );
@@ -19,9 +16,7 @@ export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAdd
     fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
 
 
-
     //getPoolTokens()
-
     lineWithFunctionDeclaration = fileArray.findIndex(
         line => line.includes('function getPoolTokens')
     );
