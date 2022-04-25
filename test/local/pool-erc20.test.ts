@@ -5,20 +5,27 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact
   from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
-
-import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
+import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
+import ERC20PoolArtifact from "../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json";
 import OpenBorrowersRegistryArtifact
   from "../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {LinearIndex, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator} from "../../typechain";
+import {
+  ERC20Pool,
+  LinearIndex,
+  MockToken,
+  OpenBorrowersRegistry,
+  VariableUtilisationRatesCalculator
+} from "../../typechain";
+import {Contract} from "ethers";
 
 chai.use(solidity);
 
 const {deployContract} = waffle;
 
 describe("Pool ERC20 token functions", () => {
-  let sut: Pool,
+  let sut: ERC20Pool,
     owner: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
@@ -26,16 +33,18 @@ describe("Pool ERC20 token functions", () => {
     user4: SignerWithAddress,
     user5: SignerWithAddress,
     user6: SignerWithAddress,
-    VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+    mockToken: Contract;
 
-  // shortcut to Pool.balanceOf with conversion to ethers.
+      // shortcut to Pool.balanceOf with conversion to ethers.
   async function balanceOf(user: SignerWithAddress): Promise<number> {
     return fromWei(await sut.balanceOf(user.address));
   }
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5, user6] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(owner, PoolArtifact)) as Pool;
+    sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+
+    mockToken = (await deployContract(owner, MockTokenArtifact, [[user1.address, user2.address, user3.address, user4.address, user5.address, user6.address]])) as MockToken;
 
     let VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -48,14 +57,16 @@ describe("Pool ERC20 token functions", () => {
         VariableUtilisationRatesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
     );
   });
 
   describe("transfer", () => {
 
     it("should revert if not enough balance", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+      await sut.connect(user1).deposit(toWei("1.0"));
 
       await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
         .to.be.revertedWith("ERC20: transfer amount exceeds balance");
@@ -63,7 +74,9 @@ describe("Pool ERC20 token functions", () => {
 
     it("should accumulate user1 interest prior to transferring the funds", async () => {
       // given
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+      await sut.connect(user1).deposit(toWei("1.0"));
+
       await sut.connect(user1).borrow(toWei("0.7"));
       await time.increase(time.duration.years(1));
 
@@ -82,8 +95,12 @@ describe("Pool ERC20 token functions", () => {
 
     it("should accumulate user2 interest prior to transferring the funds", async () => {
       // given
-      await sut.connect(user1).deposit({value: toWei("1.0")});
-      await sut.connect(user2).deposit({value: toWei("2.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+      await sut.connect(user1).deposit(toWei("1.0"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("2.0"));
+      await sut.connect(user2).deposit(toWei("2.0"));
+
       await sut.connect(user3).borrow(toWei("2.0"));
       await time.increase(time.duration.years(1));
 
@@ -105,8 +122,8 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should properly assign amount to different spenders within one owner", async () => {
-      await sut.connect(user1).deposit({value: toWei("5.0")});
-
+      await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
+      await sut.connect(user1).deposit(toWei("5.0"));
 
       await sut.connect(user1).approve(user2.address, toWei("1.05"));
       await sut.connect(user1).approve(user3.address, toWei("2.03"));
@@ -123,8 +140,11 @@ describe("Pool ERC20 token functions", () => {
 
     it("should properly assign amount to different spenders for different owners", async () => {
       // given
-      await sut.connect(user1).deposit({value: toWei("5.0")});
-      await sut.connect(user2).deposit({value: toWei("3.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
+      await sut.connect(user1).deposit(toWei("5.0"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("3.0"));
+      await sut.connect(user2).deposit(toWei("3.0"));
 
       // when
       await sut.connect(user1).approve(user2.address, toWei("2.33"));
@@ -181,7 +201,9 @@ describe("Pool ERC20 token functions", () => {
 
   describe("transferFrom", () => {
     it("should revert if amount is higher than user1 balance", async () => {
-      await sut.connect(user1).deposit({value: toWei("2.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
+      await sut.connect(user1).deposit(toWei("2.0"));
+
       await sut.connect(user1).approve(user2.address, toWei("2.0"));
       await sut.connect(user1).withdraw(toWei("1.0"));
 
@@ -190,7 +212,9 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should revert if caller's allowance for user1's tokens is too low", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+      await sut.connect(user1).deposit(toWei("1.0"));
+
       await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
       await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
@@ -198,7 +222,9 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should decrease allowance by the transfer amount", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+      await sut.connect(user1).deposit(toWei("1.0"));
+
       await sut.connect(user1).approve(user5.address, toWei("0.5"));
 
       await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.4"));
@@ -207,7 +233,9 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should decrease balance of the user1 after transfer from user1 to user3", async () => {
-      await sut.connect(user1).deposit({value: toWei("2.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
+      await sut.connect(user1).deposit(toWei("2.0"));
+
       await sut.connect(user1).approve(user5.address, toWei("1.5"));
 
       await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.2"));
@@ -215,9 +243,15 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should not decrease balance of the msg.user5", async () => {
-      await sut.connect(user1).deposit({value: toWei("3.9")});
-      await sut.connect(user5).deposit({value: toWei("5.2")});
-      await sut.connect(user3).deposit({value: toWei("4.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+      await sut.connect(user1).deposit(toWei("3.9"));
+
+      await mockToken.connect(user5).approve(sut.address, toWei("5.2"));
+      await sut.connect(user5).deposit(toWei("5.2"));
+
+      await mockToken.connect(user3).approve(sut.address, toWei("4.0"));
+      await sut.connect(user3).deposit(toWei("4.0"));
+
       await sut.connect(user1).approve(user5.address, toWei("2.0"));
 
       await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
@@ -226,8 +260,12 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should increase balance of the user3 after transfer from user1", async () => {
-      await sut.connect(user1).deposit({value: toWei("3.9")});
-      await sut.connect(user3).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+      await sut.connect(user1).deposit(toWei("3.9"));
+
+      await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
+      await sut.connect(user3).deposit(toWei("1.0"));
+
       await sut.connect(user1).approve(user5.address, toWei("0.9"));
 
       await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
@@ -235,8 +273,12 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should accumulate interest of the user1 and user3", async () => {
-      await sut.connect(user1).deposit({value: toWei("3.9")});
-      await sut.connect(user3).deposit({value: toWei("1.0")});
+      await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+      await sut.connect(user1).deposit(toWei("3.9"));
+
+      await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
+      await sut.connect(user3).deposit(toWei("1.0"));
+
       await sut.connect(user1).approve(user5.address, toWei("3.9"));
 
       await time.increase(time.duration.years(5));
@@ -249,11 +291,20 @@ describe("Pool ERC20 token functions", () => {
 
   describe("totalSupply with multiple depositors", () => {
     it("should properly sum total tokens supply - minting", async () => {
-      await sut.connect(user1).deposit({value: toWei("4.06")});
-      await sut.connect(user2).deposit({value: toWei("3.1")});
-      await sut.connect(user3).deposit({value: toWei("12.14")});
-      await sut.connect(user4).deposit({value: toWei("4.354")});
-      await sut.connect(user5).deposit({value: toWei("12.64")});
+      await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+      await sut.connect(user1).deposit(toWei("4.06"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+      await sut.connect(user2).deposit(toWei("3.1"));
+
+      await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
+      await sut.connect(user3).deposit(toWei("12.14"));
+
+      await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
+      await sut.connect(user4).deposit(toWei("4.354"));
+
+      await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
+      await sut.connect(user5).deposit(toWei("12.64"));
 
       let balanceOfUser1 = await balanceOf(user1);
       let balanceOfUser2 = await balanceOf(user2);
@@ -268,8 +319,12 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should properly sum total tokens supply - minting and burning", async () => {
-      await sut.connect(user1).deposit({value: toWei("4.06")});
-      await sut.connect(user2).deposit({value: toWei("3.1")});
+      await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+      await sut.connect(user1).deposit(toWei("4.06"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+      await sut.connect(user2).deposit(toWei("3.1"));
+
       await sut.connect(user1).withdraw(toWei("2.0"));
       await sut.connect(user2).withdraw(toWei("1.5"));
 
@@ -281,11 +336,22 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should properly sum total tokens supply with accumulated interest - minting", async () => {
-      await sut.connect(user1).deposit({value: toWei("4.06")});
-      await sut.connect(user2).deposit({value: toWei("3.1")});
-      await sut.connect(user3).deposit({value: toWei("12.14")});
-      await sut.connect(user4).deposit({value: toWei("4.354")});
-      await sut.connect(user5).deposit({value: toWei("12.64")});
+      await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+      await sut.connect(user1).deposit(toWei("4.06"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+      await sut.connect(user2).deposit(toWei("3.1"));
+
+      await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
+      await sut.connect(user3).deposit(toWei("12.14"));
+
+      await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
+      await sut.connect(user4).deposit(toWei("4.354"));
+
+      await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
+      await sut.connect(user5).deposit(toWei("12.64"));
+
+      await mockToken.connect(user6).approve(sut.address, toWei("20"));
       await sut.connect(user6).borrow(toWei("20"));
 
       await time.increase(time.duration.years(1));
@@ -308,8 +374,12 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should properly sum total tokens supply with accumulated interest - burning", async () => {
-      await sut.connect(user1).deposit({value: toWei("4.06")});
-      await sut.connect(user2).deposit({value: toWei("3.1")});
+      await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+      await sut.connect(user1).deposit(toWei("4.06"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+      await sut.connect(user2).deposit(toWei("3.1"));
+
       await sut.connect(user3).borrow(toWei("2"));
 
       await time.increase(time.duration.years(1));
@@ -325,8 +395,12 @@ describe("Pool ERC20 token functions", () => {
     });
 
     it("should properly sum total tokens supply with accumulated interest - minting, burning and borrowing", async () => {
-      await sut.connect(user1).deposit({value: toWei("3.06")});
-      await sut.connect(user2).deposit({value: toWei("2.1")});
+      await mockToken.connect(user1).approve(sut.address, toWei("3.06"));
+      await sut.connect(user1).deposit(toWei("3.06"));
+
+      await mockToken.connect(user2).approve(sut.address, toWei("2.1"));
+      await sut.connect(user2).deposit(toWei("2.1"));
+
       await sut.connect(user3).borrow(toWei("1"));
 
       await time.increase(time.duration.years(1));
@@ -365,7 +439,8 @@ describe("Pool ERC20 token functions", () => {
 
       expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
 
-      await sut.connect(user3).repay({value: toWei("0.22")});
+      await mockToken.connect(user3).approve(sut.address, toWei("0.22"));
+      await sut.connect(user3).repay(toWei("0.22"));
 
       await time.increase(time.duration.years(1));
 

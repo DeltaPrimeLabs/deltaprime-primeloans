@@ -21,8 +21,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     _;
   }
 
-  event SmartLoanCreated(address indexed accountAddress, address indexed creator, uint256 initialCollateral, uint256 initialDebt);
-
   UpgradeableBeacon public upgradeableBeacon;
 
   mapping(address => address) public ownersToLoans;
@@ -47,11 +45,11 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     updateRegistry(smartLoan);
     smartLoan.transferOwnership(msg.sender);
 
-    emit SmartLoanCreated(address(smartLoan), msg.sender, 0, 0);
+    emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, 0);
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) public virtual payable oneLoanPerOwner returns (SmartLoan) {
+  function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public virtual oneLoanPerOwner returns (SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
       abi.encodeWithSelector(SmartLoan.initialize.selector));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
@@ -60,13 +58,13 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     updateRegistry(smartLoan);
 
     //Fund account with own funds and credit
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.fund.selector), true);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.fund.selector), false);
 
     ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt), false);
 
     smartLoan.transferOwnership(msg.sender);
 
-    emit SmartLoanCreated(address(smartLoan), msg.sender, msg.value, _initialDebt);
+    emit SmartLoanCreated(address(smartLoan), msg.sender, fundedAsset, _amount, _initialDebt);
 
     return smartLoan;
   }
@@ -92,4 +90,14 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   function getAllLoans() public view returns (SmartLoan[] memory) {
     return loans;
   }
+
+  /**
+   * @dev emitted after closing a loan by the owner
+   * @param accountAddress address of a new SmartLoan
+   * @param accountAddress account creating a SmartLoan
+   * @param collateralAsset asset used as initial collateral
+   * @param collateralAmount amount of asset used as initial collateral
+   * @param initialDebt initial debt of a SmartLoan
+   **/
+  event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount, uint256 initialDebt);
 }
