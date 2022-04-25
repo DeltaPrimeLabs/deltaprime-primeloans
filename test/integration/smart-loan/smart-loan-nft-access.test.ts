@@ -4,14 +4,15 @@ import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import SmartLoansFactoryWithAccessNFTArtifact
-    from '../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
-import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+    from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import MockBorrowAccessNFTArtifact
+    from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 
-import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
-import MockSmartLoanArtifact from '../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
+import SmartLoansFactoryWithAccessNFTArtifact
+    from '../../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
+import MockSmartLoanArtifact from '../../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -20,31 +21,32 @@ import {
     getFixedGasSigners,
     recompileSmartLoan,
     toBytes32,
-    toWei
-} from "../_helpers";
-import {syncTime} from "../_syncTime"
+    toWei,
+} from "../../_helpers";
+import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    MockBorrowAccessNFT,
     CompoundingIndex,
+    ERC20Pool,
+    MockBorrowAccessNFT,
     MockSmartLoanRedstoneProvider,
     OpenBorrowersRegistry__factory,
     PangolinExchange,
-    Pool,
     SmartLoan,
     SmartLoansFactoryWithAccessNFT,
-    VariableUtilisationRatesCalculator, YieldYakRouter, YieldYakRouter__factory
-} from "../../typechain";
-import {BigNumber, Contract} from "ethers";
+    VariableUtilisationRatesCalculator,
+    YieldYakRouter,
+    YieldYakRouter__factory
+} from "../../../typechain";
+import {Contract} from "ethers";
 
 chai.use(solidity);
 
+const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
-const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
-const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -53,6 +55,10 @@ const erc20ABI = [
     'function allowance(address owner, address spender) public view returns (uint256)'
 ]
 
+const wavaxAbi = [
+    'function deposit() public payable',
+    ...erc20ABI
+]
 describe('Smart loan',  () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
@@ -60,75 +66,65 @@ describe('Smart loan',  () => {
 
     describe('A loan with an access NFT', () => {
         let exchange: PangolinExchange,
-            smartLoansFactory: SmartLoansFactoryWithAccessNFT,
-            nftContract: Contract,
-            yakRouterContract: YieldYakRouter,
-            pool: Pool,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
-            usdTokenContract: Contract,
-            linkTokenContract: Contract,
-            usdTokenDecimalPlaces: BigNumber,
-            linkTokenDecimalPlaces: BigNumber,
+            usdPool: ERC20Pool,
+            wavaxPool: ERC20Pool,
+            wavaxTokenContract: Contract,
+            nftContract: Contract,
+            yakRouterContract: YieldYakRouter,
+            smartLoansFactory: SmartLoansFactoryWithAccessNFT,
+            implementation: SmartLoan,
+            artifact: any,
             MOCK_PRICES: any,
-            AVAX_PRICE: number,
-            LINK_PRICE: number,
-            USD_PRICE: number;
+            AVAX_PRICE: number;
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
             nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
             yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-            const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-            pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-            const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-            usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-            linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+            const variableUtilisationRatesCalculatorERC20 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+            wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
-                [
-                    new Asset(toBytes32('AVAX'), WAVAXTokenAddress),
-                    new Asset(toBytes32('USD'), usdTokenAddress)
-                ]);
+            wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
 
-            const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-            usdTokenDecimalPlaces = await usdTokenContract.decimals();
-            linkTokenDecimalPlaces = await linkTokenContract.decimals();
+            const borrowersRegistryERC20 = await (new OpenBorrowersRegistry__factory(owner).deploy());
+            const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
+            const borrowingIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
+
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-            USD_PRICE = (await redstone.getPrice('USDT')).value;
-            LINK_PRICE = (await redstone.getPrice('LINK')).value;
 
             MOCK_PRICES = [
-                {
-                    symbol: 'USD',
-                    value: USD_PRICE
-                },
-                {
-                    symbol: 'LINK',
-                    value: LINK_PRICE
-                },
                 {
                     symbol: 'AVAX',
                     value: AVAX_PRICE
                 }
-            ]
+            ];
 
-            await pool.initialize(
-                variableUtilisationRatesCalculator.address,
-                borrowersRegistry.address,
-                depositIndex.address,
-                borrowingIndex.address
+            await wavaxPool.initialize(
+                variableUtilisationRatesCalculatorERC20.address,
+                borrowersRegistryERC20.address,
+                depositIndexERC20.address,
+                borrowingIndexERC20.address,
+                wavaxTokenContract.address
             );
-            await pool.connect(depositor).deposit({value: toWei("1000")});
+
+            await wavaxTokenContract.connect(depositor).deposit({value: toWei("1000")});
+            await wavaxTokenContract.connect(depositor).approve(wavaxPool.address, toWei("1000"));
+            await wavaxPool.connect(depositor).deposit(toWei("1000"));
+
+            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+                new Asset(toBytes32('AVAX'), wavaxTokenAddress)
+            ]);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
-
-            const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", pool.address, exchange.address, yakRouterContract.address, 'mock');
-            let implementation = await deployContract(owner, artifact) as SmartLoan;
+            artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], { "AVAX": wavaxPool.address} , exchange.address, yakRouterContract.address, 'mock');
+            implementation = await deployContract(owner, artifact) as SmartLoan;
 
             await smartLoansFactory.initialize(implementation.address);
 
@@ -137,7 +133,7 @@ describe('Smart loan',  () => {
 
         it("should fail to create a loan without the access NFT", async () => {
             await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("Access NFT required");
-            await expect(smartLoansFactory.connect(owner).createAndFundLoan(2137)).to.be.revertedWith("Access NFT required");
+            await expect(smartLoansFactory.connect(owner).createLoan()).to.be.revertedWith("Access NFT required");
         });
 
         it("should mint the borrower access ERC721", async () => {
@@ -159,7 +155,7 @@ describe('Smart loan',  () => {
                         }
                     })
 
-            await wrappedSmartLoansFactory.createAndFundLoan(toWei("2"), {value: toWei("0.400000001")});
+            await wrappedSmartLoansFactory.createLoan();
 
             await wrappedSmartLoansFactory.connect(owner).createLoan();
 

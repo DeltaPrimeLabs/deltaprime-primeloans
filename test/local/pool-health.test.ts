@@ -4,9 +4,9 @@ import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
-
+import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -16,10 +16,10 @@ import {
   LinearIndex,
   OpenBorrowersRegistry,
   OpenBorrowersRegistry__factory,
-  Pool,
-  VariableUtilisationRatesCalculator,
+  ERC20Pool,
+  VariableUtilisationRatesCalculator, MockToken,
 } from "../../typechain";
-import {BigNumber} from "ethers";
+import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
 
@@ -27,24 +27,27 @@ const {deployContract, provider} = waffle;
 
 describe('Safety tests of pool', () => {
   describe('Intializing a pool', () => {
-    let pool: Pool,
+    let pool: ERC20Pool,
         owner: SignerWithAddress,
         nonContractAddress: string,
         ratesCalculator: VariableUtilisationRatesCalculator,
         borrowersRegistry: OpenBorrowersRegistry,
         depositIndex: LinearIndex,
-        borrowingIndex: LinearIndex;
+        borrowingIndex: LinearIndex,
+        mockToken: Contract;
 
     before("Deploy a pool contract", async () => {
       [owner] = await getFixedGasSigners(10000000);
       nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
       borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
+
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address]])) as MockToken;
     });
 
     it("should not allow initializing pool with a non-contract ratesCalculator", async () => {
@@ -53,7 +56,8 @@ describe('Safety tests of pool', () => {
           nonContractAddress,
           borrowersRegistry.address,
           depositIndex.address,
-          borrowingIndex.address
+          borrowingIndex.address,
+          mockToken.address
         )).to.be.revertedWith("function call to a non-contract account");
     });
 
@@ -63,7 +67,8 @@ describe('Safety tests of pool', () => {
           ratesCalculator.address,
           nonContractAddress,
           depositIndex.address,
-          borrowingIndex.address
+          borrowingIndex.address,
+          mockToken.address
         )).to.be.revertedWith("Must be a contract");
     });
 
@@ -72,7 +77,8 @@ describe('Safety tests of pool', () => {
         ratesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
       );
     });
 
@@ -86,18 +92,19 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Forcefully fund pool', () => {
-    let pool: Pool,
+    let pool: ERC20Pool,
       destructable: DestructableContract,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
       user2: SignerWithAddress,
       user3: SignerWithAddress,
-      ratesCalculator: VariableUtilisationRatesCalculator;
+      ratesCalculator: VariableUtilisationRatesCalculator,
+      mockToken: Contract;
 
     before("Deploy a pool contract and a destructable contract for force funding", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -105,30 +112,35 @@ describe('Safety tests of pool', () => {
       const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
 
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, user1.address, user2.address, user3.address]])) as MockToken;
+
       await pool.initialize(
         ratesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
       );
     });
 
     it("user1 funds destructable contract with 1ETH", async () => {
-      await user1.sendTransaction({to: destructable.address, value: toWei("1.0")})
+      await user1.sendTransaction({to: destructable.address, value: toWei("1.0")});
     });
 
     it("user2 and user3 make pool related actions", async () => {
-      await pool.connect(user2).deposit({value: toWei("1.0")});
+      await mockToken.connect(user2).approve(pool.address, toWei("1.0"));
+      await pool.connect(user2).deposit(toWei("1.0"));
+
       await pool.connect(user3).borrow(toWei("0.7"));
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.3, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.3, 0.000001);
     });
 
     it("year passes, user 1 forcefully funds pool contract with 1 ETH", async () => {
       await time.increase(time.duration.years(1));
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.079401, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.3, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.3, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.08388156778, 0.000001);
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.116692526688, 0.000001);
@@ -136,7 +148,8 @@ describe('Safety tests of pool', () => {
       await destructable.connect(user1).destruct(pool.address);
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.0794010025, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.3, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.3, 0.000001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.0, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.0838815679, 0.000001);
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.11669252676, 0.000001);
@@ -146,7 +159,8 @@ describe('Safety tests of pool', () => {
       await time.increase(time.duration.years(1));
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.158802, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.3, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.3, 0.000001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.0, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.087844759, 0.000001);
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.1190160701, 0.000001);
@@ -154,33 +168,37 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Checking surplus', () => {
-    let pool: Pool,
+    let pool: ERC20Pool,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
       user2: SignerWithAddress,
       user3: SignerWithAddress,
-      ratesCalculator: VariableUtilisationRatesCalculator;
+      ratesCalculator: VariableUtilisationRatesCalculator,
+      mockToken: Contract;
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
       const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
 
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, user1.address, user2.address, user3.address]])) as MockToken;
+
       await pool.initialize(
         ratesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
       );
     });
 
     it("surplus for empty pool should be 0", async () => {
-      let poolBalance = fromWei(await provider.getBalance(pool.address));
+      let poolBalance = fromWei(await mockToken.balanceOf(pool.address));
       let totalBorrowed = fromWei(await pool.totalBorrowed());
       let totalSupply = fromWei(await pool.totalSupply());
       const currentSurplus = poolBalance + totalBorrowed - totalSupply;
@@ -188,27 +206,29 @@ describe('Safety tests of pool', () => {
     });
 
     it("surplus before borrowing should be 0", async () => {
-      await pool.connect(user1).deposit({value: toWei("1")});
-      expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1", "ether"));
+      await mockToken.connect(user1).approve(pool.address, toWei("1"));
+      await pool.connect(user1).deposit(toWei("1"));
 
-      const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+      expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("1", "ether"));
+
+      const currentSurplus = fromWei(await mockToken.balanceOf(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
       expect(currentSurplus).to.be.closeTo(0, 0.00001);
     });
 
     it("surplus before accumulating rates should be 0", async () => {
       await pool.connect(user2).borrow(toWei("0.5"));
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.equal(0.5);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.equal(0.5);
 
-      const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+      const currentSurplus = fromWei(await mockToken.balanceOf(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
       expect(currentSurplus).to.be.closeTo(0, 0.00001);
     });
 
     it("surplus after accumulating rates should be greater than zero", async () => {
       await time.increase(time.duration.years(2));
 
-      const poolBalance = fromWei(await provider.getBalance(pool.address));
+      const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
 
-      const surplus = (await provider.getBalance(pool.address)).add(await pool.totalBorrowed()).sub(await pool.totalSupply());
+      const surplus = (await mockToken.balanceOf(pool.address)).add(await pool.totalBorrowed()).sub(await pool.totalSupply());
 
       expect(surplus.toNumber()).to.be.greaterThanOrEqual(0);
 
@@ -221,12 +241,16 @@ describe('Safety tests of pool', () => {
       await pool.connect(user2).borrow(toWei("0.1"));
 
       await time.increase(time.duration.years(0.25));
-      await pool.connect(user1).deposit({value: toWei("0.3")});
+
+      await mockToken.connect(user1).approve(pool.address, toWei("0.3"));
+      await pool.connect(user1).deposit(toWei("0.3"));
+
       await pool.connect(user2).borrow(toWei("0.2"));
 
       await time.increase(time.duration.days(7));
 
-      await pool.connect(user1).deposit({value: toWei("0.2")});
+      await mockToken.connect(user1).approve(pool.address, toWei("0.2"));
+      await pool.connect(user1).deposit(toWei("0.2"));
 
       await pool.connect(user1).withdraw(toWei("0.27"));
 
@@ -236,7 +260,7 @@ describe('Safety tests of pool', () => {
 
       await time.increase(time.duration.years(20));
 
-      const poolBalance = await provider.getBalance(pool.address);
+      const poolBalance = await mockToken.balanceOf(pool.address);
       expect(fromWei(poolBalance)).to.be.closeTo(0.36, 0.00001);
 
       let surplus = poolBalance.add(await pool.totalBorrowed()).sub(await pool.totalSupply());
@@ -255,7 +279,7 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(30.418065368281, 0.000001);
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(30.20509076455, 0.000001);
 
-      const poolBalance = await provider.getBalance(pool.address);
+      const poolBalance = await mockToken.balanceOf(pool.address);
       expect(fromWei(poolBalance)).to.be.closeTo(0.36, 0.00001);
 
       let surplus = poolBalance.add(await pool.totalBorrowed()).sub(await pool.totalSupply());
@@ -264,40 +288,49 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Multiple surplus recover', () => {
-    let pool: Pool,
+    let pool: ERC20Pool,
         owner: SignerWithAddress,
         user1: SignerWithAddress,
         user2: SignerWithAddress,
         user3: SignerWithAddress,
-        ratesCalculator: VariableUtilisationRatesCalculator;
+        ratesCalculator: VariableUtilisationRatesCalculator,
+        mockToken: Contract;
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
       const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
 
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, user1.address, user2.address, user3.address]])) as MockToken;
+
       await pool.initialize(
           ratesCalculator.address,
           borrowersRegistry.address,
           depositIndex.address,
-          borrowingIndex.address
+          borrowingIndex.address,
+          mockToken.address
       );
     });
 
     it("multiple recovering surplus should not make pool unbalanced", async () => {
-      await pool.connect(user1).deposit({value: toWei("1")});
+      await mockToken.connect(user1).approve(pool.address, toWei("1"));
+      await pool.connect(user1).deposit(toWei("1"));
+
       await pool.connect(user2).borrow(toWei("0.5"));
-      await pool.connect(user1).deposit({value: toWei("1")});
+
+      await mockToken.connect(user1).approve(pool.address, toWei("1"));
+      await pool.connect(user1).deposit(toWei("1"));
 
       await recoverSurplus();
       await time.increase(time.duration.months(3));
 
-      await pool.connect(user1).deposit({value: toWei("0.1")});
+      await mockToken.connect(user1).approve(pool.address, toWei("0.1"));
+      await pool.connect(user1).deposit(toWei("0.1"));
 
       //time increase
       await recoverSurplus();
@@ -312,17 +345,23 @@ describe('Safety tests of pool', () => {
       await pool.connect(user1).withdraw(toWei("0.1"));
       await recoverSurplus();
       await time.increase(time.duration.months(3));
-      await pool.connect(user2).repay({value: toWei("0.1")});
+
+      await mockToken.connect(user2).approve(pool.address, toWei("0.1"));
+      await pool.connect(user2).repay(toWei("0.1"));
+
       await recoverSurplus();
       await time.increase(time.duration.months(3));
       await pool.connect(user2).borrow(toWei("0.5"));
-      await pool.connect(user1).deposit({value: toWei("1")});
+
+      await mockToken.connect(user1).approve(pool.address, toWei("1"));
+      await pool.connect(user1).deposit(toWei("1"));
+
       await time.increase(time.duration.years(5));
       await recoverSurplus();
 
       async function recoverSurplus() {
-        const poolBalance = await provider.getBalance(pool.address);
-        const currentSurplus = (await provider.getBalance(pool.address)).add(await pool.totalBorrowed()).sub(await pool.totalSupply());
+        const poolBalance = await mockToken.balanceOf(pool.address);
+        const currentSurplus = (await mockToken.balanceOf(pool.address)).add(await pool.totalBorrowed()).sub(await pool.totalSupply());
 
         if (currentSurplus.gt(0)) {
           const maxAvailableSurplus = (poolBalance.lt(currentSurplus)) ? poolBalance : currentSurplus;
@@ -339,51 +378,58 @@ describe('Safety tests of pool', () => {
 
 
   describe('Pool utilisation greater than 1', () => {
-    let pool: Pool,
+    let pool: ERC20Pool,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
       user2: SignerWithAddress,
       user3: SignerWithAddress,
-      ratesCalculator: VariableUtilisationRatesCalculator;
+      ratesCalculator: VariableUtilisationRatesCalculator,
+      mockToken: Contract;
 
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
       const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
 
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, user1.address, user2.address, user3.address]])) as MockToken;
+
       await pool.initialize(
         ratesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
       );
     });
 
     it("keep rates at maximum when pool utilisation is above 1", async () => {
-      await pool.connect(user1).deposit({value: toWei("1.2")});
-      expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1.2"));
+      await mockToken.connect(user1).approve(pool.address, toWei("1.2"));
+      await pool.connect(user1).deposit(toWei("1.2"));
+
+      expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("1.2", "ether"));
 
       await pool.connect(user2).borrow(toWei("1.09"));
-      expect(await provider.getBalance(pool.address)).to.be.equal(toWei("0.11"));
+      expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("0.11", "ether"));
 
       await time.increase(time.duration.years(4));
 
       let poolUtilisation = await ratesCalculator.getPoolUtilisation(await pool.totalBorrowed(), await pool.totalSupply());
       expect(fromWei(poolUtilisation)).to.be.closeTo( 0.9689115661, 0.000001);
 
-      let poolBalance = fromWei(await provider.getBalance(pool.address));
+      let poolBalance = fromWei(await mockToken.balanceOf(pool.address));
       let depositUser1 = fromWei(await pool.balanceOf(user1.address));
       let borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
       expect(depositUser1).to.be.closeTo( 3.2129248, 0.000001);
       expect(borrowedUser2).to.be.closeTo( 3.11304, 0.000001);
 
-      await pool.connect(user2).repay({value: toWei("3")});
+      await mockToken.connect(user2).approve(pool.address, toWei("3"));
+      await pool.connect(user2).repay(toWei("3"));
 
       await pool.connect(user1).withdraw(toWei("3"));
 
@@ -399,7 +445,7 @@ describe('Safety tests of pool', () => {
 
       await time.increase(time.duration.years(1));
 
-      poolBalance = fromWei(await provider.getBalance(pool.address));
+      poolBalance = fromWei(await mockToken.balanceOf(pool.address));
       depositUser1 = fromWei(await pool.balanceOf(user1.address));
       borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
@@ -413,7 +459,7 @@ describe('Safety tests of pool', () => {
     });
 
     it("recover surplus funds", async () => {
-      const poolBalance = await provider.getBalance(pool.address);
+      const poolBalance = await mockToken.balanceOf(pool.address);
       const totalBorrowed = await pool.totalBorrowed();
       const totalSupply = await pool.totalSupply();
       const depositRate = await pool.getDepositRate();
@@ -427,14 +473,14 @@ describe('Safety tests of pool', () => {
       expect(fromWei(totalSupply)).to.be.closeTo(0.336894966, 0.00001);
       expect(fromWei(totalBorrowed)).to.be.closeTo(0.3465700347, 0.00001);
 
-      let receiverBalanceBeforeRecover = await provider.getBalance(user3.address);
+      let receiverBalanceBeforeRecover = await mockToken.balanceOf(user3.address);
 
       await pool.connect(owner).recoverSurplus(maxAvailableSurplus, user3.address);
 
 
-      let receiverBalanceAfterRecover = await provider.getBalance(user3.address);
+      let receiverBalanceAfterRecover = await mockToken.balanceOf(user3.address);
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
       expect(fromWei(receiverBalanceAfterRecover)).to.be.closeTo(fromWei(receiverBalanceBeforeRecover.add(maxAvailableSurplus)), 0.00001);
       await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more surplus funds than pool balance");
 
@@ -449,12 +495,14 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await pool.getDepositRate())).to.equal(0.74625);
       expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.48086512232, 0.00001);
     });
 
     it("repay rest of loan and check pool condition", async () => {
-      await pool.connect(user2).repay({value: await pool.getBorrowed(user2.address)});
+      let borrowed = await pool.getBorrowed(user2.address);
+      await mockToken.connect(user2).approve(pool.address, borrowed);
+      await pool.connect(user2).repay(borrowed);
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.48086512689, 0.00001);
       expect(fromWei(await pool.getDepositRate())).to.closeTo(0, 0.00001);
@@ -467,11 +515,11 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0, 0.00001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0, 0.00001);
       //there are some residual funds due to deposit rate offset
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.0142349321196, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.014234927874539432, 0.000001);
     });
 
     it("recover surplus and check pool condition", async () => {
-      const poolBalance = await provider.getBalance(pool.address);
+      const poolBalance = await mockToken.balanceOf(pool.address);
       const totalBorrowed = await pool.totalBorrowed();
       const totalSupply = await pool.totalSupply();
 
@@ -482,24 +530,25 @@ describe('Safety tests of pool', () => {
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0, 0.00001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0, 0.00001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
     });
   });
 
   describe('Freeze pool', () => {
-    let pool: Pool,
-        originalPool: Pool,
+    let pool: ERC20Pool,
+        originalPool: ERC20Pool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         borrower: SignerWithAddress,
         admin: SignerWithAddress,
-        variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+        variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
+        mockToken: Contract;
 
     before("should deploy a pool", async () => {
       [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
-      originalPool = (await deployContract(owner, PoolArtifact)) as Pool;
+      originalPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
       variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -508,25 +557,32 @@ describe('Safety tests of pool', () => {
       const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await borrowingIndex.initialize(pool.address);
 
+      mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, borrower.address, depositor.address]])) as MockToken;
+
       await pool.initialize(
         variableUtilisationRatesCalculator.address,
         borrowersRegistry.address,
         depositIndex.address,
-        borrowingIndex.address
+        borrowingIndex.address,
+        mockToken.address
       );
     });
 
 
     it("should allow basic actions for a standard Rates calculator ", async () => {
-      await pool.connect(depositor).deposit({value: toWei("1.2")});
+      await mockToken.connect(depositor).approve(pool.address, toWei("1.2"));
+      await pool.connect(depositor).deposit(toWei("1.2"));
+
       await pool.connect(depositor).withdraw(toWei("0.2"));
       await pool.connect(borrower).borrow(toWei("0.7"));
-      await pool.connect(borrower).repay({value: toWei("0.2")});
+
+      await mockToken.connect(borrower).approve(pool.address, toWei("0.2"));
+      await pool.connect(borrower).repay(toWei("0.2"));
 
       expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.5, 0.000001);
     });
 
 
@@ -535,19 +591,23 @@ describe('Safety tests of pool', () => {
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.5, 0.000001);
     });
 
 
     it("should revert basic actions for a freeze calculator ", async () => {
-      await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+      await mockToken.connect(depositor).approve(pool.address, toWei("1.0"));
+      await expect(pool.connect(depositor).deposit(toWei("1.0"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+
       await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
       await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
-      await expect(pool.connect(borrower).repay({value: toWei("0.5")})).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+
+      await mockToken.connect(borrower).approve(pool.address, toWei("0.5"));
+      await expect(pool.connect(borrower).repay(toWei("0.5"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.5, 0.000001);
     });
 
 
@@ -558,12 +618,16 @@ describe('Safety tests of pool', () => {
     it("should allow basic actions for a standard calculator ", async () => {
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.5, 0.000001);
+      expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.5, 0.000001);
 
-      await expect(pool.connect(depositor).deposit({value: toWei("1.0")})).not.to.be.reverted;
+      await mockToken.connect(depositor).approve(pool.address, toWei("1.0"));
+      await expect(pool.connect(depositor).deposit(toWei("1.0"))).not.to.be.reverted;
+
       await expect(pool.connect(depositor).withdraw(toWei("0.2"))).not.to.be.reverted;
       await expect(pool.connect(borrower).borrow(toWei("0.2"))).not.to.be.reverted;
-      await expect(pool.connect(borrower).repay({value: toWei("0.5")})).not.to.be.reverted;
+
+      await mockToken.connect(borrower).approve(pool.address, toWei("0.5"));
+      await expect(pool.connect(borrower).repay(toWei("0.5"))).not.to.be.reverted;
     });
   });
 });

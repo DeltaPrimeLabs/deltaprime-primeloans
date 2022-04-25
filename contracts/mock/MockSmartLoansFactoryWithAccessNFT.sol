@@ -9,7 +9,7 @@ contract MockSmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         return super.createLoan();
     }
 
-    function createAndFundLoan(uint256 _initialDebt) public override payable hasAccessNFT returns (SmartLoan) {
-        return super.createAndFundLoan(_initialDebt);
+    function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public override hasAccessNFT returns (SmartLoan) {
+        return super.createAndFundLoan(fundedAsset, _amount, _initialDebt);
     }
 }

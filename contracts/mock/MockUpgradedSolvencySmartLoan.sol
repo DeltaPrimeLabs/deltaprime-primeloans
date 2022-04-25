@@ -14,6 +14,10 @@ import "./MockSmartLoanRedstoneProvider.sol";
  */
 contract MockUpgradedSolvencySmartLoan is MockSmartLoanRedstoneProvider {
   function getMaxLtv() override public pure returns(uint256) {
-    return 200;
+    return 2000;
+  }
+
+  function getMinSelloutLtv() override public pure returns(uint256) {
+    return 1000;
   }
 }
