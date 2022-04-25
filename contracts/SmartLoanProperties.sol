@@ -70,8 +70,17 @@ contract SmartLoanProperties {
     return IERC20(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
   }
 
-  function getPool() public virtual view returns (Pool) {
-    return Pool(0x431290dF15777d46174b83C9E01F87d7b70D3073);
+  //TODO: remember about proper sequence of pools
+  //returns indices of assets that have an ERC20 pool
+  function getPoolsAssetsIndices() public virtual view returns (uint8[1] memory) {
+    return [0];
+  }
+
+  //TODO: remember that it will be updated with a deployment script...
+  function getPoolAddress(bytes32 poolToken) public virtual view returns (address) {
+    if (poolToken == bytes32("AVAX")) return 0xCD8a1C3ba11CF5ECfa6267617243239504a98d90;
+
+    return address(0);
   }
 
   function getPriceProvider1() public virtual view returns (address) {

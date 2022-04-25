@@ -16,11 +16,12 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         updateRegistry(smartLoan);
         smartLoan.transferOwnership(msg.sender);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, 0, 0);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, 0);
+
         return smartLoan;
     }
 
-    function createAndFundLoan(uint256 _initialDebt) public override payable oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
+    function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public override oneLoanPerOwner hasAccessNFT returns (SmartLoan) {
         BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)),
             abi.encodeWithSelector(SmartLoan.initialize.selector));
         SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
@@ -29,13 +30,13 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         updateRegistry(smartLoan);
 
         //Fund account with own funds and credit
-        smartLoan.fund{value: msg.value}();
+        smartLoan.fund(fundedAsset, _amount);
 
         ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoan.borrow.selector, _initialDebt));
 
         smartLoan.transferOwnership(msg.sender);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, msg.value, _initialDebt);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, fundedAsset, _amount, _initialDebt);
 
         return smartLoan;
     }

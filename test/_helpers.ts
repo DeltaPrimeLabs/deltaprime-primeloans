@@ -2,12 +2,13 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from "../typechain";
-const {provider} = waffle;
-
-const {deployContract} = waffle;
 import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {execSync} from "child_process";
 import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
+
+const {provider} = waffle;
+
+const {deployContract} = waffle;
 
 export const toWei = ethers.utils.parseUnits;
 export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
@@ -101,11 +102,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoan(contractName: string, poolAddress: string, exchangeAddress: string, yieldYakAddress: string, subpath?: string) {
+export async function recompileSmartLoan(contractName: string, assetsIndices: Array<Number>, poolMap: {}, exchangeAddress: string, yieldYakAddress: string, subpath?: string) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    updateSmartLoanProperties(poolAddress, exchangeAddress, yieldYakAddress);
+    updateSmartLoanProperties(assetsIndices, poolMap, exchangeAddress, yieldYakAddress);
 
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
@@ -120,4 +121,3 @@ export class Asset {
     this.assetAddress = assetAddress;
   }
 }
-

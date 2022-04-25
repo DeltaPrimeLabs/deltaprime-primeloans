@@ -11,7 +11,6 @@ chai.use(solidity);
 
 const {expect} = chai;
 
-// TODO: refactor and remove dependencies between tests.
 describe('CompoundingIndex',() => {
 
   let owner: SignerWithAddress;

@@ -3,8 +3,9 @@
 pragma solidity ^0.8.4;
 import "../abstract/NFTAccess.sol";
 import "../Pool.sol";
+import "../ERC20Pool.sol";
 
-contract PoolWithAccessNFT is NFTAccess, Pool {
+contract PoolWithAccessNFT is NFTAccess, ERC20Pool {
     using TransferHelper for address payable;
 
    /**
@@ -12,7 +13,7 @@ contract PoolWithAccessNFT is NFTAccess, Pool {
      * Deposits the message value
      * It updates user deposited balance, total deposited and rates
    **/
-    function deposit() public payable override hasAccessNFT {
-        super.deposit();
+    function deposit(uint256 amount) public override hasAccessNFT {
+        super.deposit(amount);
     }
 }
