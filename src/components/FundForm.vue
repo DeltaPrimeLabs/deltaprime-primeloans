@@ -25,7 +25,7 @@
 
 
 <script>
-import {mapActions, mapState} from "vuex";
+import {mapActions, mapGetters, mapState} from "vuex";
 import CurrencyInput from "./CurrencyInput";
 import Slider from "./Slider";
 import Button from "./Button";
@@ -51,7 +51,7 @@ export default {
             if (value > this.balance) {
               return 'Fund amount exceeds user balance';
             }
-            if (this.collateralFromPayments + value > config.MAX_COLLATERAL) {
+            if (this.getCurrentCollateral + value > config.MAX_COLLATERAL) {
               return `Collateral amount higher than the maximum of ${config.MAX_COLLATERAL} allowed`;
             }
           }
@@ -110,6 +110,7 @@ export default {
   computed: {
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv', 'collateralFromPayments']),
     ...mapState('network', ['balance']),
+    ...mapGetters('loan', ['getCurrentCollateral']),
     disabled() {
       return this.fundValue == null || this.waiting || this.errors.includes(true);
     },
