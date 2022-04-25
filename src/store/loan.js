@@ -234,7 +234,7 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 100000});
+      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 300000});
 
       await awaitConfirmation(tx, provider, 'fund');
 
