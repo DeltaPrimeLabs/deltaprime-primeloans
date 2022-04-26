@@ -62,7 +62,7 @@ export default {
       return this.hasNft ?  this.mintedMessage : this.notMintedYetMessage;
     },
     videoUri() {
-      return this.nftImageUri ? this.nftImageUri : 'https://arweave.net/D4S3C6_cfvid7uRduzs95OhBw0jbruxnnljXX4P54yw';
+      return this.nftImageUri ? this.nftImageUri : 'https://arweave.net/mOoFf_oH77bi1nhDWeR5xRgX7yv7924XtOkdb6fDLfg';
     },
     correctLink() {
       const query = this.$route.query;

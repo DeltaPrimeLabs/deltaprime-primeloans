@@ -65,7 +65,7 @@ export default {
     computed: {
       ...mapState('network', ['provider', 'account']),
       ...mapState('pool', ['deploymentBlock']),
-      ...mapState('nft', ['borrowNftContract']),
+      ...mapState('nft', ['eapNftContract']),
     },
     methods: {
       loadLoansInfo() {
@@ -109,7 +109,7 @@ export default {
                       Promise.all(
                         [
                           wrappedLoan.getFullLoanStatus(),
-                          this.borrowNftContract.tokenOfOwnerByIndex(entity.creator, 0),
+                          this.eapNftContract.tokenOfOwnerByIndex(entity.creator, 0),
                         ]
                       ).then(
                           (result) => {
