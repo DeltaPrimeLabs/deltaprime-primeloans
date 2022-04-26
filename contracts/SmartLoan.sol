@@ -90,8 +90,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
- * Repays funds to the pool
- * @param _asset to repay
+   * Repays funds to the pool
+   * @param _asset to repay
    * @param _amount of funds to repay
    * @dev This function uses the redstone-evm-connector
    **/
@@ -191,8 +191,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-  * @dev This function uses the redstone-evm-connector
-  **/
+   * @dev This function uses the redstone-evm-connector
+   **/
   function liquidateLoan(uint256 toRepayInUsd, uint256[] memory orderOfPools) external payable nonReentrant {
     bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = getPricesFromMsg(assets);
@@ -221,16 +221,17 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 assetIndex = getPoolsAssetsIndices()[orderOfPools[i]];
       IERC20Metadata poolToken = getERC20TokenInstance(assets[assetIndex]);
 
+
       uint256 repaid = repayUsdAmount(
         RepayConfig(
           false,
-          toRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex] * 10**10),
+          toRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex]) / 10**10,
           assetIndex,
           0,
           prices,
           assets
         )
-    );
+      );
 
       uint256 repaidInUsd = repaid * prices[assetIndex] * 10**10 / 10 ** poolToken.decimals();
 
@@ -247,6 +248,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     //repay iterations with swapping assets
     i = 0;
     uint256 sentToLiquidator;
+
     while (i < orderOfPools.length) {
       uint256 assetIndex = getPoolsAssetsIndices()[orderOfPools[i]];
       sentToLiquidator = 0;
@@ -254,13 +256,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
       //only for a native token- we perform bonus transfer for a liquidator
       if (orderOfPools[i] == 0) {
-        sentToLiquidator = bonus * 10 ** poolToken.decimals() / (prices[assetIndex] * 10**10);
+        sentToLiquidator = bonus * 10 ** poolToken.decimals() / prices[assetIndex] / 10**10;
       }
 
       uint256 repaid = repayUsdAmount(
         RepayConfig(
           true,
-          toRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex] * 10**10),
+          toRepayInUsd *  10 ** poolToken.decimals() / prices[assetIndex] / 10**10,
           assetIndex,
           sentToLiquidator,
           prices,

@@ -309,7 +309,7 @@ describe('Smart loan',  () => {
         await wrappedLoan.getDebt(),
         await wrappedLoan.getLiquidationBonus(),
         await wrappedLoan.getMaxLtv()
-      )
+      );
 
       let previousLiquidatorBalance = await wavaxTokenContract.balanceOf(liquidator.address);
 

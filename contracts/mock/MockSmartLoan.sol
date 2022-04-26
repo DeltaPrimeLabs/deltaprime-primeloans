@@ -29,7 +29,7 @@ contract MockSmartLoan is MockSmartLoanRedstoneProvider {
     return value;
   }
 
-  function calculateTotalValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual override returns (uint256) {
+  function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual override returns (uint256) {
     return value;
   }
 
