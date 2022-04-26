@@ -50,7 +50,7 @@ const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const yakStakingTokenAddress = "0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0";
+const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 
 const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
@@ -1680,7 +1680,8 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 5000;
+
+      let investedAmount = Math.floor(64 * AVAX_PRICE);
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(

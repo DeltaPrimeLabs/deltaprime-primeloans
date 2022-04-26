@@ -10,7 +10,7 @@ import {calculateStakingTokensAmountBasedOnAvaxValue, fromWei, getFixedGasSigner
 import {BigNumber, Contract} from "ethers";
 chai.use(solidity);
 const {provider} = waffle;
-const yakStakingTokenAddress = "0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0";
+const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',

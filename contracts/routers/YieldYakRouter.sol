@@ -14,7 +14,7 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    address private constant YAKStakingAVAXAAVEV1Address = 0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0;
+    address private constant YAKStakingAVAXAAVEV1Address = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
     function stakeAVAX(uint256 amount) public payable override nonReentrant{
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).depositFor{value: amount}(msg.sender);
