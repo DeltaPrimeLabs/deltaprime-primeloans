@@ -67,7 +67,7 @@ contract SmartLoanProperties {
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
-    return IERC20(0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0);
+    return IERC20(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
   }
 
   function getPool() public virtual view returns (Pool) {
