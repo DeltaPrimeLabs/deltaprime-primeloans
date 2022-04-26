@@ -1,7 +1,9 @@
 import {Contract} from "ethers";
 const ethers = require('ethers');
 import BORROW_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessNFT.json'
+import EAP_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessNFT.json'
 import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
+import WOLF_OF_DEFI_WINNERS_NFT from '@artifacts/contracts/ERC721/WolfOfDeFiWinners.sol/WolfOfDeFiWinners.json'
 const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
 const POOL_TUP = require('@contracts/PoolTUP.json');
 import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
@@ -12,20 +14,22 @@ const ZERO = ethers.constants.AddressZero;
 export default {
   namespaced: true,
   state: {
-    borrowNftContract: null,
+    eapNftContract: null,
     borrowNftContractSet: true,
-    hasBorrowNft: null,
+    hasEapNft: null,
     borrowNftId: null,
     borrowNftImageUri: null,
     depositNftContract: null,
     depositNftContractSet: true,
     hasDepositNft: null,
     depositNftId: null,
-    depositNftImageUri: null
+    depositNftImageUri: null,
+    nfts: [],
+    numberOfNfts: 0,
   },
   mutations: {
-    setBorrowNftContract(state, contract) {
-      state.borrowNftContract = contract;
+    setEapNftContract(state, contract) {
+      state.eapNftContract = contract;
     },
     setBorrowNftContractSet(state, has) {
       state.borrowNftContractSet = has;
@@ -33,8 +37,8 @@ export default {
     setBorrowNftId(state, id) {
       state.borrowNftId = id;
     },
-    setHasBorrowNft(state, has) {
-      state.hasBorrowNft = has;
+    setHasEapNft(state, has) {
+      state.hasEapNft = has;
     },
     setBorrowNftImageUri(state, uri) {
       state.borrowNftImageUri = uri;
@@ -54,10 +58,16 @@ export default {
     setDepositNftImageUri(state, uri) {
       state.depositNftImageUri = uri;
     },
+    setNfts(state, nfts) {
+      state.nfts = nfts;
+    },
+    setNumberOfNfts(state, number) {
+      state.numberOfNfts = number;
+    },
   },
   getters: {
     borrowingLocked(state) {
-      return state.borrowNftContractSet && !state.hasBorrowNft;
+      return state.borrowNftContractSet && !state.hasEapNft;
     },
     depositLocked(state) {
       return state.depositNftContractSet && state.depositNftId === null;
@@ -75,10 +85,12 @@ export default {
         //TODO: simplify
         commit('setBorrowNftContractSet', address !== ZERO);
 
-        const borrowContract = new Contract(address, BORROW_NFT.abi, provider.getSigner());
+        const eapContract = new Contract(address, EAP_NFT.abi, provider.getSigner());
 
-        commit('setBorrowNftContract', borrowContract);
-        dispatch('checkBorrowNftBalance');
+        commit('setEapNftContract', eapContract);
+        dispatch('checkEapNftBalance');
+        dispatch('loadWolfOfDefiWinnersNfts');
+        dispatch('loadBorrowAccessNfts')
       } catch(e) {
         console.error(e)
         console.log('No access NFT for borrow required')
@@ -100,13 +112,14 @@ export default {
         commit('setDepositNftContractSet', false);
       }
     },
-    async updateBorrowNft({ commit, state }) {
-      const jsonUri = await state.borrowNftContract.baseURI();
+    async updateEapNft({ commit, state }) {
+      const jsonUri = await state.eapNftContract.baseURI();
       const response = await fetch(jsonUri);
       const json = await response.json();
       const uri = json.image;
 
       commit('setBorrowNftImageUri', uri);
+      commit('setNfts', [...state.nfts, uri]);
     },
     async updateDepositNftFromId({ commit, state }, { id }) {
       const jsonUri = await state.depositNftContract.tokenURI(id);
@@ -116,13 +129,40 @@ export default {
 
       commit('setDepositNftImageUri', uri);
     },
-    async checkBorrowNftBalance({ state, rootState, dispatch, commit }) {
-      const balance = (await state.borrowNftContract.balanceOf(rootState.network.account)).toNumber();
+    async checkEapNftBalance({ state, rootState, dispatch, commit }) {
+      const balance = (await state.eapNftContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
       if (balance > 0) {
-        commit('setHasBorrowNft', true);
-        dispatch('updateBorrowNft')
+        commit('setHasEapNft', true);
+        dispatch('updateEapNft')
       } else {
         commit('setHasBorrowNft', false);
+      }
+    },
+    async loadWolfOfDefiWinnersNfts({state, rootState, dispatch, commit}) {
+      const wolfsContractAddress = '0xf9a12a4759500df05983fd3ebd7f8a8f262a2967';
+      const wolfsContract = new Contract(wolfsContractAddress, WOLF_OF_DEFI_WINNERS_NFT.abi, provider.getSigner());
+      const balance = (await wolfsContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
+      for (let i = 0; i < balance; i++) {
+        const id = (await wolfsContract.tokenOfOwnerByIndex(rootState.network.account, i)).toNumber();
+        const tokenUri = await wolfsContract.tokenURI(id);
+        const response = await fetch(tokenUri);
+        const tokenJson = await response.json();
+        commit('setNfts', [...state.nfts, tokenJson.image]);
+      }
+    },
+    async loadBorrowAccessNfts({state, rootState, dispatch, commit}) {
+      const borrowNftContractAddress = '0xF8d1b34651f2c9230beB9b83B2260529769FDeA4';
+      const borrowNftContract = new Contract(borrowNftContractAddress, WOLF_OF_DEFI_WINNERS_NFT.abi, provider.getSigner());
+      const balance = (await borrowNftContract.balanceOf(rootState.network.account)).toNumber();
+      commit('setNumberOfNfts', state.numberOfNfts + balance);
+      if (balance > 0) {
+        const tokenId = (await borrowNftContract.tokenOfOwnerByIndex(rootState.network.account, 0));
+        const tokenUri = await borrowNftContract.tokenURI(tokenId);
+        const response = await fetch(tokenUri);
+        const tokenJson = await response.json();
+        commit('setNfts', [...state.nfts, tokenJson.image]);
       }
     },
     async getDepositNftId({ state, rootState, dispatch, commit }) {
@@ -140,7 +180,7 @@ export default {
     },
     async mintBorrowNft({ dispatch, state, rootState }, {id, signature}) {
       const provider = rootState.network.provider;
-      let tx = await state.borrowNftContract.safeMint(id, signature);
+      let tx = await state.eapNftContract.safeMint(id, signature);
 
       await awaitConfirmation(tx, provider, 'mint');
 

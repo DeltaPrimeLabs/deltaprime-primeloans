@@ -33,7 +33,7 @@ import {
     CompoundingIndex,
     MockDepositAccessNFT,
     MockSmartLoanRedstoneProvider,
-    MockSmartLoanRedstoneProviderLimitedCollateral, MockSmartLoanRedstoneProviderLimitedCollateral__factory,
+    MockSmartLoanRedstoneProviderLimitedCollateral,
     MockSmartLoanRedstoneProvider__factory,
     PangolinExchange,
     Pool,
@@ -42,7 +42,6 @@ import {
     PoolWithAccessNFT,
     PoolWithAccessNFT__factory,
     SmartLoan,
-    SmartLoanLimitedCollateral,
     SmartLoansFactory,
     SmartLoansFactory__factory,
     SmartLoansFactoryTUP,
@@ -63,7 +62,6 @@ const MAX_COLLATERAL = config.MAX_COLLATERAL;
 describe('Trading competition upgraded contracts test', () => {
     let SLImpl: SmartLoan,
         SL: SmartLoan,
-        SLUpgraded: SmartLoanLimitedCollateral,
         SLFImpl: Contract,
         SLF: SmartLoansFactory,
         SLFTUP: SmartLoansFactoryTUP,
@@ -201,7 +199,7 @@ describe('Trading competition upgraded contracts test', () => {
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(SLImpl.address);
 
-        await expect(SL.fund({value: toWei((MAX_COLLATERAL + 0.5).toString())})).to.be.revertedWith("Adding more collateral than 7 AVAX in total is not allowed");
+        await expect(SL.fund({value: toWei((MAX_COLLATERAL + 0.5).toString())})).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} AVAX in total is not allowed`);
 
         await SL.fund({value: toWei(MAX_COLLATERAL.toString())});
 

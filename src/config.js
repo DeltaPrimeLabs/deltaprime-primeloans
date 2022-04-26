@@ -2,7 +2,7 @@ import addresses from '../common/token_addresses.json';
 
 export default {
     DEFAULT_LTV: 2,
-    MAX_COLLATERAL: 7,
+    MAX_COLLATERAL: 6,
     MAX_ALLOWED_LTV: 4.5,
     LIQUIDATION_LTV: 5,
     COMPETITION_START_BLOCK: 11644638,
