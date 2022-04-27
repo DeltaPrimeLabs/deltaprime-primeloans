@@ -40,7 +40,7 @@ export default new Router({
       component: Nft,
       children: [
         {
-          path: 'borrow',
+          path: 'list',
           component: BorrowNft
         },
         {
