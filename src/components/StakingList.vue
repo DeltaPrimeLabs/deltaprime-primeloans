@@ -4,7 +4,7 @@
     <div class="total">
         <span class="total-value-wrapper">
           <span class="total-value">
-            Total staked: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
+            Total staked: <span class="value">$ {{ getTotalStakedPerProtocol() }}</span>
           </span>
         </span>
     </div>
@@ -19,16 +19,16 @@
         <div class="table__cell right">View</div>
       </div>
       <div class="table__body">
-        <div class="table__row protocols__row" v-for="protocol in protocols"
-             v-bind:key="protocol.key">
+        <div class="table__row protocols__row" v-for="(protocol, key, index) in protocols"
+             v-bind:key="key">
           <div class="table__cell left" data-label="Pool">
             <div class="token-logo-wrapper">
               <img :src="logoSrc(protocol.symbol)" class="token-logo"/>
             </div>
             <span class="token-name">{{ protocol.name }}</span>
           </div>
-          <div class="table__cell right" data-label="Total Staked">
-            <span>{{protocol.totalStaked}}</span>
+          <div class="table__cell value right" data-label="Total Staked">
+            <span>$ {{getTotalStakedPerProtocol()}}</span>
           </div>
           <div class="table__cell right" data-label="Max APR">
             <span>{{protocol.maxApr | percent}}</span>
@@ -37,7 +37,7 @@
           <div class="table__cell" v-if="!isMobile"></div>
           <div>
             <div class="table__cell invest-buttons right" @click.stop>
-              <img @click="showStakingOptions(protocol)" class="chevron clickable-icon"/>
+              <img @click="showStakingOptions(key)" class="chevron clickable-icon"/>
             </div>
           </div>
 
@@ -62,22 +62,30 @@
                       </div>
                       <span class="token-name">{{ asset.name }}</span>
                     </div>
-                    <div class="table__cell right" data-label="Price">
+                    <div class="table__cell value right" data-label="Price">
                       <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="Staked">
-                      <span>11.235</span>
+                      <LoadedValue
+                          :check="() => stakedAssets[key].assets[asset.symbol] != null"
+                          :value="formatTokenBalance(stakedAssets[key].assets[asset.symbol].balance)">
+                      </LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="APR">
                       <span>{{0.053 | percent}}</span>
                     </div>
-                    <div class="table__cell right">4.21</div>
+                    <div class="table__cell right">
+                      <LoadedValue
+                          :check="() => asset.balance != null"
+                          :value="formatTokenBalance(asset.balance)">
+                      </LoadedValue>
+                    </div>
                     <div class="table__cell" v-if="!isMobile"></div>
                     <div>
                       <div class="table__cell invest-buttons right" @click.stop>
-                        <img class="plus clickable-icon" @click="showStakeForm(protocol, asset)"/>
+                        <img class="plus clickable-icon" @click="showStakeForm(key, asset)"/>
                         <img src="src/assets/icons/slash-small.svg"/>
-                        <img class="minus clickable-icon" @click="showUnstakeForm(protocol, asset)"/>
+                        <img class="minus clickable-icon" @click="showUnstakeForm(key, asset)"/>
                       </div>
                     </div>
 
@@ -90,7 +98,6 @@
                             :price="asset.price"
                             :hasSecondButton="true"
                             v-on:submitValue="(value) => stake(protocol, asset, value)"
-                            :denominationButtons="true"
                         />
                       </SmallBlock>
                     </div>
@@ -104,7 +111,6 @@
                             :price="asset.price"
                             :hasSecondButton="true"
                             v-on:submitValue="(value) => unstake(protocol, asset, value)"
-                            :denominationButtons="true"
                         />
                       </SmallBlock>
                     </div>
@@ -129,10 +135,8 @@ import SmallBlock from "@/components/SmallBlock.vue";
 import LoadedValue from "@/components/LoadedValue.vue";
 import Button from "@/components/Button.vue";
 import {mapState, mapActions, mapGetters} from "vuex";
-import redstone from 'redstone-api';
 import Vue from 'vue'
 import config from "@/config";
-import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
 
 
 export default {
@@ -149,15 +153,13 @@ export default {
   props: {
   },
   computed: {
-    ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
+    ...mapState('loan', ['totalValue', 'assets', 'loanHistory', 'stakedAssets']),
     ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
   },
   data() {
     return {
-      list: config.ASSETS_CONFIG,
       protocols: {
-        'YAK_POOL': {
-          key: 'YAK_POOL',
+        'YAK_YIELD': {
           symbol: 'YAK',
           name: 'Protocol Yak Yield',
           totalStaked: 1.2,
@@ -168,31 +170,49 @@ export default {
             AVAX: config.ASSETS_CONFIG.AVAX
           }
         }
-      }
+      },
     }
   },
   methods: {
-    showStakingOptions(protocol) {
-      Vue.set(this.protocols[protocol.key], 'showStakingOptions', !this.protocols[protocol.key].showStakingOptions);
+    ...mapActions('loan', ['stakeAvaxYak', 'unstakeAvaxYak']),
+    showStakingOptions(protocolKey) {
+      if (this.protocols) {
+        Vue.set(this.protocols[protocolKey], 'showStakingOptions', !this.protocols[protocolKey].showStakingOptions);
+      }
     },
 
-    showStakeForm(protocol, asset) {
-      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showStakeForm', true);
-      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showUnstakeForm', false);
-
+    showStakeForm(protocolKey, asset) {
+      if (this.protocols) {
+        Vue.set(this.protocols[protocolKey].stakingOptions[asset.symbol], 'showStakeForm', true);
+        Vue.set(this.protocols[protocolKey].stakingOptions[asset.symbol], 'showUnstakeForm', false);
+      }
     },
 
-    showUnstakeForm(protocol, asset) {
-      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showUnstakeForm', true);
-      Vue.set(this.protocols[protocol.key].stakingOptions[asset.symbol], 'showStakeForm', false);
+    showUnstakeForm(protocolKey, asset) {
+      if (this.protocols) {
+        Vue.set(this.protocols[protocolKey].stakingOptions[asset.symbol], 'showUnstakeForm', true);
+        Vue.set(this.protocols[protocolKey].stakingOptions[asset.symbol], 'showStakeForm', false);
+      }
     },
 
-    stake(protocol, asset, value) {
-      console.log(`stake ${value}${asset.symbol} in ${protocol.name}`);
+    stake(protocol, asset, amount) {
+      this.handleTransaction(this.stakeAvaxYak, {amount}).then((result) => {
+      })
     },
 
-    unstake(protocol, asset, value) {
-      console.log(`unstake ${value}${asset.symbol} in ${protocol.name}`);
+    unstake(protocol, asset, amount) {
+      this.handleTransaction(this.unstakeAvaxYak, {amount}).then((result) => {
+      })
+    },
+
+    formatTokenBalance(balance) {
+      return balance !== null ? balance.toFixed(4) : '';
+    },
+
+    getTotalStakedPerProtocol() {
+      if (this.stakedAssets) {
+        return this.avaxToUSD(this.stakedAssets.YAK_YIELD.assets.AVAX.balance).toFixed(2);
+      }
     },
   },
 }

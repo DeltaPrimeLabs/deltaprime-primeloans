@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    <StakingList></StakingList>
+    <StakingList v-if="stakingAllowedForThisWallet()"></StakingList>
 
   </div>
 </template>
@@ -225,6 +225,7 @@ export default {
   computed: {
     ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
     ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
+    ...mapState('network', ['account']),
     investments() {
       if (this.list) {
         return Object.values(this.list).filter(
@@ -259,7 +260,14 @@ export default {
   },
   data() {
     return {
-      list: config.ASSETS_CONFIG
+      list: config.ASSETS_CONFIG,
+      stakingWalletWhiteList: [
+        '0x81262DfC30A5E3Ae137029F20850566F86f6eB3A',
+        '0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2',
+        '0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D',
+        '0x1884fa898A26D0e080d047533B1c1E495d958b1D',
+        '0x6C21A841d6f029243AF87EF01f6772F05832144b',
+      ]
     }
   },
   methods: {
@@ -451,6 +459,10 @@ export default {
     },
     formatTokenBalance(balance) {
       return balance !== null ? balance.toPrecision(4) : '';
+    },
+
+    stakingAllowedForThisWallet() {
+      return this.stakingWalletWhiteList.includes(this.account);
     }
   },
   watch: {

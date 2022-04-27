@@ -90,9 +90,6 @@
     <Block class="block assets-list" :bordered="true" >
       <AssetsList/>
     </Block>
-<!--    <Block class="block assets-list staking-list" :bordered="true" >
-      <StakingList/>
-    </Block>-->
     <Block class="block history-block" background="rgba(255, 255, 255, 0.3)" v-if="(loanEvents && loanEvents.length > 0)">
       <div class="history-title">Prime Account history</div>
       <LoanHistoryList :items="loanEvents" title="Prime Account History" class="history-list"/>
