@@ -33,7 +33,7 @@ import {
   SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 
@@ -77,6 +77,7 @@ describe('Smart loan - upgrading',  () => {
       depositor: SignerWithAddress,
       wavaxTokenContract: Contract,
       usdTokenContract: Contract,
+      yakRouterContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
       beacon: UpgradeableBeacon,
       AVAX_PRICE: number,
@@ -96,6 +97,8 @@ describe('Smart loan - upgrading',  () => {
           new Asset(toBytes32('AVAX'), wavaxTokenAddress),
           new Asset(toBytes32('USD'), usdTokenAddress)
       ]);
+
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
@@ -119,7 +122,7 @@ describe('Smart loan - upgrading',  () => {
       const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
       const borrowingIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
 
-      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", [0], { "AVAX": wavaxPool.address}, exchange.address, 'mock');
+      const artifact = await recompileSmartLoan("MockSmartLoanRedstoneProvider", [0], { "AVAX": wavaxPool.address}, exchange.address, yakRouterContract.address, 'mock');
       let implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

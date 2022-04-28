@@ -56,7 +56,7 @@ export default function updateSmartLoanProperties(indices, poolMap, exchangeAddr
         line => line.includes('return IYieldYakRouter')
     );
 
-    newLine = `  return IYieldYakRouter(' + yieldYakRouter + ');`;
+    newLine = `  return IYieldYakRouter(${yieldYakRouter});`;
 
     fileArray.splice(previousLine, 1, newLine);
 

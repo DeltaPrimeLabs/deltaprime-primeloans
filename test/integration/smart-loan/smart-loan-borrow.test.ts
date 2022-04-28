@@ -15,11 +15,11 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
   deployAndInitPangolinExchangeContract,
+  fromWei,
   getFixedGasSigners,
-  toBytes32,
-  toWei,
   recompileSmartLoan,
-  fromWei
+  toBytes32,
+  toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -31,20 +31,16 @@ import {
   PangolinExchange,
   SmartLoan,
   SmartLoansFactory,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
-import {BigNumber, Contract} from "ethers";
-import {parseUnits} from "ethers/lib/utils";
+import {Contract} from "ethers";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
-const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-
 
 const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
@@ -74,6 +70,7 @@ describe('Smart loan',  () => {
         mockUsdToken: MockToken,
         wavaxTokenContract: Contract,
         ethTokenContract: Contract,
+        yakRouterContract: Contract,
         wavaxPool: ERC20Pool,
         usdPool: ERC20Pool,
         owner: SignerWithAddress,
@@ -91,6 +88,8 @@ describe('Smart loan',  () => {
       const variableUtilisationRatesCalculatorERC20 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
       ethTokenContract = new ethers.Contract(ethTokenAddress, wavaxAbi, provider);
@@ -155,7 +154,7 @@ describe('Smart loan',  () => {
       ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, 'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, yakRouterContract.address, 'mock');
 
       implementation = await deployContract(owner, artifact) as SmartLoan;
 

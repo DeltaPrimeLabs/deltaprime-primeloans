@@ -30,7 +30,7 @@ import {
   PangolinExchange,
   SmartLoan,
   SmartLoansFactory,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -71,6 +71,7 @@ describe('Smart loan',  () => {
         depositor: SignerWithAddress,
         wavaxTokenContract: Contract,
         usdTokenContract: Contract,
+        yakRouterContract: Contract,
         usdTokenDecimalPlaces: BigNumber,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
@@ -85,6 +86,8 @@ describe('Smart loan',  () => {
       pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
           [
@@ -126,7 +129,7 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0], { 'AVAX': pool.address }, exchange.address, 'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0], { 'AVAX': pool.address }, exchange.address, yakRouterContract.address, 'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

@@ -32,7 +32,7 @@ import {
   PangolinExchange,
   SmartLoan,
   SmartLoansFactory,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -43,7 +43,6 @@ const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-
 
 const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
@@ -72,6 +71,7 @@ describe('Smart loan',  () => {
       mockUsdToken: MockUsd,
       wavaxTokenContract: Contract,
       ethTokenContract: Contract,
+      yakRouterContract: Contract,
       wavaxPool: ERC20Pool,
       usdPool: ERC20Pool,
       owner: SignerWithAddress,
@@ -91,6 +91,8 @@ describe('Smart loan',  () => {
       usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
+
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
       ethTokenContract = new ethers.Contract(ethTokenAddress, wavaxAbi, provider);
       mockUsdToken = (await deployContract(owner, MockUsdArtifact, [[owner.address, depositor.address]])) as MockUsd;
@@ -103,7 +105,6 @@ describe('Smart loan',  () => {
       const borrowersRegistryERC20 = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
       const borrowingIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
-
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       USD_PRICE = (await redstone.getPrice('USDT')).value;
@@ -154,7 +155,7 @@ describe('Smart loan',  () => {
       ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], { "USD": usdPool.address} , exchange.address, 'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], { "USD": usdPool.address} , exchange.address, yakRouterContract.address, 'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

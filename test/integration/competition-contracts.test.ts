@@ -148,7 +148,7 @@ describe('Trading competition upgraded contracts test', () => {
         ]);
 
         // Smart Loan Implementation
-        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], {"USD": usdPool.address}, yakRouterContract.address, exchange.address, 'mock');
+        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], {"USD": usdPool.address},  exchange.address, yakRouterContract.address,'mock');
         implementation = await deployContract(owner, artifact) as SmartLoan;
 
         // Not upgraded smartLoansFactory with TUP

@@ -132,15 +132,22 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-    require(address(this).balance >= amount, "Not enough AVAX available");
+    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
+
+    require(wavaxToken.balanceOf(address(this)) >= amount, "Not enough AVAX available");
+
+    wavaxToken.withdraw(amount);
+
     getYieldYakRouter().stakeAVAX{value: amount}(amount);
   }
 
   function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
     IYieldYakRouter yakRouter = getYieldYakRouter();
     address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
 
     require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
+    wavaxToken.deposit{value: amount}();
   }
 
   /**
@@ -196,6 +203,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   function liquidateLoan(uint256 toRepayInUsd, uint256[] memory orderOfPools) external payable nonReentrant {
     bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = getPricesFromMsg(assets);
+    uint256 leftToRepayInUsd = toRepayInUsd;
 
     require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
     _liquidationInProgress = true;
@@ -207,17 +215,17 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     {
       uint256 debt = calculateDebt(assets, prices);
 
-      if (toRepayInUsd > debt) {
-        toRepayInUsd = debt;
+      if (leftToRepayInUsd > debt) {
+        leftToRepayInUsd = debt;
       }
     }
 
-    uint256 bonus = (toRepayInUsd * getLiquidationBonus()) / getPercentagePrecision();
+    uint256 bonus = (leftToRepayInUsd * getLiquidationBonus()) / getPercentagePrecision();
 
     //repay iterations without swapping assets
     uint32 i;
 
-    while (toRepayInUsd > 0 && i < orderOfPools.length) {
+    while (leftToRepayInUsd > 0 && i < orderOfPools.length) {
       uint256 assetIndex = getPoolsAssetsIndices()[orderOfPools[i]];
       IERC20Metadata poolToken = getERC20TokenInstance(assets[assetIndex]);
 
@@ -225,7 +233,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 repaid = repayUsdAmount(
         RepayConfig(
           false,
-          toRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex]) / 10**10,
+          leftToRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex]) / 10**10,
           assetIndex,
           0,
           prices,
@@ -235,11 +243,11 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
       uint256 repaidInUsd = repaid * prices[assetIndex] * 10**10 / 10 ** poolToken.decimals();
 
-      if (repaidInUsd > toRepayInUsd) {
-        toRepayInUsd = 0;
+      if (repaidInUsd > leftToRepayInUsd) {
+        leftToRepayInUsd = 0;
         break;
       } else {
-        toRepayInUsd -= repaidInUsd;
+        leftToRepayInUsd -= repaidInUsd;
       }
 
       i++;
@@ -262,7 +270,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 repaid = repayUsdAmount(
         RepayConfig(
           true,
-          toRepayInUsd *  10 ** poolToken.decimals() / prices[assetIndex] / 10**10,
+          leftToRepayInUsd *  10 ** poolToken.decimals() / prices[assetIndex] / 10**10,
           assetIndex,
           sentToLiquidator,
           prices,
@@ -272,19 +280,28 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
       uint256 repaidInUsd = repaid * prices[assetIndex] * 10**10 / 10 ** poolToken.decimals();
 
-      if (repaidInUsd >= toRepayInUsd) {
-        toRepayInUsd = 0;
+      if (repaidInUsd >= leftToRepayInUsd) {
+        leftToRepayInUsd = 0;
         break;
       } else {
-        toRepayInUsd -= repaidInUsd;
+        leftToRepayInUsd -= repaidInUsd;
       }
 
       i++;
     }
 
+    //TODO: make more generic in the future
+    //repay with staked tokens
+    uint256 avaxToRepay = leftToRepayInUsd * 10**8 / prices[0];
+    uint256 stakedAvaxRepaid = Math.min(avaxToRepay, getYieldYakRouter().getTotalStakedValue());
+
+    if (repayWithStakedAVAX(stakedAvaxRepaid)) {
+      leftToRepayInUsd -= stakedAvaxRepaid * prices[0] / 10**8;
+    }
+
     uint256 LTV = calculateLTV(assets, prices);
 
-    emit Liquidated(msg.sender, toRepayInUsd, bonus, LTV, block.timestamp);
+    emit Liquidated(msg.sender, toRepayInUsd - leftToRepayInUsd, bonus, LTV, block.timestamp);
 
     if (msg.sender != owner()) {
       require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
@@ -294,10 +311,15 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     _liquidationInProgress = false;
   }
 
-  receive() external payable {
-    address payable nativeTokenWrapped = payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0]));
-    WAVAX(nativeTokenWrapped).deposit{value: msg.value}();
+  //TODO: write a test for it
+  function wrapNativeToken(uint256 amount) onlyOwner public {
+    require(amount <= address(this).balance, "Not enough AVAX to wrap");
+    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
+
+    wavaxToken.deposit{value: amount}();
   }
+
+  receive() external payable {}
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -432,7 +454,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
     }
 
-    total += getYieldYakRouter().getTotalStakedValue();
+    total += getYieldYakRouter().getTotalStakedValue() * prices[0] / 10**8;
 
     return total;
   }
@@ -613,16 +635,37 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     TransferHelper.safeTransfer(address(wrappedNativeToken), msg.sender, Math.min(_bonus, address(this).balance));
   }
 
-  //TODO: include in liquidations!! and calculate with USD
-  function selloutStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
+  function repayWithStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
+    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
     address yakRouterAddress = address(getYieldYakRouter());
     (bool successApprove, ) = address(getYakAvaxStakingContract()).call(
       abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
     );
-    (bool successUnstake, ) = yakRouterAddress.call(
+    if (!successApprove) return false;
+
+    (bool successUnstake, bytes memory result) = yakRouterAddress.call(
       abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
     );
-    return successApprove && successUnstake;
+
+    if (!successUnstake) return false;
+
+//    uint256 amount = abi.decode(result, (uint256));
+    //TODO: return from unstakeAVAX the real value ustaken
+    uint256 amount = Math.min(targetAvaxAmount, address(this).balance);
+
+    wavaxToken.deposit{value: amount}();
+
+    ERC20Pool pool = ERC20Pool(getPoolAddress(bytes32("AVAX")));
+
+    address(wavaxToken).safeApprove(address(pool), 0);
+    address(wavaxToken).safeApprove(address(pool), amount);
+
+    bool successRepay;
+    (successRepay, ) = address(pool).call{value: 0}(
+      abi.encodeWithSignature("repay(uint256)", amount)
+    );
+
+    return successRepay;
   }
 
   /* ========== MODIFIERS ========== */

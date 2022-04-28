@@ -34,7 +34,7 @@ import {
   SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator
+  VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -151,6 +151,7 @@ describe('Smart loan',  () => {
         linkTokenContract: Contract,
         ethTokenContract: Contract,
         wavaxTokenContract: Contract,
+        yakRouterContract: Contract,
         btcTokenContract: Contract,
         beacon: UpgradeableBeacon,
         smartLoansFactory: SmartLoansFactory,
@@ -176,6 +177,8 @@ describe('Smart loan',  () => {
       ethTokenContract = new ethers.Contract(ethTokenAddress, erc20ABI, provider);
       btcTokenContract = new ethers.Contract(btcTokenAddress, erc20ABI, provider);
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+
+      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
         new Asset(toBytes32('AVAX'), wavaxTokenAddress),
@@ -279,10 +282,10 @@ describe('Smart loan',  () => {
     });
 
     before("prepare smart loan implementations", async () => {
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, 'mock');
+      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'mock');
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
-      artifact = await recompileSmartLoan("MockUpgradedSolvencySmartLoan",[0, 1, 3], { 'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address}, exchange.address, 'mock');
+      artifact = await recompileSmartLoan("MockUpgradedSolvencySmartLoan",[0, 1, 3], { 'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address}, exchange.address, yakRouterContract.address, 'mock');
       newImplementation = await deployContract(owner, artifact) as SmartLoan;
     });
 

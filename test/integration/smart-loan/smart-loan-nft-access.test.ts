@@ -7,7 +7,8 @@ import VariableUtilisationRatesCalculatorArtifact
     from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
-import MockBorrowAccessNFTArtifact from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
+import MockBorrowAccessNFTArtifact
+    from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 
 import SmartLoansFactoryWithAccessNFTArtifact
     from '../../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
@@ -26,19 +27,18 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
     CompoundingIndex,
-    ERC20Pool, MockBorrowAccessNFT,
+    ERC20Pool,
+    MockBorrowAccessNFT,
     MockSmartLoanRedstoneProvider,
     OpenBorrowersRegistry__factory,
     PangolinExchange,
     SmartLoan,
-    SmartLoansFactory,
     SmartLoansFactoryWithAccessNFT,
-    UpgradeableBeacon,
     VariableUtilisationRatesCalculator,
     YieldYakRouter,
     YieldYakRouter__factory
 } from "../../../typechain";
-import {BigNumber, Contract} from "ethers";
+import {Contract} from "ethers";
 
 chai.use(solidity);
 
@@ -89,6 +89,8 @@ describe('Smart loan',  () => {
             wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
             wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+
+            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
             const borrowersRegistryERC20 = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
