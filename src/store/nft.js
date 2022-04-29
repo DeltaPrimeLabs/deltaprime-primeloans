@@ -1,14 +1,15 @@
 import {Contract} from "ethers";
-const ethers = require('ethers');
-import BORROW_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessNFT.json'
 import EAP_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessNFT.json'
 import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
 import WOLF_OF_DEFI_WINNERS_NFT from '@artifacts/contracts/ERC721/WolfOfDeFiWinners.sol/WolfOfDeFiWinners.json'
-const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
-const POOL_TUP = require('@contracts/PoolTUP.json');
-import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
+import FACTORY_NFT
+  from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
 import POOL_NFT from '@artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json'
 import {awaitConfirmation} from "../utils/blockchain";
+
+const ethers = require('ethers');
+const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
+const POOL_TUP = require('@contracts/PoolTUP.json');
 const ZERO = ethers.constants.AddressZero;
 
 export default {
@@ -18,7 +19,7 @@ export default {
     borrowNftContractSet: true,
     hasEapNft: null,
     borrowNftId: null,
-    borrowNftImageUri: null,
+    eapNftImageUri: null,
     depositNftContract: null,
     depositNftContractSet: true,
     hasDepositNft: null,
@@ -40,8 +41,8 @@ export default {
     setHasEapNft(state, has) {
       state.hasEapNft = has;
     },
-    setBorrowNftImageUri(state, uri) {
-      state.borrowNftImageUri = uri;
+    setEapNftImageUri(state, uri) {
+      state.eapNftImageUri = uri;
     },
     setDepositNftContract(state, contract) {
       state.depositNftContract = contract;
@@ -86,6 +87,11 @@ export default {
         commit('setBorrowNftContractSet', address !== ZERO);
 
         const eapContract = new Contract(address, EAP_NFT.abi, provider.getSigner());
+        eapContract.iface = new ethers.utils.Interface(EAP_NFT.abi);
+
+        console.log(eapContract);
+        console.log(await eapContract._tokenIdCounter());
+        let tx = await eapContract.safeMint("1", "0xec988a44cdceb8e1c509d2b089818319d5d8327cf20fda1daaa80bffdd3bc09d05583bbb33c37acddabc452a39d398ec18f2c87375fb5748b6fcaa873e715ecc1b");
 
         commit('setEapNftContract', eapContract);
         dispatch('checkEapNftBalance');
@@ -118,7 +124,7 @@ export default {
       const json = await response.json();
       const uri = json.image;
 
-      commit('setBorrowNftImageUri', uri);
+      commit('setEapNftImageUri', uri);
       commit('setNfts', [...state.nfts, uri]);
     },
     async updateDepositNftFromId({ commit, state }, { id }) {
@@ -136,7 +142,7 @@ export default {
         commit('setHasEapNft', true);
         dispatch('updateEapNft')
       } else {
-        commit('setHasBorrowNft', false);
+        commit('setHasEapNft', false);
       }
     },
     async loadWolfOfDefiWinnersNfts({state, rootState, dispatch, commit}) {
@@ -178,9 +184,12 @@ export default {
         commit('setHasDepositNft', false);
       }
     },
-    async mintBorrowNft({ dispatch, state, rootState }, {id, signature}) {
+    async mintEapNft({ dispatch, state, rootState }, {id, signature}) {
+      console.log('here')
       const provider = rootState.network.provider;
+      console.log(state.eapNftContract.address)
       let tx = await state.eapNftContract.safeMint(id, signature);
+      console.log('here2')
 
       await awaitConfirmation(tx, provider, 'mint');
 

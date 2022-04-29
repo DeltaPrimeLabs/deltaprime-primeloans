@@ -3,7 +3,7 @@ import Router from 'vue-router'
 import Pool from '@/pages/Pool'
 import Ranking from '@/pages/Ranking'
 import Nft from "@/pages/Nft";
-import BorrowNft from "@/components/BorrowNft";
+import Nfts from "@/components/Nfts";
 import DepositNft from "@/components/DepositNft";
 import Admin from "@/pages/Admin";
 import PrimeAccount from "@/pages/PrimeAccount";
@@ -41,7 +41,7 @@ export default new Router({
       children: [
         {
           path: 'list',
-          component: BorrowNft
+          component: Nfts
         },
         {
           path: 'deposit',
