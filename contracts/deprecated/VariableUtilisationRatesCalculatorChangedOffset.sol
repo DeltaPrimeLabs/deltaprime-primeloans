@@ -3,7 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IRatesCalculator.sol";
+import "../interfaces/IRatesCalculator.sol";
 
 /**
  * @title VariableUtilisationRatesCalculator
@@ -13,16 +13,16 @@ import "./interfaces/IRatesCalculator.sol";
  * and OFFSET (shift). Second piece is defined by SLOPE_2 (calculated off-chain), BREAKPOINT (threshold value above
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
-contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
+contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ownable {
   uint256 public constant SLOPE_1 = 0.12e18;
-  uint256 public constant OFFSET = 0.03e18;
+  uint256 public constant OFFSET = 0.05e18;
   // BREAKPOINT must be lower than 1e18
   uint256 public constant BREAKPOINT = 0.8e18;
   uint256 public constant MAX_RATE = 0.75e18;
 
   // calculated off-chain for gas efficiency with following formula:
   // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
-  uint256 public constant SLOPE_2 = 3.12e18;
+  uint256 public constant SLOPE_2 = 3.02e18;
 
   uint256 public depositRateOffset = 1e9;
 
