@@ -24,7 +24,8 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
   uint256 public constant SLOPE_2 = 3.12e18;
 
-  uint256 public depositRateOffset = 1e9;
+  //accuracy of 1000
+  uint256 public depositRateFactor = 995;
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -51,14 +52,10 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
-      return MAX_RATE - depositRateOffset;
+      return MAX_RATE * depositRateFactor / 1000;
     } else {
-      uint256 rate = (this.calculateBorrowingRate(_totalLoans, _totalDeposits) * _totalLoans) / _totalDeposits;
-      if (rate > depositRateOffset) {
-        return rate - depositRateOffset;
-      } else {
+      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1000);
         return rate;
-      }
     }
   }
 
@@ -94,11 +91,11 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
   /* ========== SETTERS ========== */
   /**
-   * Sets deposit rate offset
-   * This offset is needed to account for arithmetic inaccuracy and keep pool balanced
+   * Sets deposit rate factor
+   * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
    * @dev _newRate total value of loans
    **/
-  function setDepositRateOffset(uint256 offset) external onlyOwner {
-    depositRateOffset = offset;
+  function setDepositRateFactor(uint256 factor) external onlyOwner {
+    depositRateFactor = factor;
   }
 }
