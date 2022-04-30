@@ -56,11 +56,11 @@ describe('Pool with variable utilisation interest rates', () => {
       await time.increase(time.duration.years(1));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
-      expect(borrowed).to.be.closeTo(1.11, 0.000001);
+      expect(borrowed).to.be.closeTo(1.09, 0.000001);
     });
 
     it("should repay", async () => {
-      await sut.repay({value: toWei("1.11")});
+      await sut.repay({value: toWei("1.09")});
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(0, 0.000001);
@@ -114,11 +114,11 @@ describe('Pool with variable utilisation interest rates', () => {
       await time.increase(time.duration.years(1));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
-      expect(borrowed).to.be.closeTo(1.11, 0.000001);
+      expect(borrowed).to.be.closeTo(1.09, 0.000001);
     });
 
     it("should repay", async () => {
-      await sut.repay({value: toWei("1.11")});
+      await sut.repay({value: toWei("1.09")});
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(0, 0.000001);
