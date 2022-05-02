@@ -48,17 +48,17 @@ describe('Pangolin Exchange - upgrading',  () => {
         });
 
 
-        // it("should upgrade", async () => {
-        //     const exchangeV2 = await (new MockUpgradedPangolinExchange__factory(owner).deploy());
-        //
-        //     await proxy.connect(admin).upgradeTo(exchangeV2.address);
-        //
-        //     let exchangeUpgraded = (await new ethers.Contract(exchange.address, MockPangolinExchangeArtifact.abi)) as MockUpgradedPangolinExchange;
-        //
-        //     // The mock exchange has a hardcoded return value of 1337
-        //     expect(await exchangeUpgraded.connect(owner).newMockedFunction()).to.be.equal(1337);
-        //     // The contract's supported assets should remain unchanged
-        //     expect(await exchange.getAllAssets()).to.be.deep.equal(supportedAssets);
-        // });
+        it("should upgrade", async () => {
+            const exchangeV2 = await (new MockUpgradedPangolinExchange__factory(owner).deploy());
+
+            await proxy.connect(admin).upgradeTo(exchangeV2.address);
+
+            let exchangeUpgraded = (await new ethers.Contract(exchange.address, MockPangolinExchangeArtifact.abi)) as MockUpgradedPangolinExchange;
+
+            // The mock exchange has a hardcoded return value of 1337
+            expect(await exchangeUpgraded.connect(owner).newMockedFunction()).to.be.equal(1337);
+            // The contract's supported assets should remain unchanged
+            expect(await exchange.getAllAssets()).to.be.deep.equal(supportedAssets);
+        });
     });
 });

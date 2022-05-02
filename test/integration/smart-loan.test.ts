@@ -931,7 +931,7 @@ describe('Smart loan',  () => {
 
       let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoanUpdated.withdraw(toWei("150"));
+      await wrappedLoanUpdated.withdraw(toWei("130"));
       expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -941,10 +941,10 @@ describe('Smart loan',  () => {
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let loanTotalValue = BigNumber.from(await wrappedLoan.getTotalValue());
       let loanAssetsValue = fromWei(loanTotalValue.sub(BigNumber.from(await provider.getBalance(wrappedLoan.address))));
-      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("150")).sub(debt).add(loanTotalValue);
+      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("130")).sub(debt).add(loanTotalValue);
 
-      // Try to close the debt using remaining AVAX and additional 290 AVAX
-      await wrappedLoan.closeLoan({value: toWei("290")});
+      // Try to close the debt using remaining AVAX and additional 270 AVAX
+      await wrappedLoan.closeLoan({value: toWei("270")});
 
       // The "normal" loan should be solvent and debt should be equal to 0
       debt = BigNumber.from(fromWei(await wrappedLoan.getDebt()));
@@ -1106,7 +1106,7 @@ describe('Smart loan',  () => {
       // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
       let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoanUpdated.withdraw(toWei("150"));
+      await wrappedLoanUpdated.withdraw(toWei("130"));
       expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -1115,11 +1115,10 @@ describe('Smart loan',  () => {
 
       let debt = BigNumber.from(await wrappedLoan.getDebt());
       let liquidationBonus = BigNumber.from(toWei("300")).div(10);
-      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("150")).sub(toWei("100")).add(liquidationBonus);
+      let expectedOwnerAvaxBalance = initialOwnerBalance.add(toWei("130")).sub(toWei("70")).add(liquidationBonus);
 
-      // Try to liquidate the loan using remaining AVAX and additional 100 AVAX
-      await wrappedLoan.liquidateLoan(toWei("305"), {value: toWei("100")});
-
+      // Try to liquidate the loan using remaining AVAX and additional 70 AVAX
+      await wrappedLoan.liquidateLoan(toWei("305"), {value: toWei("70")});
       // The "normal" loan should be solvent and debt should be equal to 0
       debt = BigNumber.from(fromWei(await wrappedLoan.getDebt()));
       expect(await wrappedLoan.isSolvent()).to.be.true;
@@ -1410,7 +1409,7 @@ describe('Smart loan',  () => {
             let debtBeforeRepayment = BigNumber.from(await wrappedLoan.getDebt());
             let initialOwnerBalance = BigNumber.from(await provider.getBalance(owner.address));
             expect(await wrappedLoan.isSolvent()).to.be.true;
-            await wrappedLoanUpdated.withdraw(toWei("150"));
+            await wrappedLoanUpdated.withdraw(toWei("130"));
             expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
             expect(await wrappedLoan.isSolvent()).to.be.false;
             let loanAvaxBalanceAfterWithdrawal = BigNumber.from(await provider.getBalance(loan.address));
