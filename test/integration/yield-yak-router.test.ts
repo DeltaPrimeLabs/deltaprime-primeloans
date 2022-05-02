@@ -104,7 +104,7 @@ describe('Yield Yak test', () => {
         expect(await yakStakingContract.balanceOf(user.address)).to.be.equal(0);
         // Lets see if this will cause this test to be flaky based on the state of freshly forked mainnet
         // I do have suspicions that sometimes the gas usage for stake/unstake may be visibly higher based on the execution path in YAK contract.
-        expect(fromWei(initialAvaxBalance)).to.be.closeTo(fromWei(await provider.getBalance(user.address)), 0.1);
+        expect(fromWei(initialAvaxBalance)).to.be.closeTo(fromWei(await provider.getBalance(user.address)), 0.5);
     });
 
 });
