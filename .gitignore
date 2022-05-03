@@ -7,7 +7,7 @@ dist
 cache
 /artifacts/
 .idea
-.secrets
+
 .secret
 deployments/local
 deployments/localhost
