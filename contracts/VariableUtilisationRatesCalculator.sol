@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-// Last deployed from commit: 97d6cc3cb60bfd6feda4ea784b13bf0e7daac710;
+// Last deployed from commit: a6bce6b3ffb1f37090a43c55acaf3f7c1749dbf3;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
