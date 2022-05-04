@@ -19,10 +19,9 @@
       </div>
     </Bar>
     <InfoBubble
-        v-if="depositLocked"
-        cacheKey="DEPOSIT-LOCKED">
-      Depositing is not available during the tournament. <br/>
-      But you will be able to check it out in our Beta version!
+      v-if="depositLocked"
+      cacheKey="DEPOSIT-LOCKED">
+        Depositing will soon be available!
     </InfoBubble>
     <InfoBubble
         v-if="!depositLocked"
