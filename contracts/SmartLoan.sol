@@ -11,7 +11,6 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./ERC20Pool.sol";
 import "./SmartLoanProperties.sol";
-import "./mock/WAVAX.sol";
 
 /**
  * @title SmartLoan
@@ -50,11 +49,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /**
    * Funds the loan with a specified amount of a defined token
+   * @param _fundedAsset asset to be funded
+   * @param _amount to be funded
    * @dev Requires approval for ERC20 token on frontend side
    **/
   function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
     IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
-    TransferHelper.safeTransferFrom(address(token), msg.sender, address(this), _amount);
+    address(token).safeTransferFrom(msg.sender, address(this), _amount);
 
     emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
   }
@@ -71,14 +72,14 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset);
     require(getBalance(address(this), _withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
 
-    token.transfer(msg.sender, _amount);
+    address(token).safeTransfer(msg.sender, _amount);
 
     emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
   }
 
   /**
    * Borrows funds from the pool
-   * @param _asset to borrow
+   * @param _asset to be borrowed
    * @param _amount of funds to borrow
    * @dev This function uses the redstone-evm-connector
    **/
@@ -91,13 +92,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /**
    * Repays funds to the pool
-   * @param _asset to repay
+   * @param _asset to be repaid
    * @param _amount of funds to repay
    * @dev This function uses the redstone-evm-connector
    **/
   function repay(bytes32 _asset, uint256 _amount) public payable {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0]))).deposit{value: msg.value}();
+    getNativeTokenWrapped().deposit{value: msg.value}();
 
     if (isSolvent() && _liquidationInProgress == false) {
       require(msg.sender == owner());
@@ -123,35 +124,42 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * Swaps one asset to another
    * @param _soldAsset asset to be sold
    * @param _boughtAsset asset to be bought
-   * @param _maximumSold maximum amount of asset to be sold
+   * @param _exactSold exact amount of asset to be sold
    * @param _minimumBought minimum amount of asset to be bought
    * @dev This function uses the redstone-evm-connector
    **/
-  function swap(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _maximumSold, uint256 _minimumBought) public virtual onlyOwner remainsSolvent returns (uint256[] memory) {
-    return swapAssets(_soldAsset, _boughtAsset, _maximumSold, _minimumBought);
-  }
-
-  function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
-
-    require(wavaxToken.balanceOf(address(this)) >= amount, "Not enough AVAX available");
-
-    wavaxToken.withdraw(amount);
-
-    getYieldYakRouter().stakeAVAX{value: amount}(amount);
-  }
-
-  function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
-    IYieldYakRouter yakRouter = getYieldYakRouter();
-    address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
-
-    require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
-    wavaxToken.deposit{value: amount}();
+  function swap(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public virtual onlyOwner remainsSolvent returns (uint256[] memory) {
+    return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
   }
 
   /**
-   * This function can only be accessed by the owner and allows selling all of the assets.
+   * Stakes AVAX in Yield Yak protocol
+   * @param _amount amount of AVAX to be staked
+   * @dev This function uses the redstone-evm-connector
+   **/
+  function stakeAVAXYak(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
+    require(getNativeTokenWrapped().balanceOf(address(this)) >= _amount, "Not enough AVAX available");
+
+    getNativeTokenWrapped().withdraw(_amount);
+
+    getYieldYakRouter().stakeAVAX{value: _amount}(_amount);
+  }
+
+  /**
+   * Unstakes AVAX from Yield Yak protocol
+   * @param _amount amount of AVAX to be unstaked
+   * @dev This function uses the redstone-evm-connector
+   **/
+  function unstakeAVAXYak(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
+    IYieldYakRouter yakRouter = getYieldYakRouter();
+    address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), _amount);
+
+    require(yakRouter.unstakeAVAX(_amount), "Unstaking failed");
+    getNativeTokenWrapped().deposit{value: _amount}();
+  }
+
+  /**
+   * This function can only be accessed by the owner and allows closing all positions and repaying all debts.
    * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan() public virtual payable onlyOwner nonReentrant remainsSolvent {
@@ -159,8 +167,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     uint256[] memory prices = getPricesFromMsg(assets);
 
     uint256 debt = calculateDebt(assets, prices);
-    address payable nativeAddress = payable(getExchange().getAssetAddress(assets[0]));
-    WAVAX(nativeAddress).deposit{value: msg.value}();
+    getNativeTokenWrapped().deposit{value: msg.value}();
 
     require(calculateAssetsValue(assets, prices) >= debt, "Not possible to repay fully the debt");
 
@@ -172,7 +179,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       address poolAddress = getPoolAddress(assets[assetIndex]);
 
       if (poolAddress != address(0)) {
-        repayUsdAmount(
+        repayAmount(
           RepayConfig(
             true,
             ERC20Pool(poolAddress).getBorrowed(address(this)),
@@ -190,7 +197,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 balance = token.balanceOf(address(this));
 
       if (balance > 0) {
-        TransferHelper.safeTransfer(address(token), msg.sender, balance);
+        address(token).safeTransfer(msg.sender, balance);
       }
     }
 
@@ -198,20 +205,26 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
+   * This function can be accessed by any user when Prime Account is insolvent and perform partial liquidation
+   * (selling assets, closing positions and repaying debts) to bring the account back to a solvent state. At the end
+   * of liquidation resulting solvency of account is checked to make sure that the account is between maximum and minimum
+   * solvency.
    * @dev This function uses the redstone-evm-connector
+   * @param _toRepayInUsd amount in USD calculated off-chain that has to be repaid to pools to make account solvent again
+   * @param _orderOfPools order in which debts are repaid to pools, defined by liquidator for efficiency
    **/
-  function liquidateLoan(uint256 toRepayInUsd, uint256[] memory orderOfPools) external payable nonReentrant {
+  function liquidateLoan(uint256 _toRepayInUsd, uint256[] memory _orderOfPools) external payable nonReentrant {
     bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = getPricesFromMsg(assets);
-    uint256 leftToRepayInUsd = toRepayInUsd;
+    uint256 leftToRepayInUsd = _toRepayInUsd;
 
     require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
     _liquidationInProgress = true;
 
     //in case critically insolvent loans it's needed to add AVAX to bring loan to solvency
-    WAVAX(payable(getExchange().getAssetAddress(assets[0]))).deposit{value: msg.value}();
+    getNativeTokenWrapped().deposit{value: msg.value}();
 
-    //to avoid stack to deep error
+    //to avoid stack too deep error
     {
       uint256 debt = calculateDebt(assets, prices);
 
@@ -225,12 +238,12 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     //repay iterations without swapping assets
     uint32 i;
 
-    while (leftToRepayInUsd > 0 && i < orderOfPools.length) {
-      uint256 assetIndex = getPoolsAssetsIndices()[orderOfPools[i]];
+    while (leftToRepayInUsd > 0 && i < _orderOfPools.length) {
+      uint256 assetIndex = getPoolsAssetsIndices()[_orderOfPools[i]];
       IERC20Metadata poolToken = getERC20TokenInstance(assets[assetIndex]);
 
 
-      uint256 repaid = repayUsdAmount(
+      uint256 repaid = repayAmount(
         RepayConfig(
           false,
           leftToRepayInUsd * 10 ** poolToken.decimals() / (prices[assetIndex]) / 10**10,
@@ -257,17 +270,17 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     i = 0;
     uint256 sentToLiquidator;
 
-    while (i < orderOfPools.length) {
-      uint256 assetIndex = getPoolsAssetsIndices()[orderOfPools[i]];
+    while (i < _orderOfPools.length) {
+      uint256 assetIndex = getPoolsAssetsIndices()[_orderOfPools[i]];
       sentToLiquidator = 0;
       IERC20Metadata poolToken = getERC20TokenInstance(assets[assetIndex]);
 
       //only for a native token- we perform bonus transfer for a liquidator
-      if (orderOfPools[i] == 0) {
+      if (_orderOfPools[i] == 0) {
         sentToLiquidator = bonus * 10 ** poolToken.decimals() / prices[assetIndex] / 10**10;
       }
 
-      uint256 repaid = repayUsdAmount(
+      uint256 repaid = repayAmount(
         RepayConfig(
           true,
           leftToRepayInUsd *  10 ** poolToken.decimals() / prices[assetIndex] / 10**10,
@@ -301,7 +314,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
     uint256 LTV = calculateLTV(assets, prices);
 
-    emit Liquidated(msg.sender, toRepayInUsd - leftToRepayInUsd, bonus, LTV, block.timestamp);
+    emit Liquidated(msg.sender, _toRepayInUsd - leftToRepayInUsd, bonus, LTV, block.timestamp);
 
     if (msg.sender != owner()) {
       require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
@@ -314,9 +327,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   //TODO: write a test for it
   function wrapNativeToken(uint256 amount) onlyOwner public {
     require(amount <= address(this).balance, "Not enough AVAX to wrap");
-    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
-
-    wavaxToken.deposit{value: amount}();
+    getNativeTokenWrapped().deposit{value: amount}();
   }
 
   receive() external payable {}
@@ -325,7 +336,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
 
   /**
-   * Returns the current debt associated with the loan
+   * Returns the current debt from all lending pools
+   * @dev This function uses the redstone-evm-connector
    **/
   function getDebt() public view virtual returns (uint256) {
     bytes32[] memory assets = getExchange().getAllAssets();
@@ -335,7 +347,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * Returns the current value of a loan in USD including cash and investments
+   * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
    * @dev This function uses the redstone-evm-connector
    **/
   function getTotalValue() public view virtual returns (uint256) {
@@ -350,7 +362,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /**
    * Checks if the loan is solvent.
-   * It means that the ratio between debt and collateral is below safe level,
+   * It means that the ratio between debt and current collateral (defined as total value minus debt) is below safe level,
    * which is parametrized by the getMaxLtv()
    * @dev This function uses the redstone-evm-connector
    **/
@@ -385,7 +397,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * Returns the current debts associated with the loan and summary debt
+   * Returns the current debts associated with the loan as well as total debt
    **/
   function getDebts() public view virtual returns (uint256[] memory, uint256) {
     bytes32[] memory assets = getExchange().getAllAssets();
@@ -395,7 +407,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * LoanToValue ratio is calculated as the ratio between debt and collateral.
+   * LoanToValue ratio is calculated as the ratio between debt and collateral (defined as total value minus debt).
    * The collateral is equal to total loan value takeaway debt.
    * @dev This function uses the redstone-evm-connector
    **/
@@ -406,9 +418,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * Returns a current balance of the asset held by a given user
-   * @dev _asset the code of an asset
-   * @dev _user the address of queried user
+   * Returns a current balance of the asset held by a given account
+   * @param _account the address of queried user
+   * @param _asset the code of an asset
    **/
   function getBalance(address _account, bytes32 _asset) public view returns (uint256) {
     IERC20 token = IERC20(getExchange().getAssetAddress(_asset));
@@ -421,16 +433,16 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * Swaps one asset with another
    * @param _soldAsset asset to be sold
    * @param _boughtAsset asset to be bought
-   * @param _maximumSold maximum amount of asset to be sold
+   * @param _exactSold exact amount of asset to be sold
    * @param _minimumBought minimum amount of asset to be bought
    **/
-  function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _maximumSold, uint256 _minimumBought) internal returns(uint256[] memory) {
+  function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal returns(uint256[] memory) {
     IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
 
-    require(soldToken.balanceOf(address(this)) >= _maximumSold, "Not enough token to sell");
-    TransferHelper.safeTransfer(address(soldToken), address(getExchange()), _maximumSold);
+    require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
+    address(soldToken).safeTransfer(address(getExchange()), _exactSold);
 
-    uint256[] memory amounts = getExchange().swap(_soldAsset, _boughtAsset, _maximumSold, _minimumBought);
+    uint256[] memory amounts = getExchange().swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 
     emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0],  amounts[amounts.length - 1], block.timestamp);
 
@@ -438,11 +450,10 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * Returns the current value of a loan in USD including cash and investments
-   * @dev This function uses the redstone-evm-connector
+   * Calculates the current value of Prime Account in USD including all tokens as well as staking and LP positions
    **/
   function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual returns (uint256) {
-    uint256 total = 0;
+    uint256 total = address(this).balance * prices[0];
 
     for (uint256 i = 0; i < prices.length; i++) {
       require(prices[i] != 0, "Asset price returned from oracle is zero");
@@ -459,6 +470,10 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     return total;
   }
 
+  /**
+   * Returns IERC20Metadata instance of a token
+   * @param _asset the code of an asset
+   **/
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
     address assetAddress = getExchange().getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
@@ -466,44 +481,18 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * This function attempts to sell just enough asset to receive targetPoolTokenAmount.
-   * If there is not enough asset's balance to cover the whole targetPoolTokenAmount then the whole asset's balance
-   * is being sold.
-   * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
+   * Calculates the current debt as a sum of debts from all lending pools
+   * @param _assets list of supported assets
+   * @param _prices current prices
    **/
-  function sellAssetsForTargetAmount(bytes32 soldAsset, bytes32 boughtAsset, uint256 targetAmount) private {
-    IERC20Metadata soldToken = getERC20TokenInstance(soldAsset);
-    IERC20Metadata boughtToken = getERC20TokenInstance(boughtAsset);
-
-    uint256 balance = soldToken.balanceOf(address(this));
-    if (balance > 0) {
-      uint256 minSaleAmount = getExchange().getEstimatedTokensForTokens(targetAmount, address(soldToken), address(boughtToken));
-      if (balance < minSaleAmount) {
-        swapAssets(soldAsset, boughtAsset, balance, 0);
-      } else {
-        swapAssets(soldAsset, boughtAsset, minSaleAmount, targetAmount);
-      }
-    }
-  }
-
-  /**
-   * This function attempts to repay the _repayAmount back to the pool.
-   * If there is not enough AVAX balance to repay the _repayAmount then the available AVAX balance will be repaid.
-   * @dev This function uses the redstone-evm-connector
-   **/
-  function attemptRepay(bytes32 _repaidAsset, uint256 _repayAmount) internal {
-    IERC20Metadata repaidToken = getERC20TokenInstance(_repaidAsset);
-    repay(_repaidAsset, Math.min(repaidToken.balanceOf(address(this)), _repayAmount));
-  }
-
-  function calculateDebt(bytes32[] memory assets, uint256[] memory prices) internal view virtual returns (uint256) {
+  function calculateDebt(bytes32[] memory _assets, uint256[] memory _prices) internal view virtual returns (uint256) {
     uint256 debt = 0;
 
     for (uint256 i = 0; i < getPoolsAssetsIndices().length; i++) {
       uint256 assetIndex = getPoolsAssetsIndices()[i];
-      IERC20Metadata token = getERC20TokenInstance(assets[assetIndex]);
+      IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
       //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-      debt = debt + ERC20Pool(getPoolAddress(assets[assetIndex])).getBorrowed(address(this)) * prices[assetIndex] * 10**10
+      debt = debt + ERC20Pool(getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10
       / 10 ** token.decimals();
     }
 
@@ -511,9 +500,11 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * Returns the current debts associated with the loan
+   * Returns current debts associated with the loan and its total debt
+   * @param _assets list of supported assets
+   * @param _prices current prices
    **/
-  function calculateDebts(bytes32[] memory assets, uint256[] memory prices) internal virtual view returns (uint256[] memory, uint256) {
+  function calculateDebts(bytes32[] memory _assets, uint256[] memory _prices) internal virtual view returns (uint256[] memory, uint256) {
     uint length = getPoolsAssetsIndices().length;
     uint256[] memory debts = new uint256[](length);
     uint256 totalDebt;
@@ -522,8 +513,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
     for (i = 0; i < length; i++) {
       uint256 assetIndex = getPoolsAssetsIndices()[i];
-      IERC20Metadata token = getERC20TokenInstance(assets[assetIndex]);
-      uint256 poolDebt = ERC20Pool(getPoolAddress(assets[assetIndex])).getBorrowed(address(this)) * prices[assetIndex] * 10**10 / 10 ** token.decimals();
+      IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
+      uint256 poolDebt = ERC20Pool(getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10 / 10 ** token.decimals();
       debts[i] = poolDebt;
       totalDebt += poolDebt;
     }
@@ -531,9 +522,14 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     return (debts, totalDebt);
   }
 
-  function calculateLTV(bytes32[] memory assets, uint256[] memory prices) internal virtual view returns (uint256) {
-    uint256 debt = calculateDebt(assets, prices);
-    uint256 totalValue = calculateAssetsValue(assets, prices);
+  /**
+   * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
+   * @param _assets list of supported assets
+   * @param _prices current prices
+   **/
+  function calculateLTV(bytes32[] memory  _assets, uint256[] memory _prices) internal virtual view returns (uint256) {
+    uint256 debt = calculateDebt(_assets, _prices);
+    uint256 totalValue = calculateAssetsValue(_assets, _prices);
 
     if (debt == 0) {
       return 0;
@@ -545,33 +541,31 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   }
 
   /**
-   * This function role is to repay a defined amount of debt during liquidation.
-   * @dev This function uses the redstone-evm-connector
+   * This function role is to repay a defined amount of debt during liquidation or closing account.
+   * @param _repayConfig configuration for repayment
    **/
-  function repayUsdAmount(RepayConfig memory repayConfig) private returns (uint256) {
-    ERC20Pool pool = ERC20Pool(getPoolAddress(repayConfig.assets[repayConfig.poolAssetIndex]));
-    IERC20Metadata poolToken = getERC20TokenInstance(repayConfig.assets[repayConfig.poolAssetIndex]);
-
-    uint256 poolTokenPrice = repayConfig.prices[repayConfig.poolAssetIndex];
+  function repayAmount(RepayConfig memory _repayConfig) private returns (uint256) {
+    ERC20Pool pool = ERC20Pool(getPoolAddress(_repayConfig.assets[_repayConfig.poolAssetIndex]));
+    IERC20Metadata poolToken = getERC20TokenInstance(_repayConfig.assets[_repayConfig.poolAssetIndex]);
 
     uint256 availableTokens = poolToken.balanceOf(address(this));
 
     uint256 neededTokensForRepay = Math.min(
-      repayConfig.leftToRepay,
+      _repayConfig.leftToRepay,
       pool.getBorrowed(address(this))
     );
 
-    uint256 neededTokensWithBonus = neededTokensForRepay + repayConfig.tokensForLiquidator;
+    uint256 neededTokensWithBonus = neededTokensForRepay + _repayConfig.tokensForLiquidator;
 
-    if (repayConfig.allowSwaps) {
+    if (_repayConfig.allowSwaps) {
       uint32 j;
 
       // iteration with swapping assets
-      while (availableTokens < neededTokensWithBonus && j < repayConfig.assets.length) {
+      while (availableTokens < neededTokensWithBonus && j < _repayConfig.assets.length) {
         // no slippage protection during liquidation
-        if (j != repayConfig.poolAssetIndex) {
+        if (j != _repayConfig.poolAssetIndex) {
           availableTokens += swapToPoolToken(
-            SwapConfig(j, repayConfig.poolAssetIndex, neededTokensWithBonus - availableTokens, repayConfig.prices, repayConfig.assets)
+            SwapConfig(j, _repayConfig.poolAssetIndex, neededTokensWithBonus - availableTokens, _repayConfig.prices, _repayConfig.assets)
           );
         }
 
@@ -595,28 +589,32 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       }
     }
 
-    if (repayConfig.tokensForLiquidator > 0) {
-      poolToken.transfer(msg.sender, Math.min(availableTokens - repaidAmount, repayConfig.tokensForLiquidator));
+    if (_repayConfig.tokensForLiquidator > 0) {
+      address(poolToken).safeTransfer(msg.sender, Math.min(availableTokens - repaidAmount, _repayConfig.tokensForLiquidator));
     }
 
     return repaidAmount;
   }
 
-  function swapToPoolToken(SwapConfig memory swapConfig) private returns (uint256) {
-    IERC20Metadata token = getERC20TokenInstance(swapConfig.assets[swapConfig.assetIndex]);
-    IERC20Metadata poolToken = getERC20TokenInstance(getExchange().getAllAssets()[swapConfig.poolAssetIndex]);
+  /**
+   * Swap to pool token for repayment during liquidation or closing account.
+   * @param _swapConfig configuration for swap
+   **/
+  function swapToPoolToken(SwapConfig memory _swapConfig) private returns (uint256) {
+    IERC20Metadata token = getERC20TokenInstance(_swapConfig.assets[_swapConfig.assetIndex]);
+    IERC20Metadata poolToken = getERC20TokenInstance(getExchange().getAllAssets()[_swapConfig.poolAssetIndex]);
 
     //if amount needed for swap equals 0 because of limited accuracy of calculations, we swap 1
     uint256 swapped = Math.min(
-      Math.max(swapConfig.neededSwapInPoolToken * swapConfig.prices[swapConfig.poolAssetIndex] * 10 ** token.decimals() / (swapConfig.prices[swapConfig.assetIndex] * 10 ** poolToken.decimals()), 1),
+      Math.max(_swapConfig.neededSwapInPoolToken * _swapConfig.prices[_swapConfig.poolAssetIndex] * 10 ** token.decimals() / (_swapConfig.prices[_swapConfig.assetIndex] * 10 ** poolToken.decimals()), 1),
       token.balanceOf(address(this))
     );
 
     if (swapped > 0) {
-      TransferHelper.safeTransfer(address(token), address(getExchange()), swapped);
+      address(token).safeTransfer(address(getExchange()), swapped);
       (bool success, bytes memory result) = address(getExchange()).call{value: 0}(
         abi.encodeWithSignature("swap(bytes32,bytes32,uint256,uint256)",
-        swapConfig.assets[swapConfig.assetIndex], swapConfig.assets[swapConfig.poolAssetIndex], swapped, 0)
+        _swapConfig.assets[_swapConfig.assetIndex], _swapConfig.assets[_swapConfig.poolAssetIndex], swapped, 0)
       );
 
       if (success) {
@@ -629,36 +627,33 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     return 0;
   }
 
-  function payBonus(uint256 _bonus) internal {
-    bytes32[] memory assets = getExchange().getAllAssets();
-    IERC20Metadata wrappedNativeToken = getERC20TokenInstance(assets[0]);
-    TransferHelper.safeTransfer(address(wrappedNativeToken), msg.sender, Math.min(_bonus, address(this).balance));
-  }
-
-  function repayWithStakedAVAX(uint256 targetAvaxAmount) private returns(bool) {
-    WAVAX wavaxToken = WAVAX(payable(getExchange().getAssetAddress(getExchange().getAllAssets()[0])));
+  /**
+   * Unstake AVAX amount to perform repayment to a pool
+   * @param _targetAvaxAmount amount of AVAX to be repaid from staking position
+   **/
+  function repayWithStakedAVAX(uint256 _targetAvaxAmount) private returns(bool) {
     address yakRouterAddress = address(getYieldYakRouter());
     (bool successApprove, ) = address(getYakAvaxStakingContract()).call(
-      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, targetAvaxAmount)
+      abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, _targetAvaxAmount)
     );
     if (!successApprove) return false;
 
     (bool successUnstake, bytes memory result) = yakRouterAddress.call(
-      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", targetAvaxAmount)
+      abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", _targetAvaxAmount)
     );
 
     if (!successUnstake) return false;
 
 //    uint256 amount = abi.decode(result, (uint256));
     //TODO: return from unstakeAVAX the real value ustaken
-    uint256 amount = Math.min(targetAvaxAmount, address(this).balance);
+    uint256 amount = Math.min(_targetAvaxAmount, address(this).balance);
 
-    wavaxToken.deposit{value: amount}();
+    getNativeTokenWrapped().deposit{value: amount}();
 
     ERC20Pool pool = ERC20Pool(getPoolAddress(bytes32("AVAX")));
 
-    address(wavaxToken).safeApprove(address(pool), 0);
-    address(wavaxToken).safeApprove(address(pool), amount);
+    address(getNativeTokenWrapped()).safeApprove(address(pool), 0);
+    address(getNativeTokenWrapped()).safeApprove(address(pool), amount);
 
     bool successRepay;
     (successRepay, ) = address(pool).call{value: 0}(
@@ -671,6 +666,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   /* ========== MODIFIERS ========== */
 
   /**
+  * Checks whether account is solvent (LTV lower than getMaxLtv())
   * @dev This modifier uses the redstone-evm-connector
   **/
   modifier remainsSolvent() {

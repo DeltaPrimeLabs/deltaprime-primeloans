@@ -36,36 +36,34 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
   /*
    * Swaps selected ERC20 token with other ERC20 token
-   * @dev soldToken_ sold ERC20 token's address
-   * @dev boughtToken_ bought ERC20 token's address
-   * @dev _exactAmountIn exact amount of the ERC20 token to be sold
-   * @dev _minAvaxAmountOut minimum amount of the ERC20 token to be bought
+   * @dev soldToken_ sold ERC20 token's symbol
+   * @dev boughtToken_ bought ERC20 token's symbol
+   * @dev _exactSold exact amount of ERC20 token to be sold
+   * @dev _minimumBought minimum amount of ERC20 token to be bought
    **/
-  function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _amountSold, uint256 _amountBought) external override nonReentrant returns (uint256[] memory amounts) {
-    require(_amountSold > 0, "Amount of tokens to sell has to be greater than 0");
+  function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _exactSold, uint256 _minimumBought) external override nonReentrant returns (uint256[] memory amounts) {
+    require(_exactSold > 0, "Amount of tokens to sell has to be greater than 0");
 
     address soldTokenAddress = getAssetAddress(soldToken_);
     address boughtTokenAddress = getAssetAddress(boughtToken_);
-    require(soldTokenAddress != address(0), "Unsupported asset");
-    require(boughtTokenAddress != address(0), "Unsupported asset");
 
-  IERC20 soldToken = IERC20(soldTokenAddress);
+    IERC20 soldToken = IERC20(soldTokenAddress);
     IERC20 boughtToken = IERC20(boughtTokenAddress);
 
     address(soldToken).safeApprove(address(pangolinRouter), 0);
-    address(soldToken).safeApprove(address(pangolinRouter), _amountSold);
+    address(soldToken).safeApprove(address(pangolinRouter), _exactSold);
 
-    if (_amountBought > 0) {
-      require(_amountSold >= getEstimatedTokensForTokens(_amountBought, soldTokenAddress, boughtTokenAddress), "Not enough funds were provided");
+    if (_minimumBought > 0) {
+      require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, soldTokenAddress, boughtTokenAddress), "Not enough funds were provided");
     }
 
     uint256[] memory amounts;
     bytes memory result;
 
     amounts = pangolinRouter.swapExactTokensForTokens(
-      _amountSold, _amountBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp);
+      _exactSold, _minimumBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp);
 
-    TransferHelper.safeTransfer(address(soldToken), msg.sender, soldToken.balanceOf(address(this)));
+    address(soldToken).safeTransfer(msg.sender, soldToken.balanceOf(address(this)));
 
     emit TokenSwap(msg.sender, soldToken_, boughtToken_, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
@@ -152,7 +150,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   }
 
   /**
-   * Returns a path containing tokens' addresses and chosen
+   * Returns a path containing tokens' addresses
    * @dev _token ERC20 token's address
    **/
   function getPath(address _token1, address _token2) private view returns (address[] memory) {
@@ -179,7 +177,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * @dev emitted after a tokens were sold
    * @param seller the address which sold tokens
    * @param soldToken the name of sold token
-   * @param boughtToken the name of sold token
+   * @param boughtToken the name of bought token
    * @param amountSold the amount of token sold
    * @param amountBought the amount of token bought
    **/

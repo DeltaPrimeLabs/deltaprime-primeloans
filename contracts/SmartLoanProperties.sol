@@ -6,6 +6,7 @@ import "./interfaces/IAssetsExchange.sol";
 import "./Pool.sol";
 import "./interfaces/IYieldYakRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./mock/WAVAX.sol";
 
 /**
  * @title SmartLoanProperties
@@ -24,7 +25,7 @@ contract SmartLoanProperties {
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  address private constant _EXCHANGE_ADDRESS = 0x0278438423f433e277F65D14c0E002b8828702ba;
+  address private constant _EXCHANGE_ADDRESS = 0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650;
 
   address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
@@ -63,7 +64,7 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x70952A912Fa50E04c608eb49E48afC975Eb91F21);
+  return IYieldYakRouter(0x7969c5eD335650692Bc04293B07F5BF2e7A673C0);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
@@ -78,9 +79,13 @@ contract SmartLoanProperties {
 
   //TODO: remember that it will be updated with a deployment script...
   function getPoolAddress(bytes32 poolToken) public virtual view returns (address) {
-    if (poolToken == bytes32("AVAX")) return 0xCD8a1C3ba11CF5ECfa6267617243239504a98d90;
+    if (poolToken == bytes32("AVAX")) return 0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3;
 
     return address(0);
+  }
+
+  function getNativeTokenWrapped() public virtual view returns (WAVAX) {
+    return WAVAX(payable(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7));
   }
 
   function getPriceProvider1() public virtual view returns (address) {

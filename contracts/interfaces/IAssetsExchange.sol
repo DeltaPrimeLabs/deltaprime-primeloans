@@ -19,12 +19,12 @@ interface IAssetsExchange {
   }
 
 
-  /**
-   * Sells selected asset for AVAX
-   * @dev soldToken_ asset code
-   * @dev boughtToken_ asset code
-   * @dev _exactAmountIn amount to be sold
-   * @dev _minAmountOut minimum amount of the AVAX token to be bought
+  /*
+   * Swaps selected ERC20 token with other ERC20 token
+   * @dev soldToken_ sold ERC20 token's symbol
+   * @dev boughtToken_ bought ERC20 token's symbol
+   * @dev _amountSold exact amount of ERC20 token to be sold
+   * @dev _amountBought minimum amount of ERC20 token to be bought
    **/
   function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _exactAmountIn, uint256 _minAmountOut) external returns (uint256[] memory);
 

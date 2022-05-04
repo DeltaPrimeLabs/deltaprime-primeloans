@@ -14,10 +14,10 @@ import "./interfaces/IBorrowersRegistry.sol";
 
 /**
  * @title ERC20Pool
- * @dev Contract allowing user to deposit and borrow funds from a single pot
+ * @dev Contract allowing user to deposit to and borrow from a single smart contract
  * Depositors are rewarded with the interest rates collected from borrowers.
- * Rates are compounded every second and getters always return the current deposit and borrowing balance.
- * The interest rates calculation is delegated to the external calculator contract.
+ * Rates are compounded on every user interaction and getters always return the current deposit and borrowing balance.
+ * The interest rates calculation is delegated to an external calculator contract.
  */
 contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   using TransferHelper for address payable;
@@ -75,7 +75,6 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev borrowersRegistry the address of borrowers registry
    **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
-    require(address(borrowersRegistry_) != address(0), "The borrowers registry cannot set to a null address");
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     borrowersRegistry = borrowersRegistry_;
@@ -174,12 +173,12 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     emit Deposit(msg.sender, amount, block.timestamp);
   }
 
-  function _transferToPool(address payer, uint256 amount) internal virtual {
-    TransferHelper.safeTransferFrom(tokenAddress, payer, address(this), amount);
+  function _transferToPool(address from, uint256 amount) internal virtual {
+    tokenAddress.safeTransferFrom(from, address(this), amount);
   }
 
-  function _transferFromPool(address receiver, uint256 amount) internal virtual {
-    TransferHelper.safeTransfer(tokenAddress, receiver, amount);
+  function _transferFromPool(address to, uint256 amount) internal virtual {
+    tokenAddress.safeTransfer(to, amount);
   }
 
   /**
@@ -298,13 +297,13 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   /* ========== INTERNAL FUNCTIONS ========== */
 
-  function _mint(address account, uint256 amount) internal {
-    require(account != address(0), "ERC20: cannot mint to the zero address");
+  function _mint(address to, uint256 amount) internal {
+    require(to != address(0), "ERC20: cannot mint to the zero address");
 
-    _deposited[account] += amount;
+    _deposited[to] += amount;
     _deposited[address(this)] += amount;
 
-    emit Transfer(address(0), account, amount);
+    emit Transfer(address(0), to, amount);
   }
 
   function _burn(address account, uint256 amount) internal {
