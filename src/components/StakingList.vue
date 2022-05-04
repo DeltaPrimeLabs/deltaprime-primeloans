@@ -28,16 +28,17 @@
             <span class="token-name">{{ protocol.name }}</span>
           </div>
           <div class="table__cell value right" data-label="Total Staked">
-            <span>$ {{getTotalStakedPerProtocol()}}</span>
+            <span>$ {{ getTotalStakedPerProtocol() }}</span>
           </div>
           <div class="table__cell right" data-label="Max APR">
-            <span>{{protocol.maxApr | percent}}</span>
+            <span>{{ protocol.maxApr | percent }}</span>
           </div>
           <div class="table__cell" v-if="!isMobile"></div>
           <div class="table__cell" v-if="!isMobile"></div>
           <div>
             <div class="table__cell invest-buttons right" @click.stop>
-              <img @click="showStakingOptions(protocolKey)" class="chevron clickable-icon" v-bind:class="{'open': protocol.showStakingOptions}"/>
+              <img @click="showStakingOptions(protocolKey)" class="chevron clickable-icon"
+                   v-bind:class="{'open': protocol.showStakingOptions}"/>
             </div>
           </div>
 
@@ -72,7 +73,7 @@
                       </LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="APR">
-                      <span>{{0.053 | percent}}</span>
+                      <span>{{ 0.053 | percent }}</span>
                     </div>
                     <div class="table__cell right">
                       <LoadedValue
@@ -116,7 +117,7 @@
                             :hasSecondButton="true"
                             :flexDirection="isMobile ? 'column' : 'row'"
                             :slim="true"
-                            :max="stakedAssets[protocolKey].assets[asset.symbol].balance"
+                            :max="prepareValueForUnstakeMax(stakedAssets[protocolKey].assets[asset.symbol].balance)"
                             :waiting="asset.transactionInProgress"
                             :validators="unstakeValidators(protocolKey, asset)"
                             v-on:submitValue="(value) => unstake(protocol, asset, value)"
@@ -159,8 +160,7 @@ export default {
     LoadedValue,
     Button
   },
-  props: {
-  },
+  props: {},
   computed: {
     ...mapState('loan', ['totalValue', 'assets', 'loanHistory', 'stakedAssets']),
     ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
@@ -238,7 +238,6 @@ export default {
       return [
         {
           validate: (value) => {
-            console.log(this.assets.AVAX.balance);
             if (value > this.assets.AVAX.balance) {
               return 'Value exceeds your available AVAX balance';
             }
@@ -258,7 +257,11 @@ export default {
           }
         }
       ]
-    }
+    },
+
+    prepareValueForUnstakeMax(rawValue) {
+      return Number(rawValue.toFixed(8));
+    },
   },
 }
 </script>

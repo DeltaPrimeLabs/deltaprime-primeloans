@@ -364,13 +364,13 @@ export default {
       const loan = state.loan;
 
       const receiptToAvaxConversionRate = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptToAvaxConversionRate;
-      let receiptTokenAmount = amount / receiptToAvaxConversionRate;
-
-      if (receiptTokenAmount > state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalance) {
-        receiptTokenAmount = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalance;
+      const receiptTokenAmount = amount / receiptToAvaxConversionRate;
+      let receiptTokenAmountWei = toWei(String(receiptTokenAmount));
+      if (receiptTokenAmountWei.gt(state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei)) {
+        receiptTokenAmountWei = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei
       }
 
-      const unstakeTransaction = await loan.unstakeAVAXYak(toWei(String(receiptTokenAmount)), {gasLimit: 1100000});
+      const unstakeTransaction = await loan.unstakeAVAXYak(receiptTokenAmountWei, {gasLimit: 1100000});
       await awaitConfirmation(unstakeTransaction, provider, 'unstake')
 
       dispatch('updateAssets');
@@ -385,7 +385,8 @@ export default {
       const totalSupply = Number(await tokenContract.totalSupply());
       const totalDeposits = Number(await tokenContract.totalDeposits());
       const yrtToAvaxConversionRate = totalDeposits / totalSupply;
-      const stakedYrt = Number(fromWei(await tokenContract.balanceOf(state.loan.address)));
+      const stakedYrtWei = await tokenContract.balanceOf(state.loan.address);
+      const stakedYrt = Number(fromWei(stakedYrtWei));
       const stakedAvax = stakedYrt * yrtToAvaxConversionRate;
       const stakedAssets = {
         YAK_YIELD: {
@@ -393,6 +394,7 @@ export default {
             AVAX: {
               balance: stakedAvax,
               receiptTokenBalance: stakedYrt,
+              receiptTokenBalanceWei: stakedYrtWei,
               receiptToAvaxConversionRate: yrtToAvaxConversionRate
             }
           }
