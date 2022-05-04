@@ -1256,8 +1256,8 @@ describe('Smart loan',  () => {
 
     it('should withdraw', async () => {
       expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(0)
-      // await wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("1", usdTokenDecimalPlaces));
-      // expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(parseUnits("1", usdTokenDecimalPlaces))
+      await wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("1", usdTokenDecimalPlaces));
+      expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(parseUnits("1", usdTokenDecimalPlaces))
     });
   });
 
@@ -1419,11 +1419,11 @@ describe('Smart loan',  () => {
             await expect(wrappedLoan.repay(toWei("310"))).to.be.revertedWith("Not enough funds to repay the loan");
 
             // Try to repay the debt (plus extra 10 AVAX) using remaining AVAX and additional 290 AVAX
-            await wrappedLoan.repay(toWei("310"), {value: toWei("290")});
+            await wrappedLoan.repay(toWei("310"), {value: toWei("310")});
 
             // Initial balance + 150 withdrawn - (initialDebt - loanAvaxBalance)
-            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(toWei("290")).add(toWei("150"));
-            let expectedLoanAvaxBalance = loanAvaxBalanceAfterWithdrawal.sub(debtBeforeRepayment).add(toWei("290"));
+            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(toWei("310")).add(toWei("150"));
+            let expectedLoanAvaxBalance = loanAvaxBalanceAfterWithdrawal.sub(debtBeforeRepayment).add(toWei("310"));
             let debt = fromWei(await wrappedLoan.getDebt());
 
             // The "normal" loan should be solvent and debt should be equal to 0
