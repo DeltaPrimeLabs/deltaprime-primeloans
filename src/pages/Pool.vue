@@ -3,7 +3,7 @@
     <Bar>
       <div>
         <div class="rate-wrapper">
-          Current APR: <span class="rate">{{depositRate | percent}}</span>
+          Current APY: <span class="rate">{{depositRate | percent}}</span>
         </div>
       </div>
       <div class="stats">
