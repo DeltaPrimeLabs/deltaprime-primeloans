@@ -355,6 +355,7 @@ export default {
       dispatch('updateAssets');
       dispatch('updateStakedAvaxYakBalance');
       dispatch('network/updateBalance', {}, {root: true})
+
     },
 
     async unstakeAvaxYak({state, rootState, dispatch, commit}, {amount}) {
@@ -363,7 +364,11 @@ export default {
       const loan = state.loan;
 
       const receiptToAvaxConversionRate = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptToAvaxConversionRate;
-      const receiptTokenAmount = amount / receiptToAvaxConversionRate;
+      let receiptTokenAmount = amount / receiptToAvaxConversionRate;
+
+      if (receiptTokenAmount > state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalance) {
+        receiptTokenAmount = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalance;
+      }
 
       const unstakeTransaction = await loan.unstakeAVAXYak(toWei(String(receiptTokenAmount)), {gasLimit: 1100000});
       await awaitConfirmation(unstakeTransaction, provider, 'unstake')

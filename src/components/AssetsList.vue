@@ -80,6 +80,7 @@
                     :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
+                    :slim="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
                 />
               </SmallBlock>
@@ -99,6 +100,7 @@
                     :warnings="redeemWarnings(asset)"
                     :info="sellSlippageInfo(asset)"
                     :max="asset.balance"
+                    :slim="true"
                     v-on:submitValue="(value) => redeemValue(asset, value)"
                 />
               </SmallBlock>
@@ -158,6 +160,7 @@
                     :validators="investValidators(asset, list[nativeToken].balance)"
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
+                    :slim="true"
                 />
               </SmallBlock>
             </div>
@@ -351,6 +354,8 @@ export default {
       this.updateAsset(symbol, 'showChart', false);
     },
     investValue(asset, value) {
+      console.log('invest value');
+      console.log(asset);
       this.updateAsset(asset.symbol, 'waiting', true);
       this.handleTransaction(
           this.invest,
@@ -362,6 +367,7 @@ export default {
             slippage: asset.buySlippage
           })
           .then(() => {
+            console.log('invest success');
             this.updateAsset(asset.symbol, 'waiting', false);
             this.updateAsset(asset.symbol, 'sellInput', false);
             this.updateAsset(asset.symbol, 'buyInput', false);
@@ -811,64 +817,7 @@ export default {
 }
 
 .asset-input {
-  .currency-form-wrapper {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
 
-    @media screen and (min-width: $md) {
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      align-self: center;
-      width: min-content;
-      margin-top: 45px;
-    }
-
-
-    .input-wrapper {
-      height: 60px;
-    }
-
-    input {
-      height: 30px;
-      line-height: 30px;
-    }
-
-    .error, .info, .warning {
-      text-align: left;
-    }
-
-    .logo {
-      height: 30px;
-      width: 30px;
-      min-width: 30px;
-      min-height: 30px;
-    }
-
-    .symbol {
-      font-size: 16px;
-    }
-
-    .btn {
-      padding: 13px 20px;
-      margin-left: 30px;
-      font-size: 20px;
-
-      &.waiting .ball-beat:not(.active) {
-        margin-top: 5px;
-        margin-bottom: 5px;
-      }
-    }
-
-    .value-wrapper .label {
-      text-align: start;
-    }
-
-    .form-button {
-      margin-bottom: 30px;
-    }
-  }
 }
 
 </style>

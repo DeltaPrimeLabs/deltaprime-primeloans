@@ -37,11 +37,11 @@
           <div class="table__cell" v-if="!isMobile"></div>
           <div>
             <div class="table__cell invest-buttons right" @click.stop>
-              <img @click="showStakingOptions(key)" class="chevron clickable-icon"/>
+              <img @click="showStakingOptions(key)" class="chevron clickable-icon" v-bind:class="{'open': protocol.showStakingOptions}"/>
             </div>
           </div>
 
-          <div class="staking-table" v-if="protocol.showStakingOptions" @click.stop>
+          <div class="staking-table" v-if="protocol && protocol.showStakingOptions" @click.stop>
             <div class="staking-options-table">
               <div class="table nested-table">
                 <div class="table__header">
@@ -67,8 +67,8 @@
                     </div>
                     <div class="table__cell right" data-label="Staked">
                       <LoadedValue
-                          :check="() => stakedAssets[key].assets[asset.symbol] != null"
-                          :value="formatTokenBalance(stakedAssets[key].assets[asset.symbol].balance)">
+                          :check="() => stakedAssets[key].assets[asset.symbol].balance !== null"
+                          :value="formatTokenBalance(stakedAssets[key].assets[asset.symbol].balance, 4)">
                       </LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="APR">
@@ -77,7 +77,7 @@
                     <div class="table__cell right">
                       <LoadedValue
                           :check="() => asset.balance != null"
-                          :value="formatTokenBalance(asset.balance)">
+                          :value="formatTokenBalance(asset.balance, 4)">
                       </LoadedValue>
                     </div>
                     <div class="table__cell" v-if="!isMobile"></div>
@@ -97,6 +97,9 @@
                             :symbol="asset.symbol"
                             :price="asset.price"
                             :hasSecondButton="true"
+                            :flexDirection="isMobile ? 'column' : 'row'"
+                            :slim="true"
+                            :waiting="asset.transactionInProgress"
                             v-on:submitValue="(value) => stake(protocol, asset, value)"
                         />
                       </SmallBlock>
@@ -110,6 +113,10 @@
                             :symbol="asset.symbol"
                             :price="asset.price"
                             :hasSecondButton="true"
+                            :flexDirection="isMobile ? 'column' : 'row'"
+                            :slim="true"
+                            :max="stakedAssets[key].assets[asset.symbol].balance"
+                            :waiting="asset.transactionInProgress"
                             v-on:submitValue="(value) => unstake(protocol, asset, value)"
                         />
                       </SmallBlock>
@@ -167,7 +174,7 @@ export default {
           maxApr: 0.053,
           showStakingOptions: false,
           stakingOptions: {
-            AVAX: config.ASSETS_CONFIG.AVAX
+            AVAX: config.ASSETS_CONFIG.AVAX,
           }
         }
       },
@@ -176,7 +183,7 @@ export default {
   methods: {
     ...mapActions('loan', ['stakeAvaxYak', 'unstakeAvaxYak']),
     showStakingOptions(protocolKey) {
-      if (this.protocols) {
+      if (this.protocols && this.protocols[protocolKey]) {
         Vue.set(this.protocols[protocolKey], 'showStakingOptions', !this.protocols[protocolKey].showStakingOptions);
       }
     },
@@ -195,18 +202,28 @@ export default {
       }
     },
 
-    stake(protocol, asset, amount) {
+    stake(protocolKey, asset, amount) {
+      Vue.set(asset, 'transactionInProgress', true);
       this.handleTransaction(this.stakeAvaxYak, {amount}).then((result) => {
+        Vue.set(asset, 'transactionInProgress', false);
+        Vue.set(asset, 'showStakeForm', false);
       })
     },
 
-    unstake(protocol, asset, amount) {
+    unstake(protocolKey, asset, amount) {
+      Vue.set(asset, 'transactionInProgress', true);
       this.handleTransaction(this.unstakeAvaxYak, {amount}).then((result) => {
+        Vue.set(asset, 'transactionInProgress', false);
+        Vue.set(asset, 'showUnstakeForm', false);
       })
     },
 
     formatTokenBalance(balance) {
-      return balance !== null ? balance.toFixed(4) : '';
+      if (balance) {
+        return Number(balance.toFixed(4)) === 0 ? '' : balance.toFixed(4);
+      } else {
+        return '';
+      }
     },
 
     getTotalStakedPerProtocol() {
@@ -362,10 +379,14 @@ export default {
   }
 
   .chevron {
+    transform: rotate(90deg);
+    transition: transform .2s ease-in-out;
     content: url(../assets/icons/chevron-down.svg);
+
+    &.open {
+      transform: rotate(0);
+    }
   }
-
-
 }
 
 .enlarge {
@@ -457,6 +478,9 @@ export default {
 
 .staking-currency-input {
   grid-column: 1/-1;
+  height: 230px;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 </style>
