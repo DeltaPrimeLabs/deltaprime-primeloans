@@ -19,8 +19,8 @@
         <div class="table__cell right">View</div>
       </div>
       <div class="table__body">
-        <div class="table__row protocols__row" v-for="(protocol, key, index) in protocols"
-             v-bind:key="key">
+        <div class="table__row protocols__row" v-for="(protocol, protocolKey, index) in protocols"
+             v-bind:key="protocolKey">
           <div class="table__cell left" data-label="Pool">
             <div class="token-logo-wrapper">
               <img :src="logoSrc(protocol.symbol)" class="token-logo"/>
@@ -37,7 +37,7 @@
           <div class="table__cell" v-if="!isMobile"></div>
           <div>
             <div class="table__cell invest-buttons right" @click.stop>
-              <img @click="showStakingOptions(key)" class="chevron clickable-icon" v-bind:class="{'open': protocol.showStakingOptions}"/>
+              <img @click="showStakingOptions(protocolKey)" class="chevron clickable-icon" v-bind:class="{'open': protocol.showStakingOptions}"/>
             </div>
           </div>
 
@@ -67,8 +67,8 @@
                     </div>
                     <div class="table__cell right" data-label="Staked">
                       <LoadedValue
-                          :check="() => stakedAssets[key].assets[asset.symbol].balance !== null"
-                          :value="formatTokenBalance(stakedAssets[key].assets[asset.symbol].balance, 4)">
+                          :check="() => stakedAssets[protocolKey].assets[asset.symbol].balance !== null"
+                          :value="formatTokenBalance(stakedAssets[protocolKey].assets[asset.symbol].balance, 4)">
                       </LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="APR">
@@ -83,9 +83,9 @@
                     <div class="table__cell" v-if="!isMobile"></div>
                     <div>
                       <div class="table__cell invest-buttons right" @click.stop>
-                        <img class="plus clickable-icon" @click="showStakeForm(key, asset)"/>
+                        <img class="plus clickable-icon" @click="showStakeForm(protocolKey, asset)"/>
                         <img src="src/assets/icons/slash-small.svg"/>
-                        <img class="minus clickable-icon" @click="showUnstakeForm(key, asset)"/>
+                        <img class="minus clickable-icon" @click="showUnstakeForm(protocolKey, asset)"/>
                       </div>
                     </div>
 
@@ -100,6 +100,7 @@
                             :flexDirection="isMobile ? 'column' : 'row'"
                             :slim="true"
                             :waiting="asset.transactionInProgress"
+                            :validators="stakeValidators()"
                             v-on:submitValue="(value) => stake(protocol, asset, value)"
                         />
                       </SmallBlock>
@@ -115,8 +116,9 @@
                             :hasSecondButton="true"
                             :flexDirection="isMobile ? 'column' : 'row'"
                             :slim="true"
-                            :max="stakedAssets[key].assets[asset.symbol].balance"
+                            :max="stakedAssets[protocolKey].assets[asset.symbol].balance"
                             :waiting="asset.transactionInProgress"
+                            :validators="unstakeValidators(protocolKey, asset)"
                             v-on:submitValue="(value) => unstake(protocol, asset, value)"
                         />
                       </SmallBlock>
@@ -231,6 +233,32 @@ export default {
         return this.avaxToUSD(this.stakedAssets.YAK_YIELD.assets.AVAX.balance).toFixed(2);
       }
     },
+
+    stakeValidators() {
+      return [
+        {
+          validate: (value) => {
+            console.log(this.assets.AVAX.balance);
+            if (value > this.assets.AVAX.balance) {
+              return 'Value exceeds your available AVAX balance';
+            }
+          }
+        }
+      ]
+    },
+
+    unstakeValidators(protocolKey, asset) {
+      return [
+        {
+          validate: (value) => {
+            const stakedAssetBalance = this.stakedAssets[protocolKey].assets[asset.symbol].balance;
+            if (value > stakedAssetBalance) {
+              return 'Value exceeds amount of staked asset';
+            }
+          }
+        }
+      ]
+    }
   },
 }
 </script>
