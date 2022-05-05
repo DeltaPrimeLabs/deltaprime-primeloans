@@ -167,7 +167,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     uint256[] memory prices = getPricesFromMsg(assets);
 
     uint256 debt = calculateDebt(assets, prices);
-    getNativeTokenWrapped().deposit{value: msg.value}();
+    getNativeTokenWrapped().deposit{value: address(this).balance}();
 
     require(calculateAssetsValue(assets, prices) >= debt, "Not possible to repay fully the debt");
 
@@ -221,8 +221,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
     _liquidationInProgress = true;
 
-    //in case critically insolvent loans it's needed to add AVAX to bring loan to solvency
-    getNativeTokenWrapped().deposit{value: msg.value}();
+    //in case critically insolvent loans it might be needed to use native AVAX a loan has to bring loan to solvency.
+    //AVAX can be also provided in the transaction as well to "rescue" a loan
+    getNativeTokenWrapped().deposit{value: address(this).balance}();
 
     //to avoid stack too deep error
     {
@@ -453,7 +454,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * Calculates the current value of Prime Account in USD including all tokens as well as staking and LP positions
    **/
   function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual returns (uint256) {
-    uint256 total = address(this).balance * prices[0];
+    uint256 total = address(this).balance * prices[0] / 10**8;
 
     for (uint256 i = 0; i < prices.length; i++) {
       require(prices[i] != 0, "Asset price returned from oracle is zero");
