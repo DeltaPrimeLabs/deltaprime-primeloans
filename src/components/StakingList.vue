@@ -412,7 +412,7 @@ export default {
   }
 
   .chevron {
-    transform: rotate(90deg);
+    transform: rotate(180deg);
     transition: transform .2s ease-in-out;
     content: url(../assets/icons/chevron-down.svg);
 
