@@ -147,6 +147,8 @@ import Button from "@/components/Button.vue";
 import {mapState, mapActions, mapGetters} from "vuex";
 import Vue from 'vue'
 import config from "@/config";
+import {BigNumber} from "ethers";
+import {toWei} from "../utils/calculate";
 
 
 export default {
@@ -260,7 +262,7 @@ export default {
     },
 
     prepareValueForUnstakeMax(rawValue) {
-      return Number(rawValue.toFixed(8));
+      return Math.floor(rawValue * 100000000) / 100000000;
     },
   },
 }
