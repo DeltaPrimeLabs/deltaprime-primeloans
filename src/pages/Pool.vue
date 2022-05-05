@@ -3,7 +3,7 @@
     <Bar>
       <div>
         <div class="rate-wrapper">
-          Current APR: <span class="rate">{{depositRate | percent}}</span>
+          Current APY: <span class="rate">{{depositRate | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -19,10 +19,9 @@
       </div>
     </Bar>
     <InfoBubble
-        v-if="depositLocked"
-        cacheKey="DEPOSIT-LOCKED">
-      Depositing is not available during the tournament. <br/>
-      But you will be able to check it out in our Beta version!
+      v-if="depositLocked"
+      cacheKey="DEPOSIT-LOCKED">
+        Depositing will soon be available!
     </InfoBubble>
     <InfoBubble
         v-if="!depositLocked"

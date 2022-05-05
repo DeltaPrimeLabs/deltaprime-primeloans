@@ -1,6 +1,6 @@
 NETWORK_NAME should be defined the same way as in `hardhat.config.ts`
 
-####1. Create `.secret-admin` and `.secret-deployer` files in base directory
+####1. Check `.admin` and `.deployer` addresses in `.secrets/{NETWORK_NAME}`
 
 ####2. Update contracts JSONs directory for frontend in `webpack.common.js` (`@contracts`)
 

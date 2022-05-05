@@ -24,7 +24,7 @@ async function uploadNFTs() {
 
 async function uploadNFT(filePath){
     console.log('Loading file from path ', filePath);
-    const key = JSON.parse(fs.readFileSync('./.arweave-secret.json', 'utf8'));
+    const key = JSON.parse(fs.readFileSync('./.secrets/arweave/deployer.json', 'utf8'));
     const filename = path.parse(path.basename(filePath)).name;
     const metadataPath = `./tools/scripts/nft/metadata/${filename}.json`;
     console.log(`Reading metadata from path: ${metadataPath}`);

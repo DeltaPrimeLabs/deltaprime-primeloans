@@ -26,4 +26,4 @@ module.exports = async ({
   console.log(`Deployed VariableUtilisationRatesCalculator at address: ${result.address}`);
 };
 
-module.exports.tags = ['rates-offset'];
+module.exports.tags = ['init'];

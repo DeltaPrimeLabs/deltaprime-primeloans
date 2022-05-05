@@ -1,16 +1,17 @@
-import {getChainIdForNetwork, getUrlForNetwork} from "../helpers";
+import {getUrlForNetwork} from "../helpers";
 
 const {ethers} = require("hardhat");
 const UPGRADEABLE_BEACON = require("../../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json")
 
 const fs = require('fs');
-const key = fs.readFileSync("./.secret-deployer").toString().trim();
-let privateKeyWallet = new ethers.Wallet(key);
 
 var provider;
 
 async function upgradeBeacon(networkName, implementationName) {
     provider = new ethers.providers.JsonRpcProvider(getUrlForNetwork(networkName));
+
+    const key = fs.readFileSync(`./.secrets/${networkName}/deployer`).toString().trim();
+    let privateKeyWallet = new ethers.Wallet(key);
 
     let wallet = privateKeyWallet.connect(provider);
 

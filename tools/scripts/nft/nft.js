@@ -4,7 +4,7 @@ const fs = require("fs");
 const ethers = require("ethers");
 
 function initWallet(networkName) {
-    const key = fs.readFileSync("./.secret-deployer").toString().trim();
+    const key = fs.readFileSync(`./.secrets/${networkName}/deployer`).toString().trim();
     const provider = new ethers.providers.JsonRpcProvider(getUrlForNetwork(networkName));
 
     return new ethers.Wallet(key, provider);

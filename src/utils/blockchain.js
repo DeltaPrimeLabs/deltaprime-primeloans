@@ -41,7 +41,6 @@ export async function awaitConfirmation(tx, provider, actionName) {
 
 export async function handleCall(fun, args, onSuccess, onFail) {
     try {
-        // await Promise.any([fetch('fdasfdsa').then(response => response.json()), fetch('fdasfdsa').then(response => response.json())])
         if (!args) {
             return await fun();
         } else {

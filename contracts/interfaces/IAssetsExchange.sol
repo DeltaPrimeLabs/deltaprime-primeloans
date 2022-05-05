@@ -18,30 +18,25 @@ interface IAssetsExchange {
     address assetAddress;
   }
 
-  /**
-   * Buys selected asset with AVAX
-   * @dev _asset asset code
-   * @dev _exactERC20AmountOut exact amount of asset to be bought
+
+  /*
+   * Swaps selected ERC20 token with other ERC20 token
+   * @dev soldToken_ sold ERC20 token's symbol
+   * @dev boughtToken_ bought ERC20 token's symbol
+   * @dev _amountSold exact amount of ERC20 token to be sold
+   * @dev _amountBought minimum amount of ERC20 token to be bought
    **/
-  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut) external payable returns (bool);
+  function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _exactAmountIn, uint256 _minAmountOut) external returns (uint256[] memory);
 
   /**
-   * Sells selected asset for AVAX
-   * @dev _asset asset code
-   * @dev _exactERC20AmountIn amount to be bought
-   * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
+   * Returns the minimum _soldToken amount that is required to be sold to receive _exactAmountOut of a _boughtToken.
    **/
-  function sellAsset(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external returns (bool);
+  function getEstimatedTokensFromTokens(uint256 _exactAmountOut, address _soldToken, address _boughtToken) external returns (uint256);
 
   /**
-   * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
+   * Returns the maximum _boughtToken amount that will be obtained in the event of selling _amountIn of _soldToken token.
    **/
-  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns (uint256);
-
-  /**
-   * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
-   **/
-  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) external returns (uint256);
+  function getEstimatedTokensForTokens(uint256 _amountIn, address _soldToken, address _boughtToken) external returns (uint256);
 
   /**
    * Adds or updates supported assets
