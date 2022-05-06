@@ -13,7 +13,7 @@
       <div class="table__header protocols__row">
         <div class="table__cell left">Protocol</div>
         <div class="table__cell right">Total staked</div>
-        <div class="table__cell right">Max APR</div>
+        <div class="table__cell right">Max APY</div>
         <div class="table__cell"></div>
         <div class="table__cell"></div>
         <div class="table__cell right">View</div>
@@ -30,7 +30,7 @@
           <div class="table__cell value right" data-label="Total Staked">
             <span>$ {{ getTotalStakedPerProtocol() }}</span>
           </div>
-          <div class="table__cell right" data-label="Max APR">
+          <div class="table__cell right" data-label="Max APY">
             <span>{{ protocol.maxApr | percent }}</span>
           </div>
           <div class="table__cell" v-if="!isMobile"></div>
@@ -47,9 +47,9 @@
               <div class="table nested-table">
                 <div class="table__header">
                   <div class="table__cell left">Asset</div>
-                  <div class="table__cell right">Price</div>
+                  <div class="table__cell right">TVL</div>
+                  <div class="table__cell right">APY</div>
                   <div class="table__cell right">Staked</div>
-                  <div class="table__cell right">APR</div>
                   <div class="table__cell right">Available</div>
                   <div class="table__cell right"></div>
                   <div class="table__cell right">Stake/Unstake</div>
@@ -64,16 +64,16 @@
                       <span class="token-name">{{ asset.name }}</span>
                     </div>
                     <div class="table__cell value right" data-label="Price">
-                      <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
+                      <div>$ 29M</div>
+                    </div>
+                    <div class="table__cell right" data-label="APY">
+                      <span>{{ 0.094 | percent }}</span>
                     </div>
                     <div class="table__cell right" data-label="Staked">
                       <LoadedValue
                           :check="() => stakedAssets[protocolKey].assets[asset.symbol].balance !== null"
                           :value="formatTokenBalance(stakedAssets[protocolKey].assets[asset.symbol].balance, 4)">
                       </LoadedValue>
-                    </div>
-                    <div class="table__cell right" data-label="APR">
-                      <span>{{ 0.053 | percent }}</span>
                     </div>
                     <div class="table__cell right">
                       <LoadedValue
@@ -172,10 +172,10 @@ export default {
       protocols: {
         'YAK_YIELD': {
           symbol: 'YAK',
-          name: 'Protocol Yak Yield',
-          totalStaked: 1.2,
-          balance: 1,
-          maxApr: 0.053,
+          name: 'Yield Yak',
+          totalStaked: 0,
+          balance: 0,
+          maxApr: 0.094,
           showStakingOptions: false,
           stakingOptions: {
             AVAX: config.ASSETS_CONFIG.AVAX,
