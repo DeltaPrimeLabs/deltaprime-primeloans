@@ -412,12 +412,12 @@ export default {
   }
 
   .chevron {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
     transition: transform .2s ease-in-out;
     content: url(../assets/icons/chevron-down.svg);
 
     &.open {
-      transform: rotate(0);
+      transform: rotate(180deg);
     }
   }
 }
