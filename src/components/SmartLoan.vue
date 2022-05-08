@@ -31,6 +31,7 @@
         <div class="ltv-value">
           <div class="label">
             LTV
+            <img class="info-icon" src="src/assets/icons/info.svg" v-tooltip="'LTV is calculated as your debt divided by your current collateral'">
           </div>
           <div class="ltv-bar">
             <LTVBar />
@@ -285,6 +286,19 @@ export default {
     display: block;
     align-items: center;
     margin-top: 0;
+  }
+
+  .label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    .info-icon {
+      width: 18px;
+      height: 18px;
+      margin-left: 5px;
+    }
   }
 
   .ltv-bar {
