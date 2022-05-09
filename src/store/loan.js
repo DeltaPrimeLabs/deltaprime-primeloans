@@ -11,6 +11,15 @@ import {WrapperBuilder} from "redstone-evm-connector";
 
 const ethers = require('ethers');
 
+const erc20ABI = [
+  'function decimals() public view returns (uint8)',
+  'function balanceOf(address _owner) public view returns (uint256 balance)',
+  'function totalSupply() public view returns (uint256 supply)',
+  'function totalDeposits() public view returns (uint256 deposits)',
+  'function approve(address _spender, uint256 _value) public returns (bool success)',
+  'function allowance(address owner, address spender) public view returns (uint256)'
+]
+
 export default {
   namespaced: true,
   state: {
@@ -22,7 +31,8 @@ export default {
     ltv: null,
     loanBalance: null,
     loanEvents: null,
-    collateralFromPayments: null
+    collateralFromPayments: null,
+    stakedAssets: null,
   },
   getters: {
     getCurrentCollateral(state) {
@@ -30,8 +40,8 @@ export default {
     },
     getProfit(state, getters) {
       if (getters.getCurrentCollateral !== null
-          && getters.getCurrentCollateral !== 0
-          && state.collateralFromPayments !== null) {
+        && getters.getCurrentCollateral !== 0
+        && state.collateralFromPayments !== null) {
 
         return getters.getCurrentCollateral - state.collateralFromPayments;
       } else {
@@ -69,10 +79,13 @@ export default {
     },
     setCollateralFromPayments(state, collateral) {
       state.collateralFromPayments = collateral;
-    }
+    },
+    setStakedAssets(state, stakedAssets) {
+      state.stakedAssets = stakedAssets;
+    },
   },
   actions: {
-    async initSupportedAssets({ rootState, commit }) {
+    async initSupportedAssets({rootState, commit}) {
       const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
       // the first returned asset is a blockchain native currency, therefore used .slice(1)
       let supported = ((await pangolinContract.getAllAssets()).slice(1)).map(
@@ -81,7 +94,8 @@ export default {
 
       commit('setSupportedAssets', supported);
     },
-    async fetchLoan({ state, rootState, dispatch, commit }) {
+
+    async fetchLoan({state, rootState, dispatch, commit}) {
       dispatch('initSupportedAssets');
 
       const provider = rootState.network.provider;
@@ -107,10 +121,12 @@ export default {
         dispatch('updateLoanBalance');
         dispatch('updateLoanHistory');
         dispatch('updateAssets');
+        dispatch('updateStakedAvaxYakBalance');
       }
       return true;
     },
-    async updateAssets({ state, commit, dispatch }) {
+
+    async updateAssets({state, commit, dispatch}) {
       dispatch('updateLoanBalance');
 
       const loan = state.loan;
@@ -131,10 +147,10 @@ export default {
           const symbol = asset[0];
           if (symbol === config.nativeToken) {
             assets[symbol].balance = state.loanBalance;
-            assets[symbol].price = prices[0] / 10**8;
-            commit('network/setAvaxPrice', assets[symbol].price, { root: true });
+            assets[symbol].price = prices[0] / 10 ** 8;
+            commit('network/setAvaxPrice', assets[symbol].price, {root: true});
           } else {
-            assets[symbol].price = prices[i] / 10**8;
+            assets[symbol].price = prices[i] / 10 ** 8;
             assets[symbol].balance = parseFloat(formatUnits(balances[i].toString(), assets[symbol].decimals));
           }
           assets[symbol].value = assets[symbol].balance * assets[symbol].price;
@@ -144,27 +160,30 @@ export default {
 
       commit('setAssets', assets);
     },
-    async updateLoanStats({ state, commit }) {
+
+    async updateLoanStats({state, commit}) {
       const loan = state.loan;
       const status = await handleCall(loan.getFullLoanStatus);
 
       commit('setTotalValue', fromWei(status[0]));
       commit('setDebt', fromWei(status[1]));
-      commit('setLtv', status[2]/1000);
+      commit('setLtv', status[2] / 1000);
     },
-    async updateLoanBalance({ state, rootState, commit }) {
+
+    async updateLoanBalance({state, rootState, commit}) {
       const provider = rootState.network.provider;
       const balance = parseFloat(formatUnits(await provider.getBalance(state.loan.address), config.ASSETS_CONFIG[config.nativeToken].decimals));
 
       commit('setLoanBalance', balance);
     },
-    async updateLoanHistory({ commit, state, rootState }) {
+
+    async updateLoanHistory({commit, state, rootState}) {
       const loan = state.loan;
 
       const provider = rootState.network.provider;
 
       const loanFactory =
-          new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
+        new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
 
       loanFactory.iface = new ethers.utils.Interface(LOAN_FACTORY.abi);
 
@@ -185,17 +204,21 @@ export default {
       commit('setCollateralFromPayments', collateralFromPayments);
       commit('setLoanEvents', loanEvents);
     },
-    async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
+
+    async createNewLoan({rootState, dispatch, commit}, {amount, collateral}) {
       const provider = rootState.network.provider;
 
       const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
 
       const wrappedLoanFactory = WrapperBuilder
-          .wrapLite(loanFactory)
-          .usingPriceFeed(config.dataProviderId);
+        .wrapLite(loanFactory)
+        .usingPriceFeed(config.dataProviderId);
 
       //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 1400000});
+      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {
+        value: toWei(collateral.toString()),
+        gasLimit: 1400000
+      });
 
       await awaitConfirmation(tx, provider, 'create a Prime Account');
 
@@ -204,7 +227,8 @@ export default {
 
       return tx;
     },
-    async borrow({ state, rootState, dispatch, commit }, { amount }) {
+
+    async borrow({state, rootState, dispatch, commit}, {amount}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -217,7 +241,8 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true})
     },
-    async repay({ state, rootState, dispatch, commit }, { amount }) {
+
+    async repay({state, rootState, dispatch, commit}, {amount}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -230,11 +255,12 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true})
     },
-    async fund({ state, rootState, dispatch, commit }, { amount }) {
+
+    async fund({state, rootState, dispatch, commit}, {amount}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 300000});
+      const tx = await loan.fund({value: toWei(amount.toString()), gasLimit: 500000});
 
       await awaitConfirmation(tx, provider, 'fund');
 
@@ -243,7 +269,8 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true});
     },
-    async withdraw({ state, rootState, dispatch, commit }, { amount }) {
+
+    async withdraw({state, rootState, dispatch, commit}, {amount}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -256,7 +283,8 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true});
     },
-    async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
+
+    async invest({state, rootState, dispatch, commit}, {asset, amount, avaxAmount, slippage, decimals}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -277,7 +305,8 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true})
     },
-    async redeem({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
+
+    async redeem({state, rootState, dispatch, commit}, {asset, amount, avaxAmount, slippage, decimals}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -298,7 +327,8 @@ export default {
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true})
     },
-    async closeLoan({ state, rootState, dispatch}) {
+
+    async closeLoan({state, rootState, dispatch}) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
@@ -311,6 +341,67 @@ export default {
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
       dispatch('network/updateBalance', {}, {root: true})
-    }
+    },
+
+    async stakeAvaxYak({state, rootState, dispatch, commit}, {amount}) {
+
+      const provider = rootState.network.provider;
+      const loan = state.loan;
+
+      const stakeTransaction = await loan.stakeAVAXYak(toWei(String(amount)), {gasLimit: 1100000});
+
+      await awaitConfirmation(stakeTransaction, provider, 'stakeAvaxYak');
+
+      dispatch('updateAssets');
+      dispatch('updateStakedAvaxYakBalance');
+      dispatch('network/updateBalance', {}, {root: true})
+
+    },
+
+    async unstakeAvaxYak({state, rootState, dispatch, commit}, {amount}) {
+
+      const provider = rootState.network.provider;
+      const loan = state.loan;
+
+      const receiptToAvaxConversionRate = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptToAvaxConversionRate;
+      const receiptTokenAmount = amount / receiptToAvaxConversionRate;
+      let receiptTokenAmountWei = toWei(String(receiptTokenAmount));
+      if (receiptTokenAmountWei.gt(state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei)) {
+        receiptTokenAmountWei = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei
+      }
+
+      const unstakeTransaction = await loan.unstakeAVAXYak(receiptTokenAmountWei, {gasLimit: 1100000});
+      await awaitConfirmation(unstakeTransaction, provider, 'unstake')
+
+      dispatch('updateAssets');
+      dispatch('updateStakedAvaxYakBalance');
+      dispatch('network/updateBalance', {}, {root: true})
+    },
+
+    async updateStakedAvaxYakBalance({state, rootState, dispatch, commit}) {
+      const loan = state.loan;
+      const stakingContractAddress = await handleCall(loan.getYakAvaxStakingContract);
+      const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
+      const totalSupply = Number(await tokenContract.totalSupply());
+      const totalDeposits = Number(await tokenContract.totalDeposits());
+      const yrtToAvaxConversionRate = totalDeposits / totalSupply;
+      const stakedYrtWei = await tokenContract.balanceOf(state.loan.address);
+      const stakedYrt = Number(fromWei(stakedYrtWei));
+      const stakedAvax = stakedYrt * yrtToAvaxConversionRate;
+      const stakedAssets = {
+        YAK_YIELD: {
+          assets: {
+            AVAX: {
+              balance: stakedAvax,
+              receiptTokenBalance: stakedYrt,
+              receiptTokenBalanceWei: stakedYrtWei,
+              receiptToAvaxConversionRate: yrtToAvaxConversionRate
+            }
+          }
+        }
+      }
+
+      commit('setStakedAssets', stakedAssets);
+    },
   }
 }

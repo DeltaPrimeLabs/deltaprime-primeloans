@@ -99,7 +99,9 @@
 </template>
 
 
-<script>var showMenu;
+<script>
+import StakingList from "./StakingList";
+var showMenu;
 
 import Bar from "@/components/Bar.vue";
 import Value from "@/components/Value.vue";
@@ -130,6 +132,7 @@ export default {
     }
   },
   components: {
+    StakingList,
     BorrowForm,
     RepayForm,
     FundForm,
@@ -414,6 +417,10 @@ export default {
 
 .assets-list.block.bordered::after {
   background-image: linear-gradient(145deg, #c9cbff 24%, #ffd8b1 38%, #fcb7cc 52%);
+}
+
+.staking-list {
+  margin-top: 34px;
 }
 
 </style>
