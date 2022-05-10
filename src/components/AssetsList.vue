@@ -81,6 +81,7 @@
                     :warnings="investWarnings(asset.buySlippage)"
                     :info="buySlippageInfo(asset)"
                     :slim="true"
+                    :showPriceInAvax="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
                 />
               </SmallBlock>
@@ -101,6 +102,7 @@
                     :info="sellSlippageInfo(asset)"
                     :max="asset.balance"
                     :slim="true"
+                    :showPriceInAvax="true"
                     v-on:submitValue="(value) => redeemValue(asset, value)"
                 />
               </SmallBlock>

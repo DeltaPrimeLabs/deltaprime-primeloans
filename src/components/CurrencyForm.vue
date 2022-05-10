@@ -15,6 +15,7 @@
       :defaultValue="defaultValue"
       :denominationButtons="denominationButtons"
       :slippage="slippage"
+      :showPriceInAvax="showPriceInAvax"
       v-on:newValue="updateValue"
       v-on:ongoingErrorCheck="ongoingErrorCheck"
     />
@@ -46,7 +47,8 @@
       defaultValue: { type: Number, default: null },
       denominationButtons: { type: Boolean, default: false },
       slippage: { type: Number, default: 0 },
-      slim: {type: Boolean, default: false}
+      slim: {type: Boolean, default: false},
+      showPriceInAvax: { type: Boolean, default: false }
     },
     components: {
       CurrencyInput,

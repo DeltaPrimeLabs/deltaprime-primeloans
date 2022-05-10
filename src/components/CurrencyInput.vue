@@ -10,7 +10,7 @@
         <div class="converted">
           <div v-if="value && (value !== 0)">
             <div>{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd }} </div>
-            <div class="price-in-avax">{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }} AVAX</div>
+            <div v-if="showPriceInAvax" class="price-in-avax">{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }} AVAX</div>
           </div>
         </div>
         <div class="denomination" v-if="denominationButtons">
@@ -78,7 +78,8 @@ import {mapState} from "vuex";
       waiting: false,
       disabled: false,
       denominationButtons: false,
-      slippage: { type: Number, default: 0 }
+      slippage: { type: Number, default: 0 },
+      showPriceInAvax: { type: Boolean, default: false }
     },
     computed: {
       ...mapState('network', ['avaxPrice'])
