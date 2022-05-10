@@ -89,8 +89,6 @@ export default {
         const eapContract = new Contract(address, EAP_NFT.abi, provider.getSigner());
         eapContract.iface = new ethers.utils.Interface(EAP_NFT.abi);
 
-        console.log(eapContract);
-        console.log(await eapContract._tokenIdCounter());
         let tx = await eapContract.safeMint("1", "0xec988a44cdceb8e1c509d2b089818319d5d8327cf20fda1daaa80bffdd3bc09d05583bbb33c37acddabc452a39d398ec18f2c87375fb5748b6fcaa873e715ecc1b");
 
         commit('setEapNftContract', eapContract);
@@ -185,11 +183,8 @@ export default {
       }
     },
     async mintEapNft({ dispatch, state, rootState }, {id, signature}) {
-      console.log('here')
       const provider = rootState.network.provider;
-      console.log(state.eapNftContract.address)
       let tx = await state.eapNftContract.safeMint(id, signature);
-      console.log('here2')
 
       await awaitConfirmation(tx, provider, 'mint');
 
