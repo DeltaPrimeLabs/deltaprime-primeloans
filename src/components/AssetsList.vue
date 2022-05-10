@@ -1,201 +1,188 @@
 <template>
-  <div class="lists">
+  <div class="list-wrapper">
     <div class="list">
-      <div class="elements">
-        <div class="title">Your investments</div>
-        <div class="total">
-          <span class="total-value-wrapper">
-            <span class="total-value">
-              Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
-              <span class="vertical-line"></span>
-              Your {{ profit >= 0 ? 'profit' : 'loss' }}: <span class="value" :class="{'red': profit < 0}">
-              $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : '' }}</span>
-            </span>
+      <div class="title">Your investments</div>
+      <div class="total">
+        <span class="total-value-wrapper">
+          <span class="total-value">
+            Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
+            <span class="vertical-line"></span>
+            Your {{ profit >= 0 ? 'profit' : 'loss' }}: <span class="value" :class="{'red': profit < 0}">
+            $ {{ (profit !== null && avaxPrice) ? avaxToUSD(profit).toFixed(2) || usd : '' }}</span>
           </span>
-        </div>
+        </span>
+      </div>
 
-        <div class="table">
-          <div class="table__header">
-            <div class="table__cell left">Asset</div>
-            <div class="table__cell right">Price</div>
-            <div class="table__cell trend left">Trend</div>
-            <div class="table__cell right">Balance</div>
-            <div class="table__cell right">Share</div>
-            <div class="table__cell right">Value</div>
-            <div class="table__cell right">Buy/Sell</div>
+      <div class="table">
+        <div class="table__header">
+          <div class="table__cell left">Asset</div>
+          <div class="table__cell right">Price</div>
+          <div class="table__cell trend left">Trend</div>
+          <div class="table__cell right">Balance</div>
+          <div class="table__cell right">Share</div>
+          <div class="table__cell right">Value</div>
+          <div class="table__cell right">Buy/Sell</div>
+        </div>
+        <div class="table__body">
+          <div class="table__row" v-for="asset in investments"
+               v-bind:key="asset.symbol">
+            <div class="table__cell left" data-label="Asset">
+              <div class="token-logo-wrapper">
+                <img :src="logoSrc(asset.symbol)" class="token-logo"/>
+              </div>
+              <span class="token-name">{{ asset.name }}</span>
+            </div>
+            <div class="table__cell right" data-label="Price">
+              <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
+            </div>
+            <div class="table__cell center chart-icon"
+                 data-label="Chart"
+                 @click.stop="toggleChart(asset.symbol)"
+            >
+              <SimpleChart
+                  class="simple-chart"
+                  :dataPoints="asset.prices"
+                  :isStableCoin="asset.isStableCoin"
+                  :lineWidth="1.5"/>
+              <img class="enlarge clickable-icon"/>
+            </div>
+            <div class="table__cell right" data-label="Balance">
+              <LoadedValue
+                  :check="() => asset.balance != null"
+                  :value="formatTokenBalance(asset.balance)">
+              </LoadedValue>
+            </div>
+            <div class="table__cell right" data-label="Share">
+              <LoadedValue :value="asset.share | percent"></LoadedValue>
+            </div>
+            <div class="table__cell value right" data-label="Value">
+              <LoadedValue :value="asset.value | usd"></LoadedValue>
+            </div>
+            <div>
+              <div class="table__cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
+                <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
+                <img src="src/assets/icons/slash-small.svg"/>
+                <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
+              </div>
+              <div v-else class="table__cell right no-buy">-</div>
+            </div>
+            <div class="asset-input" v-if="asset.buyInput" @click.stop>
+              <SmallBlock
+                  v-on:close="() => { asset.buyInput = false; }">
+                <CurrencyForm
+                    label="Buy"
+                    :symbol="asset.symbol"
+                    :slippage="asset.buySlippage"
+                    :price="asset.price"
+                    :hasSecondButton="true"
+                    :waiting="asset.waiting"
+                    :flexDirection="isMobile ? 'column' : 'row'"
+                    :validators="investValidators(asset, list[nativeToken].balance)"
+                    :warnings="investWarnings(asset.buySlippage)"
+                    :info="buySlippageInfo(asset)"
+                    :slim="true"
+                    v-on:submitValue="(value) => investValue(asset, value)"
+                />
+              </SmallBlock>
+            </div>
+            <div class="asset-input" v-if="asset.sellInput" @click.stop>
+              <SmallBlock
+                  v-on:close="() => { asset.sellInput = false; }">
+                <CurrencyForm
+                    label="Sell"
+                    :symbol="asset.symbol"
+                    :slippage="-asset.sellSlippage"
+                    :price="asset.price"
+                    :hasSecondButton="true"
+                    :waiting="asset.waiting"
+                    :flexDirection="isMobile ? 'column' : 'row'"
+                    :validators="redeemValidators(asset.balance)"
+                    :warnings="redeemWarnings(asset)"
+                    :info="sellSlippageInfo(asset)"
+                    :max="asset.balance"
+                    :slim="true"
+                    v-on:submitValue="(value) => redeemValue(asset, value)"
+                />
+              </SmallBlock>
+            </div>
+            <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
+              <SmallBlock
+                  v-on:close="() => { asset.showChart = false; }">
+                <div class="big-chart">
+                  <Chart
+                      :dataPoints="asset.prices"
+                      :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
+                </div>
+              </SmallBlock>
+            </div>
           </div>
-          <div class="table__body">
-            <div class="table__row" v-for="asset in investments"
-                 v-bind:key="asset.symbol">
-              <div class="table__cell left" data-label="Asset">
-                <div class="token-logo-wrapper">
-                  <img :src="logoSrc(asset.symbol)" class="token-logo"/>
+
+          <div class="table__row" v-for="asset in investmentOptions"
+               v-bind:key="asset.symbol">
+            <div data-label="Asset" class="table__cell left">
+              <div class="token-logo-wrapper">
+                <img :src="logoSrc(asset.symbol)" class="token-logo"/>
+              </div>
+              <span class="token-name">{{ asset.name }}</span>
+            </div>
+            <div data-label="Price" class="table__cell right">
+              <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
+            </div>
+            <div data-label="Chart" class="table__cell chart-icon"
+                 @click.stop="toggleChart(asset.symbol)"
+            >
+              <SimpleChart
+                  :dataPoints="asset.prices"
+                  :isStableCoin="asset.isStableCoin"
+                  :lineWidth="1.5"/>
+              <img class="enlarge clickable-icon"/>
+            </div>
+            <div class="table__cell" v-if="!isMobile"></div>
+            <div class="table__cell" v-if="!isMobile"></div>
+            <div class="table__cell" v-if="!isMobile"></div>
+            <div class="table__cell invest-buttons right" @click.stop>
+              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
+                   class="plus clickable-icon"/>
+            </div>
+            <div class="asset-input" v-if="asset.buyInput" @click.stop>
+              <SmallBlock
+                  v-on:close="() => { asset.buyInput = false;  }">
+                <CurrencyForm
+                    label="Buy"
+                    :symbol="asset.symbol"
+                    :price="asset.price"
+                    :hasSecondButton="true"
+                    :slippage="asset.buySlippage"
+                    v-on:submitValue="(value) => investValue(asset, value)"
+                    v-on:changedValue="(value) => checkBuySlippage(asset, value)"
+                    :waiting="asset.waiting"
+                    :flexDirection="isMobile ? 'column' : 'row'"
+                    :validators="investValidators(asset, list[nativeToken].balance)"
+                    :warnings="investWarnings(asset.buySlippage)"
+                    :info="buySlippageInfo(asset)"
+                    :slim="true"
+                />
+              </SmallBlock>
+            </div>
+            <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
+              <SmallBlock
+                  v-on:close="() => { asset.showChart = false;  }">
+                <div class="big-chart">
+                  <Chart
+                      :dataPoints="asset.prices"
+                      :minY="asset.minPrice"
+                      :maxY="asset.maxPrice"
+                      :lineWidth="3"/>
                 </div>
-                <span class="token-name">{{ asset.name }}</span>
-              </div>
-              <div class="table__cell right" data-label="Price">
-                <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
-              </div>
-              <div class="table__cell center chart-icon"
-                   data-label="Chart"
-                   @click.stop="toggleChart(asset.symbol)"
-              >
-                <SimpleChart
-                    class="simple-chart"
-                    :dataPoints="asset.prices"
-                    :isStableCoin="asset.isStableCoin"
-                    :lineWidth="1.5"/>
-                <img class="enlarge clickable-icon"/>
-              </div>
-              <div class="table__cell right" data-label="Balance">
-                <LoadedValue
-                    :check="() => asset.balance != null"
-                    :value="formatTokenBalance(asset.balance)">
-                </LoadedValue>
-              </div>
-              <div class="table__cell right" data-label="Share">
-                <LoadedValue :value="asset.share | percent"></LoadedValue>
-              </div>
-              <div class="table__cell value right" data-label="Value">
-                <LoadedValue :value="asset.value | usd"></LoadedValue>
-              </div>
-              <div>
-                <div class="table__cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
-                  <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
-                  <img src="src/assets/icons/slash-small.svg"/>
-                  <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
-                </div>
-                <div v-else class="table__cell right no-buy">-</div>
-              </div>
-              <div class="asset-input" v-if="asset.buyInput" @click.stop>
-                <SmallBlock
-                    v-on:close="() => { asset.buyInput = false; }">
-                  <CurrencyForm
-                      label="Buy"
-                      :symbol="asset.symbol"
-                      :slippage="asset.buySlippage"
-                      :price="asset.price"
-                      :hasSecondButton="true"
-                      :waiting="asset.waiting"
-                      :flexDirection="isMobile ? 'column' : 'row'"
-                      :validators="investValidators(asset, list[nativeToken].balance)"
-                      :warnings="investWarnings(asset.buySlippage)"
-                      :info="buySlippageInfo(asset)"
-                      v-on:submitValue="(value) => investValue(asset, value)"
-                  />
-                </SmallBlock>
-              </div>
-              <div class="asset-input" v-if="asset.sellInput" @click.stop>
-                <SmallBlock
-                    v-on:close="() => { asset.sellInput = false; }">
-                  <CurrencyForm
-                      label="Sell"
-                      :symbol="asset.symbol"
-                      :slippage="-asset.sellSlippage"
-                      :price="asset.price"
-                      :hasSecondButton="true"
-                      :waiting="asset.waiting"
-                      :flexDirection="isMobile ? 'column' : 'row'"
-                      :validators="redeemValidators(asset.balance)"
-                      :warnings="redeemWarnings(asset)"
-                      :info="sellSlippageInfo(asset)"
-                      :max="asset.balance"
-                      v-on:submitValue="(value) => redeemValue(asset, value)"
-                  />
-                </SmallBlock>
-              </div>
-              <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
-                <SmallBlock
-                    v-on:close="() => { asset.showChart = false; }">
-                  <div class="big-chart">
-                    <Chart
-                        :dataPoints="asset.prices"
-                        :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
-                  </div>
-                </SmallBlock>
-              </div>
+              </SmallBlock>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="list options" v-if="investmentOptions && investmentOptions.length > 0">
-      <div class="elements">
-        <div class="title">Investment possibilities</div>
-        <div class="table">
-          <div class="table__header">
-            <div class="table__cell left">Asset</div>
-            <div class="table__cell right">Price</div>
-            <div class="table__cell trend p.left">Trend</div>
-            <div class="table__cell"></div>
-            <div class="table__cell"></div>
-            <div class="table__cell"></div>
-            <div class="table__cell right">Buy</div>
-          </div>
-          <div class="table__body">
-            <div class="table__row" v-for="asset in investmentOptions"
-                 v-bind:key="asset.symbol">
-              <div data-label="Asset" class="table__cell left">
-                <div class="token-logo-wrapper">
-                  <img :src="logoSrc(asset.symbol)" class="token-logo"/>
-                </div>
-                <span class="token-name">{{ asset.name }}</span>
-              </div>
-              <div data-label="Price" class="table__cell right">
-                <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
-              </div>
-              <div data-label="Chart" class="table__cell chart-icon"
-                   @click.stop="toggleChart(asset.symbol)"
-              >
-                <SimpleChart
-                    :dataPoints="asset.prices"
-                    :isStableCoin="asset.isStableCoin"
-                    :lineWidth="1.5"/>
-                <img class="enlarge clickable-icon"/>
-              </div>
-              <div class="table__cell" v-if="!isMobile"></div>
-              <div class="table__cell" v-if="!isMobile"></div>
-              <div class="table__cell" v-if="!isMobile"></div>
-              <div class="table__cell invest-buttons right" @click.stop>
-                <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
-                     class="plus clickable-icon"/>
-              </div>
-              <div class="asset-input" v-if="asset.buyInput" @click.stop>
-                <SmallBlock
-                    v-on:close="() => { asset.buyInput = false;  }">
-                  <CurrencyForm
-                      label="Buy"
-                      :symbol="asset.symbol"
-                      :price="asset.price"
-                      :hasSecondButton="true"
-                      :slippage="asset.buySlippage"
-                      v-on:submitValue="(value) => investValue(asset, value)"
-                      v-on:changedValue="(value) => checkBuySlippage(asset, value)"
-                      :waiting="asset.waiting"
-                      :flexDirection="isMobile ? 'column' : 'row'"
-                      :validators="investValidators(asset, list[nativeToken].balance)"
-                      :warnings="investWarnings(asset.buySlippage)"
-                      :info="buySlippageInfo(asset)"
-                  />
-                </SmallBlock>
-              </div>
-              <div class="chart" v-if="asset.showChart && asset.prices" @click.stop>
-                <SmallBlock
-                    v-on:close="() => { asset.showChart = false;  }">
-                  <div class="big-chart">
-                    <Chart
-                        :dataPoints="asset.prices"
-                        :minY="asset.minPrice"
-                        :maxY="asset.maxPrice"
-                        :lineWidth="3"/>
-                  </div>
-                </SmallBlock>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+    <StakingList></StakingList>
+
   </div>
 </template>
 
@@ -213,11 +200,13 @@ import redstone from 'redstone-api';
 import Vue from 'vue'
 import config from "@/config";
 import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
+import StakingList from "./StakingList";
 
 
 export default {
   name: 'AssetsList',
   components: {
+    StakingList,
     Chart,
     Block,
     CurrencyForm,
@@ -239,6 +228,7 @@ export default {
   computed: {
     ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
     ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
+    ...mapState('network', ['account']),
     investments() {
       if (this.list) {
         return Object.values(this.list).filter(
@@ -273,7 +263,7 @@ export default {
   },
   data() {
     return {
-      list: config.ASSETS_CONFIG
+      list: config.ASSETS_CONFIG,
     }
   },
   methods: {
@@ -357,6 +347,8 @@ export default {
       this.updateAsset(symbol, 'showChart', false);
     },
     investValue(asset, value) {
+      console.log('invest value');
+      console.log(asset);
       this.updateAsset(asset.symbol, 'waiting', true);
       this.handleTransaction(
           this.invest,
@@ -368,6 +360,7 @@ export default {
             slippage: asset.buySlippage
           })
           .then(() => {
+            console.log('invest success');
             this.updateAsset(asset.symbol, 'waiting', false);
             this.updateAsset(asset.symbol, 'sellInput', false);
             this.updateAsset(asset.symbol, 'buyInput', false);
@@ -465,7 +458,7 @@ export default {
     },
     formatTokenBalance(balance) {
       return balance !== null ? balance.toPrecision(4) : '';
-    }
+    },
   },
   watch: {
     assets: {
@@ -481,7 +474,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.lists {
+.list-wrapper {
   @media screen and (max-width: $md) {
     width: 70%;
     min-width: 300px;
@@ -490,6 +483,10 @@ export default {
 
 .list {
   width: 100%;
+
+  &:not(:first-child) {
+    margin-top: 40px;
+  }
 }
 
 .element {
@@ -809,64 +806,7 @@ export default {
 }
 
 .asset-input {
-  .currency-form-wrapper {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
 
-    @media screen and (min-width: $md) {
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      align-self: center;
-      width: min-content;
-      margin-top: 45px;
-    }
-
-
-    .input-wrapper {
-      height: 60px;
-    }
-
-    input {
-      height: 30px;
-      line-height: 30px;
-    }
-
-    .error, .info, .warning {
-      text-align: left;
-    }
-
-    .logo {
-      height: 30px;
-      width: 30px;
-      min-width: 30px;
-      min-height: 30px;
-    }
-
-    .symbol {
-      font-size: 16px;
-    }
-
-    .btn {
-      padding: 13px 20px;
-      margin-left: 30px;
-      font-size: 20px;
-
-      &.waiting .ball-beat:not(.active) {
-        margin-top: 5px;
-        margin-bottom: 5px;
-      }
-    }
-
-    .value-wrapper .label {
-      text-align: start;
-    }
-
-    .form-button {
-      margin-bottom: 30px;
-    }
-  }
 }
 
 </style>

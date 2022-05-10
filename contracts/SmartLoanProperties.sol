@@ -63,11 +63,11 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0xf81533a34a262ceAf39126eB1078066285bf8503);
+    return IYieldYakRouter(0x70952A912Fa50E04c608eb49E48afC975Eb91F21);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
-    return IERC20(0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0);
+    return IERC20(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
   }
 
   function getPool() public virtual view returns (Pool) {

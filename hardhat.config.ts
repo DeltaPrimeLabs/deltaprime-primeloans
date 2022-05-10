@@ -6,8 +6,7 @@ import "@nomiclabs/hardhat-etherscan";
 require('hardhat-deploy');
 
 const fs = require('fs');
-const deployerKey = fs.readFileSync(".secret-deployer").toString().trim();
-const adminKey = fs.readFileSync(".secret-admin").toString().trim();
+function getKey(network: string, filename: string) { return fs.readFileSync(`.secrets/${network}/${filename}`).toString().trim() }
 
 export default {
   solidity: "0.8.4",
@@ -35,26 +34,25 @@ export default {
     localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
-      chainId: 1337,
-      // accounts: [deployerKey, adminKey]
+      chainId: 1337
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
       chainId: 43113,
-      accounts: [deployerKey, adminKey]
+      accounts: [getKey('fuji', 'deployer'), getKey('fuji', 'admin')]
     },
     mainnet: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       gasPrice: 100000000000,
       chainId: 43114,
-      accounts: [deployerKey, adminKey]
+      accounts: [getKey('mainnet', 'deployer'), getKey('mainnet', 'admin')]
     },
     fantom: {
       url: 'https://rpc.ftm.tools/',
       gasPrice: 250000000000,
       chainId: 250,
-      accounts: [deployerKey, adminKey]
+      accounts: [getKey('fantom', 'deployer')]
     }
   },
   paths: {

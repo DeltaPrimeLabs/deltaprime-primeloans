@@ -31,6 +31,7 @@
         <div class="ltv-value">
           <div class="label">
             LTV
+            <img class="info-icon" src="src/assets/icons/info.svg" v-tooltip="'LTV is calculated as your debt divided by your current collateral'">
           </div>
           <div class="ltv-bar">
             <LTVBar />
@@ -98,7 +99,9 @@
 </template>
 
 
-<script>var showMenu;
+<script>
+import StakingList from "./StakingList";
+var showMenu;
 
 import Bar from "@/components/Bar.vue";
 import Value from "@/components/Value.vue";
@@ -129,6 +132,7 @@ export default {
     }
   },
   components: {
+    StakingList,
     BorrowForm,
     RepayForm,
     FundForm,
@@ -284,6 +288,19 @@ export default {
     margin-top: 0;
   }
 
+  .label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    .info-icon {
+      width: 18px;
+      height: 18px;
+      margin-left: 5px;
+    }
+  }
+
   .ltv-bar {
     display: flex;
     flex-direction: column;
@@ -400,6 +417,10 @@ export default {
 
 .assets-list.block.bordered::after {
   background-image: linear-gradient(145deg, #c9cbff 24%, #ffd8b1 38%, #fcb7cc 52%);
+}
+
+.staking-list {
+  margin-top: 34px;
 }
 
 </style>

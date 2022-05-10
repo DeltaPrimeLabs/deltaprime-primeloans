@@ -24,6 +24,7 @@ export default {
   border-radius: 25px;
   padding: 2px;
   box-shadow: 4px 4px 14px 0 rgba(191, 188, 255, 0.25);
+  height: 100%;
 
   .small-block {
     display: flex;

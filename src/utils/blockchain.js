@@ -36,19 +36,20 @@ export async function awaitConfirmation(tx, provider, actionName) {
         Vue.$toast.error(`Failed to ${actionName}. Check Metamask for more info.`)
     } else Vue.$toast.success('Transaction success! Waiting for confirmations...');
 
-    await provider.waitForTransaction(tx.hash, 3);
+    provider.waitForTransaction(tx.hash, 4).then(() => {})
 }
 
 export async function handleCall(fun, args, onSuccess, onFail) {
     try {
-        // await Promise.any([fetch('fdasfdsa').then(response => response.json()), fetch('fdasfdsa').then(response => response.json())])
         if (!args) {
             return await fun();
         } else {
             return Array.isArray(args) ? await fun(...args) : await fun(args);
         }
 
-        if (onSuccess) onSuccess();
+        if (onSuccess) {
+            onSuccess()
+        }
     } catch (error) {
         console.log(error);
         let message = error.data ? error.data.message : (error.message ? error.message : error);

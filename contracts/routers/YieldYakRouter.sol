@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-// Last deployed from commit: 1dd71dbe7e446d0f8ed0811a3d4e3363606688f2;
+// Last deployed from commit: aa33d0642351b28e89816245c2802ccabaf3e05e;
 pragma solidity ^0.8.4;
 
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
@@ -14,7 +14,7 @@ contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    address private constant YAKStakingAVAXAAVEV1Address = 0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0;
+    address private constant YAKStakingAVAXAAVEV1Address = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
     function stakeAVAX(uint256 amount) public payable override nonReentrant{
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).depositFor{value: amount}(msg.sender);

@@ -50,7 +50,7 @@ const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const yakStakingTokenAddress = "0x957Ca4a4aA7CDc866cf430bb140753F04e273bC0";
+const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 
 const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
@@ -1256,8 +1256,8 @@ describe('Smart loan',  () => {
 
     it('should withdraw', async () => {
       expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(0)
-      // await wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("1", usdTokenDecimalPlaces));
-      // expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(parseUnits("1", usdTokenDecimalPlaces))
+      await wrappedLoan.withdrawAsset(toBytes32("USD"), parseUnits("1", usdTokenDecimalPlaces));
+      expect(await usdTokenContract.balanceOf(owner.address)).to.be.equal(parseUnits("1", usdTokenDecimalPlaces))
     });
   });
 
@@ -1419,11 +1419,11 @@ describe('Smart loan',  () => {
             await expect(wrappedLoan.repay(toWei("310"))).to.be.revertedWith("Not enough funds to repay the loan");
 
             // Try to repay the debt (plus extra 10 AVAX) using remaining AVAX and additional 290 AVAX
-            await wrappedLoan.repay(toWei("310"), {value: toWei("290")});
+            await wrappedLoan.repay(toWei("310"), {value: toWei("310")});
 
             // Initial balance + 150 withdrawn - (initialDebt - loanAvaxBalance)
-            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(toWei("290")).add(toWei("150"));
-            let expectedLoanAvaxBalance = loanAvaxBalanceAfterWithdrawal.sub(debtBeforeRepayment).add(toWei("290"));
+            let expectedOwnerAvaxBalance = initialOwnerBalance.sub(toWei("310")).add(toWei("150"));
+            let expectedLoanAvaxBalance = loanAvaxBalanceAfterWithdrawal.sub(debtBeforeRepayment).add(toWei("310"));
             let debt = fromWei(await wrappedLoan.getDebt());
 
             // The "normal" loan should be solvent and debt should be equal to 0
@@ -1680,7 +1680,8 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 5000;
+
+      let investedAmount = Math.floor(64 * AVAX_PRICE);
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
