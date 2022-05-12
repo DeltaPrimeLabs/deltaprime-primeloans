@@ -197,11 +197,11 @@ import CurrencyForm from "@/components/CurrencyForm.vue";
 import SmallBlock from "@/components/SmallBlock.vue";
 import LoadedValue from "@/components/LoadedValue.vue";
 import Button from "@/components/Button.vue";
-import {mapState, mapActions, mapGetters} from "vuex";
+import {mapActions, mapGetters, mapState} from "vuex";
 import redstone from 'redstone-api';
 import Vue from 'vue'
 import config from "@/config";
-import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
+import {acceptableSlippage, maxAvaxToBeSold} from "../utils/calculate";
 import StakingList from "./StakingList";
 
 
@@ -458,8 +458,12 @@ export default {
       } catch (e) {
       }
     },
+
     formatTokenBalance(balance) {
-      return balance !== null ? balance.toPrecision(4) : '';
+      const balanceOrderOfMagnitudeExponent = String(balance).split('.')[0].length - 1;
+      const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
+      const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+      return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
     },
   },
   watch: {
