@@ -1,7 +1,12 @@
 <template>
   <div id="NftList" class="nft-list">
     <div class="page-title">
-      Your NFTs
+      <div v-if="nfts && nfts.length > 0">Your NFTs</div>
+      <div class="no-nfts-header" v-if="nfts && nfts.length === 0">
+        You don't have any DeltaPrime NFTs. Go to our
+        <a class="discord-link" href="https://discord.gg/57EdDsvhxK" target="_blank">Discord</a>
+        to find out how to get them!
+      </div>
     </div>
 
     <div class="nfts-grid">
@@ -133,6 +138,18 @@ export default {
   width: 100%;
   text-align: center;
   margin-bottom: 40px;
+
+  .no-nfts-header {
+    font-size: 20px;
+
+
+    .discord-link {
+      display: inline;
+      color: #6B70ED;
+      cursor: pointer;
+      text-decoration: none;
+    }
+  }
 }
 
 .nfts-grid {
