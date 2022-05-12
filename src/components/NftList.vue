@@ -84,7 +84,7 @@ export default {
 
     setupVideo() {
       this.numberOfNftVideosLoaded++;
-      this.setupNumberOfPlaceholders();50
+      this.setupNumberOfPlaceholders();
       if (this.numberOfNftVideosLoaded === this.numberOfNfts) {
         for (let i = 0; i < this.numberOfNftVideosLoaded; i++) {
           const videoPlayer = document.getElementById(`nft-video-${i}`)
