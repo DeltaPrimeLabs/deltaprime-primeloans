@@ -164,7 +164,6 @@
                   :info="buySlippageInfo(asset)"
                   :slim="true"
                   :showPriceInAvax="true"
-
                 />
               </SmallBlock>
             </div>
