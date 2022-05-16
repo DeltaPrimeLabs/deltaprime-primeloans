@@ -175,7 +175,7 @@ export default {
           name: 'Yield Yak',
           totalStaked: 0,
           balance: 0,
-          maxApr: 0.094,
+          maxApr: 0.09,
           showStakingOptions: false,
           stakingOptions: {
             AVAX: config.ASSETS_CONFIG.AVAX,
