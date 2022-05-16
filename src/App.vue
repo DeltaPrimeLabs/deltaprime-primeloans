@@ -7,7 +7,7 @@
     Please download and activate
     <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask plugin</b></a>.
   </Banner>
-  <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner">
+  <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner" :closable="true">
     Gas prices are high at the moment. Be careful with your transactions.
   </Banner>
   <div class="top-bar">

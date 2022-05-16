@@ -1,8 +1,9 @@
 <template>
-  <div class="banner">
+  <div class="banner" v-if="bannerVisible">
     <div class="elements">
       <slot></slot>
     </div>
+    <img v-if="closable" v-on:click="closeBanner()" class="close-button" src="src/assets/icons/cross-black.svg">
   </div>
 </template>
 
@@ -11,13 +12,22 @@
   export default {
     name: 'Banner',
     props: {
-      title: String
+      title: String,
+      closable: {
+        type: Boolean,
+        default: false,
+      }
     },
     data() {
       return {
-
+        bannerVisible: true,
       }
     },
+    methods: {
+      closeBanner() {
+        this.bannerVisible = false;
+      }
+    }
   }
 </script>
 
@@ -25,6 +35,7 @@
 @import "~@/styles/variables";
 
 .banner {
+  position: relative;
   top: 0;
   height: 60px;
   display: flex;
@@ -36,6 +47,12 @@
   box-shadow: 0px 5px 19px 0px rgba(0, 0, 0, 0.2);
 
   a {
+    cursor: pointer;
+  }
+
+  .close-button {
+    position: absolute;
+    right: 25px;
     cursor: pointer;
   }
 }
