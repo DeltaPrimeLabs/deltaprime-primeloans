@@ -1,6 +1,13 @@
 <template>
   <div>
-    <Mint v-if="showMintBox" :hasNft="hasEapNft" :nftContract="eapNftContract" :mintNFT="mintBorrowNft" :nftImageUri="borrowNftImageUri" :getNftId="getBorrowNftId"/>
+    <Mint v-if="showMintBox"
+          :hasNft="hasEapNft"
+          :nftContract="eapNftContract"
+          :mintNFT="mintBorrowNft"
+          :nftImageUri="borrowNftImageUri"
+          :getNftId="getBorrowNftId"
+          :type="'EAP'"
+    />
     <NftList :nfts="nfts" :numberOfNfts="numberOfNfts"></NftList>
   </div>
 </template>

@@ -1,5 +1,11 @@
 <template>
-  <Mint :hasNft="hasDepositNft" :nftContract="depositNftContract" :mintNFT="mintDepositNft" :nftImageUri="depositNftImageUri"/>
+  <Mint
+    :hasNft="hasDepositNft"
+    :nftContract="depositNftContract"
+    :mintNFT="mintDepositNft"
+    :nftImageUri="depositNftImageUri"
+    :type="'DEPOSIT'"
+  />
 </template>
 
 <script>
