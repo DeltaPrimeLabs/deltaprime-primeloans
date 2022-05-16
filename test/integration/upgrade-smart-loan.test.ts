@@ -232,7 +232,7 @@ describe('Smart loan - upgrading',  () => {
           }
         })
 
-      expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.0001);
+      expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.001);
       expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
       expect(await rewrappedLoan.getLTV()).to.be.equal(0);
     });
