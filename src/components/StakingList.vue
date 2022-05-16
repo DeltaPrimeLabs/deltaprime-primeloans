@@ -64,10 +64,10 @@
                       <span class="token-name">{{ asset.name }}</span>
                     </div>
                     <div class="table__cell value right" data-label="Price">
-                      <div>$ 29M</div>
+                      <div>$ 23M</div>
                     </div>
                     <div class="table__cell right" data-label="APY">
-                      <span>{{ 0.094 | percent }}</span>
+                      <span>{{ 0.09 | percent }}</span>
                     </div>
                     <div class="table__cell right" data-label="Staked">
                       <LoadedValue
