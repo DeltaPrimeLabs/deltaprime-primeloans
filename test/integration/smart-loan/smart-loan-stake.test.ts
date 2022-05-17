@@ -5,7 +5,7 @@ import redstone from 'redstone-api';
 
 import VariableUtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import WrappedPoolArtifact from '../../../artifacts/contracts/WrappedPool.sol/WrappedPool.json';
+import WavaxPoolArtifact from '../../../artifacts/contracts/WavaxPool.sol/WavaxPool.json';
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
@@ -31,7 +31,7 @@ import {
   SmartLoan,
   SmartLoansFactory,
   VariableUtilisationRatesCalculator,
-  WrappedPool,
+  WavaxPool,
   YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
@@ -73,7 +73,7 @@ describe('Smart loan',  () => {
       yakStakingContract: Contract,
       loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
-      pool: WrappedPool,
+      pool: WavaxPool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       wavaxTokenContract: Contract,
@@ -88,7 +88,7 @@ describe('Smart loan',  () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, WrappedPoolArtifact)) as WrappedPool;
+      pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
@@ -216,7 +216,7 @@ describe('Smart loan',  () => {
         wrappedLoan: any,
         yakRouterContract: Contract,
         wrappedLoanUpdated: any,
-        pool: WrappedPool,
+        pool: WavaxPool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         usdTokenContract: Contract,
@@ -234,7 +234,7 @@ describe('Smart loan',  () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, WrappedPoolArtifact)) as WrappedPool;
+      pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
@@ -356,7 +356,6 @@ describe('Smart loan',  () => {
       await wrappedLoanUpdated.withdraw(toBytes32("AVAX"), toWei("60"));
       expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
       expect(await wrappedLoan.isSolvent()).to.be.false;
-
 
       let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 

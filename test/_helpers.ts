@@ -54,6 +54,60 @@ export const getSelloutRepayAmount = async function (
   return (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1) * 1.04;
 };
 
+export const getAssetPrice = function(
+    symbol: string,
+    MOCK_PRICES: Array<{symbol: string, value: number}>
+) {
+    return MOCK_PRICES.find((el: any) => el.symbol == symbol)!.value;
+}
+
+export const suppliedAmounts = function(
+    assetProportions: Array<{symbol: string, proportion: number}>,
+    suppliedUsdAmount: number,
+    mockPrices: Array<{symbol: string, value: number}>
+) {
+    let sumOfProportions = 0;
+    assetProportions.forEach(asset => sumOfProportions += asset.proportion);
+    return assetProportions.map(asset => { return { symbol: asset.symbol, toSupply: asset.proportion / sumOfProportions * suppliedUsdAmount / getAssetPrice(asset.symbol, mockPrices)}});
+}
+
+export const getAvailableToRepay = function (
+    balances: Array<number>,
+    prices: Array<number>,
+    debts: Array<number>,
+    poolAssetsIndices: Array<number>
+) {
+    let availableToRepay = 0;
+    poolAssetsIndices.forEach(
+        (index, i) => {
+            availableToRepay += Math.min(balances[index], debts[i]) * prices[index] / 10**8;
+        }
+    );
+
+    return availableToRepay;
+};
+
+export const toRepay = function (
+    debt: number,
+    initialTotalValue: number,
+    targetLTV: number,
+    bonus: number
+) {
+    return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+}
+
+//simple model
+export const getRepayAmounts = function (
+    assetProportions: Array<{symbol: string, proportion: number}>,
+    toRepay: number,
+    mockPrices: Array<{symbol: string, value: number}>
+) {
+    let sumOfProportions = 0;
+    assetProportions.forEach(asset => sumOfProportions += asset.proportion);
+
+    return assetProportions.map(asset => { return { symbol: asset.symbol, toRepay: toRepay * asset.proportion / getAssetPrice(asset.symbol, mockPrices) / sumOfProportions } });
+}
+
 export const getFixedGasSigners = async function (gasLimit: number) {
   const signers: SignerWithAddress[] = await ethers.getSigners();
   signers.forEach(signer => {

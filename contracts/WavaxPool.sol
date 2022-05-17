@@ -13,7 +13,7 @@ import "./mock/WAVAX.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract WrappedPool is ERC20Pool {
+contract WavaxPool is ERC20Pool {
 
   function depositNativeToken() public payable virtual {
     WAVAX(tokenAddress).deposit{value: msg.value}();

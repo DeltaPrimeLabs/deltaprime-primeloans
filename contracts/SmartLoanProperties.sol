@@ -18,7 +18,7 @@ contract SmartLoanProperties {
 
   uint256 private constant _PERCENTAGE_PRECISION = 1000;
   // 10%
-  uint256 private constant _LIQUIDATION_BONUS = 100;
+  uint256 private constant _LIQUIDATION_BONUS = 50;
 
   // 500%
   uint256 private constant _MAX_LTV = 5000;
@@ -64,7 +64,7 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-  return IYieldYakRouter(0x7969c5eD335650692Bc04293B07F5BF2e7A673C0);
+  return IYieldYakRouter(0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
