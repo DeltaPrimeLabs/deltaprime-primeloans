@@ -1,4 +1,4 @@
-import {awaitConfirmation, fetchEventsInBatches, handleCall, startingBlock} from "../utils/blockchain";
+import {awaitConfirmation, fetchEventsInBatches, handleCall} from "../utils/blockchain";
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
