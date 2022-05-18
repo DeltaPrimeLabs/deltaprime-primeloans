@@ -5,7 +5,7 @@ export default {
     MAX_COLLATERAL: 6,
     MAX_ALLOWED_LTV: 4.5,
     LIQUIDATION_LTV: 5,
-    COMPETITION_START_BLOCK: 11644638,
+    COMPETITION_START_BLOCK: 14858534,
     chainId: 43114,
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},

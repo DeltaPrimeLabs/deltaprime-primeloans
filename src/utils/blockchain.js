@@ -13,7 +13,7 @@ export function startingBlock() {
         case 43114:
             return 11644638;
         default:
-            return 0;
+            return 14858534;
     }
 }
 
@@ -95,7 +95,8 @@ export async function fetchEventsInBatches(address, topics, provider, block = st
                 toBlock: endBatch,
                 address: address,
                 topics: [topics]
-            }));
+            })
+        );
 
         startBatch = endBatch + 1;
     }

@@ -17,8 +17,9 @@ module.exports = async ({
 
     const poolTUP = await ethers.getContract("PoolTUP");
     const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
+    const yieldYakRouter = await ethers.getContract("YieldYakRouter");
 
-    updateSmartLoanProperties(poolTUP.address, exchangeTUP.address);
+    updateSmartLoanProperties(poolTUP.address, exchangeTUP.address, yieldYakRouter.address);
 
     const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
     console.log(output);
