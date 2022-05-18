@@ -1,6 +1,7 @@
-export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter) {
+export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter, maxLTV, minSelloutLTV) {
     var fs = require('fs')
-    let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
+    let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
+
     let fileArray = data.split('\n');
 
 
@@ -105,7 +106,7 @@ export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAdd
 
     let result = fileArray.join("\n");
 
-    fs.writeFileSync('./contracts/SmartLoanProperties.sol', result, 'utf8');
+    fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
 
-    return 'Properties updated!'
+    return 'lib/SmartLoanLib.sol updated!'
 }

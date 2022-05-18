@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from "../typechain";
 import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {execSync} from "child_process";
-import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
+import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 
 const {provider} = waffle;
 
@@ -179,11 +179,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoan(contractName: string, poolTokenIndices: Array<Number>, poolTokenAddresses: Array<string>,  poolMap: {}, exchangeAddress: string, yieldYakAddress: string, subpath?: string) {
+export async function recompileSmartLoanLib(contractName: string, poolTokenIndices: Array<Number>, poolTokenAddresses: Array<string>,  poolMap: {}, exchangeAddress: string, yieldYakAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    updateSmartLoanProperties(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakAddress);
+    updateSmartLoanLibrary(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakAddress, maxLTV, minSelloutLTV);
 
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
