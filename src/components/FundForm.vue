@@ -1,4 +1,3 @@
-6
 <template>
   <div class="form-wrapper">
     <CurrencyInput
