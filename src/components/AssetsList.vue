@@ -15,6 +15,9 @@
         </span>
       </div>
 
+      <div class="loader-container" v-if="investments.length === 0">
+        <vue-loaders-ball-beat color="#A6A3FF" scale="2"></vue-loaders-ball-beat>
+      </div>
       <div class="table">
         <div class="table__header">
           <div class="table__cell left">Asset</div>
@@ -820,6 +823,16 @@ export default {
   margin-top: -3px;
   margin-right: -10px;
   margin-left: 2px;
+}
+
+.loader-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  margin-top: 40px;
 }
 
 </style>
