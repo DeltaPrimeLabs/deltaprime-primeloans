@@ -79,13 +79,14 @@ const TEST_TABLE =  [
       USD: 0,
       ETH: 0
     },
-    suppliedAssetsInUsd: [
+    suppliedAssets: [
       { symbol: 'AVAX', proportion: 1}
     ],
     repayAssetsProportions: [
       { symbol: 'AVAX', proportion: 1}
     ],
-    targetLtv: 4.1
+    targetLtv: 4.1,
+    action: 'LIQUIDATE'
   },
   {
     id: 2,
@@ -102,15 +103,16 @@ const TEST_TABLE =  [
       ETH: 0
     },
     swaps: [
-      { from: 'AVAX', to: 'USD', all: true, amountInUsd: 0 }
+      { from: 'AVAX', to: 'USD', all: true, amountInUsd: null }
     ],
-    suppliedAssetsInUsd: [
+    suppliedAssets: [
       { symbol: 'AVAX', proportion: 1}
     ],
     repayAssetsProportions: [
       { symbol: 'AVAX', proportion: 1}
     ],
-    targetLtv: 4.5
+    targetLtv: 4.5,
+    action: 'LIQUIDATE'
   },
   {
     id: 3,
@@ -127,10 +129,10 @@ const TEST_TABLE =  [
       ETH: 200
     },
     swaps: [
-      { from: 'USD', to: 'BTC', amountInUsd: 200, all: false },
-      { from: 'ETH', to: 'LINK', amountInUsd: 200, all: false }
+      { from: 'USD', to: 'BTC', amountInUsd: null, all: true },
+      { from: 'ETH', to: 'LINK', amountInUsd: null, all: true }
     ],
-    suppliedAssetsInUsd: [
+    suppliedAssets: [
       { symbol: 'ETH', proportion: 50 },
       { symbol: 'USD', proportion: 50 }
     ],
@@ -138,7 +140,115 @@ const TEST_TABLE =  [
       { symbol: 'ETH', proportion: 50 },
       { symbol: 'USD', proportion: 50 }
     ],
-    targetLtv: 4.3
+    targetLtv: 4.3,
+    action: 'LIQUIDATE'
+  },
+  {
+    id: 4,
+    fundInUsd: {
+      AVAX: 100,
+      USD: 0,
+      ETH: 0,
+      BTC: 0,
+      LINK: 0
+    },
+    borrowInUsd: {
+      AVAX: 550,
+      USD: 0,
+      ETH: 0
+    },
+    stakeInUsd: {
+      YAK: 640
+    },
+    suppliedAssets: [
+      { symbol: 'AVAX', proportion: 1 }
+    ],
+    repayAssetsProportions: [
+      { symbol: 'AVAX', proportion: 1 }
+    ],
+    targetLtv: 4.4,
+    action: 'LIQUIDATE'
+  },
+  {
+    id: 5,
+    fundInUsd: {
+      AVAX: 0,
+      USD: 0,
+      ETH: 0,
+      BTC: 0,
+      LINK: 50
+    },
+    borrowInUsd: {
+      USD: 350,
+      ETH: 350
+    },
+    swaps: [
+      { from: 'USD', to: 'AVAX', all: true, amountInUsd: null },
+      { from: 'ETH', to: 'AVAX', all: true, amountInUsd: null },
+    ],
+    stakeInUsd: {
+      YAK: 690
+    },
+    suppliedAssets: [
+      { symbol: 'USD', proportion: 1 },
+      { symbol: 'ETH', proportion: 1 }
+    ],
+    repayAssetsProportions: [
+      { symbol: 'USD', proportion: 1 },
+      { symbol: 'ETH', proportion: 1 }
+    ],
+    targetLtv: 4.6,
+    action: 'LIQUIDATE'
+  },
+  {
+    id: 6,
+    fundInUsd: {
+      AVAX: 0,
+      USD: 0,
+      ETH: 0,
+      BTC: 0,
+      LINK: 0
+    },
+    borrowInUsd: {
+      USD: 300,
+      AVAX: 0,
+      ETH: 0
+    },
+    withdrawInUsd: {
+      USD: 50
+    },
+    suppliedAssets: [
+      { symbol: 'USD', proportion: 1 },
+    ],
+    repayAssetsProportions: [
+    ],
+    targetLtv: 4.6,
+    action: 'HEAL'
+  },
+  {
+    id: 7,
+    fundInUsd: {
+      AVAX: 0,
+      USD: 0,
+      ETH: 0,
+      BTC: 0,
+      LINK: 0
+    },
+    borrowInUsd: {
+      USD: 300,
+      AVAX: 0,
+      ETH: 0
+    },
+    withdrawInUsd: {
+      USD: 50
+    },
+    suppliedAssets: [
+      { symbol: 'USD', proportion: 1 },
+    ],
+    repayAssetsProportions: [
+    ],
+    targetLtv: 0,
+    action: 'CLOSE'
   }
 ]
 
@@ -147,7 +257,7 @@ describe('Smart loan',  () => {
     await syncTime();
   });
 
-  describe('A liquidated loan', () => {
+  describe('An insolvent loan', () => {
     let exchange: PangolinExchange,
         loan: SmartLoan,
         wrappedLoan: any,
@@ -169,6 +279,7 @@ describe('Smart loan',  () => {
         smartLoansFactory: SmartLoansFactory,
         implementation: SmartLoan,
         newImplementation: SmartLoan,
+        supportedAssets: Array<Asset>,
         artifact: any,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
@@ -192,13 +303,14 @@ describe('Smart loan',  () => {
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+      supportedAssets = [
         new Asset(toBytes32('AVAX'), wavaxTokenAddress),
         new Asset(toBytes32('USD'), usdTokenAddress),
         new Asset(toBytes32('LINK'), linkTokenAddress),
         new Asset(toBytes32('ETH'), ethTokenAddress),
         new Asset(toBytes32('BTC'), btcTokenAddress)
-      ]);
+      ];
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
       const variableUtilisationRatesCalculatorWavax = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistryWavax = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -381,27 +493,47 @@ describe('Smart loan',  () => {
             }
           }
 
+          if (testCase.withdrawInUsd) {
+            for (const [symbol, value] of Object.entries(testCase.withdrawInUsd)) {
+              if (value > 0) {
+                let contract = getTokenContract(symbol)!;
+                let decimals = await contract.decimals();
+                let amountOfTokens = value / getPrice(symbol)!;
+
+                await wrappedLoan.withdraw(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
+              }
+            }
+          }
+
           if (testCase.swaps) {
             for (const swap of testCase.swaps) {
               let contract = getTokenContract(swap.from)!;
               let tokenDecimals = await contract.decimals();
               if (swap.all) {
-                await wrappedLoan.swap(toBytes32(swap.from), toBytes32(swap.to), await wrappedLoan.getBalance(toBytes32("AVAX")), 0);
-              } else {
+                await wrappedLoan.swap(toBytes32(swap.from), toBytes32(swap.to), await wrappedLoan.getBalance(toBytes32(swap.from)), 0);
+              } else if (swap.amountInUsd) {
                 let amountOfTokens = 0.99 * swap.amountInUsd / getPrice(swap.from)!;
                 await wrappedLoan.swap(toBytes32(swap.from), toBytes32(swap.to), toWei(amountOfTokens.toFixed(tokenDecimals), tokenDecimals), 0);
               }
             }
           }
 
+          if (testCase.stakeInUsd) {
+            //YAK AVAX
+            let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
+            await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
+          }
+
           let bonus = 0.05;
 
           const neededToRepay = toRepay(
+            testCase.action,
             fromWei(await wrappedLoan.getDebt()),
             fromWei(await wrappedLoan.getTotalValue()),
             testCase.targetLtv,
             bonus
           )
+
           const balances = [];
 
           for (const [i, balance] of (await wrappedLoan.getAllAssetsBalances()).entries()) {
@@ -416,14 +548,25 @@ describe('Smart loan',  () => {
             debts.push(formatUnits(debt, await getTokenContract(POOL_ASSETS[index])!.decimals()))
           }
 
-          const availableToRepay = getAvailableToRepay(
-            balances,
-            (await wrappedLoan.getAllAssetsPrices()).map((el: BigNumber) => el.toNumber()),
-            debts,
-            await wrappedLoan.getPoolsAssetsIndices()
+          let neededToSupply = 0;
+          let availableToRepay = getAvailableToRepay(
+              balances,
+              (await wrappedLoan.getAllAssetsPrices()).map((el: BigNumber) => el.toNumber()),
+              debts,
+              await wrappedLoan.getPoolsAssetsIndices()
           );
 
-          const neededToSupply = Math.max(1.00001 * (neededToRepay - availableToRepay), 0);
+          switch (testCase.action) {
+            case 'LIQUIDATE':
+              neededToSupply = Math.max(1.00001 * (neededToRepay - availableToRepay), 0);
+              break;
+            case 'HEAL':
+              neededToSupply = neededToRepay;
+              break;
+            case 'CLOSE':
+              neededToSupply = Math.max(1.00001 * (neededToRepay - availableToRepay), 0);
+              break;
+          }
 
           const repayAmounts = getRepayAmounts(
             testCase.repayAssetsProportions,
@@ -432,12 +575,12 @@ describe('Smart loan',  () => {
           );
 
           const allowanceAmounts = suppliedAmounts(
-            testCase.suppliedAssetsInUsd,
+            testCase.suppliedAssets,
             neededToSupply,
-            MOCK_PRICES
+            MOCK_PRICES,
           );
 
-          await liquidateLoan(allowanceAmounts, repayAmounts);
+          await action(testCase.action, allowanceAmounts, repayAmounts);
 
           expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, 0.01);
         });
@@ -445,7 +588,8 @@ describe('Smart loan',  () => {
    );
 
 
-    async function liquidateLoan(
+    async function action(
+        performedAction: string,
         allowanceAmounts: Array<{symbol: string, toSupply: number}>,
         repayAmounts: Array<{symbol: string, toRepay: number}>
         ) {
@@ -453,7 +597,8 @@ describe('Smart loan',  () => {
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
-      loan = ((await new ethers.Contract(await smartLoansFactory.getLoanForOwner(borrower.address), MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(liquidator);
+      const performer = performedAction === 'CLOSE' ? borrower : liquidator;
+      loan = ((await new ethers.Contract(await smartLoansFactory.getLoanForOwner(borrower.address), MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(performer);
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -465,8 +610,21 @@ describe('Smart loan',  () => {
                 }
               })
 
-      for (const allowance of allowanceAmounts) {
-        await getTokenContract(allowance.symbol)!.connect(liquidator).approve(wrappedLoan.address, toWei(allowance.toSupply.toString()));
+      //approves allowance amounts and returns an array of allowances in Wei
+      async function prepareAllowanceAmounts(allowances: Array<{symbol: string, toSupply: number}>) {
+        const pools = ['AVAX', 'USD', 'ETH'];
+
+        const allowancesInWei = new Array(pools.length).fill(0);
+        for (const allowance of allowances) {
+          const token = getTokenContract(allowance.symbol)!;
+          let decimals = await token.decimals();
+          const amountInWei = parseUnits(allowance.toSupply.toFixed(decimals) ?? 0, decimals);
+          let index = pools.findIndex(asset => asset === allowance.symbol)
+          allowancesInWei[index] = amountInWei;
+          await token.connect(performer).approve(wrappedLoan.address, amountInWei);
+        }
+
+        return allowancesInWei;
       }
 
       async function prepareRepayAmounts(repayAmounts: Array<{symbol: string, toRepay: number}>) {
@@ -481,7 +639,19 @@ describe('Smart loan',  () => {
         return amounts;
       }
 
-      await wrappedLoan.liquidateLoan(await prepareRepayAmounts(repayAmounts));
+      const allowances = await prepareAllowanceAmounts(allowanceAmounts);
+
+      switch (performedAction) {
+        case 'LIQUIDATE':
+          await wrappedLoan.liquidateLoan(await prepareRepayAmounts(repayAmounts));
+          break;
+        case 'HEAL':
+          await wrappedLoan.healBankruptLoan(allowances);
+          break;
+        case 'CLOSE':
+          await wrappedLoan.closeLoan(allowances);
+          break;
+      }
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
     }

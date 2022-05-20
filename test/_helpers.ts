@@ -88,12 +88,21 @@ export const getAvailableToRepay = function (
 };
 
 export const toRepay = function (
+    action: string,
     debt: number,
     initialTotalValue: number,
     targetLTV: number,
     bonus: number
 ) {
-    return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+    switch (action) {
+        case 'CLOSE':
+            return debt;
+        case 'HEAL':
+            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
+        default:
+            //liquidate
+            return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+    }
 }
 
 //simple model

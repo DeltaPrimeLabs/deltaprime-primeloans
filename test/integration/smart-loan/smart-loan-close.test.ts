@@ -266,6 +266,9 @@ describe('Smart loan',  () => {
     });
 
     it("should fund and borrow", async () => {
+      await wavaxTokenContract.connect(borrower).deposit({value: toWei("0.1")});
+      await wavaxTokenContract.connect(borrower).approve(wrappedLoan.address, toWei("0.1"));
+      await wrappedLoan.fund(toBytes32("AVAX"), toWei("0.1"));
       await usdTokenContract.connect(borrower).approve(wrappedLoan.address, toWei("400", usdTokenDecimalPlaces));
       await wrappedLoan.fund(toBytes32("USD"), toWei("400", usdTokenDecimalPlaces));
       await ethTokenContract.connect(borrower).approve(wrappedLoan.address, toWei("0.02"));
@@ -281,7 +284,7 @@ describe('Smart loan',  () => {
     });
 
     it("should fail a closeLoan attempt at the onlyOwner check", async () => {
-      await expect(wrappedLoan.connect(depositor).closeLoan()).to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(wrappedLoan.connect(depositor).closeLoan([0, 0, 0])).to.be.revertedWith("Ownable: caller is not the owner")
     });
 
     it("should perform an owner's closeLoan call", async () => {
@@ -291,13 +294,11 @@ describe('Smart loan',  () => {
       const previousBtcBorrowerBalance = formatUnits(await btcTokenContract.balanceOf(borrower.address), btcTokenDecimalPlaces);
       const previousLinkBorrowerBalance = fromWei(await linkTokenContract.balanceOf(borrower.address));
 
-
-
       const previousWavaxPoolBalance = fromWei(await wavaxTokenContract.balanceOf(wavaxPool.address));
       const previousUsdPoolBalance = formatUnits(await usdTokenContract.balanceOf(usdPool.address), usdTokenDecimalPlaces);
       const previousEthPoolBalance = fromWei(await ethTokenContract.balanceOf(ethPool.address));
 
-      await wrappedLoan.closeLoan();
+      await wrappedLoan.closeLoan([0, 0, 0]);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect(await wrappedLoan.getDebt()).to.be.equal(0);
@@ -311,7 +312,7 @@ describe('Smart loan',  () => {
       expect(balances[4]).to.be.equal(0);
 
       //comparing borrower balances
-      expect(fromWei(await wavaxTokenContract.balanceOf(borrower.address)) - previousWavaxBorrowerBalance).to.be.closeTo(0, 0.01);
+      expect(fromWei(await wavaxTokenContract.balanceOf(borrower.address)) - previousWavaxBorrowerBalance).to.be.closeTo(0.1, 0.01);
       expect(formatUnits(await usdTokenContract.balanceOf(borrower.address), usdTokenDecimalPlaces) - previousUsdBorrowerBalance).to.be.closeTo(400, 0.01);
       expect(fromWei(await ethTokenContract.balanceOf(borrower.address)) - previousEthBorrowerBalance).to.be.closeTo(0.02, 0.001);
       expect(formatUnits(await btcTokenContract.balanceOf(borrower.address), btcTokenDecimalPlaces) - previousBtcBorrowerBalance).to.be.closeTo(0.001, 0.00001);
