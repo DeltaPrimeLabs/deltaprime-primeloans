@@ -10,6 +10,9 @@ import "./openzeppelinVirtual/BeaconProxyVirtual.sol";
 contract DiamondBeaconProxy is BeaconProxyVirtual {
     constructor(address beacon, bytes memory data) payable BeaconProxyVirtual(beacon, data) {}
 
+    /* ========== RECEIVE AVAX FUNCTION ========== */
+    receive() external payable override {}
+
     /**
      * @dev Returns the current implementation address of the associated beacon.
      */

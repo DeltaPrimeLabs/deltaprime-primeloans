@@ -1,9 +1,13 @@
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {getFixedGasSigners} from "../../_helpers";
+import {getFixedGasSigners, recompileSmartLoanLib} from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {MockSmartLoan, MockSmartLoan__factory} from "../../../typechain";
+import {
+  MockSmartLoanLogicFacetSetValues,
+  MockSmartLoanLogicFacetSetValues__factory
+} from "../../../typechain";
+import {ethers} from "hardhat";
 
 chai.use(solidity);
 
@@ -14,15 +18,16 @@ describe('Smart loan',  () => {
 
 
   describe('A loan with edge LTV cases', () => {
-    let loan: MockSmartLoan,
+    let loan: MockSmartLoanLogicFacetSetValues,
         owner: SignerWithAddress;
 
     before("deploy provider, exchange and pool", async () => {
       [owner] = await getFixedGasSigners(10000000);
+      await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': ethers.constants.AddressZero}, ethers.constants.AddressZero, ethers.constants.AddressZero, 'lib');
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new MockSmartLoan__factory(owner).deploy());
+      loan = await (new MockSmartLoanLogicFacetSetValues__factory(owner).deploy());
     });
 
     it("should check debt equal to 0", async () => {

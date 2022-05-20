@@ -8,9 +8,7 @@ import VariableUtilisationRatesCalculatorArtifact
 import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import MockSmartLoanArtifact from '../../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
-import UpgradeableBeaconArtifact
-  from '../../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
+
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
@@ -18,7 +16,7 @@ import {
   deployAndInitPangolinExchangeContract,
   fromWei,
   getFixedGasSigners,
-  recompileSmartLoan,
+  recompileSmartLoanLib,
   toBytes32,
   toWei
 } from "../../_helpers";
@@ -26,25 +24,25 @@ import {syncTime} from "../../_syncTime"
 import {
   CompoundingIndex,
   ERC20Pool,
-  MockSmartLoanRedstoneProvider,
-  MockUpgradedGettersSmartLoan__factory,
+  MockSmartLoanLogicFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider__factory,
+  MockSmartLoanLogicFacetSetValues__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
-  SmartLoan,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator, YieldYakRouter__factory
+  VariableUtilisationRatesCalculator,
+  YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
 
+const {deployDiamond, deployFacet, replaceFacet} = require('./utils/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-
-const ZERO = ethers.constants.AddressZero;
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -65,7 +63,7 @@ describe('Smart loan - upgrading',  () => {
 
   describe('Check basic logic before and after upgrade', () => {
     let exchange: PangolinExchange,
-      loan: MockSmartLoanRedstoneProvider,
+      loan: MockSmartLoanLogicFacetRedstoneProvider,
       wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
       wavaxPool: ERC20Pool,
@@ -82,9 +80,11 @@ describe('Smart loan - upgrading',  () => {
       beacon: UpgradeableBeacon,
       AVAX_PRICE: number,
       USD_PRICE: number,
-      MOCK_PRICES: any;
+      MOCK_PRICES: any,
+      diamondAddress: any;
 
     before("should deploy provider, exchange, loansFactory and wavaxPool", async () => {
+      diamondAddress = await deployDiamond();
       [owner, oracle, depositor, borrower, other] = await getFixedGasSigners(10000000);
 
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
@@ -122,21 +122,18 @@ describe('Smart loan - upgrading',  () => {
       const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
       const borrowingIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
 
-      const artifact = await recompileSmartLoan(
-          "MockSmartLoanRedstoneProvider",
+      await recompileSmartLoanLib(
+          'SmartLoanLib',
           [0],
           [wavaxTokenAddress],
           { "AVAX": wavaxPool.address},
           exchange.address,
           yakRouterContract.address,
-          'mock'
+          'lib'
       );
-      let implementation = await deployContract(owner, artifact) as SmartLoan;
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
 
-      await smartLoansFactory.initialize(implementation.address);
-
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
+      await smartLoansFactory.initialize(diamondAddress);
 
       await wavaxPool.initialize(
           variableUtilisationRatesCalculatorERC20.address,
@@ -164,8 +161,8 @@ describe('Smart loan - upgrading',  () => {
 
       await wrappedSmartLoansFactory.createLoan();
 
-      const loanAddress = await smartLoansFactory.getLoanForOwner(borrower.address);
-      loan = ((await new ethers.Contract(loanAddress, MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(borrower);
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(borrower)).attach(loan_proxy_address);
     });
 
 
@@ -200,23 +197,31 @@ describe('Smart loan - upgrading',  () => {
     });
 
     it("should not allow to upgrade from non-owner", async () => {
-      await expect(beacon.connect(other).upgradeTo(other.address))
-        .to.be.revertedWith("Ownable: caller is not the owner");
+      const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress)
+      await expect(diamondCut.connect(borrower).diamondCut([], ethers.constants.AddressZero, [])).to.be.revertedWith('LibDiamond: Must be contract owner');
     });
 
 
     it("should upgrade", async () => {
-      const loanV2 = await (new MockUpgradedGettersSmartLoan__factory(owner).deploy());
+      await replaceFacet("MockSmartLoanLogicFacetSetValues", diamondAddress, ['setDebt', 'setValue'])
 
-      await beacon.connect(owner).upgradeTo(loanV2.address);
+      loan = await (new MockSmartLoanLogicFacetSetValues__factory(borrower)).attach(loan.address);
+      wrappedLoan = WrapperBuilder
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+
+      await wrappedLoan.setDebt(777);
+      await wrappedLoan.setValue(2137);
 
       //The mock loan has a hardcoded total value of 777
-      expect(await wrappedLoan.getTotalValue()).to.be.equal(777);
-      expect(await wrappedLoan.getPercentagePrecision()).to.be.equal(1001);
-      expect(await wrappedLoan.getMinSelloutLtv()).to.be.equal(400);
-      expect(await wrappedLoan.getMaxLtv()).to.be.equal(200);
-      expect(await wrappedLoan.getPoolAddress(toBytes32("AVAX"))).to.be.equal(ZERO);
-      expect(await wrappedLoan.getExchange()).to.be.equal(ZERO);
+      expect(await wrappedLoan.getDebt()).to.be.equal(777);
+      expect(await wrappedLoan.getTotalValue()).to.be.equal(2137);
     });
   });
 });

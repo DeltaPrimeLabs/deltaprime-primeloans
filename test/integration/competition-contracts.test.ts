@@ -23,7 +23,7 @@ import {
     deployAndInitPangolinExchangeContract,
     fromWei,
     getFixedGasSigners,
-    recompileSmartLoan, syncTime,
+    recompileSmartLoanLib, syncTime,
     toBytes32,
     toWei
 } from "../_helpers";
@@ -32,9 +32,6 @@ import {
     MockBorrowAccessNFT,
     CompoundingIndex,
     MockDepositAccessNFT,
-    MockSmartLoanRedstoneProvider,
-    MockSmartLoanRedstoneProviderLimitedCollateral,
-    MockSmartLoanRedstoneProvider__factory,
     PangolinExchange,
     ERC20Pool__factory,
     PoolTUP,
@@ -44,19 +41,20 @@ import {
     SmartLoansFactory,
     SmartLoansFactory__factory,
     SmartLoansFactoryTUP,
-    UpgradeableBeacon__factory,
     ERC20Pool,
-    YieldYakRouter__factory
+    YieldYakRouter__factory,
+    MockSmartLoanLogicFacetRedstoneProvider,
+    MockSmartLoanLogicFacetRedstoneProvider__factory,
+    MockSmartLoanLogicFacetLimitedCollateral__factory
 } from "../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
 
 chai.use(solidity);
 
-const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
-const SMART_LOAN_MOCK_UPGRADED = "MockSmartLoanRedstoneProviderLimitedCollateral";
+const {deployDiamond, deployFacet, replaceFacet} = require('./smart-loan/utils/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
+const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const MAX_COLLATERAL = config.MAX_COLLATERAL;
 
@@ -75,7 +73,7 @@ const wavaxAbi = [
 
 describe('Trading competition upgraded contracts test', () => {
     let implementation: SmartLoan,
-        loan: SmartLoan,
+        loan: MockSmartLoanLogicFacetRedstoneProvider,
         smartLoansFactoryImplementation: Contract,
         smartLoansFactory: SmartLoansFactory,
         smartLoansFactoryTUP: SmartLoansFactoryTUP,
@@ -99,10 +97,12 @@ describe('Trading competition upgraded contracts test', () => {
         maxCollateral: BigNumber,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
-        USD_PRICE: number;
+        USD_PRICE: number,
+        diamondAddress: any;
 
     before(async () => {
         await syncTime();
+        diamondAddress = await deployDiamond();
         [owner, admin, depositor, depositorWithoutNFT, user] = await getFixedGasSigners(10000000);
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -150,23 +150,15 @@ describe('Trading competition upgraded contracts test', () => {
         ]);
 
         // Smart Loan Implementation
-        const artifact = await recompileSmartLoan(
-            SMART_LOAN_MOCK,
-            [0],
-            [wavaxTokenContract.address],
-            {"AVAX": wavaxPool.address},
-            exchange.address,
-            yakRouterContract.address,
-            'mock'
-        );
-        implementation = await deployContract(owner, artifact) as SmartLoan;
+        await recompileSmartLoanLib('SmartLoanLib', [0], [wavaxTokenContract.address], {"AVAX": wavaxPool.address},  exchange.address, yakRouterContract.address,'lib');
+        await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
 
         // Not upgraded smartLoansFactory with TUP
         smartLoansFactoryImplementation = (await deployContract(owner, SmartLoansFactoryArtifact)) as SmartLoansFactory;
         smartLoansFactoryTUP = (await deployContract(owner, SmartLoansFactoryTUPArtifact, [smartLoansFactoryImplementation.address, admin.address, []])) as SmartLoansFactoryTUP;
         smartLoansFactory = await new SmartLoansFactory__factory(owner).attach(smartLoansFactoryTUP.address);
 
-        await smartLoansFactory.connect(owner).initialize(implementation.address);
+        await smartLoansFactory.connect(owner).initialize(diamondAddress);
 
         await wavaxPool.initialize(
             mockVariableUtilisationRatesCalculator.address,
@@ -214,8 +206,9 @@ describe('Trading competition upgraded contracts test', () => {
 
     it(`should add and withdraw more than ${MAX_COLLATERAL} USD collateral in total with the base loan contract version`, async () => {
         await smartLoansFactory.connect(user).createLoan();
-        const SLAddress = await smartLoansFactory.getLoanForOwner(user.address);
-        loan = await (new MockSmartLoanRedstoneProvider__factory(user).attach(SLAddress));
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+        loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(owner)).attach(loan_proxy_address);
+
         loan = WrapperBuilder
             .mockLite(loan.connect(user))
             .using(
@@ -236,20 +229,27 @@ describe('Trading competition upgraded contracts test', () => {
     });
 
     it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
-        const artifact = await recompileSmartLoan(
-            SMART_LOAN_MOCK_UPGRADED,
+        await recompileSmartLoanLib(
+            'SmartLoanLib',
             [0],
             [wavaxTokenContract.address],
-            { "AVAX": poolTUP.address },
+            {"AVAX": poolTUP.address},
             exchange.address,
             yakRouterContract.address,
-            'mock'
+            'lib'
         );
+        await replaceFacet("MockSmartLoanLogicFacetLimitedCollateral", diamondAddress)
 
-        implementation = await deployContract(owner, artifact) as SmartLoan;
-        const beaconAddress = await smartLoansFactory.connect(owner).upgradeableBeacon.call(0);
-        const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
-        await beacon.upgradeTo(implementation.address);
+        loan = await (new MockSmartLoanLogicFacetLimitedCollateral__factory(owner)).attach(loan.address);
+        loan = WrapperBuilder
+            .mockLite(loan)
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
 
         let moreThanMax = maxCollateral.add(toWei("1"));
 

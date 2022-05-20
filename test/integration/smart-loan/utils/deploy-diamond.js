@@ -28,7 +28,6 @@ async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions 
         })
     }
 
-    console.log('Diamond Cut:', cut)
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress)
     let tx
     let receipt
@@ -49,13 +48,13 @@ async function deployFacet(facetName, diamondAddress) {
     const facet = await Facet.deploy()
     await facet.deployed()
     console.log(`${facetName} deployed: ${facet.address}`);
+    console.log(`RETURN EXCHANGE: ${await facet.getExchange()}`);
 
     cut.push({
         facetAddress: facet.address,
         action: FacetCutAction.Add,
         functionSelectors: getSelectors(facet)
     })
-    console.log('Diamond Cut:', cut)
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress)
     let tx
     let receipt
@@ -120,8 +119,6 @@ async function deployDiamond () {
     }
 
     // upgrade diamond with facets
-    console.log('')
-    console.log('Diamond Cut:', cut)
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamond.address)
     let tx
     let receipt

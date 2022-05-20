@@ -29,7 +29,6 @@ import {
   MockToken,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
-  SmartLoan,
   SmartLoansFactory,
   VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
@@ -43,7 +42,6 @@ const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
-const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -147,14 +145,17 @@ describe('Smart loan',  () => {
       await mockUsdToken.connect(depositor).approve(usdPool.address, toWei("1000"));
       await usdPool.connect(depositor).deposit(toWei("1000"));
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+      let supportedAssetss = [
         new Asset(toBytes32('AVAX'), wavaxTokenAddress),
         new Asset(toBytes32('USD'), mockUsdToken.address),
         new Asset(toBytes32('ETH'), ethTokenAddress),
-      ]);
+      ]
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssetss);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
       await recompileSmartLoanLib("SmartLoanLib", [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, yakRouterContract.address, 'lib');
+
       await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress)
 
       await smartLoansFactory.initialize(diamondAddress);

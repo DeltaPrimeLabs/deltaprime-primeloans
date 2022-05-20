@@ -10,7 +10,6 @@ import { LibDiamond } from "../lib/LibDiamond.sol";
 import "../mock/WAVAX.sol";
 import "../ERC20Pool.sol";
 
-
 // TODO: Optimize getting diamondStorage - once per function
 contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     using TransferHelper for address payable;
@@ -324,6 +323,17 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
     /* ========== VIEW FUNCTIONS ========== */
 
+    function getLiquidationBonus() public view virtual returns (uint256) {
+        return SmartLoanLib.getLiquidationBonus();
+    }
+
+    function getMaxLtv() public view virtual returns (uint256) {
+        return SmartLoanLib.getMaxLtv();
+    }
+
+    function getPercentagePrecision() public view virtual returns (uint256) {
+        return SmartLoanLib.getPercentagePrecision();
+    }
 
     /**
      * Returns the current debt from all lending pools
@@ -468,6 +478,10 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         address assetAddress = SmartLoanLib.getExchange().getAssetAddress(_asset);
         IERC20Metadata token = IERC20Metadata(assetAddress);
         return token;
+    }
+
+    function getExchange() public view returns (address) {
+        return address(SmartLoanLib.getExchange());
     }
 
     /**

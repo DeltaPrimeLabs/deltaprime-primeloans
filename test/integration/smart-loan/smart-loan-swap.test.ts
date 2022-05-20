@@ -1,4 +1,3 @@
-
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
@@ -10,7 +9,6 @@ import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20P
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockUsdArtifact from "../../../artifacts/contracts/mock/MockUsd.sol/MockUsd.json";
-import MockSmartLoanArtifact from '../../../artifacts/contracts/mock/MockSmartLoan.sol/MockSmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
@@ -19,15 +17,15 @@ import {
   formatUnits,
   fromWei,
   getFixedGasSigners,
-  recompileSmartLoan,
+  recompileSmartLoanLib,
   toBytes32,
   toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
   CompoundingIndex,
-  ERC20Pool,
-  MockSmartLoanRedstoneProvider,
+  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+
   MockUsd,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
@@ -40,12 +38,12 @@ import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);
 
+const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
-const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -66,8 +64,7 @@ describe('Smart loan',  () => {
   describe('A loan without debt', () => {
     let exchange: PangolinExchange,
       smartLoansFactory: SmartLoansFactory,
-      implementation: SmartLoan,
-      loan: MockSmartLoanRedstoneProvider,
+      loan: MockSmartLoanLogicFacetRedstoneProvider,
       wrappedLoan: any,
       mockUsdToken: MockUsd,
       wavaxTokenContract: Contract,
@@ -82,9 +79,10 @@ describe('Smart loan',  () => {
       AVAX_PRICE: number,
       USD_PRICE: number,
       ETH_PRICE: number,
-      artifact: any;
+      diamondAddress: any;
 
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
+      diamondAddress = await deployDiamond();
       [owner, depositor] = await getFixedGasSigners(10000000);
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
@@ -156,25 +154,25 @@ describe('Smart loan',  () => {
       ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(
-        SMART_LOAN_MOCK,
-        [1],
-        [mockUsdToken.address],
-        { "USD": usdPool.address} ,
-        exchange.address,
-        yakRouterContract.address,
-        'mock'
+      await recompileSmartLoanLib(
+          'SmartLoanLib',
+          [1],
+          [mockUsdToken.address],
+          { "USD": usdPool.address},
+          exchange.address,
+          yakRouterContract.address,
+          'lib'
       );
-      implementation = await deployContract(owner, artifact) as SmartLoan;
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
 
-      await smartLoansFactory.initialize(implementation.address);
+      await smartLoansFactory.initialize(diamondAddress);
     });
 
     it("should deploy a smart loan", async () => {
       await smartLoansFactory.connect(owner).createLoan();
 
-      const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
-      loan = ((await new ethers.Contract(loanAddress, MockSmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(owner);
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(owner)).attach(loan_proxy_address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
