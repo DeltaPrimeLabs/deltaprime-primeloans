@@ -24,7 +24,7 @@ library LibDiamond {
     }
 
     struct DiamondStorage {
-        // TODO: Change to contstants in faucet?
+        // TODO: Change to contstants in SmartLoanLib?
         // SmartLoanProperties variables & constants
         uint256 _PERCENTAGE_PRECISION;
         // 10%

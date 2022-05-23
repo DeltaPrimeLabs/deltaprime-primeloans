@@ -23,7 +23,6 @@ contract DiamondInit {
     // You can add parameters to this function in order to pass in 
     // data to set your own state variables
     function init() external {
-        // TODO: Make sure that contract can be initialized only once?
         // adding ERC165 data
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         require(!ds._initialized, "DiamondInit: contract is already initialized");

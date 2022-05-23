@@ -10,7 +10,7 @@ import { LibDiamond } from "../lib/LibDiamond.sol";
 import "../mock/WAVAX.sol";
 import "../ERC20Pool.sol";
 
-// TODO: Optimize getting diamondStorage - once per function
+
 contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     using TransferHelper for address payable;
     using TransferHelper for address;
@@ -160,6 +160,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
         uint256 i;
 
+        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
         for (i = 0; i < SmartLoanLib.getPoolsAssetsIndices().length; i++) {
             uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
             IERC20Metadata token = getERC20TokenInstance(assets[assetIndex]);
@@ -440,6 +441,8 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
+
+        // TODO: Save getExchange() results to a in-memory variable?
         address(soldToken).safeTransfer(address(SmartLoanLib.getExchange()), _exactSold);
 
         uint256[] memory amounts = SmartLoanLib.getExchange().swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
@@ -492,6 +495,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     function calculateDebt(bytes32[] memory _assets, uint256[] memory _prices) internal view virtual returns (uint256) {
         uint256 debt = 0;
 
+        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
         for (uint256 i = 0; i < SmartLoanLib.getPoolsAssetsIndices().length; i++) {
             uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
             IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
@@ -515,6 +519,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
         uint256 i;
 
+        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
         for (i = 0; i < length; i++) {
             uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
             IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
@@ -614,6 +619,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
             token.balanceOf(address(this))
         );
 
+        // TODO: Save getExchange() result to a in-memory variable?
         if (swapped > 0) {
             address(token).safeTransfer(address(SmartLoanLib.getExchange()), swapped);
             (bool success, bytes memory result) = address(SmartLoanLib.getExchange()).call{value: 0}(

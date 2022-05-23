@@ -9,8 +9,6 @@ import "../mock/WAVAX.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library SmartLoanLib {
-    // TODO: Move some of those to constants to save gas on reading storage
-    // TODO: Add setters (for example for _liquidationInProgress flag
 
     uint256 private constant _PERCENTAGE_PRECISION = 1000;
     // 10%
