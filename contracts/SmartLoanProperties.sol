@@ -13,8 +13,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /**
  * @title SmartLoanProperties
- * A contract that holds SmartLoan related properties.
- * Every property has a virtual getter to allow overriding when upgrading a SmartLoan contract.
+ * A contract that holds SmartLoanDiamond related properties.
+ * Every property has a virtual getter to allow overriding when upgrading a SmartLoanDiamond contract.
  *
  */
 contract SmartLoanProperties {

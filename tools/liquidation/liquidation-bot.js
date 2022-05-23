@@ -88,7 +88,7 @@ const FACTORY_ABI = [
         "name": "createAndFundLoan",
         "outputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "",
                 "type": "address"
             }
@@ -101,7 +101,7 @@ const FACTORY_ABI = [
         "name": "createLoan",
         "outputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "",
                 "type": "address"
             }
@@ -114,7 +114,7 @@ const FACTORY_ABI = [
         "name": "getAllLoans",
         "outputs": [
             {
-                "internalType": "contract SmartLoan[]",
+                "internalType": "contract SmartLoanDiamond[]",
                 "name": "",
                 "type": "address[]"
             }
@@ -163,7 +163,7 @@ const FACTORY_ABI = [
     {
         "inputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "_smartLoanImplementation",
                 "type": "address"
             }

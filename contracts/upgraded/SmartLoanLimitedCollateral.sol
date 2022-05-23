@@ -1,9 +1,9 @@
 //// SPDX-License-Identifier: UNLICENSED
 //// Last deployed from commit: 0fbd3d2132ce3d3a12c966ee5e6ffba53aae9d33;
 //pragma solidity ^0.8.4;
-//import "../SmartLoan.sol";
+//import "../SmartLoanDiamond.sol";
 //
-//contract SmartLoanLimitedCollateral is SmartLoan {
+//contract SmartLoanLimitedCollateral is SmartLoanDiamond {
 //
 //   /**
 //    * Funds a loan with the value attached to the transaction

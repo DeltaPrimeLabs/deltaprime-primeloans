@@ -8,7 +8,7 @@ import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 import "./lib/SmartLoanLib.sol";
 
 /**
- * @title SmartLoan
+ * @title SmartLoanDiamond
  * A contract that is authorised to borrow funds using delegated credit.
  * It maintains solvency calculating the current value of assets and borrowings.
  * In case the value of assets held drops below certain level, part of the funds may be forcibly repaid.
@@ -16,8 +16,8 @@ import "./lib/SmartLoanLib.sol";
  *
  */
 
-// TODO: Change name to something like SmartLoanRouter or Diamond or whatever
-contract SmartLoan {
+// TODO: Add frontend changes to reflect facets' interfaces being used instead of one SmartLoan interface
+contract SmartLoanDiamond {
     constructor(address _contractOwner, address _diamondCutFacet) payable {
         LibDiamond.setContractOwner(_contractOwner);
 

@@ -228,16 +228,7 @@ describe('Trading competition upgraded contracts test', () => {
 
     });
 
-    it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
-        await recompileSmartLoanLib(
-            'SmartLoanLib',
-            [0],
-            [wavaxTokenContract.address],
-            {"AVAX": poolTUP.address},
-            exchange.address,
-            yakRouterContract.address,
-            'lib'
-        );
+    it("should upgrade to new SmartLoanDiamond for competition purposes and test collateral limitations", async () => {
         await replaceFacet("MockSmartLoanLogicFacetLimitedCollateral", diamondAddress)
 
         loan = await (new MockSmartLoanLogicFacetLimitedCollateral__factory(owner)).attach(loan.address);

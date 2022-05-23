@@ -203,7 +203,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Borrows the specified amount
    * It updates user borrowed balance, total borrowed amount and rates
    * @dev _amount the amount to be borrowed
-   * @dev It is only meant to be used by a SmartLoan
+   * @dev It is only meant to be used by a SmartLoanDiamond
    **/
   function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
     require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough funds in the pool to fund the loan");
@@ -223,7 +223,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /**
    * Repays the amount
    * It updates user borrowed balance, total borrowed amount and rates
-   * @dev It is only meant to be used by a SmartLoan
+   * @dev It is only meant to be used by a SmartLoanDiamond
    **/
   function repay(uint256 amount) external nonReentrant {
     _accumulateBorrowingInterest(msg.sender);

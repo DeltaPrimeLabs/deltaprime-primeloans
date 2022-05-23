@@ -15,7 +15,7 @@ contract MockSmartLoanLogicFacetSetValues is MockSmartLoanLogicFacetRedstoneProv
     }
 
     /**
-     * Dummy implementation used to test SmartLoan LTV logic
+     * Dummy implementation used to test SmartLoanDiamond LTV logic
      **/
     function getTotalValue() public view override returns (uint256) {
         return value;

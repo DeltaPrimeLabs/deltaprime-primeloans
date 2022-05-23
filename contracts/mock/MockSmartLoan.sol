@@ -8,7 +8,7 @@
 //
 ///**
 // * @title MockUpgradedSmartLoan
-// * @dev A mock implementation of a SmartLoan to check if upgrade mechanism correctly update contract logic
+// * @dev A mock implementation of a SmartLoanDiamond to check if upgrade mechanism correctly update contract logic
 // */
 //contract MockSmartLoan is MockSmartLoanRedstoneProvider {
 //  uint256 debt = 777;
@@ -23,7 +23,7 @@
 //  }
 //
 //  /**
-//   * Dummy implementation used to test SmartLoan LTV logic
+//   * Dummy implementation used to test SmartLoanDiamond LTV logic
 //   **/
 //  function getTotalValue() public view override returns (uint256) {
 //    return value;

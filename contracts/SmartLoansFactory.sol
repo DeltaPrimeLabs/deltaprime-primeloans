@@ -6,7 +6,7 @@ import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./SmartLoan.sol";
+import "./SmartLoanDiamond.sol";
 import "./proxies/DiamondBeaconProxy.sol";
 import "./faucets/DiamondInit.sol";
 import "./faucets/SmartLoanLogicFacet.sol";
@@ -25,24 +25,25 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     _;
   }
 
-  SmartLoan public smartLoanRouter;
+  SmartLoanDiamond public smartLoanDiamond;
 
   mapping(address => address) public ownersToLoans;
   mapping(address => address) public loansToOwners;
 
-  SmartLoan[] loans;
+  // TODO: Change to address[]?
+  SmartLoanDiamond[] loans;
 
-  function initialize(address payable _smartLoanRouter) external initializer {
-    smartLoanRouter = SmartLoan(_smartLoanRouter);
+  function initialize(address payable _smartLoanDiamond) external initializer {
+    smartLoanDiamond = SmartLoanDiamond(_smartLoanDiamond);
     __Ownable_init();
   }
 
-  function createLoan() public virtual oneLoanPerOwner returns (SmartLoan) {
+  function createLoan() public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
     DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(
-      payable(address(smartLoanRouter)),
+      payable(address(smartLoanDiamond)),
       abi.encodeWithSelector(DiamondInit.init.selector)
     );
-    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
+    SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
 
     //Update registry and emit event
     updateRegistry(smartLoan);
@@ -52,11 +53,11 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return smartLoan;
   }
 
-  function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public virtual oneLoanPerOwner returns (SmartLoan) {
-    DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(payable(address(smartLoanRouter)),
+  function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
+    DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(payable(address(smartLoanDiamond)),
       abi.encodeWithSelector(DiamondInit.init.selector)
     );
-    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
+    SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
 
     //Update registry and emit event
     updateRegistry(smartLoan);
@@ -73,7 +74,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return smartLoan;
   }
 
-  function updateRegistry(SmartLoan loan) internal {
+  function updateRegistry(SmartLoanDiamond loan) internal {
     ownersToLoans[msg.sender] = address(loan);
     loansToOwners[address(loan)] = msg.sender;
     loans.push(loan);
@@ -91,17 +92,17 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return loansToOwners[_loan];
   }
 
-  function getAllLoans() public view returns (SmartLoan[] memory) {
+  function getAllLoans() public view returns (SmartLoanDiamond[] memory) {
     return loans;
   }
 
   /**
    * @dev emitted after closing a loan by the owner
-   * @param accountAddress address of a new SmartLoan
-   * @param accountAddress account creating a SmartLoan
+   * @param accountAddress address of a new SmartLoanDiamond
+   * @param accountAddress account creating a SmartLoanDiamond
    * @param collateralAsset asset used as initial collateral
    * @param collateralAmount amount of asset used as initial collateral
-   * @param initialDebt initial debt of a SmartLoan
+   * @param initialDebt initial debt of a SmartLoanDiamond
    **/
   event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount, uint256 initialDebt);
 }

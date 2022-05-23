@@ -79,14 +79,10 @@ async function deployDiamond () {
     console.log('DiamondCutFacet deployed:', diamondCutFacet.address)
 
     // deploy Diamond
-    const Diamond = await ethers.getContractFactory('SmartLoan')
+    const Diamond = await ethers.getContractFactory('SmartLoanDiamond')
     const diamond = await Diamond.deploy(contractOwner.address, diamondCutFacet.address)
     await diamond.deployed()
     console.log('Diamond deployed:', diamond.address)
-
-    // console.log('About to revert with error now...')
-    // let test = await ethers.getContract("SmartLoan");
-    // console.log(`SMART LOAN ADDDDRESS: ${test.address}`);
 
     // deploy DiamondInit
     // DiamondInit provides a function that is called when the diamond is upgraded to initialize state variables

@@ -5,11 +5,11 @@ import "../abstract/NFTAccess.sol";
 import "../SmartLoansFactory.sol";
 
 contract MockSmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
-    function createLoan() public override hasAccessNFT returns (SmartLoan) {
+    function createLoan() public override hasAccessNFT returns (SmartLoanDiamond) {
         return super.createLoan();
     }
 
-    function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public override hasAccessNFT returns (SmartLoan) {
+    function createAndFundLoan(bytes32 fundedAsset, uint256 _amount, uint256 _initialDebt) public override hasAccessNFT returns (SmartLoanDiamond) {
         return super.createAndFundLoan(fundedAsset, _amount, _initialDebt);
     }
 }

@@ -2,14 +2,14 @@
 //// Last deployed from commit: ;
 //pragma solidity ^0.8.4;
 //
-//import "../SmartLoan.sol";
+//import "../SmartLoanDiamond.sol";
 //
 ///**
 // * @title MockSmartLoanRedstoneProvider
 // * A contract that overrides Redstone-Avalanche provider to the default one for test purposes (mockLite) uses default
 // *
 // */
-//contract MockSmartLoanRedstoneProvider is SmartLoan {
+//contract MockSmartLoanRedstoneProvider is SmartLoanDiamond {
 //  /**
 //   * Override trustedSigner getter for safety reasons
 //   **/

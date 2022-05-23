@@ -209,7 +209,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /**
    * Repays the message value
    * It updates user borrowed balance, total borrowed amount and rates
-   * @dev It is only meant to be used by the SmartLoan.
+   * @dev It is only meant to be used by the SmartLoanDiamond.
    **/
   function repay() external payable nonReentrant {
     _accumulateBorrowingInterest(msg.sender);

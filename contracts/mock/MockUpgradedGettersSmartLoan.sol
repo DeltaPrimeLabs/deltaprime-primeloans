@@ -5,7 +5,7 @@
 //import "./MockSmartLoanRedstoneProvider.sol";
 //
 ///**
-// * @title SmartLoan
+// * @title SmartLoanDiamond
 // * A contract that is authorised to borrow funds using delegated credit.
 // * It maintains solvency calculating the current value of assets and borrowings.
 // * In case the value of assets held drops below certain level, part of the funds may be forcibly repaid.
