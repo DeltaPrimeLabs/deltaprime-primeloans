@@ -194,7 +194,9 @@ export default {
         loan.iface.getEventTopic("Redeemed"),
         loan.iface.getEventTopic("Borrowed"),
         loan.iface.getEventTopic("Repaid"),
-        loan.iface.getEventTopic("Liquidated")
+        loan.iface.getEventTopic("Liquidated"),
+        loan.iface.getEventTopic("Staked"),
+        loan.iface.getEventTopic("Unstaked")
       ];
 
       const logs = (await fetchEventsInBatches(loan.address, topics, provider, config.COMPETITION_START_BLOCK)).flat();
