@@ -54,39 +54,6 @@ export const getSelloutRepayAmount = async function (
   return (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1) * 1.04;
 };
 
-export const getAssetPrice = function(
-    symbol: string,
-    MOCK_PRICES: Array<{symbol: string, value: number}>
-) {
-    return MOCK_PRICES.find((el: any) => el.symbol == symbol)!.value;
-}
-
-export const suppliedAmounts = function(
-    assetProportions: Array<{symbol: string, proportion: number}>,
-    suppliedUsdAmount: number,
-    mockPrices: Array<{symbol: string, value: number}>
-) {
-    let sumOfProportions = 0;
-    assetProportions.forEach(asset => sumOfProportions += asset.proportion);
-    return assetProportions.map(asset => { return { symbol: asset.symbol, toSupply: asset.proportion / sumOfProportions * suppliedUsdAmount / getAssetPrice(asset.symbol, mockPrices)}});
-}
-
-export const getAvailableToRepay = function (
-    balances: Array<number>,
-    prices: Array<number>,
-    debts: Array<number>,
-    poolAssetsIndices: Array<number>
-) {
-    let availableToRepay = 0;
-    poolAssetsIndices.forEach(
-        (index, i) => {
-            availableToRepay += Math.min(balances[index], debts[i]) * prices[index] / 10**8;
-        }
-    );
-
-    return availableToRepay;
-};
-
 export const toRepay = function (
     action: string,
     debt: number,
@@ -97,24 +64,53 @@ export const toRepay = function (
     switch (action) {
         case 'CLOSE':
             return debt;
-        case 'HEAL':
-            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
         default:
             //liquidate
-            return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+            if (initialTotalValue >= debt) {
+                return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+            } else {
+                //bankrupt loan
+                return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
+            }
     }
 }
 
-//simple model
+//simple model: we iterate over pools and repay their debts based on how much is left to repay in USD
 export const getRepayAmounts = function (
-    assetProportions: Array<{symbol: string, proportion: number}>,
-    toRepay: number,
+    debts: Array<number>,
+    poolAssetsIndices: Array<number>,
+    toRepayInUsd: number,
     mockPrices: Array<{symbol: string, value: number}>
 ) {
-    let sumOfProportions = 0;
-    assetProportions.forEach(asset => sumOfProportions += asset.proportion);
+    let repayAmounts: Array<number> = [];
+    let leftToRepayInUsd = toRepayInUsd;
+    poolAssetsIndices.forEach(
+        (index, i) => {
+            let availableToRepayInUsd = debts[i] * mockPrices[index].value;
+            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+            leftToRepayInUsd -= repaidToPool;
+            repayAmounts[i] = repaidToPool / mockPrices[index].value;
+        }
+    );
 
-    return assetProportions.map(asset => { return { symbol: asset.symbol, toRepay: toRepay * asset.proportion / getAssetPrice(asset.symbol, mockPrices) / sumOfProportions } });
+    //repayAmounts are measured in appropriate tokens (not USD)
+    return repayAmounts;
+}
+
+export const toSupply = function(
+    poolAssetsIndices: Array<number>,
+    balances: Array<number>,
+    repayAmounts: Array<number>
+) {
+    //multiplied by 1.00001 to account for limited accuracy of calculations
+    let toSupply: Array<number> = [];
+
+    poolAssetsIndices.forEach(
+        (index, i) => {
+            toSupply[i] = 1.00001 * Math.max(repayAmounts[i] - balances[index], 0);
+        }
+    );
+    return toSupply;
 }
 
 export const getFixedGasSigners = async function (gasLimit: number) {

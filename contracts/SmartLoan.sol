@@ -161,7 +161,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /**
   * This function can only be accessed by the owner and allows closing all positions and repaying all debts.
- * @param _amountsProvided amounts provided by owner to close a loan when bankrupted. If solvent
+  * @param _amountsProvided amounts provided by owner to close a loan when bankrupted. If solvent
   * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan(uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
@@ -220,134 +220,29 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
 
   /**
-   * This function can be accessed by any user when Prime Account is insolvent and perform partial liquidation
-   * (selling assets, closing positions and repaying debts) to bring the account back to a solvent state. At the end
-   * of liquidation resulting solvency of account is checked to make sure that the account is between maximum and minimum
-   * solvency.
-   * To diminish the potential effect of manipulation of liquidity pools by a liquidator, there are no swaps performed
-   * during liquidation. A liquidator has to approve adequate amount of tokens to repay debts to liquidity pools if
+ * This function can be accessed by any user when Prime Account is insolvent or bankrupt insolvent and repay part of the loan
+ * with his approved tokens.
+ * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
+ * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
+ * @dev This function uses the redstone-evm-connector
+   * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
+   **/
+  function unsafeLiquidateLoan(uint256[] memory _amountsToRepay) external payable nonReentrant {
+    liquidate(_amountsToRepay, true);
+  }
+
+
+  /**
+   * This function can be accessed by any user when Prime Account is critically insolvent and liquidate part of the loan
+   * with his approved tokens.
+   * A liquidator has to approve adequate amount of tokens to repay debts to liquidity pools if
    * there is not enough of them in a SmartLoan. For that he will receive the corresponding amount from SmartLoan
    * with the same USD value + bonus.
    * @dev This function uses the redstone-evm-connector
-   * @param _amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPoolsAssetsIndices method)
+   * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
    **/
   function liquidateLoan(uint256[] memory _amountsToRepay) external payable nonReentrant {
-    bytes32[] memory assets = getExchange().getAllAssets();
-    uint256[] memory prices = getPricesFromMsg(assets);
-
-    require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
-    require(getDebt() < getTotalValue(), "Trying to liquidate bankrupt loan");
-
-    uint256 suppliedInUSD;
-    uint256 repaidInUSD;
-
-    for (uint256 i; i < getPoolsAssetsIndices().length; i++) {
-      uint256 poolAssetIndex = getPoolsAssetsIndices()[i];
-      IERC20Metadata token = getERC20TokenInstance(assets[poolAssetIndex]);
-
-      uint256 balance = token.balanceOf(address(this));
-      uint256 allowance = token.allowance(msg.sender, address(this));
-      uint256 needed;
-
-      if (_amountsToRepay[i] > balance) {
-        needed = _amountsToRepay[i] - balance;
-      }
-
-      if (needed > 0) {
-        require(needed <= allowance, "Not enough allowance for the token");
-
-        address(token).safeTransferFrom(msg.sender, address(this), needed);
-        suppliedInUSD += needed * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
-      }
-
-      ERC20Pool pool = ERC20Pool(getPoolAddress(assets[poolAssetIndex]));
-
-      address(token).safeApprove(address(pool), 0);
-      address(token).safeApprove(address(pool), _amountsToRepay[i]);
-
-      repaidInUSD += _amountsToRepay[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
-
-      pool.repay(_amountsToRepay[i]);
-    }
-
-    uint256 valueOfTokens = calculateAssetsValue(assets, prices);
-    uint256 total = getTotalValue();
-
-    uint256 bonus = repaidInUSD * getLiquidationBonus() / getPercentagePrecision();
-
-    uint256 partToReturn = 10**18;
-
-    if (valueOfTokens >= suppliedInUSD + bonus) {
-      partToReturn = suppliedInUSD * 10**18 / total + bonus * 10**18 / total;
-    } else {
-      //meaning staking or LP positions
-      uint256 toReturnFromPositions = suppliedInUSD + bonus - valueOfTokens;
-      liquidatePositions(toReturnFromPositions, msg.sender, prices);
-    }
-
-    for (uint256 i; i < assets.length; i++) {
-      IERC20Metadata token = getERC20TokenInstance(assets[i]);
-      uint256 balance = token.balanceOf(address(this));
-
-      address(token).safeTransfer(msg.sender, balance * partToReturn / 10**18);
-    }
-
-    uint256 LTV = calculateLTV(assets, prices);
-
-    emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
-
-    if (msg.sender != owner()) {
-      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
-    }
-
-    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
-    _liquidationInProgress = false;
-
-  }
-
-  /**
-   * This function can be accessed by any user when Prime Account is critically insolvent and repay part of the loan
-   * with his approved tokens.
-   * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't return any tokens to liquidator, nor give him
-   * any bonus. It's purpose is to bring the loan to solvent position and make the loan again fully repayable.
-   * @dev This function uses the redstone-evm-connector
-   * @param _amountsProvided amounts of tokens provided by liquidator for repayment
-   **/
-  function healBankruptLoan(uint256[] memory _amountsProvided) external payable nonReentrant {
-    //to save critically insolvent loans
-    bytes32[] memory assets = getExchange().getAllAssets();
-    uint256[] memory prices = getPricesFromMsg(assets);
-
-    uint256 repaidInUSD;
-
-    require(getDebt() > getTotalValue(), "Loan is not bankrupt. Cannot perform healing");
-
-    for (uint256 i; i < getPoolsAssetsIndices().length; i++) {
-      uint256 poolAssetIndex = getPoolsAssetsIndices()[i];
-      IERC20Metadata token = getERC20TokenInstance(assets[poolAssetIndex]);
-
-      uint256 allowance = token.allowance(msg.sender, address(this));
-
-      require(allowance >= _amountsProvided[i], "Not enough allowance for token");
-      address(token).safeTransferFrom(msg.sender, address(this), _amountsProvided[i]);
-
-      ERC20Pool pool = ERC20Pool(getPoolAddress(assets[poolAssetIndex]));
-
-      address(token).safeApprove(address(pool), 0);
-      address(token).safeApprove(address(pool), _amountsProvided[i]);
-
-      repaidInUSD += _amountsProvided[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
-
-      pool.repay(_amountsProvided[i]);
-    }
-
-    uint256 LTV = calculateLTV(assets, prices);
-
-    if (msg.sender != owner()) {
-      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
-    }
-
-    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+    liquidate(_amountsToRepay, false);
   }
 
 
@@ -564,6 +459,101 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       return getMaxLtv();
     }
   }
+
+
+  /**
+   * This function can be accessed when Prime Account is insolvent and perform a partial liquidation of the loan
+   * (selling assets, closing positions and repaying debts) to bring the account back to a solvent state. At the end
+   * of liquidation resulting solvency of account is checked to make sure that the account is between maximum and minimum
+   * solvency.
+   * To diminish the potential effect of manipulation of liquidity pools by a liquidator, there are no swaps performed
+   * during liquidation.
+   * @dev This function uses the redstone-evm-connector
+   * @param _amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPoolsAssetsIndices method)
+   * @param _allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
+   **/
+  function liquidate(uint256[] memory _amountsToRepay, bool _allowUnprofitableLiquidation) internal {
+    bytes32[] memory assets = getExchange().getAllAssets();
+    uint256[] memory prices = getPricesFromMsg(assets);
+
+    require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
+    require(getDebt() < getTotalValue() || _allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
+
+    //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
+    bool healingLoan = _allowUnprofitableLiquidation && getDebt() > getTotalValue();
+
+    uint256 suppliedInUSD;
+    uint256 repaidInUSD;
+
+    for (uint256 i; i < getPoolsAssetsIndices().length; i++) {
+      uint256 poolAssetIndex = getPoolsAssetsIndices()[i];
+      IERC20Metadata token = getERC20TokenInstance(assets[poolAssetIndex]);
+
+      uint256 balance = token.balanceOf(address(this));
+      uint256 needed;
+
+      if (healingLoan) {
+        needed = _amountsToRepay[i];
+      } else if (_amountsToRepay[i] > balance) {
+        needed = healingLoan ? _amountsToRepay[i] : (_amountsToRepay[i] - balance);
+      }
+
+      if (needed > 0) {
+        require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
+
+        address(token).safeTransferFrom(msg.sender, address(this), needed);
+        suppliedInUSD += needed * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
+      }
+
+      ERC20Pool pool = ERC20Pool(getPoolAddress(assets[poolAssetIndex]));
+
+      address(token).safeApprove(address(pool), 0);
+      address(token).safeApprove(address(pool), _amountsToRepay[i]);
+
+      repaidInUSD += _amountsToRepay[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
+
+      pool.repay(_amountsToRepay[i]);
+    }
+
+    uint256 total = getTotalValue();
+    uint256 bonus;
+
+    //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
+    if (!healingLoan) {
+      uint256 valueOfTokens = calculateAssetsValue(assets, prices);
+
+      bonus = repaidInUSD * getLiquidationBonus() / getPercentagePrecision();
+
+      uint256 partToReturn = 10**18;
+
+      if (valueOfTokens >= suppliedInUSD + bonus) {
+        partToReturn = suppliedInUSD * 10**18 / total + bonus * 10**18 / total;
+      } else {
+        //meaning staking or LP positions
+        uint256 toReturnFromPositions = suppliedInUSD + bonus - valueOfTokens;
+        liquidatePositions(toReturnFromPositions, msg.sender, prices);
+      }
+
+      for (uint256 i; i < assets.length; i++) {
+        IERC20Metadata token = getERC20TokenInstance(assets[i]);
+        uint256 balance = token.balanceOf(address(this));
+
+        address(token).safeTransfer(msg.sender, balance * partToReturn / 10**18);
+      }
+    }
+
+    uint256 LTV = calculateLTV(assets, prices);
+
+    emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
+
+    if (msg.sender != owner()) {
+      require(LTV >= getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+    }
+
+    require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+    _liquidationInProgress = false;
+  }
+
 
   /**
    * Liquidates staking and LP positions and sends tokens to defined address
