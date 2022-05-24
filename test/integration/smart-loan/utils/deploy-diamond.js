@@ -4,7 +4,6 @@ const {ethers} = require("hardhat");
 
 const { getSelectors, FacetCutAction } = require('./diamond.js')
 
-// TODO: Refactor xd
 
 async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = []) {
     const cut = []

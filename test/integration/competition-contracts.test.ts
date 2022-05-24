@@ -37,7 +37,6 @@ import {
     PoolTUP,
     PoolWithAccessNFT,
     PoolWithAccessNFT__factory,
-    SmartLoan,
     SmartLoansFactory,
     SmartLoansFactory__factory,
     SmartLoansFactoryTUP,
@@ -72,8 +71,7 @@ const wavaxAbi = [
 ]
 
 describe('Trading competition upgraded contracts test', () => {
-    let implementation: SmartLoan,
-        loan: MockSmartLoanLogicFacetRedstoneProvider,
+    let loan: MockSmartLoanLogicFacetRedstoneProvider,
         smartLoansFactoryImplementation: Contract,
         smartLoansFactory: SmartLoansFactory,
         smartLoansFactoryTUP: SmartLoansFactoryTUP,

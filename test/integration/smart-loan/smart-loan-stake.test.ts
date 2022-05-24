@@ -26,7 +26,6 @@ import {
   CompoundingIndex, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
-  SmartLoan,
   SmartLoansFactory,
   VariableUtilisationRatesCalculator,
   WavaxPool,
@@ -66,7 +65,6 @@ describe('Smart loan',  () => {
   describe('A loan with staking operations', () => {
     let exchange: PangolinExchange,
       smartLoansFactory: SmartLoansFactory,
-      implementation: SmartLoan,
       yakRouterContract: Contract,
       yakStakingContract: Contract,
       loan: MockSmartLoanLogicFacetRedstoneProvider,

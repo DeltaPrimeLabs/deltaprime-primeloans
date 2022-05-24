@@ -3,7 +3,7 @@ import {
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
     PangolinExchange,
-    Pool, SmartLoan, SmartLoan__factory,
+    Pool, SmartLoanLogicFacet, SmartLoanLogicFacet__factory,
     SmartLoansFactory,
     SmartLoansFactory__factory,
     TransparentUpgradeableProxy,
@@ -29,8 +29,8 @@ describe('Smart loans factory - upgrading',  () => {
 
     describe('Check basic logic before and after upgrade', () => {
         let smartLoansFactory: SmartLoansFactory,
-            smartLoan: SmartLoan,
             pool: Pool,
+            smartLoan: SmartLoanLogicFacet,
             exchange: PangolinExchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
@@ -44,7 +44,7 @@ describe('Smart loans factory - upgrading',  () => {
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
-            smartLoan = await (new SmartLoan__factory(owner).deploy());
+            smartLoan = await (new SmartLoanLogicFacet__factory(owner).attach(proxy.address));
 
             await smartLoansFactory.connect(owner).initialize(smartLoan.address);
 
