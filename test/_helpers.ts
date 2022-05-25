@@ -64,14 +64,32 @@ export const toRepay = function (
     switch (action) {
         case 'CLOSE':
             return debt;
+        case 'HEAL':
+            //bankrupt loan
+            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
         default:
             //liquidate
-            if (initialTotalValue >= debt) {
-                return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
-            } else {
-                //bankrupt loan
-                return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
-            }
+            return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+
+    }
+}
+
+
+export const calculateBonus = function (
+    action: string,
+    debt: number,
+    initialTotalValue: number,
+    targetLTV: number,
+    maxBonus: number
+) {
+    switch (action) {
+        case 'CLOSE':
+            return 0;
+        case 'HEAL':
+            return 0;
+        default:
+            let possibleBonus = (1 - ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / debt) / targetLTV;
+            return Math.round(Math.min(possibleBonus, maxBonus) * 1000) / 1000;
     }
 }
 

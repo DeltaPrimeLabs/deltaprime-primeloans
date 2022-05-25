@@ -24,6 +24,17 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   using TransferHelper for address payable;
   using TransferHelper for address;
 
+  /** @param amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPoolsAssetsIndices method)
+    * @param liquidationBonus permil bonus for liquidator. Must be smaller or equal to getMaxLiquidationBonus(). Defined for
+    * liquidating loans where debt ~ total value
+    * @param allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
+    **/
+  struct LiquidationConfig {
+      uint256[] amountsToRepay;
+      uint256 liquidationBonus;
+      bool allowUnprofitableLiquidation;
+  }
+
   function initialize() external initializer {
     __Ownable_init();
     __ReentrancyGuard_init();
@@ -220,15 +231,16 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
 
   /**
- * This function can be accessed by any user when Prime Account is insolvent or bankrupt insolvent and repay part of the loan
- * with his approved tokens.
- * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
- * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
- * @dev This function uses the redstone-evm-connector
+   * This function can be accessed by any user when Prime Account is insolvent or bankrupt insolvent and repay part of the loan
+   * with his approved tokens.
+   * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
+   * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
+   * @dev This function uses the redstone-evm-connector
    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
+   * @param _liquidationBonus permil bonus for liquidator. Must be lower than getMaxLiquidationBonus()
    **/
-  function unsafeLiquidateLoan(uint256[] memory _amountsToRepay) external payable nonReentrant {
-    liquidate(_amountsToRepay, true);
+  function unsafeLiquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+    liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, true));
   }
 
 
@@ -240,9 +252,10 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * with the same USD value + bonus.
    * @dev This function uses the redstone-evm-connector
    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
+   * @param _liquidationBonus permil bonus for liquidator. Must be lower than getMaxLiquidationBonus()
    **/
-  function liquidateLoan(uint256[] memory _amountsToRepay) external payable nonReentrant {
-    liquidate(_amountsToRepay, false);
+  function liquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+    liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, false));
   }
 
 
@@ -435,6 +448,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 assetIndex = getPoolsAssetsIndices()[i];
       IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
       //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
+
       debt = debt + ERC20Pool(getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10
       / 10 ** token.decimals();
     }
@@ -469,18 +483,22 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * To diminish the potential effect of manipulation of liquidity pools by a liquidator, there are no swaps performed
    * during liquidation.
    * @dev This function uses the redstone-evm-connector
-   * @param _amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPoolsAssetsIndices method)
-   * @param _allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
+   * @param config configuration for liquidation
    **/
-  function liquidate(uint256[] memory _amountsToRepay, bool _allowUnprofitableLiquidation) internal {
+  function liquidate(LiquidationConfig memory config) internal {
     bytes32[] memory assets = getExchange().getAllAssets();
     uint256[] memory prices = getPricesFromMsg(assets);
 
-    require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
-    require(getDebt() < getTotalValue() || _allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
+    {
+      uint256 initialTotal = getTotalValue();
+      uint256 initialDebt = getDebt();
 
+      require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+      require(calculateLTV(assets, prices) >= getMaxLtv(), "Cannot sellout a solvent account");
+      require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
+    }
     //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
-    bool healingLoan = _allowUnprofitableLiquidation && getDebt() > getTotalValue();
+    bool healingLoan = config.allowUnprofitableLiquidation && getDebt() > getTotalValue();
 
     uint256 suppliedInUSD;
     uint256 repaidInUSD;
@@ -493,9 +511,9 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       uint256 needed;
 
       if (healingLoan) {
-        needed = _amountsToRepay[i];
-      } else if (_amountsToRepay[i] > balance) {
-        needed = healingLoan ? _amountsToRepay[i] : (_amountsToRepay[i] - balance);
+        needed = config.amountsToRepay[i];
+      } else if (config.amountsToRepay[i] > balance) {
+        needed = healingLoan ? config.amountsToRepay[i] : (config.amountsToRepay[i] - balance);
       }
 
       if (needed > 0) {
@@ -508,11 +526,11 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       ERC20Pool pool = ERC20Pool(getPoolAddress(assets[poolAssetIndex]));
 
       address(token).safeApprove(address(pool), 0);
-      address(token).safeApprove(address(pool), _amountsToRepay[i]);
+      address(token).safeApprove(address(pool), config.amountsToRepay[i]);
 
-      repaidInUSD += _amountsToRepay[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
+      repaidInUSD += config.amountsToRepay[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
 
-      pool.repay(_amountsToRepay[i]);
+      pool.repay(config.amountsToRepay[i]);
     }
 
     uint256 total = getTotalValue();
@@ -522,7 +540,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     if (!healingLoan) {
       uint256 valueOfTokens = calculateAssetsValue(assets, prices);
 
-      bonus = repaidInUSD * getLiquidationBonus() / getPercentagePrecision();
+      bonus = repaidInUSD * config.liquidationBonus / getPercentagePrecision();
 
       uint256 partToReturn = 10**18;
 

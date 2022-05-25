@@ -18,7 +18,7 @@ contract SmartLoanProperties {
 
   uint256 private constant _PERCENTAGE_PRECISION = 1000;
   // 10%
-  uint256 private constant _LIQUIDATION_BONUS = 50;
+  uint256 private constant _MAX_LIQUIDATION_BONUS = 50;
 
   // 500%
   uint256 private constant _MAX_LTV = 5000;
@@ -47,8 +47,8 @@ contract SmartLoanProperties {
     return _PERCENTAGE_PRECISION;
   }
 
-  function getLiquidationBonus() public virtual view returns (uint256) {
-    return _LIQUIDATION_BONUS;
+  function getMaxLiquidationBonus() public virtual view returns (uint256) {
+    return _MAX_LIQUIDATION_BONUS;
   }
 
   function getMaxLtv() public virtual view returns (uint256) {
