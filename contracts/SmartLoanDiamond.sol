@@ -2,10 +2,8 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { LibDiamond } from "./lib/LibDiamond.sol";
 import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
-import "./lib/SmartLoanLib.sol";
 
 /**
  * @title SmartLoanDiamond
