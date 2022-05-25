@@ -23,17 +23,23 @@ contract DiamondInit {
     // You can add parameters to this function in order to pass in 
     // data to set your own state variables
     function init() external {
-        // adding ERC165 data
+        // DiamondStorage
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(!ds._initialized, "DiamondInit: contract is already initialized");
+        // SmartLoanStorage
+        LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
+        // LiquidationStorage
+        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
 
+        require(!sls._initialized, "DiamondInit: contract is already initialized");
+
+        // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
         // SmartLoanLib ds default values initialization
-        ds._liquidationInProgress = false;
+        ls._liquidationInProgress = false;
         LibDiamond.setContractOwner(msg.sender);
 
         // add your own state variables 

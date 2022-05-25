@@ -202,13 +202,13 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
      * @param _orderOfPools order in which debts are repaid to pools, defined by liquidator for efficiency
      **/
     function liquidateLoan(uint256 _toRepayInUsd, uint256[] memory _orderOfPools) external payable nonReentrant {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
         bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 leftToRepayInUsd = _toRepayInUsd;
 
         require(calculateLTV(assets, prices) >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
-        ds._liquidationInProgress = true;
+        ls._liquidationInProgress = true;
 
         //in case critically insolvent loans it might be needed to use native AVAX a loan has to bring loan to solvency.
         //AVAX can be also provided in the transaction as well to "rescue" a loan
@@ -311,7 +311,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         }
 
         require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
-        ds._liquidationInProgress = false;
+        ls._liquidationInProgress = false;
     }
 
     //TODO: write a test for it
