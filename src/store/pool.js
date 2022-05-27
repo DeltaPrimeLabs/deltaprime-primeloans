@@ -1,6 +1,10 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
-import {awaitConfirmation, fetchEventsInBatches} from "../utils/blockchain";
+import {
+  awaitConfirmation, fetchDepositFromPayments,
+  fetchEventsForPool,
+} from "../utils/blockchain";
+import {parseLogs} from "../utils/calculate";
 
 const ethers = require('ethers');
 
@@ -101,40 +105,14 @@ export default {
 
       pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
 
-      let totalSupply = 0;
-      let totalWithdrawn = 0;
-      const provider = rootState.network.provider;
-      const topics =  [
-        pool.iface.getEventTopic("Deposit"),
-        pool.iface.getEventTopic("Withdrawal")
-      ];
+      const logs = await fetchEventsForPool(account);
 
-      let logs = (await fetchEventsInBatches(pool.address, topics, provider)).flat();
+      const poolEvents = parseLogs(logs);
 
-      logs = logs.filter(item => item.address === pool.address);
-
-      const poolEvents = [];
-      logs.forEach(log => {
-        let parsed = pool.iface.parseLog(log);
-
-        if (parsed.args.user.toLocaleLowerCase() !== account.toLocaleLowerCase()) return;
-
-        let event = {
-          type: parsed.name,
-          time: new Date(parseInt(parsed.args.timestamp.toString()) * 1000),
-          value: parseFloat(ethers.utils.formatEther(parsed.args.value)),
-          tx: log.transactionHash
-        };
-
-        if (event.type === 'Deposit') totalSupply += event.value;
-        if (event.type === 'Withdrawal') totalWithdrawn += event.value;
-
-        poolEvents.unshift(event);
-      });
 
       commit('setPoolEvents', poolEvents);
 
-      const depositInterest = pool.myDeposits - totalSupply + totalWithdrawn;
+      const depositInterest = pool.myDeposits - await fetchDepositFromPayments(account);
 
       commit('setDepositInterest', depositInterest);
     },

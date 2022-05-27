@@ -1,20 +1,10 @@
 import Vue from "vue";
 import config from "@/config";
+import ApolloClient, {gql} from "apollo-boost";
+import {fromWei} from "./calculate";
 
 export function transactionUrl(tx) {
     return 'https://snowtrace.io/tx/' + tx;
-}
-
-//block number from which events are considered, to increase loading of events information
-export function startingBlock() {
-    switch (config.chainId) {
-        case 43113:
-            return 6490771;
-        case 43114:
-            return 11644638;
-        default:
-            return 14858534;
-    }
 }
 
 export async function handleTransaction(fun, args, onSuccess, onFail) {
@@ -75,31 +65,76 @@ export function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
 
-export async function fetchEventsInBatches(address, topics, provider, block = startingBlock()) {
-    const logsPromises = [];
-    let startBatch = block;
-    const currentBlock = await provider.getBlockNumber();
-
-    let endBatch = 0;
-
-    while (endBatch < currentBlock) {
-        endBatch = startBatch + 2047;
-
-        if (endBatch > currentBlock) {
-            endBatch = currentBlock;
-        }
-
-        logsPromises.push(
-            provider.getLogs({
-                fromBlock: startBatch,
-                toBlock: endBatch,
-                address: address,
-                topics: [topics]
-            })
-        );
-
-        startBatch = endBatch + 1;
+export async function fetchEventsForSmartLoan(address) {
+    let query = `
+    {
+      smartLoanEvents(where: { smartLoan: "${address.toString()}"}, orderBy: timestamp) {
+        id
+        name
+        toAsset
+        amount
+        timestamp
+      }
     }
+   `;
 
-    return Promise.all(logsPromises);
+    const client = new ApolloClient({
+        uri: config.subgraph
+    })
+
+    return (await client.query({query: gql(query)})).data.smartLoanEvents;
+}
+
+export async function fetchCollateralFromPayments(address) {
+    let query = `
+    {   
+        smartLoan(id: "${address}") {
+            collateralFromPayments
+        }
+    }
+   `;
+
+    const client = new ApolloClient({
+        uri: config.subgraph
+    })
+
+    return fromWei((await client.query({query: gql(query)})).data.smartLoan.collateralFromPayments);
+}
+
+export async function fetchEventsForPool(address) {
+    let query = `
+    {
+      poolEvents(where: { user: "${address.toString()}"}, orderBy: timestamp) {
+        id
+        name
+        amount
+        timestamp
+      }
+    }
+   `;
+
+    const client = new ApolloClient({
+        uri: config.subgraph
+    })
+
+    return (await client.query({query: gql(query)})).data.poolEvents;
+}
+
+export async function fetchDepositFromPayments(address) {
+    let query = `
+    {   
+        poolUser(id: "${address}") {
+            depositFromPayments
+        }
+    }
+   `;
+
+    const client = new ApolloClient({
+        uri: config.subgraph
+    })
+
+    let user = (await client.query({query: gql(query)})).data.poolUser;
+    if (user) {
+        return fromWei((await client.query({query: gql(query)})).data.poolUser.depositFromPayments);
+    } else return 0;
 }

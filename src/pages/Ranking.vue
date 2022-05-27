@@ -96,7 +96,7 @@ export default {
                   }`;
 
                   const client = new ApolloClient({
-                    uri: "https://api.thegraph.com/subgraphs/name/mbare0/delta-prime"
+                    uri: config.subgraph
                   })
 
                   client
