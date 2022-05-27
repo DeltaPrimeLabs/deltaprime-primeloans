@@ -203,6 +203,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
     require(address(this).balance >= amount, "Not enough AVAX available");
     getYieldYakRouter().stakeAVAX{value: amount}(amount);
+
+    emit Staked(msg.sender, amount, block.timestamp);
   }
 
   function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
@@ -210,6 +212,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
     address(getYakAvaxStakingContract()).safeApprove(address(yakRouter), amount);
 
     require(yakRouter.unstakeAVAX(amount), "Unstaking failed");
+    emit Unstaked(msg.sender, amount, block.timestamp);
   }
 
   /**
@@ -451,6 +454,22 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * @param timestamp of the repayment
    **/
   event Repaid(address indexed borrower, uint256 amount, uint256 timestamp);
+
+  /**
+   * @dev emitted when funds are staked
+   * @param borrower the address of borrower
+   * @param amount staked
+   * @param timestamp time of the staking
+   **/
+  event Staked(address indexed borrower, uint256 amount, uint256 timestamp);
+
+  /**
+   * @dev emitted when funds are staked
+   * @param borrower the address of borrower
+   * @param amount unstaked
+   * @param timestamp time of the unstaking
+   **/
+  event Unstaked(address indexed borrower, uint256 amount, uint256 timestamp);
 
   /**
    * @dev emitted after a successful liquidation operation

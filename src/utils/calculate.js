@@ -22,39 +22,27 @@ export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
-export function parseLogs(loan, logs) {
-  let collateralFromPayments = 0;
+export function parseLogs(logs) {
   let loanEvents = [];
 
   logs.forEach(log => {
-    let parsed = loan.iface.parseLog(log);
-
     let event = {
-      type: parsed.name,
-      time: new Date(parseInt(parsed.args.timestamp.toString()) * 1000),
-      tx: log.transactionHash
+      type: log.name,
+      time: new Date(parseInt(log.timestamp.toString()) * 1000),
+      tx: log.id
     };
 
-    let value;
-
-    value = event.type === 'Liquidated' ? parsed.args.repayAmount : parsed.args.amount;
-
-    if (event.type === 'Invested' || event.type === 'Redeemed') {
-      event.asset = ethers.utils.parseBytes32String(parsed.args.asset);
-      event.value = parseFloat(ethers.utils.formatUnits(value, config.ASSETS_CONFIG[event.asset].decimals));
+    if (event.type === 'Bought' || event.type === 'Sold') {
+      event.asset = ethers.utils.parseBytes32String(log.toAsset);
+      event.value = parseFloat(ethers.utils.formatUnits(log.amount, config.ASSETS_CONFIG[event.asset].decimals));
     } else {
-      event.value = parseFloat(ethers.utils.formatEther(value));
+      event.value = parseFloat(ethers.utils.formatEther(log.amount));
     }
-
-
-
-    if (event.type === 'Funded') collateralFromPayments += event.value;
-    if (event.type === 'Withdrawn') collateralFromPayments -= event.value;
 
     loanEvents.unshift(event);
   });
 
-  return [loanEvents, collateralFromPayments]
+  return loanEvents;
 }
 
 export function roundWithPrecision(num, precision) {

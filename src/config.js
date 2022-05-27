@@ -21,5 +21,6 @@ export default {
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche-prod"
+    dataProviderId: "redstone-avalanche-prod",
+    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/delta-prime"
 }
