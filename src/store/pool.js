@@ -1,10 +1,10 @@
 import POOLTUP from '@contracts/PoolTUP.json';
 import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
 import {
-  awaitConfirmation, fetchDepositFromPayments,
-  fetchEventsForPool,
+  awaitConfirmation
 } from "../utils/blockchain";
 import {parseLogs} from "../utils/calculate";
+import {fetchDepositFromPayments, fetchEventsForPool} from "../utils/graph";
 
 const ethers = require('ethers');
 

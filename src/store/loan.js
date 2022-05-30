@@ -1,4 +1,4 @@
-import {awaitConfirmation, fetchCollateralFromPayments, fetchEventsForSmartLoan, handleCall} from "../utils/blockchain";
+import {awaitConfirmation, handleCall} from "../utils/blockchain";
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
@@ -8,6 +8,7 @@ import {formatUnits, fromWei, parseUnits, round, toWei} from "@/utils/calculate"
 import config from "@/config";
 import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from "../utils/calculate";
 import {WrapperBuilder} from "redstone-evm-connector";
+import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from "../utils/graph";
 
 const ethers = require('ethers');
 
