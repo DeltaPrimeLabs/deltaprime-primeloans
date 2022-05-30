@@ -25,7 +25,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
   using TransferHelper for address;
 
   /** @param amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPoolsAssetsIndices method)
-    * @param liquidationBonus permil bonus for liquidator. Must be smaller or equal to getMaxLiquidationBonus(). Defined for
+    * @param liquidationBonus per mille bonus for liquidator. Must be smaller or equal to getMaxLiquidationBonus(). Defined for
     * liquidating loans where debt ~ total value
     * @param allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
     **/
@@ -172,7 +172,8 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
   /**
   * This function can only be accessed by the owner and allows closing all positions and repaying all debts.
-  * @param _amountsProvided amounts provided by owner to close a loan when bankrupted. If solvent
+  * @param _amountsProvided amounts provided by owner to close a loan (when the tokens available in SmartLoan are not
+  * enough to repay debts)
   * @dev This function uses the redstone-evm-connector
    **/
   function closeLoan(uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
@@ -197,11 +198,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
       IERC20Metadata token = getERC20TokenInstance(assets[assetIndex]);
       address poolAddress = getPoolAddress(assets[assetIndex]);
 
-      //allowances are needed for insolvent/bankrupt loan
-      uint256 allowance = token.allowance(msg.sender, address(this));
+      //allowances are needed for insolvent/bankrupt loan or loans without enough token for repaying debts
+      if (_amountsProvided[i] > 0) {
+        uint256 allowance = token.allowance(msg.sender, address(this));
 
-      if (allowance >= _amountsProvided[i] && _amountsProvided[i] > 0) {
-        address(token).safeTransferFrom(msg.sender, address(this), _amountsProvided[i]);
+        if (allowance >= _amountsProvided[i]) {
+          address(token).safeTransferFrom(msg.sender, address(this), _amountsProvided[i]);
+        }
       }
 
       if (poolAddress != address(0)) {
@@ -231,13 +234,13 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
 
 
   /**
-   * This function can be accessed by any user when Prime Account is insolvent or bankrupt insolvent and repay part of the loan
+   * This function can be accessed by any user when Prime Account is insolvent or bankrupt and repay part of the loan
    * with his approved tokens.
    * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
    * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
    * @dev This function uses the redstone-evm-connector
    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
-   * @param _liquidationBonus permil bonus for liquidator. Must be lower than getMaxLiquidationBonus()
+   * @param _liquidationBonus per mille bonus for liquidator. Must be lower than getMaxLiquidationBonus()
    **/
   function unsafeLiquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
     liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, true));
@@ -252,7 +255,7 @@ contract SmartLoan is SmartLoanProperties, PriceAware, OwnableUpgradeable, Reent
    * with the same USD value + bonus.
    * @dev This function uses the redstone-evm-connector
    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
-   * @param _liquidationBonus permil bonus for liquidator. Must be lower than getMaxLiquidationBonus()
+   * @param _liquidationBonus per mille bonus for liquidator. Must be lower than getMaxLiquidationBonus()
    **/
   function liquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
     liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, false));
