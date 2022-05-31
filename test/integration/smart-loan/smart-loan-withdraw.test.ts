@@ -39,7 +39,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
@@ -129,7 +129,15 @@ describe('Smart loan',  () => {
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [0], { 'AVAX': pool.address }, exchange.address, yakRouterContract.address, 'mock');
+      artifact = await recompileSmartLoan(
+        SMART_LOAN_MOCK,
+        [0],
+        [wavaxTokenAddress],
+        { 'AVAX': pool.address },
+        exchange.address,
+        yakRouterContract.address,
+        'mock'
+      );
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

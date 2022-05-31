@@ -20,7 +20,7 @@ import {getFixedGasSigners} from "../_helpers";
 chai.use(solidity);
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 
 describe('Smart loans factory - upgrading',  () => {
     before("Synchronize blockchain time", async () => {
@@ -44,7 +44,7 @@ describe('Smart loans factory - upgrading',  () => {
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
-            smartLoan = await (new SmartLoan__factory(owner).attach(proxy.address));
+            smartLoan = await (new SmartLoan__factory(owner).deploy());
 
             await smartLoansFactory.connect(owner).initialize(smartLoan.address);
 

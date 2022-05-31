@@ -49,7 +49,6 @@ import {
     YieldYakRouter__factory
 } from "../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
-import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);
 
@@ -57,7 +56,7 @@ const SMART_LOAN_MOCK = "MockSmartLoanRedstoneProvider";
 const SMART_LOAN_MOCK_UPGRADED = "MockSmartLoanRedstoneProviderLimitedCollateral";
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const MAX_COLLATERAL = config.MAX_COLLATERAL;
 
@@ -65,7 +64,8 @@ const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
     'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
+    'function allowance(address owner, address spender) public view returns (uint256)',
+    'function transfer(address _to, uint256 _value) public returns (bool success)',
 ]
 
 const wavaxAbi = [
@@ -82,26 +82,28 @@ describe('Trading competition upgraded contracts test', () => {
         usdTokenContract: Contract,
         wavaxTokenContract: Contract,
         usdTokenDecimalPlaces: BigNumber,
-        usdPool: ERC20Pool,
+        wavaxPool: ERC20Pool,
         poolImpl: ERC20Pool,
         poolTUP: PoolTUP,
         yakRouterContract: Contract,
         poolUpgraded: PoolWithAccessNFT,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
+        depositorWithoutNFT: SignerWithAddress,
         user: SignerWithAddress,
         admin: SignerWithAddress,
         borrowNFT: Contract,
         depositNFT: Contract,
         exchange: PangolinExchange,
         mockVariableUtilisationRatesCalculator,
+        maxCollateral: BigNumber,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         USD_PRICE: number;
 
     before(async () => {
         await syncTime();
-        [owner, admin, depositor, user] = await getFixedGasSigners(10000000);
+        [owner, admin, depositor, depositorWithoutNFT, user] = await getFixedGasSigners(10000000);
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
         USD_PRICE = (await redstone.getPrice('USDT')).value;
@@ -134,12 +136,12 @@ describe('Trading competition upgraded contracts test', () => {
         // Not upgraded Pool with TUP
         poolImpl = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
         poolTUP = (await deployContract(owner, PoolTUPArtifact, [poolImpl.address, admin.address, []])) as PoolTUP;
-        usdPool = await new ERC20Pool__factory(owner).attach(poolTUP.address);
+        wavaxPool = await new ERC20Pool__factory(owner).attach(poolTUP.address);
         yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
         // Borrow/Deposit indices
-        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [usdPool.address])) as CompoundingIndex;
-        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [usdPool.address])) as CompoundingIndex;
+        const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
+        const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
 
         // Assets exchange (without TUP)
         exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
@@ -148,7 +150,15 @@ describe('Trading competition upgraded contracts test', () => {
         ]);
 
         // Smart Loan Implementation
-        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], {"USD": usdPool.address},  exchange.address, yakRouterContract.address,'mock');
+        const artifact = await recompileSmartLoan(
+            SMART_LOAN_MOCK,
+            [0],
+            [wavaxTokenContract.address],
+            {"AVAX": wavaxPool.address},
+            exchange.address,
+            yakRouterContract.address,
+            'mock'
+        );
         implementation = await deployContract(owner, artifact) as SmartLoan;
 
         // Not upgraded smartLoansFactory with TUP
@@ -158,49 +168,51 @@ describe('Trading competition upgraded contracts test', () => {
 
         await smartLoansFactory.connect(owner).initialize(implementation.address);
 
-        await usdPool.initialize(
+        await wavaxPool.initialize(
             mockVariableUtilisationRatesCalculator.address,
             smartLoansFactory.address,
             depositIndex.address,
             borrowingIndex.address,
-            usdTokenContract.address
+            wavaxTokenContract.address
         );
+
+        maxCollateral = toWei((0.99 * MAX_COLLATERAL / AVAX_PRICE).toString());
     });
 
     it("should deposit requested value without the access ERC721", async () => {
-        await usdTokenContract.connect(depositor).deposit({value: parseUnits("1")});
-        await usdTokenContract.connect(depositor).approve(usdPool.address, toWei("1"));
-        await usdPool.connect(depositor).deposit(toWei("1"));
+        await wavaxTokenContract.connect(depositor).deposit({value: toWei("1")});
+        await wavaxTokenContract.connect(depositor).approve(wavaxPool.address, toWei("1"));
+        await wavaxPool.connect(depositor).deposit(toWei("1"));
 
-        const currentDeposits = await usdPool.balanceOf(depositor.address);
+        const currentDeposits = await wavaxPool.balanceOf(depositor.address);
         expect(fromWei(currentDeposits)).to.equal(1);
 
-        await usdPool.connect(depositor).withdraw(toWei("1.0"));
+        await wavaxPool.connect(depositor).withdraw(toWei("1.0"));
     });
 
     it("should deposit requested value only with the access ERC721", async () => {
-        // Upgrade the usdPool
+        // Upgrade the wavaxPool
         const poolUpgradedImpl = await (deployContract(owner, PoolWithAccessNFTArtifact)) as PoolWithAccessNFT;
         await poolTUP.connect(admin).upgradeTo(poolUpgradedImpl.address);
-        poolUpgraded = await new PoolWithAccessNFT__factory(owner).attach(usdPool.address);
+        poolUpgraded = await new PoolWithAccessNFT__factory(owner).attach(wavaxPool.address);
 
         // Set NFT access
-        await poolUpgraded.connect(owner).setAccessNFT(borrowNFT.address);
+        await poolUpgraded.connect(owner).setAccessNFT(depositNFT.address);
 
         await expect(poolUpgraded.connect(depositor).deposit(toWei("10.0"))).to.be.revertedWith("Access NFT required");
 
-        await borrowNFT.connect(owner).addAvailableUri(["uri_1", "uri_2"]);
-        await borrowNFT.connect(depositor).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
+        await depositNFT.connect(owner).addAvailableUri(["uri_1", "uri_2"]);
+        await depositNFT.connect(depositor).safeMint("580528284777971734", "0x536aac0a69dea94674eb85fbad6dadf0460ac6de584a3429f1c39e99de67a72d7e7c2f246ab9c022d9341c26d187744ad8ccdfc5986cfc74e1fa2a5e1a4555381b");
 
-        await usdTokenContract.connect(depositor).deposit({value: toWei("10.0")});
-        await usdTokenContract.connect(depositor).approve(usdPool.address, toWei("10.0"));
+        await wavaxTokenContract.connect(depositor).deposit({value: toWei("10.0")});
+        await wavaxTokenContract.connect(depositor).approve(wavaxPool.address, toWei("10.0"));
         await poolUpgraded.connect(depositor).deposit(toWei("10.0"));
 
-        expect(fromWei(await usdTokenContract.balanceOf(usdPool.address))).to.be.closeTo(10, 0.0001);
-        expect(fromWei(await usdPool.balanceOf(depositor.address))).to.be.closeTo(10, 0.0001);
+        expect(fromWei(await wavaxTokenContract.balanceOf(wavaxPool.address))).to.be.closeTo(10, 0.0001);
+        expect(fromWei(await wavaxPool.balanceOf(depositor.address))).to.be.closeTo(10, 0.0001);
     });
 
-    it("should add and withdraw more than 100 USD collateral in total with the base loan contract version", async () => {
+    it(`should add and withdraw more than ${MAX_COLLATERAL} USD collateral in total with the base loan contract version`, async () => {
         await smartLoansFactory.connect(user).createLoan();
         const SLAddress = await smartLoansFactory.getLoanForOwner(user.address);
         loan = await (new MockSmartLoanRedstoneProvider__factory(user).attach(SLAddress));
@@ -214,56 +226,64 @@ describe('Trading competition upgraded contracts test', () => {
                     }
                 });
 
-        //load user USD balance
-        let testedUSD = MAX_COLLATERAL + 10;
+        let moreThanMax = maxCollateral.add(toWei("10"));
 
-        let usdForBorrower = 5 * MAX_COLLATERAL;
-        let requiredAvax = toWei((usdForBorrower * USD_PRICE * 1.3 / AVAX_PRICE).toString());
+        await wavaxTokenContract.connect(user).deposit({value: moreThanMax});
+        await wavaxTokenContract.connect(user).approve(loan.address, moreThanMax);
+        await loan.fund(toBytes32("AVAX"), moreThanMax);
+        await loan.withdraw(toBytes32("AVAX"), moreThanMax);
 
-        await wavaxTokenContract.connect(user).deposit({value: requiredAvax});
-        await wavaxTokenContract.connect(user).transfer(exchange.address, requiredAvax);
-        await exchange.connect(user).swap(toBytes32("USD"), toBytes32("USD"), requiredAvax, parseUnits(usdForBorrower.toString(), usdTokenDecimalPlaces));
-
-        //fund a loan
-        await usdTokenContract.connect(user).approve(loan.address, parseUnits(testedUSD.toString(), usdTokenDecimalPlaces));
-        await loan.fund(toBytes32("USD"), parseUnits(testedUSD.toString(), usdTokenDecimalPlaces));
-        await loan.withdraw(toBytes32("USD"), parseUnits(testedUSD.toString(), usdTokenDecimalPlaces));
     });
 
     it("should upgrade to new SmartLoan for competition purposes and test collateral limitations", async () => {
-        const artifact = await recompileSmartLoan(SMART_LOAN_MOCK_UPGRADED, [0],{ "AVAX": usdPool.address }, exchange.address, yakRouterContract.address, 'mock');
+        const artifact = await recompileSmartLoan(
+            SMART_LOAN_MOCK_UPGRADED,
+            [0],
+            [wavaxTokenContract.address],
+            { "AVAX": poolTUP.address },
+            exchange.address,
+            yakRouterContract.address,
+            'mock'
+        );
 
         implementation = await deployContract(owner, artifact) as SmartLoan;
         const beaconAddress = await smartLoansFactory.connect(owner).upgradeableBeacon.call(0);
         const beacon = await (new UpgradeableBeacon__factory(owner).attach(beaconAddress));
         await beacon.upgradeTo(implementation.address);
 
-        await usdTokenContract.connect(user).approve(loan.address, parseUnits((config.MAX_COLLATERAL + 10).toString(), usdTokenDecimalPlaces));
-        await expect(loan.fund(toBytes32("USD"), parseUnits((MAX_COLLATERAL + 10).toString()))).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} AVAX in total is not allowed`);
+        let moreThanMax = maxCollateral.add(toWei("1"));
 
-        await loan.fund(toBytes32("USD"), parseUnits(MAX_COLLATERAL.toString(), usdTokenDecimalPlaces));
+        await wavaxTokenContract.connect(user).deposit({value: moreThanMax});
+        await wavaxTokenContract.connect(user).approve(loan.address, moreThanMax);
+        await expect(loan.fund(toBytes32("AVAX"), moreThanMax)).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} USD in total is not allowed`);
 
-        await expect(loan.fund(toBytes32("USD"), parseUnits("10", usdTokenDecimalPlaces))).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} AVAX in total is not allowed`);
+        await loan.fund(toBytes32("AVAX"), maxCollateral);
 
-        await loan.withdraw(toBytes32("USD"), parseUnits("10", usdTokenDecimalPlaces));
-        await loan.fund(toBytes32("USD"), parseUnits("10", usdTokenDecimalPlaces));
+        await wavaxTokenContract.connect(user).deposit({value: toWei("2")});
+        await wavaxTokenContract.connect(user).approve(loan.address, toWei("2"));
+        await expect(loan.fund(toBytes32("AVAX"), toWei("2"))).to.be.revertedWith(`Adding more collateral than ${MAX_COLLATERAL} USD in total is not allowed`);
+
+        await loan.withdraw(toBytes32("AVAX"), toWei("2"));
+
+        await loan.fund(toBytes32("AVAX"), toWei("2"));
     });
 
     it("should test resetting collateral after closeLoan()", async () => {
         expect(fromWei(await loan.getTotalValue())).to.be.greaterThan(0);
-        await loan.closeLoan();
+        await loan.closeLoan([0]);
         expect(fromWei(await loan.getTotalValue())).to.be.equal(0);
-        await usdTokenContract.connect(user).approve(loan.address, parseUnits(MAX_COLLATERAL.toString(), usdTokenDecimalPlaces));
-        await loan.fund(toBytes32("USD"), parseUnits(MAX_COLLATERAL.toString(), usdTokenDecimalPlaces));
+        await wavaxTokenContract.connect(user).approve(loan.address, maxCollateral);
+        await loan.fund(toBytes32("AVAX"), maxCollateral);
     });
 
     it("should downgrade to old pool implementation and not require NFT access for deposit", async() => {
-        await expect(usdPool.connect(owner).deposit(toWei("10.0"))).to.be.revertedWith("Access NFT required");
+        await expect(wavaxPool.connect(depositorWithoutNFT).deposit(toWei("10.0"))).to.be.revertedWith("Access NFT required");
 
         await poolTUP.connect(admin).upgradeTo(poolImpl.address);
 
-        await usdPool.connect(owner).deposit(toWei("10.0"));
-        expect(await provider.getBalance(poolTUP.address)).to.equal(toWei("20"));
+        await wavaxTokenContract.connect(depositorWithoutNFT).deposit({value: toWei("10")});
+        await wavaxTokenContract.connect(depositorWithoutNFT).approve(wavaxPool.address, toWei("10"));
+        await wavaxPool.connect(depositorWithoutNFT).deposit(toWei("10.0"));
+        expect(await wavaxTokenContract.balanceOf(wavaxPool.address)).to.equal(toWei("20"));
     });
-
 });

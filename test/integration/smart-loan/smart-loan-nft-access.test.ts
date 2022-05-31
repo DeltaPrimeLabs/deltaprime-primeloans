@@ -123,7 +123,15 @@ describe('Smart loan',  () => {
             ]);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
-            artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], { "AVAX": wavaxPool.address} , exchange.address, yakRouterContract.address, 'mock');
+            artifact = await recompileSmartLoan(
+                SMART_LOAN_MOCK,
+                [1],
+                [wavaxTokenAddress],
+                { "AVAX": wavaxPool.address},
+                exchange.address,
+                yakRouterContract.address,
+                'mock'
+            );
             implementation = await deployContract(owner, artifact) as SmartLoan;
 
             await smartLoansFactory.initialize(implementation.address);

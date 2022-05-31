@@ -3,10 +3,13 @@
 pragma solidity ^0.8.4;
 
 import "./interfaces/IAssetsExchange.sol";
-import "./Pool.sol";
+//TODO: interface
+import "./ERC20Pool.sol";
 import "./interfaces/IYieldYakRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+//TODO: interface
 import "./mock/WAVAX.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /**
  * @title SmartLoanProperties
@@ -18,14 +21,14 @@ contract SmartLoanProperties {
 
   uint256 private constant _PERCENTAGE_PRECISION = 1000;
   // 10%
-  uint256 private constant _LIQUIDATION_BONUS = 100;
+  uint256 private constant _MAX_LIQUIDATION_BONUS = 50;
 
   // 500%
   uint256 private constant _MAX_LTV = 5000;
   // 400%
   uint256 private constant _MIN_SELLOUT_LTV = 4000;
 
-  address private constant _EXCHANGE_ADDRESS = 0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650;
+  address private constant _EXCHANGE_ADDRESS = 0xC9a43158891282A2B1475592D5719c001986Aaec;
 
   address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
@@ -47,8 +50,8 @@ contract SmartLoanProperties {
     return _PERCENTAGE_PRECISION;
   }
 
-  function getLiquidationBonus() public virtual view returns (uint256) {
-    return _LIQUIDATION_BONUS;
+  function getMaxLiquidationBonus() public virtual view returns (uint256) {
+    return _MAX_LIQUIDATION_BONUS;
   }
 
   function getMaxLtv() public virtual view returns (uint256) {
@@ -64,22 +67,32 @@ contract SmartLoanProperties {
   }
 
   function getYieldYakRouter() public virtual view returns (IYieldYakRouter) {
-  return IYieldYakRouter(0x7969c5eD335650692Bc04293B07F5BF2e7A673C0);
+  return IYieldYakRouter(0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5);
   }
 
   function getYakAvaxStakingContract() public virtual view returns (IERC20) {
     return IERC20(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
   }
 
-  //TODO: remember about proper sequence of pools
-  //returns indices of assets that have an ERC20 pool
   function getPoolsAssetsIndices() public virtual view returns (uint8[1] memory) {
     return [0];
   }
 
+  function getPoolTokens() public virtual view returns (IERC20Metadata[1] memory) {
+    return [
+      IERC20Metadata(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7)
+    ];
+  }
+
+  function getPools() public virtual view returns (ERC20Pool[1] memory) {
+    return [
+      ERC20Pool(0xD84379CEae14AA33C123Af12424A37803F885889)
+    ];
+  }
+
   //TODO: remember that it will be updated with a deployment script...
   function getPoolAddress(bytes32 poolToken) public virtual view returns (address) {
-    if (poolToken == bytes32("AVAX")) return 0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3;
+    if (poolToken == bytes32("AVAX")) return 0xD84379CEae14AA33C123Af12424A37803F885889;
 
     return address(0);
   }

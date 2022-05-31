@@ -8,11 +8,11 @@ import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import WAVAXArtifact from "../../artifacts/contracts/mock/WAVAX.sol/WAVAX.json";
-import WrappedPoolArtifact from '../../artifacts/contracts/WrappedPool.sol/WrappedPool.json';
+import WavaxPoolArtifact from '../../artifacts/contracts/WavaxPool.sol/WavaxPool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {LinearIndex, OpenBorrowersRegistry, WrappedPool, WAVAX} from "../../typechain";
+import {LinearIndex, OpenBorrowersRegistry, WavaxPool, WAVAX} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -20,7 +20,7 @@ chai.use(solidity);
 const {deployContract} = waffle;
 
 describe('Pool with variable utilisation interest rates', () => {
-    let sut: WrappedPool,
+    let sut: WavaxPool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         depositor2: SignerWithAddress,
@@ -34,7 +34,7 @@ describe('Pool with variable utilisation interest rates', () => {
         await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
         await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
-        sut = (await deployContract(owner, WrappedPoolArtifact)) as WrappedPool;
+        sut = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
 
         wavax = (await deployContract(owner, WAVAXArtifact)) as WAVAX;
 

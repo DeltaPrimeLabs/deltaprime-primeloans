@@ -1,3 +1,4 @@
+
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
@@ -155,7 +156,15 @@ describe('Smart loan',  () => {
       ]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      artifact = await recompileSmartLoan(SMART_LOAN_MOCK, [1], { "USD": usdPool.address} , exchange.address, yakRouterContract.address, 'mock');
+      artifact = await recompileSmartLoan(
+        SMART_LOAN_MOCK,
+        [1],
+        [mockUsdToken.address],
+        { "USD": usdPool.address} ,
+        exchange.address,
+        yakRouterContract.address,
+        'mock'
+      );
       implementation = await deployContract(owner, artifact) as SmartLoan;
 
       await smartLoansFactory.initialize(implementation.address);

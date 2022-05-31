@@ -57,11 +57,14 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
       require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, soldTokenAddress, boughtTokenAddress), "Not enough funds were provided");
     }
 
-    uint256[] memory amounts;
-    bytes memory result;
+    (bool success, bytes memory result) = address(pangolinRouter).call{value: 0}(
+      abi.encodeWithSignature("swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
+      _exactSold, _minimumBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp)
+    );
 
-    amounts = pangolinRouter.swapExactTokensForTokens(
-      _exactSold, _minimumBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp);
+    require(success, "Pangolin swap was unsuccessful.");
+
+    amounts = abi.decode(result, (uint256[]));
 
     address(soldToken).safeTransfer(msg.sender, soldToken.balanceOf(address(this)));
 
