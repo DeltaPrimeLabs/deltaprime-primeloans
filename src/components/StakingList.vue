@@ -31,7 +31,7 @@
             <span>$ {{ getTotalStakedPerProtocol() }}</span>
           </div>
           <div class="table__cell right" data-label="Max APY">
-            <span>{{ protocol.maxApr | percent }}</span>
+            <LoadedValue :check="() => protocol.maxApy !== null" :value="protocol.maxApy | percent"></LoadedValue>
           </div>
           <div class="table__cell" v-if="!isMobile"></div>
           <div class="table__cell" v-if="!isMobile"></div>
@@ -64,21 +64,21 @@
                       <span class="token-name">{{ asset.name }}</span>
                     </div>
                     <div class="table__cell value right" data-label="Price">
-                      <div>$ 23M</div>
+                      <LoadedValue :check="() => asset.tvl !== null" :value="asset.tvl | usd">M</LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="APY">
-                      <span>{{ 0.09 | percent }}</span>
+                      <LoadedValue :check="() => asset.apy !== null" :value="asset.apy | percent"></LoadedValue>
                     </div>
                     <div class="table__cell right" data-label="Staked">
                       <LoadedValue
-                          :check="() => stakedAssets[protocolKey].assets[asset.symbol].balance !== null"
-                          :value="formatTokenBalance(stakedAssets[protocolKey].assets[asset.symbol].balance, 4)">
+                        :check="() => stakedAssets[protocolKey].assets[asset.symbol].balance !== null"
+                        :value="formatTokenBalance(stakedAssets[protocolKey].assets[asset.symbol].balance, 4)">
                       </LoadedValue>
                     </div>
                     <div class="table__cell right">
                       <LoadedValue
-                          :check="() => asset.balance != null"
-                          :value="formatTokenBalance(asset.balance, 4)">
+                        :check="() => asset.balance != null"
+                        :value="formatTokenBalance(asset.balance, 4)">
                       </LoadedValue>
                     </div>
                     <div class="table__cell" v-if="!isMobile"></div>
@@ -92,35 +92,35 @@
 
                     <div class="staking-currency-input" v-if="asset.showStakeForm">
                       <SmallBlock
-                          v-on:close="() => { asset.showStakeForm = false;  }">
+                        v-on:close="() => { asset.showStakeForm = false;  }">
                         <CurrencyForm
-                            label="Stake"
-                            :symbol="asset.symbol"
-                            :price="asset.price"
-                            :hasSecondButton="true"
-                            :flexDirection="isMobile ? 'column' : 'row'"
-                            :slim="true"
-                            :waiting="asset.transactionInProgress"
-                            :validators="stakeValidators()"
-                            v-on:submitValue="(value) => stake(protocol, asset, value)"
+                          label="Stake"
+                          :symbol="asset.symbol"
+                          :price="asset.price"
+                          :hasSecondButton="true"
+                          :flexDirection="isMobile ? 'column' : 'row'"
+                          :slim="true"
+                          :waiting="asset.transactionInProgress"
+                          :validators="stakeValidators()"
+                          v-on:submitValue="(value) => stake(protocol, asset, value)"
                         />
                       </SmallBlock>
                     </div>
 
                     <div class="staking-currency-input" v-if="asset.showUnstakeForm">
                       <SmallBlock
-                          v-on:close="() => { asset.showUnstakeForm = false;  }">
+                        v-on:close="() => { asset.showUnstakeForm = false;  }">
                         <CurrencyForm
-                            label="Unstake"
-                            :symbol="asset.symbol"
-                            :price="asset.price"
-                            :hasSecondButton="true"
-                            :flexDirection="isMobile ? 'column' : 'row'"
-                            :slim="true"
-                            :max="prepareValueForUnstakeMax(stakedAssets[protocolKey].assets[asset.symbol].balance)"
-                            :waiting="asset.transactionInProgress"
-                            :validators="unstakeValidators(protocolKey, asset)"
-                            v-on:submitValue="(value) => unstake(protocol, asset, value)"
+                          label="Unstake"
+                          :symbol="asset.symbol"
+                          :price="asset.price"
+                          :hasSecondButton="true"
+                          :flexDirection="isMobile ? 'column' : 'row'"
+                          :slim="true"
+                          :max="prepareValueForUnstakeMax(stakedAssets[protocolKey].assets[asset.symbol].balance)"
+                          :waiting="asset.transactionInProgress"
+                          :validators="unstakeValidators(protocolKey, asset)"
+                          v-on:submitValue="(value) => unstake(protocol, asset, value)"
                         />
                       </SmallBlock>
                     </div>
@@ -137,18 +137,18 @@
 
 
 <script>
-import Chart from "@/components/Chart.vue";
-import SimpleChart from "@/components/SimpleChart.vue";
-import Block from "@/components/Block.vue";
-import CurrencyForm from "@/components/CurrencyForm.vue";
-import SmallBlock from "@/components/SmallBlock.vue";
-import LoadedValue from "@/components/LoadedValue.vue";
-import Button from "@/components/Button.vue";
-import {mapState, mapActions, mapGetters} from "vuex";
-import Vue from 'vue'
-import config from "@/config";
-import {BigNumber} from "ethers";
-import {toWei} from "../utils/calculate";
+import Chart from '@/components/Chart.vue';
+import SimpleChart from '@/components/SimpleChart.vue';
+import Block from '@/components/Block.vue';
+import CurrencyForm from '@/components/CurrencyForm.vue';
+import SmallBlock from '@/components/SmallBlock.vue';
+import LoadedValue from '@/components/LoadedValue.vue';
+import Button from '@/components/Button.vue';
+import {mapState, mapActions, mapGetters} from 'vuex';
+import Vue from 'vue';
+import config from '@/config';
+import {BigNumber} from 'ethers';
+import {toWei} from '../utils/calculate';
 
 
 export default {
@@ -175,14 +175,17 @@ export default {
           name: 'Yield Yak',
           totalStaked: 0,
           balance: 0,
-          maxApr: 0.09,
+          maxApy: null,
           showStakingOptions: false,
           stakingOptions: {
             AVAX: config.ASSETS_CONFIG.AVAX,
           }
         }
       },
-    }
+    };
+  },
+  mounted() {
+    this.getAvaxStakingDetails();
   },
   methods: {
     ...mapActions('loan', ['stakeAvaxYak', 'unstakeAvaxYak']),
@@ -211,7 +214,7 @@ export default {
       this.handleTransaction(this.stakeAvaxYak, {amount}).then((result) => {
         Vue.set(asset, 'transactionInProgress', false);
         Vue.set(asset, 'showStakeForm', false);
-      })
+      });
     },
 
     unstake(protocolKey, asset, amount) {
@@ -219,7 +222,7 @@ export default {
       this.handleTransaction(this.unstakeAvaxYak, {amount}).then((result) => {
         Vue.set(asset, 'transactionInProgress', false);
         Vue.set(asset, 'showUnstakeForm', false);
-      })
+      });
     },
 
     formatTokenBalance(balance) {
@@ -245,7 +248,7 @@ export default {
             }
           }
         }
-      ]
+      ];
     },
 
     unstakeValidators(protocolKey, asset) {
@@ -258,14 +261,36 @@ export default {
             }
           }
         }
-      ]
+      ];
     },
 
     prepareValueForUnstakeMax(rawValue) {
       return Math.floor(rawValue * 100000000) / 100000000;
     },
+
+    getAvaxStakingDetails() {
+      const avaxFarmAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
+      const apysUrl = 'https://staging-api.yieldyak.com/apys';
+      const farmsUrl = 'https://staging-api.yieldyak.com/farms';
+      fetch(farmsUrl).then(response => {
+        return response.json();
+      }).then(farms => {
+        const avaxFarm = farms.find(farm => farm.address === avaxFarmAddress);
+        let tvlM = this.avaxToUSD(avaxFarm.totalDeposits) / 10 ** 6;
+        tvlM = Math.round(tvlM * 100) / 100;
+        this.protocols.YAK_YIELD.stakingOptions.AVAX.tvl = tvlM;
+
+        fetch(apysUrl).then(response => {
+          return response.json();
+        }).then(apys => {
+          const avaxApy = apys[avaxFarmAddress].apy / 100;
+          this.protocols.YAK_YIELD.stakingOptions.AVAX.apy = avaxApy;
+          this.protocols.YAK_YIELD.maxApy = avaxApy;
+        });
+      });
+    }
   },
-}
+};
 </script>
 
 <style lang="scss" scoped>
