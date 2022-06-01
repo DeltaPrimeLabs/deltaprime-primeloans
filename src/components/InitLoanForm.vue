@@ -62,8 +62,8 @@ export default {
             if (value > this.balance) {
               return 'Collateral amount exceeds your account balance';
             }
-            if (value > 1) {
-              return 'Maximum initial collateral is 1 AVAX';
+            if (value > config.MAX_COLLATERAL) {
+              return `Maximum initial collateral is ${config.MAX_COLLATERAL} AVAX`;
             }
           }
         },
