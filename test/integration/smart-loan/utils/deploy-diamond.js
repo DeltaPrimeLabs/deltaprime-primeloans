@@ -5,13 +5,16 @@ const {ethers} = require("hardhat");
 const { getSelectors, FacetCutAction } = require('./diamond.js')
 
 
-async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = []) {
+async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '') {
     const cut = []
 
-    const Facet = await ethers.getContractFactory(facetName);
+    const Facet = await ethers.getContractFactory(facetName, {
+        libraries: {
+            LTVLib: ltvlibAddress,
+        },
+    });
     const facet = await Facet.deploy()
     await facet.deployed()
-    console.log(`${facetName} deployed: ${facet.address}`);
 
     cut.push({
         facetAddress: facet.address,
@@ -40,20 +43,34 @@ async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions 
     console.log('Completed diamond cut')
 }
 
-async function deployFacet(facetName, diamondAddress) {
+async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '') {
     const cut = []
 
-    const Facet = await ethers.getContractFactory(facetName);
+    const Facet = await ethers.getContractFactory(facetName, {
+        libraries: {
+            LTVLib: ltvlibAddress,
+        },
+    });
     const facet = await Facet.deploy()
     await facet.deployed()
     console.log(`${facetName} deployed: ${facet.address}`);
-    console.log(`RETURN EXCHANGE: ${await facet.getExchange()}`);
 
-    cut.push({
-        facetAddress: facet.address,
-        action: FacetCutAction.Add,
-        functionSelectors: getSelectors(facet)
-    })
+    if(newlyIntroducedFunctions.length > 0) {
+        cut.push({
+            facetAddress: facet.address,
+            action: FacetCutAction.Add,
+            functionSelectors: getSelectors(facet).get(newlyIntroducedFunctions)
+        })
+    } else {
+        cut.push({
+            facetAddress: facet.address,
+            action: FacetCutAction.Add,
+            functionSelectors: getSelectors(facet)
+        })
+    }
+
+    console.log(`cut: ${cut}`)
+
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress)
     let tx
     let receipt

@@ -25,9 +25,9 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool, LTVLib, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
-  PangolinExchange,
+  PangolinExchange, MockSmartLoanLiquidationFacetRedstoneProvider,
   SmartLoansFactory,
   UpgradeableBeacon,
   VariableUtilisationRatesCalculator, YieldYakRouter__factory
@@ -80,7 +80,9 @@ describe('Smart loan',  () => {
   describe('A liquidated loan', () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanLogicFacetRedstoneProvider,
+      loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
       wrappedLoan: any,
+      wrappedLoanLiquidation: any,
       owner: SignerWithAddress,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
@@ -88,6 +90,7 @@ describe('Smart loan',  () => {
       wavaxPool: ERC20Pool,
       admin: SignerWithAddress,
       liquidator: SignerWithAddress,
+      ltvlib: LTVLib,
       usdTokenContract: Contract,
       linkTokenContract: Contract,
       wavaxTokenContract: Contract,
@@ -204,13 +207,30 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
       await recompileSmartLoanLib('SmartLoanLib', [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address},  exchange.address, yakRouterContract.address, 'lib');
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [],  ltvlib.address);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"], ltvlib.address);
 
       await smartLoansFactory.initialize(diamondAddress);
       await smartLoansFactory.connect(borrower).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(borrower)).attach(loan_proxy_address);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
+      loanLiquidation = await loanFactoryLiquidation.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -221,6 +241,15 @@ describe('Smart loan',  () => {
               timestamp: Date.now()
             }
           })
+      wrappedLoanLiquidation = WrapperBuilder
+          .mockLite(loanLiquidation)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
     });
 
     it("should fund a loan", async () => {
@@ -240,7 +269,7 @@ describe('Smart loan',  () => {
     });
 
     it("should swap", async () => {
-      let slippageTolerance = 0.03;
+      let slippageTolerance = 0.1;
       let swappedUsd = 1300;
       let linkAmount = swappedUsd * USD_PRICE * (1 - slippageTolerance) / LINK_PRICE;
 
@@ -266,7 +295,7 @@ describe('Smart loan',  () => {
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await expect(wrappedLoan.liquidateLoan(toWei("1", 18), [0, 1])).to.be.revertedWith("Cannot sellout a solvent account");
+      await expect(wrappedLoanLiquidation.liquidateLoan(toWei("1", 18), [0, 1])).to.be.revertedWith("Cannot sellout a solvent account");
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
@@ -291,7 +320,7 @@ describe('Smart loan',  () => {
       const initWavaxPoolBalance = await wavaxTokenContract.connect(borrower).balanceOf(wavaxPool.address);
 
       await recompileSmartLoanLib("SmartLoanLib",[0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, yakRouterContract.address, 'lib', 2000, 1000);
-      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress)
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -304,7 +333,7 @@ describe('Smart loan',  () => {
 
       let previousLiquidatorBalance = await wavaxTokenContract.balanceOf(liquidator.address);
 
-      await wrappedLoan.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), [0, 1]);
+      await wrappedLoanLiquidation.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), [0, 1]);
 
       expect((fromWei(await wavaxTokenContract.balanceOf(liquidator.address)) - fromWei(previousLiquidatorBalance)) * AVAX_PRICE).to.be.closeTo(
           (((await wrappedLoan.getLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);

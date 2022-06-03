@@ -24,12 +24,17 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool,
+  LTVLib,
+  MockSmartLoanLiquidationFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
   UpgradeableBeacon,
-  VariableUtilisationRatesCalculator, YieldYakRouter__factory
+  VariableUtilisationRatesCalculator,
+  YieldYakRouter__factory
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -133,7 +138,9 @@ describe('Smart loan',  () => {
   describe('A liquidated loan', () => {
     let exchange: PangolinExchange,
         loan: MockSmartLoanLogicFacetRedstoneProvider,
+        loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
         wrappedLoan: any,
+        wrappedLoanLiquidation: any,
         owner: SignerWithAddress,
         borrower: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -155,7 +162,8 @@ describe('Smart loan',  () => {
         USD_PRICE: number,
         ETH_PRICE: number,
         BTC_PRICE: number,
-        diamondAddress: any;
+        diamondAddress: any,
+        ltvlib: LTVLib;
 
     before("deploy provider, exchange and pool", async () => {
       diamondAddress = await deployDiamond();
@@ -276,14 +284,25 @@ describe('Smart loan',  () => {
 
     before("prepare smart loan implementations", async () => {
       await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib');
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"], ltvlib.address);
 
 
     });
 
     beforeEach("create a loan", async () => {
       await recompileSmartLoanLib('SmartLoanLib', [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib');
-      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
@@ -291,10 +310,31 @@ describe('Smart loan',  () => {
       await smartLoansFactory.connect(borrower).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(borrower)).attach(loan_proxy_address);
+
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
+      loanLiquidation = await loanFactoryLiquidation.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      wrappedLoanLiquidation = WrapperBuilder
+          .mockLite(loanLiquidation)
           .using(
               () => {
                 return {
@@ -347,7 +387,12 @@ describe('Smart loan',  () => {
 
     async function liquidateLoan(orderOfLiquidation: number[]) {
       await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib', 2000, 1000);
-      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -372,7 +417,7 @@ describe('Smart loan',  () => {
 
       let previousLiquidatorBalance = await wavaxTokenContract.balanceOf(liquidator.address);
 
-      await wrappedLoan.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), orderOfLiquidation);
+      await wrappedLoanLiquidation.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), orderOfLiquidation);
 
       expect((fromWei(await wavaxTokenContract.balanceOf(liquidator.address)) - fromWei(previousLiquidatorBalance)) * AVAX_PRICE).to.be.closeTo(
           (((await wrappedLoan.getLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);

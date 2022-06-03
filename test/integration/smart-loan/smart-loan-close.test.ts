@@ -24,7 +24,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool, LTVLib, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
@@ -71,6 +71,7 @@ describe('Smart loan',  () => {
       depositor: SignerWithAddress,
       usdPool: ERC20Pool,
       wavaxPool: ERC20Pool,
+      ltvlib: LTVLib,
       ethPool: ERC20Pool,
       admin: SignerWithAddress,
       liquidator: SignerWithAddress,
@@ -242,14 +243,27 @@ describe('Smart loan',  () => {
           { 'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address,},
           exchange.address,
           yakRouterContract.address,
-          'lib');
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+          'lib'
+      );
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       await smartLoansFactory.initialize(diamondAddress);
       await smartLoansFactory.connect(borrower).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(borrower)).attach(loan_proxy_address);
+
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)

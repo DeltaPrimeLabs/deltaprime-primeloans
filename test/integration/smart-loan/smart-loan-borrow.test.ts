@@ -23,7 +23,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   CompoundingIndex,
-  ERC20Pool,
+  ERC20Pool, LTVLib,
   MockSmartLoanLogicFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider__factory,
   MockToken,
@@ -71,6 +71,7 @@ describe('Smart loan',  () => {
         yakRouterContract: Contract,
         wavaxPool: ERC20Pool,
         usdPool: ERC20Pool,
+        ltvlib: LTVLib,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         MOCK_PRICES: any,
@@ -156,7 +157,11 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib("SmartLoanLib", [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, yakRouterContract.address, 'lib');
 
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress)
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address)
 
       await smartLoansFactory.initialize(diamondAddress);
     });
@@ -166,7 +171,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.connect(owner).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(owner)).attach(loan_proxy_address);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -197,7 +207,6 @@ describe('Smart loan',  () => {
 
     it("should borrow funds in the same token as funded", async () => {
       await wrappedLoan.borrow(toBytes32("USD"), toWei("300"));
-
       expect(fromWei(await mockUsdToken.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300 + 300, 1);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300, 0.5);

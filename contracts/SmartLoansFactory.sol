@@ -31,7 +31,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   mapping(address => address) public loansToOwners;
 
   // TODO: Change to address[]?
-  SmartLoanDiamond[] loans;
+  address[] loans;
 
   function initialize(address payable _smartLoanDiamond) external initializer {
     smartLoanDiamond = SmartLoanDiamond(_smartLoanDiamond);
@@ -46,7 +46,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(smartLoan);
+    updateRegistry(address(smartLoan));
     OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
 
     emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, 0);
@@ -60,7 +60,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(smartLoan);
+    updateRegistry(address(smartLoan));
 
     //Fund account with own funds and credit
     ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoanLogicFacet.fund.selector), false);
@@ -74,9 +74,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return smartLoan;
   }
 
-  function updateRegistry(SmartLoanDiamond loan) internal {
-    ownersToLoans[msg.sender] = address(loan);
-    loansToOwners[address(loan)] = msg.sender;
+  function updateRegistry(address loan) internal {
+    ownersToLoans[msg.sender] = loan;
+    loansToOwners[loan] = msg.sender;
     loans.push(loan);
   }
 
@@ -92,7 +92,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return loansToOwners[_loan];
   }
 
-  function getAllLoans() public view returns (SmartLoanDiamond[] memory) {
+  function getAllLoans() public view returns (address[] memory) {
     return loans;
   }
 
