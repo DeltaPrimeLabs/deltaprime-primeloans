@@ -7,7 +7,7 @@
       </Menu>
       <div>
         <div class="rate-wrapper">
-          Current APY: <span class="rate">{{borrowingRate | percent}}</span>
+          Current APY: <span class="rate">{{calculateAPY() | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -178,9 +178,14 @@ export default {
     },
     async closeTheLoan() {
       this.handleTransaction(this.closeLoan)
-          .then(() => {
-            this.repayValue = null;
-          });
+        .then(() => {
+          this.repayValue = null;
+        });
+    },
+
+    calculateAPY() {
+      const compoundingPeriods = 100000;
+      return Math.pow(1 + (this.borrowingRate / compoundingPeriods), compoundingPeriods) - 1;
     }
   }
 }
