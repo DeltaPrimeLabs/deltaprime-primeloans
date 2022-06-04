@@ -5,10 +5,8 @@
         :key='tab.title'
         @click="selectedIndex = index"
         :class="{
-          'tab-selected': (index === selectedIndex),
-          'img-right': tab.imgPosition === 'right'}">
+          'tab-selected': (index === selectedIndex)}">
         <div class="tab-button">
-          <img v-if="tab.img" :src="'src/assets/icons/' + (index === selectedIndex ? tab.imgActive : tab.img) + '.svg'"/>
           <div :style="{'width': tab.titleWidth}">{{ tab.title }}</div>
         </div>
         <img v-if="index !== tabs.length - 1" src="src/assets/icons/slash.svg" class="slash">
@@ -95,10 +93,7 @@ export default {
     padding-right: 0.5rem;
     border-radius: 10px;
 
-    width: 20vw;
-
     @media screen and (min-width: $md) {
-      width: 225px;
       padding-left: 0px;
       padding-right: 20px;
     }
@@ -117,23 +112,6 @@ export default {
     .tab-button {
       color: black;
     }
-  }
-
-  .tab-button > img {
-    width: 73px;
-    margin-right: 5px;
-  }
-
-  .img-right .tab-button {
-    flex-direction: row-reverse;
-    & > img {
-      margin-left: 5px;
-    }
-  }
-
-  .tab-button:not(.img-right) {
-    display: flex;
-    justify-content: flex-end;
   }
 
   .tabs {

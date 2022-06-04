@@ -83,7 +83,7 @@
               fill: false,
               steppedLine: this.stepped,
               data: this.dataPoints,
-              borderColor: (context) => this.getColor(context, this.getLineGradient),
+              borderColor: '#00bf68',
               borderWidth: this.lineWidth
             }
           ]
@@ -179,23 +179,6 @@
       }
     },
     methods: {
-      getLineGradient(ctx, chartArea) {
-        let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-        gradient.addColorStop(0, '#fa91bf');
-        gradient.addColorStop(1, '#babafe');
-
-        return gradient;
-      },
-      getColor(context, fun) {
-        let chart = context.chart;
-        let {ctx, chartArea} = chart;
-
-        if (!chartArea) {
-          // This case happens on initial chart load
-          return null;
-        }
-        return fun(ctx, chartArea);
-      }
     }
   }
 </script>

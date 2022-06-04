@@ -20,27 +20,27 @@
       </div>
       <div class="table">
         <div class="table__header">
-          <div class="table__cell left">Asset</div>
-          <div class="table__cell right">Price</div>
-          <div class="table__cell trend left">Trend</div>
-          <div class="table__cell right">Balance</div>
-          <div class="table__cell right">Share</div>
-          <div class="table__cell right">Value</div>
-          <div class="table__cell right">Buy/Sell</div>
+          <div class="table__cell--old left">Asset</div>
+          <div class="table__cell--old right">Price</div>
+          <div class="table__cell--old chart-cell left">Trend</div>
+          <div class="table__cell--old right">Balance</div>
+          <div class="table__cell--old right">Share</div>
+          <div class="table__cell--old right">Value</div>
+          <div class="table__cell--old right">Buy/Sell</div>
         </div>
         <div class="table__body">
           <div class="table__row" v-for="asset in investments"
                v-bind:key="asset.symbol">
-            <div class="table__cell left" data-label="Asset">
+            <div class="table__cell--old left" data-label="Asset">
               <div class="token-logo-wrapper">
                 <img :src="logoSrc(asset.symbol)" class="token-logo"/>
               </div>
               <span class="token-name">{{ asset.name }}</span>
             </div>
-            <div class="table__cell right" data-label="Price">
+            <div class="table__cell--old right" data-label="Price">
               <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
             </div>
-            <div class="table__cell center chart-icon"
+            <div class="table__cell--old center chart-icon"
                  data-label="Chart"
                  @click.stop="toggleChart(asset.symbol)"
             >
@@ -51,25 +51,25 @@
                 :lineWidth="1.5"/>
               <img class="enlarge clickable-icon"/>
             </div>
-            <div class="table__cell right" data-label="Balance">
+            <div class="table__cell--old right" data-label="Balance">
               <LoadedValue
                 :check="() => asset.balance != null"
                 :value="formatTokenBalance(asset.balance)">
               </LoadedValue>
             </div>
-            <div class="table__cell right" data-label="Share">
+            <div class="table__cell--old right" data-label="Share">
               <LoadedValue :value="asset.share | percent"></LoadedValue>
             </div>
-            <div class="table__cell value right" data-label="Value">
+            <div class="table__cell--old value right" data-label="Value">
               <LoadedValue :value="asset.value | usd"></LoadedValue>
             </div>
             <div>
-              <div class="table__cell invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
+              <div class="table__cell--old invest-buttons right" @click.stop v-if="asset.symbol !== nativeToken">
                 <img @click="showBuyInput(asset.symbol)" class="plus clickable-icon"/>
                 <img src="src/assets/icons/slash-small.svg"/>
                 <img @click="showSellInput(asset.symbol)" class="minus clickable-icon"/>
               </div>
-              <div v-else class="table__cell right no-buy">-</div>
+              <div v-else class="table__cell--old right no-buy">-</div>
             </div>
             <div class="asset-input" v-if="asset.buyInput" @click.stop>
               <SmallBlock
@@ -126,16 +126,16 @@
 
           <div class="table__row" v-for="asset in investmentOptions"
                v-bind:key="asset.symbol">
-            <div data-label="Asset" class="table__cell left">
+            <div data-label="Asset" class="table__cell--old left">
               <div class="token-logo-wrapper">
                 <img :src="logoSrc(asset.symbol)" class="token-logo"/>
               </div>
               <span class="token-name">{{ asset.name }}</span>
             </div>
-            <div data-label="Price" class="table__cell right">
+            <div data-label="Price" class="table__cell--old right">
               <LoadedValue :check="() => asset.price != null" :value="asset.price | usd"></LoadedValue>
             </div>
-            <div data-label="Chart" class="table__cell chart-icon"
+            <div data-label="Chart" class="table__cell--old chart-icon"
                  @click.stop="toggleChart(asset.symbol)"
             >
               <SimpleChart
@@ -144,10 +144,10 @@
                 :lineWidth="1.5"/>
               <img class="enlarge clickable-icon"/>
             </div>
-            <div class="table__cell" v-if="!isMobile"></div>
-            <div class="table__cell" v-if="!isMobile"></div>
-            <div class="table__cell" v-if="!isMobile"></div>
-            <div class="table__cell invest-buttons right" @click.stop>
+            <div class="table__cell--old" v-if="!isMobile"></div>
+            <div class="table__cell--old" v-if="!isMobile"></div>
+            <div class="table__cell--old" v-if="!isMobile"></div>
+            <div class="table__cell--old invest-buttons right" @click.stop>
               <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)"
                    class="plus clickable-icon"/>
             </div>
@@ -742,7 +742,7 @@ export default {
         margin-bottom: 1.5em;
       }
 
-      .table__cell {
+      .table__cell--old {
         min-height: 55px;
 
         @media screen and (max-width: $md) {
@@ -784,7 +784,7 @@ export default {
   }
 }
 
-.table__cell {
+.table__cell--old {
   flex-grow: 1;
   box-sizing: border-box;
   display: flex;
@@ -793,7 +793,7 @@ export default {
   font-weight: 500;
   padding: 1px;
 
-  &.trend {
+  &.chart-cell {
     margin-left: 40px;
   }
 

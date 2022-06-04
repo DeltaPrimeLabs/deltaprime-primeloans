@@ -1,0 +1,112 @@
+<template>
+  <div class="bar-gauge-beta-component">
+    <div class="bar-gauge">
+      <div class="bar" v-bind:class="{'slim': slim}">
+        <div class="bar__value" :style="{'width': barGaugeValueWidth + 'px'}"></div>
+      </div>
+      <div v-if="!slim" class="range">
+        <div>{{min | percent(0)}}</div>
+        <div>{{max | percent(0)}}</div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+const BAR_GAUGE_WIDTH = 108;
+const SLIM_BAR_GAUGE_WIDTH = 53;
+
+export default {
+  name: 'BarGaugeBeta',
+  props: {
+    min: {
+      type: Number,
+      required: true,
+    },
+    max: {
+      type: Number,
+      required: true,
+    },
+    value: {
+      type: Number,
+      required: true,
+    },
+    slim: {
+      type: Boolean,
+      default: false,
+    }
+  },
+  computed: {
+    barGaugeElementWidth() {
+      return this.slim ? SLIM_BAR_GAUGE_WIDTH : BAR_GAUGE_WIDTH;
+    },
+    barGaugeValueWidth() {
+      if (this.value < this.min) {
+        return 0
+      } else if (this.value > this.max) {
+        return this.barGaugeElementWidth;
+      } else {
+        return this.barGaugeElementWidth * ((this.value - this.min) / (this.max - this.min));
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "~@/styles/variables";
+
+.bar-gauge-beta-component {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  .bar-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .bar {
+      position: relative;
+      width: 108px;
+      height: 17px;
+      border-radius: 9.5px;
+      box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
+      background-color: rgba(191, 188, 255, 0.2);
+
+      &.slim {
+        width: 53px;
+        height: 11px;
+
+        .bar__value {
+          height: 11px;
+        }
+      }
+
+      .bar__value {
+        top: 0;
+        left: 0;
+        width: 30px;
+        height: 17px;
+        border-top-left-radius: 9.5px;
+        border-bottom-left-radius: 9.5px;
+        background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
+      }
+    }
+
+    .range {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 2px;
+      color: $steel-gray;
+      font-size: $font-size-xxs;
+    }
+  }
+}
+
+</style>

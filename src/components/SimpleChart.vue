@@ -99,6 +99,7 @@
     },
     methods: {
       getGradient(ctx, chartArea) {
+        console.log(JSON.stringify(this.dataPoints));
         if (this.gradient === null) {
 
           let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);

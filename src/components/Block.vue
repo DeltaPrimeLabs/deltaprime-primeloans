@@ -42,8 +42,10 @@
 
 .block-wrapper.bordered::after {
   position: absolute;
-  top: -4px; bottom: -4px;
-  left: -4px; right: -4px;
+  top: -4px;
+  bottom: -4px;
+  left: -4px;
+  right: -4px;
   background-image: linear-gradient(143deg, #c9cbff 26%, #ffd8b1 60%, #fcb7cc 91%);
   content: '';
   z-index: -1;

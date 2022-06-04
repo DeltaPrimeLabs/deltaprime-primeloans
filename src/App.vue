@@ -50,7 +50,7 @@
     async created() {
       if (!ethereum) {
         this.showMetamaskBanner = true;
-        return;
+        return;F
       }
 
       if (await this.checkConnectedChain() !== config.chainId) {
@@ -192,7 +192,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 0 30px 0;
+    padding: 20px 0 35px 0;
   }
 
   .logo {

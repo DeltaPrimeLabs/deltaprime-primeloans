@@ -5,6 +5,8 @@ import EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json';
 import EXCHANGE from '@artifacts/contracts/PangolinIntermediary.sol/PangolinIntermediary.json'
 import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
 import {handleCall, handleTransaction} from "../utils/blockchain";
+import Vue from 'vue';
+import Modal from '../components/Modal';
 
 export default {
   methods: {
@@ -81,6 +83,19 @@ export default {
       asset = asset ? asset : 'avax';
       const assetData = config.ASSETS_CONFIG[asset.toUpperCase()];
       return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
+    },
+
+    openModal(component) {
+      const modal = Vue.extend(component);
+      const instance = new modal();
+      instance.$mount();
+      document.body.appendChild(instance.$el);
+    },
+
+    closeModal() {
+      const modalComponent = document.getElementById('modal');
+      console.log(modalComponent);
+      document.body.removeChild(modalComponent);
     }
   },
   computed: {

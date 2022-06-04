@@ -7,6 +7,7 @@ import BorrowNft from "@/components/BorrowNft";
 import DepositNft from "@/components/DepositNft";
 import Admin from "@/pages/Admin";
 import PrimeAccount from "@/pages/PrimeAccount";
+import PrimeAccountBeta from '../pages/PrimeAccountBeta';
 
 
 Vue.use(Router)
@@ -23,6 +24,11 @@ export default new Router({
       path: '/prime-account',
       name: 'Prime Account',
       component: PrimeAccount
+    },
+    {
+      path: '/prime-account-beta',
+      name: 'Prime Account',
+      component: PrimeAccountBeta
     },
     {
       path: '/ranking',

@@ -3,6 +3,7 @@
     <div class="links-wrapper" :class="{'mobile': isMobile}">
       <router-link to="/pool" style="width: 104px"><span title="Pool">Pool</span></router-link>
       <router-link to="/prime-account" style="width: 193px"><span title="Prime Account">Prime Account</span></router-link>
+      <router-link to="/prime-account-beta" style="width: 238px"><span title="Prime Account">Prime Account Beta</span></router-link>
       <router-link to="/nft/list" style="width: 100px"><span title="NFT">NFT</span></router-link>
     </div>
   </div>
@@ -29,7 +30,6 @@
   bottom: 0;
   width: 100%;
   padding-bottom: 1rem;
-  z-index: 1;
 
   @media screen and (min-width: $md) {
     position: initial;
