@@ -120,6 +120,7 @@ import FundForm from "./FundForm";
 import WithdrawForm from "./WithdrawForm";
 import InfoBubble from "./InfoBubble";
 import config from "@/config";
+import {aprToApy} from '../utils/calculate';
 
 export default {
   name: 'SmartLoan',
@@ -184,8 +185,7 @@ export default {
     },
 
     calculateAPY() {
-      const compoundingPeriods = 100000;
-      return Math.pow(1 + (this.borrowingRate / compoundingPeriods), compoundingPeriods) - 1;
+      return aprToApy(this.borrowingRate);
     }
   }
 }
