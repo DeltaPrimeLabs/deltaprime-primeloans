@@ -7,7 +7,7 @@
       </Menu>
       <div>
         <div class="rate-wrapper">
-          Current APY: <span class="rate">{{calculateAPY() | percent}}</span>
+          Current APY: <span class="rate">{{borrowingAPY | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -163,6 +163,9 @@ export default {
         return null;
       }
       return this.loanEvents.find(event => event.type === "Liquidated");
+    },
+    borrowingAPY() {
+      return aprToApy(this.borrowingRate);
     }
   },
   methods: {
@@ -182,10 +185,6 @@ export default {
         .then(() => {
           this.repayValue = null;
         });
-    },
-
-    calculateAPY() {
-      return aprToApy(this.borrowingRate);
     }
   }
 }
