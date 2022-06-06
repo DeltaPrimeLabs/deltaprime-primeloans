@@ -3,7 +3,7 @@
     <Bar>
       <div>
         <div class="rate-wrapper">
-          Current APY: <span class="rate">{{depositRate | percent}}</span>
+          Current APY: <span class="rate">{{depositAPY | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -167,7 +167,7 @@
         return dataPoints;
       },
 
-      calculateDepositRate() {
+      depositAPY() {
         return aprToApy(this.depositRate);
       }
     },
