@@ -220,21 +220,22 @@ describe('Smart loan',  () => {
 
       await tx.wait();
 
-      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(0);
-      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(20);
+      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(10);
     });
 
     it("should revert withdrawing too much native token", async () => {
-      await expect(wrappedLoan.withdrawNativeToken(toWei("30"))).to.be.revertedWith("Not enough AVAX to withdraw");
+      await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough WAVAX to unwrap and withdraw");
     });
 
     it("should withdraw native token", async () => {
       let providerBalance = fromWei(await provider.getBalance(owner.address));
-      await wrappedLoan.withdrawNativeToken(toWei("5"));
+      await wrappedLoan.unwrapAndWithdraw(toWei("5"));
 
       expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(providerBalance + 5, 0.001);
-      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(0);
-      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(15);
+      //shouldn't change balance of loan
+      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(5);
     });
   });
 });

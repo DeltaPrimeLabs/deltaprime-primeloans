@@ -63,7 +63,7 @@ const LIQUIDATOR_PRIVATE_KEY =  fs.readFileSync(path.resolve(__dirname, "../../.
 const rpcProvider = new ethers.providers.JsonRpcProvider()
 const liquidatorWallet = (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(rpcProvider);
 
-describe('Smart loan',  () => {
+describe('Test liquidator',  () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });

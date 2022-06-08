@@ -21,6 +21,7 @@ contract WavaxPool is ERC20Pool {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
+    _deposited[address(this)] += msg.value;
     _updateRates();
 
     emit Deposit(msg.sender, msg.value, block.timestamp);

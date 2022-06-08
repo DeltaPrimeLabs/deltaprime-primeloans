@@ -160,22 +160,15 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
-    //TODO: write test
-    function withdrawNativeToken(uint256 _amount) public payable virtual {
+    function unwrapAndWithdraw(uint256 _amount) public payable virtual {
         WAVAX native = SmartLoanLib.getNativeTokenWrapped();
-        require(native.balanceOf(address(this)) >= _amount, "Not enough AVAX to withdraw");
+        require(native.balanceOf(address(this)) >= _amount, "Not enough WAVAX to unwrap and withdraw");
+
         native.withdraw(_amount);
+
         payable(msg.sender).safeTransferETH(_amount);
 
-        emit WithdrawNative(msg.sender, msg.value, block.timestamp);
-    }
-
-    receive() external payable {
-        depositNativeToken();
-    }
-
-    fallback() external payable {
-        depositNativeToken();
+        emit UnwrapAndWithdraw(msg.sender, msg.value, block.timestamp);
     }
 
     /* ========== VIEW FUNCTIONS ========== */
@@ -459,7 +452,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     * @param amount of repaid funds
     * @param timestamp of the repayment
     **/
-    event WithdrawNative(address indexed owner,  uint256 amount, uint256 timestamp);
+    event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
 
     struct RepayConfig {
         bool allowSwaps;

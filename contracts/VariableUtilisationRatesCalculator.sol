@@ -32,8 +32,8 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   // BREAKPOINT must be lower than 1e18
   uint256 public constant MAX_RATE = 0.75e18;
 
-  //accuracy of 1000
-  uint256 public depositRateFactor = 995;
+  //accuracy of 1e18
+  uint256 public depositRateFactor = 1e18 - 1e12;
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -60,9 +60,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
-      return MAX_RATE * depositRateFactor / 1000;
+      return MAX_RATE * depositRateFactor / 1e18;
     } else {
-      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1000);
+      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1e18);
         return rate;
     }
   }
@@ -77,7 +77,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external pure override returns (uint256) {
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     if (totalDeposits == 0) return OFFSET_1;
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
