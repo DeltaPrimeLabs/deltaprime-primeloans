@@ -29,7 +29,7 @@ contract MockSmartLoanLogicFacetSetValues is MockSmartLoanLogicFacetRedstoneProv
         return debt;
     }
 
-    function calculateDebt(bytes32[] memory assets, uint256[] memory prices) internal view virtual override returns (uint256) {
+    function calculateDebt(uint256[] memory prices) internal view virtual override returns (uint256) {
         return debt;
     }
 

@@ -94,6 +94,26 @@ export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddres
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
+    // MaxLTV
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_MAX_LTV =')
+    );
+
+    newLine = `    uint256 private constant _MAX_LTV = ${maxLTV};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    //MinSelloutLTV
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_MIN_SELLOUT_LTV =')
+    );
+
+    newLine = `    uint256 private constant _MIN_SELLOUT_LTV = ${minSelloutLTV};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
     //Yak Router
 
     lineWithFunctionDeclaration = fileArray.findIndex(

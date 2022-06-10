@@ -206,7 +206,15 @@ describe('Smart loan',  () => {
     it("should deploy a smart loan behind a proxy", async () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-      await recompileSmartLoanLib('SmartLoanLib', [0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address},  exchange.address, yakRouterContract.address, 'lib');
+      await recompileSmartLoanLib(
+          'SmartLoanLib',
+          [0, 1],
+          [wavaxTokenAddress, usdTokenAddress],
+          {'USD': usdPool.address, 'AVAX': wavaxPool.address},
+          exchange.address,
+          yakRouterContract.address,
+          'lib'
+      );
 
       // Deploy LTVLib and later link contracts to it
       const LTVLib = await ethers.getContractFactory('LTVLib');
@@ -319,7 +327,18 @@ describe('Smart loan',  () => {
 
       const initWavaxPoolBalance = await wavaxTokenContract.connect(borrower).balanceOf(wavaxPool.address);
 
-      await recompileSmartLoanLib("SmartLoanLib",[0, 1], {'USD': usdPool.address, 'AVAX': wavaxPool.address}, exchange.address, yakRouterContract.address, 'lib', 2000, 1000);
+      await recompileSmartLoanLib(
+          "SmartLoanLib",
+          [0, 1],
+          [wavaxTokenAddress, usdTokenAddress],
+          {'USD': usdPool.address, 'AVAX': wavaxPool.address},
+          exchange.address,
+          yakRouterContract.address,
+          'lib',
+          2000,
+          1000
+      );
+
       await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -327,7 +346,7 @@ describe('Smart loan',  () => {
       const repayAmount = await getSelloutRepayAmount(
         await wrappedLoan.getTotalValue(),
         await wrappedLoan.getDebt(),
-        await wrappedLoan.getLiquidationBonus(),
+        await wrappedLoan.getMaxLiquidationBonus(),
         await wrappedLoan.getMaxLtv()
       );
 
@@ -336,7 +355,7 @@ describe('Smart loan',  () => {
       await wrappedLoanLiquidation.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), [0, 1]);
 
       expect((fromWei(await wavaxTokenContract.balanceOf(liquidator.address)) - fromWei(previousLiquidatorBalance)) * AVAX_PRICE).to.be.closeTo(
-          (((await wrappedLoan.getLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);
+          (((await wrappedLoan.getMaxLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect((await wavaxTokenContract.connect(borrower).balanceOf(wavaxPool.address)).gt(initWavaxPoolBalance)).to.be.true;

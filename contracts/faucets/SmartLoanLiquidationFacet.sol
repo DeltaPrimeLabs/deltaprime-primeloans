@@ -53,14 +53,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
 
         //to avoid stack too deep error
         {
-            uint256 debt = LTVLib.calculateDebt(assets, prices);
+            uint256 debt = LTVLib.calculateDebt(prices);
 
             if (leftToRepayInUsd > debt) {
                 leftToRepayInUsd = debt;
             }
         }
 
-        uint256 bonus = (leftToRepayInUsd * SmartLoanLib.getLiquidationBonus()) / SmartLoanLib.getPercentagePrecision();
+        uint256 bonus = (leftToRepayInUsd * SmartLoanLib.getMaxLiquidationBonus()) / SmartLoanLib.getPercentagePrecision();
 
         //repay iterations without swapping assets
         uint32 i;

@@ -11,19 +11,18 @@ library LTVLib {
     using TransferHelper for address;
 
     /**
-     * Calculates the current debt as a sum of debts from all lending pools
-     * @param _assets list of supported assets
-     * @param _prices current prices
-     **/
-    function calculateDebt(bytes32[] memory _assets, uint256[] memory _prices) public view returns (uint256) {
+   * Calculates the current debt as a sum of debts from all lending pools
+   * @param _prices current prices
+   **/
+    function calculateDebt(uint256[] memory _prices) internal view returns (uint256) {
         uint256 debt = 0;
 
-        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
-        for (uint256 i = 0; i < SmartLoanLib.getPoolsAssetsIndices().length; i++) {
+        for (uint256 i = 0; i < SmartLoanLib.getPoolTokens().length; i++) {
+            IERC20Metadata token = SmartLoanLib.getPoolTokens()[i];
             uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
-            IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + ERC20Pool(SmartLoanLib.getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10
+
+            debt = debt + SmartLoanLib.getPools()[i].getBorrowed(address(this)) * _prices[assetIndex] * 10**10
             / 10 ** token.decimals();
         }
 
@@ -206,7 +205,7 @@ library LTVLib {
      * @param _prices current prices
      **/
     function calculateLTV(bytes32[] memory  _assets, uint256[] memory _prices) external view returns (uint256) {
-        uint256 debt = calculateDebt(_assets, _prices);
+        uint256 debt = calculateDebt(_prices);
         uint256 totalValue = calculateAssetsValue(_assets, _prices);
 
         if (debt == 0) {
