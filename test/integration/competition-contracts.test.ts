@@ -44,7 +44,10 @@ import {
     YieldYakRouter__factory,
     MockSmartLoanLogicFacetRedstoneProvider,
     MockSmartLoanLogicFacetRedstoneProvider__factory,
-    MockSmartLoanLogicFacetLimitedCollateral__factory
+    MockSmartLoanLogicFacetLimitedCollateral__factory,
+    LTVLib,
+    MockSmartLoanLogicFacetLimitedCollateral,
+    MockSmartLoanLiquidationFacetRedstoneProvider
 } from "../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
 
@@ -96,6 +99,7 @@ describe('Trading competition upgraded contracts test', () => {
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         USD_PRICE: number,
+        ltvlib: LTVLib,
         diamondAddress: any;
 
     before(async () => {
@@ -148,8 +152,21 @@ describe('Trading competition upgraded contracts test', () => {
         ]);
 
         // Smart Loan Implementation
-        await recompileSmartLoanLib('SmartLoanLib', [0], [wavaxTokenContract.address], {"AVAX": wavaxPool.address},  exchange.address, yakRouterContract.address,'lib');
-        await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+        await recompileSmartLoanLib(
+            'SmartLoanLib',
+            [0],
+            [wavaxTokenContract.address],
+            {"AVAX": wavaxPool.address},
+            exchange.address,
+            yakRouterContract.address,
+            'lib'
+        );
+
+        // Deploy LTVLib and later link contracts to it
+        const LTVLib = await ethers.getContractFactory('LTVLib');
+        ltvlib = await LTVLib.deploy() as LTVLib;
+
+        await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
         // Not upgraded smartLoansFactory with TUP
         smartLoansFactoryImplementation = (await deployContract(owner, SmartLoansFactoryArtifact)) as SmartLoansFactory;
@@ -204,8 +221,14 @@ describe('Trading competition upgraded contracts test', () => {
 
     it(`should add and withdraw more than ${MAX_COLLATERAL} USD collateral in total with the base loan contract version`, async () => {
         await smartLoansFactory.connect(user).createLoan();
-        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-        loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(owner)).attach(loan_proxy_address);
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
+
+        const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+            libraries: {
+                LTVLib: ltvlib.address
+            }
+        });
+        loan = await loanFactory.attach(loan_proxy_address).connect(user) as MockSmartLoanLogicFacetRedstoneProvider;
 
         loan = WrapperBuilder
             .mockLite(loan.connect(user))
@@ -223,13 +246,20 @@ describe('Trading competition upgraded contracts test', () => {
         await wavaxTokenContract.connect(user).approve(loan.address, moreThanMax);
         await loan.fund(toBytes32("AVAX"), moreThanMax);
         await loan.withdraw(toBytes32("AVAX"), moreThanMax);
-
     });
 
     it("should upgrade to new SmartLoanDiamond for competition purposes and test collateral limitations", async () => {
-        await replaceFacet("MockSmartLoanLogicFacetLimitedCollateral", diamondAddress)
+        await replaceFacet("MockSmartLoanLogicFacetLimitedCollateral", diamondAddress, [], ltvlib.address);
 
-        loan = await (new MockSmartLoanLogicFacetLimitedCollateral__factory(owner)).attach(loan.address);
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
+
+        const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetLimitedCollateral", {
+            libraries: {
+                LTVLib: ltvlib.address
+            }
+        });
+        loan = await loanFactory.attach(loan_proxy_address).connect(user) as MockSmartLoanLogicFacetLimitedCollateral;
+
         loan = WrapperBuilder
             .mockLite(loan)
             .using(
@@ -258,8 +288,29 @@ describe('Trading competition upgraded contracts test', () => {
     });
 
     it("should test resetting collateral after closeLoan()", async () => {
+        await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ['closeLoan'], ltvlib.address)
+
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
+
+        const loanFactory = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+            libraries: {
+                LTVLib: ltvlib.address
+            }
+        });
+        let loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(user) as MockSmartLoanLiquidationFacetRedstoneProvider;
+
+        loanLiquidation = WrapperBuilder
+            .mockLite(loanLiquidation)
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
+
         expect(fromWei(await loan.getTotalValue())).to.be.greaterThan(0);
-        await loan.closeLoan([0]);
+        await loanLiquidation.closeLoan([0]);
         expect(fromWei(await loan.getTotalValue())).to.be.equal(0);
         await wavaxTokenContract.connect(user).approve(loan.address, maxCollateral);
         await loan.fund(toBytes32("AVAX"), maxCollateral);

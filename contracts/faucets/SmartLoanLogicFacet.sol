@@ -35,39 +35,41 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
-     * Funds the loan with a specified amount of a defined token
-     * @dev Requires approval for ERC20 token on frontend side
-     **/
+    * Funds the loan with a specified amount of a defined token
+    * @param _fundedAsset asset to be funded
+    * @param _amount to be funded
+    * @dev Requires approval for ERC20 token on frontend side
+    **/
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
-        IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
-        TransferHelper.safeTransferFrom(address(token), msg.sender, address(this), _amount);
+        IERC20Metadata token = LTVLib.getERC20TokenInstance(_fundedAsset);
+        address(token).safeTransferFrom(msg.sender, address(this), _amount);
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
 
-   /**
-   * Withdraws an amount of a defined asset from the loan
-   * This method could be used to cash out profits from investments
-   * The loan needs to remain solvent after the withdrawal
-   * @param _withdrawnAsset asset to be withdrawn
-   * @param _amount to be withdrawn
-   * @dev This function uses the redstone-evm-connector
-   **/
+    /**
+    * Withdraws an amount of a defined asset from the loan
+    * This method could be used to cash out profits from investments
+    * The loan needs to remain solvent after the withdrawal
+    * @param _withdrawnAsset asset to be withdrawn
+    * @param _amount to be withdrawn
+    * @dev This function uses the redstone-evm-connector
+    **/
     function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
-        IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset);
-        require(LTVLib.getBalance(address(this), _withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
+        IERC20Metadata token = LTVLib.getERC20TokenInstance(_withdrawnAsset);
+        require(LTVLib.getBalance(_withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
 
-        token.transfer(msg.sender, _amount);
+        address(token).safeTransfer(msg.sender, _amount);
 
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
     }
 
     /**
-     * Borrows funds from the pool
-     * @param _asset to borrow
-     * @param _amount of funds to borrow
-     * @dev This function uses the redstone-evm-connector
-     **/
+    * Borrows funds from the pool
+    * @param _asset to be borrowed
+    * @param _amount of funds to borrow
+    * @dev This function uses the redstone-evm-connector
+    **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
         ERC20Pool pool = ERC20Pool(SmartLoanLib.getPoolAddress(_asset));
         pool.borrow(_amount);
@@ -78,12 +80,12 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
     /**
      * Repays funds to the pool
-     * @param _asset to repay
+     * @param _asset to be repaid
      * @param _amount of funds to repay
      * @dev This function uses the redstone-evm-connector
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
-        IERC20Metadata token = getERC20TokenInstance(_asset);
+        IERC20Metadata token = LTVLib.getERC20TokenInstance(_asset);
         SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
 
         if (isSolvent() && SmartLoanLib.getLiquidationInProgress() == false) {
@@ -107,14 +109,14 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     }
 
 
-   /**
-   * Swaps one asset to another
-   * @param _soldAsset asset to be sold
-   * @param _boughtAsset asset to be bought
-   * @param _exactSold exact amount of asset to be sold
-   * @param _minimumBought minimum amount of asset to be bought
-   * @dev This function uses the redstone-evm-connector
-   **/
+    /**
+    * Swaps one asset to another
+    * @param _soldAsset asset to be sold
+    * @param _boughtAsset asset to be bought
+    * @param _exactSold exact amount of asset to be sold
+    * @param _minimumBought minimum amount of asset to be bought
+    * @dev This function uses the redstone-evm-connector
+    **/
     function swap(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public virtual onlyOwner remainsSolvent returns (uint256[] memory) {
         return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
     }
@@ -134,10 +136,10 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
 
     /**
-   * Unstakes AVAX from Yield Yak protocol
-   * @param _amount amount of AVAX to be unstaked
-   * @dev This function uses the redstone-evm-connector
-   **/
+    * Unstakes AVAX from Yield Yak protocol
+    * @param _amount amount of AVAX to be unstaked
+    * @dev This function uses the redstone-evm-connector
+    **/
     function unstakeAVAXYak(uint256 _amount) public onlyOwner nonReentrant remainsSolvent {
         IYieldYakRouter yakRouter = SmartLoanLib.getYieldYakRouter();
         address(SmartLoanLib.getYakAvaxStakingContract()).safeApprove(address(yakRouter), _amount);
@@ -146,65 +148,24 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         SmartLoanLib.getNativeTokenWrapped().deposit{value: _amount}();
     }
 
-    /**
-   * This function can only be accessed by the owner and allows closing all positions and repaying all debts.
-   * @dev This function uses the redstone-evm-connector
-   **/
-    function closeLoan() public virtual payable onlyOwner nonReentrant remainsSolvent {
-        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
-
-        uint256 debt = LTVLib.calculateDebt(assets, prices);
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: address(this).balance}();
-
-        require(calculateAssetsValue(assets, prices) >= debt, "Not possible to repay fully the debt");
-
-        uint256 i;
-
-        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
-        for (i = 0; i < SmartLoanLib.getPoolsAssetsIndices().length; i++) {
-            uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
-            IERC20Metadata token = getERC20TokenInstance(assets[assetIndex]);
-            address poolAddress = SmartLoanLib.getPoolAddress(assets[assetIndex]);
-
-            if (poolAddress != address(0)) {
-                repayAmount(
-                    RepayConfig(
-                        true,
-                        ERC20Pool(poolAddress).getBorrowed(address(this)),
-                        assetIndex,
-                        0,
-                        prices,
-                        assets
-                    )
-                );
-            }
-        }
-
-        for (i = 0; i < assets.length; i++) {
-            IERC20Metadata token = getERC20TokenInstance(assets[i]);
-            uint256 balance = token.balanceOf(address(this));
-
-            if (balance > 0) {
-                address(token).safeTransfer(msg.sender, balance);
-            }
-        }
-
-        emit LoanClosed(debt, address(this).balance, block.timestamp);
-    }
-
     //TODO: write a test for it
     function wrapNativeToken(uint256 amount) onlyOwner public {
         require(amount <= address(this).balance, "Not enough AVAX to wrap");
         SmartLoanLib.getNativeTokenWrapped().deposit{value: amount}();
     }
 
+    function depositNativeToken() public payable virtual {
+        SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
+
+        emit DepositNative(msg.sender, msg.value, block.timestamp);
+    }
+
     receive() external payable {}
 
     /* ========== VIEW FUNCTIONS ========== */
 
-    function getLiquidationBonus() public view virtual returns (uint256) {
-        return SmartLoanLib.getLiquidationBonus();
+    function getMaxLiquidationBonus() public view virtual returns (uint256) {
+        return SmartLoanLib.getMaxLiquidationBonus();
     }
 
     function getMaxLtv() public view virtual returns (uint256) {
@@ -223,7 +184,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
 
-        return LTVLib.calculateDebt(assets, prices);
+        return LTVLib.calculateDebt(prices);
     }
 
     /**
@@ -234,18 +195,19 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
 
-        return calculateAssetsValue(assets, prices);
+        return calculateAssetsValue(prices);
     }
+
     function getFullLoanStatus() public view returns (uint256[4] memory) {
         return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
     }
 
     /**
-     * Checks if the loan is solvent.
-     * It means that the ratio between debt and current collateral (defined as total value minus debt) is below safe level,
-     * which is parametrized by the SmartLoanLib.getMaxLtv()
-     * @dev This function uses the redstone-evm-connector
-     **/
+    * Checks if the loan is solvent.
+    * It means that the ratio between debt and current collateral (defined as total value minus debt) is below safe level,
+    * which is parametrized by the getMaxLtv()
+    * @dev This function uses the redstone-evm-connector
+    **/
     function isSolvent() public view returns (bool) {
         return getLTV() < SmartLoanLib.getMaxLtv();
     }
@@ -269,14 +231,23 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return getPricesFromMsg(assets);
     }
 
-    /**
-     * Returns the current debts associated with the loan as well as total debt
-     **/
-    function getDebts() public view virtual returns (uint256[] memory, uint256) {
-        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
 
-        return calculateDebts(assets, prices);
+    /**
+ * Returns the current debts associated with the loan as well as total debt
+ **/
+    function getDebts() public view virtual returns (uint256[] memory) {
+        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
+
+        uint length = SmartLoanLib.getPools().length;
+        uint256[] memory debts = new uint256[](length);
+
+        uint256 i;
+
+        for (i = 0; i < length; i++) {
+            debts[i] = SmartLoanLib.getPools()[i].getBorrowed(address(this));
+        }
+
+        return debts;
     }
 
     /**
@@ -287,24 +258,23 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     function getLTV() public view virtual returns (uint256) {
         bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
-        return calculateLTV(assets, prices);
+        return calculateLTV(prices);
     }
 
     /* ========== INTERNAL AND PRIVATE FUNCTIONS ========== */
 
     /**
-     * Swaps one asset with another
-     * @param _soldAsset asset to be sold
-     * @param _boughtAsset asset to be bought
-     * @param _exactSold exact amount of asset to be sold
-     * @param _minimumBought minimum amount of asset to be bought
-     **/
+    * Swaps one asset with another
+    * @param _soldAsset asset to be sold
+    * @param _boughtAsset asset to be bought
+    * @param _exactSold exact amount of asset to be sold
+    * @param _minimumBought minimum amount of asset to be bought
+    **/
     function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal returns(uint256[] memory) {
-        IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
+        // mew
+        IERC20Metadata soldToken = LTVLib.getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
-
-        // TODO: Save getExchange() results to a in-memory variable?
         address(soldToken).safeTransfer(address(SmartLoanLib.getExchange()), _exactSold);
 
         uint256[] memory amounts = SmartLoanLib.getExchange().swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
@@ -317,8 +287,8 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     /**
      * Calculates the current value of Prime Account in USD including all tokens as well as staking and LP positions
      **/
-    function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual returns (uint256) {
-        return LTVLib.calculateAssetsValue(assets, prices);
+    function calculateAssetsValue(uint256[] memory prices) internal view virtual returns (uint256) {
+        return LTVLib.calculateAssetsValue(prices) + SmartLoanLib.getYieldYakRouter().getTotalStakedValue() * prices[0] / 10**8;
     }
 
     /**
@@ -331,35 +301,20 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return token;
     }
 
-    function getExchange() public view returns (address) {
-        return address(SmartLoanLib.getExchange());
-    }
-
     /**
      * Calculates the current debt as a sum of debts from all lending pools
-     * @param _assets list of supported assets
      * @param _prices current prices
      **/
-    function calculateDebt(bytes32[] memory _assets, uint256[] memory _prices) internal view virtual returns (uint256) {
-        return LTVLib.calculateDebt(_assets, _prices);
+    function calculateDebt(uint256[] memory _prices) internal view virtual returns (uint256) {
+        return LTVLib.calculateDebt(_prices);
     }
 
     /**
-     * Returns current debts associated with the loan and its total debt
-     * @param _assets list of supported assets
-     * @param _prices current prices
-     **/
-    function calculateDebts(bytes32[] memory _assets, uint256[] memory _prices) internal virtual view returns (uint256[] memory, uint256) {
-        return LTVLib.calculateDebts(_assets, _prices);
-    }
-
-    /**
-     * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
-     * @param _assets list of supported assets
-     * @param _prices current prices
-     **/
-    function calculateLTV(bytes32[] memory  _assets, uint256[] memory _prices) internal virtual view returns (uint256) {
-        return LTVLib.calculateLTV(_assets, _prices);
+    * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
+    * @param _prices current prices
+    **/
+    function calculateLTV(uint256[] memory _prices) internal virtual view returns (uint256) {
+        return LTVLib.calculateLTV(_prices);
     }
 
     /**
@@ -387,7 +342,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     **/
     modifier remainsSolvent() {
         _;
-
         require(isSolvent(), "The action may cause an account to become insolvent");
     }
 
@@ -462,6 +416,15 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
      * @param timestamp a time of the loan's closure
      **/
     event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 timestamp);
+
+
+    /**
+    * @dev emitted when funds are repaid to the pool
+    * @param owner the address initiating repayment
+    * @param amount of repaid funds
+    * @param timestamp of the repayment
+    **/
+    event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
 
     struct RepayConfig {
         bool allowSwaps;

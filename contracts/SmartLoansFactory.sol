@@ -30,7 +30,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   mapping(address => address) public ownersToLoans;
   mapping(address => address) public loansToOwners;
 
-  // TODO: Change to address[]?
   address[] loans;
 
   function initialize(address payable _smartLoanDiamond) external initializer {

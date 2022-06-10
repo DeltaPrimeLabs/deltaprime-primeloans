@@ -12,18 +12,17 @@ library LTVLib {
 
     /**
      * Calculates the current debt as a sum of debts from all lending pools
-     * @param _assets list of supported assets
      * @param _prices current prices
      **/
-    function calculateDebt(bytes32[] memory _assets, uint256[] memory _prices) public view returns (uint256) {
+    function calculateDebt(uint256[] memory _prices) public view returns (uint256) {
         uint256 debt = 0;
 
-        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
-        for (uint256 i = 0; i < SmartLoanLib.getPoolsAssetsIndices().length; i++) {
+        for (uint256 i = 0; i < SmartLoanLib.getPoolTokens().length; i++) {
+            IERC20Metadata token = SmartLoanLib.getPoolTokens()[i];
             uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
-            IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + ERC20Pool(SmartLoanLib.getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10
+
+            debt = debt + SmartLoanLib.getPools()[i].getBorrowed(address(this)) * _prices[assetIndex] * 10**10
             / 10 ** token.decimals();
         }
 
@@ -35,12 +34,13 @@ library LTVLib {
      * Returns IERC20Metadata instance of a token
      * @param _asset the code of an asset
      **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
+    function getERC20TokenInstance(bytes32 _asset) public view returns (IERC20Metadata) {
         address assetAddress = SmartLoanLib.getExchange().getAssetAddress(_asset);
         IERC20Metadata token = IERC20Metadata(assetAddress);
         return token;
     }
 
+    //TODO: we should have a data with staking and LP positions as well
     /**
      * Returns the balances of all assets served by the price provider
      * It could be used as a helper method for UI
@@ -50,66 +50,39 @@ library LTVLib {
         uint256[] memory balances = new uint256[](assets.length);
 
         for (uint256 i = 0; i < assets.length; i++) {
-            balances[i] = getBalance(address(this), assets[i]);
+            balances[i] = getBalance(assets[i]);
         }
 
         return balances;
     }
 
     /**
-     * Returns a current balance of the asset held by a given account
-     * @param _account the address of queried user
-     * @param _asset the code of an asset
-     **/
-    function getBalance(address _account, bytes32 _asset) public view returns (uint256) {
+    * Returns a current balance of the asset held by the smart loan
+    * @param _asset the code of an asset
+    **/
+    function getBalance(bytes32 _asset) public view returns (uint256) {
         IERC20 token = IERC20(SmartLoanLib.getExchange().getAssetAddress(_asset));
-        return token.balanceOf(_account);
+        return token.balanceOf(address(this));
     }
 
     /**
-     * Calculates the current value of Prime Account in USD including all tokens as well as staking and LP positions
-     **/
-    function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) public view returns (uint256) {
+    * Calculates the current value of all tokens of Prime Account in USD
+    **/
+    function calculateAssetsValue(uint256[] memory prices) public view returns (uint256) {
         uint256 total = address(this).balance * prices[0] / 10**8;
+        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
 
         for (uint256 i = 0; i < prices.length; i++) {
             require(prices[i] != 0, "Asset price returned from oracle is zero");
 
             bytes32 _asset = assets[i];
             IERC20Metadata token = getERC20TokenInstance(_asset);
-            uint256 assetBalance = getBalance(address(this), _asset);
+            uint256 assetBalance = getBalance(_asset);
 
             total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
         }
 
-        total += SmartLoanLib.getYieldYakRouter().getTotalStakedValue() * prices[0] / 10**8;
-
         return total;
-    }
-
-
-    /**
-     * Returns current debts associated with the loan and its total debt
-     * @param _assets list of supported assets
-     * @param _prices current prices
-     **/
-    function calculateDebts(bytes32[] memory _assets, uint256[] memory _prices) external view returns (uint256[] memory, uint256) {
-        uint length = SmartLoanLib.getPoolsAssetsIndices().length;
-        uint256[] memory debts = new uint256[](length);
-        uint256 totalDebt;
-
-        uint256 i;
-
-        // TODO: Save getPoolsAssetsIndices() result to a in-memory variable?
-        for (i = 0; i < length; i++) {
-            uint256 assetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
-            IERC20Metadata token = getERC20TokenInstance(_assets[assetIndex]);
-            uint256 poolDebt = ERC20Pool(SmartLoanLib.getPoolAddress(_assets[assetIndex])).getBorrowed(address(this)) * _prices[assetIndex] * 10**10 / 10 ** token.decimals();
-            debts[i] = poolDebt;
-            totalDebt += poolDebt;
-        }
-
-        return (debts, totalDebt);
     }
 
     /**
@@ -201,13 +174,12 @@ library LTVLib {
     }
 
     /**
-     * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
-     * @param _assets list of supported assets
-     * @param _prices current prices
-     **/
-    function calculateLTV(bytes32[] memory  _assets, uint256[] memory _prices) external view returns (uint256) {
-        uint256 debt = calculateDebt(_assets, _prices);
-        uint256 totalValue = calculateAssetsValue(_assets, _prices);
+    * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
+    * @param _prices current prices
+    **/
+    function calculateLTV(uint256[] memory _prices) public view returns (uint256) {
+        uint256 debt = calculateDebt(_prices);
+        uint256 totalValue = calculateTotalValue(_prices);
 
         if (debt == 0) {
             return 0;
@@ -216,6 +188,13 @@ library LTVLib {
         } else {
             return SmartLoanLib.getMaxLtv();
         }
+    }
+
+    /**
+    * Calculates the current value of Prime Account in USD including all tokens as well as staking and LP positions
+    **/
+    function calculateTotalValue(uint256[] memory prices) public view returns (uint256) {
+        return calculateAssetsValue(prices) + SmartLoanLib.getYieldYakRouter().getTotalStakedValue() * prices[0] / 10**8;
     }
 
     struct RepayConfig {

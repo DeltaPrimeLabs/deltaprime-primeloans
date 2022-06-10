@@ -1,5 +1,6 @@
 import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
 import {
+    LTVLib,
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
     PangolinExchange,
@@ -32,6 +33,7 @@ describe('Smart loans factory - upgrading',  () => {
     describe('Check basic logic before and after upgrade', () => {
         let smartLoansFactory: SmartLoansFactory,
             pool: Pool,
+            ltvlib: LTVLib,
             exchange: PangolinExchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
@@ -46,7 +48,11 @@ describe('Smart loans factory - upgrading',  () => {
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
-            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress)
+
+            const LTVLib = await ethers.getContractFactory('LTVLib');
+            ltvlib = await LTVLib.deploy() as LTVLib;
+
+            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
             await smartLoansFactory.connect(owner).initialize(diamondAddress);
 

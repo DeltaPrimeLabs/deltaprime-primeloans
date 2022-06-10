@@ -411,7 +411,7 @@ describe('Smart loan',  () => {
       const repayAmount = await getSelloutRepayAmount(
           await wrappedLoan.getTotalValue(),
           await wrappedLoan.getDebt(),
-          await wrappedLoan.getLiquidationBonus(),
+          await wrappedLoan.getMaxLiquidationBonus(),
           await wrappedLoan.getMaxLtv()
       )
 
@@ -420,7 +420,7 @@ describe('Smart loan',  () => {
       await wrappedLoanLiquidation.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping: false}), orderOfLiquidation);
 
       expect((fromWei(await wavaxTokenContract.balanceOf(liquidator.address)) - fromWei(previousLiquidatorBalance)) * AVAX_PRICE).to.be.closeTo(
-          (((await wrappedLoan.getLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);
+          (((await wrappedLoan.getMaxLiquidationBonus()).toNumber()) * repayAmount / 10**18 / (await wrappedLoan.getPercentagePrecision()).toNumber()), 1);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
     }

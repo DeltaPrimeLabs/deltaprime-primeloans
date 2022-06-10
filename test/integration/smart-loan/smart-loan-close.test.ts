@@ -24,11 +24,16 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, LTVLib, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool,
+  LTVLib,
+  MockSmartLoanLiquidationFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
-  VariableUtilisationRatesCalculator, YieldYakRouter__factory
+  VariableUtilisationRatesCalculator,
+  YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -65,7 +70,9 @@ describe('Smart loan',  () => {
   describe('A closed loan', () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanLogicFacetRedstoneProvider,
+      loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
       wrappedLoan: any,
+      wrappedLoanLiquidation: any,
       owner: SignerWithAddress,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
@@ -252,6 +259,7 @@ describe('Smart loan',  () => {
 
 
       await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["closeLoan"], ltvlib.address);
 
       await smartLoansFactory.initialize(diamondAddress);
       await smartLoansFactory.connect(borrower).createLoan();
@@ -295,7 +303,24 @@ describe('Smart loan',  () => {
     });
 
     it("should fail a closeLoan attempt at the onlyOwner check", async () => {
-      await expect(wrappedLoan.connect(depositor).closeLoan([0, 0, 0])).to.be.revertedWith("LibDiamond: Must be contract owner")
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
+
+      wrappedLoanLiquidation = WrapperBuilder
+          .mockLite(loanLiquidation)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(wrappedLoanLiquidation.connect(depositor).closeLoan([0, 0, 0])).to.be.revertedWith("LibDiamond: Must be contract owner")
     });
 
     it("should perform an owner's closeLoan call", async () => {
@@ -309,7 +334,7 @@ describe('Smart loan',  () => {
       const previousUsdPoolBalance = formatUnits(await usdTokenContract.balanceOf(usdPool.address), usdTokenDecimalPlaces);
       const previousEthPoolBalance = fromWei(await ethTokenContract.balanceOf(ethPool.address));
 
-      await wrappedLoan.closeLoan([0, 0, 0]);
+      await wrappedLoanLiquidation.closeLoan([0, 0, 0]);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect(await wrappedLoan.getDebt()).to.be.equal(0);

@@ -23,9 +23,9 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   CompoundingIndex,
-  ERC20Pool,
+  ERC20Pool, LTVLib,
   MockSmartLoanLogicFacetRedstoneProvider,
-  MockSmartLoanLogicFacetRedstoneProvider__factory,
+  MockSmartLoanLogicFacetRedstoneProvider__factory, MockSmartLoanLogicFacetSetValues,
   MockSmartLoanLogicFacetSetValues__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
@@ -65,6 +65,7 @@ describe('Smart loan - upgrading',  () => {
     let exchange: PangolinExchange,
       loan: MockSmartLoanLogicFacetRedstoneProvider,
       wrappedLoan: any,
+      ltvlib: LTVLib,
       smartLoansFactory: SmartLoansFactory,
       wavaxPool: ERC20Pool,
       newWavaxPool: ERC20Pool,
@@ -131,7 +132,12 @@ describe('Smart loan - upgrading',  () => {
           yakRouterContract.address,
           'lib'
       );
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress);
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
 
       await smartLoansFactory.initialize(diamondAddress);
 
@@ -162,7 +168,12 @@ describe('Smart loan - upgrading',  () => {
       await wrappedSmartLoansFactory.createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-      loan = await (new MockSmartLoanLogicFacetRedstoneProvider__factory(borrower)).attach(loan_proxy_address);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
     });
 
 
@@ -203,9 +214,15 @@ describe('Smart loan - upgrading',  () => {
 
 
     it("should upgrade", async () => {
-      await replaceFacet("MockSmartLoanLogicFacetSetValues", diamondAddress, ['setDebt', 'setValue'])
+      await replaceFacet("MockSmartLoanLogicFacetSetValues", diamondAddress, ['setDebt', 'setValue'], ltvlib.address)
 
-      loan = await (new MockSmartLoanLogicFacetSetValues__factory(borrower)).attach(loan.address);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetSetValues", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+      loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetSetValues;
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
           .using(

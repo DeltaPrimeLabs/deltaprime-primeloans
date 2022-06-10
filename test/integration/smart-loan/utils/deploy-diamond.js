@@ -15,6 +15,7 @@ async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions 
     });
     const facet = await Facet.deploy()
     await facet.deployed()
+    console.log(`${facetName} deployed: ${facet.address}`);
 
     cut.push({
         facetAddress: facet.address,

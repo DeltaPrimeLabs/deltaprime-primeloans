@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getFixedGasSigners, recompileSmartLoanLib} from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+  LTVLib, MockSmartLoanLogicFacetRedstoneProvider,
   MockSmartLoanLogicFacetSetValues,
   MockSmartLoanLogicFacetSetValues__factory
 } from "../../../typechain";
@@ -19,15 +20,23 @@ describe('Smart loan',  () => {
 
   describe('A loan with edge LTV cases', () => {
     let loan: MockSmartLoanLogicFacetSetValues,
-        owner: SignerWithAddress;
+        owner: SignerWithAddress,
+        ltvlib: LTVLib;
 
     before("deploy provider, exchange and pool", async () => {
       [owner] = await getFixedGasSigners(10000000);
-      await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': ethers.constants.AddressZero}, ethers.constants.AddressZero, ethers.constants.AddressZero, 'lib');
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new MockSmartLoanLogicFacetSetValues__factory(owner).deploy());
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetSetValues", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = (await loanFactory.deploy(owner)).connect(owner) as MockSmartLoanLogicFacetSetValues;
     });
 
     it("should check debt equal to 0", async () => {

@@ -21,7 +21,7 @@ contract MockSmartLoanLogicFacetSetValues is MockSmartLoanLogicFacetRedstoneProv
         return value;
     }
 
-    function calculateAssetsValue(bytes32[] memory assets, uint256[] memory prices) internal view virtual override returns (uint256) {
+    function calculateAssetsValue(uint256[] memory prices) internal view virtual override returns (uint256) {
         return value;
     }
 
@@ -29,11 +29,11 @@ contract MockSmartLoanLogicFacetSetValues is MockSmartLoanLogicFacetRedstoneProv
         return debt;
     }
 
-    function calculateDebt(bytes32[] memory assets, uint256[] memory prices) internal view virtual override returns (uint256) {
+    function calculateDebt(uint256[] memory prices) internal view virtual override returns (uint256) {
         return debt;
     }
 
     function getLTV() public view override returns (uint256) {
-        return calculateLTV(new bytes32[](0), new uint256[](0));
+        return calculateLTV(new uint256[](0));
     }
 }
