@@ -60,7 +60,8 @@
       height: null,
       width: null,
       lineWidth: null,
-      stepped: false
+      stepped: false,
+      positiveChange: false,
     },
     data() {
       return {
@@ -83,7 +84,7 @@
               fill: false,
               steppedLine: this.stepped,
               data: this.dataPoints,
-              borderColor: '#00bf68',
+              borderColor: this.positiveChange ? '#00bf68' : '#f64254',
               borderWidth: this.lineWidth
             }
           ]

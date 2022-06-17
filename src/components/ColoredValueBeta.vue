@@ -1,7 +1,7 @@
 <template>
   <span class="colored-value-component">
     <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 }">
-      <span v-if="value > 0">+</span>
+      <span class="plus-sign" v-if="value > 0">+</span>
       {{ formattedValue }}
     </span>
   </span>
@@ -19,6 +19,11 @@ export default {
     value: {
       type: Number,
       required: true,
+    },
+    percentageRoundingPrecision: {
+      type: Number,
+      required: false,
+      default: 3,
     }
   },
   computed: {
@@ -27,7 +32,7 @@ export default {
         case 'usd':
           return this.$options.filters.usd(this.value);
         case 'percent':
-          return this.$options.filters.percent(this.value, 3  );
+          return this.$options.filters.percent(this.value, this.percentageRoundingPrecision);
       }
     }
   }
@@ -44,6 +49,10 @@ export default {
 
   &.negative {
     color: $red;
+  }
+
+  .plus-sign {
+    margin-right: -3px;
   }
 }
 

@@ -1,9 +1,8 @@
 <template>
   <div class="funds-beta-component">
-    <button v-on:click="testModal()">test modal</button>
     <div class="funds">
-      <NameValueBadgeBeta :name="'Value of available funds'">{{ 1243.36 | usd }}</NameValueBadgeBeta>
-      <div class="funds-table">
+      <NameValueBadgeBeta v-if="availableValue" :name="'Value of available funds'">{{ availableValue | usd }}</NameValueBadgeBeta>
+      <div class="funds-table" v-if="funds">
         <div class="funds-table__header">
           <div class="header__cell asset">Asset</div>
           <div class="header__cell balance">Balance</div>
@@ -14,9 +13,11 @@
           <div class="header__cell actions">Actions</div>
         </div>
         <div class="funds-table__body">
-          <FundTableRowBeta></FundTableRowBeta>
-          <FundTableRowBeta></FundTableRowBeta>
+          <FundTableRowBeta v-for="asset in funds" v-bind:key="asset.symbol" :asset="asset"></FundTableRowBeta>
         </div>
+      </div>
+      <div v-if="!funds">
+        <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
       </div>
     </div>
 
@@ -28,18 +29,99 @@ import NameValueBadgeBeta from './NameValueBadgeBeta';
 import config from '../config';
 import FundTableRowBeta from './FundTableRowBeta';
 import BorrowModal from './BorrowModal';
+import {mapState} from 'vuex';
+import redstone from 'redstone-api';
+import Vue from 'vue';
+import Loader from './Loader';
 
 export default {
   name: 'FundsBeta',
-  components: {FundTableRowBeta, NameValueBadgeBeta},
-  computed: {
-    funds() {
-      return config.ASSETS_CONFIG;
+  components: {Loader, FundTableRowBeta, NameValueBadgeBeta},
+  data() {
+    return {
+      funds: config.ASSETS_CONFIG,
+      availableValue: 0,
     }
+  },
+  computed: {
+    ...mapState('loan', ['totalValue', 'assets']),
   },
   methods: {
     testModal() {
       this.openModal(BorrowModal);
+    },
+
+    updateFund(symbol, key, value) {
+      Vue.set(this.funds[symbol], key, value);
+    },
+
+    chartPoints(points) {
+      if (points == null || points.length === 0) {
+        return [];
+      }
+
+      let maxValue = 0;
+      let minValue = points[0].value;
+
+      let dataPoints = points.map(
+        item => {
+          if (item.value > maxValue) maxValue = item.value;
+
+          if (item.value < minValue) minValue = item.value;
+
+          return {
+            x: item.timestamp,
+            y: item.value
+          };
+        }
+      );
+
+      return [dataPoints, minValue, maxValue];
+    },
+
+    async updateFunds(funds) {
+      this.funds = funds;
+
+      if (funds) {
+        for (const symbol of Object.keys(funds)) {
+          redstone.getHistoricalPrice(symbol, {
+            startDate: Date.now() - 3600 * 1000 * 24 * 7,
+            interval: 3600 * 1000,
+            endDate: Date.now(),
+            provider: 'redstone-avalanche'
+          }).then(
+            (response) => {
+
+              const [prices, minPrice, maxPrice] = this.chartPoints(
+                response
+              );
+
+              this.updateFund(symbol, 'prices', prices);
+              this.updateFund(symbol, 'minPrice', minPrice);
+              this.updateFund(symbol, 'maxPrice', maxPrice);
+            }
+          );
+        }
+      }
+
+      this.calculateAvailableValue();
+    },
+
+    calculateAvailableValue() {
+      if (this.funds) {
+        this.availableValue = 0;
+        Object.values(this.funds).forEach(asset => {
+          this.availableValue += asset.balance * asset.price;
+        });
+      }
+    }
+  },
+  watch: {
+    assets: {
+      handler(newFunds) {
+        this.updateFunds(newFunds);
+      },
+      immediate: true
     }
   }
 };

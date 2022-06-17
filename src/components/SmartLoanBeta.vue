@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="container">
-      <StatsBarBeta></StatsBarBeta>
+      <StatsBarBeta :total-value="totalValue" :today-p-n-l="1" :ltv="ltv" :profit="1" :profit-percentage="1"></StatsBarBeta>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
@@ -27,10 +27,14 @@ import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
 import FundsBeta from './FundsBeta';
+import {mapState} from 'vuex';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {FundsBeta, Block, StatsBarBeta, Tabs, Tab}
+  components: {FundsBeta, Block, StatsBarBeta, Tabs, Tab},
+  computed: {
+    ...mapState('loan', ['totalValue', 'ltv']),
+  }
 };
 </script>
 

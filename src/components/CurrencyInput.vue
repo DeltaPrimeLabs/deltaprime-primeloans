@@ -175,7 +175,7 @@ import {mapState} from "vuex";
   justify-content: space-between;
   box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
   background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
-  height: 68px;
+  height: 60px;
   border-radius: 15px;
   padding-left: 15px;
   padding-right: 15px;

@@ -14,7 +14,8 @@ export default {
     width: null,
     lineWidth: null,
     stepped: 'none',
-    isStableCoin: false
+    isStableCoin: false,
+    positiveChange: false,
   },
   data() {
     return {
@@ -37,7 +38,7 @@ export default {
           {
             fill: false,
             data: this.dataPoints,
-            borderColor: '#00bf68',
+            borderColor: this.positiveChange ? '#00bf68' : '#f64254',
             borderWidth: this.lineWidth,
             pointRadius: 0
           }

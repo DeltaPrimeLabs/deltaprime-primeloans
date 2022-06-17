@@ -41,7 +41,7 @@ export default function setupFilters() {
 
   Vue.filter('percent', function (value, precision = 2) {
     if (value == null) return null;
-    return (value > 1 ? (value * 100).toFixed(precision) : (value * 100).toPrecision(precision + 1)) + '%';
+    return (value * 100).toFixed(precision) + '%';
   });
 
   Vue.filter('tx', function (value, short) {

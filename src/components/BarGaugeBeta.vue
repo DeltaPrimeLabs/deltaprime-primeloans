@@ -89,6 +89,7 @@ export default {
         top: 0;
         left: 0;
         width: 30px;
+        min-width: 7px;
         height: 17px;
         border-top-left-radius: 9.5px;
         border-bottom-left-radius: 9.5px;

@@ -15,22 +15,33 @@ export default {
         return avax * this.avaxPrice;
       }
     },
+
     usdToAVAX(price) {
       if (this.avaxPrice) {
         return price / this.avaxPrice;
       }
     },
+
     toHex(dec) {
       return '0x' + dec.toString(16);
     },
+
     toDec(hex) {
       return parseInt(hex, 16);
     },
+
+    formatTokenBalance(balance) {
+      const balanceOrderOfMagnitudeExponent = String(balance).split('.')[0].length - 1;
+      const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
+      const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+      return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
+    },
+
     async handleTransaction(fun, args, onSuccess, onFail) {
-      await handleTransaction(fun, args, onSuccess, onFail)
+      await handleTransaction(fun, args, onSuccess, onFail);
     },
     async handleCall(fun, args, onSuccess, onFail) {
-      return await handleCall(fun, args, onSuccess, onFail)
+      return await handleCall(fun, args, onSuccess, onFail);
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
@@ -39,7 +50,7 @@ export default {
         const expectedAvax = amount * this.usdToAVAX(price);
 
         let checkedAvax =
-            await exchange.getEstimatedAVAXForERC20Token(parseUnits((amount).toString(), tokenDecimals), tokenAddress);
+          await exchange.getEstimatedAVAXForERC20Token(parseUnits((amount).toString(), tokenDecimals), tokenAddress);
 
         checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
 
@@ -116,25 +127,25 @@ export default {
         {
           validate: function (value) {
             if (value > config.MAX_ALLOWED_LTV) {
-              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`
+              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
             }
           }
         }
       ],
       positiveValidator: {
-        validate: function(value) {
+        validate: function (value) {
           if (value <= 0) {
             return `Value must be higher than 0`;
           }
         }
       },
       wrongFormatValidator: {
-        validate: function(value) {
+        validate: function (value) {
           if (!value.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting. Please use only alphanumeric values.`;
           }
         }
       }
-    }
+    };
   }
 };

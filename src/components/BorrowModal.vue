@@ -13,7 +13,15 @@
         <div class="pool-info__value">89284423.39 <span class="pool-info__currency">AVAX</span></div>
       </div>
 
-      <TransactionResultSummaryBeta></TransactionResultSummaryBeta>
+      <CurrencyInput :symbol="'ETH'"></CurrencyInput>
+
+      <div class="transaction-summary-wrapper">
+        <TransactionResultSummaryBeta></TransactionResultSummaryBeta>
+      </div>
+
+      <div class="button-wrapper">
+        <Button :label="'Borrow'"></Button>
+      </div>
     </Modal>
   </div>
 </template>
@@ -21,10 +29,14 @@
 <script>
 import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
+import CurrencyInput from './CurrencyInput';
+import Button from './Button';
 
 export default {
   name: 'BorrowModal',
   components: {
+    Button,
+    CurrencyInput,
     TransactionResultSummaryBeta,
     Modal
   }
@@ -56,6 +68,7 @@ export default {
     justify-content: center;
     color: $steel-gray;
     margin-top: 36px;
+    margin-bottom: 10px;
 
     .pool-info__label {
       margin-right: 5px;
@@ -76,6 +89,18 @@ export default {
       font-weight: 400;
     }
 
+  }
+
+  .transaction-summary-wrapper {
+    margin-top: 30px;
+  }
+
+  .button-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 48px;
   }
 }
 

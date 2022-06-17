@@ -2,7 +2,9 @@
   <div class="stats-bar-element-beta-component">
     <div class="stat">
       <div class="stat__label">{{label}}</div>
-      <div class="stat__value">{{value}}</div>
+      <div class="stat__value">
+        <LoadedValue :check="() => value != null" :value="value"></LoadedValue>
+      </div>
       <div class="stat__extras">
         <slot></slot>
       </div>
@@ -11,18 +13,16 @@
 </template>
 
 <script>
+import LoadedValue from './LoadedValue';
 export default {
   name: 'StatsBarElementBeta',
-
+  components: {LoadedValue},
   props: {
     label: {
       type: String,
       required: true,
     },
-    value: {
-      type: String,
-      required: true,
-    }
+    value: null,
   }
 };
 </script>
