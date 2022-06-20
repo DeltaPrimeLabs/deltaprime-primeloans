@@ -65,29 +65,28 @@ const wavaxAbi = [
 const POOL_ASSETS = ['AVAX', 'USD', 'ETH'];
 
 const INITIAL_PRICES = {
-  AVAX: 30,
+  AVAX: 15,
   USD: 1,
-  ETH: 2000,
-  BTC: 30000
+  ETH: 1000,
+  BTC: 20000
 }
 
 const TEST_TABLE =  [
   {
     id: 1,
     fund: {
-      AVAX: 10, // worth 300 USD
+      AVAX: 20,
       USD: 0,
       ETH: 0,
       BTC: 0
     },
     borrow: {
       AVAX: 0,
-      USD: 1200, // LTV 400%
+      USD: 1200,
       ETH: 0
     },
     pricesDuringLiquidation: {
-      AVAX: 20// changed from 30
-      // LTV 600%
+      AVAX: 8
     },
     targetLtv: 4.1,
     action: 'LIQUIDATE'
@@ -98,16 +97,15 @@ const TEST_TABLE =  [
       AVAX: 0,
       USD: 0,
       ETH: 0,
-      BTC: 0.01 //USD = 300
+      BTC: 0.01
     },
     borrow: {
-      AVAX: 5, //USD = 150
+      AVAX: 10,
       USD: 150,
-      ETH: 0.1 //USD = 200
+      ETH: 0.2
     },
     pricesDuringLiquidation: {
-      BTC: 10000// changed from 2000
-      // LTV 500%
+      BTC: 10000
     },
     targetLtv: 4.5,
     action: 'LIQUIDATE'
@@ -117,20 +115,19 @@ const TEST_TABLE =  [
     fund: {
       AVAX: 0,
       USD: 0,
-      ETH: 0.1, //USD = 200
+      ETH: 0.1,
       BTC: 0
     },
     borrow: {
-      AVAX: 10,
+      AVAX: 20,
       USD: 0,
       ETH: 0
     },
     stake: {
-      YAK: 9.5
+      YAK: 18
     },
     pricesDuringLiquidation: {
-      ETH: 500// changed from 2000
-      // LTV 600%
+      ETH: 200
     },
     targetLtv: 4.4,
     action: 'LIQUIDATE'
@@ -144,7 +141,7 @@ const TEST_TABLE =  [
       BTC: 0
     },
     borrow: {
-      AVAX: 40, //USD = 1200
+      AVAX: 40,
       USD: 0,
       ETH: 0
     },
