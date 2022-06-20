@@ -20,7 +20,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'"></Button>
+        <Button :label="'Borrow'" v-on:click="borrowSubmit()"></Button>
       </div>
     </Modal>
   </div>
@@ -39,6 +39,12 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal
+  },
+
+  methods: {
+    borrowSubmit() {
+      this.$emit('borrow', 1);
+    }
   }
 };
 </script>

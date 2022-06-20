@@ -183,7 +183,6 @@ export default {
     },
 
     formatTokenBalance(balance) {
-      console.log(balance);
       const balanceOrderOfMagnitudeExponent = String(balance).split('.')[0].length - 1;
       const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
@@ -205,7 +204,6 @@ export default {
       redstone.getHistoricalPrice(this.asset.symbol, {
         date: date24HoursAgo,
       }).then(price => {
-        console.log(price.value);
         const priceChange = this.asset.price - price.value;
         Vue.set(this.asset, 'todayPriceChange', priceChange / this.asset.price);
       });
@@ -215,7 +213,11 @@ export default {
     openBorrowModal(key) {
       console.log(key);
       if (key === 'BORROW') {
-        this.openModal(BorrowModal);
+        const modalInstance = this.openModal(BorrowModal);
+        modalInstance.$on('borrow', (borrowEvent) => {
+          console.log('on borrow');
+          console.log(borrowEvent);
+        })
       }
     }
   }

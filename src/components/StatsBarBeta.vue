@@ -9,6 +9,10 @@
       <stats-bar-element-beta v-if="ltv" :label="'LTV'" :value="ltv | percent">
         <bar-gauge-beta :min="0" :max="5" :value="ltv"></bar-gauge-beta>
       </stats-bar-element-beta>
+
+      <vue-loaders-ball-beat v-if="!ltv" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
+
+
       <stats-bar-element-beta :label="'Profit'" :value="12.56 | usd">
         <div class="profit-extra">
           <colored-value-beta :value="-0.1593" :formatting="'percent'"></colored-value-beta>

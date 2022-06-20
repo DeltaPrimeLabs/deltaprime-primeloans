@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     testModal() {
-      this.openModal(BorrowModal);
+      const modalInstance = this.openModal(BorrowModal);
     },
 
     updateFund(symbol, key, value) {

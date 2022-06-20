@@ -7,19 +7,6 @@
         <input type="number" ref="input" pattern="[0-9]+" v-model="internalValue" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
-        <div class="converted">
-          <div v-if="value && (value !== 0)">
-            <div>{{ (price ? price : avaxPrice) * (1 + slippage) * value | usd }} </div>
-            <div v-if="showPriceInAvax" class="price-in-avax">{{ (value * price * (1 + slippage) / avaxPrice).toPrecision(8) }} AVAX</div>
-          </div>
-        </div>
-        <div class="denomination" v-if="denominationButtons">
-          <img class="icon" :src="`src/assets/logo/${usdDenominated ? 'grey/' : ''}avax.svg`"
-               @click="usdDenominated = false"/>
-          <img class="slash" src="src/assets/icons/slash-small.svg"/>
-          <img class="icon" :src="`src/assets/logo/${!usdDenominated ? 'grey/' : ''}usd.svg`"
-               @click="usdDenominated = true"/>
-        </div>
         <div v-if="max" class="max-wrapper" @click.stop="value = max">
           <div class="max">MAX</div>
         </div>
@@ -79,10 +66,8 @@ import {mapState} from "vuex";
       disabled: false,
       denominationButtons: false,
       slippage: { type: Number, default: 0 },
-      showPriceInAvax: { type: Boolean, default: false }
     },
     computed: {
-      ...mapState('network', ['avaxPrice'])
     },
     data() {
       return {
@@ -260,9 +245,6 @@ input[type=number] {
     display: flex;
     flex-direction: column;
 
-    .price-in-avax {
-      font-size: $font-size-xsm;
-    }
   }
 }
 

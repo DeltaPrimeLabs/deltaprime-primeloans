@@ -101,11 +101,11 @@ export default {
       const instance = new modal();
       instance.$mount();
       document.body.appendChild(instance.$el);
+      return instance;
     },
 
     closeModal() {
       const modalComponent = document.getElementById('modal');
-      console.log(modalComponent);
       document.body.removeChild(modalComponent);
     }
   },
