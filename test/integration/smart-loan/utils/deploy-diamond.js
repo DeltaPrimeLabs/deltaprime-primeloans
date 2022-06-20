@@ -5,16 +5,10 @@ const {ethers} = require("hardhat");
 const { getSelectors, FacetCutAction } = require('./diamond.js')
 
 
-async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '') {
+async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '', hardhatConfig = undefined) {
     const cut = []
 
-    const Facet = await ethers.getContractFactory(facetName, {
-        libraries: {
-            LTVLib: ltvlibAddress,
-        },
-    });
-    const facet = await Facet.deploy()
-    await facet.deployed()
+    const facet = await deployContract(facetName, [], {LTVLib: ltvlibAddress}, hardhatConfig);
     console.log(`${facetName} deployed: ${facet.address}`);
 
     cut.push({
@@ -44,16 +38,10 @@ async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions 
     console.log('Completed diamond cut')
 }
 
-async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '') {
+async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], ltvlibAddress = '', hardhatConfig = undefined) {
     const cut = []
 
-    const Facet = await ethers.getContractFactory(facetName, {
-        libraries: {
-            LTVLib: ltvlibAddress,
-        },
-    });
-    const facet = await Facet.deploy()
-    await facet.deployed()
+    const facet = await deployContract(facetName, [], { LTVLib: ltvlibAddress }, hardhatConfig);
     console.log(`${facetName} deployed: ${facet.address}`);
 
     if(newlyIntroducedFunctions.length > 0) {
@@ -85,28 +73,24 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
     console.log('Completed diamond cut')
 }
 
-async function deployDiamond () {
+async function deployDiamond(hardhatConfig = undefined) {
     const accounts = await ethers.getSigners()
     const contractOwner = accounts[0]
 
     // deploy DiamondCutFacet
-    const DiamondCutFacet = await ethers.getContractFactory('DiamondCutFacet')
-    const diamondCutFacet = await DiamondCutFacet.deploy()
-    await diamondCutFacet.deployed()
+    const diamondCutFacet = await deployContract('DiamondCutFacet', [], {}, hardhatConfig);
+
     console.log('DiamondCutFacet deployed:', diamondCutFacet.address)
 
     // deploy Diamond
-    const Diamond = await ethers.getContractFactory('SmartLoanDiamond')
-    const diamond = await Diamond.deploy(contractOwner.address, diamondCutFacet.address)
-    await diamond.deployed()
+    const diamond = await deployContract('SmartLoanDiamond', [contractOwner.address, diamondCutFacet.address], {}, hardhatConfig);
+
     console.log('Diamond deployed:', diamond.address)
 
     // deploy DiamondInit
     // DiamondInit provides a function that is called when the diamond is upgraded to initialize state variables
     // Read about how the diamondCut function works here: https://eips.ethereum.org/EIPS/eip-2535#addingreplacingremoving-functions
-    const DiamondInit = await ethers.getContractFactory('DiamondInit')
-    const diamondInit = await DiamondInit.deploy()
-    await diamondInit.deployed()
+    const diamondInit = await deployContract('DiamondInit', [], {}, hardhatConfig);
     console.log('DiamondInit deployed:', diamondInit.address)
 
     // deploy facets
@@ -120,14 +104,12 @@ async function deployDiamond () {
     ]
     const cut = []
     for (const FacetName of FacetNames) {
-        const Facet = await ethers.getContractFactory(FacetName)
-        const facet = await Facet.deploy()
-        await facet.deployed()
+        const facet = await deployContract(FacetName,[], {}, hardhatConfig);
         console.log(`${FacetName} deployed: ${facet.address}`)
         cut.push({
             facetAddress: facet.address,
             action: FacetCutAction.Add,
-            functionSelectors: getSelectors(facet)
+            functionSelectors: getSelectors(facet, hardhatConfig)
         })
     }
 
@@ -145,6 +127,24 @@ async function deployDiamond () {
     }
     console.log('Completed diamond cut')
     return diamond.address
+}
+
+async function deployContract(name, args = [], libraries = undefined, hardhatConfig = undefined) {
+    if (!hardhatConfig) {
+        const factory = await ethers.getContractFactory(name, { libraries: libraries });
+        const contract = await factory.deploy(...args)
+        await contract.deployed();
+        return contract;
+    } else {
+        await hardhatConfig.deploy(name, {
+            from: hardhatConfig.deployer,
+            gasLimit: 8000000,
+            args: args,
+            libraries: libraries
+        });
+
+        return await ethers.getContract(name);
+    }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
