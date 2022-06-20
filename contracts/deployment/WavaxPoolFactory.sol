@@ -2,16 +2,16 @@
 // Last deployed from commit: 648f5794d589d10ef8ef138b16697fb525ee9b24;
 pragma solidity ^0.8.4;
 
-import "../ERC20Pool.sol";
+import "../WavaxPool.sol";
 
 
 /**
- * @title PoolFactory
+ * @title WavaxPoolFactory
  * @dev Contract factory allowing anyone to deploy a pool contract
  */
-contract PoolFactory {
+contract WavaxPoolFactory {
   function deployPool() public {
-    ERC20Pool pool = new ERC20Pool();
+    WavaxPool pool = new WavaxPool();
     emit PoolDeployed(address(pool));
   }
 
