@@ -3,19 +3,19 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 import {BigNumber, Contract} from "ethers";
-import config from '../../src/config';
+import config from '../../../src/config';
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import MockBorrowAccessNFTArtifact from '../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
-import MockDepositAccessNFTArtifact from '../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
+    from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import MockBorrowAccessNFTArtifact from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
+import MockDepositAccessNFTArtifact from '../../../artifacts/contracts/mock/MockDepositAccessNFT.sol/MockDepositAccessNFT.json';
 import PoolWithAccessNFTArtifact
-    from '../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
-import PoolTUPArtifact from '../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
-import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
-import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+    from '../../../artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json';
+import PoolTUPArtifact from '../../../artifacts/contracts/proxies/PoolTUP.sol/PoolTUP.json';
+import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import SmartLoansFactoryTUPArtifact
-    from '../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
-import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+    from '../../../artifacts/contracts/proxies/SmartLoansFactoryTUP.sol/SmartLoansFactoryTUP.json';
+import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -26,7 +26,7 @@ import {
     recompileSmartLoanLib, syncTime,
     toBytes32,
     toWei
-} from "../_helpers";
+} from "../../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {
     MockBorrowAccessNFT,
@@ -48,12 +48,12 @@ import {
     LTVLib,
     MockSmartLoanLogicFacetLimitedCollateral,
     MockSmartLoanLiquidationFacetRedstoneProvider
-} from "../../typechain";
+} from "../../../typechain";
 import {WrapperBuilder} from "redstone-evm-connector";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet, replaceFacet} = require('./smart-loan/utils/deploy-diamond');
+const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';

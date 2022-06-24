@@ -39,7 +39,7 @@ import {Contract} from "ethers";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';

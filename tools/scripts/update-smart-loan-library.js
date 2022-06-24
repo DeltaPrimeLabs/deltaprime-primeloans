@@ -1,55 +1,70 @@
 export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter, maxLTV, minSelloutLTV) {
     var fs = require('fs')
-    let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
+    let smartLoanLib = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
+    let logicFacet = fs.readFileSync('./contracts/faucets/SmartLoanLogicFacet.sol', 'utf8')
 
-    let fileArray = data.split('\n');
+    let libFileArray = smartLoanLib.split('\n');
+    let facetFileArray = logicFacet.split('\n');
 
 
-    //getPoolsAssetsIndices()
-    let lineWithFunctionDeclaration = fileArray.findIndex(
+    //getPoolsAssetsIndices() - SmartLoanLib
+    let lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('getPoolsAssetsIndices')
     );
 
-    fileArray[lineWithFunctionDeclaration] = fileArray[lineWithFunctionDeclaration].replace(/uint8\[(.*)\]/, `uint8[${poolTokenIndices.length}]`);
+    libFileArray[lineWithFunctionDeclaration] = libFileArray[lineWithFunctionDeclaration].replace(/uint8\[(.*)\]/, `uint8[${poolTokenIndices.length}]`);
 
     let newLine = `    return [${poolTokenIndices.toString()}];`;
 
-    fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
+    libFileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
 
+    //getPoolsAssetsIndices() - SmartLoanLogicFacet
+    lineWithFunctionDeclaration = facetFileArray.findIndex(
+        line => line.includes('getPoolsAssetsIndices')
+    );
+
+    facetFileArray[lineWithFunctionDeclaration] = facetFileArray[lineWithFunctionDeclaration].replace(/uint8\[(.*)\]/, `uint8[${poolTokenIndices.length}]`);
 
     //getPoolTokens()
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('function getPoolTokens')
     );
 
-    fileArray = fileArray.filter(
+    libFileArray = libFileArray.filter(
         line => {
             return !line.includes('IERC20Metadata(');
         }
     );
 
-    fileArray[lineWithFunctionDeclaration] = fileArray[lineWithFunctionDeclaration].replace(/IERC20Metadata\[(.*)\]/, `IERC20Metadata[${poolTokenAddresses.length}]`);
+    libFileArray[lineWithFunctionDeclaration] = libFileArray[lineWithFunctionDeclaration].replace(/IERC20Metadata\[(.*)\]/, `IERC20Metadata[${poolTokenAddresses.length}]`);
 
     let newLines = poolTokenAddresses.map(
         (address, i) => `      IERC20Metadata(${address})${i !== poolTokenAddresses.length - 1 ? ',' : ''}`
     )
 
-    fileArray.splice(lineWithFunctionDeclaration + 2, 0, ...newLines);
+    libFileArray.splice(lineWithFunctionDeclaration + 2, 0, ...newLines);
+
+    //getPoolTokens() - SmartLoanLogicFacet
+    lineWithFunctionDeclaration = facetFileArray.findIndex(
+        line => line.includes('getPoolTokens')
+    );
+
+    facetFileArray[lineWithFunctionDeclaration] = facetFileArray[lineWithFunctionDeclaration].replace(/IERC20Metadata\[(.*)\]/, `IERC20Metadata[${poolTokenAddresses.length}]`);
 
 
     //getPools()
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('function getPools(')
     );
 
-    fileArray = fileArray.filter(
+    libFileArray = libFileArray.filter(
         line => {
             return !line.includes('ERC20Pool(');
         }
     );
 
-    fileArray[lineWithFunctionDeclaration] = fileArray[lineWithFunctionDeclaration].replace(/ERC20Pool\[(.*)\]/, `ERC20Pool[${poolTokenAddresses.length}]`);
+    libFileArray[lineWithFunctionDeclaration] = libFileArray[lineWithFunctionDeclaration].replace(/ERC20Pool\[(.*)\]/, `ERC20Pool[${poolTokenAddresses.length}]`);
 
     newLines = [];
 
@@ -59,16 +74,16 @@ export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddres
         }
     );
 
-    fileArray.splice(lineWithFunctionDeclaration + 2, 0, ...newLines);
+    libFileArray.splice(lineWithFunctionDeclaration + 2, 0, ...newLines);
 
 
     //getPoolAddress()
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('function getPoolAddress')
     );
 
-    fileArray = fileArray.filter(
+    libFileArray = libFileArray.filter(
         line => {
             return !line.includes('if (poolToken == bytes32(');
         }
@@ -82,51 +97,53 @@ export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddres
         }
     );
 
-    fileArray.splice(lineWithFunctionDeclaration + 1, 0, ...newLines);
+    libFileArray.splice(lineWithFunctionDeclaration + 1, 0, ...newLines);
 
     //_EXCHANGE_ADDRESS
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('_EXCHANGE_ADDRESS =')
     );
 
     newLine = `  address private constant _EXCHANGE_ADDRESS = ${exchangeAddress};`;
 
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+    libFileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
     // MaxLTV
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('_MAX_LTV =')
     );
 
     newLine = `    uint256 private constant _MAX_LTV = ${maxLTV};`;
 
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+    libFileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
     //MinSelloutLTV
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('_MIN_SELLOUT_LTV =')
     );
 
     newLine = `    uint256 private constant _MIN_SELLOUT_LTV = ${minSelloutLTV};`;
 
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+    libFileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
     //Yak Router
 
-    lineWithFunctionDeclaration = fileArray.findIndex(
+    lineWithFunctionDeclaration = libFileArray.findIndex(
         line => line.includes('return IYieldYakRouter')
     );
 
     newLine = `  return IYieldYakRouter(${yieldYakRouter});`;
 
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+    libFileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
-    let result = fileArray.join("\n");
+    let resultLib = libFileArray.join("\n");
+    let resultFacet = facetFileArray.join("\n");
 
-    fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
+    fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', resultLib, 'utf8');
+    fs.writeFileSync('./contracts/faucets/SmartLoanLogicFacet.sol', resultFacet, 'utf8');
 
     return 'lib/SmartLoanLib.sol updated!'
 }

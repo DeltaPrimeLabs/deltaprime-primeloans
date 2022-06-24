@@ -86,7 +86,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
         IERC20Metadata token = LTVLib.getERC20TokenInstance(_asset);
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
 
         if (isSolvent() && SmartLoanLib.getLiquidationInProgress() == false) {
             LibDiamond.enforceIsContractOwner();
@@ -95,9 +94,8 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         uint256 price = getPriceFromMsg(_asset);
 
         ERC20Pool pool = ERC20Pool(SmartLoanLib.getPoolAddress(_asset));
-        uint256 poolDebt = pool.getBorrowed(address(this)) * price * 10**10 / 10 ** token.decimals();
 
-        _amount = Math.min(_amount, poolDebt);
+        _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay the loan");
 
         address(token).safeApprove(address(pool), 0);
@@ -160,7 +158,16 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
-    receive() external payable {}
+    function unwrapAndWithdraw(uint256 _amount) public payable virtual {
+        WAVAX native = SmartLoanLib.getNativeTokenWrapped();
+        require(native.balanceOf(address(this)) >= _amount, "Not enough WAVAX to unwrap and withdraw");
+
+        native.withdraw(_amount);
+
+        payable(msg.sender).safeTransferETH(_amount);
+
+        emit UnwrapAndWithdraw(msg.sender, msg.value, block.timestamp);
+    }
 
     /* ========== VIEW FUNCTIONS ========== */
 
@@ -174,6 +181,18 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
     function getPercentagePrecision() public view virtual returns (uint256) {
         return SmartLoanLib.getPercentagePrecision();
+    }
+
+    function getPoolsAssetsIndices() public view virtual returns (uint8[1] memory) {
+        return SmartLoanLib.getPoolsAssetsIndices();
+    }
+
+    function getPoolTokens() public view returns (IERC20Metadata[1] memory) {
+        return SmartLoanLib.getPoolTokens();
+    }
+
+    function getBalance(bytes32 _asset) public view returns (uint256) {
+        return LTVLib.getBalance(_asset);
     }
 
     /**
@@ -208,7 +227,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     * which is parametrized by the getMaxLtv()
     * @dev This function uses the redstone-evm-connector
     **/
-    function isSolvent() public view returns (bool) {
+    function isSolvent() public view virtual returns (bool) {
         return getLTV() < SmartLoanLib.getMaxLtv();
     }
 
@@ -271,7 +290,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     * @param _minimumBought minimum amount of asset to be bought
     **/
     function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal returns(uint256[] memory) {
-        // mew
         IERC20Metadata soldToken = LTVLib.getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
@@ -419,12 +437,20 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
 
     /**
-    * @dev emitted when funds are repaid to the pool
-    * @param owner the address initiating repayment
+    * @dev emitted when native tokens are deposited to the SmartLoan
+    * @param owner the address initiating deposit
     * @param amount of repaid funds
     * @param timestamp of the repayment
     **/
     event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
+
+    /**
+    * @dev emitted when native tokens are withdrawn by the owner
+    * @param owner the address initiating withdraw
+    * @param amount of repaid funds
+    * @param timestamp of the repayment
+    **/
+    event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
 
     struct RepayConfig {
         bool allowSwaps;

@@ -7,7 +7,7 @@
       </Menu>
       <div>
         <div class="rate-wrapper">
-          Current APY: <span class="rate">{{borrowingRate | percent}}</span>
+          Current APY: <span class="rate">{{borrowingAPY | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -120,6 +120,7 @@ import FundForm from "./FundForm";
 import WithdrawForm from "./WithdrawForm";
 import InfoBubble from "./InfoBubble";
 import config from "@/config";
+import {aprToApy} from '../utils/calculate';
 
 export default {
   name: 'SmartLoan',
@@ -162,6 +163,9 @@ export default {
         return null;
       }
       return this.loanEvents.find(event => event.type === "Liquidated");
+    },
+    borrowingAPY() {
+      return aprToApy(this.borrowingRate);
     }
   },
   methods: {
@@ -178,9 +182,9 @@ export default {
     },
     async closeTheLoan() {
       this.handleTransaction(this.closeLoan)
-          .then(() => {
-            this.repayValue = null;
-          });
+        .then(() => {
+          this.repayValue = null;
+        });
     }
   }
 }

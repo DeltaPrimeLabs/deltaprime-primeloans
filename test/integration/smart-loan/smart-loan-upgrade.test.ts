@@ -38,7 +38,7 @@ import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet, replaceFacet} = require('./utils/deploy-diamond');
+const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
@@ -179,7 +179,7 @@ describe('Smart loan - upgrading',  () => {
 
     it("should check if only one loan per owner is allowed", async () => {
       await expect(smartLoansFactory.connect(borrower).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
-      await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), 0, 0)).to.be.revertedWith("Only one loan per owner is allowed");
+      await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), wavaxTokenAddress,0, toBytes32(""), 0)).to.be.revertedWith("Only one loan per owner is allowed");
     });
 
 

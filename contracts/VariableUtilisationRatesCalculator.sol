@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-// Last deployed from commit: a6bce6b3ffb1f37090a43c55acaf3f7c1749dbf3;
+// Last deployed from commit: 48991ca286a107aedf142ae9fd21b421b08f5025;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,18 +14,26 @@ import "./interfaces/IRatesCalculator.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
 contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-  uint256 public constant SLOPE_1 = 0.12e18;
-  uint256 public constant OFFSET = 0.03e18;
+  uint256 public constant SLOPE_1 = 0;
+  uint256 public constant OFFSET_1 = 0.03e18;
+
+  uint256 public constant BREAKPOINT_1 = 0.6e18;
+
+  uint256 public constant SLOPE_2 = 0.45e18;
+  //negative, hence minus in calculations
+  uint256 public constant OFFSET_2 = 0.24e18;
+
+  uint256 public constant BREAKPOINT_2 = 0.8e18;
+
+  uint256 public constant SLOPE_3 = 3.15e18;
+  //negative, hence minus in calculations
+  uint256 public constant OFFSET_3 = 2.4e18;
+
   // BREAKPOINT must be lower than 1e18
-  uint256 public constant BREAKPOINT = 0.8e18;
   uint256 public constant MAX_RATE = 0.75e18;
 
-  // calculated off-chain for gas efficiency with following formula:
-  // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
-  uint256 public constant SLOPE_2 = 3.12e18;
-
-  //accuracy of 1000
-  uint256 public depositRateFactor = 995;
+  //accuracy of 1e18
+  uint256 public depositRateFactor = 1e18 - 1e12;
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -52,9 +60,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
-      return MAX_RATE * depositRateFactor / 1000;
+      return MAX_RATE * depositRateFactor / 1e18;
     } else {
-      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1000);
+      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1e18);
         return rate;
     }
   }
@@ -69,23 +77,21 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
    * @dev _totalLoans total value of loans
    * @dev _totalDeposits total value of deposits
    **/
-  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external pure override returns (uint256) {
-    if (totalDeposits == 0) return OFFSET;
+  function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
+    if (totalDeposits == 0) return OFFSET_1;
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
 
     if (poolUtilisation >= 1e18) {
       return MAX_RATE;
-    } else if (poolUtilisation <= BREAKPOINT) {
-      return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET;
+    } else if (poolUtilisation <= BREAKPOINT_1) {
+      return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET_1;
+    } else if (poolUtilisation <= BREAKPOINT_2) {
+      return (poolUtilisation * SLOPE_2) / 1e18 - OFFSET_2;
     } else {
       // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
       // unsigned integer safety check)
-      uint256 value = (poolUtilisation * SLOPE_2) / 1e18 + MAX_RATE;
-
-      require(value >= SLOPE_2, "Out of range value when calculating the borrowing rate. Consider checking if SLOPE_2 is calculated correctly");
-
-      return value - SLOPE_2;
+      return (poolUtilisation * SLOPE_3) / 1e18 - OFFSET_3;
     }
   }
 
