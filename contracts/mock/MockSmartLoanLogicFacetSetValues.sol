@@ -14,26 +14,11 @@ contract MockSmartLoanLogicFacetSetValues is MockSmartLoanLogicFacetRedstoneProv
         value = _newValue;
     }
 
-    /**
-     * Dummy implementation used to test SmartLoanDiamond LTV logic
-     **/
     function getTotalValue() public view override returns (uint256) {
-        return value;
-    }
-
-    function calculateAssetsValue(uint256[] memory prices) internal view virtual override returns (uint256) {
         return value;
     }
 
     function getDebt() public view override returns (uint256) {
         return debt;
-    }
-
-    function calculateDebt(uint256[] memory prices) internal view virtual override returns (uint256) {
-        return debt;
-    }
-
-    function getLTV() public view override returns (uint256) {
-        return calculateLTV(new uint256[](0));
     }
 }

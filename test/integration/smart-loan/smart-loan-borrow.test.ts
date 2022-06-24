@@ -36,11 +36,10 @@ import {Contract} from "ethers";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [

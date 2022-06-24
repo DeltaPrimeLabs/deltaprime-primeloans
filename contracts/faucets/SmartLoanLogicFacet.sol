@@ -176,6 +176,14 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return SmartLoanLib.getPercentagePrecision();
     }
 
+    function getPoolsAssetsIndices() public view virtual returns (uint8[1] memory) {
+        return SmartLoanLib.getPoolsAssetsIndices();
+    }
+
+    function getBalance(bytes32 _asset) public view returns (uint256) {
+        return LTVLib.getBalance(_asset);
+    }
+
     /**
      * Returns the current debt from all lending pools
      * @dev This function uses the redstone-evm-connector
@@ -208,7 +216,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     * which is parametrized by the getMaxLtv()
     * @dev This function uses the redstone-evm-connector
     **/
-    function isSolvent() public view returns (bool) {
+    function isSolvent() public view virtual returns (bool) {
         return getLTV() < SmartLoanLib.getMaxLtv();
     }
 

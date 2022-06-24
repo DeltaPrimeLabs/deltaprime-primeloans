@@ -3,11 +3,11 @@ import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
-import MockUsdArtifact from "../../artifacts/contracts/mock/MockUsd.sol/MockUsd.json";
-import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import MockUsdArtifact from "../../../artifacts/contracts/mock/MockUsd.sol/MockUsd.json";
+import PangolinExchangeArtifact from '../../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MockUsd, PangolinExchange} from '../../typechain';
-import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei, syncTime, fromWei, formatUnits} from "../_helpers";
+import {MockUsd, PangolinExchange} from '../../../typechain';
+import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei, syncTime, fromWei, formatUnits} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);

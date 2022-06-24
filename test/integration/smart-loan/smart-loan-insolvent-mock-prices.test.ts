@@ -40,7 +40,7 @@ import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
@@ -48,7 +48,6 @@ const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const btcTokenAddress = '0x50b7545627a5162F82A992c33b87aDc75187B218';
 
-const SMART_LOAN = "MockSmartLoanRedstoneProvider";
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -166,7 +165,7 @@ describe('Smart loan',  () => {
         loan: MockSmartLoanLogicFacetRedstoneProvider,
         loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
         wrappedLoan: any,
-        wrappedLoanLiquidation: any,
+        loanAddress: string,
         owner: SignerWithAddress,
         borrower: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -183,7 +182,8 @@ describe('Smart loan',  () => {
         smartLoansFactory: SmartLoansFactory,
         supportedAssets: Array<Asset>,
         INITIAL_MOCK_PRICES: any,
-        ltvlib: LTVLib,
+        ltvLib: LTVLib,
+        newPrices: [],
         diamondAddress: any;
 
     before("deploy provider, exchange and pool", async () => {
@@ -322,10 +322,10 @@ describe('Smart loan',  () => {
       );
       // Deploy LTVLib and later link contracts to it
       const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
+      ltvLib = await LTVLib.deploy() as LTVLib;
 
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address)
-      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"], ltvlib.address);
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvLib.address)
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan", "closeLoan"], ltvLib.address);
     });
 
     beforeEach("create a loan", async () => {
@@ -334,14 +334,15 @@ describe('Smart loan',  () => {
 
       await smartLoansFactory.connect(borrower).createLoan();
 
-      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+      loanAddress = await smartLoansFactory.getLoanForOwner(borrower.address);
+
       const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
         libraries: {
-          LTVLib: ltvlib.address
+          LTVLib: ltvLib.address
         }
       });
-      loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
-      loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
+
+      loan = await loanFactory.attach(loanAddress).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -352,142 +353,125 @@ describe('Smart loan',  () => {
               timestamp: Date.now()
             }
           });
-      wrappedLoanLiquidation = WrapperBuilder
-          .mockLite(loanLiquidation)
-          .using(
-              () => {
-                return {
-                  prices: INITIAL_MOCK_PRICES,
-                  timestamp: Date.now()
-                }
-              });
     });
 
       TEST_TABLE.forEach(
       async testCase => {
-        if(testCase.id === 1) {
           it(`Testcase ${testCase.id}:\n
         fund AVAX: ${testCase.fund.AVAX}, USD: ${testCase.fund.USD}, ETH: ${testCase.fund.ETH}, BTC: ${testCase.fund.BTC}\n
         borrow AVAX: ${testCase.borrow.AVAX}, USD: ${testCase.borrow.USD}, ETH: ${testCase.borrow.ETH}`,
-              async () => {
-                //fund
-                for (const [symbol, value] of Object.entries(testCase.fund)) {
-                  if (value > 0) {
-                    let contract = getTokenContract(symbol)!;
-                    let tokenDecimals = await contract.decimals();
+          async () => {
+            //fund
+            for (const [symbol, value] of Object.entries(testCase.fund)) {
+              if (value > 0) {
+                let contract = getTokenContract(symbol)!;
+                let tokenDecimals = await contract.decimals();
 
-                    let requiredAvax = toWei((value * getPrice(symbol)! * 1.5 / INITIAL_PRICES.AVAX).toString());
-                    await wavaxTokenContract.connect(borrower).deposit({value: requiredAvax});
+                let requiredAvax = toWei((value * getPrice(symbol)! * 1.5 / INITIAL_PRICES.AVAX).toString());
+                await wavaxTokenContract.connect(borrower).deposit({value: requiredAvax});
 
-                    if (symbol !== 'AVAX') {
-                      await wavaxTokenContract.connect(borrower).transfer(exchange.address, requiredAvax);
-                      await exchange.connect(borrower).swap(toBytes32("AVAX"), toBytes32(symbol), requiredAvax, toWei(value.toString(), tokenDecimals));
-                    }
-
-                    await contract.connect(borrower).approve(wrappedLoan.address, toWei(value.toString(), tokenDecimals));
-                    await wrappedLoan.fund(toBytes32(symbol), toWei(value.toString(), tokenDecimals));
-                  }
+                if (symbol !== 'AVAX') {
+                  await wavaxTokenContract.connect(borrower).transfer(exchange.address, requiredAvax);
+                  await exchange.connect(borrower).swap(toBytes32("AVAX"), toBytes32(symbol), requiredAvax, toWei(value.toString(), tokenDecimals));
                 }
 
-                for (const [symbol, value] of Object.entries(testCase.borrow)) {
-                  if (value > 0) {
-                    let contract = getTokenContract(symbol)!;
-                    let decimals = await contract.decimals();
-                    await wrappedLoan.borrow(toBytes32(symbol), toWei(value.toFixed(decimals) ?? 0, decimals));
-                  }
+                await contract.connect(borrower).approve(wrappedLoan.address, toWei(value.toString(), tokenDecimals));
+                await wrappedLoan.fund(toBytes32(symbol), toWei(value.toString(), tokenDecimals));
+              }
+            }
+
+            for (const [symbol, value] of Object.entries(testCase.borrow)) {
+              if (value > 0) {
+                let contract = getTokenContract(symbol)!;
+                let decimals = await contract.decimals();
+                await wrappedLoan.borrow(toBytes32(symbol), toWei(value.toFixed(decimals) ?? 0, decimals));
+              }
+            }
+
+            if (testCase.stake) {
+              //YAK AVAX
+              await wrappedLoan.stakeAVAXYak(toWei(testCase.stake.YAK.toString()));
+            }
+
+            newPrices = INITIAL_MOCK_PRICES.map(
+                (asset: any) => {
+                  // @ts-ignore
+                  let newPrice = testCase.pricesDuringLiquidation[asset.symbol];
+
+                  return {
+                    symbol: asset.symbol,
+                    value: newPrice ?? asset.value
+                  };
                 }
+            )
 
-                if (testCase.stake) {
-                  //YAK AVAX
-                  await wrappedLoan.stakeAVAXYak(toWei(testCase.stake.YAK.toString()));
-                }
-
-                const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
-                // TODO: remove if proven obsolete
-                // let SmartLoanArtifact = await import('../../../artifacts/contracts/mock/MockSmartLoanAlwaysSolvent.sol/MockSmartLoanAlwaysSolvent.json');
-                // loan = ((await new ethers.Contract(await smartLoansFactory.getLoanForOwner(borrower.address), SmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(performer);
-
-                let newPrices = INITIAL_MOCK_PRICES.map(
-                    (asset: any) => {
-                      // @ts-ignore
-                      let newPrice = testCase.pricesDuringLiquidation[asset.symbol];
-
+            wrappedLoan = WrapperBuilder
+                .mockLite(loan)
+                .using(
+                    () => {
                       return {
-                        symbol: asset.symbol,
-                        value: newPrice ?? asset.value
-                      };
-                    }
-                )
+                        prices: newPrices,
+                        timestamp: Date.now()
+                      }
+                    });
 
-                wrappedLoan = WrapperBuilder
-                    .mockLite(loan)
-                    .using(
-                        () => {
-                          return {
-                            prices: newPrices,
-                            timestamp: Date.now()
-                          }
-                        });
+            let maxBonus = 0.05;
 
-                let maxBonus = 0.05;
+            const bonus = calculateBonus(
+                testCase.action,
+                fromWei(await wrappedLoan.getDebt()),
+                fromWei(await wrappedLoan.getTotalValue()),
+                testCase.targetLtv,
+                maxBonus
+            );
 
-                const bonus = calculateBonus(
-                    testCase.action,
-                    fromWei(await wrappedLoan.getDebt()),
-                    fromWei(await wrappedLoan.getTotalValue()),
-                    testCase.targetLtv,
-                    maxBonus
-                );
+            const neededToRepay = toRepay(
+                testCase.action,
+                fromWei(await wrappedLoan.getDebt()),
+                fromWei(await wrappedLoan.getTotalValue()),
+                testCase.targetLtv,
+                bonus
+            )
 
-                const neededToRepay = toRepay(
-                    testCase.action,
-                    fromWei(await wrappedLoan.getDebt()),
-                    fromWei(await wrappedLoan.getTotalValue()),
-                    testCase.targetLtv,
-                    bonus
-                )
+            const balances = [];
 
-                const balances = [];
+            for (const [i, balance] of (await wrappedLoan.getAllAssetsBalances()).entries()) {
+              balances.push(
+                  formatUnits(balance, await getTokenContract(fromBytes32((await exchange.getAllAssets())[i]))!.decimals())
+              );
+            }
 
-                for (const [i, balance] of (await wrappedLoan.getAllAssetsBalances()).entries()) {
-                  balances.push(
-                      formatUnits(balance, await getTokenContract(fromBytes32((await exchange.getAllAssets())[i]))!.decimals())
-                  );
-                }
+            const debts = [];
 
-                const debts = [];
+            for (const [index, debt] of (await wrappedLoan.getDebts()).entries()) {
+              debts.push(formatUnits(debt, await getTokenContract(POOL_ASSETS[index])!.decimals()))
+            }
 
-                for (const [index, debt] of (await wrappedLoan.getDebts()).entries()) {
-                  debts.push(formatUnits(debt, await getTokenContract(POOL_ASSETS[index])!.decimals()))
-                }
+            const repayAmounts = getRepayAmounts(
+                debts,
+                await wrappedLoan.getPoolsAssetsIndices(),
+                neededToRepay,
+                newPrices
+            );
 
-                const repayAmounts = getRepayAmounts(
-                    debts,
-                    await wrappedLoan.getPoolsAssetsIndices(),
-                    neededToRepay,
-                    newPrices
-                );
+            let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
 
-                let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
+            let allowanceAmounts;
 
-                let allowanceAmounts;
+            if (!loanIsBankrupt) {
+              allowanceAmounts = toSupply(
+                  await wrappedLoan.getPoolsAssetsIndices(),
+                  balances,
+                  repayAmounts
+              );
+            } else {
+              allowanceAmounts = repayAmounts;
+            }
 
-                if (!loanIsBankrupt) {
-                  allowanceAmounts = toSupply(
-                      await wrappedLoan.getPoolsAssetsIndices(),
-                      balances,
-                      repayAmounts
-                  );
-                } else {
-                  allowanceAmounts = repayAmounts;
-                }
+            await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus);
 
-                await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus);
-
-                expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, testCase.ltvPrecision ?? 0.01);
-              });
-        }
-
+            // expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, testCase.ltvPrecision ?? 0.01);
+          });
       }
    );
 
@@ -502,6 +486,24 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       const performer = performedAction === 'CLOSE' ? borrower : liquidator;
+
+      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvLib.address
+        }
+      });
+
+      loanLiquidation = await loanFactoryLiquidation.attach(loanAddress).connect(performer) as MockSmartLoanLiquidationFacetRedstoneProvider;
+
+      wrappedLoan = WrapperBuilder
+        .mockLite(loanLiquidation)
+        .using(
+          () => {
+            return {
+              prices: newPrices,
+              timestamp: Date.now()
+            }
+          });
 
       let repayAmountsInWei = await Promise.all(repayAmounts.map(
           async (amount, i) => {
@@ -525,7 +527,7 @@ describe('Smart loan',  () => {
 
       switch (performedAction) {
         case 'LIQUIDATE':
-          await wrappedLoanLiquidation.liquidateLoan(repayAmountsInWei, bonusInWei);
+          await wrappedLoan.liquidateLoan(repayAmountsInWei, bonusInWei);
           break;
         case 'HEAL':
           await wrappedLoan.unsafeLiquidateLoan(repayAmountsInWei, bonusInWei);
