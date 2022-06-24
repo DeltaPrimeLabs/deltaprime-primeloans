@@ -6,17 +6,16 @@ import redstone from 'redstone-api';
 import VariableUtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenArtifact from "../../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset, deployAllFaucets,
+  Asset,
   deployAndInitPangolinExchangeContract,
   fromWei,
-  getFixedGasSigners, PoolAsset,
+  getFixedGasSigners,
   recompileSmartLoanLib,
   toBytes32,
   toWei
@@ -24,11 +23,11 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   CompoundingIndex,
-  ERC20Pool,
+  ERC20Pool, LTVLib,
   MockSmartLoanLogicFacetRedstoneProvider,
   MockToken,
   OpenBorrowersRegistry__factory,
-  PangolinExchange, PoolManager, SmartLoanGigaChadInterface,
+  PangolinExchange,
   SmartLoansFactory,
   VariableUtilisationRatesCalculator, YieldYakRouter__factory
 } from "../../../typechain";
@@ -60,10 +59,10 @@ describe('Smart loan',  () => {
   });
 
 
-  describe('A loan with debt and repayment', () => {
+  describe(`Funding a loan`, () => {
     let exchange: PangolinExchange,
         smartLoansFactory: SmartLoansFactory,
-        loan: SmartLoanGigaChadInterface,
+        loan: MockSmartLoanLogicFacetRedstoneProvider,
         wrappedLoan: any,
         mockUsdToken: MockToken,
         wavaxTokenContract: Contract,
@@ -71,16 +70,17 @@ describe('Smart loan',  () => {
         yakRouterContract: Contract,
         wavaxPool: ERC20Pool,
         usdPool: ERC20Pool,
+        ltvlib: LTVLib,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         USD_PRICE: number,
         ETH_PRICE: number,
-        solvencyFacetAddress: any,
         diamondAddress: any;
 
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
+      diamondAddress = await deployDiamond();
       [owner, depositor] = await getFixedGasSigners(10000000);
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
@@ -146,47 +146,30 @@ describe('Smart loan',  () => {
       await mockUsdToken.connect(depositor).approve(usdPool.address, toWei("1000"));
       await usdPool.connect(depositor).deposit(toWei("1000"));
 
-      let supportedAssets = [
+      let supportedAssetss = [
         new Asset(toBytes32('AVAX'), wavaxTokenAddress),
         new Asset(toBytes32('USD'), mockUsdToken.address),
         new Asset(toBytes32('ETH'), ethTokenAddress),
       ]
-      let lendingPools = [
-          new PoolAsset(toBytes32('AVAX'), wavaxPool.address),
-          new PoolAsset(toBytes32('USD'), usdPool.address),
-      ]
-      let poolManager = await deployContract(
-          owner,
-          PoolManagerArtifact,
-          [
-              supportedAssets,
-              lendingPools
-          ]
-      ) as PoolManager;
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          poolManager.address,
-          ethers.constants.AddressZero,
-          'lib'
-      );
-      //TODO: Refactor syntax
-      let result = await deployDiamond();
-      diamondAddress = result.diamondAddress;
-      solvencyFacetAddress = result.solvencyFacetAddress;
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssetss);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
       await recompileSmartLoanLib(
           "SmartLoanLib",
+          [0, 1],
+          [wavaxTokenAddress, mockUsdToken.address],
+          {'AVAX': wavaxPool.address, 'USD': usdPool.address},
+          exchange.address,
           yakRouterContract.address,
-          poolManager.address,
-          solvencyFacetAddress,
           'lib'
       );
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
-      await deployAllFaucets(diamondAddress)
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvlib = await LTVLib.deploy() as LTVLib;
+
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address)
 
       await smartLoansFactory.initialize(diamondAddress);
     });
@@ -196,13 +179,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.connect(owner).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-      // const loanFactory = await ethers.getContractAt("SmartLoanGigaChadInterface", {
-      //   libraries: {
-      //     LTVLib: ltvlib.address
-      //   }
-      // });
-      // loan = await loanFactory.attach(loan_proxy_address).connect(owner) as SmartLoanGigaChadInterface;
-      loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvlib.address
+        }
+      });
+      loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -217,63 +199,43 @@ describe('Smart loan',  () => {
 
 
     it("should fund a loan", async () => {
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getLTV()).to.be.equal(0);
-
       await mockUsdToken.connect(owner).approve(wrappedLoan.address, toWei("1000"));
       await wrappedLoan.fund(toBytes32("USD"), toWei("300"));
 
       expect(fromWei(await mockUsdToken.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300, 0.5);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+    it("should deposit native token", async () => {
+      await wrappedLoan.depositNativeToken({value: toWei("10")});
 
-    it("should borrow funds in the same token as funded", async () => {
-      await wrappedLoan.borrow(toBytes32("USD"), toWei("300"));
-      expect(fromWei(await mockUsdToken.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300 + 300, 1);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300, 0.5);
-      expect(await wrappedLoan.getLTV()).to.be.equal(1000);
+      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(0);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(10);
     });
 
-    it("should borrow funds in a different token than funded", async () => {
-      await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
+    it("should receive native token", async () => {
+      const tx = await owner.sendTransaction({
+        to: wrappedLoan.address,
+        value: toWei("10")
+      });
 
-      expect(fromWei(await wavaxTokenContract.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(1);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(600 + AVAX_PRICE * 1, 1);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300 + AVAX_PRICE * 1, 1);
-      expect(await wrappedLoan.getLTV()).to.be.closeTo(((300 + AVAX_PRICE) * 1000 / 300).toFixed(0), 1)
+      await tx.wait();
+
+      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(10);
     });
 
-
-
-    it("should repay funds", async () => {
-      await wrappedLoan.repay(toBytes32("USD"), toWei("100"));
-      await wrappedLoan.repay(toBytes32("AVAX"), toWei("0.5"));
-
-      expect(fromWei(await mockUsdToken.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(500);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(500 + AVAX_PRICE * 0.5, 1);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(200 + AVAX_PRICE * 0.5, 1);
-      expect(await wrappedLoan.getLTV()).to.be.closeTo(((200 + AVAX_PRICE * 0.5) * 1000 / 300).toFixed(0), 1)
+    it("should revert withdrawing too much native token", async () => {
+      await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough WAVAX to unwrap and withdraw");
     });
 
+    it("should withdraw native token", async () => {
+      let providerBalance = fromWei(await provider.getBalance(owner.address));
+      await wrappedLoan.unwrapAndWithdraw(toWei("5"));
 
-    it("should prevent borrowing too much", async () => {
-      await expect(wrappedLoan.borrow(toBytes32("AVAX"), toWei("900"))).to.be.revertedWith("The action may cause an account to become insolvent");
-      expect(fromWei(await wavaxTokenContract.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(0.5);
-    });
-
-    it("should repay the debt when specified too much", async () => {
-      await wavaxTokenContract.connect(owner).deposit({value: toWei("0.1")});
-      await wavaxTokenContract.connect(owner).approve(wrappedLoan.address, toWei("0.1"));
-
-      await wrappedLoan.fund(toBytes32("AVAX"), toWei("0.1"));
-      await wrappedLoan.repay(toBytes32("AVAX"), toWei("0.6"));
-
-      expect(fromWei(await wavaxTokenContract.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(0.1, 0.000001);
+      expect(fromWei(await provider.getBalance(owner.address))).to.be.closeTo(providerBalance + 5, 0.001);
+      //shouldn't change balance of loan
+      expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.equal(5);
     });
   });
 });

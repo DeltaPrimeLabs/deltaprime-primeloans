@@ -1,3 +1,12 @@
+import PANGOLIN_EXCHANGETUP from '../../deployments/mainnet/PangolinExchangeTUP.json'
+import PANGOLIN_EXCHANGE from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
+import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
+import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
+import LOAN_LOGIC from '../../artifacts/contracts/faucets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
+import LOAN_LIQUIDATION from '../../artifacts/contracts/faucets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
+import addresses from '../../common/token_addresses.json';
+import {fromBytes32, toSupply} from "../../test/_helpers";
+
 const args = require('yargs').argv;
 const https = require('https');
 const network = args.network ? args.network : 'localhost';
@@ -6,971 +15,30 @@ const minutesSync = args.minutesSync ? args.minutesSync : 0;
 const ethers = require('ethers');
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("redstone-evm-connector");
+const fs = require('fs');
+const {calculateBonus, fromWei, toRepay, formatUnits, getRepayAmounts} = require("../../test/_helpers");
+const {parseUnits} = require("ethers/lib/utils");
+const path = require("path");
 
-const FACTORY_ABI = [
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "previousOwner",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "OwnershipTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "accountAddress",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "creator",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "initialCollateral",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "initialDebt",
-                "type": "uint256"
-            }
-        ],
-        "name": "SmartLoanCreated",
-        "type": "event"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_account",
-                "type": "address"
-            }
-        ],
-        "name": "canBorrow",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_initialDebt",
-                "type": "uint256"
-            }
-        ],
-        "name": "createAndFundLoan",
-        "outputs": [
-            {
-                "internalType": "contract SmartLoanDiamond",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "createLoan",
-        "outputs": [
-            {
-                "internalType": "contract SmartLoanDiamond",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getAllLoans",
-        "outputs": [
-            {
-                "internalType": "contract SmartLoanDiamond[]",
-                "name": "",
-                "type": "address[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_user",
-                "type": "address"
-            }
-        ],
-        "name": "getLoanForOwner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_loan",
-                "type": "address"
-            }
-        ],
-        "name": "getOwnerOfLoan",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "contract SmartLoanDiamond",
-                "name": "_smartLoanImplementation",
-                "type": "address"
-            }
-        ],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "loansToOwners",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "owner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "ownersToLoans",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "renounceOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "upgradeableBeacon",
-        "outputs": [
-            {
-                "internalType": "contract UpgradeableBeacon",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
-const FACTORY_ADDRESS = "0xf3cdfA877bB0615b50D066e41404668f016feE1E"; // mainnet
-const LOAN_ABI = [
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "borrower",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Borrowed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "funder",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Funded",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "investor",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "bytes32",
-                "name": "asset",
-                "type": "bytes32"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Invested",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "liquidator",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "repayAmount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "bonus",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "ltv",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Liquidated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "debtRepaid",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "withdrawalAmount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "LoanClosed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "previousOwner",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "OwnershipTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "investor",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "bytes32",
-                "name": "asset",
-                "type": "bytes32"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Redeemed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "borrower",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Repaid",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Withdrawn",
-        "type": "event"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "borrow",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "closeLoan",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "fund",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getAllAssetsBalances",
-        "outputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "",
-                "type": "uint256[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getAllAssetsPrices",
-        "outputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "",
-                "type": "uint256[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_user",
-                "type": "address"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "_asset",
-                "type": "bytes32"
-            }
-        ],
-        "name": "getBalance",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getDebt",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getExchange",
-        "outputs": [
-            {
-                "internalType": "contract IAssetsExchange",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getFullLoanStatus",
-        "outputs": [
-            {
-                "internalType": "uint256[4]",
-                "name": "",
-                "type": "uint256[4]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getLTV",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getLiquidationBonus",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getMaxBlockTimestampDelay",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getMaxDataTimestampDelay",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getMaxLtv",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getMinSelloutLtv",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getPercentagePrecision",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getPool",
-        "outputs": [
-            {
-                "internalType": "contract Pool",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getPriceProvider1",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getPriceProvider2",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getTotalValue",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "_asset",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_exactERC20AmountOut",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_maxAvaxAmountIn",
-                "type": "uint256"
-            }
-        ],
-        "name": "invest",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_receivedSigner",
-                "type": "address"
-            }
-        ],
-        "name": "isSignerAuthorized",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "isSolvent",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_receivedTimestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "isTimestampValid",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "repayAmount",
-                "type": "uint256"
-            }
-        ],
-        "name": "liquidateLoan",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "owner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "_asset",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_exactERC20AmountIn",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_minAvaxAmountOut",
-                "type": "uint256"
-            }
-        ],
-        "name": "redeem",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "renounceOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "repay",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "withdraw",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "asset",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "withdrawAsset",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "stateMutability": "payable",
-        "type": "receive"
-    }
-];
+const erc20ABI = [
+    'function decimals() public view returns (uint8)',
+    'function balanceOf(address _owner) public view returns (uint256 balance)',
+    'function approve(address _spender, uint256 _value) public returns (bool success)',
+    'function allowance(address owner, address spender) public view returns (uint256)',
+    'function transfer(address dst, uint wad) public returns (bool)'
+]
 
-const PRIVATE_KEY = '';
+const PRIVATE_KEY =  fs.readFileSync(path.resolve(__dirname, "./.private")).toString().trim();
 const RPC_URL = getUrlForNetwork(network);
 
 let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
 let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);
-const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, wallet);
+const factory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, wallet);
+const exchange = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, wallet);
 
-async function getLoanStatus(loanAddress) {
-    let loan = getLoanContract(loanAddress);
+
+async function wrapLoanStatus(loanAddress) {
+    let loan = wrapLogicFacet(loanAddress);
     let rawStatus = await loan.getFullLoanStatus();
     let status = {
         value: rawStatus[0].toString(),
@@ -981,8 +49,18 @@ async function getLoanStatus(loanAddress) {
     return status;
 }
 
-function getLoanContract(loanAddress) {
-    let loan = new ethers.Contract(loanAddress, LOAN_ABI, wallet);
+function wrapLogicFacet(loanAddress) {
+    let loan = new ethers.Contract(loanAddress, LOAN_LOGIC.abi, wallet);
+
+    loan = WrapperBuilder
+        .wrapLite(loan)
+        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
+    return loan
+}
+
+function wrapLiquidationFacet(loanAddress) {
+    let loan = new ethers.Contract(loanAddress, LOAN_LIQUIDATION.abi, wallet);
+
     loan = WrapperBuilder
         .wrapLite(loan)
         .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
@@ -997,107 +75,91 @@ async function getInsolventLoans() {
     let loans = await getAllLoans();
     let insolventLoans = []
     await Promise.all(loans.map(async (loan) => {
-        if((await getLoanStatus(loan)).isSolvent === false) {
+        if((await wrapLoanStatus(loan)).isSolvent === false) {
             insolventLoans.push(loan)
         }
-    }))
+    }));
     return insolventLoans
 }
 
-async function liquidateLoan(loanAddress) {
-    let loanContract = getLoanContract(loanAddress);
-    [totalVal, debt] = await loanContract.getFullLoanStatus();
-    let targetLTV = (await loanContract.getMinSelloutLtv()).toNumber() + 100;
-    let liquidationBonus = await loanContract.getMaxLiquidationBonus();
-    if (debt > totalVal) {
-        console.log("The debt is greater than Total Value - impossible to rescue");
-        return;
-    }
-    let currentLTV = debt / (totalVal - debt);
-    console.log("Current LTV: " + currentLTV);
-    let maxLTV = 1000 / liquidationBonus;
-    console.log("Max LTV: " + maxLTV);
+export async function liquidateLoan(loanAddress) {
+    let loan = wrapLogicFacet(loanAddress);
+    let liquidateFacet = wrapLiquidationFacet(loanAddress);
+    let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
+    let prices = (await loan.getAllAssetsPrices()).map(el => el.toNumber() / 10**8);
+    let [tv, debt] = await loan.getFullLoanStatus();
 
-    if (currentLTV > maxLTV) {
+    let assetsSymbols = await exchange.getAllAssets();
+    let indices = await loan.getPoolsAssetsIndices();
 
-        //FIX with added AVAX
-        //BTW we aim for 90% of maxLTV to leave a bit of space for slippage
-        let fixedLTV = 0.9 * maxLTV;
+    let assetBalances = await loan.getAllAssetsBalances();
+    let poolTokens = await loan.getPoolTokens();
+    let debtsInWei = await loan.getDebts();
+    let decimals = await getDecimals(assetsSymbols);
 
-        let subsidy = (debt * (fixedLTV + 1) - fixedLTV * totalVal) / fixedLTV;
+    const bonus = calculateBonus(
+        'LIQUIDATE',
+        fromWei(debt),
+        fromWei(tv),
+        4.1,
+        maxBonus
+    );
 
-        console.log(`Old tv ${ethers.utils.formatEther(totalVal.toString())}`);
-        console.log(`Subsidy ${ethers.utils.formatEther(subsidy.toString())}`);
-        let newTotalVal = parseInt(subsidy) + parseInt(totalVal);
-        console.log(`New tv ${ethers.utils.formatEther(newTotalVal.toString())}`);
+    const neededToRepay = toRepay(
+        'LIQUIDATE',
+        fromWei(debt),
+        fromWei(tv),
+        4.1,
+        bonus
+    )
 
-        let repayAmount = getSelloutRepayAmount(newTotalVal, debt, liquidationBonus, targetLTV);
+    let balances = [];
 
-        let tx = await loanContract.liquidateLoan(repayAmount.toString(), {gasLimit: 2000000, value: subsidy.toString()});
-        console.log("Waiting for tx: " + tx.hash);
-        let receipt = await provider.waitForTransaction(tx.hash);
-        console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
-    }
-
-    let repayAmount = getSelloutRepayAmount(totalVal, debt, liquidationBonus, targetLTV);
-
-    if (repayAmount > totalVal) {
-        console.log("The repayment amount is greater than Total Value - impossible to rescue");
-        return;
+    for (const [i, balance] of (assetBalances).entries()) {
+        balances.push(formatUnits(balance, decimals[i]));
     }
 
-    let tx = await loanContract.liquidateLoan(repayAmount.toString(), {gasLimit: 8000000});
-    console.log("Waiting for tx: " + tx.hash);
-    let receipt = await provider.waitForTransaction(tx.hash);
-    console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
-}
+    const debts = [];
 
-async function liquidateWithGradualIncreaseLoan(loanAddress) {
-    let loanContract = getLoanContract(loanAddress);
-    [totalVal, debt] = await loanContract.getFullLoanStatus();
-    let targetLTV = (await loanContract.getMinSelloutLtv()).toNumber() + 100;
-    let liquidationBonus = await loanContract.getMaxLiquidationBonus();
-    if (debt > totalVal) {
-        console.log("The debt is greater than Total Value - impossible to rescue");
-        return;
-    }
-    let repayAmount = getSelloutRepayAmount(totalVal, debt, liquidationBonus, targetLTV);
-
-    if (repayAmount > targetLTV) {
-        console.log("The repayment amount is greater than Total Value - impossible to rescue");
-        return;
+    for (const [index, debt] of debtsInWei.entries()) {
+        debts.push(formatUnits(debt, decimals[indices[index]]));
     }
 
-    let success = false;
-    while (!success) {
-        console.log(`Attempting to sellout a loan under ${loanAddress} address to bring to below ${targetLTV} LTV level. Repay amount: ${repayAmount}`);
-        success = true;
-        try {
-            await loanContract.wrappedCallStatic.liquidateLoan(repayAmount.toString(), {gasLimit: 8000000});
-        } catch (error) {
-            console.log(error);
-            success = false;
-            repayAmount = repayAmount*1.01;
+    const repayAmounts = getRepayAmounts(
+        debts,
+        indices,
+        neededToRepay,
+        prices
+    );
+
+    let repayAmountsInWei = await Promise.all(repayAmounts.map(
+        async (amount, i) => {
+            let decimal = decimals[indices[i]];
+            return parseUnits((amount.toFixed(decimal) ?? 0).toString(), decimal);
         }
+    ));
+
+    let allowanceAmounts = toSupply(
+        indices,
+        balances,
+        repayAmounts
+    );
+
+    for (let [i, amount] of allowanceAmounts.entries()) {
+        let token = getTokenContract(poolTokens[i]);
+        let decimal = decimals[indices[i]];
+        let allowance = parseUnits((amount.toFixed(decimal) ?? 0).toString(), decimal);
+        await token.approve(loan.address, allowance);
     }
-    let tx = await loanContract.liquidateLoan(repayAmount.toString(), {gasLimit: 8000000});
+
+    const bonusInWei = (bonus * 1000).toFixed(0);
+
+    let tx = await liquidateFacet.liquidateLoan(repayAmountsInWei, bonusInWei, {gasLimit: 8000000});
     console.log("Waiting for tx: " + tx.hash);
     let receipt = await provider.waitForTransaction(tx.hash);
     console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
 }
 
-
-function getSelloutRepayAmount(totalValue, debt, bonus, targetLTV) {
-    targetLTV = targetLTV / 1000;
-    bonus = bonus / 1000;
-    currentLTV = debt / (totalValue - debt)
-    let repayAmount = (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1);
-    console.log(`LTV:  ${currentLTV}`);
-    console.log(`Total value:  ${ethers.utils.formatEther(totalValue.toString())}`);
-    console.log(`Debt:  ${ethers.utils.formatEther(debt.toString())}`);
-    console.log(`Repayment amount:  ${ethers.utils.formatEther(repayAmount.toString())}`);
-    return repayAmount;
-}
 
 function healthcheckPing() {
     console.log(`[${(new Date).toLocaleString()}][HEALTHCHECK] Ping!`);
@@ -1120,9 +182,17 @@ async function liquidateInsolventLoans() {
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }
 
-module.exports = {
-    liquidateInsolventLoans
-};
+function getTokenContract(address) {
+    return new ethers.Contract(address, erc20ABI, wallet);
+}
+
+async function getDecimals(symbols) {
+
+   return Promise.all(
+        symbols.map(
+            symbol => getTokenContract(addresses[fromBytes32(symbol)]).decimals()
+        )
+    );
+}
 
 console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}. Minutes sync: ${minutesSync}`);
-liquidateInsolventLoans()

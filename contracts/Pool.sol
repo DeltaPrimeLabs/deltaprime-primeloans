@@ -163,6 +163,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
+    _deposited[address(this)] += msg.value;
     _updateRates();
 
     emit Deposit(msg.sender, msg.value, block.timestamp);
@@ -285,7 +286,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(account != address(0), "ERC20: cannot mint to the zero address");
 
     _deposited[account] += amount;
-    _deposited[address(this)] += amount;
 
     emit Transfer(address(0), account, amount);
   }
@@ -310,10 +310,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _accumulateDepositInterest(address user) internal {
-    uint256 depositedWithInterest = balanceOf(user);
-    uint256 interest = depositedWithInterest - _deposited[user];
+    uint256 interest = balanceOf(user) - _deposited[user];
 
     _mint(user, interest);
+    _deposited[address(this)] = balanceOf(address(this));
 
     emit InterestCollected(user, interest, block.timestamp);
 
@@ -322,10 +322,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _accumulateBorrowingInterest(address user) internal {
-    uint256 borrowedWithInterest = getBorrowed(user);
-    uint256 interest = borrowedWithInterest - borrowed[user];
-    borrowed[user] = borrowedWithInterest;
-    borrowed[address(this)] += interest;
+    borrowed[user] = getBorrowed(user);
+    borrowed[address(this)] = getBorrowed(address(this));
 
     _borrowIndex.updateUser(user);
     _borrowIndex.updateUser(address(this));

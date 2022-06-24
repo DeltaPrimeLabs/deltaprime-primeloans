@@ -48,7 +48,16 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
-    receive() external payable {}
+    function unwrapAndWithdraw(uint256 _amount) public payable virtual {
+        WAVAX native = SmartLoanLib.getNativeTokenWrapped();
+        require(native.balanceOf(address(this)) >= _amount, "Not enough WAVAX to unwrap and withdraw");
+
+        native.withdraw(_amount);
+
+        payable(msg.sender).safeTransferETH(_amount);
+
+        emit UnwrapAndWithdraw(msg.sender, msg.value, block.timestamp);
+    }
 
     /* ========== VIEW FUNCTIONS ========== */
 
@@ -124,68 +133,21 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
 
     /* ========== EVENTS ========== */
 
-    /**
-     * @dev emitted after a loan is funded
-     * @param funder the address which funded the loan
-     * @param asset funded by an investor
-     * @param amount the amount of funds
-     * @param timestamp time of funding
-     **/
-    event Funded(address indexed funder, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
     /**
-     * @dev emitted after the funds are withdrawn from the loan
-     * @param owner the address which withdraws funds from the loan
-     * @param asset withdrawn by an investor
-     * @param amount of funds withdrawn
-     * @param timestamp of the withdrawal
-     **/
-    event Withdrawn(address indexed owner, bytes32 indexed asset, uint256 amount, uint256 timestamp);
-
-
-
-    /**
-     * @dev emitted when funds are borrowed from the pool
-     * @param borrower the address of borrower
-     * @param asset borrowed by an investor
-     * @param amount of the borrowed funds
-     * @param timestamp time of the borrowing
-     **/
-    event Borrowed(address indexed borrower, bytes32 indexed asset, uint256 amount, uint256 timestamp);
-
-    /**
-     * @dev emitted when funds are repaid to the pool
-     * @param borrower the address initiating repayment
-     * @param _asset asset repaid by an investor
-     * @param amount of repaid funds
-     * @param timestamp of the repayment
-     **/
-    event Repaid(address indexed borrower, bytes32 indexed _asset, uint256 amount, uint256 timestamp);
-
-    /**
-     * @dev emitted after a successful liquidation operation
-     * @param liquidator the address that initiated the liquidation operation
-     * @param repayAmount requested amount (AVAX) of liquidation
-     * @param bonus an amount of bonus (AVAX) received by the liquidator
-     * @param ltv a new LTV after the liquidation operation
-     * @param timestamp a time of the liquidation
-     **/
-    event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 timestamp);
-
-    /**
-     * @dev emitted after closing a loan by the owner
-     * @param debtRepaid the amount of a borrowed AVAX that was repaid back to the pool
-     * @param withdrawalAmount the amount of AVAX that was withdrawn by the owner after closing the loan
-     * @param timestamp a time of the loan's closure
-     **/
-    event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 timestamp);
-
-
-    /**
-    * @dev emitted when funds are repaid to the pool
-    * @param owner the address initiating repayment
+    * @dev emitted when native tokens are deposited to the SmartLoan
+    * @param owner the address initiating deposit
     * @param amount of repaid funds
     * @param timestamp of the repayment
     **/
     event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
+
+    /**
+    * @dev emitted when native tokens are withdrawn by the owner
+    * @param owner the address initiating withdraw
+    * @param amount of repaid funds
+    * @param timestamp of the repayment
+    **/
+    event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
+
 }

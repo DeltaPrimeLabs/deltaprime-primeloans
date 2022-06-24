@@ -69,12 +69,12 @@ describe('Pool with variable utilisation interest rates', () => {
       await time.increase(time.duration.years(1));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
-      expect(borrowed).to.be.closeTo(1.09, 0.000001);
+      expect(borrowed).to.be.closeTo(1.03, 0.000001);
     });
 
     it("should repay", async () => {
-      await mockToken.connect(owner).approve(sut.address, toWei("1.09"));
-      await sut.repay(toWei("1.09"));
+      await mockToken.connect(owner).approve(sut.address, toWei("1.03"));
+      await sut.repay(toWei("1.03"));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(0, 0.000001);
@@ -133,12 +133,12 @@ describe('Pool with variable utilisation interest rates', () => {
       await time.increase(time.duration.years(1));
 
       let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-      expect(borrowed).to.be.closeTo(1.09, 0.000001);
+      expect(borrowed).to.be.closeTo(1.03, 0.000001);
     });
 
     it("should repay", async () => {
-      await mockToken.connect(borrower).approve(sut.address, toWei("1.11"));
-      await sut.connect(borrower).repay(toWei("1.09"));
+      await mockToken.connect(borrower).approve(sut.address, toWei("1.03"));
+      await sut.connect(borrower).repay(toWei("1.03"));
 
       let borrowed = fromWei(await sut.getBorrowed(borrower.address));
       expect(borrowed).to.be.closeTo(0, 0.000001);

@@ -55,7 +55,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     **/
     function closeLoan(bytes32[] memory _assetsProvided, uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
         bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
-        uint256 debt = _calculateDebt();
+
         PoolManager poolManager = SmartLoanLib.getPoolManager();
 
         //TODO: update it after corrected on main
@@ -70,6 +70,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         uint256 i;
         IERC20Metadata token;
 
+        //TODO: here was a wrong change. We have to iterate over pool tokens, not provided assets
         for (i = 0; i < _assetsProvided.length; i++) {
             token = IERC20Metadata(poolManager.getAssetAddress(_assetsProvided[i]));
 
@@ -103,13 +104,18 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             }
         }
 
-        // Downside o f this approach is code duplication across multiple facets, but it's not entirely
+        if (address(this).balance > 0) {
+            payable(msg.sender).safeTransferETH(address(this).balance);
+        }
+
+        // TODO: Possibly introduce getDebt() method like in SmartLoanLogicFacet.sol
+        // Downside of this approach is code duplication across multiple facets, but it's not entirely
         // wrong as the "logic" of calculating the debt still resides in one place only - the LTVLib library
 
         require(_calculateDebt() == 0, "Debt not fully repaid");
         require(_calculateTotalValue() == 0, "Final value of closed loan above 0");
 
-        emit LoanClosed(debt, address(this).balance, block.timestamp);
+        emit LoanClosed(block.timestamp);
     }
 
     /**
@@ -214,7 +220,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             uint256 partToReturn = 10**18;
 
             if (valueOfTokens >= suppliedInUSD + bonus) {
-                partToReturn = suppliedInUSD * 10**18 / total + bonus * 10**18 / total;
+                partToReturn = (suppliedInUSD + bonus) * 10**18 / total;
             } else {
                 //meaning staking or LP positions
                 uint256 toReturnFromPositions = suppliedInUSD + bonus - valueOfTokens;
@@ -250,6 +256,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         return liquidateYak(_targetUsdAmount * 10**8 / _prices[0], _to);
     }
 
+    //TODO: remove once liquidation is just sending tokens back to liquidator
     /**
     * Unstake AVAX amount to perform repayment to a pool
     * @param _targetAvaxAmount amount of AVAX to be repaid from staking position
@@ -314,10 +321,8 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
     /**
     * @dev emitted after closing a loan by the owner
-    * @param debtRepaid the amount of a borrowed AVAX that was repaid back to the pool
-    * @param withdrawalAmount the amount of AVAX that was withdrawn by the owner after closing the loan
     * @param timestamp a time of the loan's closure
     **/
-    event LoanClosed(uint256 debtRepaid, uint256 withdrawalAmount, uint256 timestamp);
+    event LoanClosed(uint256 timestamp);
 }
 

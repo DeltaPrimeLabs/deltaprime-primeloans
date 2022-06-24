@@ -16,7 +16,7 @@ contract SolvencyMethodsLib {
     }
 
     // This function executes SolvencyFacet.isSolvent()
-    function _isSolvent() internal returns (bool solvent){
+    function _isSolvent() internal virtual returns (bool solvent){
         solvent = abi.decode(
             ProxyConnector.proxyDelegateCalldata(
                 SmartLoanLib.getSolvencyFacetAddress(),

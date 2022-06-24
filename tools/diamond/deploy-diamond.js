@@ -2,7 +2,7 @@
 const {ethers} = require("hardhat");
 
 
-const { getSelectors, FacetCutAction } = require('./diamond.js')
+const { getSelectors, FacetCutAction } = require('./selectors.js')
 
 
 async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], hardhatConfig = undefined) {

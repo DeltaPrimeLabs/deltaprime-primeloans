@@ -9,8 +9,6 @@ import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20P
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import UpgradeableBeaconArtifact
-  from '../../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
@@ -21,7 +19,7 @@ import {
   fromWei,
   getFixedGasSigners,
   getRepayAmounts,
-  recompileSmartLoan,
+  recompileSmartLoanLib,
   toBytes32,
   toRepay,
   toSupply,
@@ -32,17 +30,19 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
   ERC20Pool,
-  MockSmartLoanRedstoneProvider,
+  LTVLib,
+  MockSmartLoanLiquidationFacetRedstoneProvider,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
-  SmartLoan,
+  MockSmartLoanLogicFacetRedstoneProvider,
   SmartLoansFactory,
-  UpgradeableBeacon,
   VariableUtilisationRatesCalculator,
   YieldYakRouter__factory
 } from "../../../typechain";
-import {Contract} from "ethers";
+import {Contract, ContractFactory} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+
+const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
 chai.use(solidity);
 
@@ -54,10 +54,9 @@ const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
 const btcTokenAddress = '0x50b7545627a5162F82A992c33b87aDc75187B218';
 
-const SMART_LOAN = "MockSmartLoanRedstoneProvider";
-const SMART_LOAN_ALWAYS_SOLVENT = "MockSmartLoanAlwaysSolvent";
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
+  'function symbol() public view returns (string)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
   'function approve(address _spender, uint256 _value) public returns (bool success)',
   'function allowance(address owner, address spender) public view returns (uint256)',
@@ -69,21 +68,21 @@ const wavaxAbi = [
   ...erc20ABI
 ]
 
-const POOL_ASSETS = ['AVAX', 'USD', 'ETH'];
+const POOL_ASSETS = ['AVAX', 'USDT', 'ETH'];
 
 const TEST_TABLE =  [
   {
     id: 1,
     fundInUsd: {
       AVAX: 100,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
       AVAX: 550,
-      USD: 0,
+      USDT: 0,
       ETH: 0
     },
     targetLtv: 4.1,
@@ -93,18 +92,18 @@ const TEST_TABLE =  [
     id: 2,
     fundInUsd: {
       AVAX: 100,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
       AVAX: 500,
-      USD: 0,
+      USDT: 0,
       ETH: 0
     },
     swaps: [
-      { from: 'AVAX', to: 'USD', all: true, amountInUsd: null }
+      { from: 'AVAX', to: 'USDT', all: true, amountInUsd: null }
     ],
     targetLtv: 4.5,
     action: 'LIQUIDATE'
@@ -113,18 +112,18 @@ const TEST_TABLE =  [
     id: 3,
     fundInUsd: {
       AVAX: 0,
-      USD: 0,
+      USDT: 0,
       ETH: 50,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
       AVAX: 0,
-      USD: 200,
+      USDT: 200,
       ETH: 200
     },
     swaps: [
-      { from: 'USD', to: 'BTC', amountInUsd: null, all: true },
+      { from: 'USDT', to: 'BTC', amountInUsd: null, all: true },
       { from: 'ETH', to: 'LINK', amountInUsd: null, all: true }
     ],
     targetLtv: 4.3,
@@ -134,21 +133,21 @@ const TEST_TABLE =  [
     id: 4,
     fundInUsd: {
       AVAX: 0,
-      USD: 0,
-      ETH: 50,
+      USDT: 0,
+      ETH: 20,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
       AVAX: 0,
-      USD: 200,
-      ETH: 200
+      USDT: 300,
+      ETH: 280
     },
     swaps: [
-      { from: 'USD', to: 'AVAX', amountInUsd: 100, all: false },
-      { from: 'USD', to: 'BTC', amountInUsd: 95, all: false },
-      { from: 'ETH', to: 'LINK', amountInUsd: 150, all: false },
-      { from: 'ETH', to: 'AVAX', amountInUsd: 95, all: false }
+      { from: 'USDT', to: 'AVAX', amountInUsd: 200, all: false },
+      { from: 'USDT', to: 'BTC', amountInUsd: 90, all: false },
+      { from: 'ETH', to: 'LINK', amountInUsd: 200, all: false },
+      { from: 'ETH', to: 'AVAX', amountInUsd: 90, all: false }
     ],
     targetLtv: 4.4,
     action: 'LIQUIDATE'
@@ -157,14 +156,14 @@ const TEST_TABLE =  [
     id: 5,
     fundInUsd: {
       AVAX: 100,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
       AVAX: 550,
-      USD: 0,
+      USDT: 0,
       ETH: 0
     },
     stakeInUsd: {
@@ -177,18 +176,18 @@ const TEST_TABLE =  [
     id: 6,
     fundInUsd: {
       AVAX: 0,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
-      LINK: 50
+      LINK: 20
     },
     borrowInUsd: {
       AVAX: 0,
-      USD: 350,
+      USDT: 350,
       ETH: 350
     },
     swaps: [
-      { from: 'USD', to: 'AVAX', all: true, amountInUsd: null },
+      { from: 'USDT', to: 'AVAX', all: true, amountInUsd: null },
       { from: 'ETH', to: 'AVAX', all: true, amountInUsd: null },
     ],
     stakeInUsd: {
@@ -201,18 +200,18 @@ const TEST_TABLE =  [
     id: 7,
     fundInUsd: {
       AVAX: 0,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
-      USD: 300,
+      USDT: 300,
       AVAX: 0,
       ETH: 0
     },
     withdrawInUsd: {
-      USD: 50
+      USDT: 50
     },
     targetLtv: 4.6,
     action: 'HEAL'
@@ -221,18 +220,18 @@ const TEST_TABLE =  [
     id: 8,
     fundInUsd: {
       AVAX: 0,
-      USD: 0,
+      USDT: 0,
       ETH: 0,
       BTC: 0,
       LINK: 0
     },
     borrowInUsd: {
-      USD: 300,
+      USDT: 300,
       AVAX: 0,
       ETH: 0
     },
     withdrawInUsd: {
-      USD: 50
+      USDT: 50
     },
     targetLtv: 0,
     action: 'CLOSE'
@@ -246,14 +245,17 @@ describe('Smart loan - real prices',  () => {
 
   describe('An insolvent loan', () => {
     let exchange: PangolinExchange,
-        loan: SmartLoan,
+        loan: Contract,
         wrappedLoan: any,
         owner: SignerWithAddress,
         borrower: SignerWithAddress,
         depositor: SignerWithAddress,
+        loanAddress: string,
+        loanFactory: ContractFactory,
         usdPool: ERC20Pool,
         ethPool: ERC20Pool,
         wavaxPool: ERC20Pool,
+        ltvLib: LTVLib,
         admin: SignerWithAddress,
         liquidator: SignerWithAddress,
         usdTokenContract: Contract,
@@ -262,20 +264,18 @@ describe('Smart loan - real prices',  () => {
         wavaxTokenContract: Contract,
         yakRouterContract: Contract,
         btcTokenContract: Contract,
-        beacon: UpgradeableBeacon,
         smartLoansFactory: SmartLoansFactory,
-        implementation: SmartLoan,
-        newImplementation: SmartLoan,
         supportedAssets: Array<Asset>,
-        artifact: any,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         LINK_PRICE: number,
         USD_PRICE: number,
         ETH_PRICE: number,
-        BTC_PRICE: number;
+        BTC_PRICE: number,
+        diamondAddress: any;
 
     before("deploy provider, exchange and pool", async () => {
+      diamondAddress = await deployDiamond();
       [owner, depositor, borrower, admin, liquidator] = await getFixedGasSigners(10000000);
 
       usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
@@ -292,11 +292,12 @@ describe('Smart loan - real prices',  () => {
 
       supportedAssets = [
         new Asset(toBytes32('AVAX'), wavaxTokenAddress),
-        new Asset(toBytes32('USD'), usdTokenAddress),
+        new Asset(toBytes32('USDT'), usdTokenAddress),
         new Asset(toBytes32('LINK'), linkTokenAddress),
         new Asset(toBytes32('ETH'), ethTokenAddress),
         new Asset(toBytes32('BTC'), btcTokenAddress)
       ];
+
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
       const variableUtilisationRatesCalculatorWavax = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
@@ -314,19 +315,20 @@ describe('Smart loan - real prices',  () => {
       const depositIndexEth = (await deployContract(owner, CompoundingIndexArtifact, [ethPool.address])) as CompoundingIndex;
       const borrowingIndexEth = (await deployContract(owner, CompoundingIndexArtifact, [ethPool.address])) as CompoundingIndex;
 
-      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
-      LINK_PRICE = (await redstone.getPrice('LINK')).value;
-      ETH_PRICE = (await redstone.getPrice('ETH')).value;
-      BTC_PRICE = (await redstone.getPrice('BTC')).value;
+      AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche"})).value;
+      USD_PRICE = (await redstone.getPrice('USDT', { provider: "redstone-avalanche"})).value;
+      LINK_PRICE = (await redstone.getPrice('LINK', { provider: "redstone-avalanche"})).value;
+      ETH_PRICE = (await redstone.getPrice('ETH', { provider: "redstone-avalanche"})).value;
+      BTC_PRICE = (await redstone.getPrice('BTC', { provider: "redstone-avalanche"})).value;
 
+      //TODO: why do we mock prices? maybe we can use wrapLite?
       MOCK_PRICES = [
         {
           symbol: 'AVAX',
           value: AVAX_PRICE
         },
         {
-          symbol: 'USD',
+          symbol: 'USDT',
           value: USD_PRICE
         },
         {
@@ -376,11 +378,25 @@ describe('Smart loan - real prices',  () => {
       await wavaxPool.connect(depositor).deposit(toWei("1000"));
 
       //deposit other tokens
-      await depositToPool("USD", usdTokenContract, usdPool, 10000, USD_PRICE);
+      await depositToPool("USDT", usdTokenContract, usdPool, 10000, USD_PRICE);
       await depositToPool("ETH", ethTokenContract, ethPool, 1, ETH_PRICE);
 
       await topupUser(liquidator);
       await topupUser(borrower);
+
+      await recompileSmartLoanLib(
+          "SmartLoanLib",
+          [0, 1, 3],
+          [wavaxTokenAddress, usdTokenAddress, ethTokenAddress],
+          {'AVAX': wavaxPool.address, 'USDT': usdPool.address, 'ETH': ethPool.address},
+          exchange.address,
+          yakRouterContract.address,
+          'lib'
+      );
+
+      // Deploy LTVLib and later link contracts to it
+      const LTVLib = await ethers.getContractFactory('LTVLib');
+      ltvLib = await LTVLib.deploy() as LTVLib;
 
       async function depositToPool(symbol: string, tokenContract: Contract, pool: ERC20Pool, amount: number, price: number) {
         const initialTokenDepositWei = parseUnits(amount.toString(), await tokenContract.decimals());
@@ -400,7 +416,7 @@ describe('Smart loan - real prices',  () => {
         const amountSwapped = toWei((10000 / AVAX_PRICE).toString());
 
         await wavaxTokenContract.connect(user).transfer(exchange.address, amountSwapped);
-        await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("USD"), amountSwapped, 0);
+        await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("USDT"), amountSwapped, 0);
 
         await wavaxTokenContract.connect(user).transfer(exchange.address, amountSwapped);
         await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("ETH"), amountSwapped, 0);
@@ -413,42 +429,31 @@ describe('Smart loan - real prices',  () => {
       }
     });
 
-    before("prepare smart loan implementations", async () => {
-      artifact = await recompileSmartLoan(
-          SMART_LOAN_ALWAYS_SOLVENT,
-          [0, 1, 3],
-          [wavaxTokenAddress, usdTokenAddress, ethTokenAddress],
-          {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},
-          exchange.address,
-          yakRouterContract.address,
-          'mock'
-      );
-      implementation = await deployContract(owner, artifact) as SmartLoan;
+    before("prepare smart loan facets", async () => {
 
-      artifact = await recompileSmartLoan(
-          SMART_LOAN,
-          [0, 1, 3],
-          [wavaxTokenAddress, usdTokenAddress, ethTokenAddress],
-          { 'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},
-          exchange.address,
-          yakRouterContract.address,
-          'mock');
-      newImplementation = await deployContract(owner, artifact) as SmartLoan;
+      await deployFacet("MockSmartLoanLogicFacetAlwaysSolventRedstoneProvider", diamondAddress, [], ltvLib.address);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan", "closeLoan"], ltvLib.address);
     });
 
     beforeEach("create a loan", async () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await smartLoansFactory.initialize(implementation.address);
 
-      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
-      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
+      await replaceFacet("MockSmartLoanLogicFacetAlwaysSolventRedstoneProvider", diamondAddress, [], ltvLib.address)
+
+      await smartLoansFactory.initialize(diamondAddress);
 
       await smartLoansFactory.connect(borrower).createLoan();
 
-      const loanAddress = await smartLoansFactory.getLoanForOwner(borrower.address);
+      loanAddress = await smartLoansFactory.getLoanForOwner(borrower.address);
 
-      let SmartLoanArtifact = await import('../../../artifacts/contracts/mock/MockSmartLoanAlwaysSolvent.sol/MockSmartLoanAlwaysSolvent.json');
-      loan = ((await new ethers.Contract(loanAddress, SmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(borrower);
+      loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvLib.address
+        }
+      });
+
+      //TODO: we don't cast to MockSmartLoanRedstoneProvider to have access to all the methods (not just ones from a logic facet)
+      loan = await loanFactory.attach(loanAddress).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -461,11 +466,12 @@ describe('Smart loan - real prices',  () => {
           })
     });
 
+
       TEST_TABLE.forEach(
       async testCase => {
         it(`Testcase ${testCase.id}:\n
-        fund AVAX: ${testCase.fundInUsd.AVAX}, USD: ${testCase.fundInUsd.USD}, ETH: ${testCase.fundInUsd.ETH}, BTC: ${testCase.fundInUsd.BTC}, LINK: ${testCase.fundInUsd.LINK}\n
-        borrow AVAX: ${testCase.borrowInUsd.AVAX}, USD: ${testCase.borrowInUsd.USD}, ETH: ${testCase.borrowInUsd.ETH}`,
+        fund AVAX: ${testCase.fundInUsd.AVAX}, USDT: ${testCase.fundInUsd.USDT}, ETH: ${testCase.fundInUsd.ETH}, BTC: ${testCase.fundInUsd.BTC}, LINK: ${testCase.fundInUsd.LINK}\n
+        borrow AVAX: ${testCase.borrowInUsd.AVAX}, USDT: ${testCase.borrowInUsd.USDT}, ETH: ${testCase.borrowInUsd.ETH}`,
         async () => {
           //fund
           for (const [symbol, value] of Object.entries(testCase.fundInUsd)) {
@@ -523,11 +529,11 @@ describe('Smart loan - real prices',  () => {
             }
           }
 
-          if (testCase.stakeInUsd) {
-            //YAK AVAX
-            let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
-            await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
-          }
+          // if (testCase.stakeInUsd) {
+          //   //YAK AVAX
+          //   let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
+          //   await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
+          // }
 
           let maxBonus = 0.05;
 
@@ -565,7 +571,7 @@ describe('Smart loan - real prices',  () => {
               debts,
               await wrappedLoan.getPoolsAssetsIndices(),
               neededToRepay,
-              MOCK_PRICES
+              MOCK_PRICES.map((el: any) => el.value)
           );
 
           let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
@@ -596,14 +602,18 @@ describe('Smart loan - real prices',  () => {
         repayAmounts: Array<number>,
         bonus: number
     ) {
-      await beacon.connect(owner).upgradeTo(newImplementation.address);
 
-      expect(await wrappedLoan.isSolvent()).to.be.false;
+      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
+        libraries: {
+          LTVLib: ltvLib.address
+        }
+      });
 
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvLib.address);
 
       const performer = performedAction === 'CLOSE' ? borrower : liquidator;
-      let SmartLoanArtifact = await import('../../../artifacts/contracts/mock/MockSmartLoanAlwaysSolvent.sol/MockSmartLoanAlwaysSolvent.json');
-      loan = ((await new ethers.Contract(await smartLoansFactory.getLoanForOwner(borrower.address), SmartLoanArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(performer);
+
+      loan = await loanFactoryLiquidation.attach(loanAddress).connect(performer) as MockSmartLoanLiquidationFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -614,6 +624,8 @@ describe('Smart loan - real prices',  () => {
                   timestamp: Date.now()
                 }
               })
+
+      expect(await wrappedLoan.isSolvent()).to.be.false;
 
       let repayAmountsInWei = await Promise.all(repayAmounts.map(
           async (amount, i) => {
@@ -652,7 +664,7 @@ describe('Smart loan - real prices',  () => {
 
     function getTokenContract(symbol: string) {
       if (symbol == "AVAX") return wavaxTokenContract;
-      if (symbol == "USD") return usdTokenContract;
+      if (symbol == "USDT") return usdTokenContract;
       if (symbol == "ETH") return ethTokenContract;
       if (symbol == "LINK") return linkTokenContract;
       if (symbol == "BTC") return btcTokenContract;
@@ -660,7 +672,7 @@ describe('Smart loan - real prices',  () => {
 
     function getPrice(symbol: string) {
       if (symbol == "AVAX") return AVAX_PRICE;
-      if (symbol == "USD") return USD_PRICE;
+      if (symbol == "USDT") return USD_PRICE;
       if (symbol == "ETH") return ETH_PRICE;
       if (symbol == "LINK") return LINK_PRICE;
       if (symbol == "BTC") return BTC_PRICE;

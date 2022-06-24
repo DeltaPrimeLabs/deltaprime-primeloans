@@ -3,7 +3,7 @@
     <Bar>
       <div>
         <div class="rate-wrapper">
-          Current APY: <span class="rate">{{depositRate | percent}}</span>
+          Current APY: <span class="rate">{{depositAPY | percent}}</span>
         </div>
       </div>
       <div class="stats">
@@ -77,6 +77,7 @@
   import Chart from "@/components/Chart.vue";
   import {mapState, mapActions, mapGetters} from 'vuex';
   import {fromWei} from "../utils/calculate";
+  import {aprToApy} from "../utils/calculate";
 
   export default {
     name: 'Deposit',
@@ -164,6 +165,10 @@
         this.maximumDeposit = maxDeposit;
 
         return dataPoints;
+      },
+
+      depositAPY() {
+        return aprToApy(this.depositRate);
       }
     },
     methods: {

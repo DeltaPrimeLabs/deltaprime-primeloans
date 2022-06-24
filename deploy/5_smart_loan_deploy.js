@@ -3,7 +3,7 @@ import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
-import {deployDiamond, deployFacet} from "../test/integration/smart-loan/utils/deploy-diamond";
+import {deployDiamond, deployFacet} from "../tools/diamond/deploy-diamond";
 
 module.exports = async ({
     getNamedAccounts,

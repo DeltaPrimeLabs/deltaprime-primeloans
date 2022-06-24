@@ -10,7 +10,6 @@
     "test-local": "yarn hardhat test test/local/*",
     "test-local:all": "yarn hardhat test test/local/* test/deprecated/*/*",
     "test-integration": "yarn hardhat test test/integration/*/* --network localhost",
-    "test-integration:all": "yarn hardhat test test/integration/*/*  test/benchmarks/* --network localhost",
     "fork:mainnet": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc --no-deploy",
     "fork:fuji": "yarn hardhat node --fork https://api.avax-test.network/ext/bc/C/rpc --no-deploy",
     "migrate:local": "npx hardhat deploy --network localhost --tags init",

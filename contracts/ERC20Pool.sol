@@ -25,7 +25,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95e18;
 
   mapping(address => mapping(address => uint256)) private _allowed;
-  mapping(address => uint256) private _deposited;
+  mapping(address => uint256) internal _deposited;
 
   mapping(address => uint256) public borrowed;
 
@@ -168,6 +168,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     _transferToPool(msg.sender, amount);
 
     _mint(msg.sender, amount);
+    _deposited[address(this)] += amount;
     _updateRates();
 
     emit Deposit(msg.sender, amount, block.timestamp);
@@ -301,7 +302,6 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(to != address(0), "ERC20: cannot mint to the zero address");
 
     _deposited[to] += amount;
-    _deposited[address(this)] += amount;
 
     emit Transfer(address(0), to, amount);
   }
@@ -326,10 +326,10 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _accumulateDepositInterest(address user) internal {
-    uint256 depositedWithInterest = balanceOf(user);
-    uint256 interest = depositedWithInterest - _deposited[user];
+    uint256 interest = balanceOf(user) - _deposited[user];
 
     _mint(user, interest);
+    _deposited[address(this)] = balanceOf(address(this));
 
     emit InterestCollected(user, interest, block.timestamp);
 
@@ -338,10 +338,8 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _accumulateBorrowingInterest(address user) internal {
-    uint256 borrowedWithInterest = getBorrowed(user);
-    uint256 interest = borrowedWithInterest - borrowed[user];
-    borrowed[user] = borrowedWithInterest;
-    borrowed[address(this)] += interest;
+    borrowed[user] = getBorrowed(user);
+    borrowed[address(this)] = getBorrowed(address(this));
 
     borrowIndex.updateUser(user);
     borrowIndex.updateUser(address(this));

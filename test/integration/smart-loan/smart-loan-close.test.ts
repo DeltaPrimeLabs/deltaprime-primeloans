@@ -27,7 +27,6 @@ import {
   ERC20Pool,
   MockSmartLoanLiquidationFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider,
-  MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
@@ -36,10 +35,10 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';

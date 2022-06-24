@@ -89,11 +89,11 @@ describe("ERC20Pool ERC20 token functions", () => {
 
       expect(fromWei(await mockToken.balanceOf(sut.address))).to.be.equal(0.2);
 
-      expect(fromWei(await sut.balanceOf(user1.address))).to.be.closeTo( 0.530447, 0.000001);
-      expect(fromWei(await sut.getBorrowed(user2.address))).to.be.closeTo(0.3306, 0.000001);
+      expect(fromWei(await sut.balanceOf(user1.address))).to.be.closeTo( 0.5089999912853879, 0.000001);
+      expect(fromWei(await sut.getBorrowed(user2.address))).to.be.closeTo(0.309, 0.000001);
 
-      expect(fromWei(await sut.getDepositRate())).to.be.closeTo(0.06498344756805137, 0.000001);
-      expect(fromWei(await sut.getBorrowingRate())).to.be.closeTo(0.10478975279339, 0.000001);
+      expect(fromWei(await sut.getDepositRate())).to.be.closeTo(0.02014430094445913, 0.000001);
+      expect(fromWei(await sut.getBorrowingRate())).to.be.closeTo(0.03318271602877101, 0.000001);
     });
   });
 });

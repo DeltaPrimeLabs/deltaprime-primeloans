@@ -72,7 +72,7 @@ library SmartLoanLib {
     }
 
     function getYieldYakRouter() internal view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x5A61c51C6745b3F509f4a1BF54BFD04e04aF430a);
+  return IYieldYakRouter(0x202CCe504e04bEd6fC0521238dDf04Bc9E8E15aB);
     }
 
     function getMaxBlockTimestampDelay() internal view returns (uint256) {

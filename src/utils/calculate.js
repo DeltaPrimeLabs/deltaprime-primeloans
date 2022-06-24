@@ -54,6 +54,11 @@ export function round(num) {
   return roundWithPrecision(num, 18);
 }
 
+export function aprToApy(apr) {
+  const compoundingPeriods = 100000;
+  return Math.pow(1 + (apr / compoundingPeriods), compoundingPeriods) - 1;
+}
+
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
 export const parseUnits = ethers.utils.parseUnits;

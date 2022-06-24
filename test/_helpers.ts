@@ -7,7 +7,7 @@ import {execSync} from "child_process";
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 
 const {provider} = waffle;
-const {deployDiamond, deployFacet} = require('./integration/smart-loan/utils/deploy-diamond');
+const {deployDiamond, deployFacet} = require('../tools/diamond/deploy-diamond');
 const {deployContract} = waffle;
 
 export const toWei = ethers.utils.parseUnits;
@@ -98,16 +98,16 @@ export const getRepayAmounts = function (
     debts: Array<number>,
     poolAssetsIndices: Array<number>,
     toRepayInUsd: number,
-    mockPrices: Array<{symbol: string, value: number}>
+    mockPrices: Array<number>
 ) {
     let repayAmounts: Array<number> = [];
     let leftToRepayInUsd = toRepayInUsd;
     poolAssetsIndices.forEach(
         (index, i) => {
-            let availableToRepayInUsd = debts[i] * mockPrices[index].value;
+            let availableToRepayInUsd = debts[i] * mockPrices[index];
             let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
             leftToRepayInUsd -= repaidToPool;
-            repayAmounts[i] = repaidToPool / mockPrices[index].value;
+            repayAmounts[i] = repaidToPool / mockPrices[index];
         }
     );
 

@@ -97,7 +97,6 @@ contract FundingFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
         IERC20Metadata token = getERC20TokenInstance(_asset);
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
 
         if (_isSolvent() && SmartLoanLib.getLiquidationInProgress() == false) {
             LibDiamond.enforceIsContractOwner();
@@ -105,10 +104,9 @@ contract FundingFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
 
         uint256 price = getPriceFromMsg(_asset);
 
-        ERC20Pool pool =  ERC20Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
-        uint256 poolDebt = pool.getBorrowed(address(this)) * price * 10**10 / 10 ** token.decimals();
+        ERC20Pool pool = ERC20Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
 
-        _amount = Math.min(_amount, poolDebt);
+        _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay the loan");
 
         address(token).safeApprove(address(pool), 0);
@@ -116,7 +114,7 @@ contract FundingFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
 
         pool.repay(_amount);
 
-        if(pool.getBorrowed(address(this)) == 0) {
+        if (token.balanceOf(address(this)) == 0) {
             LibDiamond.removeOwnedAsset(_asset);
         }
 
