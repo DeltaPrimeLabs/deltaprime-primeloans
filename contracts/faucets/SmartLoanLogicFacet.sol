@@ -176,7 +176,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return SmartLoanLib.getPercentagePrecision();
     }
 
-    function getPoolsAssetsIndices() public view virtual returns (uint8[1] memory) {
+    function getPoolsAssetsIndices() public view virtual returns (uint8[2] memory) {
         return SmartLoanLib.getPoolsAssetsIndices();
     }
 
