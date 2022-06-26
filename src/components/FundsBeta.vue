@@ -1,5 +1,7 @@
 <template>
   <div class="funds-beta-component">
+    <button v-on:click="test()">test</button>
+    <button v-on:click="wavaxSwap()">WavaxSwap</button>
     <div class="funds">
       <NameValueBadgeBeta v-if="availableValue" :name="'Value of available funds'">{{ availableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
@@ -29,7 +31,7 @@ import NameValueBadgeBeta from './NameValueBadgeBeta';
 import config from '../config';
 import FundTableRowBeta from './FundTableRowBeta';
 import BorrowModal from './BorrowModal';
-import {mapState} from 'vuex';
+import {mapState, mapActions} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
@@ -44,9 +46,18 @@ export default {
     }
   },
   computed: {
-    ...mapState('loan', ['totalValue', 'assets']),
+    ...mapState('fundsStore', ['assets']),
   },
   methods: {
+    ...mapActions('fundsStore', ['fund', 'swapToWavax']),
+    test() {
+      console.log(this.funds);
+      this.fund();
+    },
+
+    wavaxSwap() {
+      this.swapToWavax();
+    },
     testModal() {
       const modalInstance = this.openModal(BorrowModal);
     },
@@ -80,6 +91,7 @@ export default {
     },
 
     async updateFunds(funds) {
+      console.log(funds);
       this.funds = funds;
 
       if (funds) {

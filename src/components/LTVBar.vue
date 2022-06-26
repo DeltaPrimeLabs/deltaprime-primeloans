@@ -30,7 +30,6 @@ export default {
     }
   },
   computed: {
-    ...mapState('loan', ['ltv']),
     closeToInsolvent() {
       return this.liquidationLTV > this.ltv && this.ltv > this.maxAllowedLTV;
     },

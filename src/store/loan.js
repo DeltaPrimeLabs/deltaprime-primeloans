@@ -1,5 +1,5 @@
 import {awaitConfirmation, handleCall} from "../utils/blockchain";
-import LOAN from '@contracts/SmartLoan.json'
+import LOAN from '@contracts/SmartLoanLogicFacet.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import PANGOLIN_EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json'
@@ -97,6 +97,8 @@ export default {
     },
 
     async fetchLoan({state, rootState, dispatch, commit}) {
+      dispatch('updateAssets');
+      console.log('async fetchLoan({state, rootState, dispatch, commit}) {');
       dispatch('initSupportedAssets');
 
       const provider = rootState.network.provider;
@@ -128,7 +130,9 @@ export default {
     },
 
     async updateAssets({state, commit, dispatch}) {
-      dispatch('updateLoanBalance');
+      console.log('async updateAssets({state, commit, dispatch}) {');
+
+      // dispatch('updateLoanBalance');
 
       const loan = state.loan;
 
@@ -163,8 +167,11 @@ export default {
     },
 
     async updateLoanStats({state, commit}) {
+      console.log('async updateLoanStats({state, commit}) {');
+
       const loan = state.loan;
       const status = await handleCall(loan.getFullLoanStatus);
+      console.log(status);
 
       commit('setTotalValue', fromWei(status[0]));
       commit('setDebt', fromWei(status[1]));

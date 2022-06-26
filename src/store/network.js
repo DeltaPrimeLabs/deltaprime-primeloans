@@ -40,6 +40,7 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       window.provider = provider;
 
+      console.log(provider);
       commit('setProvider', provider);
     },
     async initAccount({ commit, state }) {

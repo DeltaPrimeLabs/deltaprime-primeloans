@@ -5,7 +5,7 @@ import EAP_NFT from '@artifacts/contracts/ERC721/EarlyAccessNFT.sol/EarlyAccessN
 import DEPOSIT_NFT from '@artifacts/contracts/ERC721/DepositAccessNFT.sol/DepositAccessNFT.json'
 import WOLF_OF_DEFI_WINNERS_NFT from '@artifacts/contracts/ERC721/WolfOfDeFiWinners.sol/WolfOfDeFiWinners.json'
 const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
-const POOL_TUP = require('@contracts/PoolTUP.json');
+const POOL_TUP = require('@contracts/WavaxPoolTUP.json');
 import FACTORY_NFT from '@artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json'
 import POOL_NFT from '@artifacts/contracts/upgraded/PoolWithAccessNFT.sol/PoolWithAccessNFT.json'
 import {awaitConfirmation} from "../utils/blockchain";
@@ -105,7 +105,7 @@ export default {
         const depositContract = new Contract(address, DEPOSIT_NFT.abi, provider.getSigner());
 
         commit('setDepositNftContract', depositContract);
-        dispatch('getDepositNftId');
+        // dispatch('getDepositNftId');
       } catch(e) {
         console.error(e)
         console.log('No access NFT for deposit required')
@@ -183,8 +183,8 @@ export default {
       let tx = await state.eapNftContract.safeMint(id, signature);
 
       awaitConfirmation(tx, provider, 'mint').then(() => {
-        dispatch('initNfts');
-        dispatch('checkBorrowNftBalance', {id: id})
+        // dispatch('initNfts');
+        // dispatch('checkBorrowNftBalance', {id: id})
       });
 
     },
@@ -193,8 +193,8 @@ export default {
       let tx = await state.depositNftContract.safeMint(id, signature);
 
       awaitConfirmation(tx, provider, 'mint').then(() => {
-        dispatch('initNfts');
-        dispatch('getDepositNftId', {id: id})
+        // dispatch('initNfts');
+        // dispatch('getDepositNftId', {id: id})
       })
     }
   }

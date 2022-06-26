@@ -27,13 +27,26 @@ import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
 import FundsBeta from './FundsBeta';
-import {mapState} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 
 export default {
   name: 'SmartLoanBeta',
   components: {FundsBeta, Block, StatsBarBeta, Tabs, Tab},
   computed: {
     ...mapState('loan', ['totalValue', 'ltv']),
+  },
+  methods: {
+    ...mapActions('fundsStore', ['setup'])
+  },
+  mounted() {
+    if (window.provider) {
+
+      this.setup();
+    } else {
+      setTimeout(() => {
+        this.setup();
+      }, 1000);
+    }
   }
 };
 </script>

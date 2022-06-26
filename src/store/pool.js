@@ -1,5 +1,5 @@
-import POOLTUP from '@contracts/PoolTUP.json';
-import POOL from '@artifacts/contracts/Pool.sol/Pool.json'
+import POOLTUP from '@contracts/WavaxPoolTUP.json';
+import POOL from '@artifacts/contracts/WavaxPool.sol/WavaxPool.json'
 import {
   awaitConfirmation
 } from "../utils/blockchain";
@@ -123,7 +123,7 @@ export default {
       commit('setUserBorrowed', userBorrowed);
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
-      const tx = await state.pool.deposit({gasLimit: 600000, value: ethers.utils.parseEther(amount.toString())});
+      const tx = await state.pool.depositNativeToken({gasLimit: 600000, value: ethers.utils.parseEther(amount.toString())});
       const provider = rootState.network.provider;
 
       await awaitConfirmation(tx, provider, 'deposit');

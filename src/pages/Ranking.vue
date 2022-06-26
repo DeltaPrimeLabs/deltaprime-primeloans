@@ -35,7 +35,7 @@
 <script>
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
-import LOAN from '@contracts/SmartLoan.json'
+import LOAN from '@contracts/SmartLoanLogicFacet.json'
 import {ethers} from "ethers";
 import config from "@/config";
 import Block from "@/components/Block.vue";

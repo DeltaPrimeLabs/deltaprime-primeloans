@@ -5,6 +5,7 @@ import network from './network';
 import pool from './pool';
 import loan from './loan';
 import nft from './nft';
+import fundsStore from './fundsStore';
 
 Vue.use(Vuex);
 
@@ -13,6 +14,7 @@ export default new Vuex.Store({
     network,
     pool,
     loan,
-    nft
+    nft,
+    fundsStore
   },
 });
