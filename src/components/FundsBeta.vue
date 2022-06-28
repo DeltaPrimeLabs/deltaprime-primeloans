@@ -1,7 +1,12 @@
 <template>
   <div class="funds-beta-component">
-    <button v-on:click="test()">test</button>
+    <button v-on:click="fundClick()">fund</button>
+    <button v-on:click="borrowClick()">borrow</button>
     <button v-on:click="wavaxSwap()">WavaxSwap</button>
+    <button v-on:click="createLoanClick()">create loan</button>
+    <button v-on:click="createAndFundLoanClick()">create and fund loan</button>
+    <button v-on:click="testLoanClick()">test loan</button>
+    <button v-on:click="depositClick()">deposit</button>
     <div class="funds">
       <NameValueBadgeBeta v-if="availableValue" :name="'Value of available funds'">{{ availableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
@@ -49,15 +54,36 @@ export default {
     ...mapState('fundsStore', ['assets']),
   },
   methods: {
-    ...mapActions('fundsStore', ['fund', 'swapToWavax']),
-    test() {
-      console.log(this.funds);
+    ...mapActions('fundsStore', ['fund', 'borrow', 'swapToWavax', 'createLoan', 'createAndFundLoan', 'setupSmartLoanContract']),
+    ...mapActions('poolStore', ['deposit']),
+    fundClick() {
       this.fund();
+    },
+
+    borrowClick() {
+      this.borrow();
     },
 
     wavaxSwap() {
       this.swapToWavax();
     },
+
+    createLoanClick() {
+      this.createLoan();
+    },
+
+    createAndFundLoanClick() {
+      this.createAndFundLoan();
+    },
+
+    testLoanClick() {
+      this.setupSmartLoanContract();
+    },
+
+    depositClick() {
+      this.deposit();
+    },
+
     testModal() {
       const modalInstance = this.openModal(BorrowModal);
     },

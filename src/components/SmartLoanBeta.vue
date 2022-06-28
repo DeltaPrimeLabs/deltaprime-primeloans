@@ -12,7 +12,7 @@
               stake
             </Tab>
             <Tab title="Provide Liquidity">
-              provide liquiditi
+              provide liquidity
             </Tab>
           </Tabs>
         </Block>
@@ -40,7 +40,6 @@ export default {
   },
   mounted() {
     if (window.provider) {
-
       this.setup();
     } else {
       setTimeout(() => {
