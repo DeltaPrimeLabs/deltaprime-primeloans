@@ -569,7 +569,7 @@ describe('Smart loan - real prices',  () => {
               debts,
               await wrappedLoan.getPoolsAssetsIndices(),
               neededToRepay,
-              MOCK_PRICES
+              MOCK_PRICES.map((el: any) => el.value)
           );
 
           let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();

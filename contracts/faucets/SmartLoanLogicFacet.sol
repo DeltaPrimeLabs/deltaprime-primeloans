@@ -180,6 +180,10 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return SmartLoanLib.getPoolsAssetsIndices();
     }
 
+    function getPoolTokens() public view returns (IERC20Metadata[1] memory) {
+        return SmartLoanLib.getPoolTokens();
+    }
+
     function getBalance(bytes32 _asset) public view returns (uint256) {
         return LTVLib.getBalance(_asset);
     }
