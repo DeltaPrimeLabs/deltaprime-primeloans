@@ -44,6 +44,13 @@ export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddres
 
     libFileArray.splice(lineWithFunctionDeclaration + 2, 0, ...newLines);
 
+    //getPoolTokens() - SmartLoanLogicFacet
+    lineWithFunctionDeclaration = facetFileArray.findIndex(
+        line => line.includes('getPoolTokens')
+    );
+
+    facetFileArray[lineWithFunctionDeclaration] = facetFileArray[lineWithFunctionDeclaration].replace(/IERC20Metadata\[(.*)\]/, `IERC20Metadata[${poolTokenAddresses.length}]`);
+
 
     //getPools()
 

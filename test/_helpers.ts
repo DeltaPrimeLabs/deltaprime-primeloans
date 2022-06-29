@@ -98,16 +98,16 @@ export const getRepayAmounts = function (
     debts: Array<number>,
     poolAssetsIndices: Array<number>,
     toRepayInUsd: number,
-    mockPrices: Array<{symbol: string, value: number}>
+    mockPrices: Array<number>
 ) {
     let repayAmounts: Array<number> = [];
     let leftToRepayInUsd = toRepayInUsd;
     poolAssetsIndices.forEach(
         (index, i) => {
-            let availableToRepayInUsd = debts[i] * mockPrices[index].value;
+            let availableToRepayInUsd = debts[i] * mockPrices[index];
             let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
             leftToRepayInUsd -= repaidToPool;
-            repayAmounts[i] = repaidToPool / mockPrices[index].value;
+            repayAmounts[i] = repaidToPool / mockPrices[index];
         }
     );
 

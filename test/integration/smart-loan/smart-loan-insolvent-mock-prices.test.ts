@@ -28,7 +28,10 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, LTVLib, MockSmartLoanLiquidationFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider,
+  ERC20Pool,
+  LTVLib,
+  MockSmartLoanLiquidationFacetRedstoneProvider,
+  MockSmartLoanLogicFacetRedstoneProvider,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
@@ -37,10 +40,10 @@ import {
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
-import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
@@ -451,7 +454,7 @@ describe('Smart loan',  () => {
                 debts,
                 await wrappedLoan.getPoolsAssetsIndices(),
                 neededToRepay,
-                newPrices
+                newPrices.map((el: any) => el.value)
             );
 
             let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
@@ -470,7 +473,7 @@ describe('Smart loan',  () => {
 
             await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus);
 
-            // expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, testCase.ltvPrecision ?? 0.01);
+            expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, testCase.ltvPrecision ?? 0.01);
           });
       }
    );
