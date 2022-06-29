@@ -40,7 +40,7 @@ import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./utils/deploy-diamond');
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
@@ -222,7 +222,7 @@ describe('Smart loan',  () => {
       await wrappedLoan.unstakeAVAXYak(tokenAmountToUnstake);
 
       expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakStakingContract.balanceOf(wrappedLoan.address));
-      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.15);
+      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.2);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
     });
 

@@ -4,9 +4,9 @@ import {solidity} from "ethereum-waffle";
 import {
     YieldYakRouter,
     YieldYakRouter__factory,
-} from "../../typechain";
+} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {calculateStakingTokensAmountBasedOnAvaxValue, fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {calculateStakingTokensAmountBasedOnAvaxValue, fromWei, getFixedGasSigners, toWei} from "../../_helpers";
 import {BigNumber, Contract} from "ethers";
 chai.use(solidity);
 const {provider} = waffle;
