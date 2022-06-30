@@ -10,7 +10,7 @@
     </div>
 
     <div class="table">
-      <div class="table__header protocols__row">
+      <div class="staking-asset__header protocols__row">
         <div class="table__cell left">Protocol</div>
         <div class="table__cell right">Total staked</div>
         <div class="table__cell right">Max APY</div>
@@ -45,7 +45,7 @@
           <div class="staking-table" v-if="protocol && protocol.showStakingOptions" @click.stop>
             <div class="staking-options-table">
               <div class="table nested-table">
-                <div class="table__header">
+                <div class="staking-asset__header">
                   <div class="table__cell left">Asset</div>
                   <div class="table__cell right">TVL</div>
                   <div class="table__cell right">APY</div>
@@ -319,7 +319,7 @@ export default {
   padding: 0 20px;
   margin-top: 0;
 
-  .table__header {
+  .staking-asset__header {
     margin-bottom: 0;
   }
 }

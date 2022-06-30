@@ -1,16 +1,17 @@
 <template>
-  <div class="currency-input-wrapper">
+  <div class="currency-input-wrapper" v-bind:class="{'embedded': embedded}">
     <div class="input-wrapper"
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
-          @click="$refs.input.focus()">
+         @click="$refs.input.focus()">
       <span class="input">
-        <input type="number" ref="input" pattern="[0-9]+" v-model="internalValue" @input="valueChange()" step="0.0001" placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
+        <input type="number" ref="input" pattern="[0-9]+" v-model="internalValue" @input="valueChange()" step="0.0001"
+               placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
         <div v-if="max" class="max-wrapper" @click.stop="value = max">
           <div class="max">MAX</div>
         </div>
-        <div class="logo-wrapper">
+        <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
           <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
         </div>
@@ -28,14 +29,14 @@
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <span>
         <img src="src/assets/icons/error.svg"/>
-        {{error}}
+        {{ error }}
       </span>
     </div>
     <div class="warning"
          v-if="warning && !waiting && !ongoingErrorCheck">
       <span>
         <img src="src/assets/icons/warning.svg"/>
-        {{warning}}
+        {{ warning }}
       </span>
     </div>
   </div>
@@ -43,116 +44,128 @@
 
 
 <script>
-import config from "@/config";
-import {mapState} from "vuex";
+import config from '@/config';
+import {mapState} from 'vuex';
 
-  export default {
-    name: 'CurrencyInput',
-    props: {
-      price: { type: Number },
-      max: { type: Number, default: null },
-      symbol: { type: String, default: 'AVAX' },
-      flexDirection: { type: String, default: 'column'},
-      validators: {
-        type: Array, default: () => []
-      },
-      warnings: {
-        type: Array, default: () => []
-      },
-      //TODO: make an array like in validators
-      info: { type: Function, default: null },
-      defaultValue: null,
-      waiting: false,
-      disabled: false,
-      denominationButtons: false,
-      slippage: { type: Number, default: 0 },
+export default {
+  name: 'CurrencyInput',
+  props: {
+    price: {type: Number},
+    max: {type: Number, default: null},
+    symbol: {type: String, default: 'AVAX'},
+    flexDirection: {type: String, default: 'column'},
+    validators: {
+      type: Array, default: () => []
     },
-    computed: {
+    warnings: {
+      type: Array, default: () => []
     },
-    data() {
-      return {
-        error: '',
-        warning: '',
-        value: this.defaultValue,
-        defaultValidators: [],
-        asset: config.ASSETS_CONFIG[this.symbol],
-        ongoingErrorCheck: false,
-        usdDenominated: true,
-        internalValue: this.defaultValue,
+    //TODO: make an array like in validators
+    info: {type: Function, default: null},
+    defaultValue: null,
+    waiting: false,
+    disabled: false,
+    denominationButtons: false,
+    slippage: {type: Number, default: 0},
+    embedded: false,
+  },
+  computed: {},
+  data() {
+    return {
+      error: '',
+      warning: '',
+      value: this.defaultValue,
+      defaultValidators: [],
+      asset: config.ASSETS_CONFIG[this.symbol],
+      ongoingErrorCheck: false,
+      usdDenominated: true,
+      internalValue: this.defaultValue,
+    };
+  },
+  created() {
+    this.defaultValidators.push(this.positiveValidator, this.wrongFormatValidator);
+  },
+  watch: {
+    value: function (newValue) {
+      this.updateValue(newValue);
+    },
+    defaultValue: function (newValue) {
+      this.value = newValue;
+    },
+    warnings: function () {
+      this.checkWarnings(this.value);
+    },
+    validators: function () {
+      this.checkErrors(this.value);
+    },
+  },
+  methods: {
+    async updateValue(value) {
+      this.internalValue = this.value;
+      this.ongoingErrorCheck = true;
+      this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
+      await this.checkErrors(value);
+      this.ongoingErrorCheck = false;
+      this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
+
+      await this.checkWarnings(value);
+
+      const hasError = this.error.length > 0;
+
+      this.$emit('newValue', {value: Number(value), error: hasError});
+    },
+    async checkWarnings(newValue) {
+      this.warning = '';
+
+      for (const validator of [...this.warnings]) {
+        let value = typeof newValue === 'number' ? newValue : 0;
+
+        let validatorResult = await validator.validate(value);
+        if (validatorResult) {
+          this.warning = validatorResult;
+        }
       }
     },
-    created() {
-      this.defaultValidators.push(this.positiveValidator, this.wrongFormatValidator);
+    async checkErrors(newValue) {
+      this.error = '';
+
+      for (const validator of [...this.validators, ...this.defaultValidators]) {
+        let value = typeof newValue === 'number' ? newValue : 0;
+
+        let validatorResult = await validator.validate(value);
+        if (validatorResult) {
+          this.error = validatorResult;
+        }
+      }
     },
-    watch: {
-      value: function (newValue) {
-        this.updateValue(newValue);
-      },
-      defaultValue: function(newValue) {
-        this.value = newValue;
-      },
-      warnings: function() {
-        this.checkWarnings(this.value);
-      },
-      validators: function() {
-        this.checkErrors(this.value);
-      },
+    valueChange() {
+      const match = this.internalValue.match(/^\d*[\.|\,]?\d{1,8}$/);
+      if (match) {
+        this.value = Number(this.internalValue);
+      } else {
+        this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1);
+        this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
+      }
+      this.$emit('inputChange', this.value);
     },
-    methods: {
-      async updateValue(value) {
-        this.internalValue = this.value;
-        this.ongoingErrorCheck = true;
-        this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
-        await this.checkErrors(value);
-        this.ongoingErrorCheck = false;
-        this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
-
-        await this.checkWarnings(value);
-
-        const hasError = this.error.length > 0;
-
-        this.$emit('newValue', {value: Number(value), error: hasError});
-      },
-      async checkWarnings(newValue) {
-        this.warning = '';
-
-        for (const validator of [...this.warnings]) {
-          let value = typeof newValue === "number" ? newValue : 0;
-
-          let validatorResult = await validator.validate(value);
-          if (validatorResult) {
-            this.warning = validatorResult;
-          }
-        }
-      },
-      async checkErrors(newValue) {
-        this.error = '';
-
-        for (const validator of [...this.validators, ...this.defaultValidators]) {
-          let value = typeof newValue === "number" ? newValue : 0;
-
-          let validatorResult = await validator.validate(value);
-          if (validatorResult) {
-            this.error = validatorResult;
-          }
-        }
-      },
-      valueChange() {
-        const match = this.internalValue.match(/^\d*[\.|\,]?\d{1,8}$/);
-        if (match) {
-          this.value = Number(this.internalValue);
-        } else {
-          this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1)
-          this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
-        }
-        this.$emit('inputChange', this.value);
-      },
-    }
   }
+};
 </script>
 
 <style lang="scss" scoped>
 @import "~@/styles/variables";
+
+.currency-input-wrapper {
+
+  &.embedded {
+    height: 60px;
+
+    .input-wrapper {
+      box-shadow: none;
+      background-image: none;
+    }
+  }
+}
 
 .input-wrapper {
   display: flex;
@@ -180,6 +193,7 @@ import {mapState} from "vuex";
 
 .input {
   position: relative;
+
   &:after {
     content: ' ';
     position: absolute;
@@ -208,7 +222,7 @@ input {
   }
 }
 
-input:focus{
+input:focus {
   outline: none;
 }
 
@@ -314,6 +328,7 @@ img {
     transform: translateY(-1px);
   }
 }
+
 .error {
   color: $red;
 }

@@ -5,7 +5,7 @@
         Borrow
       </div>
 
-      <div class="pool-info">
+      <div class="modal-top-info">
         <div class="pool-info__label">APY:</div>
         <div class="pool-info__value">{{0.0235 | percent}}</div>
         <div class="pool-info__divider"></div>

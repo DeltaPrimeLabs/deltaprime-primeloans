@@ -9,7 +9,7 @@
               <FundsBeta></FundsBeta>
             </Tab>
             <Tab title="Stake">
-              stake
+              <StakeBeta></StakeBeta>
             </Tab>
             <Tab title="Provide Liquidity">
               provide liquidity
@@ -28,10 +28,11 @@ import Tabs from './Tabs';
 import Tab from './Tab';
 import FundsBeta from './FundsBeta';
 import {mapActions, mapState} from 'vuex';
+import StakeBeta from './StakeBeta';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {FundsBeta, Block, StatsBarBeta, Tabs, Tab},
+  components: {StakeBeta, FundsBeta, Block, StatsBarBeta, Tabs, Tab},
   computed: {
     ...mapState('loan', ['totalValue', 'ltv']),
   },

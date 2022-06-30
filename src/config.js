@@ -6,7 +6,7 @@ export default {
     MAX_ALLOWED_LTV: 4.5,
     LIQUIDATION_LTV: 5,
     COMPETITION_START_BLOCK: 14858534,
-    chainId: 1337,
+    chainId: 43114,
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true},

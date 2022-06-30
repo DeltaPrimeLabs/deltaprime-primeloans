@@ -1,46 +1,50 @@
 <template>
-  <div id="modal" class="borrow-modal-component modal-component">
+  <div id="modal" class="stake-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Borrow
+        Stake
       </div>
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ 0.0235 | percent }}</div>
+        <div class="top-info__value">{{0.0235 | percent}}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">89284423.39 <span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value">124.39 <span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="'ETH'"></CurrencyInput>
+      <CurrencyInput :symbol="'AVAX'"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            Values after transaction:
+            <div class="stake-protocol">
+              <img class="stake-protocol__icon" src="src/assets/logo/yak.svg">
+              <div class="stake-protocol__name">Yak protocol</div>
+              ,
+            </div>
+            Values after confirmation:
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              LTV:
+              Staked:
             </div>
             <div class="summary__value">
-              {{ 2.511 | percent }}
+              42.25 <span class="currency">AVAX</span>
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="2.511" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              Balance:
+              Daily interest ≈
             </div>
             <div class="summary__value">
-              73.12 AVAX
+              73.12 <span class="currency">AVAX</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()"></Button>
+        <Button :label="'Stake'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -51,21 +55,19 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
-import BarGaugeBeta from './BarGaugeBeta';
 
 export default {
-  name: 'BorrowModal',
+  name: 'StakeModal',
   components: {
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
-    Modal,
-    BarGaugeBeta
+    Modal
   },
 
   methods: {
     submit() {
-      this.$emit('borrow', 1);
+      this.$emit('stake', 1);
     }
   }
 };
@@ -75,5 +77,25 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
+.summary__title {
+  .stake-protocol {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 5px;
+
+    .stake-protocol__icon {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      margin-right: 9px;
+    }
+
+    .stake-protocol__name {
+      font-weight: 600;
+      color: black;
+    }
+  }
+}
 
 </style>

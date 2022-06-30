@@ -2,7 +2,7 @@
   <div class="transaction-result-summary-beta-component">
     <div class="summary-wrapper">
       <div class="summary">
-        <div class="summary__title">
+<!--        <div class="summary__title">
           Values after transaction:
         </div>
         <div class="summary__values">
@@ -20,7 +20,8 @@
           <div class="summary__value">
             73.12 AVAX
           </div>
-        </div>
+        </div>-->
+        <slot></slot>
       </div>
     </div>
   </div>
@@ -52,6 +53,8 @@ export default {
     padding: 16px 0 18px 30px;
 
     .summary__title {
+      display: flex;
+      flex-direction: row;
       color: $steel-gray;
       font-size: $font-size-xsm;
       margin-bottom: 14px;
@@ -61,6 +64,10 @@ export default {
       display: flex;
       flex-direction: row;
       color: $steel-gray;
+
+      .currency {
+        font-weight: 400;
+      }
 
       .summary__label {
         margin-right: 5px;
