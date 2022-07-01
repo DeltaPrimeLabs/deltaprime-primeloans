@@ -1,13 +1,11 @@
-export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter) {
+export default function updateSmartLoanLibrary(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakRouter, maxLTV, minSelloutLTV) {
     var fs = require('fs')
-    let data = fs.readFileSync('./contracts/SmartLoanProperties.sol', 'utf8')
+    let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
     let fileArray = data.split('\n');
 
 
-
     //getPoolsAssetsIndices()
-
     let lineWithFunctionDeclaration = fileArray.findIndex(
         line => line.includes('getPoolsAssetsIndices')
     );
@@ -19,9 +17,7 @@ export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAdd
     fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
 
 
-
     //getPoolTokens()
-
     lineWithFunctionDeclaration = fileArray.findIndex(
         line => line.includes('function getPoolTokens')
     );
@@ -98,6 +94,26 @@ export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAdd
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
+    // MaxLTV
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_MAX_LTV =')
+    );
+
+    newLine = `    uint256 private constant _MAX_LTV = ${maxLTV};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    //MinSelloutLTV
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_MIN_SELLOUT_LTV =')
+    );
+
+    newLine = `    uint256 private constant _MIN_SELLOUT_LTV = ${minSelloutLTV};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
     //Yak Router
 
     lineWithFunctionDeclaration = fileArray.findIndex(
@@ -110,7 +126,7 @@ export default function updateSmartLoanProperties(poolTokenIndices, poolTokenAdd
 
     let result = fileArray.join("\n");
 
-    fs.writeFileSync('./contracts/SmartLoanProperties.sol', result, 'utf8');
+    fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
 
-    return 'Properties updated!'
+    return 'lib/SmartLoanLib.sol updated!'
 }

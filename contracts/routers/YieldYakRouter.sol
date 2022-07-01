@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
-import "hardhat/console.sol";
 import "../interfaces/IYieldYakRouter.sol";
 
 contract YieldYakRouter is IYieldYakRouter, ReentrancyGuard {

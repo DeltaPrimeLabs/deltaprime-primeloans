@@ -1,15 +1,13 @@
-// SPDX-License-Identifier: UNLICENSED
-// Last deployed from commit: abc6cea589527b5b056d9754bdb215cb9014b9d2;
 pragma solidity ^0.8.4;
-import "../SmartLoan.sol";
 
-contract SmartLoanLimitedCollateral is SmartLoan {
+import "./MockSmartLoanLogicFacetRedstoneProvider.sol";
 
-   /**
-    * Funds a loan with the value attached to the transaction
-    * Allows to add up to 500 USD of collateral in total
-    * @dev This function uses the redstone-evm-connector
-   **/
+contract MockSmartLoanLogicFacetLimitedCollateral is MockSmartLoanLogicFacetRedstoneProvider {
+    /**
+      * Funds a loan with the value attached to the transaction
+      * Allows to add up to 500 USD of collateral in total
+      * @dev This function uses the redstone-evm-connector
+    **/
     function fund(bytes32 fundedAsset, uint256 _amount) public override {
         super.fund(fundedAsset, _amount);
 

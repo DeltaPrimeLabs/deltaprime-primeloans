@@ -2,7 +2,7 @@ import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
 
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
-import updateSmartLoanProperties from "../tools/scripts/update-smart-loan-properties"
+import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 import hre from "hardhat";
 import verifyContract from "../tools/scripts/verify-contract";
 
@@ -19,7 +19,7 @@ module.exports = async ({
     const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
     const yieldYakRouter = await ethers.getContract("YieldYakRouter");
 
-    updateSmartLoanProperties(poolTUP.address, exchangeTUP.address, yieldYakRouter.address);
+    updateSmartLoanLibrary(poolTUP.address, exchangeTUP.address, yieldYakRouter.address);
 
     const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
     console.log(output);

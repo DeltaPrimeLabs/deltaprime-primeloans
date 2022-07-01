@@ -89,7 +89,8 @@ export default {
     }
   },
   mocha: {
-    "allow-uncaught": true
+    "allow-uncaught": true,
+    timeout: 5000000
   },
   namedAccounts: {
       deployer: 0,
