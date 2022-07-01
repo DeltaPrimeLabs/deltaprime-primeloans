@@ -14,7 +14,6 @@ module.exports = async ({
 
     embedCommitHash('SmartLoanDiamond');
     embedCommitHash('SmartLoanLib', 'contracts/lib');
-    embedCommitHash('LTVLib', 'contracts/lib');
     embedCommitHash('LibDiamond', 'contracts/lib');
 
     const diamondAddress = await deployDiamond({
@@ -40,19 +39,12 @@ module.exports = async ({
     const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
     console.log(output);
 
-    // Deploy LTVLib and later link contracts to it
-    const ltvLib = await deploy('LTVLib', {
-        from: deployer,
-        gasLimit: 8000000,
-        args: [],
-    });
-
-    await deployFacet("SmartLoanLogicFacet", diamondAddress, [], ltvLib.address, {
+    await deployFacet("SmartLoanLogicFacet", diamondAddress, [], {
         deployer: deployer,
         deploy: deploy
     });
 
-    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ["liquidateLoan"], ltvLib.address, {
+    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ["liquidateLoan"], {
         deployer: deployer,
         deploy: deploy
     });

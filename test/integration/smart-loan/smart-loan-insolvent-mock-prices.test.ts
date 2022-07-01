@@ -28,7 +28,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, LTVLib, MockSmartLoanLiquidationFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider,
+  ERC20Pool, MockSmartLoanLiquidationFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
@@ -183,7 +183,6 @@ describe('Smart loan',  () => {
         smartLoansFactory: SmartLoansFactory,
         supportedAssets: Array<Asset>,
         INITIAL_MOCK_PRICES: any,
-        ltvlib: LTVLib,
         diamondAddress: any;
 
     before("deploy provider, exchange and pool", async () => {
@@ -320,12 +319,9 @@ describe('Smart loan',  () => {
           yakRouterContract.address,
           'lib'
       );
-      // Deploy LTVLib and later link contracts to it
-      const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
 
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address)
-      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"], ltvlib.address);
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [])
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"]);
     });
 
     beforeEach("create a loan", async () => {
@@ -335,11 +331,7 @@ describe('Smart loan',  () => {
       await smartLoansFactory.connect(borrower).createLoan();
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
-        libraries: {
-          LTVLib: ltvlib.address
-        }
-      });
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
       loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
       loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
 

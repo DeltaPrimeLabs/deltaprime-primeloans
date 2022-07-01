@@ -1,6 +1,5 @@
 import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../_helpers";
 import {
-    LTVLib,
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
     PangolinExchange,
@@ -21,7 +20,7 @@ import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet} = require('./smart-loan//utils/deploy-diamond');
+const {deployDiamond, deployFacet} = require('./smart-loan/utils/deploy-diamond');
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 
@@ -33,7 +32,6 @@ describe('Smart loans factory - upgrading',  () => {
     describe('Check basic logic before and after upgrade', () => {
         let smartLoansFactory: SmartLoansFactory,
             pool: Pool,
-            ltvlib: LTVLib,
             exchange: PangolinExchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
@@ -49,10 +47,7 @@ describe('Smart loans factory - upgrading',  () => {
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
 
-            const LTVLib = await ethers.getContractFactory('LTVLib');
-            ltvlib = await LTVLib.deploy() as LTVLib;
-
-            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
 
             await smartLoansFactory.connect(owner).initialize(diamondAddress);
 

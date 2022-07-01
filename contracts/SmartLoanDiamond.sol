@@ -14,7 +14,6 @@ import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
  *
  */
 
-// TODO: Add frontend changes to reflect facets' interfaces being used instead of one SmartLoan interface
 contract SmartLoanDiamond {
     constructor(address _contractOwner, address _diamondCutFacet) payable {
         LibDiamond.setContractOwner(_contractOwner);

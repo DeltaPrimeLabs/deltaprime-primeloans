@@ -23,7 +23,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, LTVLib, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
   SmartLoansFactory,
@@ -62,7 +62,6 @@ describe('Smart loan',  () => {
         loan: MockSmartLoanLogicFacetRedstoneProvider,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
-        ltvlib: LTVLib,
         pool: ERC20Pool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -136,11 +135,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      // Deploy LTVLib and later link contracts to it
-      const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
-
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
 
       await smartLoansFactory.initialize(diamondAddress);
     });
@@ -150,11 +145,7 @@ describe('Smart loan',  () => {
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
 
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
-        libraries: {
-          LTVLib: ltvlib.address
-        }
-      });
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
       loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
 
       wrappedLoan = WrapperBuilder

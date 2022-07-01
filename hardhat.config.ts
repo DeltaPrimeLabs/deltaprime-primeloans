@@ -4,6 +4,7 @@ import '@nomiclabs/hardhat-waffle'
 import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
+import "hardhat-interface-generator";
 require('hardhat-deploy');
 
 const fs = require('fs');
@@ -17,7 +18,7 @@ export default {
       },
       {
         version: "0.8.4",
-      }
+      },
     ]
   },
   defaultNetwork: "hardhat",

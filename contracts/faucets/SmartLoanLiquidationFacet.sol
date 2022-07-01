@@ -1,17 +1,19 @@
 pragma solidity ^0.8.4;
 
-
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "./SolvencyFacet.sol";
+import "../lib/SolvencyMethodsLib.sol";
 
 import "../lib/SmartLoanLib.sol";
-import "../lib/LTVLib.sol";
 import "../ERC20Pool.sol";
+import "../PoolManager.sol";
 
-contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
+contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -51,11 +53,10 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
     * enough to repay debts)
     * @dev This function uses the redstone-evm-connector
     **/
-    function closeLoan(uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
-        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
-
-        uint256 debt = LTVLib.calculateDebt(prices);
+    function closeLoan(bytes32[] memory _assetsProvided, uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
+        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
+        uint256 debt = _calculateDebt();
+        PoolManager poolManager = SmartLoanLib.getPoolManager();
 
         //TODO: update it after corrected on main
         IYieldYakRouter yakRouter = SmartLoanLib.getYieldYakRouter();
@@ -67,9 +68,10 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
         }
 
         uint256 i;
+        IERC20Metadata token;
 
-        for (i = 0; i < SmartLoanLib.getPoolTokens().length; i++) {
-            IERC20Metadata token = SmartLoanLib.getPoolTokens()[i];
+        for (i = 0; i < _assetsProvided.length; i++) {
+            token = IERC20Metadata(poolManager.getAssetAddress(_assetsProvided[i]));
 
             //allowances are needed for insolvent/bankrupt loan or loans without enough token for repaying debts
             if (_amountsProvided[i] > 0) {
@@ -79,8 +81,12 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
                     address(token).safeTransferFrom(msg.sender, address(this), _amountsProvided[i]);
                 }
             }
+        }
 
-            ERC20Pool pool = SmartLoanLib.getPools()[i];
+        bytes32[] memory poolAssets = poolManager.getAllPoolAssets();
+        for (i = 0; i < poolAssets.length; i++) {
+            token = IERC20Metadata(poolManager.getAssetAddress(poolAssets[i]));
+            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(poolAssets[i]));
             uint256 borrowed = pool.getBorrowed(address(this));
 
             address(token).safeApprove(address(pool), 0);
@@ -89,7 +95,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
         }
 
         for (i = 0; i < assets.length; i++) {
-            IERC20Metadata token = LTVLib.getERC20TokenInstance(assets[i]);
+            token = getERC20TokenInstance(assets[i]);
             uint256 balance = token.balanceOf(address(this));
 
             if (balance > 0) {
@@ -97,12 +103,11 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
             }
         }
 
-        // TODO: Possibly introduce getDebt() method like in SmartLoanLogicFacet.sol
-        // Downside of this approach is code duplication across multiple facets, but it's not entirely
+        // Downside o f this approach is code duplication across multiple facets, but it's not entirely
         // wrong as the "logic" of calculating the debt still resides in one place only - the LTVLib library
 
-        require(LTVLib.calculateDebt(prices) == 0, "Debt not fully repaid");
-        require(LTVLib.calculateAssetsValue(prices) == 0, "Final value of closed loan above 0");
+        require(_calculateDebt() == 0, "Debt not fully repaid");
+        require(_calculateTotalValue() == 0, "Final value of closed loan above 0");
 
         emit LoanClosed(debt, address(this).balance, block.timestamp);
     }
@@ -147,27 +152,28 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
     function liquidate(LiquidationConfig memory config) internal {
         SmartLoanLib.setLiquidationInProgress(true);
 
-        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
+        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        bytes32[] memory poolAssets = poolManager.getAllPoolAssets();
+        uint256[] memory prices = getPricesFromMsg(poolAssets);
+
 
         {
-            // TODO: Potentially re-create getTotalValue() & getDebt() methods in this facet as well
-            uint256 initialTotal = LTVLib.calculateTotalValue(prices);
-            uint256 initialDebt = LTVLib.calculateDebt(prices);
+            uint256 initialTotal = _calculateTotalValue();
+            uint256 initialDebt = _calculateDebt();
 
             require(config.liquidationBonus <= SmartLoanLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-            require(LTVLib.calculateLTV(prices) >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
+            require(_calculateLTV() >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
             require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
-        bool healingLoan = config.allowUnprofitableLiquidation && LTVLib.calculateDebt(prices) > LTVLib.calculateTotalValue(prices);
+        // TODO: Recalculating TV and Debt because of stack to deep. Could be optimized
+        bool healingLoan = config.allowUnprofitableLiquidation && _calculateDebt() > _calculateTotalValue();
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
 
-        for (uint256 i; i < SmartLoanLib.getPoolTokens().length; i++) {
-            uint256 poolAssetIndex = SmartLoanLib.getPoolsAssetsIndices()[i];
-            IERC20Metadata token = SmartLoanLib.getPoolTokens()[i];
+        for (uint256 i=0; i < poolAssets.length; i++) {
+            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(poolAssets[i]));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
@@ -182,25 +188,26 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
                 require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
 
                 address(token).safeTransferFrom(msg.sender, address(this), needed);
-                suppliedInUSD += needed * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
+                suppliedInUSD += needed * prices[i] * 10**10 / 10 ** token.decimals();
             }
 
-            ERC20Pool pool = SmartLoanLib.getPools()[i];
+            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(poolAssets[i]));
 
             address(token).safeApprove(address(pool), 0);
             address(token).safeApprove(address(pool), config.amountsToRepay[i]);
 
-            repaidInUSD += config.amountsToRepay[i] * prices[poolAssetIndex] * 10**10 / 10 ** token.decimals();
+            repaidInUSD += config.amountsToRepay[i] * prices[i] * 10**10 / 10 ** token.decimals();
 
             pool.repay(config.amountsToRepay[i]);
         }
 
-        uint256 total = LTVLib.calculateTotalValue(prices);
+        uint256 total = _calculateTotalValue();
+        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
         if (!healingLoan) {
-            uint256 valueOfTokens = LTVLib.calculateAssetsValue(prices);
+            uint256 valueOfTokens = _calculateAssetsValue();
 
             bonus = repaidInUSD * config.liquidationBonus / SmartLoanLib.getPercentagePrecision();
 
@@ -215,14 +222,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
             }
 
             for (uint256 i; i < assets.length; i++) {
-                IERC20Metadata token = LTVLib.getERC20TokenInstance(assets[i]);
+                IERC20Metadata token = getERC20TokenInstance(assets[i]);
                 uint256 balance = token.balanceOf(address(this));
 
                 address(token).safeTransfer(msg.sender, balance * partToReturn / 10**18);
             }
         }
 
-        uint256 LTV = LTVLib.calculateLTV(prices);
+        uint256 LTV = _calculateLTV();
 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
@@ -271,27 +278,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
         return successUnstake;
     }
 
-    // Needed for isSolvent() modifier - possibly #TODO: create a base class out of this
     /**
-     * LoanToValue ratio is calculated as the ratio between debt and collateral (defined as total value minus debt).
-     * The collateral is equal to total loan value takeaway debt.
-     * @dev This function uses the redstone-evm-connector
+     * Returns IERC20Metadata instance of a token
+     * @param _asset the code of an asset
      **/
-    function getLTV() public view virtual returns (uint256) {
-        bytes32[] memory assets = SmartLoanLib.getExchange().getAllAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
-        return LTVLib.calculateLTV(prices);
+    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
+        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
     }
 
-    /**
-    * Checks if the loan is solvent.
-    * It means that the ratio between debt and current collateral (defined as total value minus debt) is below safe level,
-    * which is parametrized by the getMaxLtv()
-    * @dev This function uses the redstone-evm-connector
-    **/
-    function isSolvent() public view returns (bool) {
-        return getLTV() < SmartLoanLib.getMaxLtv();
-    }
 
     /**
     * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
@@ -300,7 +294,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
     modifier remainsSolvent() {
         _;
 
-        require(isSolvent(), "The action may cause an account to become insolvent");
+        require(_isSolvent(), "The action may cause an account to become insolvent");
     }
 
     modifier onlyOwner() {

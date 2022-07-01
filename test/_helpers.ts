@@ -1,13 +1,13 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PangolinExchange} from "../typechain";
-import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import {MockSmartLoanLogicFacetSetValues, PangolinExchange} from "../typechain";
+
 import {execSync} from "child_process";
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 
 const {provider} = waffle;
-
+const {deployDiamond, deployFacet} = require('./integration/smart-loan/utils/deploy-diamond');
 const {deployContract} = waffle;
 
 export const toWei = ethers.utils.parseUnits;
@@ -143,13 +143,43 @@ export const getFixedGasSigners = async function (gasLimit: number) {
   return signers;
 };
 
+
+export const deployAllFaucets = async function(diamondAddress: any) {
+    await deployFacet(
+        "MockFundingFacetRP",
+        diamondAddress,
+        [
+            'borrow',
+            'repay',
+            'fund',
+            'withdraw',
+        ],
+        ''
+    )
+    await deployFacet("MockPangolinDEXFacetRP", diamondAddress, ['swapPangolin'])
+    await deployFacet("MockYieldYakFacetRP", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak'])
+    await deployFacet("MockSmartLoanLiquidationFacetRP", diamondAddress, ['closeLoan', 'liquidateLoan', 'unsafeLiquidateLoan'])
+    await deployFacet(
+        "MockSmartLoanLogicFacetRP",
+        diamondAddress,
+        [
+            'depositNativeToken',
+            'getOwnedAssetsBalances',
+            'getOwnedAssetsPrices',
+            'wrapNativeToken',
+        ]
+    )
+};
+
+
 export const deployAndInitPangolinExchangeContract = async function (
     owner: SignerWithAddress,
     pangolinRouterAddress: string,
     supportedAssets: Asset[]
   ) {
-  const exchange = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
-  exchange.initialize(pangolinRouterAddress, supportedAssets);
+  let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
+  const exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+  await exchange.initialize(pangolinRouterAddress, supportedAssets);
   return exchange
 };
 
@@ -179,12 +209,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoanLib(contractName: string, poolTokenIndices: Array<Number>, poolTokenAddresses: Array<string>,  poolMap: {}, exchangeAddress: string, yieldYakAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
+export async function recompileSmartLoanLib(contractName: string, yieldYakAddress: string, poolManagerAddress: string, solvencyFacetAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(poolTokenIndices, poolTokenAddresses, poolMap, exchangeAddress, yieldYakAddress, maxLTV, minSelloutLTV);
-
+    await updateSmartLoanLibrary(yieldYakAddress, poolManagerAddress, solvencyFacetAddress, maxLTV, minSelloutLTV);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }
@@ -197,4 +226,14 @@ export class Asset {
     this.asset = asset;
     this.assetAddress = assetAddress;
   }
+}
+
+export class PoolAsset {
+    asset: string;
+    poolAddress: string;
+
+    constructor(asset: string, poolAddress: string) {
+        this.asset = asset;
+        this.poolAddress = poolAddress;
+    }
 }

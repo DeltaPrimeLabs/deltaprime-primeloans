@@ -1,0 +1,109 @@
+import {execSync} from "child_process";
+let fs = require('fs')
+let path = require('path')
+
+function fixDataLocation() {
+    const dir = './contracts/interfaces/faucets'
+    const files = fs.readdirSync(dir)
+
+    for (const file of files) {
+        let changes = 0;
+        let fullPath = path.join(dir, file)
+        console.log(`Processing interface: ${fullPath}`)
+        let data = fs.readFileSync(fullPath, 'utf8')
+        let fileArray = data.split('\n');
+        fileArray.forEach((element, index) => {
+            if(element.includes('uint256[]') && !element.includes('uint256[] memory')) {
+                fileArray[index] = fileArray[index].replace('uint256[]', 'uint256[] memory')
+                changes++
+            } else if (element.includes('uint256[')) {
+                console.log(`before: ${fileArray[index]}`)
+                fileArray[index] = fileArray[index].replace(/uint256\[(.*)\]/, `uint256[${element[element.indexOf('uint256[') + 8]}] memory`)
+                console.log(`after: ${fileArray[index]}`)
+                changes++
+            }
+            if(element.includes('bytes32[]') && !element.includes('bytes32[] memory')) {
+                fileArray[index] = fileArray[index].replace('bytes32[]', 'bytes32[] memory')
+                changes++
+            }
+        })
+        let result = fileArray.join("\n");
+
+        fs.writeFileSync(fullPath, result, 'utf8');
+        console.log(`Interface processed (${changes} changes) and saved to: ${fullPath}`)
+    }
+    return 'interfaces updated!'
+}
+
+function generateFaucetsInterfaces(faucetsList) {
+    for (const facet of faucetsList) {
+        const output = execSync(`npx hardhat gen-interface ${facet}`, { encoding: 'utf-8' });
+        console.log(output)
+        let oldPath = path.join('./contracts/faucets', `I${facet}.sol`);
+        let newPath = path.join('./contracts/interfaces/faucets', `I${facet}.sol`);
+        fs.rename(oldPath, newPath, (err) => {if(err !== null) console.log(err)});
+        console.log(`Moved ${oldPath} -> ${newPath}`)
+    }
+
+}
+
+function removeObsoleteFunctions(functionsToRemove) {
+    const dir = './contracts/interfaces/faucets'
+    const files = fs.readdirSync(dir)
+
+    for (const file of files) {
+        let changes = 0;
+        let fullPath = path.join(dir, file)
+        console.log(`Processing interface: ${fullPath}`)
+        let data = fs.readFileSync(fullPath, 'utf8')
+        let fileArray = data.split('\n');
+        let newFileArray = []
+        fileArray.forEach((element, index) => {
+           let shouldInclude = true;
+           for (const func of functionsToRemove) {
+               if (element.includes(func)) {
+                   console.log(`Removing: ${func}`)
+                   shouldInclude = false;
+                   changes++;
+                   break;
+               }
+           }
+           if (shouldInclude === true) {
+               newFileArray.push(element);
+           }
+        })
+        let result = newFileArray.join("\n");
+
+        fs.writeFileSync(fullPath, result, 'utf8');
+        console.log(`Interface processed, removed ${changes} functions and saved to: ${fullPath}`)
+    }
+}
+
+function createFaucetsInterfaces() {
+    const faucetsList = [
+        'FundingFacet',
+        'OwnershipFacet',
+        'PangolinDEXFacet',
+        'SmartLoanLiquidationFacet',
+        'SmartLoanLogicFacet',
+        'SolvencyFacet',
+        'YieldYakFacet',
+    ]
+    const functionsToRemove = [
+        '_getLTV',
+        'routerContractAddress',
+        'isTimestampValid',
+        'isSignerAuthorized',
+        'getMaxDataTimestampDelay',
+        'getMaxBlockTimestampDelay',
+        'getERC20TokenInstance',
+    ]
+    generateFaucetsInterfaces(faucetsList);
+    fixDataLocation();
+    removeObsoleteFunctions(functionsToRemove);
+}
+
+module.exports.generateFaucetsInterfaces = generateFaucetsInterfaces;
+module.exports.fixDataLocation = fixDataLocation;
+module.exports.removeObsoleteFunctions = removeObsoleteFunctions;
+module.exports.createFaucetsInterfaces = createFaucetsInterfaces;

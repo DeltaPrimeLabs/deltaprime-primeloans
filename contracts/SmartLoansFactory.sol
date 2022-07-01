@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./SmartLoanDiamond.sol";
 import "./proxies/DiamondBeaconProxy.sol";
 import "./faucets/DiamondInit.sol";
-import "./faucets/SmartLoanLogicFacet.sol";
+import "./faucets/FundingFacet.sol";
 import "./faucets/OwnershipFacet.sol";
 
 /**
@@ -62,9 +62,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     updateRegistry(address(smartLoan));
 
     //Fund account with own funds and credit
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoanLogicFacet.fund.selector), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.fund.selector), false);
 
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(SmartLoanLogicFacet.borrow.selector, fundedAsset, _initialDebt), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.borrow.selector, fundedAsset, _initialDebt), false);
 
     OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
 

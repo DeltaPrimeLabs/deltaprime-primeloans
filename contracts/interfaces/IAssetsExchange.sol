@@ -18,6 +18,14 @@ interface IAssetsExchange {
     address assetAddress;
   }
 
+  /**
+   * For adding supported lending pools
+   **/
+  struct poolAsset {
+    bytes32 asset;
+    address poolAddress;
+  }
+
 
   /*
    * Swaps selected ERC20 token with other ERC20 token
@@ -54,7 +62,7 @@ interface IAssetsExchange {
   /**
    * Returns all the supported assets keys
    **/
-  function getAllAssets() external view returns (bytes32[] memory);
+  function getAllSupportedAssets() external view returns (bytes32[] memory);
 
   /**
    * Returns address of an asset

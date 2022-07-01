@@ -25,7 +25,6 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
   ERC20Pool,
-  LTVLib,
   MockSmartLoanLiquidationFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider__factory,
@@ -162,8 +161,7 @@ describe('Smart loan',  () => {
         USD_PRICE: number,
         ETH_PRICE: number,
         BTC_PRICE: number,
-        diamondAddress: any,
-        ltvlib: LTVLib;
+        diamondAddress: any;
 
     before("deploy provider, exchange and pool", async () => {
       diamondAddress = await deployDiamond();
@@ -285,12 +283,8 @@ describe('Smart loan',  () => {
     before("prepare smart loan implementations", async () => {
       await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib');
 
-      // Deploy LTVLib and later link contracts to it
-      const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
-
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
-      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"], ltvlib.address);
+      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"]);
 
 
     });
@@ -298,11 +292,7 @@ describe('Smart loan',  () => {
     beforeEach("create a loan", async () => {
       await recompileSmartLoanLib('SmartLoanLib', [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib');
 
-      // Deploy LTVLib and later link contracts to it
-      const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
-
-      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
@@ -311,16 +301,9 @@ describe('Smart loan',  () => {
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
 
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {
-        libraries: {
-          LTVLib: ltvlib.address
-        }
-      });
-      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider", {
-        libraries: {
-          LTVLib: ltvlib.address
-        }
-      });
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
+      const loanFactoryLiquidation = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider");
+
       loan = await loanFactory.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLogicFacetRedstoneProvider;
       loanLiquidation = await loanFactoryLiquidation.attach(loan_proxy_address).connect(borrower) as MockSmartLoanLiquidationFacetRedstoneProvider;
 
@@ -388,11 +371,7 @@ describe('Smart loan',  () => {
     async function liquidateLoan(orderOfLiquidation: number[]) {
       await recompileSmartLoanLib("SmartLoanLib", [0, 1, 3], {'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address},  exchange.address, yakRouterContract.address, 'lib', 2000, 1000);
 
-      // Deploy LTVLib and later link contracts to it
-      const LTVLib = await ethers.getContractFactory('LTVLib');
-      ltvlib = await LTVLib.deploy() as LTVLib;
-
-      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, [], ltvlib.address);
+      await replaceFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
 

@@ -6,11 +6,14 @@ pragma solidity ^0.8.4;
 * EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-2535
 /******************************************************************************/
 import { IDiamondCut } from "../interfaces/IDiamondCut.sol";
+import "../lib/Bytes32EnumerableMap.sol";
 
 // Remember to add the loupe functions from DiamondLoupeFacet to the diamond.
 // The loupe functions are required by the EIP2535 Diamonds standard
 
 library LibDiamond {
+    using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
+
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
     bytes32 constant LIQUIDATION_STORAGE_POSITION = keccak256("diamond.standard.liquidation.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
@@ -46,6 +49,8 @@ library LibDiamond {
         address contractOwner;
         // Is contract initialized?
         bool _initialized;
+        // TODO: mock staking tokens until redstone oracle supports them
+        EnumerableMap.Bytes32ToAddressMap ownedAssets;
     }
 
     struct LiquidationStorage {
@@ -77,14 +82,24 @@ library LibDiamond {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     function setContractOwner(address _newOwner) internal {
-        SmartLoanStorage storage ds = smartLoanStorage();
-        address previousOwner = ds.contractOwner;
-        ds.contractOwner = _newOwner;
+        SmartLoanStorage storage sls = smartLoanStorage();
+        address previousOwner = sls.contractOwner;
+        sls.contractOwner = _newOwner;
         emit OwnershipTransferred(previousOwner, _newOwner);
     }
 
     function contractOwner() internal view returns (address contractOwner_) {
         contractOwner_ = smartLoanStorage().contractOwner;
+    }
+
+    function addOwnedAsset(bytes32 _symbol, address _address) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        EnumerableMap.set(sls.ownedAssets, _symbol, _address);
+    }
+
+    function removeOwnedAsset(bytes32 _symbol) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        EnumerableMap.remove(sls.ownedAssets, _symbol);
     }
 
     function enforceIsContractOwner() internal view {
