@@ -1,16 +1,47 @@
 <template>
   <div class="stake-beta-component">
-    <StakingAssetBeta></StakingAssetBeta>
-    <StakingAssetBeta></StakingAssetBeta>
-    <StakingAssetBeta></StakingAssetBeta>
+    <StakingAssetBeta v-for="asset in assetsAvailableForStaking"
+                      v-bind:key="asset"
+                      :stakingAsset="stakedAssets[asset]">
+    </StakingAssetBeta>
   </div>
 </template>
 
 <script>
 import StakingAssetBeta from './StakingAssetBeta';
+import {mapActions, mapGetters, mapState} from 'vuex';
+
 export default {
   name: 'StakeBeta',
-  components: {StakingAssetBeta}
+  components: {StakingAssetBeta},
+  data() {
+    return {
+      assetsAvailableForStaking: null,
+    };
+  },
+  computed: {
+    ...mapState('stakeStore', ['stakedAssets'])
+  },
+  methods: {
+    ...mapActions('stakeStore', ['setup']),
+    setupStakedAssets(stakedAssets) {
+      if (stakedAssets) {
+        this.assetsAvailableForStaking = Object.keys(stakedAssets);
+        console.log(this.assetsAvailableForStaking);
+      }
+    }
+  },
+  mounted() {
+  },
+
+  watch: {
+    stakedAssets: {
+      handler(stakedAssets) {
+        this.setupStakedAssets(stakedAssets);
+      },
+      immediate: true
+    }
+  }
 };
 </script>
 

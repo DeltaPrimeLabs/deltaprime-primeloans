@@ -107,7 +107,7 @@ export default {
     closeModal() {
       const modalComponent = document.getElementById('modal');
       document.body.removeChild(modalComponent);
-    }
+    },
   },
   computed: {
     ...mapState('network', ['provider', 'avaxPrice']),

@@ -1,5 +1,5 @@
 <template>
-  <div class="staking-protocol-table-row-component">
+  <div class="staking-protocol-table-row-component" v-if="protocol">
     <div class="table__row">
       <div class="table__cell protocol-cell">
         <div class="protocol">
@@ -13,19 +13,19 @@
 
       <div class="table__cell">
         <div class="double-value staked-balance">
-          <div class="double-value__pieces">15.32</div>
-          <div class="double-value__usd">{{ 1525.11 | usd }}</div>
+          <div class="double-value__pieces">{{ protocol.balance | smartRound }}</div>
+          <div class="double-value__usd">{{ avaxToUSD(protocol.balance) | usd}}</div>
         </div>
       </div>
 
       <div class="table__cell">
-        {{ 0.0135 | percent }}
+        {{ apy | percent }}
       </div>
 
       <div class="table__cell">
         <div class="double-value">
-          <div class="double-value__pieces">0.01</div>
-          <div class="double-value__usd">{{ 0.15 | usd }}</div>
+          <div class="double-value__pieces">{{ calculateDailyInterest | smartRound }}</div>
+          <div class="double-value__usd">{{ avaxToUSD(calculateDailyInterest) | usd }}</div>
         </div>
       </div>
 
@@ -49,26 +49,67 @@
 
 <script>
 import StakeModal from './StakeModal';
-import BorrowModal from './BorrowModal';
 import SwapModal from './SwapModal';
-
+import {mapState, mapActions} from 'vuex';
 
 
 export default {
   name: 'StakingProtocolTableRow',
+  props: {
+    protocol: {
+      required: true,
+    }
+  },
+  mounted() {
+    this.setupStakingApy();
+    console.log(this.protocol);
+  },
+  data() {
+    return {
+      staked: null,
+      apy: null,
+      dailyInterest: 0,
+      totalInterest: 0,
+    };
+  },
+  computed: {
+    ...mapState('stakeStore', ['stakedAssets']),
+    calculateDailyInterest() {
+      return this.apy / 365 * this.protocol.balance;
+    }
+  },
   methods: {
+    ...mapActions('stakeStore', ['stakeAvaxYak']),
     openStakeModal() {
       console.log('open stake modal');
       const modalInstance = this.openModal(StakeModal);
+      modalInstance.apy = this.apy;
+      modalInstance.available = 1;
+      modalInstance.staked = this.protocol.balance;
       modalInstance.$on('stake', (stakeEvent) => {
         console.log(stakeEvent);
+        this.handleTransaction(this.stakeAvaxYak({amount: stakeEvent})).then(result => {
+          console.log(result);
+          this.closeModal();
+        })
       });
     },
+
     openSwapModal() {
       console.log('open stake modal');
       const modalInstance = this.openModal(SwapModal);
       modalInstance.$on('stake', (stakeEvent) => {
         console.log(stakeEvent);
+      });
+    },
+
+    setupStakingApy() {
+      const avaxFarmAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
+      const apysUrl = 'https://staging-api.yieldyak.com/apys';
+      fetch(apysUrl).then(response => {
+        return response.json();
+      }).then(apys => {
+        this.apy = apys[avaxFarmAddress].apy / 100;
       });
     }
   }

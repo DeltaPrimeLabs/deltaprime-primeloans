@@ -10,60 +10,15 @@
         </div>
         <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()">
         <div class="select-dropdown">
-          <input class="dropdown__input" type="text" placeholder="search">
+          <input  class="dropdown__input" type="text" placeholder="search">
           <div class="dropdown__list">
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/btc.svg">
-              <div class="option__symbol">BTC</div>
-              <div class="option__name">Bitcoin</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/eth.svg">
-              <div class="option__symbol">ETH</div>
-              <div class="option__name">Ethereum</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/usdc.svg">
-              <div class="option__symbol">USDC</div>
-              <div class="option__name">Usdc</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/avax.svg">
-              <div class="option__symbol">AVAX</div>
-              <div class="option__name">Avalanche</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/yak.svg">
-              <div class="option__symbol">YAK</div>
-              <div class="option__name">Yeild yak</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/usdt.svg">
-              <div class="option__symbol">USDT</div>
-              <div class="option__name">Tether</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/png.svg">
-              <div class="option__symbol">PNG</div>
-              <div class="option__name">Pangolin</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/qi.svg">
-              <div class="option__symbol">QI</div>
-              <div class="option__name">Benqi</div>
-            </div>
-
-            <div class="dropdown__option">
-              <img class="option__icon" src="src/assets/logo/usdc.svg">
-              <div class="option__symbol">USDC</div>
-              <div class="option__name">Usdc</div>
+            <div class="dropdown__option"
+                 v-for="assetOption in displayedOptions"
+                 v-bind:key="assetOption.symbol"
+                 v-on:click="selectOption(assetOption)">
+              <img class="option__icon" :src="assetOption.logo">
+              <div class="option__symbol">{{assetOption.symbol}}</div>
+              <div class="option__name">{{ assetOption.name }}</div>
             </div>
           </div>
         </div>
@@ -75,19 +30,30 @@
 
 <script>
 import CurrencyInput from './CurrencyInput';
+import config from '../config';
 
 export default {
   name: 'CurrencyComboInput',
   components: {
     CurrencyInput
   },
-  props: {},
+  props: {
+    value: {
+      type: String
+    }
+  },
   computed: {},
   data() {
     return {
       expanded: false,
       hasBackground: false,
+      assetOptions: [],
+      displayedOptions: [],
+      value: null
     };
+  },
+  mounted() {
+    this.setupAssetOptions();
   },
   methods: {
     toggleSelect() {
@@ -100,6 +66,28 @@ export default {
         this.expanded = true;
         this.hasBackground = true;
       }
+    },
+
+    setupAssetOptions() {
+      console.log(config.ASSETS_CONFIG);
+      Object.keys(config.ASSETS_CONFIG).forEach(assetSymbol => {
+        const asset = config.ASSETS_CONFIG[assetSymbol];
+        const assetOption = {
+          symbol: assetSymbol,
+          name: asset.name,
+          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+        }
+        this.assetOptions.push(assetOption);
+        this.displayedOptions.push(assetOption);
+      })
+    },
+
+    searchOptions(searchPhrase) {
+      return this.assetOptions.filter(assetOption => assetOption.symbol.includes(searchPhrase) || assetOption.name.includes(searchPhrase));
+    },
+
+    selectOption(option) {
+      this.value = option;
     }
   }
 };
@@ -248,8 +236,11 @@ export default {
       }
 
       &.has-background {
-        border-color: $delta-light;
-        background-color: white;
+
+        .select-dropdown {
+          border-color: $delta-light;
+          background-color: white;
+        }
       }
     }
   }

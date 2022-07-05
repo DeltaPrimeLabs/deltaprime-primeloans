@@ -103,7 +103,7 @@ export default {
   name: 'FundTableRowBeta',
   components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, PoolEventsList, ColoredValueBeta, SmallChartBeta},
   props: {
-    asset: {}
+    asset: {},
   },
   mounted() {
     this.setupActionsConfiguration();

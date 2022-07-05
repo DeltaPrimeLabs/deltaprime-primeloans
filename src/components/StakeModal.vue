@@ -7,13 +7,13 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{0.0235 | percent}}</div>
+        <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">124.39 <span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="'AVAX'"></CurrencyInput>
+      <CurrencyInput :symbol="'AVAX'" v-on:newValue="stakeValueChange"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -30,14 +30,14 @@
               Staked:
             </div>
             <div class="summary__value">
-              42.25 <span class="currency">AVAX</span>
+              {{ staked + stakeValue | smartRound }} <span class="currency">AVAX</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              73.12 <span class="currency">AVAX</span>
+              {{ calculateDailyInterest | smartRound }} <span class="currency">AVAX</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -65,10 +65,34 @@ export default {
     Modal
   },
 
+  props: {
+    apy: null,
+    available: null,
+    staked: null,
+  },
+
+  data() {
+    return {
+      stakeValue: 0,
+    }
+  },
+
+  computed: {
+    calculateDailyInterest() {
+      return this.apy / 365 * (this.staked + this.stakeValue);
+    }
+  },
+
   methods: {
     submit() {
-      this.$emit('stake', 1);
-    }
+      this.$emit('stake', this.stakeValue);
+    },
+
+
+    stakeValueChange(event) {
+      console.log(event.value);
+      this.stakeValue = event.value;
+    },
   }
 };
 </script>

@@ -37,14 +37,20 @@ export default {
     ...mapState('loan', ['totalValue', 'ltv']),
   },
   methods: {
-    ...mapActions('fundsStore', ['setup'])
+    ...mapActions('fundsStore', ['fundsStoreSetup']),
+    ...mapActions('stakeStore', ['stakeStoreSetup'])
   },
-  mounted() {
+  async mounted() {
     if (window.provider) {
-      this.setup();
+      console.log('provider');
+      await this.fundsStoreSetup();
+      await this.stakeStoreSetup();
     } else {
-      setTimeout(() => {
-        this.setup();
+      console.log('no provider');
+
+      setTimeout(async () => {
+        await this.fundsStoreSetup();
+        await this.stakeStoreSetup();
       }, 1000);
     }
   }

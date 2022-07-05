@@ -7,8 +7,9 @@
     <button v-on:click="createAndFundLoanClick()">create and fund loan</button>
     <button v-on:click="testLoanClick()">test loan</button>
     <button v-on:click="depositClick()">deposit</button>
+    <button v-on:click="getAllAssetsBalancesClick()">balances</button>
     <div class="funds">
-      <NameValueBadgeBeta v-if="availableValue" :name="'Value of available funds'">{{ availableValue | usd }}</NameValueBadgeBeta>
+      <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
         <div class="funds-table__header">
           <div class="header__cell asset">Asset</div>
@@ -20,7 +21,7 @@
           <div class="header__cell actions">Actions</div>
         </div>
         <div class="funds-table__body">
-          <FundTableRowBeta v-for="asset in funds" v-bind:key="asset.symbol" :asset="asset"></FundTableRowBeta>
+          <FundTableRowBeta v-for="(asset, index) in funds" v-bind:key="asset.symbol" :asset="asset" :balance="assetBalances[index]"></FundTableRowBeta>
         </div>
       </div>
       <div v-if="!funds">
@@ -40,6 +41,7 @@ import {mapState, mapActions} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
+import {fromWei} from '../utils/calculate';
 
 export default {
   name: 'FundsBeta',
@@ -47,14 +49,22 @@ export default {
   data() {
     return {
       funds: config.ASSETS_CONFIG,
-      availableValue: 0,
     }
   },
   computed: {
-    ...mapState('fundsStore', ['assets']),
+    ...mapState('fundsStore', ['assets', 'assetBalances']),
+    calculateAvailableValue() {
+      if (this.funds) {
+        let availableValue = 0;
+        Object.values(this.funds).forEach(asset => {
+          availableValue += asset.balance * asset.price;
+        });
+        return availableValue;
+      }
+    }
   },
   methods: {
-    ...mapActions('fundsStore', ['fund', 'borrow', 'swapToWavax', 'createLoan', 'createAndFundLoan', 'setupSmartLoanContract']),
+    ...mapActions('fundsStore', ['fund', 'borrow', 'swapToWavax', 'createLoan', 'createAndFundLoan', 'setupSmartLoanContract', 'getAllAssetsBalances']),
     ...mapActions('poolStore', ['deposit']),
     fundClick() {
       this.fund();
@@ -86,6 +96,10 @@ export default {
 
     testModal() {
       const modalInstance = this.openModal(BorrowModal);
+    },
+
+    getAllAssetsBalancesClick() {
+      this.getAllAssetsBalances();
     },
 
     updateFund(symbol, key, value) {
@@ -121,7 +135,7 @@ export default {
       this.funds = funds;
 
       if (funds) {
-        for (const symbol of Object.keys(funds)) {
+        Object.keys(funds).forEach((symbol, index) => {
           redstone.getHistoricalPrice(symbol, {
             startDate: Date.now() - 3600 * 1000 * 24 * 7,
             interval: 3600 * 1000,
@@ -137,22 +151,12 @@ export default {
               this.updateFund(symbol, 'prices', prices);
               this.updateFund(symbol, 'minPrice', minPrice);
               this.updateFund(symbol, 'maxPrice', maxPrice);
+              this.updateFund(symbol, 'balance', fromWei(this.assetBalances[index]));
             }
           );
-        }
+        })
       }
-
-      this.calculateAvailableValue();
     },
-
-    calculateAvailableValue() {
-      if (this.funds) {
-        this.availableValue = 0;
-        Object.values(this.funds).forEach(asset => {
-          this.availableValue += asset.balance * asset.price;
-        });
-      }
-    }
   },
   watch: {
     assets: {

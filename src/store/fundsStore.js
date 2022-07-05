@@ -1,18 +1,18 @@
-import {awaitConfirmation, handleCall} from "../utils/blockchain";
-import SMART_LOAN from '@contracts/SmartLoanLogicFacet.json'
-import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json'
-import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
-import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json'
-import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
-import {formatUnits, fromWei, parseUnits, round, toWei} from "@/utils/calculate";
-import config from "@/config";
-import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from "../utils/calculate";
-import {WrapperBuilder} from "redstone-evm-connector";
-import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from "../utils/graph";
+import {awaitConfirmation, handleCall} from '../utils/blockchain';
+import SMART_LOAN from '@contracts/SmartLoanLogicFacet.json';
+import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
+import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
+import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
+import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
+import config from '@/config';
+import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from '../utils/calculate';
+import {WrapperBuilder} from 'redstone-evm-connector';
+import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from '../utils/graph';
 import redstone from 'redstone-api';
 
 
-const toBytes32 = require("ethers").utils.formatBytes32String;
+const toBytes32 = require('ethers').utils.formatBytes32String;
 
 const ethereum = window.ethereum;
 
@@ -43,8 +43,12 @@ export default {
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wavaxTokenContract: null,
+    assetBalances: null,
   },
   getters: {
+    getSmartLoanContract(state) {
+      return state.smartLoanContract;
+    }
 
   },
   mutations: {
@@ -67,13 +71,17 @@ export default {
     setWavaxTokenContract(state, wavaxTokenContract) {
       state.wavaxTokenContract = wavaxTokenContract;
     },
+
+    setAssetBalances(state, assetBalances) {
+      state.assetBalances = assetBalances;
+    },
   },
   actions: {
-
-    async setup({dispatch}) {
+    async fundsStoreSetup({dispatch}) {
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
       await dispatch('setupContracts');
+      await dispatch('getAllAssetsBalances');
     },
 
 
@@ -82,16 +90,11 @@ export default {
       let supported = ((await pangolinContract.getAllAssets())).map(
         asset => ethers.utils.parseBytes32String(asset)
       );
-      console.log(supported);
 
       commit('setSupportedAssets', supported);
     },
 
     async setupAssets({state, commit, dispatch}) {
-      console.log('async updateAssets({state, commit, dispatch}) {');
-
-      console.log(state.assets);
-
 
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
@@ -101,27 +104,21 @@ export default {
         asset => assets[asset] = config.ASSETS_CONFIG[asset]
       );
 
-      console.log(assets);
 
       redstone.getPrice(Object.keys(assets)).then(prices => {
-        console.log(prices);
         Object.keys(assets).forEach(assetSymbol => {
           assets[assetSymbol].price = prices[assetSymbol].value;
         });
       });
-      console.log(assets);
 
 
       setTimeout(() => {
         commit('setAssets', assets);
       }, 5000);
-      console.log(assets);
     },
 
     async setupContracts({state, rootState, commit, dispatch}) {
-      console.log('setupContracts');
       const provider = rootState.network.provider;
-      console.log(rootState.network.account);
 
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
@@ -130,8 +127,7 @@ export default {
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
       commit('setWavaxTokenContract', wavaxTokenContract);
 
-      dispatch('setupSmartLoanContract');
-      console.log(wavaxTokenContract);
+      await dispatch('setupSmartLoanContract');
     },
 
     async setupSmartLoanContract({state, rootState, commit, dispatch}) {
@@ -140,13 +136,11 @@ export default {
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
-      const wrappedSmartLoanContract = WrapperBuilder.wrapLite(smartLoanContract).usingPriceFeed(config.dataProviderId)
+      const wrappedSmartLoanContract = WrapperBuilder.wrapLite(smartLoanContract).usingPriceFeed(config.dataProviderId);
 
       if (wrappedSmartLoanContract) {
-        console.log(wrappedSmartLoanContract);
         commit('setSmartLoanContract', wrappedSmartLoanContract);
       }
-
     },
 
     async createLoan({state, rootState, commit, dispatch}) {
@@ -159,11 +153,19 @@ export default {
     async createAndFundLoan({state, rootState, commit, dispatch}) {
       const provider = rootState.network.provider;
       await state.wavaxTokenContract.connect(provider.getSigner()).approve(state.smartLoanFactoryContract.address, toWei('2'));
-      const wrappedSmartLoanFactoryContract = WrapperBuilder.wrapLite(state.smartLoanFactoryContract).usingPriceFeed(config.dataProviderId)
+      const wrappedSmartLoanFactoryContract = WrapperBuilder.wrapLite(state.smartLoanFactoryContract).usingPriceFeed(config.dataProviderId);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32("AVAX"), state.wavaxTokenContract.address, toWei('2'), toBytes32("AVAX"), toWei('2'), {gasLimit: 50000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32('AVAX'), state.wavaxTokenContract.address, toWei('2'), toBytes32('AVAX'), toWei('2'), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'createAndFundLoan');
+    },
+
+    async getAllAssetsBalances({state, rootState, commit}) {
+      console.log(state.smartLoanContract);
+      const balances = await state.smartLoanContract.getAllAssetsBalances();
+      console.log(balances);
+
+      commit('setAssetBalances', balances);
     },
 
     async swapToWavax({state, rootState}) {
@@ -209,4 +211,4 @@ export default {
 
 
   }
-}
+};

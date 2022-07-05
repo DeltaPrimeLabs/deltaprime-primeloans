@@ -16,19 +16,17 @@
 
         <div class="header__cell">
           <div class="header__cell__label">Staked:</div>
-          <div class="header__cell__value">15.32</div>
+          <div class="header__cell__value">{{ totalStaked | smartRound }}</div>
         </div>
 
         <div class="header__cell">
           <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value">7.28%</div>
+          <div class="header__cell__value">{{ maxStakingApy | percent }}</div>
         </div>
 
         <div class="header__cell">
           <div class="header__cell__label">Available protocols:</div>
           <div class="protocols-list">
-            <img class="protocol__icon" src="src/assets/logo/btc.svg">
-            <img class="protocol__icon" src="src/assets/logo/eth.svg">
             <img class="protocol__icon" src="src/assets/logo/yak.svg">
           </div>
         </div>
@@ -39,7 +37,8 @@
         </div>
       </div>
 
-      <div class="staking-protocols" v-bind:class="{'expanded': tableBodyExpanded}">
+      <div class="staking-protocols" v-bind:class="{'expanded': tableBodyExpanded}"
+           :style="{height: calculateStakingProtocolsHeight}">
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
@@ -50,9 +49,10 @@
             <div class="table__header__cell">Actions</div>
           </div>
           <div class="table__body">
-            <StakingProtocolTableRow></StakingProtocolTableRow>
-            <StakingProtocolTableRow></StakingProtocolTableRow>
-            <StakingProtocolTableRow></StakingProtocolTableRow>
+            <StakingProtocolTableRow v-for="protocol in availableProtocols"
+                                     v-bind:key="protocol"
+                                     :protocol="stakingAsset.protocols[protocol]">
+            </StakingProtocolTableRow>
           </div>
         </div>
       </div>
@@ -68,12 +68,33 @@ import PoolEventsList from './PoolHistoryList';
 export default {
   name: 'StakingAssetBeta',
   components: {PoolEventsList, StakingProtocolTableRow},
+  props: {
+    stakingAsset: {
+      required: true
+    }
+  },
   data() {
     return {
       tableBodyExpanded: false,
       bodyHasCollapsed: true,
       stakingHeaderRoundBottom: false,
+      maxStakingApy: 0,
+      totalStaked: 0,
+      availableProtocols: null,
     };
+  },
+  mounted() {
+    this.setupMaxStakingApy();
+    this.setupTotalStaked();
+    this.setupAvailableProtocols();
+  },
+
+  computed: {
+    calculateStakingProtocolsHeight() {
+      const headerHeight = 53;
+      const numberOfProtocols = Object.keys(this.stakingAsset.protocols).length;
+      return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+    }
   },
 
   methods: {
@@ -93,6 +114,30 @@ export default {
         }, 180);
       }
     },
+
+    setupMaxStakingApy() {
+      const avaxFarmAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
+      const apysUrl = 'https://staging-api.yieldyak.com/apys';
+      fetch(apysUrl).then(response => {
+        return response.json();
+      }).then(apys => {
+        this.maxStakingApy = apys[avaxFarmAddress].apy / 100;
+      });
+    },
+
+    setupTotalStaked() {
+      console.log(this.stakingAsset);
+      const protocols = Object.keys(this.stakingAsset.protocols);
+      protocols.forEach(protocol => {
+        this.totalStaked += this.stakingAsset.protocols[protocol].balance;
+      });
+    },
+
+    setupAvailableProtocols() {
+      this.availableProtocols = Object.keys(this.stakingAsset.protocols);
+      console.log(this.availableProtocols);
+      console.log(this.availableProtocols['YAK_YIELD']);
+    }
   }
 };
 </script>
