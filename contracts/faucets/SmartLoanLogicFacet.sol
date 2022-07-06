@@ -160,7 +160,23 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
-    receive() external payable {}
+    //TODO: write test
+    function withdrawNativeToken(uint256 _amount) public payable virtual {
+        WAVAX native = SmartLoanLib.getNativeTokenWrapped();
+        require(native.balanceOf(address(this)) >= _amount, "Not enough AVAX to withdraw");
+        native.withdraw(_amount);
+        payable(msg.sender).safeTransferETH(_amount);
+
+        emit WithdrawNative(msg.sender, msg.value, block.timestamp);
+    }
+
+    receive() external payable {
+        depositNativeToken();
+    }
+
+    fallback() external payable {
+        depositNativeToken();
+    }
 
     /* ========== VIEW FUNCTIONS ========== */
 
@@ -176,7 +192,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
         return SmartLoanLib.getPercentagePrecision();
     }
 
-    function getPoolsAssetsIndices() public view virtual returns (uint8[2] memory) {
+    function getPoolsAssetsIndices() public view virtual returns (uint8[1] memory) {
         return SmartLoanLib.getPoolsAssetsIndices();
     }
 
@@ -283,7 +299,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
     * @param _minimumBought minimum amount of asset to be bought
     **/
     function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal returns(uint256[] memory) {
-        // mew
         IERC20Metadata soldToken = LTVLib.getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
@@ -431,12 +446,20 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard {
 
 
     /**
-    * @dev emitted when funds are repaid to the pool
-    * @param owner the address initiating repayment
+    * @dev emitted when native tokens are deposited to the SmartLoan
+    * @param owner the address initiating deposit
     * @param amount of repaid funds
     * @param timestamp of the repayment
     **/
     event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
+
+    /**
+    * @dev emitted when native tokens are withdrawn by the owner
+    * @param owner the address initiating withdraw
+    * @param amount of repaid funds
+    * @param timestamp of the repayment
+    **/
+    event WithdrawNative(address indexed owner,  uint256 amount, uint256 timestamp);
 
     struct RepayConfig {
         bool allowSwaps;
