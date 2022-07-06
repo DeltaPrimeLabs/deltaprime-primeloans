@@ -243,6 +243,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard {
         return liquidateYak(_targetUsdAmount * 10**8 / _prices[0], _to);
     }
 
+    //TODO: remove once liquidation is just sending tokens back to liquidator
     /**
     * Unstake AVAX amount to perform repayment to a pool
     * @param _targetAvaxAmount amount of AVAX to be repaid from staking position
