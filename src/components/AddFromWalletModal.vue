@@ -2,15 +2,7 @@
   <div v-if="asset" id="modal" class="borrow-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Borrow
-      </div>
-
-      <div class="modal-top-info">
-        <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ loanAPY | percent }}</div>
-        <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{poolTVL}}<span class="top-info__currency">{{ asset.symbol }}</span></div>
+        Add from wallet
       </div>
 
       <CurrencyInput :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
@@ -40,7 +32,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()"></Button>
+        <Button :label="'Add funds'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -54,7 +46,7 @@ import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 
 export default {
-  name: 'BorrowModal',
+  name: 'AddFromWalletModal',
   components: {
     Button,
     CurrencyInput,
@@ -66,10 +58,7 @@ export default {
   props: {
     asset: {},
     ltv: {},
-    totalCollateral: {},
-    loanAPY: {},
-    poolTVL: {},
-    maxLTV: {}
+    totalCollateral: {}
   },
 
   data() {
@@ -87,7 +76,7 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('borrow', this.value);
+      this.$emit('addFromWallet', this.value);
     },
 
     inputChange(change) {
@@ -100,14 +89,10 @@ export default {
       console.log(this.ltv);
       if (this.value) {
         const loan = this.totalCollateral * this.ltv;
-        this.ltvAfterTransaction = (loan + (this.value * this.asset.price)) / this.totalCollateral;
+        this.ltvAfterTransaction = loan / (this.totalCollateral + (this.value * this.asset.price));
       } else {
         this.ltvAfterTransaction = this.ltv;
       }
-    },
-
-    calculateMaxBorrowAmount() {
-
     }
   }
 };

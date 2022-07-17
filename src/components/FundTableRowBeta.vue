@@ -64,7 +64,7 @@
           v-for="(actionConfig, index) of actionsConfig"
           v-bind:key="index"
           :config="actionConfig"
-          v-on:menuOptionClick="openBorrowModal">
+          v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -94,9 +94,11 @@ import LoadedValue from './LoadedValue';
 import config from '../config';
 import redstone from 'redstone-api';
 import Vue from 'vue';
-import {mapState} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 import {aprToApy} from '../utils/calculate';
 import BorrowModal from './BorrowModal';
+import SwapModal from './SwapModal';
+import AddFromWalletModal from './AddFromWalletModal';
 
 
 export default {
@@ -132,6 +134,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions('fundsStore', ['swap', 'fund']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -207,18 +210,58 @@ export default {
         const priceChange = this.asset.price - price.value;
         Vue.set(this.asset, 'todayPriceChange', priceChange / this.asset.price);
       });
-
     },
 
-    openBorrowModal(key) {
+    actionClick(key) {
       console.log(key);
-      if (key === 'BORROW') {
-        const modalInstance = this.openModal(BorrowModal);
-        modalInstance.$on('borrow', (borrowEvent) => {
-          console.log('on borrow');
-          console.log(borrowEvent);
-        })
+      switch (key) {
+        case 'BORROW':
+          this.openBorrowModal()
+          break;
+        case 'SWAP':
+          this.openSwapModal();
+          break;
+        case 'ADD_FROM_WALLET':
+          this.openAddFromWalletModal();
+          break;
       }
+    },
+
+    openBorrowModal() {
+      const modalInstance = this.openModal(BorrowModal);
+      modalInstance.asset = this.asset;
+      modalInstance.ltv = 1.5;
+      modalInstance.totalCollateral = 101;
+      modalInstance.poolTVL = 11245;
+      modalInstance.loanAPY = this.loanAPY;
+      modalInstance.maxLTV = 4.5;
+      modalInstance.$on('borrow', (borrowEvent) => {
+        console.log('on borrow');
+        console.log(borrowEvent);
+      });
+    },
+
+    openSwapModal() {
+      const modalInstance = this.openModal(SwapModal);
+      modalInstance.sourceAsset = this.asset.symbol;
+      modalInstance.sourceAssetBalance = this.asset.balance;
+      console.log(this.asset);
+      modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
+      modalInstance.$on('swap', swapEvent => {
+        this.handleTransaction(this.swap, {swapEvent: swapEvent});
+      });
+    },
+
+    openAddFromWalletModal() {
+      const modalInstance = this.openModal(AddFromWalletModal);
+      modalInstance.asset = this.asset;
+      modalInstance.ltv = 1.5;
+      modalInstance.totalCollateral = 101;
+      modalInstance.$on('addFromWallet', value => {
+        this.handleTransaction(this.fund, {value: value}).then(() => {
+          this.closeModal();
+        })
+      })
     }
   }
 };

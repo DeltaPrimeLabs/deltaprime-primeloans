@@ -148,6 +148,12 @@ export default {
       }
       this.$emit('inputChange', this.value);
     },
+
+    setValue(value) {
+      console.log('setValue');
+      this.internalValue = String(value);
+      this.value = value;
+    },
   }
 };
 </script>
@@ -314,7 +320,7 @@ img {
   color: #7d7d7d;
   font-size: 14px;
   width: 100%;
-  text-align: end;
+  text-align: start;
 }
 
 .warning {

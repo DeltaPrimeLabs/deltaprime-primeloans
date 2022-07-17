@@ -195,7 +195,7 @@ export default {
 }
 
 .error {
-  text-align: end;
+  text-align: start;
   height: 24px;
   color: $red;
 

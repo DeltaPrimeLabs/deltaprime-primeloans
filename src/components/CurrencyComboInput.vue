@@ -1,23 +1,26 @@
 <template>
-  <div class="currency-combo-input-component">
+  <div class="currency-combo-input-component" v-if="displayedOptions && displayedOptions.length > 0">
     <div class="combo-input">
-      <CurrencyInput class="currency-input" :embedded="true"></CurrencyInput>
+<!--      <button v-on:click="test()">test</button>-->
+      <CurrencyInput ref="currencyInput" class="currency-input" :embedded="true" v-on:inputChange="currencyInputChange"></CurrencyInput>
       <div class="divider"></div>
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
-        <div class="selected-asset">
-          <img class="selected-asset__icon" src="src/assets/logo/btc.svg">
-          <div class="selected-asset__symbol">BTC</div>
+        <div v-if="selectedAsset" class="selected-asset">
+          <img class="selected-asset__icon" :src="selectedAsset.logo">
+          <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
         <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()">
+        <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div class="select-dropdown">
-          <input  class="dropdown__input" type="text" placeholder="search">
+          <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
+                 v-on:change="searchPhraseChange()">
           <div class="dropdown__list">
             <div class="dropdown__option"
                  v-for="assetOption in displayedOptions"
                  v-bind:key="assetOption.symbol"
                  v-on:click="selectOption(assetOption)">
               <img class="option__icon" :src="assetOption.logo">
-              <div class="option__symbol">{{assetOption.symbol}}</div>
+              <div class="option__symbol">{{ assetOption.symbol }}</div>
               <div class="option__name">{{ assetOption.name }}</div>
             </div>
           </div>
@@ -38,57 +41,117 @@ export default {
     CurrencyInput
   },
   props: {
-    value: {
-      type: String
+    assetOptions: {}
+  },
+  computed: {
+    getDisplayedAssetOptions() {
+      return this.displayedOptions;
     }
   },
-  computed: {},
   data() {
     return {
       expanded: false,
       hasBackground: false,
-      assetOptions: [],
       displayedOptions: [],
-      value: null
+      selectedAsset: null,
+      searchPhrase: null,
+      assetAmount: null,
     };
   },
   mounted() {
-    this.setupAssetOptions();
   },
   methods: {
     toggleSelect() {
       if (this.expanded) {
-        this.expanded = false;
-        setTimeout(() => {
-          this.hasBackground = false
-        }, 200);
+        this.closeDropdown();
       } else {
-        this.expanded = true;
-        this.hasBackground = true;
+        this.openDropdown();
       }
     },
 
-    setupAssetOptions() {
-      console.log(config.ASSETS_CONFIG);
-      Object.keys(config.ASSETS_CONFIG).forEach(assetSymbol => {
-        const asset = config.ASSETS_CONFIG[assetSymbol];
-        const assetOption = {
-          symbol: assetSymbol,
-          name: asset.name,
-          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
-        }
-        this.assetOptions.push(assetOption);
-        this.displayedOptions.push(assetOption);
-      })
+    closeDropdown() {
+      this.expanded = false;
+      setTimeout(() => {
+        this.hasBackground = false;
+      }, 200);
+    },
+
+    openDropdown() {
+      this.expanded = true;
+      this.hasBackground = true;
+    },
+
+    setupDisplayedAssetOptions() {
+      this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
     },
 
     searchOptions(searchPhrase) {
-      return this.assetOptions.filter(assetOption => assetOption.symbol.includes(searchPhrase) || assetOption.name.includes(searchPhrase));
+      if (searchPhrase) {
+        return this.assetOptions.filter(
+          assetOption => assetOption.symbol.toUpperCase().includes(searchPhrase.toUpperCase()) ||
+            assetOption.name.toUpperCase().includes(searchPhrase.toUpperCase()));
+      } else {
+        return this.assetOptions;
+      }
+    },
+
+    searchPhraseChange() {
+      this.displayedOptions = this.searchOptions(this.searchPhrase);
     },
 
     selectOption(option) {
-      this.value = option;
-    }
+      this.selectedAsset = option;
+      console.log('select option emit');
+      this.emitValue();
+      this.toggleSelect();
+    },
+
+    dropdownPanelClick() {
+      if (this.expanded) {
+        this.closeDropdown();
+      }
+    },
+
+    test() {
+    },
+
+    setSelectedAsset(asset, disableEmitValue) {
+      this.selectedAsset = this.displayedOptions.find(option => option.symbol === asset);
+      if (!disableEmitValue) {
+        console.log('select asset emit');
+        this.emitValue();
+      }
+    },
+
+    currencyInputChange(value, disableEmitValue) {
+      this.assetAmount = value;
+      if (!disableEmitValue) {
+        console.log('currencyInputChange emit');
+        this.emitValue();
+      }
+    },
+
+    emitValue() {
+      this.$emit('valueChange', {asset: this.selectedAsset.symbol, value: this.assetAmount});
+    },
+
+    setCurrencyInputValue(value) {
+      this.$refs.currencyInput.setValue(value)
+    },
+
+  },
+  watch: {
+    searchPhrase: {
+      handler() {
+        this.searchPhraseChange();
+      },
+    },
+
+    assetOptions: {
+      handler() {
+        this.setupDisplayedAssetOptions();
+      }
+    },
   }
 };
 </script>
@@ -129,6 +192,7 @@ export default {
         display: flex;
         flex-direction: row;
         align-items: center;
+        min-width: 105px;
 
         .selected-asset__icon {
           width: 34px;
@@ -149,6 +213,15 @@ export default {
         transition: transform 200ms ease-in-out;
       }
 
+      .dropdown-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -1;
+      }
+
       .select-dropdown {
         position: absolute;
         top: 52px;
@@ -164,6 +237,7 @@ export default {
         background-color: transparent;
         overflow-y: hidden;
         transition: height 200ms ease-in-out;
+        z-index: 2;
 
         .dropdown__input {
           border: none;

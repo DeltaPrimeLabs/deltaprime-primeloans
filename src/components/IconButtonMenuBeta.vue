@@ -46,7 +46,7 @@ export default {
 
     menuOptionClick(option) {
       console.log(option);
-      this.$emit('menuOptionClick', option.key);
+      this.$emit('iconButtonClick', option.key);
     }
   },
 };

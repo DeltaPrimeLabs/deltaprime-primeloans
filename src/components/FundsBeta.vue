@@ -8,6 +8,7 @@
     <button v-on:click="testLoanClick()">test loan</button>
     <button v-on:click="depositClick()">deposit</button>
     <button v-on:click="getAllAssetsBalancesClick()">balances</button>
+    <button v-on:click="testModal()">test swap</button>
     <div class="funds">
       <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
@@ -42,6 +43,7 @@ import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
 import {fromWei} from '../utils/calculate';
+import SwapModal from './SwapModal';
 
 export default {
   name: 'FundsBeta',
@@ -95,7 +97,9 @@ export default {
     },
 
     testModal() {
-      const modalInstance = this.openModal(BorrowModal);
+      const swapModalInstance = this.openModal(SwapModal);
+      swapModalInstance.sourceAsset = 'BTC';
+      swapModalInstance.targetAsset = 'AVAX';
     },
 
     getAllAssetsBalancesClick() {
@@ -151,7 +155,9 @@ export default {
               this.updateFund(symbol, 'prices', prices);
               this.updateFund(symbol, 'minPrice', minPrice);
               this.updateFund(symbol, 'maxPrice', maxPrice);
-              this.updateFund(symbol, 'balance', fromWei(this.assetBalances[index]));
+              if (this.assetBalances && this.assetBalances[index]) {
+                this.updateFund(symbol, 'balance', fromWei(this.assetBalances[index]));
+              }
             }
           );
         })
