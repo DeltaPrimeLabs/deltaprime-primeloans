@@ -8,6 +8,7 @@ import DepositNft from "@/components/DepositNft";
 import Admin from "@/pages/Admin";
 import PrimeAccount from "@/pages/PrimeAccount";
 import PrimeAccountBeta from '../pages/PrimeAccountBeta';
+import PoolsBeta from '../components/PoolsBeta';
 
 
 Vue.use(Router)
@@ -19,6 +20,11 @@ export default new Router({
       path: '/pool',
       name: 'Pool',
       component: Pool
+    },
+    {
+      path: '/pool-beta',
+      name: 'Pools Beta',
+      component: PoolsBeta
     },
     {
       path: '/prime-account',

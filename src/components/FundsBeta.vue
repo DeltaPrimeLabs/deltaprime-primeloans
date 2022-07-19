@@ -1,6 +1,6 @@
 <template>
   <div class="funds-beta-component">
-    <button v-on:click="fundClick()">fund</button>
+<!--    <button v-on:click="fundClick()">fund</button>
     <button v-on:click="borrowClick()">borrow</button>
     <button v-on:click="wavaxSwap()">WavaxSwap</button>
     <button v-on:click="createLoanClick()">create loan</button>
@@ -8,7 +8,7 @@
     <button v-on:click="testLoanClick()">test loan</button>
     <button v-on:click="depositClick()">deposit</button>
     <button v-on:click="getAllAssetsBalancesClick()">balances</button>
-    <button v-on:click="testModal()">test swap</button>
+    <button v-on:click="testModal()">test swap</button>-->
     <div class="funds">
       <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">

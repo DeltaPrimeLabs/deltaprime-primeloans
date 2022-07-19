@@ -196,12 +196,6 @@ export default {
       console.log(asset);
     },
 
-    getAssetIcon(assetSymbol) {
-      assetSymbol = assetSymbol ? assetSymbol : 'avax';
-      const asset = config.ASSETS_CONFIG[assetSymbol.toUpperCase()];
-      return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
-    },
-
     setup24HourChange() {
       const date24HoursAgo = Date.now() - 1000 * 3600 * 24;
       redstone.getHistoricalPrice(this.asset.symbol, {

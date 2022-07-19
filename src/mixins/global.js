@@ -108,6 +108,11 @@ export default {
       const modalComponent = document.getElementById('modal');
       document.body.removeChild(modalComponent);
     },
+
+    getAssetIcon(assetSymbol) {
+      const asset = config.ASSETS_CONFIG[assetSymbol.toUpperCase()];
+      return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
+    },
   },
   computed: {
     ...mapState('network', ['provider', 'avaxPrice']),

@@ -1,9 +1,9 @@
 <template>
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
-      <stats-bar-element-beta :label="'Total value'" :value="avaxToUSD(totalValue) | usd">
+      <stats-bar-element-beta :label="'Total value'" :value="avaxToUSD(8) | usd">
         <div class="total-value-extra">
-          Today: <colored-value-beta :value="203.45" :formatting="'usd'"></colored-value-beta>
+          Today: <colored-value-beta :value="23.45" :formatting="'usd'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
       <stats-bar-element-beta v-if="ltv" :label="'LTV'" :value="ltv | percent">
@@ -15,7 +15,7 @@
 
       <stats-bar-element-beta :label="'Profit'" :value="12.56 | usd">
         <div class="profit-extra">
-          <colored-value-beta :value="-0.1593" :formatting="'percent'"></colored-value-beta>
+          <colored-value-beta :value="0.1593" :formatting="'percent'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
     </div>

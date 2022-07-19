@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="container">
-      <StatsBarBeta :total-value="totalValue" :today-p-n-l="1" :ltv="ltv" :profit="1" :profit-percentage="1"></StatsBarBeta>
+      <StatsBarBeta :total-value="totalValue" :today-p-n-l="1" :ltv="1.53" :profit="1" :profit-percentage="1"></StatsBarBeta>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
