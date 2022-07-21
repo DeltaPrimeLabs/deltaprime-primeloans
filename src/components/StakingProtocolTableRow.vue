@@ -39,7 +39,7 @@
       <div class="table__cell">
         <div class="actions">
           <img class="action" src="src/assets/icons/plus.svg" v-on:click="openStakeModal()">
-          <img class="action" src="src/assets/icons/minus.svg" v-on:click="openSwapModal()">
+          <img class="action" src="src/assets/icons/minus.svg" v-on:click="openUnstakeModal()">
         </div>
       </div>
 
@@ -49,7 +49,7 @@
 
 <script>
 import StakeModal from './StakeModal';
-import SwapModal from './SwapModal';
+import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 
 
@@ -57,6 +57,9 @@ export default {
   name: 'StakingProtocolTableRow',
   props: {
     protocol: {
+      required: true,
+    },
+    asset: {
       required: true,
     }
   },
@@ -79,27 +82,29 @@ export default {
     }
   },
   methods: {
-    ...mapActions('stakeStore', ['stakeAvaxYak']),
+    ...mapActions('stakeStore', ['stakeAvaxYak', 'unstakeAvaxYak']),
     openStakeModal() {
-      console.log('open stake modal');
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.available = 1;
+      modalInstance.available = this.asset.balance;
       modalInstance.staked = this.protocol.balance;
-      modalInstance.$on('stake', (stakeEvent) => {
-        console.log(stakeEvent);
-        this.handleTransaction(this.stakeAvaxYak({amount: stakeEvent})).then(result => {
-          console.log(result);
+      modalInstance.asset = this.asset;
+      modalInstance.$on('STAKE', (stakeValue) => {
+        this.handleTransaction(this.stakeAvaxYak({amount: stakeValue})).then(result => {
           this.closeModal();
         })
       });
     },
 
-    openSwapModal() {
-      console.log('open stake modal');
-      const modalInstance = this.openModal(SwapModal);
-      modalInstance.$on('stake', (stakeEvent) => {
-        console.log(stakeEvent);
+    openUnstakeModal() {
+      const modalInstance = this.openModal(UnstakeModal);
+      modalInstance.apy = this.apy;
+      modalInstance.staked = this.protocol.balance;
+      modalInstance.asset = this.asset;
+      modalInstance.$on('UNSTAKE', (unstakeValue) => {
+        this.handleTransaction(this.unstakeAvaxYak({amount: unstakeValue})).then(result => {
+          this.closeModal();
+        })
       });
     },
 

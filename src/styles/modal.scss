@@ -55,3 +55,45 @@
   justify-content: center;
   margin-top: 48px;
 }
+
+.summary__title {
+  .pool {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 5px;
+
+    .pool__icon {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      margin-right: 9px;
+    }
+
+    .pool__name {
+      font-weight: 600;
+      color: black;
+    }
+  }
+}
+
+.summary__title {
+  .protocol {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 5px;
+
+    .protocol__icon {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      margin-right: 9px;
+    }
+
+    .protocol__name {
+      font-weight: 600;
+      color: black;
+    }
+  }
+}

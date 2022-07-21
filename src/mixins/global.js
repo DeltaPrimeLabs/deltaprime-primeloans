@@ -30,11 +30,11 @@ export default {
       return parseInt(hex, 16);
     },
 
-    formatTokenBalance(balance) {
-      const balanceOrderOfMagnitudeExponent = String(balance).split('.')[0].length - 1;
+    formatTokenBalance(value) {
+      const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
       const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
-      return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
+      return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
     },
 
     async handleTransaction(fun, args, onSuccess, onFail) {

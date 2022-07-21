@@ -64,8 +64,8 @@
 import LoadedValue from './LoadedValue';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
-import WithdrawModal from './WithdrawModal';
 import {mapActions} from 'vuex';
+import PoolWithdrawModal from './PoolWithdrawModal';
 
 
 export default {
@@ -86,7 +86,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit']),
+    ...mapActions('poolStore', ['deposit', 'withdraw']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -103,7 +103,6 @@ export default {
     },
 
     actionClick(key) {
-      console.log(key);
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
@@ -120,17 +119,21 @@ export default {
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.$on('DEPOSIT', deposit => {
-        this.handleTransaction()
+        this.handleTransaction(this.deposit, {amount: deposit}).then(() => {
+          this.closeModal();
+        })
       });
     },
 
     openWithdrawModal() {
-      const modalInstance = this.openModal(WithdrawModal);
+      const modalInstance = this.openModal(PoolWithdrawModal);
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
-      modalInstance.$on('DEPOSIT', deposit => {
-        console.log(deposit);
+      modalInstance.$on('WITHDRAW', withdraw => {
+        this.handleTransaction(this.withdraw, {amount: withdraw}).then(() => {
+          this.closeModal();
+        })
       });
     },
 

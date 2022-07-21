@@ -1,19 +1,19 @@
 <template>
-  <div id="modal" class="deposit-modal-component modal-component">
+  <div id="modal" class="pool-withdraw-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Deposit
+        Withdraw
       </div>
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__label">Deposit:</div>
+        <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="'AVAX'" v-on:newValue="depositValueChange" :max="Number(available)"></CurrencyInput>
+      <CurrencyInput :symbol="'AVAX'" v-on:newValue="withdrawValueChange" :max="Number(deposit)"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -30,7 +30,7 @@
               Deposit:
             </div>
             <div class="summary__value">
-              {{ deposit + depositValue | smartRound }} <span class="currency">AVAX</span>
+              {{ deposit - withdrawValue > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">AVAX</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
@@ -57,7 +57,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 
 export default {
-  name: 'DepositModal',
+  name: 'PoolWithdrawModal',
   components: {
     Button,
     CurrencyInput,
@@ -73,25 +73,30 @@ export default {
 
   data() {
     return {
-      depositValue: 0,
+      withdrawValue: 0,
     }
   },
 
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (this.deposit + this.depositValue);
+      const value = this.deposit - this.withdrawValue;
+      if (value > 0) {
+        return this.apy / 365 * value;
+      } else {
+        return 0;
+      }
     }
   },
 
   methods: {
     submit() {
-      this.$emit('DEPOSIT', this.depositValue);
+      this.$emit('WITHDRAW', this.withdrawValue);
     },
 
 
-    depositValueChange(event) {
+    withdrawValueChange(event) {
       console.log(event.value);
-      this.depositValue = event.value;
+      this.withdrawValue = event.value;
     },
   }
 };

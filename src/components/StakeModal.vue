@@ -18,9 +18,9 @@
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div class="stake-protocol">
-              <img class="stake-protocol__icon" src="src/assets/logo/yak.svg">
-              <div class="stake-protocol__name">Yak protocol</div>
+            <div class="protocol">
+              <img class="protocol__icon" src="src/assets/logo/yak.svg">
+              <div class="protocol__name">Yak protocol</div>
               ,
             </div>
             Values after confirmation:
@@ -66,9 +66,10 @@ export default {
   },
 
   props: {
-    apy: null,
-    available: null,
-    staked: null,
+    apy: {},
+    available: {},
+    staked: {},
+    asset: {}
   },
 
   data() {
@@ -85,7 +86,7 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('stake', this.stakeValue);
+      this.$emit('STAKE', this.stakeValue);
     },
 
 
@@ -100,26 +101,4 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
-
-.summary__title {
-  .stake-protocol {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    margin-right: 5px;
-
-    .stake-protocol__icon {
-      height: 22px;
-      width: 22px;
-      border-radius: 50%;
-      margin-right: 9px;
-    }
-
-    .stake-protocol__name {
-      font-weight: 600;
-      color: black;
-    }
-  }
-}
-
 </style>

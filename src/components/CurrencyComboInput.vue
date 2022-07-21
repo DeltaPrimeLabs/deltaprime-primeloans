@@ -101,7 +101,6 @@ export default {
 
     selectOption(option) {
       this.selectedAsset = option;
-      console.log('select option emit');
       this.emitValue();
       this.toggleSelect();
     },
@@ -118,7 +117,6 @@ export default {
     setSelectedAsset(asset, disableEmitValue) {
       this.selectedAsset = this.displayedOptions.find(option => option.symbol === asset);
       if (!disableEmitValue) {
-        console.log('select asset emit');
         this.emitValue();
       }
     },
@@ -126,7 +124,6 @@ export default {
     currencyInputChange(value, disableEmitValue) {
       this.assetAmount = value;
       if (!disableEmitValue) {
-        console.log('currencyInputChange emit');
         this.emitValue();
       }
     },

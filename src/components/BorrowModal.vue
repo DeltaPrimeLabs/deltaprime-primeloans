@@ -33,7 +33,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance + value }} {{ asset.symbol }}
+              {{ asset.balance + value | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -87,7 +87,7 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('borrow', this.value);
+      this.$emit('BORROW', this.value);
     },
 
     inputChange(change) {

@@ -1,36 +1,36 @@
 <template>
-  <div id="modal" class="deposit-modal-component modal-component">
+  <div v-if="asset" id="modal" class="unstake-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Deposit
+        Unstake
       </div>
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__label">Staked:</div>
+        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="'AVAX'" v-on:newValue="depositValueChange" :max="Number(available)"></CurrencyInput>
+      <CurrencyInput :symbol="asset.symbol" v-on:newValue="unstakeValueChange"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div class="pool">
-              <img class="pool__icon" src="src/assets/logo/avax.svg">
-              <div class="pool__name">AVAX Pool</div>
+            <div class="protocol">
+              <img class="protocol__icon" src="src/assets/logo/yak.svg">
+              <div class="protocol__name">Yak protocol</div>
               ,
             </div>
             Values after confirmation:
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              Deposit:
+              Staked:
             </div>
             <div class="summary__value">
-              {{ deposit + depositValue | smartRound }} <span class="currency">AVAX</span>
+              {{ staked - unstakeValue > 0 ? staked - unstakeValue : 0 | smartRound }} <span class="currency">AVAX</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
@@ -44,7 +44,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Deposit'" v-on:click="submit()"></Button>
+        <Button :label="'Unstake'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -57,7 +57,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 
 export default {
-  name: 'DepositModal',
+  name: 'StakeModal',
   components: {
     Button,
     CurrencyInput,
@@ -66,32 +66,36 @@ export default {
   },
 
   props: {
-    apy: null,
-    available: null,
-    deposit: null,
+    apy: {},
+    available: {},
+    staked: {},
+    asset: {}
   },
 
   data() {
     return {
-      depositValue: 0,
+      unstakeValue: 0,
     }
   },
 
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (this.deposit + this.depositValue);
+      const balance = this.staked - this.unstakeValue;
+      if (balance <= 0) {
+        return 0;
+      } else {
+        return this.apy / 365 * balance;
+      }
     }
   },
 
   methods: {
     submit() {
-      this.$emit('DEPOSIT', this.depositValue);
+      this.$emit('UNSTAKE', this.unstakeValue);
     },
 
-
-    depositValueChange(event) {
-      console.log(event.value);
-      this.depositValue = event.value;
+    unstakeValueChange(event) {
+      this.unstakeValue = event.value;
     },
   }
 };
@@ -100,5 +104,4 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
-
 </style>

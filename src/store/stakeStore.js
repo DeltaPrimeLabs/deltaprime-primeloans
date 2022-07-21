@@ -67,7 +67,7 @@ export default {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
       const wavaxTokenContract = rootState.fundsStore.wavaxTokenContract;
 
-      await wavaxTokenContract.connect(provider.getSigner()).approve(smartLoanContract.address, toWei('200'));
+      await wavaxTokenContract.connect(provider.getSigner()).approve(smartLoanContract.address, toWei(String(amount)));
       const stakeTransaction = await smartLoanContract.stakeAVAXYak(toWei(String(amount)), {gasLimit: 1100000});
 
       await awaitConfirmation(stakeTransaction, provider, 'stakeAvaxYak');
@@ -81,11 +81,11 @@ export default {
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const receiptToAvaxConversionRate = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptToAvaxConversionRate;
+      const receiptToAvaxConversionRate = state.stakedAssets.AVAX.protocols.YAK_YIELD.receiptToAvaxConversionRate;
       const receiptTokenAmount = amount / receiptToAvaxConversionRate;
       let receiptTokenAmountWei = toWei(String(receiptTokenAmount));
-      if (receiptTokenAmountWei.gt(state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei)) {
-        receiptTokenAmountWei = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei
+      if (receiptTokenAmountWei.gt(state.stakedAssets.AVAX.protocols.YAK_YIELD.receiptTokenBalanceWei)) {
+        receiptTokenAmountWei = state.state.stakedAssets.AVAX.protocols.YAK_YIELD.receiptTokenBalanceWei
       }
 
       const unstakeTransaction = await smartLoanContract.unstakeAVAXYak(receiptTokenAmountWei, {gasLimit: 1100000});

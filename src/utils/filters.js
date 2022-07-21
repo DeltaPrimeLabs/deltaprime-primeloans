@@ -58,8 +58,8 @@ export default function setupFilters() {
   });
 
   Vue.filter('smartRound', function (value) {
-    const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
-    const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
+    const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+    const precisionMultiplierExponent = 5 - valueOrderOfMagnitudeExponent;
     const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
     return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
   });

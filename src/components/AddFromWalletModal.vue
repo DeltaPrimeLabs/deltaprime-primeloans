@@ -25,7 +25,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance + value }} {{ asset.symbol }}
+              {{ asset.balance + value | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -76,7 +76,7 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('addFromWallet', this.value);
+      this.$emit('ADD_FROM_WALLET', this.value);
     },
 
     inputChange(change) {

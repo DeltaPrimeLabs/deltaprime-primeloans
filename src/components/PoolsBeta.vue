@@ -4,7 +4,7 @@
       <div class="main-content">
         <Block :bordered="true">
           <div class="title">Deposits</div>
-          <NameValueBadgeBeta :name="'All deposits'">{{ 12124.42 | usd }}</NameValueBadgeBeta>
+          <NameValueBadgeBeta :name="'All deposits'">{{ totalTVL | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table" v-if="funds">
               <div class="pools-table__header">
@@ -51,43 +51,57 @@ export default {
   async mounted() {
     if (window.provider) {
       await this.fundsStoreSetup();
+      await this.poolStoreSetup();
+      this.setupPools();
     } else {
       setTimeout(async () => {
         await this.fundsStoreSetup();
+        await this.poolStoreSetup();
+        this.setupPools();
       }, 1000);
-    }
 
-    this.setupPools();
+    }
   },
 
   data() {
     return {
       pools: null,
       funds: config.ASSETS_CONFIG,
+      totalTVL: 0,
     };
   },
   computed: {
     ...mapState('fundsStore', ['assets']),
-
+    ...mapState('poolStore', ['pool']),
   },
 
   methods: {
+    ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     setupPools() {
       this.pools = [
         {
           asset: config.ASSETS_CONFIG['AVAX'],
-          deposit: 115.2,
-          apy: 0.01252,
+          deposit: fromWei(this.pool.deposit),
+          apy: fromWei(this.pool.apy),
           interest: 0.0112,
-          tvl: 87954.1235
+          tvl: fromWei(this.pool.tvl)
         }
       ];
+      this.setupTotalTVL();
     },
 
     async updateFunds(funds) {
       this.funds = funds;
     },
+
+    setupTotalTVL() {
+      let totalTVL = 0;
+      this.pools.forEach(pool => {
+        totalTVL += pool.tvl * pool.asset.price;
+      })
+      this.totalTVL = totalTVL;
+    }
   },
   watch: {
     assets: {

@@ -14,6 +14,7 @@ import {WrapperBuilder} from 'redstone-evm-connector';
 import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from '../utils/graph';
 import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
+import {from} from 'apollo-boost';
 
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
@@ -38,24 +39,66 @@ const wavaxAbi = [
 
 export default {
   namespaced: true,
-  state: {},
+  state: {
+    poolContract: null,
+    pool: null,
+  },
   getters: {},
-  mutations: {},
+  mutations: {
+    setPoolContract(state, poolContract) {
+      state.poolContract = poolContract;
+    },
+
+    setPool(state, pool) {
+      state.pool = pool;
+    },
+  },
   actions: {
 
-    async setup({dispatch}) {
+    async poolStoreSetup({dispatch}) {
+      await dispatch('setupPoolContract');
+      await dispatch('setupPool')
+    },
 
+    async setupPoolContract({rootState, commit}) {
+      console.log('setupPoolContract');
+      const provider = rootState.network.provider;
+      const poolContract = new ethers.Contract(POOL_TUP.address, POOL.abi, provider.getSigner());
+      console.log(poolContract);
+      commit('setPoolContract', poolContract);
+    },
+
+    async setupPool({state, rootState, commit}) {
+      const tvl = await state.poolContract.totalSupply();
+      const deposit = await state.poolContract.balanceOf(rootState.network.account);
+      const depositAPY = await state.poolContract.getDepositRate();
+
+      const pool = {
+        tvl: tvl,
+        deposit: deposit,
+        apy: depositAPY
+      };
+      console.log(pool);
+      commit('setPool', pool);
     },
 
     async deposit({state, rootState, commit, dispatch}, {amount}) {
       const provider = rootState.network.provider;
 
       const wavaxTokenContract = rootState.fundsStore.wavaxTokenContract;
-      const poolContract = new ethers.Contract(POOL_TUP.address, POOL.abi, provider.getSigner());
 
-      await wavaxTokenContract.connect(provider.getSigner()).approve(poolContract.address, toWei(String(amount)));
-      await poolContract.connect(provider.getSigner()).deposit(toWei(String(amount)));
+      await wavaxTokenContract.connect(provider.getSigner()).approve(state.poolContract.address, toWei(String(amount)));
+      await state.poolContract.connect(provider.getSigner()).deposit(toWei(String(amount)));
 
-    }
+    },
+
+    async withdraw({state, rootState, commit, dispatch}, {amount}) {
+      const provider = rootState.network.provider;
+
+      const wavaxTokenContract = rootState.fundsStore.wavaxTokenContract;
+
+      await wavaxTokenContract.connect(provider.getSigner()).approve(state.poolContract.address, toWei(String(amount)));
+      await state.poolContract.connect(provider.getSigner()).withdraw(toWei(String(amount)));
+    },
   },
 }

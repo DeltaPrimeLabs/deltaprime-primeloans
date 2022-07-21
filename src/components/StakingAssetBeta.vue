@@ -1,15 +1,15 @@
 <template>
-  <div class="staking-asset-component">
+  <div v-if="assetSymbol && asset" class="staking-asset-component">
     <div class="staking-asset">
       <div class="staking-asset__header"
            v-bind:class="{'body-collapsed': bodyHasCollapsed, 'round-bottom': stakingHeaderRoundBottom}">
         <div class="header__cell">
           <div class="asset">
             <div class="asset__icon">
-              <img src="src/assets/icons/avax-icon.svg">
+              <img :src="logoSrc(asset.symbol)">
             </div>
             <div class="asset__name">
-              AVAX
+              {{asset.name}}
             </div>
           </div>
         </div>
@@ -51,7 +51,8 @@
           <div class="table__body">
             <StakingProtocolTableRow v-for="protocol in availableProtocols"
                                      v-bind:key="protocol"
-                                     :protocol="stakingAsset.protocols[protocol]">
+                                     :protocol="stakingOptions.protocols[protocol]"
+                                     :asset="asset">
             </StakingProtocolTableRow>
           </div>
         </div>
@@ -64,13 +65,18 @@
 <script>
 import StakingProtocolTableRow from './StakingProtocolTableRow';
 import PoolEventsList from './PoolHistoryList';
+import config from '@/config';
+
 
 export default {
   name: 'StakingAssetBeta',
   components: {PoolEventsList, StakingProtocolTableRow},
   props: {
-    stakingAsset: {
-      required: true
+    stakingOptions: {
+      required: true,
+    },
+    assetSymbol: {
+      required: true,
     }
   },
   data() {
@@ -81,18 +87,22 @@ export default {
       maxStakingApy: 0,
       totalStaked: 0,
       availableProtocols: null,
+      asset: null,
     };
   },
   mounted() {
+    console.log(this.asset);
     this.setupMaxStakingApy();
     this.setupTotalStaked();
     this.setupAvailableProtocols();
+
+    this.asset = config.ASSETS_CONFIG[this.assetSymbol];
   },
 
   computed: {
     calculateStakingProtocolsHeight() {
       const headerHeight = 53;
-      const numberOfProtocols = Object.keys(this.stakingAsset.protocols).length;
+      const numberOfProtocols = Object.keys(this.stakingOptions.protocols).length;
       return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
     }
   },
@@ -126,15 +136,15 @@ export default {
     },
 
     setupTotalStaked() {
-      console.log(this.stakingAsset);
-      const protocols = Object.keys(this.stakingAsset.protocols);
+      console.log(this.stakingOptions);
+      const protocols = Object.keys(this.stakingOptions.protocols);
       protocols.forEach(protocol => {
-        this.totalStaked += this.stakingAsset.protocols[protocol].balance;
+        this.totalStaked += this.stakingOptions.protocols[protocol].balance;
       });
     },
 
     setupAvailableProtocols() {
-      this.availableProtocols = Object.keys(this.stakingAsset.protocols);
+      this.availableProtocols = Object.keys(this.stakingOptions.protocols);
       console.log(this.availableProtocols);
       console.log(this.availableProtocols['YAK_YIELD']);
     }

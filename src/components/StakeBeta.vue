@@ -2,7 +2,8 @@
   <div class="stake-beta-component">
     <StakingAssetBeta v-for="asset in assetsAvailableForStaking"
                       v-bind:key="asset"
-                      :stakingAsset="stakedAssets[asset]">
+                      :stakingOptions="stakedAssets[asset]"
+                      :assetSymbol="asset">
     </StakingAssetBeta>
   </div>
 </template>

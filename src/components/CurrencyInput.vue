@@ -150,7 +150,6 @@ export default {
     },
 
     setValue(value) {
-      console.log('setValue');
       this.internalValue = String(value);
       this.value = value;
     },

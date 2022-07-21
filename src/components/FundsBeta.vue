@@ -42,8 +42,9 @@ import {mapState, mapActions} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
-import {fromWei} from '../utils/calculate';
+import {fromWei, formatUnits} from '../utils/calculate';
 import SwapModal from './SwapModal';
+
 
 export default {
   name: 'FundsBeta',
@@ -156,7 +157,12 @@ export default {
               this.updateFund(symbol, 'minPrice', minPrice);
               this.updateFund(symbol, 'maxPrice', maxPrice);
               if (this.assetBalances && this.assetBalances[index]) {
-                this.updateFund(symbol, 'balance', fromWei(this.assetBalances[index]));
+                const balance = formatUnits(this.assetBalances[index], config.ASSETS_CONFIG[symbol].decimals);
+                if (balance > 0) {
+                  this.updateFund(symbol, 'balance', balance);
+                } else {
+                  this.updateFund(symbol, 'balance', null);
+                }
               }
             }
           );

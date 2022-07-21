@@ -34,7 +34,7 @@ const wavaxAbi = [
   ...erc20ABI
 ];
 
-const nullAddress = '0x0000000000000000000000000000000000000000';
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   namespaced: true,
@@ -80,10 +80,11 @@ export default {
   },
   actions: {
     async fundsStoreSetup({state, dispatch}) {
+      console.log('fundsStoreSetup');
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
       await dispatch('setupContracts');
-      if (state.smartLoanContract.address !== nullAddress) {
+      if (state.smartLoanContract.address !== NULL_ADDRESS) {
         await dispatch('getAllAssetsBalances');
       }
     },
@@ -94,8 +95,6 @@ export default {
       let supported = ((await pangolinContract.getAllAssets())).map(
         asset => ethers.utils.parseBytes32String(asset)
       );
-
-      console.log(supported);
 
       commit('setSupportedAssets', supported);
     },
@@ -143,8 +142,6 @@ export default {
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
       const wrappedSmartLoanContract = WrapperBuilder.wrapLite(smartLoanContract).usingPriceFeed(config.dataProviderId);
-      console.log('wrappedSmartLoanContract');
-      console.log(wrappedSmartLoanContract);
 
       if (wrappedSmartLoanContract) {
         commit('setSmartLoanContract', wrappedSmartLoanContract);
@@ -169,10 +166,9 @@ export default {
     },
 
     async getAllAssetsBalances({state, rootState, commit}) {
-      console.log(state.smartLoanContract);
       const balances = await state.smartLoanContract.getAllAssetsBalances();
+      console.log('getAllAssetBalances');
       console.log(balances);
-
       commit('setAssetBalances', balances);
     },
 
@@ -191,44 +187,43 @@ export default {
       await dispatch('getAllAssetsBalances');
     },
 
-    async withdraw({state, rootState, commit, dispatch}) {
+    async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
+      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(withdrawRequest.amount)));
+      const transaction = await state.smartLoanContract.withdraw(toBytes32(withdrawRequest.asset), toWei(String(withdrawRequest.amount)), {gasLimit: 50000000});
 
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei('200'));
-      const transaction = await state.smartLoanContract.withdraw(toBytes32('AVAX'), toWei('10'), {gasLimit: 50000000});
-
-      await awaitConfirmation(transaction, provider, 'fund');
+      await awaitConfirmation(transaction, provider, 'withdraw');
     },
 
-    async borrow({state, rootState, commit, dispatch}) {
+    async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       const provider = rootState.network.provider;
 
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei('5'));
-      const transaction = await state.smartLoanContract.borrow(toBytes32('AVAX'), toWei('2'), {gasLimit: 50000000});
+      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(borrowRequest.amount)));
+      const transaction = await state.smartLoanContract.borrow(toBytes32(borrowRequest.asset), toWei(String(borrowRequest.amount)), {gasLimit: 50000000});
 
-      await awaitConfirmation(transaction, provider, 'fund');
+      await awaitConfirmation(transaction, provider, 'borrow');
     },
 
-    async repay({state, rootState, commit, dispatch}) {
+    async repay({state, rootState, commit, dispatch}, {repayRequest}) {
       const provider = rootState.network.provider;
 
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei('200'));
-      const transaction = await state.smartLoanContract.repay(toBytes32('AVAX'), toWei('10'), {gasLimit: 50000000});
+      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(repayRequest.amount)));
+      const transaction = await state.smartLoanContract.repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
 
-      await awaitConfirmation(transaction, provider, 'fund');
+      await awaitConfirmation(transaction, provider, 'repay');
     },
 
-    async swap({state, rootState, commit, dispatch}, {swapEvent}) {
-      console.log(swapEvent);
+    async swap({state, rootState, commit, dispatch}, {swapRequest}) {
+      console.log(swapRequest);
       const provider = rootState.network.provider;
       const transaction = await state.smartLoanContract.swap(
-        toBytes32(swapEvent.sourceAsset),
-        toBytes32(swapEvent.targetAsset),
-        toWei(String(swapEvent.sourceAmount)),
-        toWei(String(swapEvent.targetAmount - 1)),
+        toBytes32(swapRequest.sourceAsset),
+        toBytes32(swapRequest.targetAsset),
+        parseUnits(String(swapRequest.sourceAmount), config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals),
+        parseUnits(String(0), config.ASSETS_CONFIG[swapRequest.targetAsset].decimals),
       )
 
-      await awaitConfirmation(transaction, provider, 'swap');
+      await awaitConfirmatieon(transaction, provider, 'swap');
     },
 
 

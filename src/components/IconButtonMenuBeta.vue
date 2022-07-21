@@ -23,7 +23,8 @@ export default {
   },
   mounted() {
     document.addEventListener('click', (event) => {
-      if (!document.getElementById('icon-button-menu-component').contains(event.target) && event.target.id !== 'icon-button') {
+      const iconMenuButtonComponent = document.getElementById('icon-button-menu-component');
+      if (iconMenuButtonComponent && !iconMenuButtonComponent.contains(event.target) && event.target.id !== 'icon-button') {
         if (this.menuOpen) {
           this.menuOpen = false;
         }

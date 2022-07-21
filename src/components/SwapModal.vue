@@ -83,7 +83,7 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('swap',{
+      this.$emit('SWAP',{
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
         sourceAmount: this.sourceAssetAmount,
