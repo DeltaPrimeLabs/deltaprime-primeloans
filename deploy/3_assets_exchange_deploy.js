@@ -10,7 +10,15 @@ const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
 const supportedAssets = [
     asset('AVAX'),
-    asset('ETH')
+    asset('USDC'),
+    asset('BTC'),
+    asset('ETH'),
+    asset('USDT'),
+    asset('PNG'),
+    asset('XAVA'),
+    asset('LINK'),
+    asset('YAK'),
+    asset('QI')
 ]
 
 function asset(symbol) {

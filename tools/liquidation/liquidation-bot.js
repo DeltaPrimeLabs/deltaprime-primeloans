@@ -88,7 +88,7 @@ const FACTORY_ABI = [
         "name": "createAndFundLoan",
         "outputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "",
                 "type": "address"
             }
@@ -101,7 +101,7 @@ const FACTORY_ABI = [
         "name": "createLoan",
         "outputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "",
                 "type": "address"
             }
@@ -114,7 +114,7 @@ const FACTORY_ABI = [
         "name": "getAllLoans",
         "outputs": [
             {
-                "internalType": "contract SmartLoan[]",
+                "internalType": "contract SmartLoanDiamond[]",
                 "name": "",
                 "type": "address[]"
             }
@@ -163,7 +163,7 @@ const FACTORY_ABI = [
     {
         "inputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoanDiamond",
                 "name": "_smartLoanImplementation",
                 "type": "address"
             }
@@ -1008,7 +1008,7 @@ async function liquidateLoan(loanAddress) {
     let loanContract = getLoanContract(loanAddress);
     [totalVal, debt] = await loanContract.getFullLoanStatus();
     let targetLTV = (await loanContract.getMinSelloutLtv()).toNumber() + 100;
-    let liquidationBonus = await loanContract.getLiquidationBonus();
+    let liquidationBonus = await loanContract.getMaxLiquidationBonus();
     if (debt > totalVal) {
         console.log("The debt is greater than Total Value - impossible to rescue");
         return;
@@ -1056,7 +1056,7 @@ async function liquidateWithGradualIncreaseLoan(loanAddress) {
     let loanContract = getLoanContract(loanAddress);
     [totalVal, debt] = await loanContract.getFullLoanStatus();
     let targetLTV = (await loanContract.getMinSelloutLtv()).toNumber() + 100;
-    let liquidationBonus = await loanContract.getLiquidationBonus();
+    let liquidationBonus = await loanContract.getMaxLiquidationBonus();
     if (debt > totalVal) {
         console.log("The debt is greater than Total Value - impossible to rescue");
         return;

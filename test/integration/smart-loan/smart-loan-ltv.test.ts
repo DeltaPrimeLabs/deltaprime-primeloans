@@ -1,9 +1,14 @@
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {getFixedGasSigners} from "../../_helpers";
+import {getFixedGasSigners, recompileSmartLoanLib} from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {MockSmartLoan, MockSmartLoan__factory} from "../../../typechain";
+import {
+  MockSmartLoanLogicFacetRedstoneProvider,
+  MockSmartLoanLogicFacetSetValues,
+  MockSmartLoanLogicFacetSetValues__factory
+} from "../../../typechain";
+import {ethers} from "hardhat";
 
 chai.use(solidity);
 
@@ -14,7 +19,7 @@ describe('Smart loan',  () => {
 
 
   describe('A loan with edge LTV cases', () => {
-    let loan: MockSmartLoan,
+    let loan: MockSmartLoanLogicFacetSetValues,
         owner: SignerWithAddress;
 
     before("deploy provider, exchange and pool", async () => {
@@ -22,7 +27,9 @@ describe('Smart loan',  () => {
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new MockSmartLoan__factory(owner).deploy());
+      // Deploy LTVLib and later link contracts to it
+      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetSetValues");
+      loan = (await loanFactory.deploy(owner)).connect(owner) as MockSmartLoanLogicFacetSetValues;
     });
 
     it("should check debt equal to 0", async () => {

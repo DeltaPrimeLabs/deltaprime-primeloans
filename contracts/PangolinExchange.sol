@@ -9,6 +9,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
+import "./lib/SmartLoanLib.sol";
+import "./PoolManager.sol";
 
 /**
  * @title PangolinExchange
@@ -78,11 +80,13 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * @dev _assets assets to be added or updated
    **/
   function _updateAssets(Asset[] memory _assets) internal {
+    PoolManager poolManager = SmartLoanLib.getPoolManager();
     for (uint256 i = 0; i < _assets.length; i++) {
+      require(poolManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
 
-      EnumerableMap.set(supportedAssetsMap, _assets[i].asset, _assets[i].assetAddress);
+      supportedAssetsMap.set(_assets[i].asset, _assets[i].assetAddress);
     }
 
     emit AssetsAdded(_assets);
@@ -111,7 +115,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   /**
    * Returns all the supported assets keys
    **/
-  function getAllAssets() public view override returns (bytes32[] memory result) {
+  function getAllSupportedAssets() public override view returns (bytes32[] memory result) {
     return supportedAssetsMap._inner._keys._inner._values;
   }
 
@@ -158,7 +162,7 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    **/
   function getPath(address _token1, address _token2) private view returns (address[] memory) {
     address[] memory path;
-    address nativeTokenAddress = getAssetAddress(getAllAssets()[0]);
+    address nativeTokenAddress = getAssetAddress(bytes32("AVAX"));
 
     if (_token1 != nativeTokenAddress && _token2 != nativeTokenAddress) {
       path = new address[](3);

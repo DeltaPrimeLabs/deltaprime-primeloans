@@ -3,7 +3,7 @@ import {
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
     PangolinExchange,
-    Pool, SmartLoan, SmartLoan__factory,
+    Pool,
     SmartLoansFactory,
     SmartLoansFactory__factory,
     TransparentUpgradeableProxy,
@@ -17,8 +17,10 @@ import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
 import {getFixedGasSigners} from "../_helpers";
 
+
 chai.use(solidity);
 
+const {deployDiamond, deployFacet} = require('./smart-loan/utils/deploy-diamond');
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 
@@ -29,7 +31,6 @@ describe('Smart loans factory - upgrading',  () => {
 
     describe('Check basic logic before and after upgrade', () => {
         let smartLoansFactory: SmartLoansFactory,
-            smartLoan: SmartLoan,
             pool: Pool,
             exchange: PangolinExchange,
             owner: SignerWithAddress,
@@ -37,6 +38,7 @@ describe('Smart loans factory - upgrading',  () => {
             proxy: TransparentUpgradeableProxy,
             ownerLoanAddress: any;
         before("should deploy provider, exchange, loansFactory and pool", async () => {
+            let diamondAddress = await deployDiamond();
             [owner, admin] = await getFixedGasSigners(10000000);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
@@ -44,9 +46,10 @@ describe('Smart loans factory - upgrading',  () => {
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).attach(proxy.address));
-            smartLoan = await (new SmartLoan__factory(owner).deploy());
 
-            await smartLoansFactory.connect(owner).initialize(smartLoan.address);
+            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
+
+            await smartLoansFactory.connect(owner).initialize(diamondAddress);
 
             await smartLoansFactory.createLoan();
             ownerLoanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
