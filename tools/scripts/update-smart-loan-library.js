@@ -1,4 +1,4 @@
-export default function updateSmartLoanLibrary(yieldYakRouter, poolManager, solvencyFacetAddress, maxLTV, minSelloutLTV) {
+export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAddress, poolManager, solvencyFacetAddress, maxLTV, minSelloutLTV) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
@@ -31,6 +31,16 @@ export default function updateSmartLoanLibrary(yieldYakRouter, poolManager, solv
     );
 
     newLine = `    return IYieldYakRouter(${yieldYakRouter});`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    //Pangolin Router
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('address private constant _PANGOLIN_ROUTER_CONTRACT')
+    );
+
+    newLine = `    address private constant _PANGOLIN_ROUTER_CONTRACT = ${pangolinRouterAddress};`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

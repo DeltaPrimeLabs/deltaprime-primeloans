@@ -7,17 +7,19 @@ import VariableUtilisationRatesCalculatorArtifact
   from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import WavaxPoolArtifact from '../../../artifacts/contracts/WavaxPool.sol/WavaxPool.json';
 import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
-
+import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
-  deployAndInitPangolinExchangeContract, formatUnits, fromBytes32,
+  deployAllFaucets,
+  deployAndInitPangolinExchangeContract,
   fromWei,
-  getFixedGasSigners, getRepayAmounts,
+  getFixedGasSigners,
+  PoolAsset,
   recompileSmartLoanLib,
-  toBytes32, toRepay, toSupply,
+  toBytes32,
   toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
@@ -26,9 +28,9 @@ import {
   CompoundingIndex,
   MockSmartLoanLiquidationFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider,
-  MockSmartLoanLogicFacetRedstoneProvider__factory,
   OpenBorrowersRegistry__factory,
   PangolinExchange,
+  PoolManager,
   SmartLoansFactory,
   VariableUtilisationRatesCalculator,
   WavaxPool,
@@ -36,10 +38,10 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
-import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
@@ -81,6 +83,7 @@ describe('Smart loan',  () => {
       MOCK_PRICES: any,
       AVAX_PRICE: number,
       USD_PRICE: number,
+      solvencyFacetAddress: any,
       diamondAddress: any;
 
     before("deploy factory, exchange and pool", async () => {
@@ -93,11 +96,6 @@ describe('Smart loan',  () => {
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
-          new Asset(toBytes32('AVAX'), wavaxTokenAddress),
-          new Asset(toBytes32('USD'), usdTokenAddress)
-      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -129,18 +127,55 @@ describe('Smart loan',  () => {
 
       await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
 
+      let supportedAssets = [
+        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('USD'), usdTokenContract.address)
+      ]
+
+      let lendingPools = [
+        new PoolAsset(toBytes32('AVAX'), pool.address)
+      ]
+
+      let poolManager = await deployContract(
+          owner,
+          PoolManagerArtifact,
+          [
+            supportedAssets,
+            lendingPools
+          ]
+      ) as PoolManager;
+
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+      // TODO: Check if it's possibl to avoid doulbe-recompilation
       await recompileSmartLoanLib(
-          'SmartLoanLib',
-          [0],
-          [wavaxTokenAddress],
-          { "AVAX": pool.address},
-          exchange.address,
+          "SmartLoanLib",
           yakRouterContract.address,
+          ethers.constants.AddressZero,
+          poolManager.address,
+          ethers.constants.AddressZero,
           'lib'
       );
 
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+
+      //TODO: Refactor syntax
+      let result = await deployDiamond();
+      diamondAddress = result.diamondAddress;
+      solvencyFacetAddress = result.solvencyFacetAddress;
+
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+      await recompileSmartLoanLib(
+          "SmartLoanLib",
+          yakRouterContract.address,
+          exchange.address,
+          poolManager.address,
+          solvencyFacetAddress,
+          'lib'
+      );
+
+      await deployAllFaucets(diamondAddress)
 
       await smartLoansFactory.initialize(diamondAddress);
     });
@@ -150,9 +185,7 @@ describe('Smart loan',  () => {
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
 
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
-
-      loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
+      loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -241,6 +274,7 @@ describe('Smart loan',  () => {
         MOCK_PRICES_UPDATED: any,
         AVAX_PRICE: number,
         USD_PRICE: number,
+        solvencyFacetAddress: any,
         diamondAddress: any;
 
     before("deploy provider, exchange and pool", async () => {
@@ -253,12 +287,6 @@ describe('Smart loan',  () => {
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
-          [
-            new Asset(toBytes32('AVAX'), wavaxTokenAddress),
-            new Asset(toBytes32('USD'), usdTokenAddress)
-          ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -290,20 +318,55 @@ describe('Smart loan',  () => {
 
       await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
 
+      let supportedAssets = [
+        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('USD'), usdTokenContract.address)
+      ]
+
+      let lendingPools = [
+        new PoolAsset(toBytes32('AVAX'), pool.address)
+      ]
+
+      let poolManager = await deployContract(
+          owner,
+          PoolManagerArtifact,
+          [
+            supportedAssets,
+            lendingPools
+          ]
+      ) as PoolManager;
+
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
+      // TODO: Check if it's possibl to avoid doulbe-recompilation
       await recompileSmartLoanLib(
-          'SmartLoanLib',
-          [0],
-          [wavaxTokenAddress],
-          {"AVAX": pool.address},
-          exchange.address,
+          "SmartLoanLib",
           yakRouterContract.address,
+          ethers.constants.AddressZero,
+          poolManager.address,
+          ethers.constants.AddressZero,
           'lib'
       );
 
-      await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
-      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan"]);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+
+      //TODO: Refactor syntax
+      let result = await deployDiamond();
+      diamondAddress = result.diamondAddress;
+      solvencyFacetAddress = result.solvencyFacetAddress;
+
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+      await recompileSmartLoanLib(
+          "SmartLoanLib",
+          yakRouterContract.address,
+          exchange.address,
+          poolManager.address,
+          solvencyFacetAddress,
+          'lib'
+      );
+
+      await deployAllFaucets(diamondAddress)
 
       await smartLoansFactory.initialize(diamondAddress);
     });
@@ -313,9 +376,7 @@ describe('Smart loan',  () => {
 
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
 
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
-
-      loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
+      loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan)
@@ -341,7 +402,7 @@ describe('Smart loan',  () => {
       let usdAmount = Math.floor(30 * AVAX_PRICE);
       let requiredAvaxAmount = USD_PRICE * usdAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
-      await wrappedLoan.swap(
+      await wrappedLoan.swapPangolin(
           toBytes32('AVAX'),
           toBytes32('USD'),
           toWei(requiredAvaxAmount.toString()),

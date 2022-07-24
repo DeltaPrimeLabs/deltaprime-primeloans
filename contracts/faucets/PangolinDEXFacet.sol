@@ -13,9 +13,7 @@ import {LibDiamond} from "../lib/LibDiamond.sol";
 contract PangolinDEXFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
-
-    address constant public routerContractAddress = 0xC9a43158891282A2B1475592D5719c001986Aaec;
-
+    
     /**
   * Override PriceAware method, addresses below belong to authorized signers of data feeds
   **/
@@ -54,9 +52,9 @@ contract PangolinDEXFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
-        address(soldToken).safeTransfer(routerContractAddress, _exactSold);
+        address(soldToken).safeTransfer(SmartLoanLib.getPangolinRouterContract(), _exactSold);
 
-        IAssetsExchange exchange = IAssetsExchange(routerContractAddress);
+        IAssetsExchange exchange = IAssetsExchange(SmartLoanLib.getPangolinRouterContract());
 
         uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 

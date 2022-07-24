@@ -33,7 +33,9 @@ library SmartLoanLib {
 
     address private constant _YAK_STAKING_CONTRACT = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
-    address private constant _SOLVENCY_FACET_ADDRESS = 0xC6A09F78CfB85275e5261200442b0B9AA9D4D0ce;
+    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x986aaa537b8cc170761FDAC6aC4fc7F9d8a20A8C;
+
+    address private constant _SOLVENCY_FACET_ADDRESS = 0xc582Bc0317dbb0908203541971a358c44b1F3766;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -59,7 +61,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0xDb731EaaFA0FFA7854A24C2379585a85D768Ed5C);
+    return PoolManager(0x96F3Ce39Ad2BfDCf92C0F6E2C2CAbF83874660Fc);
     }
 
 //    // TODO: Remove
@@ -72,7 +74,7 @@ library SmartLoanLib {
     }
 
     function getYieldYakRouter() internal view returns (IYieldYakRouter) {
-  return IYieldYakRouter(0x202CCe504e04bEd6fC0521238dDf04Bc9E8E15aB);
+    return IYieldYakRouter(0x976fcd02f7C4773dd89C309fBF55D5923B4c98a1);
     }
 
     function getMaxBlockTimestampDelay() internal view returns (uint256) {
@@ -81,6 +83,10 @@ library SmartLoanLib {
 
     function getYakAvaxStakingContract() internal view returns (IERC20) {
         return IERC20(_YAK_STAKING_CONTRACT);
+    }
+
+    function getPangolinRouterContract() internal view returns (address) {
+        return _PANGOLIN_ROUTER_CONTRACT;
     }
 
     function getPriceProvider1() internal view returns (address) {

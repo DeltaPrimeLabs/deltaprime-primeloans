@@ -209,11 +209,11 @@ export async function syncTime() {
     }
 }
 
-export async function recompileSmartLoanLib(contractName: string, yieldYakAddress: string, poolManagerAddress: string, solvencyFacetAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
+export async function recompileSmartLoanLib(contractName: string, yieldYakAddress: string, pangolinRouterAddress: string, poolManagerAddress: string, solvencyFacetAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(yieldYakAddress, poolManagerAddress, solvencyFacetAddress, maxLTV, minSelloutLTV);
+    await updateSmartLoanLibrary(yieldYakAddress, pangolinRouterAddress, poolManagerAddress, solvencyFacetAddress, maxLTV, minSelloutLTV);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }
