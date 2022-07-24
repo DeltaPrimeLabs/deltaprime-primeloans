@@ -11,6 +11,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
   Asset,
   deployAllFaucets,
@@ -42,8 +43,6 @@ chai.use(solidity);
 const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -88,12 +87,12 @@ describe('Smart loan - upgrading',  () => {
       diamondAddress = await deployDiamond();
       [owner, oracle, depositor, borrower, other] = await getFixedGasSigners(10000000);
 
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
       const variableUtilisationRatesCalculatorERC20 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
       newWavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
@@ -132,7 +131,7 @@ describe('Smart loan - upgrading',  () => {
       await wavaxPool.connect(depositor).deposit(toWei("1000"));
 
       let supportedAssets = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), usdTokenContract.address)
       ]
 
@@ -204,7 +203,7 @@ describe('Smart loan - upgrading',  () => {
 
     it("should check if only one loan per owner is allowed", async () => {
       await expect(smartLoansFactory.connect(borrower).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
-      await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), wavaxTokenAddress,0, toBytes32(""), 0)).to.be.revertedWith("Only one loan per owner is allowed");
+      await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'],0, toBytes32(""), 0)).to.be.revertedWith("Only one loan per owner is allowed");
     });
 
 

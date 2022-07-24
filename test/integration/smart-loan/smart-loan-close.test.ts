@@ -36,16 +36,12 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
+import TOKEN_ADDRESSES from '../common/token_addresses.json';
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const linkTokenAddress = '0x5947bb275c521040051d82396192181b413227a3';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
-const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
-const btcTokenAddress = '0x50b7545627a5162F82A992c33b87aDc75187B218';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -109,18 +105,18 @@ describe('Smart loan',  () => {
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      ethTokenContract = new ethers.Contract(ethTokenAddress, erc20ABI, provider);
-      btcTokenContract = new ethers.Contract(btcTokenAddress, erc20ABI, provider);
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+      linkTokenContract = new ethers.Contract(TOKEN_ADDRESSES['LINK'], erc20ABI, provider);
+      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
+      ethTokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
+      btcTokenContract = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
-        new Asset(toBytes32('USD'), usdTokenAddress),
-        new Asset(toBytes32('LINK'), linkTokenAddress),
-        new Asset(toBytes32('ETH'), ethTokenAddress),
-        new Asset(toBytes32('BTC'), btcTokenAddress)
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+        new Asset(toBytes32('USD'), TOKEN_ADDRESSES['USDT']),
+        new Asset(toBytes32('LINK'), TOKEN_ADDRESSES['LINK']),
+        new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
+        new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC'])
       ]);
 
       const variableUtilisationRatesCalculatorWavax = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
@@ -189,7 +185,7 @@ describe('Smart loan',  () => {
         borrowersRegistryUsd.address,
         depositIndexUsd.address,
         borrowingIndexUsd.address,
-        usdTokenAddress
+        TOKEN_ADDRESSES['USDT']
       );
 
       await ethPool.initialize(
@@ -197,7 +193,7 @@ describe('Smart loan',  () => {
           borrowersRegistryEth.address,
           depositIndexEth.address,
           borrowingIndexEth.address,
-          ethTokenAddress
+          TOKEN_ADDRESSES['ETH']
       );
 
       // top-up borrower's wallet with tokens for further actions
@@ -243,7 +239,8 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           'SmartLoanLib',
           [0, 1, 3],
-          [wavaxTokenAddress, usdTokenAddress, ethTokenAddress],
+          ethers.constants.AddressZero,
+          [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDT'], TOKEN_ADDRESSES['ETH']],
           { 'AVAX': wavaxPool.address, 'USD': usdPool.address, 'ETH': ethPool.address,},
           exchange.address,
           yakRouterContract.address,

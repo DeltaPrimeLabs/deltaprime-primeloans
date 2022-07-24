@@ -16,13 +16,13 @@ import chai, {expect} from "chai";
 import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
 import {getFixedGasSigners} from "../../_helpers";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 
 
 chai.use(solidity);
 
 const {deployDiamond, deployFacet} = require('../../../tools/diamond/deploy-diamond');
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
 
 describe('Smart loans factory - upgrading',  () => {
     before("Synchronize blockchain time", async () => {
@@ -41,7 +41,7 @@ describe('Smart loans factory - upgrading',  () => {
             let diamondAddress = await deployDiamond();
             [owner, admin] = await getFixedGasSigners(10000000);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), TOKEN_ADDRESSES['USDT'])]);
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).deploy());
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));

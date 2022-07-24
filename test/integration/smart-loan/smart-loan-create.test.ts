@@ -35,13 +35,12 @@ import {
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -94,8 +93,8 @@ describe('Smart loan',  () => {
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-      ethTokenContract = new ethers.Contract(ethTokenAddress, wavaxAbi, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+      ethTokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], wavaxAbi, provider);
       //it's a mock implementation of USD token with 18 decimal places
       mockUsdToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, depositor.address]])) as MockToken;
 
@@ -151,9 +150,9 @@ describe('Smart loan',  () => {
       await usdPool.connect(depositor).deposit(toWei("1000"));
 
       let supportedAssetss = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), mockUsdToken.address),
-        new Asset(toBytes32('ETH'), ethTokenAddress),
+        new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
       ]
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssetss);
 
@@ -162,7 +161,7 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanLib",
           [0, 1],
-          [wavaxTokenAddress, mockUsdToken.address],
+          [TOKEN_ADDRESSES['AVAX'], mockUsdToken.address],
           {'AVAX': wavaxPool.address, 'USD': usdPool.address},
           exchange.address,
           yakRouterContract.address,
@@ -218,7 +217,7 @@ describe('Smart loan',  () => {
 
       await wavaxTokenContract.connect(borrower2).deposit({value: toWei("1")});
       await wavaxTokenContract.connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
-      await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), wavaxTokenAddress, toWei("1"), toBytes32("USD"), toWei((2 * AVAX_PRICE).toString()));
+      await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], toWei("1"), toBytes32("USD"), toWei((2 * AVAX_PRICE).toString()));
 
       const loanAddress = await smartLoansFactory.getLoanForOwner(borrower2.address);
       const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider", {

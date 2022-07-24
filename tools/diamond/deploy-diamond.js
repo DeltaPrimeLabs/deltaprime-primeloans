@@ -74,7 +74,8 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
     console.log('Completed diamond cut')
 }
 
-async function deployDiamond(hardhatConfig = undefined) {
+async function deployDiamond(testEnv = true, hardhatConfig = undefined) {
+    let solvencyFacetName = testEnv ? 'MockSolvencyFacetRP' : 'MockSolvencyFacet';
     const accounts = await ethers.getSigners()
     const contractOwner = accounts[0]
 
@@ -105,12 +106,12 @@ async function deployDiamond(hardhatConfig = undefined) {
         'OwnershipFacet'
     ]
     const cut = []
-    let solvencyFacetAddress;
+    let solvencyFacetAddress = '';
     for (const FacetName of FacetNames) {
-        const facet = await deployContract(FacetName,[], {}, hardhatConfig);
+        const facet = await deployContract(FacetName, [], {}, hardhatConfig);
         console.log(`${FacetName} deployed: ${facet.address}`)
         // TODO: Refactor
-        if(FacetName === "MockSolvencyFacetRP") {
+        if (FacetName === solvencyFacetName) {
             solvencyFacetAddress = facet.address;
         }
         cut.push({
@@ -133,7 +134,7 @@ async function deployDiamond(hardhatConfig = undefined) {
         throw Error(`Diamond upgrade failed: ${tx.hash}`)
     }
     console.log('Completed diamond cut')
-    return {diamondAddress: diamond.address, solvencyFacetAddress: solvencyFacetAddress}
+    return {'diamondAddress': diamond.address, 'solvencyFacetAddress': solvencyFacetAddress};
 }
 
 async function deployContract(name, args = [], libraries = undefined, hardhatConfig = undefined) {

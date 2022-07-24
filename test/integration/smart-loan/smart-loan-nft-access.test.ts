@@ -13,6 +13,7 @@ import MockBorrowAccessNFTArtifact
 import SmartLoansFactoryWithAccessNFTArtifact
     from '../../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
     Asset,
     deployAndInitPangolinExchangeContract,
@@ -43,7 +44,6 @@ import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond'
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -87,7 +87,7 @@ describe('Smart loan',  () => {
             usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
             wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
 
-            wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+            wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
             yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
@@ -118,14 +118,14 @@ describe('Smart loan',  () => {
             await wavaxPool.connect(depositor).deposit(toWei("1000"));
 
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
-                new Asset(toBytes32('AVAX'), wavaxTokenAddress)
+                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX'])
             ]);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
             await recompileSmartLoanLib(
                 'SmartLoanLib',
                 [1],
-                [wavaxTokenAddress],
+                [TOKEN_ADDRESSES['AVAX']],
                 { "AVAX": wavaxPool.address},
                 exchange.address,
                 yakRouterContract.address,

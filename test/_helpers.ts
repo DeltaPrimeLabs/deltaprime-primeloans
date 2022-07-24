@@ -1,7 +1,18 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MockSmartLoanLogicFacetSetValues, PangolinExchange} from "../typechain";
+import {
+    CompoundingIndex,
+    ERC20Pool, MockToken, OpenBorrowersRegistry__factory,
+    PangolinExchange,
+    VariableUtilisationRatesCalculator
+} from "../typechain";
+import TOKEN_ADDRESSES from '../common/token_addresses.json';
+import VariableUtilisationRatesCalculatorArtifact
+    from '../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+import ERC20PoolArtifact from '../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 
 import {execSync} from "child_process";
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
@@ -9,6 +20,18 @@ import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 const {provider} = waffle;
 const {deployDiamond, deployFacet} = require('../tools/diamond/deploy-diamond');
 const {deployContract} = waffle;
+
+const erc20ABI = [
+    'function decimals() public view returns (uint8)',
+    'function balanceOf(address _owner) public view returns (uint256 balance)',
+    'function approve(address _spender, uint256 _value) public returns (bool success)',
+    'function allowance(address owner, address spender) public view returns (uint256)'
+]
+
+const wavaxAbi = [
+    'function deposit() public payable',
+    ...erc20ABI
+]
 
 export const toWei = ethers.utils.parseUnits;
 export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
@@ -207,6 +230,40 @@ export async function syncTime() {
 
         await syncTime();
     }
+}
+
+export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any) {
+
+    const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+    let pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+    let tokenContract: any;
+    switch(tokenName){
+        case 'USD':
+            //it's a mock implementation of USD token with 18 decimal places
+            tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
+            break;
+        case 'AVAX':
+            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            for (const user of tokenAirdropList) {
+                await tokenContract.connect(user).deposit({value: toWei("1000")});
+            }
+            break;
+        case 'ETH':
+            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
+            break;
+    }
+
+    const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+    const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+    const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+    await pool.initialize(
+        variableUtilisationRatesCalculator.address,
+        borrowersRegistry.address,
+        depositIndex.address,
+        borrowingIndex.address,
+        tokenContract!.address
+    );
+    return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
 export async function recompileSmartLoanLib(contractName: string, yieldYakAddress: string, pangolinRouterAddress: string, poolManagerAddress: string, solvencyFacetAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {

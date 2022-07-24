@@ -9,6 +9,7 @@ import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIn
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
     Asset,
     deployAndInitPangolinExchangeContract,
@@ -43,8 +44,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -93,8 +92,8 @@ describe('Test liquidator',  () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
 
             const supportedAssets = [
-                new Asset(toBytes32('AVAX'), wavaxTokenAddress),
-                new Asset(toBytes32('USDC'), usdTokenAddress)
+                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
             ];
 
             exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
@@ -105,8 +104,8 @@ describe('Test liquidator',  () => {
 
             yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-            wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-            usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+            wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
 
             const borrowersRegistryERC20 = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
@@ -123,7 +122,7 @@ describe('Test liquidator',  () => {
             await recompileSmartLoanLib(
                 "SmartLoanLib",
                 [0],
-                [wavaxTokenAddress],
+                [TOKEN_ADDRESSES['AVAX']],
                 {'AVAX': wavaxPool.address},
                 exchange.address,
                 yakRouterContract.address,

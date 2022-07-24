@@ -23,7 +23,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   CompoundingIndex,
-  ERC20Pool, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
+  ERC20Pool,
   OpenBorrowersRegistry__factory,
   PangolinExchange, PoolManager, SmartLoanGigaChadInterface,
   SmartLoansFactory,
@@ -31,14 +31,13 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 
 chai.use(solidity);
 
 const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805A1EDcbA50c1Ce5db95118';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -81,8 +80,8 @@ describe('Smart loan',  () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
@@ -111,7 +110,7 @@ describe('Smart loan',  () => {
           borrowersRegistry.address,
           depositIndex.address,
           borrowingIndex.address,
-          wavaxTokenAddress
+          TOKEN_ADDRESSES['AVAX']
       );
 
       await wavaxTokenContract.connect(depositor).deposit({value: toWei("1000")});
@@ -119,7 +118,7 @@ describe('Smart loan',  () => {
       await pool.connect(depositor).deposit(toWei("1000"));
 
       let supportedAssets = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), usdTokenContract.address)
       ]
 

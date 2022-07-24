@@ -10,6 +10,7 @@ import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIn
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
@@ -44,8 +45,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 
 const erc20ABI = [
@@ -94,8 +93,8 @@ describe('Smart loan',  () => {
       pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -128,7 +127,7 @@ describe('Smart loan',  () => {
       await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
 
       let supportedAssets = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), usdTokenContract.address)
       ]
 
@@ -285,8 +284,8 @@ describe('Smart loan',  () => {
       pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
+      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -313,13 +312,13 @@ describe('Smart loan',  () => {
           borrowersRegistry.address,
           depositIndex.address,
           borrowingIndex.address,
-          wavaxTokenAddress
+          TOKEN_ADDRESSES['AVAX']
       );
 
       await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
 
       let supportedAssets = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), usdTokenContract.address)
       ]
 

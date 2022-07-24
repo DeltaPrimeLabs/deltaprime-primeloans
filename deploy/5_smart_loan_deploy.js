@@ -16,7 +16,7 @@ module.exports = async ({
     embedCommitHash('SmartLoanLib', 'contracts/lib');
     embedCommitHash('LibDiamond', 'contracts/lib');
 
-    const diamondAddress = await deployDiamond({
+    const diamondAddress = await deployDiamond(false,{
         deployer: deployer,
         deploy: deploy
     });

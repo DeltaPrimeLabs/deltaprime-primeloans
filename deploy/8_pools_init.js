@@ -1,6 +1,6 @@
 const {ethers} = require("hardhat");
-const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const usdcTokenAddress = "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664";
+
+import TOKEN_ADDRESSES from '../common/token_addresses.json';
 
 module.exports = async ({
     getNamedAccounts,
@@ -9,8 +9,8 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "WavaxPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", WAVAXTokenAddress);
-    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "UsdcPoolTUP", "UsdcDepositIndexTUP", "UsdcBorrowIndexTUP",usdcTokenAddress);
+    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "WavaxPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", TOKEN_ADDRESSES['AVAX']);
+    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "UsdcPoolTUP", "UsdcDepositIndexTUP", "UsdcBorrowIndexTUP",TOKEN_ADDRESSES['USDC']);
 };
 
 async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex, borrowIndex, tokenAddress) {

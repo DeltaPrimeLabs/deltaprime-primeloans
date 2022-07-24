@@ -40,13 +40,11 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-
+import TOKEN_ADDRESSES from '../common/token_addresses.json';
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const ethTokenAddress = '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB';
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -97,8 +95,8 @@ describe('Smart loan',  () => {
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider);
-      ethTokenContract = new ethers.Contract(ethTokenAddress, wavaxAbi, provider);
+      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+      ethTokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], wavaxAbi, provider);
       mockUsdToken = (await deployContract(owner, MockUsdArtifact, [[owner.address, depositor.address]])) as MockUsd;
       usdTokenDecimalPlaces = BigNumber.from(await mockUsdToken.decimals());
 
@@ -153,9 +151,9 @@ describe('Smart loan',  () => {
       await usdPool.connect(depositor).deposit(parseUnits("1000", usdTokenDecimalPlaces));
 
       let supportedAssets = [
-        new Asset(toBytes32('AVAX'), wavaxTokenAddress),
+        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USD'), mockUsdToken.address),
-        new Asset(toBytes32('ETH'), ethTokenAddress)
+        new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH'])
       ]
 
       let lendingPools = [
