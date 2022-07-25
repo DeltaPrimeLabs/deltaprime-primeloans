@@ -94,7 +94,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     * Returns a current balance of the asset held by the smart loan
     * @param _asset the code of an asset
     **/
-    function getBalance(bytes32 _asset) internal view returns (uint256) {
+    function getBalance(bytes32 _asset) public view returns (uint256) {
         IERC20 token = IERC20(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
