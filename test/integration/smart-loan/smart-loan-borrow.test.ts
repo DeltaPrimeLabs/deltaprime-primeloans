@@ -50,8 +50,7 @@ describe('Smart loan',  () => {
 
 
   describe('A loan with debt and repayment', () => {
-    let exchange: PangolinExchange,
-        smartLoansFactory: SmartLoansFactory,
+    let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         tokenContracts: any = {},
@@ -63,13 +62,13 @@ describe('Smart loan',  () => {
         USD_PRICE: number,
         ETH_PRICE: number;
 
-    before("deploy factory, exchange, wavaxPool and usdPool", async () => {
+    before("deploy factory, wavaxPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
       let lendingPools = [];
       for (const token of [
-            {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
-            {'name': 'AVAX', 'airdropList': [depositor]}
-          ]) {
+        {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
+        {'name': 'AVAX', 'airdropList': [depositor]}
+      ]) {
         let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
         await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
         await poolContract.connect(depositor).deposit(toWei("1000"));
@@ -87,36 +86,24 @@ describe('Smart loan',  () => {
           owner,
           PoolManagerArtifact,
           [
-              supportedAssets,
-              lendingPools
+            supportedAssets,
+            lendingPools
           ]
       ) as PoolManager;
 
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
+      // TODO: Check if it's possible to avoid double-recompilation
+      let diamondAddress = await deployDiamond();
       await recompileSmartLoanLib(
           "SmartLoanLib",
           yakRouterContract.address,
           ethers.constants.AddressZero,
           poolManager.address,
-          ethers.constants.AddressZero,
+          diamondAddress,
           'lib'
       );
-      //TODO: Refactor syntax
-      let {diamondAddress, solvencyFacetAddress} = await deployDiamond();
-
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          ethers.constants.AddressZero,
-          poolManager.address,
-          solvencyFacetAddress,
-          'lib'
-      );
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
-
       await deployAllFaucets(diamondAddress)
 
       await smartLoansFactory.initialize(diamondAddress);
@@ -149,14 +136,14 @@ describe('Smart loan',  () => {
       loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
       wrappedLoan = WrapperBuilder
-        .mockLite(loan)
-        .using(
-          () => {
-            return {
-              prices: MOCK_PRICES,
-              timestamp: Date.now()
-            }
-          })
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
     });
 
 

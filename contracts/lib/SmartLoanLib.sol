@@ -33,15 +33,15 @@ library SmartLoanLib {
 
     address private constant _YAK_STAKING_CONTRACT = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
-    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x986aaa537b8cc170761FDAC6aC4fc7F9d8a20A8C;
+    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x0000000000000000000000000000000000000000;
 
-    address private constant _SOLVENCY_FACET_ADDRESS = 0xc582Bc0317dbb0908203541971a358c44b1F3766;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
 
-    function getSolvencyFacetAddress() internal view returns (address) {
-        return _SOLVENCY_FACET_ADDRESS;
+    function getDiamondAddress() internal view returns (address) {
+        return _DIAMOND_BEACON_ADDRESS;
     }
 
     function getPercentagePrecision() internal view returns (uint256) {
@@ -61,20 +61,15 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x96F3Ce39Ad2BfDCf92C0F6E2C2CAbF83874660Fc);
+    return PoolManager(0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8);
     }
-
-//    // TODO: Remove
-//    function getExchange() internal view returns (IAssetsExchange) {
-//        return IAssetsExchange(_EXCHANGE_ADDRESS);
-//    }
 
     function getNativeTokenWrapped() internal view returns (WAVAX) {
         return WAVAX(payable(_WAVAX_ADDRESS));
     }
 
     function getYieldYakRouter() internal view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x976fcd02f7C4773dd89C309fBF55D5923B4c98a1);
+    return IYieldYakRouter(0x172076E0166D1F9Cc711C77Adf8488051744980C);
     }
 
     function getMaxBlockTimestampDelay() internal view returns (uint256) {

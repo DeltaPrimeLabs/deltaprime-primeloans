@@ -54,6 +54,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @dev This function uses the redstone-evm-connector
     **/
     function closeLoan(bytes32[] memory _assetsProvided, uint256[] memory _amountsProvided) public virtual payable onlyOwner nonReentrant remainsSolvent {
+        //TODO Add parameters as a tuple - ASSET - AMOUNT
         bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
 
         PoolManager poolManager = SmartLoanLib.getPoolManager();
@@ -156,6 +157,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
+        //TODO Add parameters as a tuple - ASSET - AMOUNT
         SmartLoanLib.setLiquidationInProgress(true);
 
         PoolManager poolManager = SmartLoanLib.getPoolManager();

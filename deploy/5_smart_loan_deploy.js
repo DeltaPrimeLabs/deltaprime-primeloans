@@ -6,9 +6,9 @@ import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 import {deployDiamond, deployFacet} from "../tools/diamond/deploy-diamond";
 
 module.exports = async ({
-    getNamedAccounts,
-    deployments
-}) => {
+                            getNamedAccounts,
+                            deployments
+                        }) => {
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
@@ -16,7 +16,7 @@ module.exports = async ({
     embedCommitHash('SmartLoanLib', 'contracts/lib');
     embedCommitHash('LibDiamond', 'contracts/lib');
 
-    const diamondAddress = await deployDiamond(false,{
+    const diamondAddress = await deployDiamond({
         deployer: deployer,
         deploy: deploy
     });

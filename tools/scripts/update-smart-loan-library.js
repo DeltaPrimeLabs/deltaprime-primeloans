@@ -1,4 +1,4 @@
-export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAddress, poolManager, solvencyFacetAddress, maxLTV, minSelloutLTV) {
+export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAddress, poolManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
@@ -57,10 +57,10 @@ export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAdd
     //SolvencyFacetAddress
 
     lineWithFunctionDeclaration = fileArray.findIndex(
-        line => line.includes('_SOLVENCY_FACET_ADDRESS =')
+        line => line.includes('_DIAMOND_BEACON_ADDRESS =')
     );
 
-    newLine = `    address private constant _SOLVENCY_FACET_ADDRESS = ${solvencyFacetAddress};`;
+    newLine = `    address private constant _DIAMOND_BEACON_ADDRESS = ${diamondBeaconAddress};`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

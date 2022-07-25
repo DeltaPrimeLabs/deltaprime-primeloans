@@ -74,8 +74,7 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
     console.log('Completed diamond cut')
 }
 
-async function deployDiamond(testEnv = true, hardhatConfig = undefined) {
-    let solvencyFacetName = testEnv ? 'MockSolvencyFacetRP' : 'MockSolvencyFacet';
+async function deployDiamond(hardhatConfig = undefined) {
     const accounts = await ethers.getSigners()
     const contractOwner = accounts[0]
 
@@ -100,20 +99,14 @@ async function deployDiamond(testEnv = true, hardhatConfig = undefined) {
     console.log('Deploying facets')
     // TODO: Deploy normal SolvencyFacet and Mock - RP only in tests
     const FacetNames = [
-        'MockSolvencyFacetRP',
         'DiamondInit',
         'DiamondLoupeFacet',
         'OwnershipFacet'
     ]
     const cut = []
-    let solvencyFacetAddress = '';
     for (const FacetName of FacetNames) {
         const facet = await deployContract(FacetName, [], {}, hardhatConfig);
         console.log(`${FacetName} deployed: ${facet.address}`)
-        // TODO: Refactor
-        if (FacetName === solvencyFacetName) {
-            solvencyFacetAddress = facet.address;
-        }
         cut.push({
             facetAddress: facet.address,
             action: FacetCutAction.Add,
@@ -134,7 +127,7 @@ async function deployDiamond(testEnv = true, hardhatConfig = undefined) {
         throw Error(`Diamond upgrade failed: ${tx.hash}`)
     }
     console.log('Completed diamond cut')
-    return {'diamondAddress': diamond.address, 'solvencyFacetAddress': solvencyFacetAddress};
+    return diamond.address
 }
 
 async function deployContract(name, args = [], libraries = undefined, hardhatConfig = undefined) {
