@@ -59,14 +59,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
         PoolManager poolManager = SmartLoanLib.getPoolManager();
 
-        //TODO: update it after corrected on main
-        IYieldYakRouter yakRouter = SmartLoanLib.getYieldYakRouter();
-        uint256 stakedAmount = yakRouter.getTotalStakedValue();
-
-        if (stakedAmount > 0) {
-            address(SmartLoanLib.getYakAvaxStakingContract()).safeApprove(address(yakRouter), stakedAmount);
-            require(yakRouter.unstakeAVAX(stakedAmount), "Unstaking failed");
-        }
+        //TODO: Get rid of this once YRT token is available in the price feed
+//        IYieldYakRouter yakRouter = SmartLoanLib.getYieldYakRouter();
+//        uint256 stakedAmount = yakRouter.getTotalStakedValue();
+//
+//        if (stakedAmount > 0) {
+//            address(SmartLoanLib.getYakAvaxStakingContract()).safeApprove(address(yakRouter), stakedAmount);
+//            require(yakRouter.unstakeAVAXYak(stakedAmount), "Unstaking failed");
+//        }
 
         uint256 i;
         IERC20Metadata token;
@@ -226,6 +226,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             } else {
                 //meaning staking or LP positions
                 uint256 toReturnFromPositions = suppliedInUSD + bonus - valueOfTokens;
+                //TODO: remove once liquidation is just sending tokens back to liquidator
                 liquidatePositions(toReturnFromPositions, msg.sender, prices);
             }
 
@@ -254,8 +255,9 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param _targetUsdAmount value in USD to be repaid from positions
     * @param _to address to which send funds from liquidation
     **/
+    //TODO: remove once liquidation is just sending tokens back to liquidator
     function liquidatePositions(uint256 _targetUsdAmount, address _to, uint256[] memory _prices) private returns(bool) {
-        return liquidateYak(_targetUsdAmount * 10**8 / _prices[0], _to);
+//        return liquidateYak(_targetUsdAmount * 10**8 / _prices[0], _to);
     }
 
     //TODO: remove once liquidation is just sending tokens back to liquidator
@@ -264,6 +266,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param _targetAvaxAmount amount of AVAX to be repaid from staking position
     * @param _to address to which send funds from liquidation
     **/
+    // TODO: To be removed in favor of returning YRT token to a liquidator
     function liquidateYak(uint256 _targetAvaxAmount, address _to) private returns(bool) {
         address yakRouterAddress = address(SmartLoanLib.getYieldYakRouter());
         (bool successApprove, ) = address(SmartLoanLib.getYakAvaxStakingContract()).call(

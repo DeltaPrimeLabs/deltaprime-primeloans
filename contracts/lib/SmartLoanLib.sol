@@ -35,7 +35,7 @@ library SmartLoanLib {
 
     address private constant _PANGOLIN_ROUTER_CONTRACT = 0x0000000000000000000000000000000000000000;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0xaC9fCBA56E42d5960f813B9D0387F3D3bC003338;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -61,7 +61,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0xf4B146FbA71F41E0592668ffbF264F1D186b2Ca8);
+    return PoolManager(0x63fea6E447F120B8Faf85B53cdaD8348e645D80E);
     }
 
     function getNativeTokenWrapped() internal view returns (WAVAX) {
@@ -69,7 +69,7 @@ library SmartLoanLib {
     }
 
     function getYieldYakRouter() internal view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x172076E0166D1F9Cc711C77Adf8488051744980C);
+    return IYieldYakRouter(0x0000000000000000000000000000000000000000);
     }
 
     function getMaxBlockTimestampDelay() internal view returns (uint256) {

@@ -13,6 +13,8 @@ interface IYakStakingAVAXAAVEV1 {
 
     function depositFor(address account) external payable;
 
+    function deposit() external payable;
+
     function transfer(address to, uint256 amount) external returns (bool);
 
     function allowance(address owner, address spender) external view returns (uint256);

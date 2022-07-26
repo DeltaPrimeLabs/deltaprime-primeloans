@@ -3,10 +3,6 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import VariableUtilisationRatesCalculatorArtifact
-  from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import WavaxPoolArtifact from '../../../artifacts/contracts/WavaxPool.sol/WavaxPool.json';
-import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -14,7 +10,7 @@ import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
-  deployAllFaucets,
+  deployAllFaucets, deployAndInitializeLendingPool,
   deployAndInitPangolinExchangeContract,
   fromWei,
   getFixedGasSigners,
@@ -26,19 +22,13 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  CompoundingIndex,
-  MockSmartLoanLiquidationFacetRedstoneProvider,
   MockSmartLoanLogicFacetRedstoneProvider,
-  OpenBorrowersRegistry__factory,
   PangolinExchange,
   PoolManager,
   SmartLoansFactory,
-  VariableUtilisationRatesCalculator,
   WavaxPool,
-  YieldYakRouter__factory
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
@@ -67,72 +57,36 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan with staking operations', () => {
-    let exchange: PangolinExchange,
-      smartLoansFactory: SmartLoansFactory,
-      yakRouterContract: Contract,
+    let smartLoansFactory: SmartLoansFactory,
       yakStakingContract: Contract,
       loan: MockSmartLoanLogicFacetRedstoneProvider,
       wrappedLoan: any,
-      pool: WavaxPool,
+      tokenContracts: any = {},
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
-      wavaxTokenContract: Contract,
-      usdTokenContract: Contract,
-      usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
       AVAX_PRICE: number,
       USD_PRICE: number,
-      solvencyFacetAddress: any,
       diamondAddress: any;
 
-    before("deploy factory, exchange and pool", async () => {
-      diamondAddress = await deployDiamond();
+    before("deploy factory and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-      yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
-      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
-
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
-
-      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
-
-      MOCK_PRICES = [
-        {
-          symbol: 'USD',
-          value: USD_PRICE
-        },
-        {
-          symbol: 'AVAX',
-          value: AVAX_PRICE
-        }
-      ]
-
-      await pool.initialize(
-        variableUtilisationRatesCalculator.address,
-        borrowersRegistry.address,
-        depositIndex.address,
-        borrowingIndex.address,
-        wavaxTokenContract.address
-      );
-
-      await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
+      let lendingPools = [];
+      // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
+      for (const token of [
+        {'name': 'AVAX', 'airdropList': [depositor]}
+      ]) {
+        let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+        await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
+        await poolContract.connect(depositor).deposit(toWei("1000"));
+        lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
+        tokenContracts[token.name] = tokenContract;
+      }
 
       let supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-        new Asset(toBytes32('USD'), usdTokenContract.address)
-      ]
-
-      let lendingPools = [
-        new PoolAsset(toBytes32('AVAX'), pool.address)
+        new Asset(toBytes32('USD'), TOKEN_ADDRESSES['USDC'])
       ]
 
       let poolManager = await deployContract(
@@ -144,35 +98,19 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
+      diamondAddress = await deployDiamond();
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          yakRouterContract.address,
+          ethers.constants.AddressZero,
           ethers.constants.AddressZero,
           poolManager.address,
-          ethers.constants.AddressZero,
+          diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
-
-      //TODO: Refactor syntax
-      let result = await deployDiamond();
-      diamondAddress = result.diamondAddress;
-      solvencyFacetAddress = result.solvencyFacetAddress;
-
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          exchange.address,
-          poolManager.address,
-          solvencyFacetAddress,
-          'lib'
-      );
 
       await deployAllFaucets(diamondAddress)
 
@@ -185,6 +123,20 @@ describe('Smart loan',  () => {
       const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
 
       loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDC')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -202,8 +154,8 @@ describe('Smart loan',  () => {
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
-      await wavaxTokenContract.connect(owner).deposit({value: toWei("200")});
-      await wavaxTokenContract.connect(owner).approve(wrappedLoan.address, toWei("200"));
+      await tokenContracts['AVAX'].connect(owner).deposit({value: toWei("200")});
+      await tokenContracts['AVAX'].connect(owner).approve(wrappedLoan.address, toWei("200"));
       await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * AVAX_PRICE, 0.0001);
@@ -234,7 +186,7 @@ describe('Smart loan',  () => {
 
     it("should unstake part of staked AVAX", async() => {
       let initialTotalValue = await wrappedLoan.getTotalValue();
-      let initialAvaxBalance = await wavaxTokenContract.balanceOf(wrappedLoan.address);
+      let initialAvaxBalance = await tokenContracts['AVAX'].balanceOf(wrappedLoan.address);
       let amountAvaxToReceive = toWei("10");
       let initialStakedTokensBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
       let tokenAmountToUnstake = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, amountAvaxToReceive);
@@ -244,7 +196,7 @@ describe('Smart loan',  () => {
       await wrappedLoan.unstakeAVAXYak(tokenAmountToUnstake);
 
       expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakStakingContract.balanceOf(wrappedLoan.address));
-      expect(fromWei(await wavaxTokenContract.balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.2);
+      expect(fromWei(await tokenContracts['AVAX'].balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.2);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
     });
 
@@ -253,224 +205,224 @@ describe('Smart loan',  () => {
     });
   });
 
-  describe('A loan with staking liquidation', () => {
-    let exchange: PangolinExchange,
-        loan: MockSmartLoanLogicFacetRedstoneProvider,
-        smartLoansFactory: SmartLoansFactory,
-        loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
-        wrappedLoan: any,
-        wrappedLoanUpdated: any,
-        yakRouterContract: Contract,
-        pool: WavaxPool,
-        owner: SignerWithAddress,
-        depositor: SignerWithAddress,
-        liquidator: SignerWithAddress,
-        usdTokenContract: Contract,
-        wavaxTokenContract: Contract,
-        yakStakingContract: Contract,
-        usdTokenDecimalPlaces: BigNumber,
-        MOCK_PRICES: any,
-        MOCK_PRICES_UPDATED: any,
-        AVAX_PRICE: number,
-        USD_PRICE: number,
-        solvencyFacetAddress: any,
-        diamondAddress: any;
-
-    before("deploy provider, exchange and pool", async () => {
-      diamondAddress = await deployDiamond();
-      [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-
-      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
-      yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-      usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
-      wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
-
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-      const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
-
-      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
-
-      MOCK_PRICES = [
-        {
-          symbol: 'USD',
-          value: USD_PRICE
-        },
-        {
-          symbol: 'AVAX',
-          value: AVAX_PRICE
-        }
-      ]
-
-      await pool.initialize(
-          variableUtilisationRatesCalculator.address,
-          borrowersRegistry.address,
-          depositIndex.address,
-          borrowingIndex.address,
-          TOKEN_ADDRESSES['AVAX']
-      );
-
-      await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
-
-      let supportedAssets = [
-        new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-        new Asset(toBytes32('USD'), usdTokenContract.address)
-      ]
-
-      let lendingPools = [
-        new PoolAsset(toBytes32('AVAX'), pool.address)
-      ]
-
-      let poolManager = await deployContract(
-          owner,
-          PoolManagerArtifact,
-          [
-            supportedAssets,
-            lendingPools
-          ]
-      ) as PoolManager;
-
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          ethers.constants.AddressZero,
-          poolManager.address,
-          ethers.constants.AddressZero,
-          'lib'
-      );
-
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
-
-      //TODO: Refactor syntax
-      let result = await deployDiamond();
-      diamondAddress = result.diamondAddress;
-      solvencyFacetAddress = result.solvencyFacetAddress;
-
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          exchange.address,
-          poolManager.address,
-          solvencyFacetAddress,
-          'lib'
-      );
-
-      await deployAllFaucets(diamondAddress)
-
-      await smartLoansFactory.initialize(diamondAddress);
-    });
-
-    it("should deploy a smart loan, fund, borrow and invest", async () => {
-      await smartLoansFactory.connect(owner).createLoan();
-
-      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-
-      loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
-
-      wrappedLoan = WrapperBuilder
-          .mockLite(loan)
-          .using(
-              () => {
-                return {
-                  prices: MOCK_PRICES,
-                  timestamp: Date.now()
-                }
-              })
-
-      await wavaxTokenContract.connect(owner).deposit({value: toWei("100")});
-      await wavaxTokenContract.connect(owner).approve(wrappedLoan.address, toWei("100"));
-      await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
-      await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
-
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(400 * AVAX_PRICE, 0.1);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300 * AVAX_PRICE, 0.1);
-      expect(await wrappedLoan.getLTV()).to.be.equal(3000);
-
-      const slippageTolerance = 0.03;
-
-      let usdAmount = Math.floor(30 * AVAX_PRICE);
-      let requiredAvaxAmount = USD_PRICE * usdAmount * (1 + slippageTolerance) / AVAX_PRICE;
-
-      await wrappedLoan.swapPangolin(
-          toBytes32('AVAX'),
-          toBytes32('USD'),
-          toWei(requiredAvaxAmount.toString()),
-          parseUnits(usdAmount.toString(), usdTokenDecimalPlaces),
-      );
-
-      await wrappedLoan.stakeAVAXYak(
-          toWei("305")
-      );
-    });
-
-    it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {
-      // Define "updated" (USD x 1000) prices and build an updated wrapped loan
-      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
-      MOCK_PRICES_UPDATED = [
-        {
-          symbol: 'USD',
-          value: USD_PRICE * 1000
-        },
-        {
-          symbol: 'AVAX',
-          value: AVAX_PRICE
-        }
-      ]
-
-      wrappedLoanUpdated = WrapperBuilder
-          .mockLite(loan)
-          .using(
-              () => {
-                return {
-                  prices: MOCK_PRICES_UPDATED,
-                  timestamp: Date.now()
-                }
-              })
-
-      // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
-      expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoanUpdated.withdraw(toBytes32("AVAX"), toWei("60"));
-      expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
-      expect(await wrappedLoan.isSolvent()).to.be.false;
-
-      const loanFactory = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider");
-      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-      loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLiquidationFacetRedstoneProvider;
-
-      let wrappedLoanLiquidator = WrapperBuilder
-          .mockLite(loanLiquidation.connect(liquidator))
-          .using(
-              () => {
-                return {
-                  prices: MOCK_PRICES,
-                  timestamp: Date.now()
-                }
-              })
-
-      let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
-
-      let allowance = toWei("150");
-      await wavaxTokenContract.connect(liquidator).approve(wrappedLoan.address, allowance);
-      await wavaxTokenContract.connect(liquidator).deposit({value: allowance});
-
-      await wrappedLoanLiquidator.liquidateLoan([toWei("150")], 50);
-      let currentStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
-
-      expect(fromWei(initialStakedBalance)).to.be.greaterThan(fromWei(currentStakedBalance));
-      expect(fromWei(currentStakedBalance)).to.be.greaterThan(0);
-      expect(await wrappedLoan.isSolvent()).to.be.true;
-    });
-  });
+  // describe('A loan with staking liquidation', () => {
+  //   let exchange: PangolinExchange,
+  //       loan: MockSmartLoanLogicFacetRedstoneProvider,
+  //       smartLoansFactory: SmartLoansFactory,
+  //       loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
+  //       wrappedLoan: any,
+  //       wrappedLoanUpdated: any,
+  //       yakRouterContract: Contract,
+  //       pool: WavaxPool,
+  //       owner: SignerWithAddress,
+  //       depositor: SignerWithAddress,
+  //       liquidator: SignerWithAddress,
+  //       usdTokenContract: Contract,
+  //       wavaxTokenContract: Contract,
+  //       yakStakingContract: Contract,
+  //       usdTokenDecimalPlaces: BigNumber,
+  //       MOCK_PRICES: any,
+  //       MOCK_PRICES_UPDATED: any,
+  //       AVAX_PRICE: number,
+  //       USD_PRICE: number,
+  //       solvencyFacetAddress: any,
+  //       diamondAddress: any;
+  //
+  //   before("deploy provider, exchange and pool", async () => {
+  //     diamondAddress = await deployDiamond();
+  //     [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
+  //
+  //     const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+  //     pool = (await deployContract(owner, WavaxPoolArtifact)) as WavaxPool;
+  //     yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+  //     yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
+  //     usdTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
+  //     wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+  //
+  //     const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+  //     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+  //     const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+  //
+  //     usdTokenDecimalPlaces = await usdTokenContract.decimals();
+  //
+  //     AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+  //     USD_PRICE = (await redstone.getPrice('USDT')).value;
+  //
+  //     MOCK_PRICES = [
+  //       {
+  //         symbol: 'USD',
+  //         value: USD_PRICE
+  //       },
+  //       {
+  //         symbol: 'AVAX',
+  //         value: AVAX_PRICE
+  //       }
+  //     ]
+  //
+  //     await pool.initialize(
+  //         variableUtilisationRatesCalculator.address,
+  //         borrowersRegistry.address,
+  //         depositIndex.address,
+  //         borrowingIndex.address,
+  //         TOKEN_ADDRESSES['AVAX']
+  //     );
+  //
+  //     await pool.connect(depositor).depositNativeToken({value: toWei("1000")});
+  //
+  //     let supportedAssets = [
+  //       new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+  //       new Asset(toBytes32('USD'), usdTokenContract.address)
+  //     ]
+  //
+  //     let lendingPools = [
+  //       new PoolAsset(toBytes32('AVAX'), pool.address)
+  //     ]
+  //
+  //     let poolManager = await deployContract(
+  //         owner,
+  //         PoolManagerArtifact,
+  //         [
+  //           supportedAssets,
+  //           lendingPools
+  //         ]
+  //     ) as PoolManager;
+  //
+  //     smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+  //
+  //     // TODO: Check if it's possibl to avoid doulbe-recompilation
+  //     await recompileSmartLoanLib(
+  //         "SmartLoanLib",
+  //         yakRouterContract.address,
+  //         ethers.constants.AddressZero,
+  //         poolManager.address,
+  //         ethers.constants.AddressZero,
+  //         'lib'
+  //     );
+  //
+  //     exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+  //
+  //     //TODO: Refactor syntax
+  //     let result = await deployDiamond();
+  //     diamondAddress = result.diamondAddress;
+  //     solvencyFacetAddress = result.solvencyFacetAddress;
+  //
+  //     smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+  //
+  //     await recompileSmartLoanLib(
+  //         "SmartLoanLib",
+  //         yakRouterContract.address,
+  //         exchange.address,
+  //         poolManager.address,
+  //         solvencyFacetAddress,
+  //         'lib'
+  //     );
+  //
+  //     await deployAllFaucets(diamondAddress)
+  //
+  //     await smartLoansFactory.initialize(diamondAddress);
+  //   });
+  //
+  //   it("should deploy a smart loan, fund, borrow and invest", async () => {
+  //     await smartLoansFactory.connect(owner).createLoan();
+  //
+  //     const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+  //
+  //     loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+  //
+  //     wrappedLoan = WrapperBuilder
+  //         .mockLite(loan)
+  //         .using(
+  //             () => {
+  //               return {
+  //                 prices: MOCK_PRICES,
+  //                 timestamp: Date.now()
+  //               }
+  //             })
+  //
+  //     await wavaxTokenContract.connect(owner).deposit({value: toWei("100")});
+  //     await wavaxTokenContract.connect(owner).approve(wrappedLoan.address, toWei("100"));
+  //     await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+  //     await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
+  //
+  //     expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(400 * AVAX_PRICE, 0.1);
+  //     expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300 * AVAX_PRICE, 0.1);
+  //     expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+  //
+  //     const slippageTolerance = 0.03;
+  //
+  //     let usdAmount = Math.floor(30 * AVAX_PRICE);
+  //     let requiredAvaxAmount = USD_PRICE * usdAmount * (1 + slippageTolerance) / AVAX_PRICE;
+  //
+  //     await wrappedLoan.swapPangolin(
+  //         toBytes32('AVAX'),
+  //         toBytes32('USD'),
+  //         toWei(requiredAvaxAmount.toString()),
+  //         parseUnits(usdAmount.toString(), usdTokenDecimalPlaces),
+  //     );
+  //
+  //     await wrappedLoan.stakeAVAXYak(
+  //         toWei("305")
+  //     );
+  //   });
+  //
+  //   it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {
+  //     // Define "updated" (USD x 1000) prices and build an updated wrapped loan
+  //     AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+  //     USD_PRICE = (await redstone.getPrice('USDT')).value;
+  //     MOCK_PRICES_UPDATED = [
+  //       {
+  //         symbol: 'USD',
+  //         value: USD_PRICE * 1000
+  //       },
+  //       {
+  //         symbol: 'AVAX',
+  //         value: AVAX_PRICE
+  //       }
+  //     ]
+  //
+  //     wrappedLoanUpdated = WrapperBuilder
+  //         .mockLite(loan)
+  //         .using(
+  //             () => {
+  //               return {
+  //                 prices: MOCK_PRICES_UPDATED,
+  //                 timestamp: Date.now()
+  //               }
+  //             })
+  //
+  //     // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
+  //     expect(await wrappedLoan.isSolvent()).to.be.true;
+  //     await wrappedLoanUpdated.withdraw(toBytes32("AVAX"), toWei("60"));
+  //     expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
+  //     expect(await wrappedLoan.isSolvent()).to.be.false;
+  //
+  //     const loanFactory = await ethers.getContractFactory("MockSmartLoanLiquidationFacetRedstoneProvider");
+  //     const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+  //     loanLiquidation = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLiquidationFacetRedstoneProvider;
+  //
+  //     let wrappedLoanLiquidator = WrapperBuilder
+  //         .mockLite(loanLiquidation.connect(liquidator))
+  //         .using(
+  //             () => {
+  //               return {
+  //                 prices: MOCK_PRICES,
+  //                 timestamp: Date.now()
+  //               }
+  //             })
+  //
+  //     let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+  //
+  //     let allowance = toWei("150");
+  //     await wavaxTokenContract.connect(liquidator).approve(wrappedLoan.address, allowance);
+  //     await wavaxTokenContract.connect(liquidator).deposit({value: allowance});
+  //
+  //     await wrappedLoanLiquidator.liquidateLoan([toWei("150")], 50);
+  //     let currentStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+  //
+  //     expect(fromWei(initialStakedBalance)).to.be.greaterThan(fromWei(currentStakedBalance));
+  //     expect(fromWei(currentStakedBalance)).to.be.greaterThan(0);
+  //     expect(await wrappedLoan.isSolvent()).to.be.true;
+  //   });
+  // });
 });
 

@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../lib/SmartLoanLib.sol";
 import "../PoolManager.sol";
 import { LibDiamond } from "../lib/LibDiamond.sol";
+import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 
 
 contract SolvencyFacet is PriceAware {
@@ -68,7 +69,19 @@ contract SolvencyFacet is PriceAware {
         bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         if(prices.length > 0) {
-            return calculateAssetsValue() + SmartLoanLib.getYieldYakRouter().getTotalStakedValue() * prices[0] / 10**8;
+            //TODO: remove once liquidation is just sending tokens back to liquidator
+            IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
+            uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
+            uint256 stakedTotalValue;
+            if (stakedBalance == 0) {
+                stakedTotalValue = 0;
+            } else {
+                uint256 totalSupply = yakStakingContract.totalSupply();
+                uint256 totalDeposits = yakStakingContract.totalDeposits();
+                stakedTotalValue = stakedBalance * totalDeposits / totalSupply;
+            }
+            // TODO: REMOVE ^^
+            return calculateAssetsValue() + stakedTotalValue * prices[0] / 10**8;
         }
         else {
             return 0;

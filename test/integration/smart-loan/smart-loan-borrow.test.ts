@@ -65,6 +65,7 @@ describe('Smart loan',  () => {
     before("deploy factory, wavaxPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
       let lendingPools = [];
+      // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
       for (const token of [
         {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
         {'name': 'AVAX', 'airdropList': [depositor]}
@@ -91,9 +92,9 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
+      // TODO: Remove from this testcase as it's obsolete
       yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
-      // TODO: Check if it's possible to avoid double-recompilation
       let diamondAddress = await deployDiamond();
       await recompileSmartLoanLib(
           "SmartLoanLib",
@@ -104,6 +105,7 @@ describe('Smart loan',  () => {
           'lib'
       );
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
       await deployAllFaucets(diamondAddress)
 
       await smartLoansFactory.initialize(diamondAddress);
