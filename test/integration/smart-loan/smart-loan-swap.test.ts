@@ -40,7 +40,7 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
