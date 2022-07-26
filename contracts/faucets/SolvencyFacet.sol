@@ -17,14 +17,14 @@ contract SolvencyFacet is PriceAware {
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getMaxBlockTimestampDelay();
+        return SmartLoanLib.getRedstoneConfigManager().maxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return (_receivedSigner == SmartLoanLib.getPriceProvider1()) || (_receivedSigner == SmartLoanLib.getPriceProvider2());
+        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     /* ================== */

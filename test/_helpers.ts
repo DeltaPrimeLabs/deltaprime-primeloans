@@ -167,10 +167,9 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFaucets = async function(diamondAddress: any, testEnv = true) {
-    let solvencyFacetName = testEnv ? 'MockSolvencyFacetRP' : 'MockSolvencyFacet';
+export const deployAllFaucets = async function(diamondAddress: any) {
     await deployFacet(
-        "MockFundingFacetRP",
+        "FundingFacet",
         diamondAddress,
         [
             'borrow',
@@ -180,12 +179,12 @@ export const deployAllFaucets = async function(diamondAddress: any, testEnv = tr
         ],
         ''
     )
-    await deployFacet(solvencyFacetName, diamondAddress, [])
-    await deployFacet("MockPangolinDEXFacetRP", diamondAddress, ['swapPangolin'])
-    await deployFacet("MockYieldYakFacetRP", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak'])
-    await deployFacet("MockSmartLoanLiquidationFacetRP", diamondAddress, ['closeLoan', 'liquidateLoan', 'unsafeLiquidateLoan'])
+    await deployFacet("SolvencyFacet", diamondAddress, [])
+    await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
+    await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak'])
+    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['closeLoan', 'liquidateLoan', 'unsafeLiquidateLoan'])
     await deployFacet(
-        "MockSmartLoanLogicFacetRP",
+        "SmartLoanLogicFacet",
         diamondAddress,
         [
             'depositNativeToken',
@@ -268,11 +267,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileSmartLoanLib(contractName: string, yieldYakAddress: string, pangolinRouterAddress: string, poolManagerAddress: string, diamondBeaconAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
+export async function recompileSmartLoanLib(contractName: string, pangolinRouterAddress: string, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(yieldYakAddress, pangolinRouterAddress, poolManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV);
+    await updateSmartLoanLibrary(pangolinRouterAddress, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }

@@ -1,4 +1,4 @@
-export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAddress, poolManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
+export default function updateSmartLoanLibrary(pangolinRouterAddress, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
     var fs = require('fs')
     let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
@@ -24,16 +24,6 @@ export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAdd
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
-    //Yak Router
-
-    lineWithFunctionDeclaration = fileArray.findIndex(
-        line => line.includes('return IYieldYakRouter')
-    );
-
-    newLine = `    return IYieldYakRouter(${yieldYakRouter});`;
-
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
-
     //Pangolin Router
 
     lineWithFunctionDeclaration = fileArray.findIndex(
@@ -51,6 +41,16 @@ export default function updateSmartLoanLibrary(yieldYakRouter, pangolinRouterAdd
     );
 
     newLine = `    return PoolManager(${poolManager});`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    //Redstone Config Manager
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('return RedstoneConfigManager')
+    );
+
+    newLine = `    return RedstoneConfigManager(${redstoneConfigManager});`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

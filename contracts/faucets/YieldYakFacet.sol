@@ -1,7 +1,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
@@ -12,25 +11,11 @@ import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../lib/SmartLoanLib.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
 
-contract YieldYakFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
+contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
     address private constant YAKStakingAVAXAAVEV1Address = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
-
-    /**
-  * Override PriceAware method, addresses below belong to authorized signers of data feeds
-  **/
-    function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return (_receivedSigner == SmartLoanLib.getPriceProvider1()) || (_receivedSigner == SmartLoanLib.getPriceProvider2());
-    }
-
-    /**
-     * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
-     **/
-    function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getMaxBlockTimestampDelay();
-    }
 
     // TODO: Change name to a more unique one for this exact investment strategy
     /**

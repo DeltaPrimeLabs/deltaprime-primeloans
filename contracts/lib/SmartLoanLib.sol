@@ -9,6 +9,7 @@ import "../interfaces/IYieldYakRouter.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
 import "../mock/WAVAX.sol";
 import "../ERC20Pool.sol";
+import "../RedstoneConfigManager.sol";
 
 library SmartLoanLib {
 
@@ -22,6 +23,7 @@ library SmartLoanLib {
 
     address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
+    // TODO: Remove after using RestoneConfigManager on production
     // redstone-evm-connector price providers
     address private constant _PRICE_PROVIDER_1 = 0x981bdA8276ae93F567922497153de7A5683708d3;
 
@@ -35,7 +37,7 @@ library SmartLoanLib {
 
     address private constant _PANGOLIN_ROUTER_CONTRACT = 0x0000000000000000000000000000000000000000;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0xaC9fCBA56E42d5960f813B9D0387F3D3bC003338;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x72662E4da74278430123cE51405c1e7A1B87C294;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -61,7 +63,11 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x63fea6E447F120B8Faf85B53cdaD8348e645D80E);
+    return PoolManager(0x4653251486a57f90Ee89F9f34E098b9218659b83);
+    }
+
+    function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
+    return RedstoneConfigManager(0x6Da3D07a6BF01F02fB41c02984a49B5d9Aa6ea92);
     }
 
     function getNativeTokenWrapped() internal view returns (WAVAX) {

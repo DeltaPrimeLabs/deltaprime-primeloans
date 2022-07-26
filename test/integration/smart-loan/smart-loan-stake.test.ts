@@ -22,6 +22,8 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
+  CompoundingIndex__factory,
+  RedstoneConfigManager__factory,
   MockSmartLoanLogicFacetRedstoneProvider,
   PangolinExchange,
   PoolManager,
@@ -72,6 +74,8 @@ describe('Smart loan',  () => {
     before("deploy factory and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+
       let lendingPools = [];
       // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
       for (const token of [
@@ -104,8 +108,8 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanLib",
           ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
           poolManager.address,
+          redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );

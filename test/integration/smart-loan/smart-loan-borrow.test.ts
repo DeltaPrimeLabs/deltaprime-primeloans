@@ -20,7 +20,7 @@ import {syncTime} from "../../_syncTime"
 import {
   PangolinExchange, PoolManager, SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  YieldYakRouter__factory
+  RedstoneConfigManager__factory,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
@@ -64,6 +64,9 @@ describe('Smart loan',  () => {
 
     before("deploy factory, wavaxPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
+
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+
       let lendingPools = [];
       // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
       for (const token of [
@@ -93,14 +96,14 @@ describe('Smart loan',  () => {
       ) as PoolManager;
 
       // TODO: Remove from this testcase as it's obsolete
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
+      // yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
 
       let diamondAddress = await deployDiamond();
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          yakRouterContract.address,
           ethers.constants.AddressZero,
           poolManager.address,
+          redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
