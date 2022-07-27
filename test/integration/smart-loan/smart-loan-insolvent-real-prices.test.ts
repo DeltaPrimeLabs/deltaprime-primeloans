@@ -428,7 +428,7 @@ describe('Smart loan - real prices',  () => {
     before("prepare smart loan facets", async () => {
 
       await deployFacet("MockSmartLoanLogicFacetAlwaysSolventRedstoneProvider", diamondAddress, [], ltvLib.address);
-      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan", "closeLoan"], ltvLib.address);
+      await deployFacet("MockSmartLoanLiquidationFacetRedstoneProvider", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan"], ltvLib.address);
     });
 
     beforeEach("create a loan", async () => {
@@ -649,9 +649,6 @@ describe('Smart loan - real prices',  () => {
           break;
         case 'HEAL':
           await wrappedLoan.unsafeLiquidateLoan(repayAmountsInWei, bonusInWei);
-          break;
-        case 'CLOSE':
-          await wrappedLoan.closeLoan(allowanceAmountsInWei);
           break;
       }
 

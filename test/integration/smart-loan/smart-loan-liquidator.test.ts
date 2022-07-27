@@ -145,7 +145,7 @@ describe('Test liquidator',  () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployFacet("MockSmartLoanLogicFacetAlwaysSolvent", diamondAddress, [], ltvLib.address);
-            await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan", "closeLoan"], ltvLib.address);
+            await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ["liquidateLoan", "unsafeLiquidateLoan"], ltvLib.address);
             await smartLoansFactory.initialize(diamondAddress);
         });
 

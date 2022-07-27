@@ -56,7 +56,7 @@ describe('Smart loan',  () => {
     await syncTime();
   });
 
-  describe('A loan with closeLoan() and additional AVAX supplied', () => {
+  describe('A loan with withdrawal', () => {
     let exchange: PangolinExchange,
         loan: SmartLoanGigaChadInterface,
         smartLoansFactory: SmartLoansFactory,

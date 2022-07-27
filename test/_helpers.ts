@@ -182,7 +182,7 @@ export const deployAllFaucets = async function(diamondAddress: any) {
     await deployFacet("SolvencyFacet", diamondAddress, [])
     await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
     await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak'])
-    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['closeLoan', 'liquidateLoan', 'unsafeLiquidateLoan'])
+    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['liquidateLoan', 'unsafeLiquidateLoan'])
     await deployFacet(
         "SmartLoanLogicFacet",
         diamondAddress,

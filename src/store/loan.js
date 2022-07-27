@@ -321,21 +321,6 @@ export default {
       dispatch('network/updateBalance', {}, {root: true})
     },
 
-    async closeLoan({state, rootState, dispatch}) {
-      const provider = rootState.network.provider;
-      const loan = state.loan;
-
-      let tx = await loan.closeLoan({gasLimit: 5000000});
-
-      await awaitConfirmation(tx, provider, 'closing the loan');
-
-      dispatch('updateLoanStats');
-      dispatch('updateLoanHistory');
-      dispatch('updateLoanBalance');
-      dispatch('updateAssets');
-      dispatch('network/updateBalance', {}, {root: true})
-    },
-
     async stakeAvaxYak({state, rootState, dispatch, commit}, {amount}) {
 
       const provider = rootState.network.provider;

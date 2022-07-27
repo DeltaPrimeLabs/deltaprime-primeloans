@@ -555,9 +555,6 @@ describe('Smart loan',  () => {
         case 'HEAL':
           await wrappedLoan.unsafeLiquidateLoan(repayAmountsInWei, bonusInWei);
           break;
-        case 'CLOSE':
-          await wrappedLoan.closeLoan(allowanceAmountsInWei, bonusInWei);
-          break;
       }
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
