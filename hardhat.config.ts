@@ -19,6 +19,9 @@ export default {
       {
         version: "0.8.4",
       },
+      {
+        version: "0.8.10",
+      }
     ]
   },
   defaultNetwork: "hardhat",

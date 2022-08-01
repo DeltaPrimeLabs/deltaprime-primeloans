@@ -10,7 +10,8 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./CompoundingIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
-
+import "./interfaces/aaveV3/interfaces/IPool.sol";
+import "hardhat/console.sol";
 
 /**
  * @title ERC20Pool
@@ -36,6 +37,8 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   CompoundingIndex public borrowIndex;
 
   address payable public tokenAddress;
+
+  IPool private constant aaveV3Pool = IPool(0x794a61358D6845594F94dc1DB02A252b5b4814aD);
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_, address payable tokenAddress_) public initializer {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
@@ -163,23 +166,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * It updates user deposited balance, total deposited and rates
    **/
   function deposit(uint256 amount) public virtual nonReentrant {
-    _accumulateDepositInterest(msg.sender);
-
-    _transferToPool(msg.sender, amount);
-
-    _mint(msg.sender, amount);
-    _deposited[address(this)] += amount;
-    _updateRates();
-
-    emit Deposit(msg.sender, amount, block.timestamp);
-  }
-
-  function _transferToPool(address from, uint256 amount) internal virtual {
-    tokenAddress.safeTransferFrom(from, address(this), amount);
-  }
-
-  function _transferFromPool(address to, uint256 amount) internal virtual {
-    tokenAddress.safeTransfer(to, amount);
+    _deposit(amount, msg.sender, true);
   }
 
   /**
@@ -187,17 +174,7 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
    **/
   function withdraw(uint256 _amount) external nonReentrant {
-    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
-
-    _accumulateDepositInterest(msg.sender);
-
-    _burn(msg.sender, _amount);
-
-    _transferFromPool(msg.sender, _amount);
-
-    _updateRates();
-
-    emit Withdrawal(msg.sender, _amount, block.timestamp);
+    _withdraw(_amount, msg.sender, true);
   }
 
   /**
@@ -238,6 +215,35 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     _updateRates();
 
     emit Repayment(msg.sender, amount, block.timestamp);
+  }
+
+  /**
+   * Borrows the specified amount from AAVE V3 Pool using credit delegation
+   * @dev _amount the amount to be borrowed
+   * @dev _onBehalfOf delegator of borrowed funds
+   * @dev It is only meant to be used by the owner
+   **/
+  function borrowFromAaveV3(uint256 _amount, address _onBehalfOf) public virtual onlyOwner nonReentrant {
+    _deposit(_amount, address(aaveV3Pool), false);
+
+    aaveV3Pool.borrow(tokenAddress, _amount, 2, 0, _onBehalfOf);
+
+    emit BorrowingFromAaveV3(_amount, _onBehalfOf, block.timestamp);
+  }
+
+  /**
+   * Repays the specified amount to AAVE V3 Pool
+   * @dev _amount the amount to be borrowed
+   * @dev _onBehalfOf delegator of borrowed funds
+   * @dev It is only meant to be used by the owner
+   **/
+  function repayToAaveV3(uint256 _amount, address _onBehalfOf) public virtual onlyOwner nonReentrant {
+    _withdraw(_amount, address(aaveV3Pool), false);
+
+    IERC20(tokenAddress).approve(address(aaveV3Pool), _amount);
+    aaveV3Pool.repay(tokenAddress, _amount, 2, _onBehalfOf);
+
+    emit RepayingToAaveV3(_amount, _onBehalfOf, block.timestamp);
   }
 
   /* =========
@@ -297,6 +303,52 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   /* ========== INTERNAL FUNCTIONS ========== */
+
+  /**
+ * Deposits the amount
+ * It updates user deposited balance, total deposited and rates
+ **/
+  function _deposit(uint256 amount, address user, bool transfer) internal virtual {
+    _accumulateDepositInterest(user);
+
+    if (transfer) {
+      _transferToPool(user, amount);
+    }
+
+    _mint(user, amount);
+    _deposited[address(this)] += amount;
+    _updateRates();
+
+    emit Deposit(user, amount, block.timestamp);
+  }
+
+  /**
+ * Withdraws selected amount from the user deposits
+ * @dev _amount the amount to be withdrawn
+   **/
+  function _withdraw(uint256 _amount, address user, bool transfer) internal {
+    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
+
+    _accumulateDepositInterest(user);
+
+    _burn(user, _amount);
+
+    if (transfer) {
+      _transferFromPool(user, _amount);
+    }
+
+    _updateRates();
+
+    emit Withdrawal(user, _amount, block.timestamp);
+  }
+
+  function _transferToPool(address from, uint256 amount) internal virtual {
+    tokenAddress.safeTransferFrom(from, address(this), amount);
+  }
+
+  function _transferFromPool(address to, uint256 amount) internal virtual {
+    tokenAddress.safeTransfer(to, amount);
+  }
 
   function _mint(address to, uint256 amount) internal {
     require(to != address(0), "ERC20: cannot mint to the zero address");
@@ -388,6 +440,22 @@ contract ERC20Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @param timestamp of the repayment
    **/
   event Repayment(address indexed user, uint256 value, uint256 timestamp);
+
+  /**
+   * @dev emitted after borrowing funds from AAVE V3 Pool
+   * @param amount the address that borrows
+   * @param onBehalfOf delegator address
+   * @param timestamp time of the borrowing
+   **/
+  event BorrowingFromAaveV3(uint256 amount, address onBehalfOf, uint256 timestamp);
+
+  /**
+   * @dev emitted after repaying funds to AAVE V3 Pool
+   * @param amount the address that borrows
+   * @param onBehalfOf delegator address
+   * @param timestamp time of the borrowing
+   **/
+  event RepayingToAaveV3(uint256 amount, address onBehalfOf, uint256 timestamp);
 
   /**
    * @dev emitted after accumulating deposit interest
