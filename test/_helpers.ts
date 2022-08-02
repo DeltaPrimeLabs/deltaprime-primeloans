@@ -191,6 +191,9 @@ export const deployAllFaucets = async function(diamondAddress: any) {
             'getOwnedAssetsBalances',
             'getOwnedAssetsPrices',
             'wrapNativeToken',
+            'unwrapAndWithdraw',
+            'getAllAssetsBalances',
+            'getAllAssetsPrices',
         ]
     )
 };
@@ -239,7 +242,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     let pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
     let tokenContract: any;
     switch(tokenName){
-        case 'USD':
+        case 'MCKUSD':
             //it's a mock implementation of USD token with 18 decimal places
             tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
             break;

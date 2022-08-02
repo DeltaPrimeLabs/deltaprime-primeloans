@@ -35,6 +35,41 @@ function fixDataLocation() {
     return 'interfaces updated!'
 }
 
+function fixPayableFunctions(payableFunctions) {
+    const dir = './contracts/interfaces/faucets'
+    const files = fs.readdirSync(dir)
+
+    for (const file of files) {
+        let changes = 0;
+        let fullPath = path.join(dir, file)
+        console.log(`Processing interface: ${fullPath}`)
+        let data = fs.readFileSync(fullPath, 'utf8')
+        let fileArray = data.split('\n');
+        let newFileArray = []
+        fileArray.forEach((element, index) => {
+            let elementToPush = element;
+            let payableAdded = false;
+            for (const func of payableFunctions) {
+                if (element.includes(func)) {
+                    console.log(`Adding payable to function: ${func}`)
+                    newFileArray.push(elementToPush.replace('external', 'payable external'));
+                    payableAdded = true;
+                    changes++;
+                    break;
+                }
+            }
+            if(!payableAdded) {
+                newFileArray.push(elementToPush);
+            }
+
+        })
+        let result = newFileArray.join("\n");
+
+        fs.writeFileSync(fullPath, result, 'utf8');
+        console.log(`Interface processed, added payable to ${changes} functions and saved to: ${fullPath}`)
+    }
+}
+
 function generateFaucetsInterfaces(faucetsList) {
     for (const facet of faucetsList) {
         const output = execSync(`npx hardhat gen-interface ${facet}`, { encoding: 'utf-8' });
@@ -98,9 +133,18 @@ function createFaucetsInterfaces() {
         'getMaxBlockTimestampDelay',
         'getERC20TokenInstance',
     ]
+    const payableFunctions = [
+        'deposit',
+        'repay',
+        'depositNativeToken',
+        'unsafeLiquidateLoan',
+        'liquidateLoan',
+        'unwrapAndWithdraw',
+    ]
     generateFaucetsInterfaces(faucetsList);
     fixDataLocation();
     removeObsoleteFunctions(functionsToRemove);
+    fixPayableFunctions(payableFunctions);
 }
 
 module.exports.generateFaucetsInterfaces = generateFaucetsInterfaces;

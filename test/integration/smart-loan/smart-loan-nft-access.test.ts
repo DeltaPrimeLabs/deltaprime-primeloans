@@ -3,10 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import VariableUtilisationRatesCalculatorArtifact
-    from '../../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import ERC20PoolArtifact from '../../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
-import CompoundingIndexArtifact from '../../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import MockBorrowAccessNFTArtifact
     from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 
@@ -15,10 +12,9 @@ import SmartLoansFactoryWithAccessNFTArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 import {
-    Asset,
-    deployAndInitPangolinExchangeContract,
+    Asset, deployAllFaucets, deployAndInitializeLendingPool,
     fromWei,
-    getFixedGasSigners,
+    getFixedGasSigners, PoolAsset,
     recompileSmartLoanLib,
     toBytes32,
     toWei,
@@ -28,13 +24,10 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
     CompoundingIndex,
     ERC20Pool,
-    MockBorrowAccessNFT, MockSmartLoanLogicFacetRedstoneProvider, MockSmartLoanLogicFacetRedstoneProvider__factory,
-    OpenBorrowersRegistry__factory,
-    PangolinExchange,
+    MockBorrowAccessNFT, MockSmartLoanLogicFacetRedstoneProvider,
+    OpenBorrowersRegistry__factory, PoolManager, RedstoneConfigManager__factory,
     SmartLoansFactoryWithAccessNFT,
     VariableUtilisationRatesCalculator,
-    YieldYakRouter,
-    YieldYakRouter__factory
 } from "../../../typechain";
 import {Contract} from "ethers";
 
@@ -43,7 +36,6 @@ chai.use(solidity);
 import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -62,80 +54,64 @@ describe('Smart loan',  () => {
     });
 
     describe('A loan with an access NFT', () => {
-        let exchange: PangolinExchange,
-            owner: SignerWithAddress,
+        let owner: SignerWithAddress,
             depositor: SignerWithAddress,
             loan: MockSmartLoanLogicFacetRedstoneProvider,
             wrappedLoan: any,
-            usdPool: ERC20Pool,
-            wavaxPool: ERC20Pool,
-            wavaxTokenContract: Contract,
+            tokenContracts: any = {},
             nftContract: Contract,
-            yakRouterContract: YieldYakRouter,
-            smartLoansFactory: SmartLoansFactoryWithAccessNFT,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
-            diamondAddress: any;
+            smartLoansFactory: SmartLoansFactoryWithAccessNFT;
 
         before("deploy provider, exchange and pool", async () => {
-            diamondAddress = await deployDiamond();
             [owner, depositor] = await getFixedGasSigners(10000000);
+
+            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+
             nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
-            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-            const variableUtilisationRatesCalculatorERC20 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-            usdPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
-            wavaxPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+            let lendingPools = [];
+            for (const token of [
+                {'name': 'AVAX', 'airdropList': [depositor]}
+            ]) {
+                let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
+                await poolContract.connect(depositor).deposit(toWei("1000"));
+                lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
+                tokenContracts[token.name] = tokenContract;
+            }
 
-            wavaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            let supportedAssets = [
+                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+            ]
 
-            yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
+            let poolManager = await deployContract(
+                owner,
+                PoolManagerArtifact,
+                [
+                    supportedAssets,
+                    lendingPools
+                ]
+            ) as PoolManager;
 
-            const borrowersRegistryERC20 = await (new OpenBorrowersRegistry__factory(owner).deploy());
-            const depositIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
-            const borrowingIndexERC20 = (await deployContract(owner, CompoundingIndexArtifact, [wavaxPool.address])) as CompoundingIndex;
+            let diamondAddress = await deployDiamond();
 
-
-            AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-
-            MOCK_PRICES = [
-                {
-                    symbol: 'AVAX',
-                    value: AVAX_PRICE
-                }
-            ];
-
-            await wavaxPool.initialize(
-                variableUtilisationRatesCalculatorERC20.address,
-                borrowersRegistryERC20.address,
-                depositIndexERC20.address,
-                borrowingIndexERC20.address,
-                wavaxTokenContract.address
-            );
-
-            await wavaxTokenContract.connect(depositor).deposit({value: toWei("1000")});
-            await wavaxTokenContract.connect(depositor).approve(wavaxPool.address, toWei("1000"));
-            await wavaxPool.connect(depositor).deposit(toWei("1000"));
-
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
-                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX'])
-            ]);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryWithAccessNFTArtifact) as SmartLoansFactoryWithAccessNFT;
-            await recompileSmartLoanLib(
-                'SmartLoanLib',
-                [1],
-                [TOKEN_ADDRESSES['AVAX']],
-                { "AVAX": wavaxPool.address},
-                exchange.address,
-                yakRouterContract.address,
-                'lib'
-            );
-            await deployFacet("MockSmartLoanLogicFacetRedstoneProvider", diamondAddress, []);
-
             await smartLoansFactory.initialize(diamondAddress);
-
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
+
+            await recompileSmartLoanLib(
+                "SmartLoanLib",
+                ethers.constants.AddressZero,
+                poolManager.address,
+                redstoneConfigManager.address,
+                diamondAddress,
+                'lib',
+            );
+
+            await deployAllFaucets(diamondAddress)
         });
 
         it("should fail to create a loan without the access NFT", async () => {
@@ -152,6 +128,14 @@ describe('Smart loan',  () => {
         });
 
         it("should create a loan with the access NFT", async () => {
+            AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+
+            MOCK_PRICES = [
+                {
+                    symbol: 'AVAX',
+                    value: AVAX_PRICE
+                },
+            ];
             const wrappedSmartLoansFactory = WrapperBuilder
                 .mockLite(smartLoansFactory.connect(depositor))
                 .using(
@@ -166,10 +150,8 @@ describe('Smart loan',  () => {
 
             await wrappedSmartLoansFactory.connect(owner).createLoan();
 
-            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-
-            const loanFactory = await ethers.getContractFactory("MockSmartLoanLogicFacetRedstoneProvider");
-            loan = await loanFactory.attach(loan_proxy_address).connect(owner) as MockSmartLoanLogicFacetRedstoneProvider;
+            const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)

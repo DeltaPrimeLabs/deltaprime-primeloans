@@ -9,6 +9,7 @@ import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import { LibDiamond } from "../lib/LibDiamond.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../mock/WAVAX.sol";
 import "../ERC20Pool.sol";
 
@@ -30,7 +31,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return (_receivedSigner == SmartLoanLib.getPriceProvider1()) || (_receivedSigner == SmartLoanLib.getPriceProvider2());
+        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
@@ -46,6 +47,25 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
+    }
+
+    function getAllAssetsBalances() public view returns (uint256[] memory) {
+        PoolManager poolManager = SmartLoanLib.getPoolManager();
+
+        bytes32[] memory assets = poolManager.getAllTokenAssets();
+        uint256[] memory balances = new uint[](assets.length);
+        for(uint256 i=0; i<assets.length; i++) {
+            balances[i] = IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this));
+        }
+        return balances;
+    }
+
+    function getAllAssetsPrices() public view returns (uint256[] memory result) {
+        PoolManager poolManager = SmartLoanLib.getPoolManager();
+
+        bytes32[] memory assets = poolManager.getAllTokenAssets();
+        uint256[] memory prices = getPricesFromMsg(assets);
+        return prices;
     }
 
     function unwrapAndWithdraw(uint256 _amount) public payable virtual {

@@ -9,7 +9,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset, deployAllFaucets, deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
   fromWei, getFixedGasSigners,
   PoolAsset,
   recompileSmartLoanLib,
@@ -19,18 +18,15 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   MockSmartLoanLogicFacetRedstoneProvider,
-  PangolinExchange, PoolManager,
+  PoolManager, RedstoneConfigManager__factory,
   SmartLoansFactory,
-  YieldYakRouter__factory
 } from "../../../typechain";
-import {Contract} from "ethers";
 import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
 
 chai.use(solidity);
 
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
@@ -39,12 +35,10 @@ describe('Smart loan',  () => {
 
 
   describe(`Funding a loan`, () => {
-    let exchange: PangolinExchange,
-        smartLoansFactory: SmartLoansFactory,
+    let smartLoansFactory: SmartLoansFactory,
         loan: MockSmartLoanLogicFacetRedstoneProvider,
         wrappedLoan: any,
         tokenContracts: any = {},
-        yakRouterContract: Contract,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         MOCK_PRICES: any,
@@ -54,6 +48,8 @@ describe('Smart loan',  () => {
 
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
+
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       USD_PRICE = (await redstone.getPrice('USDT')).value;
@@ -101,34 +97,23 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          ethers.constants.AddressZero,
-          poolManager.address,
-          ethers.constants.AddressZero,
-          'lib'
-      );
-      //TODO: Refactor syntax
-      let {diamondAddress, solvencyFacetAddress} = await deployDiamond();
+      let diamondAddress = await deployDiamond();
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(diamondAddress);
+
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          yakRouterContract.address,
           ethers.constants.AddressZero,
           poolManager.address,
-          solvencyFacetAddress,
+          redstoneConfigManager.address,
+          diamondAddress,
           'lib'
       );
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
       await deployAllFaucets(diamondAddress)
 
-      await smartLoansFactory.initialize(diamondAddress);
+
     });
 
 
@@ -178,7 +163,6 @@ describe('Smart loan',  () => {
     });
 
     it("should revert withdrawing too much native token", async () => {
-      console.log(wrappedLoan);
       await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough WAVAX to unwrap and withdraw");
     });
 

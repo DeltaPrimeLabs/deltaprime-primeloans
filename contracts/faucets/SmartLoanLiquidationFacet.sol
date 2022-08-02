@@ -41,7 +41,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return (_receivedSigner == SmartLoanLib.getPriceProvider1()) || (_receivedSigner == SmartLoanLib.getPriceProvider2());
+        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
 

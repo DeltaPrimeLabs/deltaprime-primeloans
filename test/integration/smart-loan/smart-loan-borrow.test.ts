@@ -9,7 +9,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset, deployAllFaucets, deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
   fromWei,
   getFixedGasSigners, PoolAsset,
   recompileSmartLoanLib,
@@ -18,7 +17,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  PangolinExchange, PoolManager, SmartLoanGigaChadInterface,
+  PoolManager, SmartLoanGigaChadInterface,
   SmartLoansFactory,
   RedstoneConfigManager__factory,
 } from "../../../typechain";
@@ -29,7 +28,6 @@ chai.use(solidity);
 
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 const {deployContract} = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -54,7 +52,6 @@ describe('Smart loan',  () => {
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         tokenContracts: any = {},
-        yakRouterContract: Contract,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         MOCK_PRICES: any,
@@ -70,7 +67,7 @@ describe('Smart loan',  () => {
       let lendingPools = [];
       // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
       for (const token of [
-        {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
+        {'name': 'MCKUSD', 'airdropList': [owner.address, depositor.address]},
         {'name': 'AVAX', 'airdropList': [depositor]}
       ]) {
         let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
@@ -82,7 +79,7 @@ describe('Smart loan',  () => {
 
       let supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-        new Asset(toBytes32('USD'), tokenContracts['USD'].address),
+        new Asset(toBytes32('MCKUSD'), tokenContracts['MCKUSD'].address),
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
       ]
 
@@ -95,10 +92,11 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
-      // TODO: Remove from this testcase as it's obsolete
-      // yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-
       let diamondAddress = await deployDiamond();
+
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(diamondAddress);
+
       await recompileSmartLoanLib(
           "SmartLoanLib",
           ethers.constants.AddressZero,
@@ -107,17 +105,13 @@ describe('Smart loan',  () => {
           diamondAddress,
           'lib'
       );
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
       await deployAllFaucets(diamondAddress)
-
-      await smartLoansFactory.initialize(diamondAddress);
     });
 
 
     it("should deploy a smart loan", async () => {
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      USD_PRICE = (await redstone.getPrice('USDC')).value;
       ETH_PRICE = (await redstone.getPrice('ETH')).value;
 
       MOCK_PRICES = [
@@ -126,7 +120,7 @@ describe('Smart loan',  () => {
           value: AVAX_PRICE
         },
         {
-          symbol: 'USD',
+          symbol: 'MCKUSD',
           value: USD_PRICE
         },
         {
@@ -157,10 +151,10 @@ describe('Smart loan',  () => {
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
-      await tokenContracts['USD'].connect(owner).approve(wrappedLoan.address, toWei("1000"));
-      await wrappedLoan.fund(toBytes32("USD"), toWei("300"));
+      await tokenContracts['MCKUSD'].connect(owner).approve(wrappedLoan.address, toWei("1000"));
+      await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("300"));
 
-      expect(fromWei(await tokenContracts['USD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
+      expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300, 0.5);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
@@ -168,8 +162,8 @@ describe('Smart loan',  () => {
 
 
     it("should borrow funds in the same token as funded", async () => {
-      await wrappedLoan.borrow(toBytes32("USD"), toWei("300"));
-      expect(fromWei(await tokenContracts['USD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
+      await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"));
+      expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300 + 300, 1);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300, 0.5);
       expect(await wrappedLoan.getLTV()).to.be.equal(1000);
@@ -187,10 +181,10 @@ describe('Smart loan',  () => {
 
 
     it("should repay funds", async () => {
-      await wrappedLoan.repay(toBytes32("USD"), toWei("100"));
+      await wrappedLoan.repay(toBytes32("MCKUSD"), toWei("100"));
       await wrappedLoan.repay(toBytes32("AVAX"), toWei("0.5"));
 
-      expect(fromWei(await tokenContracts['USD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(500);
+      expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(500);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(500 + AVAX_PRICE * 0.5, 1);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(200 + AVAX_PRICE * 0.5, 1);
       expect(await wrappedLoan.getLTV()).to.be.closeTo(((200 + AVAX_PRICE * 0.5) * 1000 / 300).toFixed(0), 1)

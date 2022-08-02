@@ -28,6 +28,10 @@ contract PoolManager {
         return assetToPoolAddress._inner._keys._inner._values;
     }
 
+    function getAllTokenAssets() public view returns (bytes32[] memory result) {
+        return assetToTokenAddress._inner._keys._inner._values;
+    }
+
     /**
     * Returns address of an asset
     **/

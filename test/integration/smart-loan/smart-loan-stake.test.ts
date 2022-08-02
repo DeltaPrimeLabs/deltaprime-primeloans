@@ -11,7 +11,6 @@ import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
   deployAllFaucets, deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -22,13 +21,10 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  CompoundingIndex__factory,
   RedstoneConfigManager__factory,
   MockSmartLoanLogicFacetRedstoneProvider,
-  PangolinExchange,
   PoolManager,
   SmartLoansFactory,
-  WavaxPool,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
@@ -36,7 +32,6 @@ import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond'
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 
 const erc20ABI = [

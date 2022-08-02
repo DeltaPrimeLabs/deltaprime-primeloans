@@ -7,8 +7,7 @@ import {
   Asset,
   deployAllFaucets,
   deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
-  getFixedGasSigners,
+    getFixedGasSigners,
   PoolAsset,
   recompileSmartLoanLib,
   toBytes32,
@@ -16,23 +15,18 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  ERC20Pool,
-  MockSmartLoanLogicFacetRedstoneProvider,
   MockToken,
-  PangolinExchange,
-  PoolManager, SmartLoanGigaChadInterface,
+  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  YieldYakRouter__factory
 } from "../../../typechain";
 import {ethers} from "hardhat";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import {Contract} from "ethers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import TOKEN_ADDRESSES from "../../../common/token_addresses.json";
+import redstone from "redstone-api";
 
 chai.use(solidity);
 
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
@@ -41,22 +35,25 @@ describe('Smart loan',  () => {
 
 
   describe('A loan with edge LTV cases', () => {
-    let exchange: PangolinExchange,
-        smartLoansFactory: SmartLoansFactory,
+    let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
-        mockUsdToken: MockToken,
-        yakRouterContract: Contract,
         tokenContracts: any = {},
         owner: SignerWithAddress,
-        depositor: SignerWithAddress;
+        depositor: SignerWithAddress,
+        MOCK_PRICES: any,
+        AVAX_PRICE: number,
+        USD_PRICE: number,
+        ETH_PRICE: number;
 
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+
       let lendingPools = [];
       for (const token of [
-        {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
+        {'name': 'MCKUSD', 'airdropList': [owner.address, depositor.address]},
         {'name': 'AVAX', 'airdropList': [depositor]}
       ]) {
         let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
@@ -68,7 +65,7 @@ describe('Smart loan',  () => {
 
       let supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-        new Asset(toBytes32('USD'), tokenContracts['USD'].address),
+        new Asset(toBytes32('MCKUSD'), tokenContracts['MCKUSD'].address),
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
       ]
 
@@ -81,77 +78,90 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          ethers.constants.AddressZero,
-          poolManager.address,
-          ethers.constants.AddressZero,
-          'lib'
-      );
-      //TODO: Refactor syntax
-      let {diamondAddress, solvencyFacetAddress} = await deployDiamond();
+      let diamondAddress = await deployDiamond();
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(diamondAddress);
+
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          yakRouterContract.address,
           ethers.constants.AddressZero,
           poolManager.address,
-          solvencyFacetAddress,
-          'lib'
+          redstoneConfigManager.address,
+          diamondAddress,
+          'lib',
+          5020
       );
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
       await deployAllFaucets(diamondAddress)
-
-      await smartLoansFactory.initialize(diamondAddress);
     });
 
     it("should deploy a smart loan", async () => {
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDC')).value;
+      ETH_PRICE = (await redstone.getPrice('ETH')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        },
+        {
+          symbol: 'MCKUSD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'ETH',
+          value: ETH_PRICE
+        }
+      ];
+
       await smartLoansFactory.connect(owner).createLoan();
 
       const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
       loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
 
       wrappedLoan = WrapperBuilder
-          .wrapLite(loan)
-          .usingPriceFeed("redstone-avalanche-prod")
+          .mockLite(loan)
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
     });
 
     it("should check debt equal to 0", async () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
       expect(await wrappedLoan.isSolvent()).to.be.true;
 
-      await mockUsdToken.connect(owner).approve(wrappedLoan.address, toWei("100"));
-      await wrappedLoan.fund(toBytes32("USDT"), toWei("100"));
+      await tokenContracts['MCKUSD'].connect(owner).approve(wrappedLoan.address, toWei("100"));
+      await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("100"));
 
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
     it("should check debt greater than 0 and lesser than totalValue", async () => {
-      await wrappedLoan.borrow(toBytes32("USDT"), toWei("25"));
+      await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("25"));
 
       expect(await wrappedLoan.getLTV()).to.be.equal(250);
     });
 
     it("should check LTV 4999", async () => {
-      await wrappedLoan.borrow(toBytes32("USDT"), toWei("474"));
+      await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("474"));
 
       expect(await wrappedLoan.getLTV()).to.be.equal(4990);
     });
 
     it("should check LTV 5000", async () => {
-      await wrappedLoan.borrow(toBytes32("USDT"), toWei("1"));
+      await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
       expect(await wrappedLoan.getLTV()).to.be.equal(5000);
     });
 
     it("should check LTV 5010", async () => {
-      await wrappedLoan.borrow(toBytes32("USDT"), toWei("1"));
+      await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
       expect(await wrappedLoan.getLTV()).to.be.equal(5010);
     });

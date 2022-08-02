@@ -9,7 +9,6 @@ import {
   Asset,
   deployAllFaucets,
   deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -19,11 +18,8 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  MockSmartLoanLogicFacetRedstoneProvider,
-  PangolinExchange,
-  PoolManager, SmartLoanGigaChadInterface,
+  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  YieldYakRouter__factory
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -33,7 +29,6 @@ import redstone from "redstone-api";
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -49,11 +44,9 @@ describe('Smart loan',  () => {
 
 
   describe('Creating a loan', () => {
-    let exchange: PangolinExchange,
-        smartLoansFactory: SmartLoansFactory,
+    let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
-        yakRouterContract: Contract,
         tokenContracts: any = {},
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -66,6 +59,8 @@ describe('Smart loan',  () => {
 
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
       [owner, depositor, borrower1, borrower2] = await getFixedGasSigners(10000000);
+
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       USD_PRICE = (await redstone.getPrice('USDT')).value;
@@ -113,34 +108,21 @@ describe('Smart loan',  () => {
           ]
       ) as PoolManager;
 
-      yakRouterContract = await (new YieldYakRouter__factory(owner).deploy());
-
-      // TODO: Check if it's possibl to avoid doulbe-recompilation
-      await recompileSmartLoanLib(
-          "SmartLoanLib",
-          yakRouterContract.address,
-          ethers.constants.AddressZero,
-          poolManager.address,
-          ethers.constants.AddressZero,
-          'lib'
-      );
-      //TODO: Refactor syntax
-      let {diamondAddress, solvencyFacetAddress} = await deployDiamond();
+      let diamondAddress = await deployDiamond();
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+      await smartLoansFactory.initialize(diamondAddress);
+
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          yakRouterContract.address,
           ethers.constants.AddressZero,
           poolManager.address,
-          solvencyFacetAddress,
+          redstoneConfigManager.address,
+          diamondAddress,
           'lib'
       );
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
       await deployAllFaucets(diamondAddress)
-
-      await smartLoansFactory.initialize(diamondAddress);
     });
 
 
