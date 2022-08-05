@@ -49,6 +49,10 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
+    function getAllOwnedAssets() external view returns (bytes32[] memory result) {
+        return SmartLoanLib.getAllOwnedAssets();
+    }
+
     function getAllAssetsBalances() public view returns (uint256[] memory) {
         PoolManager poolManager = SmartLoanLib.getPoolManager();
 

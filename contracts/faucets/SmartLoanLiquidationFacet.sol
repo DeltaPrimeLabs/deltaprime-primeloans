@@ -22,8 +22,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
       * liquidating loans where debt ~ total value
       * @param allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
     **/
+
+    struct AssetAmountPair {
+        bytes32 asset;
+        uint256 amount;
+    }
+
     struct LiquidationConfig {
-        uint256[] amountsToRepay;
+        AssetAmountPair[] assetsAmountsToRepay;
         uint256 liquidationBonus;
         bool allowUnprofitableLiquidation;
     }
@@ -53,25 +59,25 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
     * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
     * @dev This function uses the redstone-evm-connector
-    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
-    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than getMaxLiquidationBonus()
+    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to getMaxLiquidationBonus()
     **/
-    function unsafeLiquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, true));
+    function unsafeLiquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, true));
     }
 
     /**
-    * This function can be accessed by any user when Prime Account is critically insolvent and liquidate part of the loan
+    * This function can be accessed by any user when Prime Account is insolvent and liquidate part of the loan
     * with his approved tokens.
     * A liquidator has to approve adequate amount of tokens to repay debts to liquidity pools if
     * there is not enough of them in a SmartLoan. For that he will receive the corresponding amount from SmartLoan
     * with the same USD value + bonus.
     * @dev This function uses the redstone-evm-connector
-    * @param _amountsToRepay amounts of tokens provided by liquidator for repayment
-    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than getMaxLiquidationBonus()
+    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
-    function liquidateLoan(uint256[] memory _amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_amountsToRepay, _liquidationBonus, false));
+    function liquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, false));
     }
 
     /**
@@ -85,12 +91,15 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        //TODO Add parameters as a tuple - ASSET - AMOUNT
         SmartLoanLib.setLiquidationInProgress(true);
 
         PoolManager poolManager = SmartLoanLib.getPoolManager();
-        bytes32[] memory poolAssets = poolManager.getAllPoolAssets();
-        uint256[] memory prices = getPricesFromMsg(poolAssets);
+        // TODO: this is not optimal - let's later check if changing list of AssetAmount to two separate lists will be more efficient
+        bytes32[] memory assetsToRepay = new bytes32[](config.assetsAmountsToRepay.length);
+        for(uint i=0; i< assetsToRepay.length; i++){
+            assetsToRepay[i] = config.assetsAmountsToRepay[i].asset;
+        }
+        uint256[] memory prices = getPricesFromMsg(assetsToRepay);
 
 
         {
@@ -108,61 +117,58 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
 
-        for (uint256 i=0; i < poolAssets.length; i++) {
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(poolAssets[i]));
+        for (uint256 i = 0; i < config.assetsAmountsToRepay.length; i++) {
+            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsAmountsToRepay[i].asset));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
 
             if (healingLoan) {
-                needed = config.amountsToRepay[i];
-            } else if (config.amountsToRepay[i] > balance) {
-                needed = healingLoan ? config.amountsToRepay[i] : (config.amountsToRepay[i] - balance);
+                needed = config.assetsAmountsToRepay[i].amount;
+            } else if (config.assetsAmountsToRepay[i].amount > balance) {
+                needed = config.assetsAmountsToRepay[i].amount - balance;
             }
 
             if (needed > 0) {
                 require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
 
                 address(token).safeTransferFrom(msg.sender, address(this), needed);
-                suppliedInUSD += needed * prices[i] * 10**10 / 10 ** token.decimals();
+                suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
             }
 
-            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(poolAssets[i]));
+            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(assetsToRepay[i]));
+
+            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.assetsAmountsToRepay[i].amount);
 
             address(token).safeApprove(address(pool), 0);
-            address(token).safeApprove(address(pool), config.amountsToRepay[i]);
+            address(token).safeApprove(address(pool), repayAmount);
 
-            repaidInUSD += config.amountsToRepay[i] * prices[i] * 10**10 / 10 ** token.decimals();
+            repaidInUSD += repayAmount * prices[i] * 10 ** 10 / 10 ** token.decimals();
 
-            pool.repay(config.amountsToRepay[i]);
+            pool.repay(repayAmount);
         }
 
         uint256 total = _calculateTotalValue();
-        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
+        bytes32[] memory assetsOwned = SmartLoanLib.getAllOwnedAssets();
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
         if (!healingLoan) {
-            uint256 valueOfTokens = _calculateAssetsValue();
+            uint256 valueOfTokens = _getTotalValue();
 
             bonus = repaidInUSD * config.liquidationBonus / SmartLoanLib.getPercentagePrecision();
 
-            uint256 partToReturn = 10**18;
+            uint256 partToReturn = 10 ** 18;
 
             if (valueOfTokens >= suppliedInUSD + bonus) {
-                partToReturn = (suppliedInUSD + bonus) * 10**18 / total;
-            } else {
-                //meaning staking or LP positions
-                uint256 toReturnFromPositions = suppliedInUSD + bonus - valueOfTokens;
-                //TODO: remove once liquidation is just sending tokens back to liquidator
-                liquidatePositions(toReturnFromPositions, msg.sender, prices);
+                partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
             }
 
-            for (uint256 i; i < assets.length; i++) {
-                IERC20Metadata token = getERC20TokenInstance(assets[i]);
+            for (uint256 i; i < assetsOwned.length; i++) {
+                IERC20Metadata token = getERC20TokenInstance(assetsOwned[i]);
                 uint256 balance = token.balanceOf(address(this));
 
-                address(token).safeTransfer(msg.sender, balance * partToReturn / 10**18);
+                address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
             }
         }
 
@@ -176,46 +182,6 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
         require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
         SmartLoanLib.setLiquidationInProgress(false);
-    }
-
-    /**
-    * Liquidates staking and LP positions and sends tokens to defined address
-    * @param _targetUsdAmount value in USD to be repaid from positions
-    * @param _to address to which send funds from liquidation
-    **/
-    //TODO: remove once liquidation is just sending tokens back to liquidator
-    function liquidatePositions(uint256 _targetUsdAmount, address _to, uint256[] memory _prices) private returns(bool) {
-//        return liquidateYak(_targetUsdAmount * 10**8 / _prices[0], _to);
-    }
-
-    //TODO: remove once liquidation is just sending tokens back to liquidator
-    /**
-    * Unstake AVAX amount to perform repayment to a pool
-    * @param _targetAvaxAmount amount of AVAX to be repaid from staking position
-    * @param _to address to which send funds from liquidation
-    **/
-    // TODO: To be removed in favor of returning YRT token to a liquidator
-    function liquidateYak(uint256 _targetAvaxAmount, address _to) private returns(bool) {
-        address yakRouterAddress = address(SmartLoanLib.getYieldYakRouter());
-        (bool successApprove, ) = address(SmartLoanLib.getYakAvaxStakingContract()).call(
-            abi.encodeWithSignature("approve(address,uint256)", yakRouterAddress, _targetAvaxAmount)
-        );
-        if (!successApprove) return false;
-
-        (bool successUnstake, bytes memory result) = yakRouterAddress.call(
-            abi.encodeWithSignature("unstakeAVAXForASpecifiedAmount(uint256)", _targetAvaxAmount)
-        );
-
-        if (!successUnstake) return false;
-
-        //    uint256 amount = abi.decode(result, (uint256));
-        //TODO: return from unstakeAVAX the real value ustaken
-        uint256 amount = Math.min(_targetAvaxAmount, address(this).balance);
-
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: amount}();
-        address(SmartLoanLib.getNativeTokenWrapped()).safeTransfer(_to, amount);
-
-        return successUnstake;
     }
 
     /**

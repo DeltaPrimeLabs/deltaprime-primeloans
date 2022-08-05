@@ -9,7 +9,6 @@ import "../PoolManager.sol";
 import { LibDiamond } from "../lib/LibDiamond.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 
-
 contract SolvencyFacet is PriceAware {
     /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
 
@@ -64,26 +63,26 @@ contract SolvencyFacet is PriceAware {
      * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
      * @dev This function uses the redstone-evm-connector
      **/
-    // TODO: Refactor - change usage in code and tests to use getTotalValue only
     function getTotalValue() public view virtual returns (uint256) {
         bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
+        uint256 nativeTokenPrice = getPricesFromMsg(SmartLoanLib.getNativeTokenSymbol())[0];
         if(prices.length > 0) {
-            //TODO: remove once liquidation is just sending tokens back to liquidator
-            IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95);
-            uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-            uint256 stakedTotalValue;
-            if (stakedBalance == 0) {
-                stakedTotalValue = 0;
-            } else {
-                uint256 totalSupply = yakStakingContract.totalSupply();
-                uint256 totalDeposits = yakStakingContract.totalDeposits();
-                stakedTotalValue = stakedBalance * totalDeposits / totalSupply;
+            PoolManager poolManager = SmartLoanLib.getPoolManager();
+
+            uint256 total = address(this).balance * nativeTokenPrice / 10**8;
+
+            for (uint256 i = 0; i < prices.length; i++) {
+                require(prices[i] != 0, "Asset price returned from oracle is zero");
+
+                IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
+                uint256 assetBalance = token.balanceOf(address(this));
+
+                total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
             }
-            // TODO: REMOVE ^^
-            return calculateAssetsValue() + stakedTotalValue * prices[0] / 10**8;
-        }
-        else {
+
+            return total;
+        } else {
             return 0;
         }
     }
@@ -116,26 +115,5 @@ contract SolvencyFacet is PriceAware {
         } else {
             return SmartLoanLib.getMaxLtv();
         }
-    }
-
-
-    // TODO: WAVAX price needs to be at first position always if we don't want to if-check every step of the loop for the current symbol
-    function calculateAssetsValue() public view returns (uint256) {
-        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
-
-        uint256 total = address(this).balance * prices[0] / 10**8;
-
-        for (uint256 i = 0; i < prices.length; i++) {
-            require(prices[i] != 0, "Asset price returned from oracle is zero");
-
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
-            uint256 assetBalance = token.balanceOf(address(this));
-
-            total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
-        }
-
-        return total;
     }
 }

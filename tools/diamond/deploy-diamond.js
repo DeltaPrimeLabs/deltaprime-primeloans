@@ -5,23 +5,23 @@ const {ethers} = require("hardhat");
 const { getSelectors, FacetCutAction } = require('./selectors.js')
 
 
-async function replaceFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], hardhatConfig = undefined) {
+async function replaceFacet(facetName, diamondAddress, onlySpecificFunctions = [], hardhatConfig = undefined) {
     const cut = []
 
     const facet = await deployContract(facetName, [], hardhatConfig);
     console.log(`${facetName} deployed: ${facet.address}`);
 
-    cut.push({
-        facetAddress: facet.address,
-        action: FacetCutAction.Replace,
-        functionSelectors: getSelectors(facet).remove(newlyIntroducedFunctions)
-    })
-
-    if(newlyIntroducedFunctions.length > 0) {
+    if(onlySpecificFunctions.length > 0) {
         cut.push({
             facetAddress: facet.address,
-            action: FacetCutAction.Add,
-            functionSelectors: getSelectors(facet).get(newlyIntroducedFunctions)
+            action: FacetCutAction.Replace,
+            functionSelectors: getSelectors(facet).get(onlySpecificFunctions)
+        })
+    } else {
+        cut.push({
+            facetAddress: facet.address,
+            action: FacetCutAction.Replace,
+            functionSelectors: getSelectors(facet)
         })
     }
 

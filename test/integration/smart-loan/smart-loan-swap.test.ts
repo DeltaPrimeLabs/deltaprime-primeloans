@@ -58,7 +58,6 @@ describe('Smart loan',  () => {
       smartLoansFactory: SmartLoansFactory,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
-      usdPool: ERC20Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       tokenContracts: any = {},

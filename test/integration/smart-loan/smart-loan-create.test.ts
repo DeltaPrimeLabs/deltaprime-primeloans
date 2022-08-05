@@ -63,7 +63,7 @@ describe('Smart loan',  () => {
       let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      USD_PRICE = (await redstone.getPrice('USDC')).value;
       ETH_PRICE = (await redstone.getPrice('ETH')).value;
 
       MOCK_PRICES = [
@@ -72,7 +72,7 @@ describe('Smart loan',  () => {
           value: AVAX_PRICE
         },
         {
-          symbol: 'USD',
+          symbol: 'MCKUSD',
           value: USD_PRICE
         },
         {
@@ -83,7 +83,7 @@ describe('Smart loan',  () => {
 
       let lendingPools = [];
       for (const token of [
-        {'name': 'USD', 'airdropList': [owner.address, depositor.address]},
+        {'name': 'MCKUSD', 'airdropList': [owner.address, depositor.address]},
         {'name': 'AVAX', 'airdropList': [depositor]}
       ]) {
         let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
@@ -95,7 +95,7 @@ describe('Smart loan',  () => {
 
       let supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-        new Asset(toBytes32('USD'), tokenContracts['USD'].address),
+        new Asset(toBytes32('MCKUSD'), tokenContracts['MCKUSD'].address),
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
       ]
 
@@ -160,7 +160,7 @@ describe('Smart loan',  () => {
 
       await tokenContracts['AVAX'].connect(borrower2).deposit({value: toWei("1")});
       await tokenContracts['AVAX'].connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
-      await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], toWei("1"), toBytes32("USD"), toWei((2 * AVAX_PRICE).toString()));
+      await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], toWei("1"), toBytes32("MCKUSD"), toWei((2 * AVAX_PRICE).toString()));
 
       const loanAddress = await smartLoansFactory.getLoanForOwner(borrower2.address);
       loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower2);
@@ -180,7 +180,7 @@ describe('Smart loan',  () => {
       expect(fromWei((await wrappedLoan.getOwnedAssetsBalances())[0])).to.equal(1);
       expect(fromWei((await wrappedLoan.getOwnedAssetsBalances())[1])).to.be.closeTo(2 * AVAX_PRICE, 0.05);
       expect(fromWei(await tokenContracts['AVAX'].balanceOf(loan.address))).to.equal(1);
-      expect(fromWei(await tokenContracts['USD'].balanceOf(loan.address))).to.be.closeTo(2 * AVAX_PRICE, 0.05);
+      expect(fromWei(await tokenContracts['MCKUSD'].balanceOf(loan.address))).to.be.closeTo(2 * AVAX_PRICE, 0.05);
     });
   });
 });

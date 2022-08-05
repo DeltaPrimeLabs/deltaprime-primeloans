@@ -52,12 +52,12 @@ contract SolvencyMethodsLib {
         );
     }
 
-    // This function executes SolvencyFacet.calculateAssetsValue()
-    function _calculateAssetsValue() internal virtual returns (uint256 assetsValue) {
+    // This function executes SolvencyFacet.getTotalValue()
+    function _getTotalValue() internal virtual returns (uint256 assetsValue) {
         assetsValue = abi.decode(
             ProxyConnector.proxyDelegateCalldata(
-                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.calculateAssetsValue.selector)),
-                abi.encodeWithSelector(SolvencyFacet.calculateAssetsValue.selector)
+                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.getTotalValue.selector)),
+                abi.encodeWithSelector(SolvencyFacet.getTotalValue.selector)
             ),
             (uint256)
         );

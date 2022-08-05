@@ -24,6 +24,7 @@ const {deployContract} = waffle;
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
+    'function transfer(address _to, uint256 _value) public returns (bool success)',
     'function approve(address _spender, uint256 _value) public returns (bool success)',
     'function allowance(address owner, address spender) public view returns (uint256)'
 ]
@@ -118,39 +119,35 @@ export const calculateBonus = function (
 
 //simple model: we iterate over pools and repay their debts based on how much is left to repay in USD
 export const getRepayAmounts = function (
-    debts: Array<number>,
-    poolAssetsIndices: Array<number>,
+    debts: any,
     toRepayInUsd: number,
-    mockPrices: Array<number>
+    mockPrices: any
 ) {
-    let repayAmounts: Array<number> = [];
+    let repayAmounts: any = {};
     let leftToRepayInUsd = toRepayInUsd;
-    poolAssetsIndices.forEach(
-        (index, i) => {
-            let availableToRepayInUsd = debts[i] * mockPrices[index];
-            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
-            leftToRepayInUsd -= repaidToPool;
-            repayAmounts[i] = repaidToPool / mockPrices[index];
-        }
-    );
+    for (const [asset, debt] of Object.entries(debts)) {
+        let availableToRepayInUsd = Number(debt) * mockPrices[asset];
+        let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+        leftToRepayInUsd -= repaidToPool;
+        repayAmounts[asset] = repaidToPool / mockPrices[asset];
+    }
 
     //repayAmounts are measured in appropriate tokens (not USD)
     return repayAmounts;
 }
 
 export const toSupply = function(
-    poolAssetsIndices: Array<number>,
-    balances: Array<number>,
-    repayAmounts: Array<number>
+    balances: any,
+    repayAmounts: any
 ) {
     //multiplied by 1.00001 to account for limited accuracy of calculations
-    let toSupply: Array<number> = [];
+    let toSupply: any = {};
 
-    poolAssetsIndices.forEach(
-        (index, i) => {
-            toSupply[i] = 1.00001 * Math.max(repayAmounts[i] - balances[index], 0);
-        }
-    );
+    for (const [asset, amount] of Object.entries(repayAmounts)) {
+        // TODO: Change 1.1 to smth smaller if possible
+        toSupply[asset] = 1.1 * Math.max(Number(amount) - (balances[asset] ?? 0), 0);
+    }
+
     return toSupply;
 }
 
@@ -190,9 +187,12 @@ export const deployAllFaucets = async function(diamondAddress: any) {
             'depositNativeToken',
             'getOwnedAssetsBalances',
             'getOwnedAssetsPrices',
+            'getMaxLiquidationBonus',
+            'getBalance',
             'wrapNativeToken',
             'unwrapAndWithdraw',
             'getAllAssetsBalances',
+            'getAllOwnedAssets',
             'getAllAssetsPrices',
         ]
     )
@@ -255,6 +255,9 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         case 'ETH':
             tokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
             break;
+        case 'USDC':
+            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+            break;
     }
 
     const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -286,6 +289,16 @@ export class Asset {
     constructor(asset: string, assetAddress: string) {
         this.asset = asset;
         this.assetAddress = assetAddress;
+    }
+}
+
+export class AssetAmount {
+    asset: string;
+    amount: BigNumber;
+
+    constructor(asset: string, amount: BigNumber) {
+        this.asset = asset;
+        this.amount = amount;
     }
 }
 
