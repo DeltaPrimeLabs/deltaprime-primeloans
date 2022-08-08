@@ -11,6 +11,7 @@ import "../interfaces/IYieldYakRouter.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../lib/SmartLoanLib.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
+import "../mock/WAVAX.sol";
 import "hardhat/console.sol";
 
 contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, PriceAware {
@@ -43,9 +44,9 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     **/
     function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
-        require(SmartLoanLib.getNativeTokenWrapped().balanceOf(address(this)) >= amount, "Not enough AVAX available");
+        require(WAVAX(SmartLoanLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
 
-        SmartLoanLib.getNativeTokenWrapped().withdraw(amount);
+        WAVAX(SmartLoanLib.getNativeToken()).withdraw(amount);
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).deposit{value: amount}();
 
         // TODO make staking more generic
@@ -80,7 +81,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
         emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
 
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: amount}();
+        WAVAX(SmartLoanLib.getNativeToken()).deposit{value: amount}();
         // TOOD: Add na unstake event
     }
 

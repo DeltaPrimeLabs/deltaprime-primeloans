@@ -64,6 +64,12 @@ export default {
       gasPrice: 250000000000,
       chainId: 250,
       accounts: [getKey('fantom', 'deployer')]
+    },
+    celo: {
+      url: 'https://forno.celo.org',
+      gasPrice: 250000000000,
+      chainId: 42220,
+      accounts: [getKey('celo', 'deployer')],
     }
   },
   paths: {

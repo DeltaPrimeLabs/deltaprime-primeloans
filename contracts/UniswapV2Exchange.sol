@@ -17,7 +17,7 @@ import "./PoolManager.sol";
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -26,11 +26,13 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
 
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
+  bytes32 nativeToken;
 
   // TODO: Check if the below comment is still valid
   // first supportedAsset must be a blockchain native currency
-  function initialize(address _pangolinRouter, IAssetsExchange.Asset[] memory supportedAssets) external initializer {
-    pangolinRouter = IPangolinRouter(_pangolinRouter);
+  function initialize(address _router, Asset[] memory supportedAssets, bytes32 _nativeToken) external initializer {
+    pangolinRouter = IPangolinRouter(_router);
+    nativeToken = _nativeToken;
 
     _updateAssets(supportedAssets);
     __Ownable_init();
@@ -161,9 +163,9 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
    * Returns a path containing tokens' addresses
    * @dev _token ERC20 token's address
    **/
-  function getPath(address _token1, address _token2) private view returns (address[] memory) {
+  function getPath(address _token1, address _token2) internal virtual view returns (address[] memory) {
     address[] memory path;
-    address nativeTokenAddress = getAssetAddress(bytes32("AVAX"));
+    address nativeTokenAddress = getAssetAddress(nativeToken);
 
     if (_token1 != nativeTokenAddress && _token2 != nativeTokenAddress) {
       path = new address[](3);

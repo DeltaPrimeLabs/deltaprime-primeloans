@@ -11,7 +11,7 @@ import {
     calculateBonus,
     deployAllFaucets,
     deployAndInitializeLendingPool,
-    deployAndInitPangolinExchangeContract,
+    deployAndInitExchangeContract,
     formatUnits,
     fromBytes32,
     fromWei,
@@ -27,15 +27,14 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    ERC20Pool,
-    PangolinExchange,
-    PoolManager,
-    RedstoneConfigManager__factory,
-    SmartLoansFactory,
+  ERC20Pool,
+  PoolManager,
+  RedstoneConfigManager__factory,
+  SmartLoansFactory, UniswapV2Exchange,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -227,7 +226,7 @@ describe('Smart loan - real prices',  () => {
   });
 
   describe('An insolvent loan', () => {
-    let exchange: PangolinExchange,
+    let exchange: UniswapV2Exchange,
         loan: Contract,
         wrappedLoan: any,
         owner: SignerWithAddress,
@@ -291,18 +290,20 @@ describe('Smart loan - real prices',  () => {
           ]
       ) as PoolManager;
 
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
+
       diamondAddress = await deployDiamond();
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
 
       AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
       USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;
@@ -379,7 +380,12 @@ describe('Smart loan - real prices',  () => {
     before("prepare smart loan facets", async () => {
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          exchange.address,
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

@@ -1,4 +1,4 @@
-import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../../_helpers";
+import {Asset, deployAndInitExchangeContract, syncTime, toBytes32} from "../../_helpers";
 import {
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
@@ -16,7 +16,7 @@ import chai, {expect} from "chai";
 import {deployContract, solidity} from "ethereum-waffle";
 import {ethers} from "hardhat";
 import {getFixedGasSigners} from "../../_helpers";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 
 chai.use(solidity);
@@ -41,7 +41,7 @@ describe('Smart loans factory - upgrading',  () => {
             let diamondAddress = await deployDiamond();
             [owner, admin] = await getFixedGasSigners(10000000);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])]);
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USCD'), TOKEN_ADDRESSES['USDC'])]);
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).deploy());
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));

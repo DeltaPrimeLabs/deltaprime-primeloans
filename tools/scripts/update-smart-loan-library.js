@@ -1,8 +1,8 @@
-export default function updateSmartLoanLibrary(pangolinRouterAddress, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
+export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
     var fs = require('fs')
-    let data = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
+    let libcontract = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
-    let fileArray = data.split('\n');
+    let fileArray = libcontract.split('\n');
 
     // MaxLTV
 
@@ -21,16 +21,6 @@ export default function updateSmartLoanLibrary(pangolinRouterAddress, poolManage
     );
 
     newLine = `    uint256 private constant _MIN_SELLOUT_LTV = ${minSelloutLTV};`;
-
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
-
-    //Pangolin Router
-
-    lineWithFunctionDeclaration = fileArray.findIndex(
-        line => line.includes('address private constant _PANGOLIN_ROUTER_CONTRACT')
-    );
-
-    newLine = `    address private constant _PANGOLIN_ROUTER_CONTRACT = ${pangolinRouterAddress};`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
@@ -68,5 +58,21 @@ export default function updateSmartLoanLibrary(pangolinRouterAddress, poolManage
 
     fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
 
-    return 'lib/SmartLoanLib.sol updated!'
+
+    for (const exchange of exchanges) {
+        console.log(exchange)
+        let exchangeContract = fs.readFileSync(exchange.facetPath, 'utf8');
+        let fileArray = exchangeContract.split('\n');
+        lineWithFunctionDeclaration = fileArray.findIndex(
+            line => line.includes('getRouterContract')
+        );
+
+        newLine = `        return ${exchange.contractAddress};`;
+
+        fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
+
+        fs.writeFileSync(exchange.facetPath, fileArray.join("\n"), 'utf8');
+    }
+
+    return 'lib/SmartLoanLib.sol, PangolinExchange.sol and UbeswapExchange.sol updated!'
 }

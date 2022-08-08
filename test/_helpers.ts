@@ -4,22 +4,21 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     CompoundingIndex,
     ERC20Pool, MockToken, OpenBorrowersRegistry__factory,
-    PangolinExchange, Pool,
     VariableUtilisationRatesCalculator
 } from "../typechain";
-import TOKEN_ADDRESSES from '../common/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
+import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import ERC20PoolArtifact from '../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
-import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 
 import {execSync} from "child_process";
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
 
 const {provider} = waffle;
-const {deployDiamond, deployFacet} = require('../tools/diamond/deploy-diamond');
+const {deployFacet} = require('../tools/diamond/deploy-diamond');
 const {deployContract} = waffle;
 
 const erc20ABI = [
@@ -165,7 +164,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFaucets = async function(diamondAddress: any) {
+export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVAX') {
     await deployFacet(
         "FundingFacet",
         diamondAddress,
@@ -178,20 +177,23 @@ export const deployAllFaucets = async function(diamondAddress: any) {
         ''
     )
     await deployFacet("SolvencyFacet", diamondAddress, [])
-    await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
-    await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak', 'getTotalStakedValue'])
+    if (chain == 'AVAX') {
+        await deployFacet("SmartLoanWavaxFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
+        await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
+        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak', 'getTotalStakedValue'])
+    }
+    if (chain == 'CELO') {
+        await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])
+    }
     await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['liquidateLoan', 'unsafeLiquidateLoan'])
     await deployFacet(
         "SmartLoanLogicFacet",
         diamondAddress,
         [
-            'depositNativeToken',
             'getOwnedAssetsBalances',
             'getOwnedAssetsPrices',
             'getMaxLiquidationBonus',
             'getBalance',
-            'wrapNativeToken',
-            'unwrapAndWithdraw',
             'getAllAssetsBalances',
             'getAllOwnedAssets',
             'getAllAssetsPrices',
@@ -200,13 +202,15 @@ export const deployAllFaucets = async function(diamondAddress: any) {
 };
 
 
-export const deployAndInitPangolinExchangeContract = async function (
+export const deployAndInitExchangeContract = async function (
     owner: SignerWithAddress,
-    pangolinRouterAddress: string,
-    supportedAssets: Asset[]
+    routerAddress: string,
+    supportedAssets: Asset[],
+    name: string
 ) {
-    let exchange = (await deployContract(owner, PangolinExchangeArtifact)) as PangolinExchange;
-    await exchange.initialize(pangolinRouterAddress, supportedAssets);
+    let exchangeFactory = await ethers.getContractFactory(name);
+    const exchange = (await exchangeFactory.deploy()).connect(owner);
+    await exchange.initialize(routerAddress, supportedAssets);
     return exchange
 };
 
@@ -236,28 +240,46 @@ export async function syncTime() {
     }
 }
 
-export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any) {
+export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any, chain = 'AVAX') {
 
     const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
     let tokenContract: any;
-    switch(tokenName){
-        case 'MCKUSD':
-            //it's a mock implementation of USD token with 18 decimal places
-            tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
-            break;
-        case 'AVAX':
-            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
-            for (const user of tokenAirdropList) {
-                await tokenContract.connect(user).deposit({value: toWei("1000")});
-            }
-            break;
-        case 'ETH':
-            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
-            break;
-        case 'USDC':
-            tokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
-            break;
+    if (chain === 'AVAX') {
+        switch (tokenName) {
+            case 'MCKUSD':
+                //it's a mock implementation of USD token with 18 decimal places
+                tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
+                break;
+            case 'AVAX':
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+                for (const user of tokenAirdropList) {
+                    await tokenContract.connect(user).deposit({value: toWei("1000")});
+                }
+                break;
+            case 'ETH':
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
+                break;
+            case 'USDC':
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+        }
+    } else if (chain === 'CELO') {
+        switch (tokenName) {
+            case 'MCKUSD':
+                //it's a mock implementation of USD token with 18 decimal places
+                tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
+                break;
+            case 'CELO':
+                tokenContract = new ethers.Contract(CELO_TOKEN_ADDRESSES['CELO'], erc20ABI, provider);
+                break;
+            case 'mcUSD':
+                tokenContract = new ethers.Contract(CELO_TOKEN_ADDRESSES['mcUSD'], erc20ABI, provider);
+                break;
+            case 'ETH':
+                tokenContract = new ethers.Contract(CELO_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
+                break;
+        }
     }
 
     const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -273,11 +295,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileSmartLoanLib(contractName: string, pangolinRouterAddress: string, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
+export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(pangolinRouterAddress, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV);
+    await updateSmartLoanLibrary(exchanges, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }

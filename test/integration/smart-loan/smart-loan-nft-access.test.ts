@@ -10,7 +10,7 @@ import MockBorrowAccessNFTArtifact
 import SmartLoansFactoryWithAccessNFTArtifact
     from '../../../artifacts/contracts/upgraded/SmartLoansFactoryWithAccessNFT.sol/SmartLoansFactoryWithAccessNFT.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     Asset, deployAllFaucets, deployAndInitializeLendingPool,
     fromWei,
@@ -104,7 +104,7 @@ describe('Smart loan',  () => {
 
             await recompileSmartLoanLib(
                 "SmartLoanLib",
-                ethers.constants.AddressZero,
+                [],
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,

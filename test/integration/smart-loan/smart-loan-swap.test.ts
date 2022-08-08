@@ -9,8 +9,8 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
-  deployAllFaucets, deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
+  deployAllFaucets,
+  deployAndInitializeLendingPool,
   formatUnits,
   fromWei,
   getFixedGasSigners,
@@ -21,16 +21,17 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  ERC20Pool,
-  PangolinExchange,
-  PoolManager, RedstoneConfigManager__factory,
+  PoolManager,
+  RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory,
+  UniswapV2Exchange,
 } from "../../../typechain";
-import {BigNumber, Contract} from "ethers";
+import {BigNumber} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
@@ -54,7 +55,7 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan without debt', () => {
-    let exchange: PangolinExchange,
+    let exchange: UniswapV2Exchange,
       smartLoansFactory: SmartLoansFactory,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
@@ -109,18 +110,25 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+      let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
+      exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
+      await exchange.initialize(pangolinRouterAddress, supportedAssets, toBytes32('AVAX'));
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          exchange.address,
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

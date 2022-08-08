@@ -1,6 +1,6 @@
 const {ethers} = require("hardhat");
 
-import TOKEN_ADDRESSES from '../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 
 module.exports = async ({
     getNamedAccounts,

@@ -5,12 +5,12 @@ import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/Po
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     Asset,
     deployAllFaucets,
     deployAndInitializeLendingPool,
-    deployAndInitPangolinExchangeContract,
+    deployAndInitExchangeContract,
     getFixedGasSigners,
     PoolAsset,
     recompileSmartLoanLib,
@@ -24,6 +24,7 @@ import {
     PoolManager,
     RedstoneConfigManager__factory,
     SmartLoanLogicFacet,
+    UniswapV2Exchange,
     SmartLoansFactory,
 } from "../../../typechain";
 import {BigNumber, Contract, ContractFactory} from "ethers";
@@ -32,6 +33,8 @@ import redstone from "redstone-api";
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
+import {LTVLib} from "../../../typechain/LTVLib";
+import {YieldYakRouter__factory} from "../../../typechain/factories/YieldYakRouter__factory";
 
 const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -64,7 +67,7 @@ describe('Test liquidator',  () => {
 
 
     describe('A loan with debt and repayment', () => {
-        let exchange: PangolinExchange,
+        let exchange: UniswapV2Exchange,
             smartLoansFactory: SmartLoansFactory,
             loanAddress: string,
             loanFactory: ContractFactory,
@@ -125,6 +128,7 @@ describe('Test liquidator',  () => {
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
             ];
 
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
             AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;
 
@@ -159,11 +163,16 @@ describe('Test liquidator',  () => {
                 'lib'
             );
 
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets);
 
             await recompileSmartLoanLib(
                 "SmartLoanLib",
-                exchange.address,
+                [
+                    {
+                        facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                        contractAddress: exchange.address,
+                    }
+                ],
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,

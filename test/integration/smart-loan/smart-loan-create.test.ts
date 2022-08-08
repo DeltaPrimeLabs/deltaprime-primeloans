@@ -18,24 +18,18 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
+  PoolManager,
+  RedstoneConfigManager__factory,
+  SmartLoanGigaChadInterface,
   SmartLoansFactory,
 } from "../../../typechain";
-import {Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import redstone from "redstone-api";
 
 chai.use(solidity);
 
-const {deployContract, provider} = waffle;
-
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-]
+const {deployContract} = waffle;
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
@@ -115,7 +109,7 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

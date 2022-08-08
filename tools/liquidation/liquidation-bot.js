@@ -1,13 +1,14 @@
 import PANGOLIN_EXCHANGETUP from '../../deployments/mainnet/PangolinExchangeTUP.json'
-import PANGOLIN_EXCHANGE from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json'
+import PANGOLIN_EXCHANGE from '../../artifacts/contracts/UniswapV2Exchange.sol/UniswapV2Exchange.json'
 import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
 import LOAN_LOGIC from '../../artifacts/contracts/faucets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
 import SOLVENCY_LOGIC from '../../artifacts/contracts/faucets/SolvencyFacet.sol/SolvencyFacet.json'
 import LOAN_LIQUIDATION from '../../artifacts/contracts/faucets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
+import addresses from '../../common/addresses/avax/token_addresses.json';
+import {fromBytes32, toSupply} from "../../test/_helpers";
 import POOL_MANAGER from '../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import ERC20_POOL from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
-import addresses from '../../common/token_addresses.json';
 import {AssetAmount, fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
 import redstone from "redstone-api";
 

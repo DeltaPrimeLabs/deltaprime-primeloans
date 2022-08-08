@@ -7,7 +7,6 @@ import "../Pool.sol";
 import "../PoolManager.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
-import "../mock/WAVAX.sol";
 import "../ERC20Pool.sol";
 import "../RedstoneConfigManager.sol";
 
@@ -29,15 +28,9 @@ library SmartLoanLib {
 
     address private constant _PRICE_PROVIDER_2 = 0x3BEFDd935b50F172e696A5187DBaCfEf0D208e48;
 
-    address private constant _WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+    address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _YIELD_YAK_ROUTER_ADDRESS = 0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5;
-
-    address private constant _YAK_STAKING_CONTRACT = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
-
-    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x0000000000000000000000000000000000000000;
-
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x1c85638e118b37167e9298c2268758e058DdfDA0;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -63,7 +56,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0xccf1769D8713099172642EB55DDFFC0c5A444FE9);
+    return PoolManager(0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32[] memory symbol) {
@@ -72,27 +65,15 @@ library SmartLoanLib {
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
-    return RedstoneConfigManager(0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134);
+    return RedstoneConfigManager(0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6);
     }
 
-    function getNativeTokenWrapped() internal view returns (WAVAX) {
-        return WAVAX(payable(_WAVAX_ADDRESS));
-    }
-
-    function getYieldYakRouter() internal view returns (IYieldYakRouter) {
-    return IYieldYakRouter(0x0000000000000000000000000000000000000000);
+    function getNativeToken() internal view returns (address payable) {
+        return payable(_NATIVE_ADDRESS);
     }
 
     function getMaxBlockTimestampDelay() internal view returns (uint256) {
         return MAX_BLOCK_TIMESTAMP_DELAY;
-    }
-
-    function getYakAvaxStakingContract() internal view returns (IERC20) {
-        return IERC20(_YAK_STAKING_CONTRACT);
-    }
-
-    function getPangolinRouterContract() internal view returns (address) {
-        return _PANGOLIN_ROUTER_CONTRACT;
     }
 
     function getPriceProvider1() internal view returns (address) {

@@ -22,7 +22,7 @@ import {
 import {ethers} from "hardhat";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {WrapperBuilder} from "redstone-evm-connector";
-import TOKEN_ADDRESSES from "../../../common/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import redstone from "redstone-api";
 
 chai.use(solidity);
@@ -85,7 +85,7 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

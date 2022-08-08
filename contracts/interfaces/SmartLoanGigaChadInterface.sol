@@ -7,7 +7,8 @@ import "./faucets/IOwnershipFacet.sol";
 import "./faucets/ISmartLoanLogicFacet.sol";
 import "./faucets/ISmartLoanLiquidationFacet.sol";
 import "./faucets/ISolvencyFacet.sol";
+import "./faucets/IUbeswapDEXFacet.sol";
 
-interface SmartLoanGigaChadInterface is IPangolinDEXFacet, IFundingFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanLogicFacet, ISolvencyFacet, IYieldYakFacet {
+interface SmartLoanGigaChadInterface is IPangolinDEXFacet, IFundingFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanLogicFacet, ISolvencyFacet, IYieldYakFacet, IUbeswapDEXFacet {
 
 }

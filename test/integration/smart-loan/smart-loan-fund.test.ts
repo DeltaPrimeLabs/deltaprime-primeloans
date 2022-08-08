@@ -21,7 +21,7 @@ import {
   PoolManager, RedstoneConfigManager__factory,
   SmartLoansFactory,
 } from "../../../typechain";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -104,7 +104,7 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

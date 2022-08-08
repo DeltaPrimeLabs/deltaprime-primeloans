@@ -6,12 +6,12 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
   Asset,
   deployAllFaucets,
   deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
+  deployAndInitExchangeContract,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -21,7 +21,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  PangolinExchange,
+  UniswapV2Exchange,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
@@ -30,7 +30,7 @@ import {
 
 chai.use(solidity);
 
-const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
+const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
@@ -52,7 +52,7 @@ describe('Smart loan - upgrading',  () => {
   });
 
   describe('Check basic logic before and after upgrade', () => {
-    let exchange: PangolinExchange,
+    let exchange: UniswapV2Exchange,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
@@ -120,18 +120,23 @@ describe('Smart loan - upgrading',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          exchange.address,
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
