@@ -2,9 +2,9 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
-import "../PangolinExchange.sol";
+import "../UniswapV2Exchange.sol";
 
-contract MockUpgradedPangolinExchange is PangolinExchange{
+contract MockUpgradedPangolinExchange is UniswapV2Exchange{
     /**
    * Returns a mocked 1337 value;
    **/

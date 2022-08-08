@@ -1,4 +1,4 @@
-import addresses from '../common/token_addresses.json';
+import addresses from '../common/addresses/avax/token_addresses.json';
 
 export default {
     DEFAULT_LTV: 2,

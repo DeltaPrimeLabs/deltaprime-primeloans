@@ -2165,6 +2165,11 @@
   resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.8.3.tgz#781d360c282436494b32fe7d9f7f8e64b3118aa3"
   integrity sha512-fbF6oTd4sGGy0xjHPKAt+eS2CrxJ3+6gQ3FGcBoIJR2TLAyCkCyI8JqZNy+FeON0AhVgNJoUumVoZQjBFUqHkw==
 
+"@ubeswap/core@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@ubeswap/core/-/core-1.0.2.tgz#506919c723d7f130c7b1a33d9e68f10207a86792"
+  integrity sha512-NjVhCrIej5p+0G2AdPGzWZZW96XjY12s+Qq9dkqxziqcPpJy3EMTMfuLINPxP3uzRyjsPp6mUIFwWJGlTX0qog==
+
 "@uniswap/lib@^4.0.1-alpha":
   version "4.0.1-alpha"
   resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-4.0.1-alpha.tgz#2881008e55f075344675b3bca93f020b028fbd02"
@@ -2371,6 +2376,13 @@ abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
   integrity sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==
+
+abi2solidity@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/abi2solidity/-/abi2solidity-0.1.2.tgz#c0058daec2e64e0f70b4fd7ad67f56f792e8293c"
+  integrity sha512-vt67G1tgAGZiN8npK7ad464FB/IHUDrPQO/U3M2KCkyI9u8Z//P9UzRKMwsBc7ZaQiGJ++jAg1+gmAqmDs8Vog==
+  dependencies:
+    commander "^2.19.0"
 
 abort-controller@^3.0.0:
   version "3.0.0"
@@ -3373,6 +3385,14 @@ axios@^0.25.0:
   integrity sha512-cD8FOb0tRH3uuEe6+evtAbgJtfxr7ly3fQjYcMcuPlgkwVS9xboaVIpcDV+cYQe+yGykgwZCs1pzjntcGa6l5g==
   dependencies:
     follow-redirects "^1.14.7"
+
+axios@^0.27.2:
+  version "0.27.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.27.2.tgz#207658cc8621606e586c85db4b41a750e756d972"
+  integrity sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==
+  dependencies:
+    follow-redirects "^1.14.9"
+    form-data "^4.0.0"
 
 babel-code-frame@^6.26.0:
   version "6.26.0"
@@ -5336,7 +5356,7 @@ commander@3.0.2:
   resolved "https://registry.yarnpkg.com/commander/-/commander-3.0.2.tgz#6837c3fb677ad9933d1cfba42dd14d5117d6b39e"
   integrity sha512-Gar0ASD4BDyKC4hl4DwHqDrmvjoxWKZigVnAbn5H1owvm4CxCPdb0HQDehwNYMJpla5+M2tPmPARzhtYuwpHow==
 
-commander@^2.20.0, commander@^2.20.3:
+commander@^2.19.0, commander@^2.20.0, commander@^2.20.3:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -7958,6 +7978,11 @@ follow-redirects@^1.14.7, follow-redirects@^1.14.8:
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.9.tgz#dd4ea157de7bfaf9ea9b3fbd85aa16951f78d8d7"
   integrity sha512-MQDfihBQYMcyy5dhRDJUHcw7lb2Pv/TuE6xP1vyraLukNDHKbDxDNaOE3NbCAdKQApno+GPRyo1YAp89yCjK4w==
 
+follow-redirects@^1.14.9:
+  version "1.15.1"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.1.tgz#0ca6a452306c9b276e4d3127483e29575e207ad5"
+  integrity sha512-yLAMQs+k0b2m7cVxpS1VKJVvoz7SS9Td1zss3XRwXj+ZDH00RJgnuLx7E44wx02kQLrdM3aOOy+FpzS7+8OizA==
+
 for-each@^0.3.3, for-each@~0.3.3:
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/for-each/-/for-each-0.3.3.tgz#69b447e88a0a5d32c3e7084f3f1710034b21376e"
@@ -8214,7 +8239,7 @@ functional-red-black-tree@^1.0.1, functional-red-black-tree@~1.0.1:
   resolved "https://registry.yarnpkg.com/functional-red-black-tree/-/functional-red-black-tree-1.0.1.tgz#1b0ab3bd553b2a0d6399d29c0e3ea0b252078327"
   integrity sha1-GwqzvVU7Kg1jmdKcDj6gslIHgyc=
 
-ganache-cli@^6.1.0:
+ganache-cli@^6.1.0, ganache-cli@^6.12.2:
   version "6.12.2"
   resolved "https://registry.yarnpkg.com/ganache-cli/-/ganache-cli-6.12.2.tgz#c0920f7db0d4ac062ffe2375cb004089806f627a"
   integrity sha512-bnmwnJDBDsOWBUP8E/BExWf85TsdDEFelQSzihSJm9VChVO1SHp94YXLP5BlA4j/OTxp0wR4R1Tje9OHOuAJVw==
@@ -8698,6 +8723,13 @@ hardhat-deploy@^0.9.0:
     match-all "^1.2.6"
     murmur-128 "^0.2.1"
     qs "^6.9.4"
+
+hardhat-interface-generator@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/hardhat-interface-generator/-/hardhat-interface-generator-0.0.6.tgz#0d23660a3dadbe0d14546314ad5e105ec0e63d44"
+  integrity sha512-VRu5/oOttVb4p/59kK5GL2eyuriPNmZX630tL/FB4bizZ99T5WEWY3rWTMmIvj+FgWBvIvj1FdVo+x4f2okv/w==
+  dependencies:
+    abi2solidity "^0.1.2"
 
 hardhat-tracer@^1.0.0-alpha.5:
   version "1.0.0-alpha.6"
@@ -14198,10 +14230,10 @@ redent@^3.0.0:
     indent-string "^4.0.0"
     strip-indent "^3.0.0"
 
-redstone-api-extended@^1.0.9:
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/redstone-api-extended/-/redstone-api-extended-1.0.9.tgz#673b5f8c9b3c861698eafd0c5639e9af61bd7f0f"
-  integrity sha512-JTErhUFo/YGkkzWQI4Y1095bx0Kq6iwFtRupmKwjPWM09u6ZqBlyDuy8p0INd89lfEmg7r7Evm9e1XpWlrAOQA==
+redstone-api-extended@^1.0.10:
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/redstone-api-extended/-/redstone-api-extended-1.0.10.tgz#93588e25ea9011d6186607052e0c2fc45b93a23d"
+  integrity sha512-8VrCkg+TytMoRi3fZHHdTG/g3MmPB6TNdTrpxgL/OjR/2rEclVJk9U1rMc9UsT8G1DKXf58zixBzxBRJUBpuIw==
   dependencies:
     ar-gql "^0.0.6"
     arweave "^1.10.16"
@@ -14228,16 +14260,17 @@ redstone-api@^0.4.0, redstone-api@^0.4.6:
     pako "^2.0.3"
     redstone-node "^0.4.21"
 
-redstone-evm-connector@^2.1.16:
-  version "2.1.16"
-  resolved "https://registry.yarnpkg.com/redstone-evm-connector/-/redstone-evm-connector-2.1.16.tgz#f89520efcfc20be39663327ac96c63280785b2ac"
-  integrity sha512-+HK82mVT5u9WX10RjrM+0tA6l0b9cAYoss6is4DBJ78tRSB4BBvhrUs21TW0wUk4cLcwWF3Oobn9rjXIyq4Uvg==
+redstone-evm-connector@^2.1.21:
+  version "2.1.25"
+  resolved "https://registry.yarnpkg.com/redstone-evm-connector/-/redstone-evm-connector-2.1.25.tgz#9ba5fbeaf585a972237944ebfa07fb9327a6e4fb"
+  integrity sha512-Ce1QiFmsp67KQGHzbGYT4qo1fTQUFUmES7rc22PHC5p631KkJ2TPH/b0XuQlggayA5TkjVHbMOkcNTg4qDqJTg==
   dependencies:
     "@ethersproject/providers" "5.4.3"
     "@openzeppelin/contracts" "^4.1.0"
     "@openzeppelin/contracts-upgradeable" "^4.3.2"
     "@openzeppelin/test-helpers" "^0.5.10"
     "@typechain/ethers-v5" "6.0.5"
+    axios "^0.27.2"
     bluebird "^3.7.2"
     eth-sig-util "^3.0.1"
     ethereumjs-util "^7.1.0"
@@ -14247,7 +14280,7 @@ redstone-evm-connector@^2.1.16:
     prettier-plugin-solidity "^1.0.0-beta.19"
     promise-timeout "^1.3.0"
     redstone-api "^0.4.0"
-    redstone-api-extended "^1.0.9"
+    redstone-api-extended "^1.0.10"
     redstone-node "^0.4.35"
     solidity-bytes-utils "^0.1.2"
     ts-generator "^0.1.1"

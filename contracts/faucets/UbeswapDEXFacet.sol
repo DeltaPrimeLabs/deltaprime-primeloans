@@ -2,7 +2,7 @@ pragma solidity ^0.8.4;
 
 import "./UniswapV2DEXFacet.sol";
 
-contract PangolinDEXFacet is UniswapV2DEXFacet {
+contract UbeswapDEXFacet is UniswapV2DEXFacet {
 
     /**
     * Swaps one asset to another
@@ -12,7 +12,7 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
     * @param _minimumBought minimum amount of asset to be bought
     * @dev This function uses the redstone-evm-connector
     **/
-    function swapPangolin(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public onlyOwner remainsSolvent returns (uint256[] memory) {
+    function swapUbeswap(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public onlyOwner remainsSolvent returns (uint256[] memory) {
         return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
     }
 
@@ -20,6 +20,6 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getRouterContract() public override returns (address) {
-        return 0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9;
+        return 0xd38Db8A8e218f17A2009a995077450b202aF0927;
     }
 }

@@ -3,13 +3,12 @@ import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
-import MockUsdArtifact from "../../../artifacts/contracts/mock/MockUsd.sol/MockUsd.json";
-import PangolinExchangeArtifact from '../../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import UniswapV2ExchangeArtifact from '../../../artifacts/contracts/UniswapV2Exchange.sol/UniswapV2Exchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {MockUsd, PangolinExchange} from '../../../typechain';
+import {UniswapV2Exchange} from '../../../typechain';
 import {Asset, fromBytes32, getFixedGasSigners, toBytes32, toWei, syncTime, fromWei, formatUnits} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -43,7 +42,7 @@ describe('EPangolinExchange', () => {
   });
 
   describe('Test buying and selling an asset', () => {
-    let sut: PangolinExchange,
+    let sut: UniswapV2Exchange,
       wavaxToken: Contract,
       usdToken: Contract,
       pangolinRouter: Contract,
@@ -53,11 +52,13 @@ describe('EPangolinExchange', () => {
         before('Deploy the PangolinExchange contract', async () => {
       [,owner] = await getFixedGasSigners(10000000);
 
-      sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
-      await sut.initialize(pangolinRouterAddress,  [
+      sut = await deployContract(owner, UniswapV2ExchangeArtifact) as UniswapV2Exchange;
+      await sut.initialize(pangolinRouterAddress,
+[
         new Asset(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32("USD"), TOKEN_ADDRESSES['USDT']),
-      ]);
+      ],
+      toBytes32("AVAX"));
 
       wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
       usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDT'], ERC20Abi, provider);
@@ -129,24 +130,25 @@ describe('EPangolinExchange', () => {
   });
 
   describe('Set and read assets', () => {
-    let sut: PangolinExchange;
+    let sut: UniswapV2Exchange;
 
     const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
     const token2Address = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
     const token3Address = '0x5947bb275c521040051d82396192181b413227a3';
 
     before("deploy a contract with a predefined supported assets", async () => {
-      let contract: PangolinExchange,
-        owner: SignerWithAddress;
+       let owner: SignerWithAddress;
 
       [owner] = await getFixedGasSigners(10000000);
       let token1 = "TOKEN_1";
-      sut = await deployContract(owner, PangolinExchangeArtifact) as PangolinExchange;
+      sut = await deployContract(owner, UniswapV2ExchangeArtifact) as UniswapV2Exchange;
       await sut.initialize(pangolinRouterAddress,
         [
           new Asset(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX']),
           new Asset(toBytes32(token1), token1Address)
-        ]);
+        ],
+        toBytes32("AVAX")
+      );
     });
 
     it("should add asset at a contract deploy", async () => {
@@ -322,11 +324,11 @@ describe('EPangolinExchange', () => {
 
     it("should deploy a contract with an empty asset array", async () => {
       let owner2: SignerWithAddress,
-        sut2: PangolinExchange;
+        sut2: UniswapV2Exchange;
 
       [,owner2] = await getFixedGasSigners(10000000);
 
-      sut2 = await deployContract(owner2, PangolinExchangeArtifact) as PangolinExchange;
+      sut2 = await deployContract(owner2, UniswapV2ExchangeArtifact) as UniswapV2Exchange;
       await sut2.initialize(pangolinRouterAddress, []);
       expect(await sut2.getAllAssets()).to.be.empty;
     });

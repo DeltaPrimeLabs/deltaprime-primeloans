@@ -9,9 +9,8 @@ import {
   Asset,
   AssetAmount,
   calculateBonus,
-  deployAllFaucets,
+  deployAllFaucets, deployAndInitExchangeContract,
   deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract,
   formatUnits,
   fromBytes32,
   fromWei,
@@ -29,7 +28,7 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   ERC20Pool,
   MockSmartLoanLogicFacetRedstoneProvider,
-  PangolinExchange,
+  UniswapV2Exchange,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoansFactory,
@@ -37,7 +36,7 @@ import {
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -151,7 +150,7 @@ describe('Smart loan',  () => {
   });
 
   describe('An insolvent loan - mock prices', () => {
-    let exchange: PangolinExchange,
+    let exchange: UniswapV2Exchange,
         loan: MockSmartLoanLogicFacetRedstoneProvider,
         wrappedLoan: any,
         owner: SignerWithAddress,
@@ -234,14 +233,14 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
 
       //deposit other tokens
       await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);
@@ -280,7 +279,12 @@ describe('Smart loan',  () => {
     before("prepare smart loan implementations", async () => {
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          exchange.address,
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

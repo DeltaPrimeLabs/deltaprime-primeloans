@@ -36,19 +36,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
-
-    //TODO: write a test for it
-    function wrapNativeToken(uint256 amount) onlyOwner public {
-        require(amount <= address(this).balance, "Not enough AVAX to wrap");
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: amount}();
-    }
-
-    function depositNativeToken() public payable virtual {
-        SmartLoanLib.getNativeTokenWrapped().deposit{value: msg.value}();
-
-        emit DepositNative(msg.sender, msg.value, block.timestamp);
-    }
-
     function getAllOwnedAssets() external view returns (bytes32[] memory result) {
         return SmartLoanLib.getAllOwnedAssets();
     }
@@ -70,17 +57,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         bytes32[] memory assets = poolManager.getAllTokenAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         return prices;
-    }
-
-    function unwrapAndWithdraw(uint256 _amount) public payable virtual {
-        WAVAX native = SmartLoanLib.getNativeTokenWrapped();
-        require(native.balanceOf(address(this)) >= _amount, "Not enough WAVAX to unwrap and withdraw");
-
-        native.withdraw(_amount);
-
-        payable(msg.sender).safeTransferETH(_amount);
-
-        emit UnwrapAndWithdraw(msg.sender, msg.value, block.timestamp);
     }
 
     /* ========== VIEW FUNCTIONS ========== */
@@ -135,10 +111,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         return getPricesFromMsg(assets);
     }
 
-
-    /* ========== INTERNAL AND PRIVATE FUNCTIONS ========== */
-
-
     /* ========== MODIFIERS ========== */
 
     /**
@@ -154,24 +126,4 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         LibDiamond.enforceIsContractOwner();
         _;
     }
-
-    /* ========== EVENTS ========== */
-
-
-    /**
-    * @dev emitted when native tokens are deposited to the SmartLoan
-    * @param owner the address initiating deposit
-    * @param amount of repaid funds
-    * @param timestamp of the repayment
-    **/
-    event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
-
-    /**
-    * @dev emitted when native tokens are withdrawn by the owner
-    * @param owner the address initiating withdraw
-    * @param amount of repaid funds
-    * @param timestamp of the repayment
-    **/
-    event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
-
 }

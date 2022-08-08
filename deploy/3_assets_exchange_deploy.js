@@ -1,5 +1,5 @@
 const web3Abi  = require('web3-eth-abi');
-const addresses = require("../common/token_addresses.json");
+const addresses = require("../common/addresses/avax/token_addresses.json");
 const {ethers} = require("hardhat");
 const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
 const hre = require("hardhat");

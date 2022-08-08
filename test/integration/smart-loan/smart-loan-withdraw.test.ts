@@ -8,7 +8,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset, deployAllFaucets, deployAndInitializeLendingPool,
-  deployAndInitPangolinExchangeContract, formatUnits,
+  deployAndInitExchangeContract, formatUnits,
   fromWei,
   getFixedGasSigners, PoolAsset,
   recompileSmartLoanLib,
@@ -18,13 +18,12 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  ERC20Pool,
-  PangolinExchange, PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
-  SmartLoansFactory,
+  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
+  SmartLoansFactory, UniswapV2Exchange,
 } from "../../../typechain";
 import {BigNumber} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -45,7 +44,7 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan with withdrawal', () => {
-    let exchange: PangolinExchange,
+    let exchange: UniswapV2Exchange,
         loan: SmartLoanGigaChadInterface,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
@@ -100,18 +99,23 @@ describe('Smart loan',  () => {
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           'lib'
       );
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
 
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          exchange.address,
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,

@@ -6,7 +6,7 @@ import redstone from 'redstone-api';
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
@@ -104,7 +104,7 @@ describe('Smart loan',  () => {
       diamondAddress = await deployDiamond();
       await recompileSmartLoanLib(
           "SmartLoanLib",
-          ethers.constants.AddressZero,
+          [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
@@ -212,7 +212,7 @@ describe('Smart loan',  () => {
   });
 
   // describe('A loan with staking liquidation', () => {
-  //   let exchange: PangolinExchange,
+  //   let exchange: UniswapV2Exchange,
   //       loan: MockSmartLoanLogicFacetRedstoneProvider,
   //       smartLoansFactory: SmartLoansFactory,
   //       loanLiquidation: MockSmartLoanLiquidationFacetRedstoneProvider,
@@ -305,7 +305,7 @@ describe('Smart loan',  () => {
   //         'lib'
   //     );
   //
-  //     exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+  //     exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
   //
   //     //TODO: Refactor syntax
   //     let result = await deployDiamond();

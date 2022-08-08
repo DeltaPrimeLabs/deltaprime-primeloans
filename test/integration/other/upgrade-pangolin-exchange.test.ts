@@ -1,8 +1,8 @@
-import {Asset, deployAndInitPangolinExchangeContract, syncTime, toBytes32} from "../../_helpers";
+import {Asset, deployAndInitExchangeContract, syncTime, toBytes32} from "../../_helpers";
 import {
     MockUpgradedPangolinExchange,
     MockUpgradedPangolinExchange__factory,
-    PangolinExchange, PangolinExchange__factory, TransparentUpgradeableProxy,
+    PangolinExchange__factory, TransparentUpgradeableProxy,
     TransparentUpgradeableProxy__factory,
 } from "../../../typechain";
 import MockPangolinExchangeArtifact from '../../../artifacts/contracts/mock/MockUpgradedPangolinExchange.sol/MockUpgradedPangolinExchange.json';
@@ -23,14 +23,14 @@ describe('Pangolin Exchange - upgrading',  () => {
     });
 
     describe('Check basic logic before and after upgrade', () => {
-        let exchange: PangolinExchange,
+        let exchange: UniswapV2Exchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
             supportedAssets: any,
             proxy: TransparentUpgradeableProxy;
         before("should deploy provider, exchange, loansFactory and pool", async () => {
             [owner, admin] = await getFixedGasSigners(100000000);
-            exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(exchange.address, admin.address, []));
             exchange = await (new PangolinExchange__factory(owner).attach(proxy.address));
