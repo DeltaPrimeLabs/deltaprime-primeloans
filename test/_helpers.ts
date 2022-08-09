@@ -4,7 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     CompoundingIndex,
     ERC20Pool, MockToken, OpenBorrowersRegistry__factory,
-    PangolinExchange,
+    PangolinExchange, Pool,
     VariableUtilisationRatesCalculator
 } from "../typechain";
 import TOKEN_ADDRESSES from '../common/token_addresses.json';
@@ -13,6 +13,7 @@ import VariableUtilisationRatesCalculatorArtifact
 import ERC20PoolArtifact from '../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
+import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 
 import {execSync} from "child_process";
 import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
@@ -178,7 +179,7 @@ export const deployAllFaucets = async function(diamondAddress: any) {
     )
     await deployFacet("SolvencyFacet", diamondAddress, [])
     await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
-    await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak'])
+    await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak', 'getTotalStakedValue'])
     await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['liquidateLoan', 'unsafeLiquidateLoan'])
     await deployFacet(
         "SmartLoanLogicFacet",
@@ -204,8 +205,7 @@ export const deployAndInitPangolinExchangeContract = async function (
     pangolinRouterAddress: string,
     supportedAssets: Asset[]
 ) {
-    let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
-    const exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+    let exchange = (await deployContract(owner, PangolinExchangeArtifact)) as PangolinExchange;
     await exchange.initialize(pangolinRouterAddress, supportedAssets);
     return exchange
 };

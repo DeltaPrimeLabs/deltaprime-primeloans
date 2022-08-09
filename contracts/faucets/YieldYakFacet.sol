@@ -4,25 +4,43 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
+import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../lib/SmartLoanLib.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
+import "hardhat/console.sol";
 
-contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
+contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, PriceAware {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
     address private constant YAKStakingAVAXAAVEV1Address = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
+    /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
+
+    /**
+     * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
+     **/
+    function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
+        return SmartLoanLib.getRedstoneConfigManager().maxBlockTimestampDelay();
+    }
+
+    /**
+     * Override PriceAware method, addresses below belong to authorized signers of data feeds
+     **/
+    function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
+        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+    }
+
     // TODO: Change name to a more unique one for this exact investment strategy
     /**
- * Stakes AVAX in Yield Yak protocol
- * @param amount amount of AVAX to be staked
- * @dev This function uses the redstone-evm-connector
- **/
+        * Stakes AVAX in Yield Yak protocol
+        * @param amount amount of AVAX to be staked
+        * @dev This function uses the redstone-evm-connector
+    **/
     function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         require(SmartLoanLib.getNativeTokenWrapped().balanceOf(address(this)) >= amount, "Not enough AVAX available");
@@ -67,32 +85,20 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
     }
 
     function getTotalStakedValue() public view override returns (uint256 totalValue) {
+        // TODO: Make more generic whith supporting multiple staking strategies
         IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
         uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
         if (stakedBalance == 0) {
             totalValue = 0;
         } else {
-            uint256 totalSupply = yakStakingContract.totalSupply();
-            uint256 totalDeposits = yakStakingContract.totalDeposits();
-            totalValue = stakedBalance * totalDeposits / totalSupply;
-        }
-    }
-
-    // TODO: To be removed in favor of returning YRT token to a liquidator
-    function unstakeAVAXForASpecifiedAmount(uint256 amount) public override {
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
-        uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-
-        if (stakedBalance != 0) {
-            uint256 totalSupply = yakStakingContract.totalSupply();
-            uint256 totalDeposits = yakStakingContract.totalDeposits();
-            uint256 totalStakedValue = stakedBalance * totalDeposits / totalSupply;
-            if (totalStakedValue < amount) {
-                unstakeAVAXYak(stakedBalance);
-            } else {
-                uint256 unstakeAmount = amount * stakedBalance / totalStakedValue;
-                unstakeAVAXYak(unstakeAmount);
-            }
+            PoolManager poolManager = SmartLoanLib.getPoolManager();
+            bytes32[] memory symbol = new bytes32[](1);
+            symbol[0] = "$YYAV3SA1";
+            uint256 price = getPricesFromMsg(symbol)[0];
+            console.log('stakedBalance: %s', stakedBalance);
+            console.log('price: %s', price);
+            console.log('yakStakingContract.decimals(): %s', yakStakingContract.decimals());
+            totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
         }
     }
 

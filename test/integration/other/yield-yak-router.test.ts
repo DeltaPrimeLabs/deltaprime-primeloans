@@ -2,12 +2,28 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
-    YieldYakRouter,
-    YieldYakRouter__factory,
+    PoolManager,
+    RedstoneConfigManager__factory,
+    SmartLoanGigaChadInterface,
+    SmartLoansFactory
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {calculateStakingTokensAmountBasedOnAvaxValue, fromWei, getFixedGasSigners, toWei} from "../../_helpers";
+import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import {
+    Asset,
+    calculateStakingTokensAmountBasedOnAvaxValue, deployAllFaucets,
+    fromWei,
+    getFixedGasSigners, recompileSmartLoanLib,
+    toBytes32,
+    toWei
+} from "../../_helpers";
+import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+const {deployContract} = waffle;
 import {BigNumber, Contract} from "ethers";
+import TOKEN_ADDRESSES from "../../../common/token_addresses.json";
+import redstone from "redstone-api";
+import {WrapperBuilder} from "redstone-evm-connector";
 chai.use(solidity);
 const {provider} = waffle;
 const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
@@ -20,91 +36,133 @@ const erc20ABI = [
     'function totalDeposits() external view returns (uint256)'
 ]
 
+const wavaxAbi = [
+    'function deposit() public payable',
+    ...erc20ABI
+]
+
 describe('Yield Yak test', () => {
-    let yakRouterContract: YieldYakRouter,
+    let smartLoansFactory: SmartLoansFactory,
+        loan: SmartLoanGigaChadInterface,
+        wrappedLoan: any,
         user: SignerWithAddress,
-        yakStakingContract: Contract;
+        owner: SignerWithAddress,
+        MOCK_PRICES: any,
+        AVAX_PRICE: number,
+        $YYAV3SA1_PRICE: number,
+        yakStakingContract: Contract,
+        avaxTokenContract: Contract;
 
     before(async() => {
-        [user] = await getFixedGasSigners(10000000);
-        yakRouterContract = await (new YieldYakRouter__factory(user).deploy());
+        [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+        let supportedAssets = [
+            new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+            new Asset(toBytes32('$YYAV3SA1'), TOKEN_ADDRESSES['$YYAV3SA1']),
+        ]
+        let poolManager = await deployContract(
+            owner,
+            PoolManagerArtifact,
+            [
+                supportedAssets,
+                []
+            ]
+        ) as PoolManager;
+
+        let diamondAddress = await deployDiamond();
+
+        smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+        await smartLoansFactory.initialize(diamondAddress);
+
+        await recompileSmartLoanLib(
+            "SmartLoanLib",
+            ethers.constants.AddressZero,
+            poolManager.address,
+            redstoneConfigManager.address,
+            diamondAddress,
+            'lib'
+        );
+        await deployAllFaucets(diamondAddress)
+
+        AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+        $YYAV3SA1_PRICE = (await redstone.getPrice('$YYAV3SA1', { provider: "redstone-avalanche-prod-node-3"})).value;
+        console.log(`----x----> $YYAV3SA1_PRICE: ${$YYAV3SA1_PRICE}`);
+
+        MOCK_PRICES = [
+            {
+                symbol: 'AVAX',
+                value: AVAX_PRICE
+            },
+            {
+                symbol: '$YYAV3SA1',
+                value: $YYAV3SA1_PRICE
+            },
+        ];
+
+        await smartLoansFactory.connect(user).createLoan();
+
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
+        loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);
+
+        wrappedLoan = WrapperBuilder
+            .mockLite(loan)
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
+
+        avaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+        await avaxTokenContract.connect(user).deposit({value: toWei('1000')});
+        await avaxTokenContract.connect(user).approve(loan.address, toWei('1000'));
+        await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
     })
 
     it("should calculate total value of 0 staked tokens", async () => {
-        let stakedAvaxValue = await yakRouterContract.connect(user).getTotalStakedValue();
+        let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
         expect(fromWei(stakedAvaxValue)).to.be.equal(0)
     });
 
     it("should successfully stake AVAX with YieldYak", async () => {
-        let initialAvaxBalance = BigNumber.from(await provider.getBalance(user.address));
-        let initialStakedBalance = await yakStakingContract.balanceOf(user.address);
+        let initialAvaxBalance = BigNumber.from(await avaxTokenContract.balanceOf(wrappedLoan.address));
+        let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
         let investedAvaxAmount = BigNumber.from(toWei("10"));
 
         expect(initialStakedBalance).to.be.equal(0);
         expect(fromWei(initialAvaxBalance)).to.be.greaterThan(0);
 
-        await yakRouterContract.connect(user).stakeAVAX(investedAvaxAmount, {value: investedAvaxAmount});
+        await wrappedLoan.stakeAVAXYak(investedAvaxAmount);
 
         let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, investedAvaxAmount);
 
-        let afterStakingStakedBalance = await yakStakingContract.balanceOf(user.address);
-        let avaxBalanceDifference = initialAvaxBalance.sub(await provider.getBalance(user.address));
+        let afterStakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+        let avaxBalanceDifference = initialAvaxBalance.sub(await avaxTokenContract.balanceOf(wrappedLoan.address));
 
         expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
         expect(fromWei(avaxBalanceDifference)).to.be.closeTo(10, 1);
     });
 
     it("should calculate total value of staked tokens", async () => {
-        let stakedAvaxValue = await yakRouterContract.connect(user).getTotalStakedValue();
-        expect(fromWei(stakedAvaxValue)).to.be.equal(10)
+        let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
+        expect(fromWei(stakedAvaxValue)).to.be.equal(10 )
     });
 
-    it("should unstake tokens worth a specified AVAX amount", async () => {
-        let initialAvaxBalance = BigNumber.from(await provider.getBalance(user.address));
-        let initialStakedBalance = await yakStakingContract.balanceOf(user.address);
-        let redeemedAvaxValue = BigNumber.from(toWei("5"));
-        let expectedTokensToUnstakeAmount = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, redeemedAvaxValue);
-
-        await yakStakingContract.connect(user).approve(yakRouterContract.address, initialStakedBalance)
-        await yakRouterContract.connect(user).unstakeAVAXForASpecifiedAmount(redeemedAvaxValue);
-        let expectedAfterUnstakingStakedBalance = initialStakedBalance.sub(expectedTokensToUnstakeAmount);
-
-        let afterUntakingStakedBalance = await yakStakingContract.balanceOf(user.address);
-        let avaxBalanceDifference = (await provider.getBalance(user.address)).sub(initialAvaxBalance);
-
-        expect(fromWei(afterUntakingStakedBalance)).to.be.closeTo(fromWei(expectedAfterUnstakingStakedBalance), 1e-5);
-        expect(fromWei(avaxBalanceDifference)).to.be.closeTo(5, 0.5);
-    });
 
     it("should unstake remaining AVAX", async () => {
-        let initialAvaxBalance = BigNumber.from(await provider.getBalance(user.address));
-        let initialStakedBalance = await yakStakingContract.balanceOf(user.address);
+        let initialAvaxBalance = BigNumber.from(await avaxTokenContract.balanceOf(wrappedLoan.address));
+        let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 
-        await yakStakingContract.connect(user).approve(yakRouterContract.address, initialStakedBalance)
-        await yakRouterContract.connect(user).unstakeAVAX(initialStakedBalance);
+        await yakStakingContract.connect(user).approve(wrappedLoan.address, initialStakedBalance)
+        await wrappedLoan.unstakeAVAXYak(initialStakedBalance);
 
-        let afterUntakingStakedBalance = await yakStakingContract.balanceOf(user.address);
-        let avaxBalanceDifference = (await provider.getBalance(user.address)).sub(initialAvaxBalance);
+        let afterUntakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+        let avaxBalanceDifference = (await avaxTokenContract.balanceOf(wrappedLoan.address)).sub(initialAvaxBalance);
 
         expect(afterUntakingStakedBalance).to.be.equal(0);
-        expect(fromWei(avaxBalanceDifference)).to.be.closeTo(5, 0.5);
-    });
-
-    it("should stake some AVAX then unstake all using unstakeAVAXForASpecifiedAmount with amount greater than stakedBalance", async () => {
-        let initialAvaxBalance = BigNumber.from(await provider.getBalance(user.address));
-        let investedAvaxAmount = BigNumber.from(toWei("10"));
-
-        await yakRouterContract.connect(user).stakeAVAX(investedAvaxAmount, {value: investedAvaxAmount});
-        let stakedBalance = await yakStakingContract.balanceOf(user.address);
-
-        await yakStakingContract.connect(user).approve(yakRouterContract.address, stakedBalance)
-        await yakRouterContract.connect(user).unstakeAVAXForASpecifiedAmount(toWei("99999"));
-
-        expect(await yakStakingContract.balanceOf(user.address)).to.be.equal(0);
-        // Lets see if this will cause this test to be flaky based on the state of freshly forked mainnet
-        // I do have suspicions that sometimes the gas usage for stake/unstake may be visibly higher based on the execution path in YAK contract.
-        expect(fromWei(initialAvaxBalance)).to.be.closeTo(fromWei(await provider.getBalance(user.address)), 0.5);
+        expect(fromWei(avaxBalanceDifference)).to.be.closeTo(10, 0.5);
     });
 
 });

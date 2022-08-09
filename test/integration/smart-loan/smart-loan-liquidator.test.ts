@@ -219,7 +219,6 @@ describe('Test liquidator',  () => {
         });
 
         it("liquidate loan", async () => {
-            console.log('jezcze okej 1')
             await liquidateLoan(wrappedLoan.address, poolManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;

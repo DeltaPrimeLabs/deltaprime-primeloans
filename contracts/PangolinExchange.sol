@@ -27,8 +27,9 @@ contract PangolinExchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuar
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
 
+  // TODO: Check if the below comment is still valid
   // first supportedAsset must be a blockchain native currency
-  function initialize(address _pangolinRouter, Asset[] memory supportedAssets) external initializer {
+  function initialize(address _pangolinRouter, IAssetsExchange.Asset[] memory supportedAssets) external initializer {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
 
     _updateAssets(supportedAssets);

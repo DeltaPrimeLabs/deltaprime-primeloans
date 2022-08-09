@@ -35,9 +35,9 @@ library SmartLoanLib {
 
     address private constant _YAK_STAKING_CONTRACT = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
 
-    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x162700d1613DfEC978032A909DE02643bC55df1A;
+    address private constant _PANGOLIN_ROUTER_CONTRACT = 0x0000000000000000000000000000000000000000;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0xc9952Fc93Fa9bE383ccB39008c786b9f94eAc95d;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -63,7 +63,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x172076E0166D1F9Cc711C77Adf8488051744980C);
+    return PoolManager(0xccf1769D8713099172642EB55DDFFC0c5A444FE9);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32[] memory symbol) {
@@ -72,7 +72,7 @@ library SmartLoanLib {
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
-    return RedstoneConfigManager(0xe039608E695D21aB11675EBBA00261A0e750526c);
+    return RedstoneConfigManager(0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134);
     }
 
     function getNativeTokenWrapped() internal view returns (WAVAX) {
