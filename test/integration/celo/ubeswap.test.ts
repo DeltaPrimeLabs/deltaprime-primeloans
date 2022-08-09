@@ -1,3 +1,5 @@
+//npx hardhat test test/integration/celo/ubeswap.test.ts --network localhost
+
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
@@ -62,7 +64,7 @@ describe('Smart loan',  () => {
     before("deploy factory, exchange, wavaxPool and usdPool", async () => {
       [random] = await getFixedGasSigners(6500000);
 
-      owner = provider.getSigner('0x517f717f0AE11efc2AF8943071B66d77DfaFc9fC');
+      owner = provider.getSigner('0x5839Dd13ad2C78dDcF3365D54302D65764619737');
       depositor = ethers.Wallet.createRandom().connect(provider);
 
       await random.sendTransaction({
@@ -118,7 +120,10 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
-          'lib'
+          'lib',
+          undefined,
+          undefined,
+          'CELO'
       );
 
       let exchangeFactory = await ethers.getContractFactory("UbeswapExchange");

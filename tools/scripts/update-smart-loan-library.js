@@ -1,4 +1,4 @@
-export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV) {
+export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV, nativeAssetSymbol) {
     var fs = require('fs')
     let libcontract = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
 
@@ -54,13 +54,25 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
+    // native asset
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('getNativeTokenSymbol()')
+    );
+
+    newLine = `        symbol[0] = "${nativeAssetSymbol}";`;
+
+    fileArray.splice(lineWithFunctionDeclaration + 2, 1, newLine);
+
+    //write changes to SmartLoanLib.sol
+
     let result = fileArray.join("\n");
 
     fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
 
+    // exchanges
 
     for (const exchange of exchanges) {
-        console.log(exchange)
         let exchangeContract = fs.readFileSync(exchange.facetPath, 'utf8');
         let fileArray = exchangeContract.split('\n');
         lineWithFunctionDeclaration = fileArray.findIndex(

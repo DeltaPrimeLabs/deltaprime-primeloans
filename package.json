@@ -12,7 +12,7 @@
     "test-integration": "yarn hardhat test test/integration/*/* --network localhost",
     "fork:mainnet": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc --no-deploy",
     "fork:fuji": "yarn hardhat node --fork https://api.avax-test.network/ext/bc/C/rpc --no-deploy",
-    "fork:celo": "yarn ganache-cli fork https://forno.celo.org -u 0x517f717f0AE11efc2AF8943071B66d77DfaFc9fC",
+    "fork:celo": "yarn ganache-cli --fork https://forno.celo.org -u 0x5839Dd13ad2C78dDcF3365D54302D65764619737",
     "migrate:local": "npx hardhat deploy --network localhost --tags init",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci",

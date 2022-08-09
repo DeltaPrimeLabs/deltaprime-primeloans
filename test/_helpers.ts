@@ -295,11 +295,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath?: string, maxLTV: number=5000, minSelloutLTV: number=4000) {
+export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(exchanges, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV);
+    await updateSmartLoanLibrary(exchanges, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV, nativeAssetSymbol);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }
