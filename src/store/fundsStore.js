@@ -47,12 +47,6 @@ export default {
     wavaxTokenContract: null,
     assetBalances: [],
   },
-  getters: {
-    getSmartLoanContract(state) {
-      return state.smartLoanContract;
-    }
-
-  },
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
       state.smartLoanContract = smartLoanContract;
@@ -155,12 +149,12 @@ export default {
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
 
-    async createAndFundLoan({state, rootState, commit, dispatch}) {
+    async createAndFundLoan({state, rootState, commit, dispatch}, {value}) {
       const provider = rootState.network.provider;
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(state.smartLoanFactoryContract.address, toWei('2'));
+      await state.wavaxTokenContract.connect(provider.getSigner()).approve(state.smartLoanFactoryContract.address, toWei(String(value)));
       const wrappedSmartLoanFactoryContract = WrapperBuilder.wrapLite(state.smartLoanFactoryContract).usingPriceFeed(config.dataProviderId);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32('AVAX'), state.wavaxTokenContract.address, toWei('2'), toBytes32('AVAX'), toWei('2'), {gasLimit: 50000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32('AVAX'), state.wavaxTokenContract.address, toWei(String(value)), toBytes32('AVAX'), toWei('0'), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'createAndFundLoan');
     },

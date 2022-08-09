@@ -102,6 +102,8 @@ import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 
 export default {
   name: 'FundTableRowBeta',
@@ -123,6 +125,7 @@ export default {
   computed: {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt']),
+    ...mapState('fundsStore', ['smartLoanContract']),
 
     loanAPY() {
       return aprToApy(this.borrowingRate);
@@ -133,7 +136,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'repay']),
+    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'repay', 'createAndFundLoan']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -264,10 +267,17 @@ export default {
       modalInstance.ltv = 1.5;
       modalInstance.totalCollateral = 101;
       modalInstance.$on('ADD_FROM_WALLET', value => {
+        if (this.smartLoanContract) {
+          if (this.smartLoanContract.address === NULL_ADDRESS) {
+            this.handleTransaction(this.createAndFundLoan, {value: value}).then(() => {
+              this.closeModal();
+            });
+          }
+        }
         this.handleTransaction(this.fund, {value: value}).then(() => {
           this.closeModal();
-        })
-      })
+        });
+      });
     },
 
     openWithdrawModal() {
