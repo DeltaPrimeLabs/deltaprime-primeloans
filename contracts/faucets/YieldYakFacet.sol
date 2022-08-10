@@ -12,7 +12,6 @@ import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../lib/SmartLoanLib.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
 import "../mock/WAVAX.sol";
-import "hardhat/console.sol";
 
 contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, PriceAware {
     using TransferHelper for address payable;
@@ -96,9 +95,6 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
             bytes32[] memory symbol = new bytes32[](1);
             symbol[0] = "$YYAV3SA1";
             uint256 price = getPricesFromMsg(symbol)[0];
-            console.log('stakedBalance: %s', stakedBalance);
-            console.log('price: %s', price);
-            console.log('yakStakingContract.decimals(): %s', yakStakingContract.decimals());
             totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
         }
     }

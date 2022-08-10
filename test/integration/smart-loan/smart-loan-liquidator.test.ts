@@ -9,8 +9,8 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 import {
     Asset,
     deployAllFaucets,
-    deployAndInitializeLendingPool,
     deployAndInitExchangeContract,
+    deployAndInitializeLendingPool,
     getFixedGasSigners,
     PoolAsset,
     recompileSmartLoanLib,
@@ -18,23 +18,13 @@ import {
     toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {
-    ERC20Pool,
-    PangolinExchange,
-    PoolManager,
-    RedstoneConfigManager__factory,
-    SmartLoanLogicFacet,
-    UniswapV2Exchange,
-    SmartLoansFactory,
-} from "../../../typechain";
+import {PoolManager, RedstoneConfigManager__factory, SmartLoansFactory, UniswapV2Exchange,} from "../../../typechain";
 import {BigNumber, Contract, ContractFactory} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import redstone from "redstone-api";
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
-import {LTVLib} from "../../../typechain/LTVLib";
-import {YieldYakRouter__factory} from "../../../typechain/factories/YieldYakRouter__factory";
 
 const {deployDiamond, deployFacet, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -128,7 +118,6 @@ describe('Test liquidator',  () => {
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
             ];
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange") as UniswapV2Exchange;
             AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;
 
@@ -156,14 +145,14 @@ describe('Test liquidator',  () => {
 
             await recompileSmartLoanLib(
                 "SmartLoanLib",
-                ethers.constants.AddressZero,
+                [],
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets);
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange", "AVAX") as UniswapV2Exchange;
 
             await recompileSmartLoanLib(
                 "SmartLoanLib",

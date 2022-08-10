@@ -58,23 +58,16 @@ contract PoolManager {
         }
     }
 
+    function _addPoolAsset(bytes32 _asset, address _poolAddress) internal {
+        require(!assetToPoolAddress.contains(_asset), "Asset's pool already exists");
+        assetToPoolAddress.set(_asset, _poolAddress);
+        emit PoolAssetAdded(msg.sender, _asset, _poolAddress, block.timestamp);
+    }
+
     function addTokenAssets(IAssetsExchange.Asset[] memory tokenAssets) public onlyAdmin {
         for(uint256 i=0; i<tokenAssets.length; i++) {
             _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress);
         }
-    }
-
-
-    function _addPoolAsset(bytes32 _asset, address _poolAddress) internal {
-        require(!assetToPoolAddress.contains(_asset), "Asset's pool already exists");
-        assetToPoolAddress.set(_asset, _poolAddress);
-        // TODO: Emit event
-    }
-
-    function removePoolAsset(bytes32 _asset) public onlyAdmin {
-        // TODO: Add some check reg. pool's utilisation / state prior to removing it from the manager?
-        // TODO: Emit event
-        revert("Not implemented");
     }
 
     function _addTokenAsset(bytes32 _asset, address _tokenAddress) internal {
@@ -82,13 +75,29 @@ contract PoolManager {
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
         assetToTokenAddress.set(_asset, _tokenAddress);
-        // TODO: Emit event
+        emit TokenAssetAdded(msg.sender, _asset, _tokenAddress, block.timestamp);
     }
 
-    function removeTokenAsset(bytes32 _asset) public onlyAdmin {
-        // TODO: Add some check reg. token's usage prior to removing it from the manager?
-        // TODO: Emit event
-        revert("Not implemented");
+    function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyAdmin{
+        for(uint256 i=0; i<_tokenAssets.length; i++) {
+            _removeTokenAsset(_tokenAssets[i]);
+        }
+    }
+
+    function _removeTokenAsset(bytes32 _tokenAsset) internal {
+        EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
+        emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
+    }
+
+    function removePoolAssets(bytes32[] memory _poolAssets) public onlyAdmin {
+        for(uint256 i=0; i<_poolAssets.length; i++) {
+            _removePoolAsset(_poolAssets[i]);
+        }
+    }
+
+    function _removePoolAsset(bytes32 _poolAsset) internal {
+        EnumerableMap.remove(assetToPoolAddress, _poolAsset);
+        emit PoolAssetRemoved(msg.sender, _poolAsset, block.timestamp);
     }
 
     modifier onlyAdmin {
@@ -97,4 +106,38 @@ contract PoolManager {
     }
 
     event AdminChanged(address indexed user, address newAdmin, uint256 timestamp);
+
+    /**
+     * @dev emitted after adding a token asset
+     * @param performer an address of the wallet adding a token asset
+     * @param tokenAsset token asset
+     * @param assetAddress an address of the token asset
+     * @param timestamp time of adding a token asset
+     **/
+    event TokenAssetAdded(address indexed performer, bytes32 indexed tokenAsset, address assetAddress, uint256 timestamp);
+
+    /**
+     * @dev emitted after removing a token asset
+     * @param performer an address of the wallet removing a token asset
+     * @param tokenAsset token asset
+     * @param timestamp time a token asset removal
+     **/
+    event TokenAssetRemoved(address indexed performer, bytes32 indexed tokenAsset, uint256 timestamp);
+
+    /**
+     * @dev emitted after adding a pool asset
+     * @param performer an address of wallet adding the pool asset
+     * @param poolAsset pool asset
+     * @param poolAssetAddress an address of the pool asset
+     * @param timestamp time of the pool asset addition
+     **/
+    event PoolAssetAdded(address indexed performer, bytes32 indexed poolAsset, address poolAssetAddress, uint256 timestamp);
+
+    /**
+     * @dev emitted after removing a pool asset
+     * @param performer an address of wallet removing the pool asset
+     * @param poolAsset pool asset
+     * @param timestamp time of a pool asset removal
+     **/
+    event PoolAssetRemoved(address indexed performer, bytes32 indexed poolAsset, uint256 timestamp);
 }

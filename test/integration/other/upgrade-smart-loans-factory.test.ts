@@ -2,12 +2,11 @@ import {Asset, deployAndInitExchangeContract, syncTime, toBytes32} from "../../_
 import {
     MockUpgradedSmartLoansFactory,
     MockUpgradedSmartLoansFactory__factory,
-    PangolinExchange,
     Pool,
     SmartLoansFactory,
     SmartLoansFactory__factory,
     TransparentUpgradeableProxy,
-    TransparentUpgradeableProxy__factory,
+    TransparentUpgradeableProxy__factory, UniswapV2Exchange,
 } from "../../../typechain";
 import MockSmartLoansFactoryArtifact from '../../../artifacts/contracts/mock/MockUpgradedSmartLoansFactory.sol/MockUpgradedSmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -32,7 +31,7 @@ describe('Smart loans factory - upgrading',  () => {
     describe('Check basic logic before and after upgrade', () => {
         let smartLoansFactory: SmartLoansFactory,
             pool: Pool,
-            exchange: PangolinExchange,
+            exchange: UniswapV2Exchange,
             owner: SignerWithAddress,
             admin: SignerWithAddress,
             proxy: TransparentUpgradeableProxy,
@@ -41,7 +40,7 @@ describe('Smart loans factory - upgrading',  () => {
             let diamondAddress = await deployDiamond();
             [owner, admin] = await getFixedGasSigners(10000000);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USCD'), TOKEN_ADDRESSES['USDC'])]);
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USCD'), TOKEN_ADDRESSES['USDC'])], "UniswapV2Exchange", "AVAX") as UniswapV2Exchange;
             smartLoansFactory = await (new SmartLoansFactory__factory(owner).deploy());
 
             proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(smartLoansFactory.address, admin.address, []));

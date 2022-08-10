@@ -20,6 +20,6 @@ contract UbeswapDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getRouterContract() public override returns (address) {
-        return 0xd38Db8A8e218f17A2009a995077450b202aF0927;
+        return 0xD563FBCA557F1256A54e124B1eC3F8a00aEA5247;
     }
 }
