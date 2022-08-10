@@ -85,9 +85,9 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   function _updateAssets(Asset[] memory _assets) internal {
     PoolManager poolManager = SmartLoanLib.getPoolManager();
     for (uint256 i = 0; i < _assets.length; i++) {
-      require(poolManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
+      require(poolManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
 
       supportedAssetsMap.set(_assets[i].asset, _assets[i].assetAddress);
     }

@@ -30,7 +30,7 @@ library SmartLoanLib {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x1c85638e118b37167e9298c2268758e058DdfDA0;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0xAd3E631c01798f9aAE4692dabF791a62c226C5D4;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -56,7 +56,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E);
+    return PoolManager(0x5BD774039675883C6072E109E462328111B29600);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32[] memory symbol) {
@@ -65,7 +65,7 @@ library SmartLoanLib {
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
-    return RedstoneConfigManager(0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6);
+    return RedstoneConfigManager(0x7151E5129F386e6B4c497F151030Fa5eD6b4453c);
     }
 
     function getNativeToken() internal view returns (address payable) {

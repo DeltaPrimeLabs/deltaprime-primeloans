@@ -21,7 +21,7 @@ import {
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 const {deployContract} = waffle;
 import {BigNumber, Contract} from "ethers";
-import TOKEN_ADDRESSES from "../../../common/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import redstone from "redstone-api";
 import {WrapperBuilder} from "redstone-evm-connector";
 chai.use(solidity);
@@ -77,7 +77,7 @@ describe('Yield Yak test', () => {
 
         await recompileSmartLoanLib(
             "SmartLoanLib",
-            ethers.constants.AddressZero,
+            [],
             poolManager.address,
             redstoneConfigManager.address,
             diamondAddress,
@@ -147,7 +147,7 @@ describe('Yield Yak test', () => {
 
     it("should calculate total value of staked tokens", async () => {
         let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
-        expect(fromWei(stakedAvaxValue)).to.be.equal(10 )
+        expect(fromWei(stakedAvaxValue)).to.be.equal(10 * AVAX_PRICE )
     });
 
 

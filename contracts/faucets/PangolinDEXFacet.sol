@@ -20,6 +20,6 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getRouterContract() public override returns (address) {
-        return 0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9;
+        return 0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5;
     }
 }
