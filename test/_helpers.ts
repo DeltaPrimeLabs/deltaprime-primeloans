@@ -180,7 +180,7 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
     if (chain == 'AVAX') {
         await deployFacet("SmartLoanWavaxFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'unstakeAVAXYak', 'getTotalStakedValue'])
+        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'getTotalStakedValueYYAV3SA1', 'getTotalStakedValueYYVSAVAXV2'])
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])

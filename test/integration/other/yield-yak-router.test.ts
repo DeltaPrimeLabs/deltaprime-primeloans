@@ -5,7 +5,7 @@ import {
     PoolManager,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
-    SmartLoansFactory
+    SmartLoansFactory, UniswapV2Exchange
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
@@ -26,7 +26,9 @@ import redstone from "redstone-api";
 import {WrapperBuilder} from "redstone-evm-connector";
 chai.use(solidity);
 const {provider} = waffle;
-const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
+const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const yakStakingAVAXTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
+const yakStakingSAVAXTokenAddress = "0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557";
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -41,7 +43,7 @@ const wavaxAbi = [
     ...erc20ABI
 ]
 
-describe('Yield Yak test', () => {
+describe('Yield Yak test stake AVAX', () => {
     let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
@@ -55,7 +57,7 @@ describe('Yield Yak test', () => {
 
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
-        yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+        yakStakingContract = await new ethers.Contract(yakStakingAVAXTokenAddress, erc20ABI, provider);
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
@@ -121,7 +123,7 @@ describe('Yield Yak test', () => {
     })
 
     it("should calculate total value of 0 staked tokens", async () => {
-        let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
+        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYAV3SA1();
         expect(fromWei(stakedAvaxValue)).to.be.equal(0)
     });
 
@@ -145,8 +147,8 @@ describe('Yield Yak test', () => {
     });
 
     it("should calculate total value of staked tokens", async () => {
-        let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
-        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.001)
+        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYAV3SA1();
+        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.1)
     });
 
 
@@ -162,6 +164,171 @@ describe('Yield Yak test', () => {
 
         expect(afterUntakingStakedBalance).to.be.equal(0);
         expect(fromWei(avaxBalanceDifference)).to.be.closeTo(10, 0.5);
+    });
+
+});
+
+describe('Yield Yak test stake SAVAX', () => {
+    let smartLoansFactory: SmartLoansFactory,
+        loan: SmartLoanGigaChadInterface,
+        exchange: UniswapV2Exchange,
+        wrappedLoan: any,
+        user: SignerWithAddress,
+        owner: SignerWithAddress,
+        MOCK_PRICES: any,
+        AVAX_PRICE: number,
+        SAVAX_PRICE: number,
+        $YYVSAVAXV2_PRICE: any,
+        yakStakingContract: Contract,
+        sAvaxTokenContract: Contract,
+        avaxTokenContract: Contract;
+
+    before(async() => {
+        [user, owner] = await getFixedGasSigners(10000000);
+        yakStakingContract = await new ethers.Contract(yakStakingSAVAXTokenAddress, erc20ABI, provider);
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
+        let supportedAssets = [
+            new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+            new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['SAVAX']),
+            new Asset(toBytes32('$YYVSAVAXV2'), TOKEN_ADDRESSES['$YYVSAVAXV2']),
+        ]
+        let poolManager = await deployContract(
+            owner,
+            PoolManagerArtifact,
+            [
+                supportedAssets,
+                []
+            ]
+        ) as PoolManager;
+
+        let diamondAddress = await deployDiamond();
+
+        smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+        await smartLoansFactory.initialize(diamondAddress);
+
+        await recompileSmartLoanLib(
+            "SmartLoanLib",
+            [],
+            poolManager.address,
+            redstoneConfigManager.address,
+            diamondAddress,
+            'lib'
+        );
+
+        let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
+        exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
+        await exchange.initialize(pangolinRouterAddress, supportedAssets, toBytes32('AVAX'));
+
+        await recompileSmartLoanLib(
+            "SmartLoanLib",
+            [
+                {
+                    facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                    contractAddress: exchange.address,
+                }
+            ],
+            poolManager.address,
+            redstoneConfigManager.address,
+            diamondAddress,
+            'lib'
+        );
+
+        await deployAllFaucets(diamondAddress)
+
+        // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
+        AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+        SAVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+        $YYVSAVAXV2_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
+
+        MOCK_PRICES = [
+            {
+                symbol: 'AVAX',
+                value: AVAX_PRICE
+            },
+            {
+                symbol: 'SAVAX',
+                value: SAVAX_PRICE
+            },
+            {
+                symbol: '$YYVSAVAXV2',
+                value: $YYVSAVAXV2_PRICE
+            },
+        ];
+
+        await smartLoansFactory.connect(user).createLoan();
+
+        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
+        loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);
+
+        wrappedLoan = WrapperBuilder
+            .mockLite(loan)
+            .using(
+                () => {
+                    return {
+                        prices: MOCK_PRICES,
+                        timestamp: Date.now()
+                    }
+                })
+
+        avaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+        sAvaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['SAVAX'], wavaxAbi, provider);
+        await avaxTokenContract.connect(user).deposit({value: toWei('1000')});
+        await avaxTokenContract.connect(user).approve(loan.address, toWei('1000'));
+        await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+    });
+
+    // TODO: Calculate more accurate expected sAvax output once Redstone data feed provides sAvax price
+    it("should buy 50 SAVAX", async () => {
+        await wrappedLoan.swapPangolin(
+            toBytes32('AVAX'),
+            toBytes32('SAVAX'),
+            toWei("50"),
+            toWei("40")
+        )
+    });
+
+    it("should calculate total value of 0 staked tokens", async () => {
+        let stakedSAvaxValue = await wrappedLoan.getTotalStakedValueYYVSAVAXV2();
+        expect(fromWei(stakedSAvaxValue)).to.be.equal(0)
+    });
+
+    it("should successfully stake SAVAX with YieldYak", async () => {
+        let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
+        let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+        let investedAvaxAmount = BigNumber.from(toWei("10"));
+
+        expect(initialStakedBalance).to.be.equal(0);
+        expect(fromWei(initialSAvaxBalance)).to.be.greaterThan(0);
+
+        await wrappedLoan.stakeSAVAXYak(investedAvaxAmount);
+
+        let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, investedAvaxAmount);
+
+        let afterStakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+        let sAvaxBalanceDifference = initialSAvaxBalance.sub(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
+
+        expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
+        expect(fromWei(sAvaxBalanceDifference)).to.be.closeTo(10, 1);
+    });
+
+    it("should calculate total value of staked tokens", async () => {
+        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYVSAVAXV2();
+        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.01)
+    });
+
+
+    it("should unstake remaining SAVAX", async () => {
+        let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
+        let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+
+        await yakStakingContract.connect(user).approve(wrappedLoan.address, initialStakedBalance)
+        await wrappedLoan.unstakeSAVAXYak(initialStakedBalance);
+
+        let afterUntakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+        let sAvaxBalanceDifference = (await sAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(initialSAvaxBalance);
+
+        expect(afterUntakingStakedBalance).to.be.equal(0);
+        expect(fromWei(sAvaxBalanceDifference)).to.be.closeTo(10, 0.5);
     });
 
 });
