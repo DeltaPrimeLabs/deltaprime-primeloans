@@ -56,7 +56,7 @@ describe('Yield Yak test', () => {
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('$YYAV3SA1'), TOKEN_ADDRESSES['$YYAV3SA1']),
@@ -87,7 +87,6 @@ describe('Yield Yak test', () => {
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
         $YYAV3SA1_PRICE = (await redstone.getPrice('$YYAV3SA1', { provider: "redstone-avalanche-prod-node-3"})).value;
-        console.log(`----x----> $YYAV3SA1_PRICE: ${$YYAV3SA1_PRICE}`);
 
         MOCK_PRICES = [
             {
@@ -147,7 +146,7 @@ describe('Yield Yak test', () => {
 
     it("should calculate total value of staked tokens", async () => {
         let stakedAvaxValue = await wrappedLoan.getTotalStakedValue();
-        expect(fromWei(stakedAvaxValue)).to.be.equal(10 * AVAX_PRICE )
+        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.001)
     });
 
 
