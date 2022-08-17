@@ -61,7 +61,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
         PoolManager poolManager = SmartLoanLib.getPoolManager();
-        ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(_asset));
+        Pool pool = Pool(poolManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
         if(pool.getBorrowed(address(this)) > 0) {
@@ -85,7 +85,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
             LibDiamond.enforceIsContractOwner();
         }
 
-        ERC20Pool pool = ERC20Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
+        Pool pool = Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay the loan");

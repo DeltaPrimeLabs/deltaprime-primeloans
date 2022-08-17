@@ -3,9 +3,8 @@
 pragma solidity ^0.8.4;
 import "../abstract/NFTAccess.sol";
 import "../Pool.sol";
-import "../ERC20Pool.sol";
 
-contract PoolWithAccessNFT is NFTAccess, ERC20Pool {
+contract PoolWithAccessNFT is NFTAccess, Pool {
     using TransferHelper for address payable;
 
    /**

@@ -13,7 +13,7 @@ module.exports = async ({
   const {deploy} = deployments;
   const {deployer, admin} = await getNamedAccounts();
 
-  embedCommitHash('ERC20Pool', './contracts');
+  embedCommitHash('Pool', './contracts');
   embedCommitHash('WavaxPool', './contracts');
   embedCommitHash('UsdcPool', './contracts');
   embedCommitHash('WavaxPoolTUP', './contracts/proxies');

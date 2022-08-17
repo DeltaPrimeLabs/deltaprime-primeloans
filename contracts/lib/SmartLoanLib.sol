@@ -7,7 +7,7 @@ import "../Pool.sol";
 import "../PoolManager.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import {LibDiamond} from "../lib/LibDiamond.sol";
-import "../ERC20Pool.sol";
+import "../Pool.sol";
 import "../RedstoneConfigManager.sol";
 
 library SmartLoanLib {
@@ -30,7 +30,7 @@ library SmartLoanLib {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0xAd3E631c01798f9aAE4692dabF791a62c226C5D4;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7;
 
     // redstone-evm-connector max block.timestamp acceptable delay
     uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
@@ -56,7 +56,7 @@ library SmartLoanLib {
     }
 
     function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x5BD774039675883C6072E109E462328111B29600);
+    return PoolManager(0x51A1ceB83B83F1985a81C295d1fF28Afef186E02);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32[] memory symbol) {
@@ -65,7 +65,7 @@ library SmartLoanLib {
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
-    return RedstoneConfigManager(0x7151E5129F386e6B4c497F151030Fa5eD6b4453c);
+    return RedstoneConfigManager(0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6);
     }
 
     function getNativeToken() internal view returns (address payable) {

@@ -10,7 +10,7 @@
 //import "../lib/SolvencyMethodsLib.sol";
 //
 //import "../lib/SmartLoanLib.sol";
-//import "../ERC20Pool.sol";
+//import "../Pool.sol";
 //import "../PoolManager.sol";
 //
 //contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
@@ -138,7 +138,7 @@
 //                suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
 //            }
 //
-//            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(assetsToRepay[i]));
+//            Pool pool = Pool(poolManager.getPoolAddress(assetsToRepay[i]));
 //
 //            address(token).safeApprove(address(pool), 0);
 //            address(token).safeApprove(address(pool), config.assetsAmountsToRepay[i].amount);

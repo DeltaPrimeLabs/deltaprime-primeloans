@@ -2,14 +2,14 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
-import "../ERC20Pool.sol";
+import "../Pool.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 /**
  * @title MockUpgradedPool
  * @dev A mock implementation of a Pool to check if upgrade mechanism correctly update contrac logic
  */
-contract MockUpgradedPool is ERC20Pool {
+contract MockUpgradedPool is Pool {
   /**
    * Dummy implementation recording double deposits
    * used to test upgrade of contract logic

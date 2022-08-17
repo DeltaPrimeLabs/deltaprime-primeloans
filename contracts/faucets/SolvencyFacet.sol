@@ -51,7 +51,7 @@ contract SolvencyFacet is PriceAware {
         for (uint256 i = 0; i < assets.length; i++) {
             IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            ERC20Pool pool = ERC20Pool(poolManager.getPoolAddress(assets[i]));
+            Pool pool = Pool(poolManager.getPoolAddress(assets[i]));
             debt = debt + pool.getBorrowed(address(this)) * prices[i] * 10**10
             / 10 ** token.decimals();
         }

@@ -8,7 +8,7 @@ import LOAN_LIQUIDATION from '../../artifacts/contracts/faucets/SmartLoanLiquida
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, toSupply} from "../../test/_helpers";
 import POOL_MANAGER from '../../artifacts/contracts/PoolManager.sol/PoolManager.json';
-import ERC20_POOL from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {AssetAmount, fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
 import redstone from "redstone-api";
 
@@ -87,7 +87,7 @@ function getPoolManager(poolManagerAddress) {
 
 async function getPoolContract(poolManager, asset) {
     let poolAddress = await poolManager.getPoolAddress(asset);
-    return new ethers.Contract(poolAddress, ERC20_POOL.abi, wallet);
+    return new ethers.Contract(poolAddress, POOL.abi, wallet);
 }
 
 async function getAllLoans() {

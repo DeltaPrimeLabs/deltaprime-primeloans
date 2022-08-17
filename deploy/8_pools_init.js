@@ -15,7 +15,7 @@ module.exports = async ({
 
 async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex, borrowIndex, tokenAddress) {
     const poolTUP = await ethers.getContract(poolTup);
-    const pool = await ethers.getContractFactory("ERC20Pool");
+    const pool = await ethers.getContractFactory("Pool");
     const variableUtilisationRatesCalculator = await ethers.getContract(ratesCalculator);
     const smartLoansFactoryTUP = await ethers.getContract("SmartLoansFactoryTUP");
     const depositIndexTUP = await ethers.getContract(depositIndex);

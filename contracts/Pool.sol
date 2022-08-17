@@ -14,10 +14,10 @@ import "./interfaces/IBorrowersRegistry.sol";
 
 /**
  * @title Pool
- * @dev Contract allowing user to deposit and borrow funds from a single pot
+ * @dev Contract allowing user to deposit to and borrow from a single smart contract
  * Depositors are rewarded with the interest rates collected from borrowers.
- * Rates are compounded every second and getters always return the current deposit and borrowing balance.
- * The interest rates calculation is delegated to the external calculator contract.
+ * Rates are compounded on every user interaction and getters always return the current deposit and borrowing balance.
+ * The interest rates calculation is delegated to an external calculator contract.
  */
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   using TransferHelper for address payable;
@@ -25,23 +25,26 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95e18;
 
   mapping(address => mapping(address => uint256)) private _allowed;
-  mapping(address => uint256) private _deposited;
+  mapping(address => uint256) internal _deposited;
 
   mapping(address => uint256) public borrowed;
 
-  IRatesCalculator private _ratesCalculator;
-  IBorrowersRegistry private _borrowersRegistry;
+  IRatesCalculator public ratesCalculator;
+  IBorrowersRegistry public borrowersRegistry;
 
-  CompoundingIndex private _depositIndex;
-  CompoundingIndex private _borrowIndex;
+  CompoundingIndex public depositIndex;
+  CompoundingIndex public borrowIndex;
 
-  function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_) public initializer {
+  address payable public tokenAddress;
+
+  function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_, address payable tokenAddress_) public initializer {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
-    _borrowersRegistry = borrowersRegistry_;
-    _ratesCalculator = ratesCalculator_;
-    _depositIndex = depositIndex_;
-    _borrowIndex = borrowIndex_;
+    borrowersRegistry = borrowersRegistry_;
+    ratesCalculator = ratesCalculator_;
+    depositIndex = depositIndex_;
+    borrowIndex = borrowIndex_;
+    tokenAddress = tokenAddress_;
 
     __Ownable_init();
     __ReentrancyGuard_init();
@@ -54,12 +57,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Sets the new rate calculator.
    * The calculator is an external contract that contains the logic for calculating deposit and borrowing rates.
    * Only the owner of the Contract can execute this function.
-   * @dev _ratesCalculator the address of rates calculator
+   * @dev ratesCalculator the address of rates calculator
    **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
     // setting address(0) ratesCalculator_ freezes the pool
     require(AddressUpgradeable.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0), "Must be a contract");
-    _ratesCalculator = ratesCalculator_;
+    ratesCalculator = ratesCalculator_;
     if (address(ratesCalculator_) != address(0)) {
       _updateRates();
     }
@@ -69,13 +72,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Sets the new borrowers registry contract.
    * The borrowers registry decides if an account can borrow funds.
    * Only the owner of the Contract can execute this function.
-   * @dev _borrowersRegistry the address of borrowers registry
+   * @dev borrowersRegistry the address of borrowers registry
    **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
-    require(address(borrowersRegistry_) != address(0), "The borrowers registry cannot set to a null address");
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
-    _borrowersRegistry = borrowersRegistry_;
+    borrowersRegistry = borrowersRegistry_;
     emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
   }
 
@@ -155,18 +157,29 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     return true;
   }
 
+
   /**
-   * Deposits the message value
+   * Deposits the amount
    * It updates user deposited balance, total deposited and rates
    **/
-  function deposit() public payable virtual nonReentrant {
+  function deposit(uint256 amount) public virtual nonReentrant {
     _accumulateDepositInterest(msg.sender);
 
-    _mint(msg.sender, msg.value);
-    _deposited[address(this)] += msg.value;
+    _transferToPool(msg.sender, amount);
+
+    _mint(msg.sender, amount);
+    _deposited[address(this)] += amount;
     _updateRates();
 
-    emit Deposit(msg.sender, msg.value, block.timestamp);
+    emit Deposit(msg.sender, amount, block.timestamp);
+  }
+
+  function _transferToPool(address from, uint256 amount) internal virtual {
+    tokenAddress.safeTransferFrom(from, address(this), amount);
+  }
+
+  function _transferFromPool(address to, uint256 amount) internal virtual {
+    tokenAddress.safeTransfer(to, amount);
   }
 
   /**
@@ -174,13 +187,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
    **/
   function withdraw(uint256 _amount) external nonReentrant {
-    require(address(this).balance >= _amount, "There is not enough available funds to withdraw");
+    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
 
     _accumulateDepositInterest(msg.sender);
 
     _burn(msg.sender, _amount);
 
-    payable(msg.sender).safeTransferETH(_amount);
+    _transferFromPool(msg.sender, _amount);
 
     _updateRates();
 
@@ -191,16 +204,17 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Borrows the specified amount
    * It updates user borrowed balance, total borrowed amount and rates
    * @dev _amount the amount to be borrowed
+   * @dev It is only meant to be used by a SmartLoanDiamond
    **/
   function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
-    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan");
+    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough funds in the pool to fund the loan");
 
     _accumulateBorrowingInterest(msg.sender);
 
     borrowed[msg.sender] += _amount;
     borrowed[address(this)] += _amount;
 
-    payable(msg.sender).safeTransferETH(_amount);
+    _transferFromPool(msg.sender, _amount);
 
     _updateRates();
 
@@ -208,21 +222,22 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   /**
-   * Repays the message value
+   * Repays the amount
    * It updates user borrowed balance, total borrowed amount and rates
-   * @dev It is only meant to be used by the SmartLoanDiamond.
+   * @dev It is only meant to be used by a SmartLoanDiamond
    **/
-  function repay() external payable nonReentrant {
+  function repay(uint256 amount) external nonReentrant {
     _accumulateBorrowingInterest(msg.sender);
 
-    require(borrowed[msg.sender] >= msg.value, "You are trying to repay more that was borrowed by a user");
+    require(borrowed[msg.sender] >= amount, "You are trying to repay more that was borrowed by a user");
+    _transferToPool(msg.sender, amount);
 
-    borrowed[msg.sender] -= msg.value;
-    borrowed[address(this)] -= msg.value;
+    borrowed[msg.sender] -= amount;
+    borrowed[address(this)] -= amount;
 
     _updateRates();
 
-    emit Repayment(msg.sender, msg.value, block.timestamp);
+    emit Repayment(msg.sender, amount, block.timestamp);
   }
 
   /* =========
@@ -234,7 +249,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _user the address of queried borrower
   **/
   function getBorrowed(address _user) public view returns (uint256) {
-    return _borrowIndex.getIndexedValue(borrowed[_user], _user);
+    return borrowIndex.getIndexedValue(borrowed[_user], _user);
   }
 
   function totalSupply() public view override returns (uint256) {
@@ -251,43 +266,44 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _user the address of queried depositor
    **/
   function balanceOf(address user) public view override returns (uint256) {
-    return _depositIndex.getIndexedValue(_deposited[user], user);
+    return depositIndex.getIndexedValue(_deposited[user], user);
   }
 
   /**
    * Returns the current interest rate for deposits
    **/
   function getDepositRate() public view returns (uint256) {
-    return _ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply());
+    return ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply());
   }
 
   /**
    * Returns the current interest rate for borrowings
    **/
   function getBorrowingRate() public view returns (uint256) {
-    return _ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply());
+    return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply());
   }
 
   /**
    * Recovers the surplus funds resultant from difference between deposit and borrowing rates
    **/
   function recoverSurplus(uint256 amount, address account) public onlyOwner nonReentrant {
-    uint256 surplus = address(this).balance + totalBorrowed() - totalSupply();
+    uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
+    uint256 surplus = balance + totalBorrowed() - totalSupply();
 
-    require(amount <= address(this).balance, "Trying to recover more surplus funds than pool balance");
+    require(amount <= balance, "Trying to recover more surplus funds than pool balance");
     require(amount <= surplus, "Trying to recover more funds than current surplus");
 
-    payable(account).safeTransferETH(amount);
+    _transferFromPool(account, amount);
   }
 
   /* ========== INTERNAL FUNCTIONS ========== */
 
-  function _mint(address account, uint256 amount) internal {
-    require(account != address(0), "ERC20: cannot mint to the zero address");
+  function _mint(address to, uint256 amount) internal {
+    require(to != address(0), "ERC20: cannot mint to the zero address");
 
-    _deposited[account] += amount;
+    _deposited[to] += amount;
 
-    emit Transfer(address(0), account, amount);
+    emit Transfer(address(0), to, amount);
   }
 
   function _burn(address account, uint256 amount) internal {
@@ -304,9 +320,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _updateRates() internal {
-    require(address(_ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
-    _depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
-    _borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
+    require(address(ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+    depositIndex.setRate(ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
+    borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
   }
 
   function _accumulateDepositInterest(address user) internal {
@@ -317,23 +333,23 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     emit InterestCollected(user, interest, block.timestamp);
 
-    _depositIndex.updateUser(user);
-    _depositIndex.updateUser(address(this));
+    depositIndex.updateUser(user);
+    depositIndex.updateUser(address(this));
   }
 
   function _accumulateBorrowingInterest(address user) internal {
     borrowed[user] = getBorrowed(user);
     borrowed[address(this)] = getBorrowed(address(this));
 
-    _borrowIndex.updateUser(user);
-    _borrowIndex.updateUser(address(this));
+    borrowIndex.updateUser(user);
+    borrowIndex.updateUser(address(this));
   }
 
   /* ========== MODIFIERS ========== */
 
   modifier canBorrow() {
-    require(address(_borrowersRegistry) != address(0), "Borrowers registry is not configured");
-    require(_borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
+    require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured");
+    require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
     require(totalSupply() != 0, "Cannot borrow from an empty pool");
     _;
     require((totalBorrowed() * 1e18) / totalSupply() <= MAX_POOL_UTILISATION_FOR_BORROWING, "The pool utilisation cannot be greater than 95%");

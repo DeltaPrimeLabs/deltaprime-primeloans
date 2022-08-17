@@ -2,7 +2,7 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import "./ERC20Pool.sol";
+import "./Pool.sol";
 import "./mock/WAVAX.sol";
 
 
@@ -13,7 +13,7 @@ import "./mock/WAVAX.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract WavaxPool is ERC20Pool {
+contract WavaxPool is Pool {
 
   function depositNativeToken() public payable virtual {
     WAVAX(tokenAddress).deposit{value: msg.value}();

@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
-import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
@@ -16,7 +16,7 @@ import {
   LinearIndex,
   OpenBorrowersRegistry,
   OpenBorrowersRegistry__factory,
-  ERC20Pool,
+  Pool,
   VariableUtilisationRatesCalculator, MockToken,
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
@@ -27,7 +27,7 @@ const {deployContract, provider} = waffle;
 
 describe('Safety tests of pool', () => {
   describe('Intializing a pool', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
         owner: SignerWithAddress,
         nonContractAddress: string,
         ratesCalculator: VariableUtilisationRatesCalculator,
@@ -40,7 +40,7 @@ describe('Safety tests of pool', () => {
       [owner] = await getFixedGasSigners(10000000);
       nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
@@ -92,7 +92,7 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Forcefully fund pool', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
       destructable: DestructableContract,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
@@ -104,7 +104,7 @@ describe('Safety tests of pool', () => {
     before("Deploy a pool contract and a destructable contract for force funding", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -168,7 +168,7 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Checking surplus', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
       user2: SignerWithAddress,
@@ -179,7 +179,7 @@ describe('Safety tests of pool', () => {
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
@@ -288,7 +288,7 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Multiple surplus recover', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
         owner: SignerWithAddress,
         user1: SignerWithAddress,
         user2: SignerWithAddress,
@@ -299,7 +299,7 @@ describe('Safety tests of pool', () => {
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
@@ -379,7 +379,7 @@ describe('Safety tests of pool', () => {
 
 
   describe('Pool utilisation greater than 1', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
       user2: SignerWithAddress,
@@ -390,7 +390,7 @@ describe('Safety tests of pool', () => {
     before("Deploy Pool contract", async () => {
       [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
       ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
       await depositIndex.initialize(pool.address);
@@ -535,8 +535,8 @@ describe('Safety tests of pool', () => {
   });
 
   describe('Freeze pool', () => {
-    let pool: ERC20Pool,
-        originalPool: ERC20Pool,
+    let pool: Pool,
+        originalPool: Pool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         borrower: SignerWithAddress,
@@ -546,9 +546,9 @@ describe('Safety tests of pool', () => {
 
     before("should deploy a pool", async () => {
       [owner, depositor, borrower, admin] = await getFixedGasSigners(10000000);
-      originalPool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      originalPool = (await deployContract(owner, PoolArtifact)) as Pool;
 
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
       variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;

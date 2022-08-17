@@ -23,7 +23,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
     CompoundingIndex,
-    ERC20Pool,
+    Pool,
     MockBorrowAccessNFT, MockSmartLoanLogicFacetRedstoneProvider,
     OpenBorrowersRegistry__factory, PoolManager, RedstoneConfigManager__factory,
     SmartLoansFactoryWithAccessNFT,

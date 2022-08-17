@@ -2,12 +2,12 @@
 // Last deployed from commit: 648f5794d589d10ef8ef138b16697fb525ee9b24;
 pragma solidity ^0.8.4;
 
-import "./ERC20Pool.sol";
+import "./Pool.sol";
 
 
 /**
  * @title UsdcPool
  * @dev Contract allowing user to deposit to and borrow USDC from a single smart contract
  */
-contract UsdcPool is ERC20Pool {
+contract UsdcPool is Pool {
 }

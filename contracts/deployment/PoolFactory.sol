@@ -2,7 +2,7 @@
 // Last deployed from commit: 648f5794d589d10ef8ef138b16697fb525ee9b24;
 pragma solidity ^0.8.4;
 
-import "../ERC20Pool.sol";
+import "../Pool.sol";
 
 
 /**
@@ -11,7 +11,7 @@ import "../ERC20Pool.sol";
  */
 contract PoolFactory {
   function deployPool() public {
-    ERC20Pool pool = new ERC20Pool();
+    Pool pool = new Pool();
     emit PoolDeployed(msg.sender, address(pool), block.timestamp);
   }
 

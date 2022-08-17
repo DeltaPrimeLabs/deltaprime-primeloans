@@ -2,7 +2,7 @@ import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
@@ -12,7 +12,7 @@ import OpenBorrowersRegistryArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
-  ERC20Pool,
+  Pool,
   LinearIndex,
   MockToken,
   OpenBorrowersRegistry,
@@ -26,7 +26,7 @@ const {deployContract} = waffle;
 
 describe('Pool with variable utilisation interest rates', () => {
   describe('Single borrowing with interest rates', () => {
-    let sut: ERC20Pool,
+    let sut: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       mockToken: Contract,
@@ -34,7 +34,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
-      sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, owner.address]])) as MockToken;
 
@@ -82,7 +82,7 @@ describe('Pool with variable utilisation interest rates', () => {
   });
 
   describe('Single borrowing after a delay', () => {
-      let sut: ERC20Pool,
+      let sut: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       borrower: SignerWithAddress,
@@ -91,7 +91,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
       before("Deploy Pool contract", async () => {
         [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-        sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+        sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
         mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, borrower.address]])) as MockToken;
 
@@ -146,7 +146,7 @@ describe('Pool with variable utilisation interest rates', () => {
   });
 
   describe('Borrowing close to pool utilisation threshold', () => {
-    let sut: ERC20Pool,
+    let sut: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       borrower: SignerWithAddress,
@@ -156,7 +156,7 @@ describe('Pool with variable utilisation interest rates', () => {
     before("Deploy Pool contract", async () => {
       [owner, depositor, borrower] = await getFixedGasSigners(10000000);
       VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-      sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, borrower.address]])) as MockToken;
 

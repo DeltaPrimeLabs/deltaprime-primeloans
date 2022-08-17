@@ -3,14 +3,14 @@ import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     CompoundingIndex,
-    ERC20Pool, MockToken, OpenBorrowersRegistry__factory,
+    Pool, MockToken, OpenBorrowersRegistry__factory,
     VariableUtilisationRatesCalculator
 } from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import ERC20PoolArtifact from '../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 
@@ -244,7 +244,7 @@ export async function syncTime() {
 export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any, chain = 'AVAX') {
 
     const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
-    let pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+    let pool = (await deployContract(owner, PoolArtifact)) as Pool;
     let tokenContract: any;
     if (chain === 'AVAX') {
         switch (tokenName) {

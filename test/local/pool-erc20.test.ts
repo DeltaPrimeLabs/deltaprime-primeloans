@@ -6,13 +6,13 @@ import VariableUtilisationRatesCalculatorArtifact
   from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
-import ERC20PoolArtifact from "../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json";
+import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
 import OpenBorrowersRegistryArtifact
   from "../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
-  ERC20Pool,
+  Pool,
   LinearIndex,
   MockToken,
   OpenBorrowersRegistry,
@@ -25,7 +25,7 @@ chai.use(solidity);
 const {deployContract} = waffle;
 
 describe("Pool ERC20 token functions", () => {
-  let sut: ERC20Pool,
+  let sut: Pool,
     owner: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
@@ -42,7 +42,7 @@ describe("Pool ERC20 token functions", () => {
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5, user6] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+    sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     mockToken = (await deployContract(owner, MockTokenArtifact, [[user1.address, user2.address, user3.address, user4.address, user5.address, user6.address]])) as MockToken;
 

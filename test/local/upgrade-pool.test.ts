@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
-import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import OpenBorrowersRegistryArtifact
@@ -15,8 +15,8 @@ import {
   CompoundingIndex,
   MockUpgradedPool__factory,
   OpenBorrowersRegistry,
-  ERC20Pool,
-  ERC20Pool__factory,
+  Pool,
+  Pool__factory,
   TransparentUpgradeableProxy,
   TransparentUpgradeableProxy__factory,
   VariableUtilisationRatesCalculator, MockToken
@@ -37,7 +37,7 @@ const erc20ABI = [
 describe('Upgradeable pool', () => {
 
   describe('Basic upgradeability functionalities', () => {
-    let pool: ERC20Pool,
+    let pool: Pool,
       mockUsdToken: MockToken,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
@@ -50,10 +50,10 @@ describe('Upgradeable pool', () => {
 
     it("should deploy a contract behind a proxy", async () => {
       [owner, depositor, borrower, admin, depositor2] = await getFixedGasSigners(10000000);
-      pool = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
       proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(pool.address, admin.address, []));
-      pool = await (new ERC20Pool__factory(owner).attach(proxy.address));
+      pool = await (new Pool__factory(owner).attach(proxy.address));
 
       mockUsdToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, depositor2.address]])) as MockToken;
 

@@ -27,7 +27,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  ERC20Pool,
+  Pool,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoansFactory, UniswapV2Exchange,
@@ -345,7 +345,7 @@ describe('Smart loan - real prices',  () => {
       await topupUser(liquidator);
       await topupUser(borrower);
 
-      async function depositToPool(symbol: string, tokenContract: Contract, pool: ERC20Pool, amount: number, price: number) {
+      async function depositToPool(symbol: string, tokenContract: Contract, pool: Pool, amount: number, price: number) {
         const initialTokenDepositWei = parseUnits(amount.toString(), await tokenContract.decimals());
         let requiredAvax = toWei((amount * price * 1.5 / AVAX_PRICE).toString());
 

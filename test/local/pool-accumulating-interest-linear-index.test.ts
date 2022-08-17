@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
-import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
@@ -14,7 +14,7 @@ import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
   LinearIndex,
   OpenBorrowersRegistry,
-  ERC20Pool,
+  Pool,
   VariableUtilisationRatesCalculator,
   MockToken
 } from "../../typechain";
@@ -134,7 +134,7 @@ const TEST_ACTIONS = [
   }
 ]
 describe('Pool testing suite with accumulating interest', () => {
-  let sut: ERC20Pool,
+  let sut: Pool,
       owner: SignerWithAddress,
       depositor1: SignerWithAddress,
       depositor2: SignerWithAddress,
@@ -145,7 +145,7 @@ describe('Pool testing suite with accumulating interest', () => {
   
   before("Deploy Pool contract", async () => {
     [owner, depositor1, depositor2, borrower1, borrower2] = await getFixedGasSigners(10000000);
-    sut = (await deployContract(owner, ERC20PoolArtifact)) as ERC20Pool;
+    sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
