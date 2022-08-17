@@ -10,7 +10,6 @@ import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import { LibDiamond } from "../lib/LibDiamond.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../mock/WAVAX.sol";
 import "../Pool.sol";
 
 

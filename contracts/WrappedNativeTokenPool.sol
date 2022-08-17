@@ -3,7 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "./Pool.sol";
-import "./mock/WAVAX.sol";
+import "./interfaces/IWrappedNativeToken.sol";
 
 
 /**
@@ -16,7 +16,7 @@ import "./mock/WAVAX.sol";
 contract WrappedNativeTokenPool is Pool {
 
   function depositNativeToken() public payable virtual {
-    WAVAX(tokenAddress).deposit{value: msg.value}();
+    IWrappedNativeToken(tokenAddress).deposit{value: msg.value}();
 
     _accumulateDepositInterest(msg.sender);
 

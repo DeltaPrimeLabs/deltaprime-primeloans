@@ -163,7 +163,7 @@ describe('Smart loan',  () => {
     });
 
     it("should revert withdrawing too much native token", async () => {
-      await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough WAVAX to unwrap and withdraw");
+      await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough native token to unwrap and withdraw");
     });
 
     it("should withdraw native token", async () => {

@@ -2,26 +2,26 @@ pragma solidity ^0.8.4;
 
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../lib/SmartLoanLib.sol";
-import "../mock/WAVAX.sol";
+import "../interfaces/IWrappedNativeToken.sol";
 
-contract SmartLoanWavaxFacet {
+contract SmartLoanWrappedNativeTokenFacet {
     using TransferHelper for address payable;
 
     function wrapNativeToken(uint256 amount) onlyOwner public {
-        require(amount <= address(this).balance, "Not enough AVAX to wrap");
-        WAVAX(SmartLoanLib.getNativeToken()).deposit{value: amount}();
+        require(amount <= address(this).balance, "Not enough native token to wrap");
+        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: amount}();
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
 
     function depositNativeToken() public payable virtual {
-        WAVAX(SmartLoanLib.getNativeToken()).deposit{value: msg.value}();
+        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: msg.value}();
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
     function unwrapAndWithdraw(uint256 _amount) public payable virtual {
-        WAVAX native = WAVAX(SmartLoanLib.getNativeToken());
-        require(native.balanceOf(address(this)) >= _amount, "Not enough WAVAX to unwrap and withdraw");
+        IWrappedNativeToken native = IWrappedNativeToken(SmartLoanLib.getNativeToken());
+        require(native.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 
         native.withdraw(_amount);
 
