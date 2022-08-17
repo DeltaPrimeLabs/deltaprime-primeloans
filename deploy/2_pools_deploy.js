@@ -14,12 +14,12 @@ module.exports = async ({
   const {deployer, admin} = await getNamedAccounts();
 
   embedCommitHash('Pool', './contracts');
-  embedCommitHash('WavaxPool', './contracts');
+  embedCommitHash('WrappedNativeTokenPool', './contracts');
   embedCommitHash('UsdcPool', './contracts');
-  embedCommitHash('WavaxPoolTUP', './contracts/proxies');
+  embedCommitHash('WrappedNativeTokenPoolTUP', './contracts/proxies');
   embedCommitHash('UsdcPoolTUP', './contracts/proxies');
 
-  await deployPool(deploy, deployer, admin, 'WavaxPool', 'WavaxPoolFactory', 'WavaxPoolTUP');
+  await deployPool(deploy, deployer, admin, 'WrappedNativeTokenPool', 'WrappedNativeTokenPoolFactory', 'WrappedNativeTokenPoolTUP');
   await deployPool(deploy, deployer, admin, 'UsdcPool', 'PoolFactory', 'UsdcPoolTUP');
 };
 

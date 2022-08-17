@@ -67,7 +67,7 @@ describe('Smart loan - upgrading',  () => {
       MOCK_PRICES: any,
       diamondAddress: any;
 
-    before("should deploy provider, exchange, loansFactory and wavaxPool", async () => {
+    before("should deploy provider, exchange, loansFactory and WrappedNativeTokenPool", async () => {
       [owner, oracle, depositor, borrower, other] = await getFixedGasSigners(10000000);
 
       let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));

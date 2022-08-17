@@ -58,7 +58,7 @@ describe('Smart loan',  () => {
         USD_PRICE: number,
         ETH_PRICE: number;
 
-    before("deploy factory, wavaxPool and usdPool", async () => {
+    before("deploy factory, WrappedNativeTokenPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
       let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));

@@ -21,7 +21,7 @@ module.exports = async ({
         deploy: deploy
     });
 
-    const wavaxPoolTUP = await ethers.getContract("WavaxPoolTUP");
+    const WrappedNativeTokenPoolTUP = await ethers.getContract("WrappedNativeTokenPoolTUP");
     const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP");
     const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
     const yieldYakRouter = await ethers.getContract("YieldYakRouter");
@@ -29,7 +29,7 @@ module.exports = async ({
     updateSmartLoanLibrary(
         [0, 1],
         ["0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664"],
-        {'AVAX': wavaxPoolTUP.address, 'USDC': usdcPoolTUP.address},
+        {'AVAX': WrappedNativeTokenPoolTUP.address, 'USDC': usdcPoolTUP.address},
         exchangeTUP.address,
         yieldYakRouter.address,
         5000,

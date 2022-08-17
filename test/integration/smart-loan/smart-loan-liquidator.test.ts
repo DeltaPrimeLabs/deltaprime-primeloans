@@ -76,7 +76,7 @@ describe('Test liquidator',  () => {
             diamondAddress: any;
 
 
-        before("deploy factory, exchange, wavaxPool and usdPool", async () => {
+        before("deploy factory, exchange, WrappedNativeTokenPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
 
             redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(

@@ -2,16 +2,16 @@
 // Last deployed from commit: 648f5794d589d10ef8ef138b16697fb525ee9b24;
 pragma solidity ^0.8.4;
 
-import "../WavaxPool.sol";
+import "../WrappedNativeTokenPool.sol";
 
 
 /**
- * @title WavaxPoolFactory
+ * @title WrappedNativeTokenPoolFactory
  * @dev Contract factory allowing anyone to deploy a pool contract
  */
-contract WavaxPoolFactory {
+contract WrappedNativeTokenPoolFactory {
   function deployPool() public {
-    WavaxPool pool = new WavaxPool();
+    WrappedNativeTokenPool pool = new WrappedNativeTokenPool();
     emit PoolDeployed(msg.sender, address(pool), block.timestamp);
   }
 

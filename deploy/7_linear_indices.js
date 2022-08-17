@@ -17,8 +17,8 @@ module.exports = async ({
     embedCommitHash('UsdcBorrowIndex');
     embedCommitHash('UsdcDepositIndex');
 
-    await deployLinearIndex("WavaxBorrowIndex", "WavaxPoolTUP", deploy, deployer, admin);
-    await deployLinearIndex("WavaxDepositIndex", "WavaxPoolTUP", deploy, deployer, admin);
+    await deployLinearIndex("WavaxBorrowIndex", "WrappedNativeTokenPoolTUP", deploy, deployer, admin);
+    await deployLinearIndex("WavaxDepositIndex", "WrappedNativeTokenPoolTUP", deploy, deployer, admin);
     await deployLinearIndex("UsdcBorrowIndex", "UsdcPoolTUP", deploy, deployer, admin);
     await deployLinearIndex("UsdcDepositIndex", "UsdcPoolTUP", deploy, deployer, admin);
 
