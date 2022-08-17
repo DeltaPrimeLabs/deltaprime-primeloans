@@ -12,12 +12,14 @@ import "../WavaxPool.sol";
 contract WavaxPoolFactory {
   function deployPool() public {
     WavaxPool pool = new WavaxPool();
-    emit PoolDeployed(address(pool));
+    emit PoolDeployed(msg.sender, address(pool), block.timestamp);
   }
 
   /**
    * @dev emitted after pool is deployed by any user
+   * @param user the address initiating the deployment
    * @param poolAddress of deployed pool
+   * @param timestamp of the deployment
    **/
-  event PoolDeployed(address poolAddress);
+  event PoolDeployed(address user, address poolAddress, uint256 timestamp);
 }
