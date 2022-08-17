@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * CompoundingIndex
  * The contract contains logic for time-based index recalculation with minimal memory footprint.
  * It could be used as a base building block for any index-based entities like deposits and loans.
- * @dev updatedRate the value of updated rate
  **/
 contract CompoundingIndex is Ownable {
   using WadRayMath for uint256;

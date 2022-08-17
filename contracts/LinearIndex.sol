@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * The contract contains logic for time-based index recalculation with minimal memory footprint.
  * It could be used as a base building block for any index-based entities like deposits and loans.
  * The index is updated on a linear basis to the compounding happens when a user decide to accumulate the interests
- * @dev updatedRate the value of updated rate
  **/
 contract LinearIndex is OwnableUpgradeable {
 
