@@ -16,8 +16,6 @@ contract LinearIndex is OwnableUpgradeable {
     uint256 private constant SECONDS_IN_YEAR = 365 days;
     uint256 private constant BASE_RATE = 1e18;
 
-    uint256 public start;
-
     uint256 public index;
     uint256 public indexUpdateTime;
 
@@ -27,9 +25,8 @@ contract LinearIndex is OwnableUpgradeable {
     uint256 public rate;
 
     function initialize(address owner_) external initializer {
-        start = block.timestamp;
         index = BASE_RATE;
-        indexUpdateTime = start;
+        indexUpdateTime = block.timestamp;
 
         __Ownable_init();
         if (address(owner_) != address(0)) {

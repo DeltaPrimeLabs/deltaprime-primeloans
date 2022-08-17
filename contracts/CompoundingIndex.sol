@@ -17,10 +17,8 @@ contract CompoundingIndex is Ownable {
   uint256 private constant SECONDS_IN_YEAR = 365 days;
   uint256 private constant BASE_RATE = 1e18;
 
-  uint256 public start = block.timestamp;
-
   uint256 public index = BASE_RATE;
-  uint256 public indexUpdateTime = start;
+  uint256 public indexUpdateTime = block.timestamp;
 
   mapping(uint256 => uint256) prevIndex;
   mapping(address => uint256) userUpdateTime;
