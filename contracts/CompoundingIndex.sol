@@ -36,7 +36,7 @@ contract CompoundingIndex is Ownable {
   /**
    * Sets the new rate
    * Before the new rate is set, the index is updated accumulating interest
-   * @dev updatedRate the value of updated rate
+   * @dev _rate the value of updated rate
    **/
   function setRate(uint256 _rate) public onlyOwner {
     updateIndex();
