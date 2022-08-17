@@ -4,13 +4,14 @@ pragma solidity ^0.8.4;
 
 import "./lib/WadRayMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IIndex.sol";
 
 /**
  * CompoundingIndex
  * The contract contains logic for time-based index recalculation with minimal memory footprint.
  * It could be used as a base building block for any index-based entities like deposits and loans.
  **/
-contract CompoundingIndex is Ownable {
+contract CompoundingIndex is IIndex, Ownable {
   using WadRayMath for uint256;
 
   uint256 private constant SECONDS_IN_YEAR = 365 days;
@@ -37,7 +38,7 @@ contract CompoundingIndex is Ownable {
    * Before the new rate is set, the index is updated accumulating interest
    * @dev _rate the value of updated rate
    **/
-  function setRate(uint256 _rate) public onlyOwner {
+  function setRate(uint256 _rate) public override onlyOwner  {
     updateIndex();
     rate = _rate;
     emit RateUpdated(rate);
@@ -50,7 +51,7 @@ contract CompoundingIndex is Ownable {
    * It persists the update time and the update index time->index mapping
    * @dev user address of the index owner
    **/
-  function updateUser(address user) public onlyOwner {
+  function updateUser(address user) public override onlyOwner {
     userUpdateTime[user] = block.timestamp;
     prevIndex[block.timestamp] = getIndex();
   }
@@ -61,7 +62,7 @@ contract CompoundingIndex is Ownable {
    * Gets current value of the compounding index
    * It recalculates the value on-demand without updating the storage
    **/
-  function getIndex() public view returns (uint256) {
+  function getIndex() public view override returns (uint256) {
     uint256 period = block.timestamp - indexUpdateTime;
     if (period > 0) {
       return index.wadToRay().rayMul(getCompoundedFactor(period)).rayToWad();
@@ -76,7 +77,7 @@ contract CompoundingIndex is Ownable {
    * Ray operations round up the result, but it is only an issue for very small values (with an order of magnitude
    * of 1 Wei)
    **/
-  function getIndexedValue(uint256 value, address user) public view returns (uint256) {
+  function getIndexedValue(uint256 value, address user) public view override returns (uint256) {
     uint256 userTime = userUpdateTime[user];
     uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
 

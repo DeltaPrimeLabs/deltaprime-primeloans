@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "./CompoundingIndex.sol";
+import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 
@@ -32,12 +32,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   IRatesCalculator public ratesCalculator;
   IBorrowersRegistry public borrowersRegistry;
 
-  CompoundingIndex public depositIndex;
-  CompoundingIndex public borrowIndex;
+  IIndex public depositIndex;
+  IIndex public borrowIndex;
 
   address payable public tokenAddress;
 
-  function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, CompoundingIndex depositIndex_, CompoundingIndex borrowIndex_, address payable tokenAddress_) public initializer {
+  function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_) public initializer {
     require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
 
     borrowersRegistry = borrowersRegistry_;
