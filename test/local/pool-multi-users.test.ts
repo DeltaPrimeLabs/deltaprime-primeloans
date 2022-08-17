@@ -7,7 +7,7 @@ import VariableUtilisationRatesCalculatorArtifact
 import ERC20PoolArtifact from '../../artifacts/contracts/ERC20Pool.sol/ERC20Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import VariableUtilisationRatesCalculatorChangedOffsetArtifact
-    from '../../artifacts/contracts/deprecated/VariableUtilisationRatesCalculatorChangedOffset.sol/VariableUtilisationRatesCalculatorChangedOffset.json';
+    from '../../artifacts/contracts/mock/VariableUtilisationRatesCalculatorChangedOffset.sol/VariableUtilisationRatesCalculatorChangedOffset.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
