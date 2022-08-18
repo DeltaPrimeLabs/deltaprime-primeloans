@@ -29,7 +29,7 @@ import {
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  UniswapV2Exchange,
+  PangolinExchange,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -218,7 +218,7 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan with staking liquidation', () => {
-    let exchange: UniswapV2Exchange,
+    let exchange: PangolinExchange,
         loan: SmartLoanGigaChadInterface,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
@@ -303,9 +303,9 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
-      exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
-      await exchange.initialize(pangolinRouterAddress, supportedAssets, toBytes32('AVAX'));
+      let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
+      exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+      await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
           "SmartLoanLib",

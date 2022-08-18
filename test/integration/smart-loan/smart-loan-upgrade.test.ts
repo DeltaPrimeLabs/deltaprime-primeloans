@@ -21,7 +21,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  UniswapV2Exchange,
+  PangolinExchange,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
@@ -52,7 +52,7 @@ describe('Smart loan - upgrading',  () => {
   });
 
   describe('Check basic logic before and after upgrade', () => {
-    let exchange: UniswapV2Exchange,
+    let exchange: PangolinExchange,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
@@ -127,7 +127,7 @@ describe('Smart loan - upgrading',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange", "AVAX") as UniswapV2Exchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
 
       await recompileSmartLoanLib(
           "SmartLoanLib",

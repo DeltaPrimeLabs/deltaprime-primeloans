@@ -28,7 +28,7 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Pool,
   MockSmartLoanLogicFacetRedstoneProvider,
-  UniswapV2Exchange,
+  PangolinExchange,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoansFactory,
@@ -150,7 +150,7 @@ describe('Smart loan',  () => {
   });
 
   describe('An insolvent loan - mock prices', () => {
-    let exchange: UniswapV2Exchange,
+    let exchange: PangolinExchange,
         loan: MockSmartLoanLogicFacetRedstoneProvider,
         wrappedLoan: any,
         owner: SignerWithAddress,
@@ -240,7 +240,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange", "AVAX") as UniswapV2Exchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
 
       //deposit other tokens
       await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);

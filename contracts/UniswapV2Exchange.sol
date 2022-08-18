@@ -26,11 +26,9 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
 
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
-  bytes32 nativeToken;
 
-  function initialize(address _router, Asset[] memory supportedAssets, bytes32 _nativeToken) external initializer {
+  function initialize(address _router, Asset[] memory supportedAssets) external initializer {
     router = IUniswapV2Router01(_router);
-    nativeToken = _nativeToken;
 
     _updateAssets(supportedAssets);
     __Ownable_init();
@@ -163,7 +161,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
    **/
   function getPath(address _token1, address _token2) internal virtual view returns (address[] memory) {
     address[] memory path;
-    address nativeTokenAddress = getAssetAddress(nativeToken);
+    address nativeTokenAddress = getAssetAddress(getNativeTokenSymbol());
 
     if (_token1 != nativeTokenAddress && _token2 != nativeTokenAddress) {
       path = new address[](3);
@@ -177,6 +175,10 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
     }
 
     return path;
+  }
+
+  function getNativeTokenSymbol() virtual internal view returns (bytes32) {
+    return "ETH";
   }
 
   /* ========== EVENTS ========== */

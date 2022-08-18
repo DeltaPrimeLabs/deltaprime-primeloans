@@ -25,7 +25,7 @@ import {
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  UniswapV2Exchange,
+  PangolinExchange,
 } from "../../../typechain";
 import {BigNumber} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -55,7 +55,7 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan without debt', () => {
-    let exchange: UniswapV2Exchange,
+    let exchange: PangolinExchange,
       smartLoansFactory: SmartLoansFactory,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
@@ -117,9 +117,9 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
-      exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
-      await exchange.initialize(pangolinRouterAddress, supportedAssets, toBytes32('AVAX'));
+      let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
+      exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+      await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
           "SmartLoanLib",

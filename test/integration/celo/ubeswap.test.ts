@@ -55,7 +55,6 @@ describe('Smart loan',  () => {
       depositor: Wallet,
       random: SignerWithAddress,
       tokenContracts: any = {},
-      usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
       CELO_PRICE: number,
       USD_PRICE: number,
@@ -128,7 +127,7 @@ describe('Smart loan',  () => {
 
       let exchangeFactory = await ethers.getContractFactory("UbeswapExchange");
       exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapExchange;
-      await exchange.initialize(ubeswapRouterAddress, supportedAssets, toBytes32('CELO'));
+      await exchange.initialize(ubeswapRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
           "SmartLoanLib",

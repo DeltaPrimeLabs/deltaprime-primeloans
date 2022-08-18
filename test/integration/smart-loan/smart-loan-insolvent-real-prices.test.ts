@@ -30,7 +30,7 @@ import {
   Pool,
   PoolManager,
   RedstoneConfigManager__factory,
-  SmartLoansFactory, UniswapV2Exchange,
+  SmartLoansFactory, PangolinExchange,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -226,7 +226,7 @@ describe('Smart loan - real prices',  () => {
   });
 
   describe('An insolvent loan', () => {
-    let exchange: UniswapV2Exchange,
+    let exchange: PangolinExchange,
         loan: Contract,
         wrappedLoan: any,
         owner: SignerWithAddress,
@@ -301,7 +301,7 @@ describe('Smart loan - real prices',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "UniswapV2Exchange", "AVAX") as UniswapV2Exchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
 
       AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
       USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;

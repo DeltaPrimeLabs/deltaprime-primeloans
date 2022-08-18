@@ -217,7 +217,7 @@ describe('Yield Yak test stake SAVAX', () => {
 
         let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
         exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
-        await exchange.initialize(pangolinRouterAddress, supportedAssets, toBytes32('AVAX'));
+        await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
         await recompileSmartLoanLib(
             "SmartLoanLib",

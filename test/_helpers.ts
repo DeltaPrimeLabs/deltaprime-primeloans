@@ -206,12 +206,11 @@ export const deployAndInitExchangeContract = async function (
     owner: SignerWithAddress,
     routerAddress: string,
     supportedAssets: Asset[],
-    name: string,
-    nativeToken: string
+    name: string
 ) {
     let exchangeFactory = await ethers.getContractFactory(name);
     const exchange = (await exchangeFactory.deploy()).connect(owner);
-    await exchange.initialize(routerAddress, supportedAssets, toBytes32(nativeToken));
+    await exchange.initialize(routerAddress, supportedAssets);
     return exchange
 };
 
