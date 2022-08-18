@@ -41,25 +41,25 @@ contract SmartLoanWrappedNativeTokenFacet {
 
     /**
     * @dev emitted when native tokens are wrapped in the SmartLoan
-    * @param owner the address initiating deposit
+    * @param owner the address initiating wrap
     * @param amount of wrapped funds
-    * @param timestamp of the repayment
+    * @param timestamp of wrap
     **/
     event WrapNative(address indexed owner,  uint256 amount, uint256 timestamp);
 
     /**
     * @dev emitted when native tokens are deposited to the SmartLoan
-    * @param owner the address initiating deposit
-    * @param amount of repaid funds
-    * @param timestamp of the repayment
+    * @param owner the address initiating deposit of native token
+    * @param amount of deposited funds
+    * @param timestamp of deposit
     **/
     event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
 
     /**
-    * @dev emitted when native tokens are withdrawn by the owner
-    * @param owner the address initiating withdraw
-    * @param amount of repaid funds
-    * @param timestamp of the repayment
+    * @dev emitted when native tokens are unwrapped and withdrawn from the SmartLoan
+    * @param owner the address initiating unwrap and withdraw of native token
+    * @param amount of unwrapped and withdrawn funds
+    * @param timestamp of unwrap and withdraw
     **/
     event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
 
