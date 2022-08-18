@@ -51,7 +51,7 @@ describe('Yield Yak test stake AVAX', () => {
         owner: SignerWithAddress,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
-        $YYAV3SA1_PRICE: number,
+        YYAV3SA1_PRICE: number,
         yakStakingContract: Contract,
         avaxTokenContract: Contract;
 
@@ -61,7 +61,7 @@ describe('Yield Yak test stake AVAX', () => {
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-            new Asset(toBytes32('$YYAV3SA1'), TOKEN_ADDRESSES['$YYAV3SA1']),
+            new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
         ]
         let poolManager = await deployContract(
             owner,
@@ -83,12 +83,13 @@ describe('Yield Yak test stake AVAX', () => {
             poolManager.address,
             redstoneConfigManager.address,
             diamondAddress,
+            smartLoansFactory.address,
             'lib'
         );
         await deployAllFaucets(diamondAddress)
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        $YYAV3SA1_PRICE = (await redstone.getPrice('$YYAV3SA1', { provider: "redstone-avalanche-prod-node-3"})).value;
+        YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', { provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
@@ -96,8 +97,8 @@ describe('Yield Yak test stake AVAX', () => {
                 value: AVAX_PRICE
             },
             {
-                symbol: '$YYAV3SA1',
-                value: $YYAV3SA1_PRICE
+                symbol: 'YYAV3SA1',
+                value: YYAV3SA1_PRICE
             },
         ];
 
@@ -212,6 +213,7 @@ describe('Yield Yak test stake SAVAX', () => {
             poolManager.address,
             redstoneConfigManager.address,
             diamondAddress,
+            smartLoansFactory.address,
             'lib'
         );
 
@@ -230,6 +232,7 @@ describe('Yield Yak test stake SAVAX', () => {
             poolManager.address,
             redstoneConfigManager.address,
             diamondAddress,
+            smartLoansFactory.address,
             'lib'
         );
 

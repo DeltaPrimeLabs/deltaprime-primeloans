@@ -41,6 +41,7 @@ contract DiamondInit {
         // SmartLoanLib ds default values initialization
         ls._liquidationInProgress = false;
         LibDiamond.setContractOwner(msg.sender);
+        sls._initialized = true;
 
         // add your own state variables 
         // EIP-2535 specifies that the `diamondCut` function takes two optional 

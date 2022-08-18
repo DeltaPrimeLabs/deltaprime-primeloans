@@ -83,6 +83,7 @@ describe('PangolinExchange', () => {
                 poolManager.address,
                 ethers.constants.AddressZero,
                 ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 'lib'
             );
 
@@ -196,6 +197,7 @@ describe('PangolinExchange', () => {
               "SmartLoanLib",
               [],
               poolManager.address,
+              ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               'lib'

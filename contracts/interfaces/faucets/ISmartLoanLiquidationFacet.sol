@@ -1,8 +1,6 @@
+import "../../faucets/SmartLoanLiquidationFacet.sol";
+
 interface ISmartLoanLiquidationFacet {
-  struct AssetAmountPair {
-    bytes32 asset;
-    uint256 amount;
-  }
-  function liquidateLoan ( AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus ) payable external;
-  function unsafeLiquidateLoan ( AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus ) payable external;
+  function liquidateLoan ( SmartLoanLiquidationFacet.AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus ) payable external;
+  function unsafeLiquidateLoan ( SmartLoanLiquidationFacet.AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus ) payable external;
 }

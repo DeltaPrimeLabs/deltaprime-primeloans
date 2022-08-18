@@ -34,8 +34,8 @@ contract DiamondBeaconProxy is BeaconProxyVirtual {
         _setBeacon(newBeacon);
         emit BeaconUpgraded(newBeacon);
         if (data.length > 0 || forceCall) {
-            // 0xe1c7392a = init()
-            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0xe1c7392a), data);
+            // 0xc4d66de8 = initialize(address owner)
+            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0xc4d66de8), data);
         }
     }
 }

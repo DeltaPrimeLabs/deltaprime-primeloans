@@ -147,10 +147,14 @@ describe('Test liquidator',  () => {
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
+                ethers.constants.AddressZero,
                 'lib'
             );
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
 
             await recompileSmartLoanLib(
                 "SmartLoanLib",
@@ -163,11 +167,10 @@ describe('Test liquidator',  () => {
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
+                smartLoansFactory.address,
                 'lib'
             );
             await deployAllFaucets(diamondAddress);
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
         });
 

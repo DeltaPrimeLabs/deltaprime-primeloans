@@ -101,7 +101,6 @@ async function deployDiamond(hardhatConfig = undefined) {
     const FacetNames = [
         'DiamondInit',
         'DiamondLoupeFacet',
-        'OwnershipFacet'
     ]
     const cut = []
     for (const FacetName of FacetNames) {

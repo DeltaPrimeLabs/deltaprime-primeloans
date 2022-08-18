@@ -113,6 +113,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 

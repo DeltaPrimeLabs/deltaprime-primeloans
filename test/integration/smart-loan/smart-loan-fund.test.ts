@@ -5,6 +5,7 @@ import redstone from 'redstone-api';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import DestructableArtifact from '../../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
@@ -17,8 +18,9 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+  DestructableContract,
   MockSmartLoanLogicFacetRedstoneProvider,
-  PoolManager, RedstoneConfigManager__factory,
+  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory,
 } from "../../../typechain";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -36,9 +38,10 @@ describe('Smart loan',  () => {
 
   describe(`Funding a loan`, () => {
     let smartLoansFactory: SmartLoansFactory,
-        loan: MockSmartLoanLogicFacetRedstoneProvider,
+        loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         tokenContracts: any = {},
+        destructable: DestructableContract,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
         MOCK_PRICES: any,
@@ -48,6 +51,10 @@ describe('Smart loan',  () => {
 
     before("deploy factory, exchange, WrappedNativeTokenPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
+
+      // Prepare the Destructable contract to send AVAX to a SmartLoan contract
+      destructable = (await deployContract(depositor, DestructableArtifact)) as DestructableContract;
+      await depositor.sendTransaction({to: destructable.address, value: toWei("21.37")});
 
       let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
 
@@ -108,6 +115,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -143,6 +151,33 @@ describe('Smart loan',  () => {
       expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
     });
 
+    it("should add native AVAX to SmartLoan using the destructable contract", async () => {
+      expect(await provider.getBalance(wrappedLoan.address)).to.be.equal(0);
+      await destructable.connect(depositor).destruct(wrappedLoan.address);
+      expect(await provider.getBalance(wrappedLoan.address)).to.be.equal(toWei("21.37"));
+    });
+
+    it("should fail to wrapNativeToken as a non-owner", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.wrapNativeToken(toWei("21.37"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+    });
+
+    it("should wrapNativeToken and then withdraw extra supplied AVAX afterwards", async () => {
+      let initialWAVAXBalance = await tokenContracts['AVAX'].balanceOf(wrappedLoan.address);
+      await wrappedLoan.wrapNativeToken(toWei("21.37"));
+      expect(await tokenContracts['AVAX'].balanceOf(wrappedLoan.address)).to.be.equal(initialWAVAXBalance + toWei("21.37"));
+      await wrappedLoan.withdraw(toBytes32("AVAX"), toWei("21.37"));
+      expect(await tokenContracts['AVAX'].balanceOf(wrappedLoan.address)).to.be.equal(initialWAVAXBalance);
+    });
+
     it("should deposit native token", async () => {
       await wrappedLoan.depositNativeToken({value: toWei("10")});
 
@@ -164,6 +199,19 @@ describe('Smart loan',  () => {
 
     it("should revert withdrawing too much native token", async () => {
       await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough native token to unwrap and withdraw");
+    });
+
+    it("should fail to withdraw funds as a non-owner", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.withdraw(toBytes32("AVAX"), toWei("300"))).to.be.revertedWith("LibDiamond: Must be contract owner");
     });
 
     it("should withdraw native token", async () => {

@@ -245,7 +245,7 @@ describe('Smart loan - real prices',  () => {
         LINK_PRICE: number,
         USD_PRICE: number,
         ETH_PRICE: number,
-        $YYAV3SA1_PRICE: number,
+        YYAV3SA1_PRICE: number,
         BTC_PRICE: number,
         diamondAddress: any;
 
@@ -270,7 +270,7 @@ describe('Smart loan - real prices',  () => {
       }
       tokenContracts['BTC'] = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
       tokenContracts['LINK'] = new ethers.Contract(TOKEN_ADDRESSES['LINK'], erc20ABI, provider);
-      tokenContracts['$YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['$YYAV3SA1'], erc20ABI, provider);
+      tokenContracts['YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['YYAV3SA1'], erc20ABI, provider);
 
       supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
@@ -278,7 +278,7 @@ describe('Smart loan - real prices',  () => {
         new Asset(toBytes32('LINK'), TOKEN_ADDRESSES['LINK']),
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
         new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
-        new Asset(toBytes32('$YYAV3SA1'), TOKEN_ADDRESSES['$YYAV3SA1']),
+        new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
       ];
 
       poolManager = await deployContract(
@@ -298,17 +298,18 @@ describe('Smart loan - real prices',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          ethers.constants.AddressZero,
           'lib'
       );
 
       exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
 
-      AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
-      USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;
-      LINK_PRICE = (await redstone.getPrice('LINK', { provider: "redstone-avalanche-prod-node-3"})).value;
-      ETH_PRICE = (await redstone.getPrice('ETH', { provider: "redstone-avalanche-prod-node-3"})).value;
-      BTC_PRICE = (await redstone.getPrice('BTC', { provider: "redstone-avalanche-prod-node-3"})).value;
-      $YYAV3SA1_PRICE = (await redstone.getPrice('$YYAV3SA1', { provider: "redstone-avalanche-prod-node-3"})).value;
+      AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-1"})).value;
+      USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-1"})).value;
+      LINK_PRICE = (await redstone.getPrice('LINK', { provider: "redstone-avalanche-prod-1"})).value;
+      ETH_PRICE = (await redstone.getPrice('ETH', { provider: "redstone-avalanche-prod-1"})).value;
+      BTC_PRICE = (await redstone.getPrice('BTC', { provider: "redstone-avalanche-prod-1"})).value;
+      YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', { provider: "redstone-avalanche-prod-1"})).value;
 
       //TODO: why do we mock prices? maybe we can use wrapLite?
       MOCK_PRICES = [
@@ -333,8 +334,8 @@ describe('Smart loan - real prices',  () => {
           value: BTC_PRICE
         },
         {
-          symbol: '$YYAV3SA1',
-          value: $YYAV3SA1_PRICE
+          symbol: 'YYAV3SA1',
+          value: YYAV3SA1_PRICE
         }
       ];
 
@@ -387,15 +388,33 @@ describe('Smart loan - real prices',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          ethers.constants.AddressZero,
           'lib'
       );
       await deployAllFaucets(diamondAddress);
     });
 
     beforeEach("create a loan", async () => {
-      await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
+
+      await recompileSmartLoanLib(
+          "SmartLoanLib",
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
+          poolManager.address,
+          redstoneConfigManager.address,
+          diamondAddress,
+          smartLoansFactory.address,
+          'lib'
+      );
+      await replaceFacet("OwnershipFacet", diamondAddress, ['transferOwnership']);
+
+      await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
 
       await smartLoansFactory.connect(borrower).createLoan();
 
@@ -559,7 +578,7 @@ describe('Smart loan - real prices',  () => {
       await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
 
       const performer = performedAction === 'CLOSE' ? borrower : liquidator;
-      const initialStakedYakTokensBalance = await tokenContracts['$YYAV3SA1'].balanceOf(performer.address);
+      const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
 
       wrappedLoan = WrapperBuilder
           .mockLite(loan.connect(performer))
@@ -571,7 +590,6 @@ describe('Smart loan - real prices',  () => {
                 }
               })
 
-      console.log(`Val: ${await wrappedLoan.getTotalValue()}, Debt: ${await wrappedLoan.getDebt()}, LTV: ${await wrappedLoan.getLTV()}`)
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       let repayAmountsInWei: Array<AssetAmount> = [];
@@ -604,7 +622,7 @@ describe('Smart loan - real prices',  () => {
       // TODO: Add checks for returned staking contracts
       expect(await wrappedLoan.isSolvent()).to.be.true;
       if(stake) {
-        expect(await tokenContracts['$YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
+        expect(await tokenContracts['YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
       }
     }
 
@@ -614,6 +632,7 @@ describe('Smart loan - real prices',  () => {
       if (symbol == "ETH") return tokenContracts['ETH'];
       if (symbol == "LINK") return tokenContracts['LINK'];
       if (symbol == "BTC") return tokenContracts['BTC'];
+      if (symbol == "YYAV3SA1") return tokenContracts['YYAV3SA1'];
     }
 
     function getPrice(symbol: string) {
@@ -622,6 +641,7 @@ describe('Smart loan - real prices',  () => {
       if (symbol == "ETH") return ETH_PRICE;
       if (symbol == "LINK") return LINK_PRICE;
       if (symbol == "BTC") return BTC_PRICE;
+      if (symbol == "YYAV3SA1") return YYAV3SA1_PRICE;
     }
   });
 });

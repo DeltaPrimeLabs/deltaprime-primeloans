@@ -114,6 +114,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -132,6 +133,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -211,6 +213,21 @@ describe('Smart loan',  () => {
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(AVAX_PRICE * 100 + 900, 2);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
+    });
+
+
+    it("should fail to swap from a non-owner account", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.swapPangolin(
+          toBytes32('AVAX'), toBytes32('ETH'), 0,0)).to.be.revertedWith("LibDiamond: Must be contract owner");
     });
 
     it("should buy an asset from funded", async () => {

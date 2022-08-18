@@ -12,7 +12,6 @@ import { LibDiamond } from "../lib/LibDiamond.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
-
 contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
@@ -34,6 +33,15 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     }
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
+
+    function initialize(address owner) external {
+        require(owner != address(0), "Initialize: Cannot set the owner to a zero address");
+
+        LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
+        require(!sls._initialized, "DiamondInit: contract is already initialized");
+        LibDiamond.setContractOwner(owner);
+        sls._initialized = true;
+    }
 
     function getAllOwnedAssets() external view returns (bytes32[] memory result) {
         return SmartLoanLib.getAllOwnedAssets();

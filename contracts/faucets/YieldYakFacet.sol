@@ -53,7 +53,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
         // TODO make staking more generic
         // Add asset to ownedAssets
-        LibDiamond.addOwnedAsset("$YYAV3SA1", YAKStakingAVAXAAVEV1Address);
+        LibDiamond.addOwnedAsset("YYAV3SA1", YAKStakingAVAXAAVEV1Address);
 
         emit Staked(msg.sender, "AVAX", amount, block.timestamp);
     }
@@ -117,7 +117,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset("$YYAV3SA1");
+            LibDiamond.removeOwnedAsset("YYAV3SA1");
         }
 
         emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
@@ -148,7 +148,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
             totalValue = 0;
         } else {
             PoolManager poolManager = SmartLoanLib.getPoolManager();
-            uint256 price = getPriceFromMsg("$YYAV3SA1");
+            uint256 price = getPriceFromMsg("YYAV3SA1");
             totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
         }
     }
