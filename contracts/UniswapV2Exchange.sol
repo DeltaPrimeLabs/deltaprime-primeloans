@@ -28,8 +28,6 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
   bytes32 nativeToken;
 
-  // TODO: Check if the below comment is still valid
-  // first supportedAsset must be a blockchain native currency
   function initialize(address _router, Asset[] memory supportedAssets, bytes32 _nativeToken) external initializer {
     router = IUniswapV2Router01(_router);
     nativeToken = _nativeToken;

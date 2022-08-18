@@ -59,9 +59,8 @@ library SmartLoanLib {
     return PoolManager(0x51A1ceB83B83F1985a81C295d1fF28Afef186E02);
     }
 
-    function getNativeTokenSymbol() internal pure returns (bytes32[] memory symbol) {
-        symbol = new bytes32[](1);
-        symbol[0] = "AVAX";
+    function getNativeTokenSymbol() internal pure returns (bytes32 symbol) {
+        return "AVAX";
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {

@@ -134,9 +134,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
             totalValue = 0;
         } else {
             PoolManager poolManager = SmartLoanLib.getPoolManager();
-            bytes32[] memory symbol = new bytes32[](1);
-            symbol[0] = "$YYVSAVAXV2";
-            uint256 price = getPricesFromMsg(symbol)[0];
+            uint256 price = getPriceFromMsg("$YYVSAVAXV2");
             totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
         }
     }
@@ -150,9 +148,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
             totalValue = 0;
         } else {
             PoolManager poolManager = SmartLoanLib.getPoolManager();
-            bytes32[] memory symbol = new bytes32[](1);
-            symbol[0] = "$YYAV3SA1";
-            uint256 price = getPricesFromMsg(symbol)[0];
+            uint256 price = getPriceFromMsg("$YYAV3SA1");
             totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
         }
     }

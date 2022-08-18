@@ -66,7 +66,7 @@ contract SolvencyFacet is PriceAware {
     function getTotalValue() public view virtual returns (uint256) {
         bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
-        uint256 nativeTokenPrice = getPricesFromMsg(SmartLoanLib.getNativeTokenSymbol())[0];
+        uint256 nativeTokenPrice = getPriceFromMsg(SmartLoanLib.getNativeTokenSymbol());
         if(prices.length > 0) {
             PoolManager poolManager = SmartLoanLib.getPoolManager();
 

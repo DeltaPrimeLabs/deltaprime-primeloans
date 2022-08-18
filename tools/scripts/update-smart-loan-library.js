@@ -60,9 +60,9 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
         line => line.includes('getNativeTokenSymbol()')
     );
 
-    newLine = `        symbol[0] = "${nativeAssetSymbol}";`;
+    newLine = `        return "${nativeAssetSymbol}";`;
 
-    fileArray.splice(lineWithFunctionDeclaration + 2, 1, newLine);
+    fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
 
     //write changes to SmartLoanLib.sol
 
