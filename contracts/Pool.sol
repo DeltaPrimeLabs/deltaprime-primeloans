@@ -16,7 +16,6 @@ import "./interfaces/IBorrowersRegistry.sol";
  * @title Pool
  * @dev Contract allowing user to deposit to and borrow from a single smart contract
  * Depositors are rewarded with the interest rates collected from borrowers.
- * Rates are compounded on every user interaction and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to an external calculator contract.
  */
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
