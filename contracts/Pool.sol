@@ -324,9 +324,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function _updateRates() internal {
+    uint256 totalBorrowed = totalBorrowed();
+    uint256 totalSupply = totalSupply();
     require(address(ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
-    depositIndex.setRate(ratesCalculator.calculateDepositRate(totalBorrowed(), totalSupply()));
-    borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()));
+    depositIndex.setRate(ratesCalculator.calculateDepositRate(totalBorrowed, totalSupply));
+    borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(totalBorrowed, totalSupply));
   }
 
   function _accumulateDepositInterest(address user) internal {
