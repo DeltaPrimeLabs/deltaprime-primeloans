@@ -68,6 +68,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     if (address(ratesCalculator_) != address(0)) {
       _updateRates();
     }
+
+    emit RatesCalculatorChanged(address(ratesCalculator_), block.timestamp);
   }
 
   /**
@@ -405,4 +407,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   * @param timestamp of the borrowers registry change
   **/
   event BorrowersRegistryChanged(address indexed registry, uint256 timestamp);
+
+  /**
+  * @dev emitted after changing rates calculator
+  * @param calculator an address of the newly set rates calculator
+  * @param timestamp of the borrowers registry change
+  **/
+  event RatesCalculatorChanged(address indexed calculator, uint256 timestamp);
 }
