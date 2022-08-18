@@ -6,7 +6,7 @@ import "../../UniswapV2Exchange.sol";
 
 /**
  * @title PangolinExchange
- * @dev Contract allows user to invest into an ERC20 token
+ * @dev Contract allows user to swap ERC20 tokens on DEX
  * This implementation uses the Pangolin DEX
  */
 contract PangolinExchange is UniswapV2Exchange {
