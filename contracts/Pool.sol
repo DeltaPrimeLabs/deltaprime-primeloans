@@ -395,7 +395,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /**
    * @dev emitted after accumulating deposit interest
    * @param user the address that the deposit interest is accumulated for
-   * @param value the amount accumulated interest
+   * @param value the amount that interest is calculated from
    * @param timestamp of the interest accumulation
    **/
   event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
