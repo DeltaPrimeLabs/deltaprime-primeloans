@@ -99,9 +99,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   /**
    * Sets deposit rate factor
    * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
-   * @dev _newRate total value of loans
+   * @param _factor total value of loans
    **/
-  function setDepositRateFactor(uint256 factor) external onlyOwner {
-    depositRateFactor = factor;
+  function setDepositRateFactor(uint256 _factor) external onlyOwner {
+    depositRateFactor = _factor;
   }
 }
