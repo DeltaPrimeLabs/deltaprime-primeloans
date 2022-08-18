@@ -88,7 +88,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
       supportedAssetsMap.set(_assets[i].asset, _assets[i].assetAddress);
     }
 
-    emit AssetsAdded(_assets);
+    emit AssetsAdded(msg.sender, _assets);
   }
 
   /**
@@ -108,7 +108,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
       EnumerableMap.remove(supportedAssetsMap, _assets[i]);
     }
 
-    emit AssetsRemoved(_assets);
+    emit AssetsRemoved(msg.sender, _assets);
   }
 
   /**
@@ -197,13 +197,15 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
 
   /**
    * @dev emitted after the owner adds/updates assets
+   * @param performer an address of wallet adding the assets
    * @param assets added/updated assets
    **/
-  event AssetsAdded(Asset[] assets);
+  event AssetsAdded(address performer, Asset[] assets);
 
   /**
    * @dev emitted after the owner removes assets
+   * @param performer an address of wallet removing the assets
    * @param removedAssets removed assets
    **/
-  event AssetsRemoved(bytes32[] removedAssets);
+  event AssetsRemoved(address performer, bytes32[] removedAssets);
 }
