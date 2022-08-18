@@ -184,7 +184,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   /* ========== EVENTS ========== */
 
   /**
-   * @dev emitted after a tokens were sold
+   * @dev emitted after tokens were swapped
    * @param seller the address which sold tokens
    * @param soldToken the name of sold token
    * @param boughtToken the name of bought token
