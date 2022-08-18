@@ -145,7 +145,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(recipient != address(0), "ERC20: cannot transfer to the zero address");
     require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
-    _accumulateDepositInterest(msg.sender);
+    _accumulateDepositInterest(sender);
 
     require(_deposited[sender] >= amount, "ERC20: transfer amount exceeds balance");
 
