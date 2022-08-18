@@ -386,7 +386,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   /**
    * @dev emitted after the user repays debt
-   * @param user the address that repays
+   * @param user the address that repays debt
    * @param value the amount repaid
    * @param timestamp of the repayment
    **/
