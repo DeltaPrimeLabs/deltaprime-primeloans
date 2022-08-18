@@ -2,27 +2,27 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
 import "./lib/SmartLoanLib.sol";
 import "./PoolManager.sol";
 
 /**
- * @title PangolinExchange
+ * @title UniswapV2Exchange
  * @dev Contract allows user to invest into an ERC20 token
- * This implementation uses the Pangolin DEX
+ * This implementation supports UniswapV2Exchange-like DEXs
  */
 contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
   /* ========= STATE VARIABLES ========= */
-  IPangolinRouter pangolinRouter;
+  IUniswapV2Router01 router;
 
   using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
   EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
@@ -31,7 +31,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   // TODO: Check if the below comment is still valid
   // first supportedAsset must be a blockchain native currency
   function initialize(address _router, Asset[] memory supportedAssets, bytes32 _nativeToken) external initializer {
-    pangolinRouter = IPangolinRouter(_router);
+    router = IUniswapV2Router01(_router);
     nativeToken = _nativeToken;
 
     _updateAssets(supportedAssets);
@@ -55,19 +55,19 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
     IERC20 soldToken = IERC20(soldTokenAddress);
     IERC20 boughtToken = IERC20(boughtTokenAddress);
 
-    address(soldToken).safeApprove(address(pangolinRouter), 0);
-    address(soldToken).safeApprove(address(pangolinRouter), _exactSold);
+    address(soldToken).safeApprove(address(router), 0);
+    address(soldToken).safeApprove(address(router), _exactSold);
 
     if (_minimumBought > 0) {
       require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, soldTokenAddress, boughtTokenAddress), "Not enough funds were provided");
     }
 
-    (bool success, bytes memory result) = address(pangolinRouter).call{value: 0}(
+    (bool success, bytes memory result) = address(router).call{value: 0}(
       abi.encodeWithSignature("swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
       _exactSold, _minimumBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp)
     );
 
-    require(success, "Pangolin swap was unsuccessful.");
+    require(success, "Swap was unsuccessful.");
 
     amounts = abi.decode(result, (uint256[]));
 
@@ -147,7 +147,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   function getEstimatedTokensForTokens(uint256 _exactAmountOut, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
-    return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
+    return router.getAmountsIn(_exactAmountOut, path)[0];
   }
 
   /**
@@ -156,7 +156,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
   function getEstimatedTokensFromTokens(uint256 _amountIn, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
-    return pangolinRouter.getAmountsOut(_amountIn, path)[1];
+    return router.getAmountsOut(_amountIn, path)[1];
   }
 
   /**

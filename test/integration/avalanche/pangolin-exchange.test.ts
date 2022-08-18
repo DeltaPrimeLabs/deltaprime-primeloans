@@ -41,13 +41,13 @@ const WavaxAbi = [
     ...ERC20Abi
 ]
 
-const pangolinRouterAbi = [
+const uniswapV2ExchangeAbi = [
     'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
     'function getAmountsOut (uint256 amountIn, address[] path) view returns (uint256[])'
 ]
 
 
-describe('PangolinExchange', () => {
+describe('UniswapV2Exchange', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
@@ -56,11 +56,11 @@ describe('PangolinExchange', () => {
         let sut: UniswapV2Exchange,
             wavaxToken: Contract,
             usdToken: Contract,
-            pangolinRouter: Contract,
+            router: Contract,
             owner: SignerWithAddress,
             usdTokenDecimalPlaces: BigNumber;
 
-        before('Deploy the PangolinExchange contract', async () => {
+        before('Deploy the UniswapV2Exchange contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
 
             let supportedAssets = [
@@ -99,7 +99,7 @@ describe('PangolinExchange', () => {
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
             usdTokenDecimalPlaces = await usdToken.decimals();
-            pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
+            router = await new ethers.Contract(pangolinRouterAddress, uniswapV2ExchangeAbi);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});
         });
@@ -114,7 +114,7 @@ describe('PangolinExchange', () => {
 
         it('should check if enough funds were provided', async () => {
             const usdTokenPurchaseAmount = 1e8;
-            const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(usdTokenPurchaseAmount.toString(), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
+            const estimatedAvax = (await router.connect(owner).getAmountsIn(usdTokenPurchaseAmount.toString(), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
             await expect(sut.swap(toBytes32('AVAX'), toBytes32('USDC'), Math.floor(estimatedAvax * 0.9).toString(), usdTokenPurchaseAmount.toString())).to.be.revertedWith('Not enough funds were provided');
         });
@@ -123,7 +123,7 @@ describe('PangolinExchange', () => {
         it('should check if an erc20 tokens were purchased successfully', async () => {
             const usdTokenPurchaseAmount = 100;
             const usdTokenPurchaseAmountWei = parseUnits(usdTokenPurchaseAmount.toString(), usdTokenDecimalPlaces);
-            const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(usdTokenPurchaseAmountWei, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
+            const estimatedAvax = (await router.connect(owner).getAmountsIn(usdTokenPurchaseAmountWei, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
             const initialWavaxBalance = await wavaxToken.connect(owner).balanceOf(owner.address);
             const initialUsdBalance = await usdToken.connect(owner).balanceOf(owner.address);
@@ -146,7 +146,7 @@ describe('PangolinExchange', () => {
             expect(await wavaxToken.connect(owner).balanceOf(sut.address)).to.be.equal(0);
             expect(await usdToken.connect(owner).balanceOf(sut.address)).to.be.equal(0);
 
-            const estimatedAvaxNeeded = (await pangolinRouter.connect(owner).getAmountsIn(parseUnits("100", usdTokenDecimalPlaces), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
+            const estimatedAvaxNeeded = (await router.connect(owner).getAmountsIn(parseUnits("100", usdTokenDecimalPlaces), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
             await wavaxToken.connect(owner).deposit({value: estimatedAvaxNeeded});
             await wavaxToken.connect(owner).approve(sut.address, estimatedAvaxNeeded);
