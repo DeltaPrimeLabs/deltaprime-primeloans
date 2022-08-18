@@ -38,7 +38,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   address payable public tokenAddress;
 
   function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_) public initializer {
-    require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
+    require(AddressUpgradeable.isContract(address(ratesCalculator_)), "RatesCalculator must be a contract");
+    require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "BorrowersRegistry must be a contract");
+    require(AddressUpgradeable.isContract(address(depositIndex_)), "DepositIndex must be a contract");
+    require(AddressUpgradeable.isContract(address(borrowIndex_)), "BorrowIndex must be a contract");
 
     borrowersRegistry = borrowersRegistry_;
     ratesCalculator = ratesCalculator_;

@@ -58,18 +58,40 @@ describe('Safety tests of pool', () => {
           depositIndex.address,
           borrowingIndex.address,
           mockToken.address
-        )).to.be.revertedWith("function call to a non-contract account");
+        )).to.be.revertedWith("RatesCalculator must be a contract");
     });
 
     it("should not allow initializing pool with a non-contract borrowersRegistry", async () => {
       await expect(
-        pool.initialize(
-          ratesCalculator.address,
-          nonContractAddress,
-          depositIndex.address,
-          borrowingIndex.address,
-          mockToken.address
-        )).to.be.revertedWith("Must be a contract");
+          pool.initialize(
+              ratesCalculator.address,
+              nonContractAddress,
+              depositIndex.address,
+              borrowingIndex.address,
+              mockToken.address
+          )).to.be.revertedWith("BorrowersRegistry must be a contract");
+    });
+
+    it("should not allow initializing pool with a non-contract depositIndex", async () => {
+      await expect(
+          pool.initialize(
+              ratesCalculator.address,
+              borrowersRegistry.address,
+              nonContractAddress,
+              borrowingIndex.address,
+              mockToken.address
+          )).to.be.revertedWith("DepositIndex must be a contract");
+    });
+
+    it("should not allow initializing pool with a non-contract borrowIndex", async () => {
+      await expect(
+          pool.initialize(
+              ratesCalculator.address,
+              borrowersRegistry.address,
+              depositIndex.address,
+              nonContractAddress,
+              mockToken.address
+          )).to.be.revertedWith("BorrowIndex must be a contract");
     });
 
     it("should initialize a pool", async () => {
