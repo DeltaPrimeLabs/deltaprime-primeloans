@@ -14,7 +14,7 @@ import "./PoolManager.sol";
 
 /**
  * @title UniswapV2Exchange
- * @dev Contract allows user to invest into an ERC20 token
+ * @dev Contract allows user to swap ERC20 tokens on DEX
  * This implementation supports UniswapV2Exchange-like DEXs
  */
 contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
