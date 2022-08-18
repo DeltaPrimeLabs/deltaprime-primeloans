@@ -32,8 +32,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   // BREAKPOINT must be lower than 1e18
   uint256 public constant MAX_RATE = 0.75e18;
 
-  //accuracy of 1e18
-  uint256 public depositRateFactor = 1e18 - 1e12;
+  //residual spread to account for arithmetic inaccuracies in calculation of deposit rate. Does not result in any meaningful
+  //profit generation
+  uint256 public spread = 1e12;
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -60,9 +61,9 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     if (_totalDeposits == 0) return 0;
 
     if (_totalLoans >= _totalDeposits) {
-      return MAX_RATE * depositRateFactor / 1e18;
+      return MAX_RATE * (1e18 - spread) / 1e18;
     } else {
-      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1e18);
+      uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
         return rate;
     }
   }
@@ -97,11 +98,11 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
   /* ========== SETTERS ========== */
   /**
-   * Sets deposit rate factor
-   * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
-   * @param _factor total value of loans
+   * Sets the spread between deposit and borrow rate, number between 0 and 1e18
+   * @param _spread spread defined by user
    **/
-  function setDepositRateFactor(uint256 _factor) external onlyOwner {
-    depositRateFactor = _factor;
+  function setSpread(uint256 _spread) external onlyOwner {
+    require(_spread < 1e18, "Spread must be smaller than 1e18");
+    spread = _spread;
   }
 }

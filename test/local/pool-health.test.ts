@@ -289,12 +289,12 @@ describe('Safety tests of pool', () => {
       expect(fromWei(surplus)).to.be.greaterThanOrEqual(0);
     });
 
-    it("set new deposit rate offset", async () => {
+    it("set new spread", async () => {
       expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(10.610769352810026, 0.000001);
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(10.25077880358883, 0.000001);
 
-      await ratesCalculator.setDepositRateFactor(toWei((1e18-1e15).toString()));
-      expect(await ratesCalculator.depositRateFactor()).to.equal(toWei((1e18-1e15).toString()));
+      await ratesCalculator.setSpread(1e15);
+      expect(await ratesCalculator.spread()).to.equal(1e15);
 
       await time.increase(time.duration.years(1));
 
@@ -306,6 +306,10 @@ describe('Safety tests of pool', () => {
 
       let surplus = poolBalance.add(await pool.totalBorrowed()).sub(await pool.totalSupply());
       expect(fromWei(surplus)).to.be.greaterThanOrEqual(0);
+    });
+
+    it("should not allow setting spread higher than 1 Wei", async () => {
+      await expect(ratesCalculator.setSpread(toWei("1").add(1))).to.be.revertedWith("Spread must be smaller than 1e18")
     });
   });
 
