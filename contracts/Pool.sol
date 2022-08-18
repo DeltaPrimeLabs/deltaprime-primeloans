@@ -394,7 +394,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   /**
    * @dev emitted after accumulating deposit interest
-   * @param user the address that the deposit interest is accumulated
+   * @param user the address that the deposit interest is accumulated for
    * @param value the amount accumulated interest
    * @param timestamp of the interest accumulation
    **/
