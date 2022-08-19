@@ -25,10 +25,9 @@ export default {
       state.avaxPrice = price;
     }
   },
-  getters: {
-  },
   actions: {
     async initNetwork({ dispatch }) {
+      console.log('init network');
       //TODO: Promise.all?
       await dispatch('initProvider');
       await dispatch('initAccount');
@@ -61,6 +60,8 @@ export default {
     async updateBalance({ state, commit }) {
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
+      console.log(balance);
+      console.log('setBalance');
 
       commit('setBalance', balance);
     },

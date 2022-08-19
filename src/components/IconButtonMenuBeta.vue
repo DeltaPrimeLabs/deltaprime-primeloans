@@ -1,10 +1,14 @@
 <template>
   <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip">
     <img id="icon-button" class="icon-button"
+         v-bind:class="{'icon-button--disabled': config.disabled}"
          :src="config.iconSrc"
          v-on:click="iconButtonClick()">
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
-      <div class="menu__option" v-for="option in config.menuOptions" v-bind:key="option.key"
+      <div class="menu__option"
+           v-for="option in config.menuOptions"
+           v-bind:class="{'menu__option--disabled': option.disabled}"
+           v-bind:key="option.key"
            v-on:click="menuOptionClick(option)">
         {{ option.name }}
       </div>
@@ -22,14 +26,16 @@ export default {
     }
   },
   mounted() {
-    document.addEventListener('click', (event) => {
-      const iconMenuButtonComponent = document.getElementById('icon-button-menu-component');
-      if (iconMenuButtonComponent && !iconMenuButtonComponent.contains(event.target) && event.target.id !== 'icon-button') {
-        if (this.menuOpen) {
-          this.menuOpen = false;
+    if (!this.config.disabled) {
+      document.addEventListener('click', (event) => {
+        const iconMenuButtonComponent = document.getElementById('icon-button-menu-component');
+        if (iconMenuButtonComponent && !iconMenuButtonComponent.contains(event.target) && event.target.id !== 'icon-button') {
+          if (this.menuOpen) {
+            this.menuOpen = false;
+          }
         }
-      }
-    });
+      });
+    }
   },
   data() {
     return {
@@ -38,16 +44,19 @@ export default {
   },
   methods: {
     iconButtonClick() {
-      if (this.config.menuOptions) {
-        this.menuOpen = !this.menuOpen;
-      } else {
-        this.$emit('iconButtonClick', this.config.iconButtonActionKey);
+      if (!this.config.disabled) {
+        if (this.config.menuOptions) {
+          this.menuOpen = !this.menuOpen;
+        } else {
+          this.$emit('iconButtonClick', this.config.iconButtonActionKey);
+        }
       }
     },
 
     menuOptionClick(option) {
-      console.log(option);
-      this.$emit('iconButtonClick', option.key);
+      if (!option.disabled) {
+        this.$emit('iconButtonClick', option.key);
+      }
     }
   },
 };
@@ -62,9 +71,12 @@ export default {
   .icon-button {
     height: 26px;
     width: 26px;
+    cursor: pointer;
 
-    &:hover {
-      cursor: pointer;
+
+    &.icon-button--disabled {
+      opacity: 0.5;
+      cursor: default;
     }
   }
 
@@ -98,14 +110,23 @@ export default {
       white-space: nowrap;
       color: $dark-gray;
       font-weight: 600;
+      cursor: pointer;
 
       &:hover {
         color: $delta-primary;
-        cursor: pointer;
       }
 
       &:not(:last-child) {
         margin-bottom: 10px;
+      }
+
+      &.menu__option--disabled {
+        opacity: 0.5;
+        cursor: default;
+
+        &:hover {
+          color: $dark-gray;
+        }
       }
     }
   }

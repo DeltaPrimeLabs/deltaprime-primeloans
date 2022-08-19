@@ -10,10 +10,13 @@
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{poolTVL}}<span class="top-info__currency">{{ asset.symbol }}</span></div>
+        <div class="top-info__value">{{ poolTVL }}<span class="top-info__currency">{{ asset.symbol }}</span></div>
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
+      <CurrencyInput :symbol="asset.symbol"
+                     :validators="validators"
+                     v-on:inputChange="inputChange"
+                     v-on:newValue="currencyInputChange"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -21,11 +24,16 @@
             Values after transaction:
           </div>
           <div class="summary__values">
-            <div class="summary__label">
+            <div class="summary__label" v-bind:class="{'summary__label--error': ltvAfterTransaction > MAX_ALLOWED_LTV}">
               LTV:
             </div>
             <div class="summary__value">
-              {{ ltvAfterTransaction | percent }}
+              <span class="summary__value--error" v-if="ltvAfterTransaction > MAX_ALLOWED_LTV">
+                > {{ MAX_ALLOWED_LTV | percent }}
+              </span>
+              <span v-if="ltvAfterTransaction <= MAX_ALLOWED_LTV">
+                {{ ltvAfterTransaction | percent }}
+              </span>
             </div>
             <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
@@ -33,14 +41,14 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance + value | smartRound }} {{ asset.symbol }}
+              {{ Number(asset.balance) + value | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()"></Button>
+        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError"></Button>
       </div>
     </Modal>
   </div>
@@ -52,6 +60,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
+import config from '../config';
 
 export default {
   name: 'BorrowModal',
@@ -76,13 +85,17 @@ export default {
     return {
       value: 0,
       ltvAfterTransaction: 0,
+      validators: [],
+      currencyInputError: false,
+      MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
     };
   },
 
   mounted() {
     setTimeout(() => {
       this.calculateLTVAfterTransaction();
-    })
+      this.setupValidators();
+    });
   },
 
   methods: {
@@ -96,6 +109,10 @@ export default {
       this.calculateLTVAfterTransaction();
     },
 
+    currencyInputChange(changeEvent) {
+      this.currencyInputError = changeEvent.error;
+    },
+
     calculateLTVAfterTransaction() {
       console.log(this.ltv);
       if (this.value) {
@@ -106,9 +123,17 @@ export default {
       }
     },
 
-    calculateMaxBorrowAmount() {
-
-    }
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (this.ltvAfterTransaction > config.MAX_ALLOWED_LTV) {
+              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
+            }
+          }
+        }
+      ];
+    },
   }
 };
 </script>

@@ -5,7 +5,10 @@
         Withdraw
       </div>
 
-      <CurrencyInput :symbol="'AVAX'" v-on:newValue="withdrawValueChange" :max="Number(asset.balance)"></CurrencyInput>
+      <CurrencyInput :symbol="'AVAX'"
+                     v-on:newValue="withdrawValueChange"
+                     :max="Number(asset.balance)"
+                     :validators="validators"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -13,11 +16,16 @@
             Values after confirmation:
           </div>
           <div class="summary__values">
-            <div class="summary__label">
+            <div class="summary__label" v-bind:class="{'summary__label--error': ltvAfterTransaction > MAX_ALLOWED_LTV}">
               LTV:
             </div>
             <div class="summary__value">
-              {{ ltvAfterTransaction | percent }}
+              <span class="summary__value--error" v-if="ltvAfterTransaction > MAX_ALLOWED_LTV">
+                > {{ MAX_ALLOWED_LTV | percent }}
+              </span>
+              <span v-if="ltvAfterTransaction <= MAX_ALLOWED_LTV">
+                {{ ltvAfterTransaction | percent }}
+              </span>
             </div>
             <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
@@ -32,7 +40,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Withdraw'" v-on:click="submit()"></Button>
+        <Button :label="'Withdraw'" v-on:click="submit()" :disabled="currencyInputError"></Button>
       </div>
     </Modal>
   </div>
@@ -44,6 +52,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
+import config from '../config';
 
 export default {
   name: 'WithdrawModal',
@@ -66,13 +75,17 @@ export default {
     return {
       withdrawValue: 0,
       ltvAfterTransaction: 0,
-    }
+      validators: [],
+      currencyInputError: false,
+      MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
+    };
   },
 
   mounted() {
     setTimeout(() => {
-      this.calculateLTVAfterTransaction();
-    })
+      this.setupValidators();
+      this.updateLTVAfterTransaction();
+    });
   },
 
   methods: {
@@ -83,15 +96,48 @@ export default {
 
     withdrawValueChange(event) {
       this.withdrawValue = event.value;
+      this.currencyInputError = event.error;
+      this.updateLTVAfterTransaction();
     },
 
     calculateLTVAfterTransaction() {
       if (this.withdrawValue) {
+        console.log(this.withdrawValue);
+        console.log(this.totalCollateral);
         const loan = this.totalCollateral * this.ltv;
-        this.ltvAfterTransaction = (loan + (this.withdrawValue * this.asset.price)) / this.totalCollateral;
+        console.log(loan);
+        console.log(this.totalCollateral - (this.withdrawValue * this.asset.price));
+        return loan / (this.totalCollateral - (this.withdrawValue * this.asset.price));
       } else {
-        this.ltvAfterTransaction = this.ltv;
+        return this.ltv;
       }
+    },
+
+    updateLTVAfterTransaction() {
+      this.ltvAfterTransaction = this.calculateLTVAfterTransaction();
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            console.log(this.ltvAfterTransaction);
+            if (this.calculateLTVAfterTransaction() > config.MAX_ALLOWED_LTV) {
+              console.log('ltv above');
+              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
+            } else {
+              console.log('ltv ok');
+            }
+          }
+        },
+        {
+          validate: (value) => {
+            if (this.asset.balance - value < 0) {
+              return `Withdraw amount exceeds balance`;
+            }
+          }
+        }
+      ];
     },
   }
 };

@@ -126,6 +126,7 @@ export default {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt']),
     ...mapState('fundsStore', ['smartLoanContract']),
+    ...mapState('poolStore', ['pool']),
 
     loanAPY() {
       return aprToApy(this.borrowingRate);
@@ -133,6 +134,12 @@ export default {
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
+    },
+
+    hasSmartLoanContract() {
+      console.log('HAS SMART LOAN CONTRACT');
+      console.log(this.smartLoanContract.address !== NULL_ADDRESS);
+      return this.smartLoanContract.address !== NULL_ADDRESS;
     }
   },
   methods: {
@@ -149,28 +156,31 @@ export default {
             },
             {
               key: 'BORROW',
-              name: 'Borrow'
+              name: 'Borrow',
+              disabled: !this.hasSmartLoanContract
             }
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw / Repay',
+          disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw'
+              name: 'Withdraw',
             },
             {
               key: 'REPAY',
-              name: 'Repay'
+              name: 'Repay',
             }
           ]
         },
         {
           iconSrc: 'src/assets/icons/swap.svg',
           tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP'
+          iconButtonActionKey: 'SWAP',
+          disabled: !this.hasSmartLoanContract
         },
       ];
     },
@@ -283,8 +293,8 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = 1.5;
-      modalInstance.totalCollateral = 101;
+      modalInstance.ltv = 4.3;
+      modalInstance.totalCollateral = 900;
       modalInstance.$on('WITHDRAW', value => {
         console.log(value);
         const withdrawRequest = {

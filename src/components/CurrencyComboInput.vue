@@ -1,8 +1,12 @@
 <template>
   <div class="currency-combo-input-component" v-if="displayedOptions && displayedOptions.length > 0">
     <div class="combo-input">
-<!--      <button v-on:click="test()">test</button>-->
-      <CurrencyInput ref="currencyInput" class="currency-input" :embedded="true" v-on:inputChange="currencyInputChange"></CurrencyInput>
+      <CurrencyInput ref="currencyInput"
+                     class="currency-input"
+                     :embedded="true"
+                     :validators="validators"
+                     v-on:inputChange="currencyInputChange">
+      </CurrencyInput>
       <div class="divider"></div>
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
@@ -41,7 +45,8 @@ export default {
     CurrencyInput
   },
   props: {
-    assetOptions: {}
+    assetOptions: {},
+    validators: {}
   },
   computed: {
     getDisplayedAssetOptions() {
@@ -122,6 +127,7 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
+      console.log(value);
       this.assetAmount = value;
       if (!disableEmitValue) {
         this.emitValue();
@@ -133,7 +139,7 @@ export default {
     },
 
     setCurrencyInputValue(value) {
-      this.$refs.currencyInput.setValue(value)
+      this.$refs.currencyInput.setValue(value);
     },
 
   },

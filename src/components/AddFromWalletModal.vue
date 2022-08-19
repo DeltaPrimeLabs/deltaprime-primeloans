@@ -25,7 +25,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance + value | smartRound }} {{ asset.symbol }}
+              {{ Number(asset.balance) + value | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -44,6 +44,8 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
+import {mapState} from 'vuex';
+
 
 export default {
   name: 'AddFromWalletModal',
@@ -65,13 +67,15 @@ export default {
     return {
       value: 0,
       ltvAfterTransaction: 0,
+      validators: {},
     };
   },
 
   mounted() {
     setTimeout(() => {
       this.calculateLTVAfterTransaction();
-    })
+      this.setupValidators();
+    });
   },
 
   methods: {
@@ -93,7 +97,11 @@ export default {
       } else {
         this.ltvAfterTransaction = this.ltv;
       }
-    }
+    },
+
+    setupValidators() {
+      console.log(this.balance);
+    },
   }
 };
 </script>

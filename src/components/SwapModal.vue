@@ -7,11 +7,13 @@
 
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
-                          :value="'BTC'"
-                          v-on:valueChange="sourceInputChange">
+                          v-on:valueChange="sourceInputChange"
+                          :validators="sourceValidators">
       </CurrencyComboInput>
       <div class="asset-info">
-        Available: <span class="asset-info__value">{{ sourceAssetBalance }}</span>
+        Available:
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{ sourceAssetBalance }}</span>
+        <span v-if="!sourceAssetBalance" class="asset-info__value">0</span>
       </div>
 
       <div class="reverse-swap-button">
@@ -20,7 +22,6 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
-                          :value="'ETH'"
                           v-on:valueChange="targetInputChange">
       </CurrencyComboInput>
       <div class="asset-info">
@@ -29,7 +30,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Swap'" v-on:click="submit()"></Button>
+        <Button :label="'Swap'" v-on:click="submit()" :disabled="sourceInputError || targetInputError"></Button>
       </div>
     </Modal>
   </div>
@@ -42,6 +43,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import config from '../config';
+import {maxAvaxToBeSold} from '../utils/calculate';
 
 export default {
   name: 'SwapModal',
@@ -61,10 +63,14 @@ export default {
       targetAssetOptions: [],
       sourceAsset: null,
       targetAsset: null,
-      sourceAssetBalance: null,
+      sourceAssetBalance: 0,
       conversionRate: null,
       sourceAssetAmount: null,
       targetAssetAmount: null,
+      sourceValidators: [],
+      targetValidators: [],
+      sourceInputError: false,
+      targetInputError: false,
     };
   },
 
@@ -75,15 +81,15 @@ export default {
       this.setupSourceAsset();
       this.setupTargetAsset();
       this.setupConversionRate();
+      this.setupValidators();
     });
   },
 
-  computed: {
-  },
+  computed: {},
 
   methods: {
     submit() {
-      this.$emit('SWAP',{
+      this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
         sourceAmount: this.sourceAssetAmount,
@@ -120,6 +126,7 @@ export default {
 
     sourceInputChange(change) {
       console.log('sourceInputChange');
+      console.log(change);
       if (change.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
@@ -136,14 +143,16 @@ export default {
           this.setupConversionRate();
         }
       }
+      this.sourceInputError = change.error;
     },
 
     targetInputChange(change) {
       console.log('targetInputChange');
+      console.log(change);
       if (change.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
-        this.targetAsset = change.symbol;
+        this.targetAsset = change.asset;
         const sourceAssetAmount = change.value * this.conversionRate;
         console.log(sourceAssetAmount);
         if (!Number.isNaN(sourceAssetAmount)) {
@@ -156,13 +165,16 @@ export default {
           this.setupConversionRate();
         }
       }
+      this.targetInputError = change.error;
     },
 
     setupConversionRate() {
+      console.log(this.targetAsset);
+      console.log(this.sourceAsset);
       const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
       const targetAsset = config.ASSETS_CONFIG[this.targetAsset];
-      console.log(sourceAsset)
-      console.log(targetAsset)
+      console.log(sourceAsset);
+      console.log(targetAsset);
       this.conversionRate = targetAsset.price / sourceAsset.price;
     },
 
@@ -180,6 +192,28 @@ export default {
 
       this.calculateSourceAssetBalance();
       this.setupConversionRate();
+    },
+
+    setupValidators() {
+      this.sourceValidators = [
+        {
+          validate: (value) => {
+            console.log('validate function');
+            console.log(value);
+            const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
+            sourceAsset.balance;
+            if (value > sourceAsset.balance) {
+              return 'Amount exceeds balance';
+            }
+          }
+        },
+
+        {
+          validate: async (value) => {
+            // console.log('slippage validator');
+          }
+        }
+      ];
     }
   }
 };

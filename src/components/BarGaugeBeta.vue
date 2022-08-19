@@ -2,7 +2,7 @@
   <div class="bar-gauge-beta-component">
     <div class="bar-gauge">
       <div class="bar" v-bind:class="{'slim': slim}">
-        <div class="bar__value" :style="{'width': barGaugeValueWidth + 'px'}"></div>
+        <div class="bar__value" v-bind:class="{'bar__value--error': value >= max}" :style="{'width': barGaugeValueWidth + 'px'}"></div>
       </div>
       <div v-if="!slim" class="range">
         <div>{{min | percent(0)}}</div>
@@ -91,9 +91,13 @@ export default {
         width: 30px;
         min-width: 7px;
         height: 17px;
-        border-top-left-radius: 9.5px;
-        border-bottom-left-radius: 9.5px;
+        border-radius: 9.5px;
         background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
+
+        &.bar__value--error {
+          background-image: none;
+          background-color: $red;
+        }
       }
     }
 

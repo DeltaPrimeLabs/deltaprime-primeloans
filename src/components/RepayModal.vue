@@ -5,7 +5,7 @@
         Repay
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:newValue="repayValueChange" :max="asset.balance"></CurrencyInput>
+      <CurrencyInput :symbol="asset.symbol" v-on:newValue="repayValueChange" :max="Number(asset.balance)"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>

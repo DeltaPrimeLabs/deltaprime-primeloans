@@ -71,6 +71,11 @@ export default {
 
       .summary__label {
         margin-right: 5px;
+
+        &.summary__label--error {
+          color: $red;
+          font-weight: 600;
+        }
       }
 
       .summary__divider {
@@ -83,6 +88,10 @@ export default {
       .summary__value {
         font-weight: 600;
         margin-right: 5px;
+
+        .summary__value--error {
+          color: $red;
+        }
       }
     }
   }
