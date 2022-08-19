@@ -88,7 +88,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
         Pool pool = Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
-        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay the loan");
+        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
