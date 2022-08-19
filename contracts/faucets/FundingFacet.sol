@@ -105,14 +105,6 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     /* ======= VIEW FUNCTIONS ======*/
 
     /**
-     * Returns IERC20Metadata instance of a token
-     * @param _asset the code of an asset
-     **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
-    }
-
-    /**
     * Returns a current balance of the asset held by the smart loan
     * @param _asset the code of an asset
     **/

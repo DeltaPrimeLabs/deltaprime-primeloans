@@ -48,14 +48,6 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     }
 
     /**
-     * Returns IERC20Metadata instance of a token
-     * @param _asset the code of an asset
-     **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
-    }
-
-    /**
      * Returns address of UniswapV2-like exchange
      **/
     //TO BE OVERRIDDEN
