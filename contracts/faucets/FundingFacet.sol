@@ -64,8 +64,9 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
         Pool pool = Pool(poolManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
-        if(pool.getBorrowed(address(this)) > 0) {
-            LibDiamond.addOwnedAsset(_asset, poolManager.getAssetAddress(_asset));
+        IERC20Metadata token = getERC20TokenInstance(_asset);
+        if (token.balanceOf(address(this)) > 0) {
+            LibDiamond.addOwnedAsset(_asset, address(token));
         }
 
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
