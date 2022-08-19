@@ -81,7 +81,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     function repay(bytes32 _asset, uint256 _amount) public payable {
         IERC20Metadata token = getERC20TokenInstance(_asset);
 
-        if (_isSolvent() && SmartLoanLib.getLiquidationInProgress() == false) {
+        if (_isSolvent()) {
             LibDiamond.enforceIsContractOwner();
         }
 

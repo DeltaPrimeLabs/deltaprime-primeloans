@@ -91,8 +91,6 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        SmartLoanLib.setLiquidationInProgress(true);
-
         PoolManager poolManager = SmartLoanLib.getPoolManager();
         // TODO: this is not optimal - let's later check if changing list of AssetAmount to two separate lists will be more efficient
         bytes32[] memory assetsToRepay = new bytes32[](config.assetsAmountsToRepay.length);
@@ -146,6 +144,12 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             repaidInUSD += repayAmount * prices[i] * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
+
+            if (token.balanceOf(address(this)) == 0) {
+                LibDiamond.removeOwnedAsset(config.assetsAmountsToRepay[i].asset);
+            }
+
+            emit LiquidationRepay(msg.sender, config.assetsAmountsToRepay[i].asset, repayAmount, block.timestamp);
         }
 
         uint256 total = _calculateTotalValue();
@@ -181,7 +185,6 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         }
 
         require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
-        SmartLoanLib.setLiquidationInProgress(false);
     }
 
     /**
@@ -223,5 +226,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param timestamp a time of the loan's closure
     **/
     event LoanClosed(uint256 timestamp);
+
+    /**
+     * @dev emitted when funds are repaid to the pool during a liquidation
+     * @param borrower the address initiating repayment
+     * @param _asset asset repaid by an investor
+     * @param amount of repaid funds
+     * @param timestamp of the repayment
+     **/
+    event LiquidationRepay(address indexed borrower, bytes32 indexed _asset, uint256 amount, uint256 timestamp);
 }
 

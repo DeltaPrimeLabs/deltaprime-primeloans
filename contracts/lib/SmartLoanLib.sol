@@ -89,16 +89,6 @@ library SmartLoanLib {
         return _PRICE_PROVIDER_2;
     }
 
-    function getLiquidationInProgress() internal view returns (bool) {
-        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
-        return ls._liquidationInProgress;
-    }
-
-    function setLiquidationInProgress(bool _status) internal {
-        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
-        ls._liquidationInProgress = _status;
-    }
-
     /**
     * Returns all owned assets keys
     **/

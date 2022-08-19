@@ -27,8 +27,6 @@ contract DiamondInit {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         // SmartLoanStorage
         LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
-        // LiquidationStorage
-        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
 
         require(!sls._initialized, "DiamondInit: contract is already initialized");
 
@@ -38,8 +36,6 @@ contract DiamondInit {
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
-        // SmartLoanLib ds default values initialization
-        ls._liquidationInProgress = false;
         LibDiamond.setContractOwner(msg.sender);
         sls._initialized = true;
 

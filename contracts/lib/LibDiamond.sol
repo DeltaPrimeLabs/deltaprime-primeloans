@@ -15,7 +15,6 @@ library LibDiamond {
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
-    bytes32 constant LIQUIDATION_STORAGE_POSITION = keccak256("diamond.standard.liquidation.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
 
     struct FacetAddressAndPosition {
@@ -53,20 +52,8 @@ library LibDiamond {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
     }
 
-    struct LiquidationStorage {
-        // Is liquidation in progress?
-        bool _liquidationInProgress;
-    }
-
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;
-        assembly {
-            ds.slot := position
-        }
-    }
-
-    function liquidationStorage() internal pure returns (LiquidationStorage storage ds) {
-        bytes32 position = LIQUIDATION_STORAGE_POSITION;
         assembly {
             ds.slot := position
         }
