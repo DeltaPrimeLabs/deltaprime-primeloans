@@ -2,10 +2,11 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
+    PangolinExchange,
     PoolManager,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
-    SmartLoansFactory, UniswapV2Exchange
+    SmartLoansFactory
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
@@ -58,7 +59,7 @@ describe('Yield Yak test stake AVAX', () => {
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 120));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
@@ -172,7 +173,7 @@ describe('Yield Yak test stake AVAX', () => {
 describe('Yield Yak test stake SAVAX', () => {
     let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
-        exchange: UniswapV2Exchange,
+        exchange: PangolinExchange,
         wrappedLoan: any,
         user: SignerWithAddress,
         owner: SignerWithAddress,
@@ -187,7 +188,7 @@ describe('Yield Yak test stake SAVAX', () => {
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingSAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 60));
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 120));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['SAVAX']),
@@ -217,8 +218,8 @@ describe('Yield Yak test stake SAVAX', () => {
             'lib'
         );
 
-        let exchangeFactory = await ethers.getContractFactory("UniswapV2Exchange");
-        exchange = (await exchangeFactory.deploy()).connect(owner) as UniswapV2Exchange;
+        let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
+        exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
         await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
         await recompileSmartLoanLib(
@@ -241,7 +242,7 @@ describe('Yield Yak test stake SAVAX', () => {
         // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
         SAVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        $YYVSAVAXV2_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
+        $YYVSAVAXV2_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
