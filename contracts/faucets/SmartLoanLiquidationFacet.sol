@@ -129,6 +129,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
             if (needed > 0) {
                 require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
+                require(needed <= token.balanceOf(msg.sender), "Msg.sender supplied token balance is insufficient");
 
                 address(token).safeTransferFrom(msg.sender, address(this), needed);
                 suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
