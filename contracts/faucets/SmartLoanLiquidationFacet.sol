@@ -187,17 +187,6 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
     }
 
-
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-
-        require(_isSolvent(), "The action may cause an account to become insolvent");
-    }
-
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
         _;

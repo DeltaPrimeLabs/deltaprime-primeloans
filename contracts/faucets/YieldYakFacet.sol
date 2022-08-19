@@ -153,16 +153,6 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
         }
     }
 
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-
-        require(_isSolvent(), "The action may cause an account to become insolvent");
-    }
-
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
         _;
