@@ -198,13 +198,12 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
         diamondAddress,
         [
             'initialize',
-            'getOwnedAssetsBalances',
-            'getOwnedAssetsPrices',
+            'getAllAssetsBalances',
+            'getAllAssetsPrices',
             'getMaxLiquidationBonus',
             'getBalance',
             'getAllAssetsBalances',
             'getAllOwnedAssets',
-            'getAllAssetsPrices',
         ]
     )
 };
@@ -329,6 +328,26 @@ export class AssetAmount {
     constructor(asset: string, amount: BigNumber) {
         this.asset = asset;
         this.amount = amount;
+    }
+}
+
+export class AssetNamePrice {
+    name: string;
+    price: BigNumber;
+
+    constructor(name: string, price: BigNumber) {
+        this.name = name;
+        this.price = price;
+    }
+}
+
+export class AssetNameBalance {
+    name: string;
+    balance: BigNumber;
+
+    constructor(name: string, balance: BigNumber) {
+        this.name = name;
+        this.balance = balance;
     }
 }
 

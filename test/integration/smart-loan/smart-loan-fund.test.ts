@@ -9,7 +9,7 @@ import DestructableArtifact from '../../../artifacts/contracts/mock/Destructable
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset, deployAllFaucets, deployAndInitializeLendingPool,
+  Asset, AssetNameBalance, AssetNamePrice, deployAllFaucets, deployAndInitializeLendingPool, formatUnits, fromBytes32,
   fromWei, getFixedGasSigners,
   PoolAsset,
   recompileSmartLoanLib,
@@ -19,15 +19,14 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   DestructableContract,
-  MockSmartLoanLogicFacetRedstoneProvider,
   PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory,
 } from "../../../typechain";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
-
 chai.use(solidity);
 
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {BigNumber} from "ethers";
 const {deployContract, provider} = waffle;
 
 describe('Smart loan',  () => {
@@ -149,6 +148,32 @@ describe('Smart loan',  () => {
       await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("300"));
 
       expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
+    });
+
+    it("should return all assets balances", async () => {
+      let result = await wrappedLoan.getAllAssetsBalances();
+      let assetsNameBalance = [];
+      for (const r of result) {
+        assetsNameBalance.push(new AssetNameBalance(fromBytes32(r[0]), r[1]));
+      }
+      expect(assetsNameBalance).to.eql([
+          new AssetNameBalance("AVAX", BigNumber.from("0")),
+          new AssetNameBalance("MCKUSD", toWei("300")),
+          new AssetNameBalance("ETH", BigNumber.from("0")),
+      ])
+    });
+
+    it("should return all assets prices", async () => {
+      let result = await wrappedLoan.getAllAssetsPrices();
+      let assetsNamePrice = [];
+      for (const r of result) {
+        assetsNamePrice.push(new AssetNamePrice(fromBytes32(r[0]), r[1]));
+      }
+      expect(assetsNamePrice).to.eql([
+        new AssetNamePrice("AVAX", BigNumber.from((Math.floor(Number(AVAX_PRICE) * 1e8)).toString())),
+        new AssetNamePrice("MCKUSD", BigNumber.from(Math.floor((Number(USD_PRICE) * 1e8)).toString())),
+        new AssetNamePrice("ETH", BigNumber.from(Math.floor((Number(ETH_PRICE) * 1e8)).toString())),
+      ])
     });
 
     it("should add native AVAX to SmartLoan using the destructable contract", async () => {

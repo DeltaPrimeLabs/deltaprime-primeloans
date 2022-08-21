@@ -16,6 +16,16 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    struct AssetNameBalance {
+        bytes32 name;
+        uint256 balance;
+    }
+
+    struct AssetNamePrice {
+        bytes32 name;
+        uint256 price;
+    }
+
     /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
 
     /**
@@ -47,23 +57,20 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         return SmartLoanLib.getAllOwnedAssets();
     }
 
-    function getAllAssetsBalances() public view returns (uint256[] memory) {
+    function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
         PoolManager poolManager = SmartLoanLib.getPoolManager();
-
         bytes32[] memory assets = poolManager.getAllTokenAssets();
-        uint256[] memory balances = new uint[](assets.length);
-        for(uint256 i=0; i<assets.length; i++) {
-            balances[i] = IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this));
+        uint256[] memory balances = new uint256[](assets.length);
+        AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
+
+        for (uint256 i = 0; i<assets.length; i++) {
+            result[i] = AssetNameBalance({
+            name: assets[i],
+            balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
+            });
         }
-        return balances;
-    }
 
-    function getAllAssetsPrices() public view returns (uint256[] memory result) {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
-
-        bytes32[] memory assets = poolManager.getAllTokenAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
-        return prices;
+        return result;
     }
 
     /* ========== VIEW FUNCTIONS ========== */
@@ -81,22 +88,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     }
 
 
-
-    /**
-     * Returns the balances of all assets owned by the Prime Account
-     * It could be used as a helper method for UI
-     **/
-    function getOwnedAssetsBalances() public view returns (uint256[] memory) {
-        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
-        uint256[] memory balances = new uint256[](assets.length);
-
-        for (uint256 i = 0; i < assets.length; i++) {
-            balances[i] = getBalance(assets[i]);
-        }
-
-        return balances;
-    }
-
     /**
     * Returns a current balance of the asset held by the smart loan
     * @param _asset the code of an asset
@@ -108,14 +99,21 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
 
 
     /**
-     * Returns the prices of all assets owned by the Prime Account
+     * Returns the prices of all assets supported by the PoolManager
      * It could be used as a helper method for UI
      * @dev This function uses the redstone-evm-connector
      **/
-    function getOwnedAssetsPrices() public view returns (uint256[] memory) {
-        bytes32[] memory assets = SmartLoanLib.getAllOwnedAssets();
-
-        return getPricesFromMsg(assets);
+    function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
+        bytes32[] memory assets = SmartLoanLib.getPoolManager().getAllTokenAssets();
+        uint256[] memory prices = getPricesFromMsg(assets);
+        AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
+        for(uint i=0; i<assets.length; i++){
+            result[i] = AssetNamePrice({
+                name: assets[i],
+                price: prices[i]
+            });
+        }
+        return result;
     }
 
     /* ========== MODIFIERS ========== */
