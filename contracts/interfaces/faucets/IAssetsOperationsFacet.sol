@@ -1,4 +1,4 @@
-interface IFundingFacet {
+interface IAssetsOperationsFacet {
   function borrow ( bytes32 _asset, uint256 _amount ) external;
   function fund ( bytes32 _fundedAsset, uint256 _amount ) external;
   function repay ( bytes32 _asset, uint256 _amount ) payable external;

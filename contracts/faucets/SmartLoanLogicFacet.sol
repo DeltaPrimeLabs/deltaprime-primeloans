@@ -53,26 +53,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         sls._initialized = true;
     }
 
-    function getAllOwnedAssets() external view returns (bytes32[] memory result) {
-        return SmartLoanLib.getAllOwnedAssets();
-    }
-
-    function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
-        bytes32[] memory assets = poolManager.getAllTokenAssets();
-        uint256[] memory balances = new uint256[](assets.length);
-        AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
-
-        for (uint256 i = 0; i<assets.length; i++) {
-            result[i] = AssetNameBalance({
-            name: assets[i],
-            balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
-            });
-        }
-
-        return result;
-    }
-
     /* ========== VIEW FUNCTIONS ========== */
 
     function getMaxLiquidationBonus() public view virtual returns (uint256) {
@@ -97,6 +77,25 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
         return token.balanceOf(address(this));
     }
 
+    function getAllOwnedAssets() external view returns (bytes32[] memory result) {
+        return SmartLoanLib.getAllOwnedAssets();
+    }
+
+    function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
+        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        bytes32[] memory assets = poolManager.getAllTokenAssets();
+        uint256[] memory balances = new uint256[](assets.length);
+        AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
+
+        for (uint256 i = 0; i<assets.length; i++) {
+            result[i] = AssetNameBalance({
+            name: assets[i],
+            balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
+            });
+        }
+
+        return result;
+    }
 
     /**
      * Returns the prices of all assets supported by the PoolManager

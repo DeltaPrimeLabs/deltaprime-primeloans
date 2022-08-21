@@ -10,7 +10,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./SmartLoanDiamond.sol";
 import "./proxies/DiamondBeaconProxy.sol";
 import "./faucets/DiamondInit.sol";
-import "./faucets/FundingFacet.sol";
+import "./faucets/AssetsOperationsFacet.sol";
 import "./faucets/OwnershipFacet.sol";
 import "./faucets/SmartLoanLogicFacet.sol";
 
@@ -105,9 +105,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     address(token).safeTransferFrom(msg.sender, address(this), _amount);
     token.approve(address(smartLoan), _amount);
 
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.fund.selector, _fundedAsset, _amount), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
 
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.borrow.selector, _debtAsset, _initialDebt), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.borrow.selector, _debtAsset, _initialDebt), false);
 
     _proposeOwnershipTransfer(address(this), msg.sender);
     OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);

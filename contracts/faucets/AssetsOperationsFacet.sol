@@ -11,7 +11,7 @@ import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../PoolManager.sol";
 
-contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

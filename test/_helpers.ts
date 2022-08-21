@@ -173,7 +173,7 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
         ]
     )
     await deployFacet(
-        "FundingFacet",
+        "AssetsOperationsFacet",
         diamondAddress,
         [
             'borrow',

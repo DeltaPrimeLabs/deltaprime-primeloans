@@ -116,7 +116,7 @@ function removeObsoleteFunctions(functionsToRemove) {
 
 function createFaucetsInterfaces() {
     const faucetsList = [
-        'FundingFacet',
+        'AssetsOperationsFacet',
         'OwnershipFacet',
         'PangolinDEXFacet',
         'UbeswapDEXFacet',
