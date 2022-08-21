@@ -96,7 +96,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
 
         {
-            uint256 initialTotal = _calculateTotalValue();
+            uint256 initialTotal = _getTotalValue();
             uint256 initialDebt = _calculateDebt();
 
             require(config.liquidationBonus <= SmartLoanLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
@@ -105,7 +105,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
         // TODO: Recalculating TV and Debt because of stack to deep. Could be optimized
-        bool healingLoan = config.allowUnprofitableLiquidation && _calculateDebt() > _calculateTotalValue();
+        bool healingLoan = config.allowUnprofitableLiquidation && _calculateDebt() > _getTotalValue();
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
@@ -148,7 +148,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
         }
 
-        uint256 total = _calculateTotalValue();
+        uint256 total = _getTotalValue();
         bytes32[] memory assetsOwned = SmartLoanLib.getAllOwnedAssets();
         uint256 bonus;
 
@@ -162,6 +162,11 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
             if (valueOfTokens >= suppliedInUSD + bonus) {
                 partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
+            }
+
+            // Native token transfer
+            if (address(this).balance > 0) {
+                payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
             }
 
             for (uint256 i; i < assetsOwned.length; i++) {
