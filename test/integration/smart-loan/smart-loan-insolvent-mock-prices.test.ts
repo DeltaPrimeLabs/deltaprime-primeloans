@@ -7,7 +7,6 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
-  AssetAmount,
   calculateBonus,
   deployAllFaucets, deployAndInitExchangeContract,
   deployAndInitializeLendingPool,
@@ -483,10 +482,12 @@ describe('Smart loan',  () => {
             }
           });
 
-      let repayAmountsInWei: Array<AssetAmount> = [];
+      let amountsToRepayInWei = [];
+      let assetsToRepay = [];
       for (const [asset, amount] of Object.entries(repayAmounts) ) {
         let decimals = await tokenContracts[asset].decimals();
-        repayAmountsInWei.push(new AssetAmount(toBytes32(asset), parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals)));
+        amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
+        assetsToRepay.push(toBytes32(asset));
       }
 
       for (const [asset, amount] of Object.entries(allowanceAmounts)) {
@@ -499,10 +500,10 @@ describe('Smart loan',  () => {
 
       switch (performedAction) {
         case 'LIQUIDATE':
-          await wrappedLoan.liquidateLoan(repayAmountsInWei, bonusInWei);
+          await wrappedLoan.liquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei);
           break;
         case 'HEAL':
-          await wrappedLoan.unsafeLiquidateLoan(repayAmountsInWei, bonusInWei);
+          await wrappedLoan.unsafeLiquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei);
           break;
       }
 

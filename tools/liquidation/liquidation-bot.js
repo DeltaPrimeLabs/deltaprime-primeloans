@@ -9,7 +9,7 @@ import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, toSupply} from "../../test/_helpers";
 import POOL_MANAGER from '../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
-import {AssetAmount, fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
+import {fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
 import redstone from "redstone-api";
 
 const args = require('yargs').argv;
@@ -155,10 +155,12 @@ export async function liquidateLoan(loanAddress, poolManagerAddress) {
         pricesArg
     );
 
-    let repayAmountsInWei = [];
+    let amountsToRepayInWei = [];
+    let assetsToRepay = [];
     for (const [asset, amount] of Object.entries(repayAmounts) ) {
         let decimals = await getTokenContract(addresses[asset]).decimals();
-        repayAmountsInWei.push(new AssetAmount(toBytes32(asset), parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals)));
+        amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
+        assetsToRepay.push(toBytes32(asset));
     }
 
     let allowanceAmounts = toSupply(
@@ -175,7 +177,7 @@ export async function liquidateLoan(loanAddress, poolManagerAddress) {
 
     const bonusInWei = (bonus * 1000).toFixed(0);
 
-    let tx = await liquidateFacet.liquidateLoan(repayAmountsInWei, bonusInWei, {gasLimit: 8000000});
+    let tx = await liquidateFacet.liquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
     await provider.waitForTransaction(tx.hash);
 }
 

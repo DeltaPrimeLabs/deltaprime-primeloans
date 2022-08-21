@@ -17,19 +17,16 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    /** @param amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPools() method)
+    /** @param assetsToRepay names of tokens to be repaid to pools
+    /** @param amountsToRepay amounts of tokens to be repaid to pools
       * @param liquidationBonus per mille bonus for liquidator. Must be smaller or equal to getMaxLiquidationBonus(). Defined for
       * liquidating loans where debt ~ total value
       * @param allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
     **/
 
-    struct AssetAmountPair {
-        bytes32 asset;
-        uint256 amount;
-    }
-
     struct LiquidationConfig {
-        AssetAmountPair[] assetsAmountsToRepay;
+        bytes32[] assetsToRepay;
+        uint256[] amountsToRepay;
         uint256 liquidationBonus;
         bool allowUnprofitableLiquidation;
     }
@@ -59,11 +56,12 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
     * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
     * @dev This function uses the redstone-evm-connector
-    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
+    * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to getMaxLiquidationBonus()
     **/
-    function unsafeLiquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, true));
+    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(LiquidationConfig(assetsToRepay, amountsToRepay, _liquidationBonus, true));
     }
 
     /**
@@ -73,11 +71,12 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * there is not enough of them in a SmartLoan. For that he will receive the corresponding amount from SmartLoan
     * with the same USD value + bonus.
     * @dev This function uses the redstone-evm-connector
-    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
+    * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
-    function liquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, false));
+    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(LiquidationConfig(assetsToRepay, amountsToRepay, _liquidationBonus, false));
     }
 
     /**
@@ -92,12 +91,8 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     **/
     function liquidate(LiquidationConfig memory config) internal {
         PoolManager poolManager = SmartLoanLib.getPoolManager();
-        // TODO: this is not optimal - let's later check if changing list of AssetAmount to two separate lists will be more efficient
-        bytes32[] memory assetsToRepay = new bytes32[](config.assetsAmountsToRepay.length);
-        for(uint i=0; i< assetsToRepay.length; i++){
-            assetsToRepay[i] = config.assetsAmountsToRepay[i].asset;
-        }
-        uint256[] memory prices = getPricesFromMsg(assetsToRepay);
+
+        uint256[] memory prices = getPricesFromMsg(config.assetsToRepay);
 
 
         {
@@ -115,16 +110,16 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
 
-        for (uint256 i = 0; i < config.assetsAmountsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsAmountsToRepay[i].asset));
+        for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
+            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsToRepay[i]));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
 
             if (healingLoan) {
-                needed = config.assetsAmountsToRepay[i].amount;
-            } else if (config.assetsAmountsToRepay[i].amount > balance) {
-                needed = config.assetsAmountsToRepay[i].amount - balance;
+                needed = config.amountsToRepay[i];
+            } else if (config.amountsToRepay[i] > balance) {
+                needed = config.amountsToRepay[i] - balance;
             }
 
             if (needed > 0) {
@@ -135,9 +130,9 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
                 suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
             }
 
-            Pool pool = Pool(poolManager.getPoolAddress(assetsToRepay[i]));
+            Pool pool = Pool(poolManager.getPoolAddress(config.assetsToRepay[i]));
 
-            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.assetsAmountsToRepay[i].amount);
+            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.amountsToRepay[i]);
 
             address(token).safeApprove(address(pool), 0);
             address(token).safeApprove(address(pool), repayAmount);
@@ -147,10 +142,10 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             pool.repay(repayAmount);
 
             if (token.balanceOf(address(this)) == 0) {
-                LibDiamond.removeOwnedAsset(config.assetsAmountsToRepay[i].asset);
+                LibDiamond.removeOwnedAsset(config.assetsToRepay[i]);
             }
 
-            emit LiquidationRepay(msg.sender, config.assetsAmountsToRepay[i].asset, repayAmount, block.timestamp);
+            emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
         }
 
         uint256 total = _calculateTotalValue();

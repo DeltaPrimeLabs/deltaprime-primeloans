@@ -321,16 +321,6 @@ export class Asset {
     }
 }
 
-export class AssetAmount {
-    asset: string;
-    amount: BigNumber;
-
-    constructor(asset: string, amount: BigNumber) {
-        this.asset = asset;
-        this.amount = amount;
-    }
-}
-
 export class AssetNamePrice {
     name: string;
     price: BigNumber;

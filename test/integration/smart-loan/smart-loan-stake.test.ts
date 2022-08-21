@@ -9,7 +9,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
   Asset,
-  AssetAmount,
   calculateStakingTokensAmountBasedOnAvaxValue,
   deployAllFaucets,
   deployAndInitializeLendingPool,
@@ -450,7 +449,7 @@ describe('Smart loan',  () => {
       await tokenContracts['AVAX'].connect(liquidator).approve(wrappedLoan.address, allowance);
       await tokenContracts['AVAX'].connect(liquidator).deposit({value: allowance});
 
-      await wrappedLoanLiquidator.liquidateLoan([new AssetAmount(toBytes32("AVAX"), toWei("150"))], 50);
+      await wrappedLoanLiquidator.liquidateLoan([toBytes32("AVAX")], [toWei("150")], 50);
       let currentStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 
       expect(fromWei(initialStakedBalance)).to.be.greaterThan(fromWei(currentStakedBalance));
