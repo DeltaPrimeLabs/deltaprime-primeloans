@@ -81,13 +81,10 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     function unstakeSAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
+
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
 
-        // TODO: Maybe perform a standard function call?
-        (bool success, ) = address(yakStakingContract).call(abi.encodeWithSignature("withdraw(uint256)", amount));
-        if (!success) {
-            revert("Unstaking failed");
-        }
+        yakStakingContract.withdraw(amount);
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
@@ -107,13 +104,10 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     function unstakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
+
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
 
-        // TODO: Maybe perform a standard function call?
-        (bool success, ) = address(yakStakingContract).call(abi.encodeWithSignature("withdraw(uint256)", amount));
-        if (!success) {
-            revert("Unstaking failed");
-        }
+        yakStakingContract.withdraw(amount);
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
