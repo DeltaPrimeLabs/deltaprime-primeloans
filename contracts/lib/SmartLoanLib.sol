@@ -6,7 +6,7 @@ import "../interfaces/IAssetsExchange.sol";
 import "../Pool.sol";
 import "../PoolManager.sol";
 import "../interfaces/IYieldYakRouter.sol";
-import {LibDiamond} from "../lib/LibDiamond.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../Pool.sol";
 import "../RedstoneConfigManager.sol";
 
@@ -93,7 +93,7 @@ library SmartLoanLib {
     * Returns all owned assets keys
     **/
     function getAllOwnedAssets() internal view returns (bytes32[] memory result) {
-        LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         return sls.ownedAssets._inner._keys._inner._values;
     }
 }

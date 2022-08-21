@@ -192,7 +192,7 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(nonOwnerWrappedLoan.wrapNativeToken(toWei("21.37"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.wrapNativeToken(toWei("21.37"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should wrapNativeToken and then withdraw extra supplied AVAX afterwards", async () => {
@@ -236,7 +236,7 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(nonOwnerWrappedLoan.withdraw(toBytes32("AVAX"), toWei("300"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.withdraw(toBytes32("AVAX"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should withdraw native token", async () => {

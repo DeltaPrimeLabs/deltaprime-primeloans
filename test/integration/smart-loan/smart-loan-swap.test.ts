@@ -227,7 +227,7 @@ describe('Smart loan',  () => {
                 }
               })
       await expect(nonOwnerWrappedLoan.swapPangolin(
-          toBytes32('AVAX'), toBytes32('ETH'), 0,0)).to.be.revertedWith("LibDiamond: Must be contract owner");
+          toBytes32('AVAX'), toBytes32('ETH'), 0,0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should buy an asset from funded", async () => {

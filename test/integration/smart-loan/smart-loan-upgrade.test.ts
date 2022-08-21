@@ -219,7 +219,7 @@ describe('Smart loan - upgrading',  () => {
 
     it("should not allow to upgrade from non-owner", async () => {
       const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, borrower);
-      await expect(diamondCut.diamondCut([], ethers.constants.AddressZero, [])).to.be.revertedWith('LibDiamond: Must be contract owner');
+      await expect(diamondCut.diamondCut([], ethers.constants.AddressZero, [])).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
     });
 
 

@@ -170,7 +170,7 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(nonOwnerWrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
 
@@ -201,7 +201,7 @@ describe('Smart loan',  () => {
                   timestamp: Date.now()
                 }
               })
-      await expect(nonOwnerWrappedLoan.repay(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.repay(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should repay funds", async () => {

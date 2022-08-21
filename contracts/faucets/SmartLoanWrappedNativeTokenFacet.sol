@@ -33,7 +33,7 @@ contract SmartLoanWrappedNativeTokenFacet {
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

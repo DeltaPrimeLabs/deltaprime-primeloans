@@ -142,7 +142,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             pool.repay(repayAmount);
 
             if (token.balanceOf(address(this)) == 0) {
-                LibDiamond.removeOwnedAsset(config.assetsToRepay[i]);
+                DiamondStorageLib.removeOwnedAsset(config.assetsToRepay[i]);
             }
 
             emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
@@ -181,7 +181,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
-        if (msg.sender != LibDiamond.smartLoanStorage().contractOwner) {
+        if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner) {
             require(LTV >= SmartLoanLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
@@ -189,7 +189,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     }
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

@@ -211,7 +211,7 @@ describe('Smart loan',  () => {
                 }
               })
       await expect(nonOwnerWrappedLoan.swapUbeswap(
-          toBytes32('ETH'), toBytes32('mcUSD'), 0,0)).to.be.revertedWith("LibDiamond: Must be contract owner");
+          toBytes32('ETH'), toBytes32('mcUSD'), 0,0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
 

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SmartLoanLib.sol";
-import { LibDiamond } from "../lib/LibDiamond.sol";
+import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../PoolManager.sol";
@@ -27,7 +27,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         if(token.balanceOf(address(this)) > 0) {
-            LibDiamond.addOwnedAsset(_fundedAsset, address(token));
+            DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
         }
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
@@ -47,7 +47,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         address(token).safeTransfer(msg.sender, _amount);
         if(token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_withdrawnAsset);
+            DiamondStorageLib.removeOwnedAsset(_withdrawnAsset);
         }
 
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
@@ -66,7 +66,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         IERC20Metadata token = getERC20TokenInstance(_asset);
         if (token.balanceOf(address(this)) > 0) {
-            LibDiamond.addOwnedAsset(_asset, address(token));
+            DiamondStorageLib.addOwnedAsset(_asset, address(token));
         }
 
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
@@ -83,7 +83,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
         IERC20Metadata token = getERC20TokenInstance(_asset);
 
         if (_isSolvent()) {
-            LibDiamond.enforceIsContractOwner();
+            DiamondStorageLib.enforceIsContractOwner();
         }
 
         Pool pool = Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
@@ -97,7 +97,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
         pool.repay(_amount);
 
         if (token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_asset);
+            DiamondStorageLib.removeOwnedAsset(_asset);
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
@@ -117,7 +117,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

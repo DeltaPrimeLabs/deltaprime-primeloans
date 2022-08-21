@@ -2,7 +2,7 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import { LibDiamond } from "./lib/LibDiamond.sol";
+import { DiamondStorageLib } from "./lib/DiamondStorageLib.sol";
 import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 
 /**
@@ -16,7 +16,7 @@ import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 
 contract SmartLoanDiamond {
     constructor(address _contractOwner, address _diamondCutFacet) payable {
-        LibDiamond.setContractOwner(_contractOwner);
+        DiamondStorageLib.setContractOwner(_contractOwner);
 
         // Add the diamondCut external function from the diamondCutFacet
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
@@ -27,7 +27,7 @@ contract SmartLoanDiamond {
         action: IDiamondCut.FacetCutAction.Add,
         functionSelectors: functionSelectors
         });
-        LibDiamond.diamondCut(cut, address(0), "");
+        DiamondStorageLib.diamondCut(cut, address(0), "");
     }
 
     function implementation() public view returns (address) {
@@ -35,8 +35,8 @@ contract SmartLoanDiamond {
     }
 
     function implementation(bytes4 funcSignature) public view returns (address) {
-        LibDiamond.DiamondStorage storage ds;
-        bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
+        DiamondStorageLib.DiamondStorage storage ds;
+        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
         // get diamond storage
         assembly {
             ds.slot := position
@@ -52,8 +52,8 @@ contract SmartLoanDiamond {
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
     fallback() external payable {
-        LibDiamond.DiamondStorage storage ds;
-        bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
+        DiamondStorageLib.DiamondStorage storage ds;
+        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
         // get diamond storage
         assembly {
             ds.slot := position

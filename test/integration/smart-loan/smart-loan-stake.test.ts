@@ -188,19 +188,19 @@ describe('Smart loan',  () => {
     });
 
     it("should fail to stake AVAX as a non-owner", async () => {
-      await expect(nonOwnerWrappedLoan.stakeAVAXYak(toWei("9999"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.stakeAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should fail to unstake AVAX as a non-owner", async () => {
-      await expect(nonOwnerWrappedLoan.unstakeAVAXYak(toWei("9999"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.unstakeAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should fail to stake sAVAX as a non-owner", async () => {
-      await expect(nonOwnerWrappedLoan.stakeSAVAXYak(toWei("9999"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.stakeSAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should fail to unstake sAVAX as a non-owner", async () => {
-      await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(toWei("9999"))).to.be.revertedWith("LibDiamond: Must be contract owner");
+      await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
     });
 
     it("should stake", async () => {

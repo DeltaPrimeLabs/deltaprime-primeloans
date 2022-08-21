@@ -7,7 +7,7 @@ import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../lib/SmartLoanLib.sol";
-import {LibDiamond} from "../lib/LibDiamond.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -34,12 +34,12 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
         PoolManager poolManager = SmartLoanLib.getPoolManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = poolManager.getAssetAddress(_boughtAsset);
-        LibDiamond.addOwnedAsset(_boughtAsset, boughtAssetAddress);
+        DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
         IERC20 token = IERC20(poolManager.getAssetAddress(_soldAsset));
         if(token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_soldAsset);
+            DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
 
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0],  amounts[amounts.length - 1], block.timestamp);
@@ -56,7 +56,7 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     }
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

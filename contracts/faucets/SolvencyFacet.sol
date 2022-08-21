@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../lib/SmartLoanLib.sol";
 import "../PoolManager.sol";
-import { LibDiamond } from "../lib/LibDiamond.sol";
+import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 
 contract SolvencyFacet is PriceAware {

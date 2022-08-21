@@ -8,7 +8,7 @@ import "../lib/SmartLoanLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import { LibDiamond } from "../lib/LibDiamond.sol";
+import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
@@ -47,9 +47,9 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     function initialize(address owner) external {
         require(owner != address(0), "Initialize: Cannot set the owner to a zero address");
 
-        LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         require(!sls._initialized, "DiamondInit: contract is already initialized");
-        LibDiamond.setContractOwner(owner);
+        DiamondStorageLib.setContractOwner(owner);
         sls._initialized = true;
     }
 
@@ -118,7 +118,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 }
