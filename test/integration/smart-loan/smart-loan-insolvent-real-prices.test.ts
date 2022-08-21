@@ -292,7 +292,7 @@ describe('Smart loan - real prices',  () => {
       diamondAddress = await deployDiamond();
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
@@ -377,7 +377,7 @@ describe('Smart loan - real prices',  () => {
 
     before("prepare smart loan facets", async () => {
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [
             {
               facetPath: './contracts/faucets/PangolinDEXFacet.sol',
@@ -398,7 +398,7 @@ describe('Smart loan - real prices',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [
             {
               facetPath: './contracts/faucets/PangolinDEXFacet.sol',

@@ -5,7 +5,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
@@ -60,7 +60,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @dev This function uses the redstone-evm-connector
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
         Pool pool = Pool(poolManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
@@ -86,7 +86,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
             DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
+        Pool pool = Pool(SmartLoanConfigLib.getPoolManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
@@ -110,7 +110,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 

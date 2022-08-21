@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
@@ -32,14 +32,14 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getMaxBlockTimestampDelay();
+        return SmartLoanConfigLib.getMaxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
@@ -56,15 +56,15 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     /* ========== VIEW FUNCTIONS ========== */
 
     function getMaxLiquidationBonus() public view virtual returns (uint256) {
-        return SmartLoanLib.getMaxLiquidationBonus();
+        return SmartLoanConfigLib.getMaxLiquidationBonus();
     }
 
     function getMaxLtv() public view virtual returns (uint256) {
-        return SmartLoanLib.getMaxLtv();
+        return SmartLoanConfigLib.getMaxLtv();
     }
 
     function getPercentagePrecision() public view virtual returns (uint256) {
-        return SmartLoanLib.getPercentagePrecision();
+        return SmartLoanConfigLib.getPercentagePrecision();
     }
 
 
@@ -73,16 +73,16 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) public view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 
     function getAllOwnedAssets() external view returns (bytes32[] memory result) {
-        return SmartLoanLib.getAllOwnedAssets();
+        return SmartLoanConfigLib.getAllOwnedAssets();
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
         bytes32[] memory assets = poolManager.getAllTokenAssets();
         uint256[] memory balances = new uint256[](assets.length);
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
@@ -103,7 +103,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
      * @dev This function uses the redstone-evm-connector
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
-        bytes32[] memory assets = SmartLoanLib.getPoolManager().getAllTokenAssets();
+        bytes32[] memory assets = SmartLoanConfigLib.getPoolManager().getAllTokenAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for(uint i=0; i<assets.length; i++){

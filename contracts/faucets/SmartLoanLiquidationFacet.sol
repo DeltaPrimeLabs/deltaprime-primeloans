@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./SolvencyFacet.sol";
 import "../lib/SolvencyMethodsLib.sol";
 
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import "../Pool.sol";
 import "../PoolManager.sol";
 
@@ -37,14 +37,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getMaxBlockTimestampDelay();
+        return SmartLoanConfigLib.getMaxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
 
@@ -90,7 +90,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
 
         uint256[] memory prices = getPricesFromMsg(config.assetsToRepay);
 
@@ -99,8 +99,8 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             uint256 initialTotal = _getTotalValue();
             uint256 initialDebt = _calculateDebt();
 
-            require(config.liquidationBonus <= SmartLoanLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-            require(_getLTV() >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
+            require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+            require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
             require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
@@ -149,14 +149,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         }
 
         uint256 total = _getTotalValue();
-        bytes32[] memory assetsOwned = SmartLoanLib.getAllOwnedAssets();
+        bytes32[] memory assetsOwned = SmartLoanConfigLib.getAllOwnedAssets();
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
         if (!healingLoan) {
             uint256 valueOfTokens = _getTotalValue();
 
-            bonus = repaidInUSD * config.liquidationBonus / SmartLoanLib.getPercentagePrecision();
+            bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
 
             uint256 partToReturn = 10 ** 18;
 
@@ -182,10 +182,10 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner) {
-            require(LTV >= SmartLoanLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+            require(LTV >= SmartLoanConfigLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
-        require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+        require(LTV < SmartLoanConfigLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
     }
 
     modifier onlyOwner() {

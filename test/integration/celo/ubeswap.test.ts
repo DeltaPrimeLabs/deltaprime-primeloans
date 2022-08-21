@@ -114,7 +114,7 @@ describe('Smart loan',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
@@ -131,7 +131,7 @@ describe('Smart loan',  () => {
       await exchange.initialize(ubeswapRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
 [
             {
               facetPath: './contracts/faucets/UbeswapDEXFacet.sol',

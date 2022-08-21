@@ -18,7 +18,7 @@ contract SolvencyMethodsLib {
     }
 
     function _getDiamondBeaconContract(bytes memory methodSig) internal returns(address solvencyFacetAddress) {
-        solvencyFacetAddress = IDiamondBeacon(payable(SmartLoanLib.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
+        solvencyFacetAddress = IDiamondBeacon(payable(SmartLoanConfigLib.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
     }
 
     function convertBytesToBytes4(bytes memory inBytes) internal returns (bytes4 outBytes4) {
@@ -68,11 +68,11 @@ contract SolvencyMethodsLib {
      * @param _asset the code of an asset
      **/
     function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
+        return IERC20Metadata(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
     }
 
     /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
+    * Checks whether account is solvent (LTV lower than SmartLoanConfigLib.getMaxLtv())
     * @dev This modifier uses the redstone-evm-connector
     **/
     modifier remainsSolvent() {

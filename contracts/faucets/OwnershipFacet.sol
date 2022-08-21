@@ -3,14 +3,14 @@ pragma solidity ^0.8.0;
 
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import { IERC173 } from "../interfaces/IERC173.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import "../SmartLoansFactory.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 
 contract OwnershipFacet is IERC173 {
     function transferOwnership(address _newOwner) external override {
         DiamondStorageLib.enforceIsContractOwner();
-        SmartLoansFactory(SmartLoanLib.getSmartLoansFactoryAddress()).executeOwnershipTransfer(msg.sender, _newOwner);
+        SmartLoansFactory(SmartLoanConfigLib.getSmartLoansFactoryAddress()).executeOwnershipTransfer(msg.sender, _newOwner);
         DiamondStorageLib.setContractOwner(_newOwner);
     }
 

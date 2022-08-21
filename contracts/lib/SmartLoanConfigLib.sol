@@ -10,7 +10,7 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../Pool.sol";
 import "../RedstoneConfigManager.sol";
 
-library SmartLoanLib {
+library SmartLoanConfigLib {
 
     uint256 private constant _PERCENTAGE_PRECISION = 1000;
     // 5%

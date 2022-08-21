@@ -13,8 +13,8 @@ module.exports = async ({
     const {deployer} = await getNamedAccounts();
 
     embedCommitHash('SmartLoanDiamond');
-    embedCommitHash('SmartLoanLib', 'contracts/lib');
-    embedCommitHash('LibDiamond', 'contracts/lib');
+    embedCommitHash('SmartLoanConfigLib', 'contracts/lib');
+    embedCommitHash('DiamondStorageLib', 'contracts/lib');
 
     const diamondAddress = await deployDiamond({
         deployer: deployer,

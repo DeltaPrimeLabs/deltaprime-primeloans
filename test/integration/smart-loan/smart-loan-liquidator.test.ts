@@ -142,7 +142,7 @@ describe('Test liquidator',  () => {
             diamondAddress = await deployDiamond();
 
             await recompileSmartLoanLib(
-                "SmartLoanLib",
+                "SmartLoanConfigLib",
                 [],
                 poolManager.address,
                 redstoneConfigManager.address,
@@ -157,7 +157,7 @@ describe('Test liquidator',  () => {
             await smartLoansFactory.initialize(diamondAddress);
 
             await recompileSmartLoanLib(
-                "SmartLoanLib",
+                "SmartLoanConfigLib",
                 [
                     {
                         facetPath: './contracts/faucets/PangolinDEXFacet.sol',

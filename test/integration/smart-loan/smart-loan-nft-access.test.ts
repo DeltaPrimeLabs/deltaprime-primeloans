@@ -103,7 +103,7 @@ describe('Smart loan',  () => {
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
 
             await recompileSmartLoanLib(
-                "SmartLoanLib",
+                "SmartLoanConfigLib",
                 [],
                 poolManager.address,
                 redstoneConfigManager.address,

@@ -10,7 +10,7 @@ import "./SolvencyFacet.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../interfaces/IYakStakingVectorSAV2.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 
@@ -28,14 +28,14 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getRedstoneConfigManager().maxBlockTimestampDelay();
+        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     // TODO: Change name to a more unique one for this exact investment strategy
@@ -46,9 +46,9 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     **/
     function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
-        require(IWrappedNativeToken(SmartLoanLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
+        require(IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
 
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).withdraw(amount);
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).withdraw(amount);
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).deposit{value: amount}();
 
         // TODO make staking more generic
@@ -116,7 +116,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
         emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
 
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: amount}();
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: amount}();
     }
 
 

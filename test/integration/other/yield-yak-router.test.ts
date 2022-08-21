@@ -79,7 +79,7 @@ describe('Yield Yak test stake AVAX', () => {
         await smartLoansFactory.initialize(diamondAddress);
 
         await recompileSmartLoanLib(
-            "SmartLoanLib",
+            "SmartLoanConfigLib",
             [],
             poolManager.address,
             redstoneConfigManager.address,
@@ -199,7 +199,7 @@ describe('Yield Yak test stake SAVAX', () => {
         await smartLoansFactory.initialize(diamondAddress);
 
         await recompileSmartLoanLib(
-            "SmartLoanLib",
+            "SmartLoanConfigLib",
             [],
             poolManager.address,
             redstoneConfigManager.address,
@@ -213,7 +213,7 @@ describe('Yield Yak test stake SAVAX', () => {
         await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
         await recompileSmartLoanLib(
-            "SmartLoanLib",
+            "SmartLoanConfigLib",
             [
                 {
                     facetPath: './contracts/faucets/PangolinDEXFacet.sol',

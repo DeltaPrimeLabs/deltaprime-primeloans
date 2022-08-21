@@ -6,7 +6,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
@@ -31,7 +31,7 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = poolManager.getAssetAddress(_boughtAsset);
         DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
