@@ -126,33 +126,6 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     }
 
 
-    function getTotalStakedValueYYVSAVAXV2() public view override returns (uint256 totalValue) {
-        // TODO: Make more generic whith supporting multiple staking strategies
-        IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);
-        uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-        if (stakedBalance == 0) {
-            totalValue = 0;
-        } else {
-            PoolManager poolManager = SmartLoanLib.getPoolManager();
-            uint256 price = getPriceFromMsg("$YYVSAVAXV2");
-            totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
-        }
-    }
-
-
-    function getTotalStakedValueYYAV3SA1() public view override returns (uint256 totalValue) {
-        // TODO: Make more generic whith supporting multiple staking strategies
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
-        uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-        if (stakedBalance == 0) {
-            totalValue = 0;
-        } else {
-            PoolManager poolManager = SmartLoanLib.getPoolManager();
-            uint256 price = getPriceFromMsg("YYAV3SA1");
-            totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
-        }
-    }
-
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
         _;

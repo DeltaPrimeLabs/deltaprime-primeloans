@@ -10,8 +10,4 @@ interface IYieldYakRouter {
     function unstakeAVAXYak(uint256 amount) external;
 
     function unstakeSAVAXYak(uint256 amount) external;
-
-    function getTotalStakedValueYYAV3SA1() external view returns (uint256 totalValue);
-
-    function getTotalStakedValueYYVSAVAXV2() external view returns (uint256 totalValue);
 }

@@ -124,11 +124,6 @@ describe('Yield Yak test stake AVAX', () => {
         await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
     })
 
-    it("should calculate total value of 0 staked tokens", async () => {
-        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYAV3SA1();
-        expect(fromWei(stakedAvaxValue)).to.be.equal(0)
-    });
-
     it("should successfully stake AVAX with YieldYak", async () => {
         let initialAvaxBalance = BigNumber.from(await avaxTokenContract.balanceOf(wrappedLoan.address));
         let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
@@ -146,11 +141,6 @@ describe('Yield Yak test stake AVAX', () => {
 
         expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
         expect(fromWei(avaxBalanceDifference)).to.be.closeTo(10, 1);
-    });
-
-    it("should calculate total value of staked tokens", async () => {
-        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYAV3SA1();
-        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.1)
     });
 
 
@@ -291,11 +281,6 @@ describe('Yield Yak test stake SAVAX', () => {
         )
     });
 
-    it("should calculate total value of 0 staked tokens", async () => {
-        let stakedSAvaxValue = await wrappedLoan.getTotalStakedValueYYVSAVAXV2();
-        expect(fromWei(stakedSAvaxValue)).to.be.equal(0)
-    });
-
     it("should successfully stake SAVAX with YieldYak", async () => {
         let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
         let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
@@ -314,12 +299,6 @@ describe('Yield Yak test stake SAVAX', () => {
         expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
         expect(fromWei(sAvaxBalanceDifference)).to.be.closeTo(10, 1);
     });
-
-    it("should calculate total value of staked tokens", async () => {
-        let stakedAvaxValue = await wrappedLoan.getTotalStakedValueYYVSAVAXV2();
-        expect(fromWei(stakedAvaxValue)).to.be.closeTo(10 * AVAX_PRICE, 0.01)
-    });
-
 
     it("should unstake remaining SAVAX", async () => {
         let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
