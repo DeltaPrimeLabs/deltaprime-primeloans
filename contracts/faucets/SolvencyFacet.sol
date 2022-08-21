@@ -50,8 +50,9 @@ contract SolvencyFacet is PriceAware {
 
         for (uint256 i = 0; i < assets.length; i++) {
             IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
-            //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
+
             Pool pool = Pool(poolManager.getPoolAddress(assets[i]));
+            //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
             debt = debt + pool.getBorrowed(address(this)) * prices[i] * 10**10
             / 10 ** token.decimals();
         }
@@ -92,19 +93,12 @@ contract SolvencyFacet is PriceAware {
     }
 
     /**
-     * LoanToValue ratio is calculated as the ratio between debt and collateral (defined as total value minus debt).
+     * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
      * The collateral is equal to total loan value takeaway debt.
      * @dev This function uses the redstone-evm-connector
      **/
     // TODO: Refactor - change usage in code and tests to use getLTV only
     function getLTV() public view virtual returns (uint256) {
-        return calculateLTV();
-    }
-
-    /**
-    * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
-    **/
-    function calculateLTV() public virtual view returns (uint256) {
         uint256 debt = getDebt();
         uint256 totalValue = getTotalValue();
 

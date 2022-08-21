@@ -63,17 +63,6 @@ contract SolvencyMethodsLib {
         );
     }
 
-    // This function executes SolvencyFacet.calculateLTV() but allows for in-memory uint256[] _prices re-use
-    function _calculateLTV() internal virtual returns (uint256 ltv) {
-        ltv = abi.decode(
-            ProxyConnector.proxyDelegateCalldata(
-                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.calculateLTV.selector)),
-                abi.encodeWithSelector(SolvencyFacet.calculateLTV.selector)
-            ),
-            (uint256)
-        );
-    }
-
     /**
      * Returns IERC20Metadata instance of a token
      * @param _asset the code of an asset

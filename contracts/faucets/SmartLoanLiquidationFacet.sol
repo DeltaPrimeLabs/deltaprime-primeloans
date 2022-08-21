@@ -100,7 +100,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             uint256 initialDebt = _calculateDebt();
 
             require(config.liquidationBonus <= SmartLoanLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-            require(_calculateLTV() >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
+            require(_getLTV() >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
             require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
@@ -177,7 +177,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             }
         }
 
-        uint256 LTV = _calculateLTV();
+        uint256 LTV = _getLTV();
 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
