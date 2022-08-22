@@ -3,7 +3,7 @@
     <div class="stats-bar">
       <stats-bar-element-beta :label="'Total value'" :value="totalValue | usd">
         <div class="total-value-extra">
-          Today: <colored-value-beta :value="23.45" :formatting="'usd'"></colored-value-beta>
+          Today: <colored-value-beta :value="todayPNL" :formatting="'usd'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
       <stats-bar-element-beta v-if="ltv" :label="'LTV'" :value="ltv | percent">

@@ -50,6 +50,7 @@ export default {
     assetBalances: [],
     avaxDebt: null,
     ltv: null,
+    fullLoanStatus: {},
   },
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
@@ -87,6 +88,11 @@ export default {
     setLTV(state, ltv) {
       state.ltv = ltv;
     },
+
+    setFullLoanStatus(state, status) {
+      state.fullLoanStatus = status;
+    }
+    ,
   },
   actions: {
     async fundsStoreSetup({state, dispatch}) {
@@ -97,6 +103,7 @@ export default {
         await dispatch('getAllAssetsBalances');
         await dispatch('getDebts');
         await dispatch('getLTV');
+        await dispatch('getFullLoanStatus');
       }
     },
 
@@ -105,6 +112,7 @@ export default {
       await dispatch('getAllAssetsBalances');
       await dispatch('getDebts');
       await dispatch('getLTV');
+      await dispatch('getFullLoanStatus');
     },
 
 
@@ -199,6 +207,15 @@ export default {
       const ltvResponse = await state.smartLoanContract.getLTV();
       const ltv = parseInt(ltvResponse) / 1000;
       commit('setLTV', ltv);
+    },
+
+    async getFullLoanStatus({state, commit}) {
+      const fullLoanStatusResponse = await state.smartLoanContract.getFullLoanStatus();
+      const fullLoanStatus = {
+        totalValue: fromWei(fullLoanStatusResponse[0]),
+        debt: fromWei(fullLoanStatusResponse[1]),
+      }
+      commit('setFullLoanStatus', fullLoanStatus);
     },
 
     async swapToWavax({state, rootState}) {
