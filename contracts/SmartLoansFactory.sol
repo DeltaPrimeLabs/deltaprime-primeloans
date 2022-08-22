@@ -16,10 +16,12 @@ import "./faucets/SmartLoanLogicFacet.sol";
 
 /**
  * @title SmartLoansFactory
- * It creates and fund the Smart Loan.
- * It's also responsible for keeping track of the loans and ensuring they follow the solvency protection rules
- * and could be authorised to access the lending pool.
- *
+ * @dev Contract responsible for creating new instances of SmartLoans (SmartLoanDiamond).
+ * It's possible to either simply create a new loan or create and fund it with an ERC20 asset as well as borrow in a single transaction.
+ * At the time of creating a loan, SmartLoansFactory contract is the owner for the sake of being able to perform the fund() and borrow() operations.
+ * At the end of the createAndFundLoan the ownership is transferred to the msg.sender.
+ * It's also responsible for keeping track of the loans, ensuring one loan per wallet rule, ownership transfers proposals/execution and
+ * authorizes registered loans to borrow from lending pools.
  */
 contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   using TransferHelper for address;
@@ -75,14 +77,12 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
       payable(address(smartLoanDiamond)),
       // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
       // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-        abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, address(this))
+        abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, msg.sender)
     );
     SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(address(smartLoan), address(this));
-    _proposeOwnershipTransfer(address(this), msg.sender);
-    OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
+    updateRegistry(address(smartLoan), msg.sender);
 
     emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, "", 0);
     return smartLoan;
