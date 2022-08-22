@@ -5,7 +5,8 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name" v-on:click="logAsset(asset)">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="asset.symbol === 'AVAX'">Loan APY: {{ loanAPY | percent }}</div>
+          <div class="asset__loan" v-if="asset.symbol === 'AVAX' && pool">Loan APY: {{ pool.borrowingAPY / 1000000000000000000 | percent }}</div>
+          <div class="asset__loan" v-if="asset.symbol === 'USDC' && usdcPool">Loan APY: {{ usdcPool.borrowingAPY / 1000000000000000000 | percent }}</div>
         </div>
       </div>
 
@@ -126,7 +127,7 @@ export default {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt']),
     ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt']),
-    ...mapState('poolStore', ['pool']),
+    ...mapState('poolStore', ['pool', 'usdcPool']),
 
     loanAPY() {
       return aprToApy(this.borrowingRate);

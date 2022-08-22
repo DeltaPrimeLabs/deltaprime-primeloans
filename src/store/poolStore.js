@@ -91,11 +91,13 @@ export default {
       const tvl = await state.poolContract.totalSupply();
       const deposit = await state.poolContract.balanceOf(rootState.network.account);
       const depositAPY = await state.poolContract.getDepositRate();
+      const borrowingAPY = await state.poolContract.getBorrowingRate();
 
       const pool = {
         tvl: tvl,
         deposit: deposit,
-        apy: depositAPY
+        apy: depositAPY,
+        borrowingAPY: borrowingAPY
       };
       commit('setPool', pool);
     },
@@ -104,11 +106,13 @@ export default {
       const tvl = await state.usdcPoolContract.totalSupply();
       const deposit = await state.usdcPoolContract.balanceOf(rootState.network.account);
       const depositAPY = await state.usdcPoolContract.getDepositRate();
+      const borrowingAPY = await state.usdcPoolContract.getBorrowingRate();
 
       const pool = {
         tvl: tvl,
         deposit: deposit,
-        apy: depositAPY
+        apy: depositAPY,
+        borrowingAPY: borrowingAPY
       };
       commit('setUsdcPool', pool);
     },

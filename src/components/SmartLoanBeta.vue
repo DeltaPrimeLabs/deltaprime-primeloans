@@ -38,15 +38,18 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
-    ...mapActions('stakeStore', ['stakeStoreSetup'])
+    ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('stakeStore', ['stakeStoreSetup']),
   },
   async mounted() {
     if (window.provider) {
       await this.fundsStoreSetup();
+      await this.poolStoreSetup();
       await this.stakeStoreSetup();
     } else {
       setTimeout(async () => {
         await this.fundsStoreSetup();
+        await this.poolStoreSetup();
         await this.stakeStoreSetup();
       }, 1000);
     }
