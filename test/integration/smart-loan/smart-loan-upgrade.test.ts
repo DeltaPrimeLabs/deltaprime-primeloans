@@ -176,9 +176,7 @@ describe('Smart loan - upgrading',  () => {
 
     });
 
-    it("should fail addign a Pool Asset to the PoolManager that is not a contract", async () => {
-      await expect(poolManager.addPoolAssets([new PoolAsset(toBytes32("TEST1"), other.address)])).to.be.revertedWith("PoolManager: Pool must be a contract");
-    });
+
 
 
     it("should check if only one loan per owner is allowed", async () => {

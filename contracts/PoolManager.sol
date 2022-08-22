@@ -12,17 +12,27 @@ contract PoolManager {
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
+    address public adminTransferProposal;
 
     constructor(IAssetsExchange.Asset[] memory tokenAssets, IAssetsExchange.poolAsset[] memory poolAssets) {
         admin = msg.sender;
-        emit AdminChanged(msg.sender, msg.sender, block.timestamp);
+        emit AdminChanged(address(0), msg.sender, block.timestamp);
         addTokenAssets(tokenAssets);
         addPoolAssets(poolAssets);
     }
 
-    function setAdmin(address _newAdmin) external onlyAdmin {
-        admin = _newAdmin;
-        emit AdminChanged(msg.sender, _newAdmin, block.timestamp);
+    // Set to address(0) to reset proposal
+    function proposeAdminTransfer(address _newOwner) onlyAdmin public {
+        adminTransferProposal = _newOwner;
+    }
+
+    function executeAdminTransfer() public {
+        require(adminTransferProposal != address(0), "There is no active admin transfer proposal");
+        require(adminTransferProposal == msg.sender, "Only the proposed new admin can execute admin transfer proposal");
+        address oldAdmin = admin;
+        admin = adminTransferProposal;
+        adminTransferProposal = address(0);
+        emit AdminChanged(oldAdmin, msg.sender, block.timestamp);
     }
 
     function getAllPoolAssets() public view returns (bytes32[] memory result) {
@@ -107,7 +117,7 @@ contract PoolManager {
         _;
     }
 
-    event AdminChanged(address indexed user, address newAdmin, uint256 timestamp);
+    event AdminChanged(address indexed olAdmin, address newAdmin, uint256 timestamp);
 
     /**
      * @dev emitted after adding a token asset
