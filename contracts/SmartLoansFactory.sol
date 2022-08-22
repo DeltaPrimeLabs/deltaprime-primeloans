@@ -24,8 +24,8 @@ import "./faucets/SmartLoanLogicFacet.sol";
 contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   using TransferHelper for address;
 
-  modifier oneLoanPerOwner() {
-    require(!_userHasLoan(msg.sender), "Only one loan per owner is allowed");
+  modifier hasNoLoan() {
+    require(!_hasLoan(msg.sender), "Only one loan per owner is allowed");
     _;
   }
 
@@ -38,24 +38,24 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
 
   address[] loans;
 
-  function _userHasLoan(address user) internal view returns (bool) {
+  function _hasLoan(address user) internal view returns (bool) {
     return ownersToLoans[user] != address(0);
   }
 
   function _proposeOwnershipTransfer(address _oldOwner, address _newOwner) internal {
-    require(_userHasLoan(_oldOwner), "Previous owner does not have a loan");
-    require(!_userHasLoan(_newOwner), "New owner already has a loan");
+    require(_hasLoan(_oldOwner), "Previous owner does not have a loan");
+    require(!_hasLoan(_newOwner), "New owner already has a loan");
     ownershipTransferProposal[_oldOwner] = _newOwner;
   }
 
   function proposeOwnershipTransfer(address _newOwner) public {
-    require(_userHasLoan(msg.sender), "Msg.sender does not own a loan");
+    require(_hasLoan(msg.sender), "Msg.sender does not own a loan");
     _proposeOwnershipTransfer(msg.sender, _newOwner);
   }
 
   function executeOwnershipTransfer(address _oldOwner, address _newOwner) public {
     require(ownershipTransferProposal[_oldOwner] == _newOwner, "Ownership transfer proposal not found.");
-    require(!_userHasLoan(_newOwner), "New owner already has a loan");
+    require(!_hasLoan(_newOwner), "New owner already has a loan");
 
     ownershipTransferProposal[_oldOwner] = address(0);
 
@@ -70,7 +70,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     __Ownable_init();
   }
 
-  function createLoan() public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
+  function createLoan() public virtual hasNoLoan returns (SmartLoanDiamond) {
     DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(
       payable(address(smartLoanDiamond)),
       // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
@@ -89,7 +89,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   //TODO: check how much calling an external contract for asset address would cost
-  function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
+  function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public virtual hasNoLoan returns (SmartLoanDiamond) {
     DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(payable(address(smartLoanDiamond)),
     // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
     // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
@@ -128,7 +128,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   function getLoanForOwner(address _user) external view override returns (address) {
-    return address(ownersToLoans[_user]);
+    return ownersToLoans[_user];
   }
 
   function getOwnerOfLoan(address _loan) external view override returns (address) {
@@ -140,7 +140,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   /**
-   * @dev emitted after closing a loan by the owner
+   * @dev emitted after creating a loan by the owner
    * @param accountAddress address of a new SmartLoanDiamond
    * @param creator account creating a SmartLoanDiamond
    * @param collateralAsset asset used as initial collateral
