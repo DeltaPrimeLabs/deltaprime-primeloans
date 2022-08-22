@@ -37,8 +37,7 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
         DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        IERC20 token = IERC20(poolManager.getAssetAddress(_soldAsset));
-        if(token.balanceOf(address(this)) == 0) {
+        if(soldToken.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
 
