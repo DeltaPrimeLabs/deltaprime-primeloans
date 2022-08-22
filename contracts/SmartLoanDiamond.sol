@@ -52,15 +52,7 @@ contract SmartLoanDiamond {
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
     fallback() external payable {
-        DiamondStorageLib.DiamondStorage storage ds;
-        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
-        // get diamond storage
-        assembly {
-            ds.slot := position
-        }
-        // get facet from function selector
-        address facet = ds.selectorToFacetAndPosition[msg.sig].facetAddress;
-        require(facet != address(0), "Diamond: Function does not exist");
+        address facet = implementation(msg.sig);
         // Execute external function from facet using delegatecall and return any value.
         assembly {
             // copy function selector and any arguments
