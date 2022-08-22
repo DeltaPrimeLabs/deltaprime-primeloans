@@ -23,7 +23,6 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
-  MockSmartLoanLogicFacetRedstoneProvider,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,

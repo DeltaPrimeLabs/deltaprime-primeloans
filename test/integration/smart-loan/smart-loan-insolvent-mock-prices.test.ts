@@ -26,11 +26,10 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Pool,
-  MockSmartLoanLogicFacetRedstoneProvider,
   PangolinExchange,
   PoolManager,
   RedstoneConfigManager__factory,
-  SmartLoansFactory,
+  SmartLoansFactory, SmartLoanGigaChadInterface,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -150,7 +149,7 @@ describe('Smart loan',  () => {
 
   describe('An insolvent loan - mock prices', () => {
     let exchange: PangolinExchange,
-        loan: MockSmartLoanLogicFacetRedstoneProvider,
+        loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         owner: SignerWithAddress,
         borrower: SignerWithAddress,
