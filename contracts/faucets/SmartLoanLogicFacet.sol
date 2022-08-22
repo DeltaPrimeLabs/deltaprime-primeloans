@@ -89,8 +89,8 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
 
         for (uint256 i = 0; i<assets.length; i++) {
             result[i] = AssetNameBalance({
-            name: assets[i],
-            balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
+                name: assets[i],
+                balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
             });
         }
 

@@ -61,7 +61,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to getMaxLiquidationBonus()
     **/
     function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(assetsToRepay, amountsToRepay, _liquidationBonus, true));
+        liquidate(
+            LiquidationConfig({
+                assetsToRepay: assetsToRepay,
+                amountsToRepay: amountsToRepay,
+                liquidationBonus: _liquidationBonus,
+                allowUnprofitableLiquidation: true
+            })
+        );
     }
 
     /**
@@ -76,7 +83,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
     function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(assetsToRepay, amountsToRepay, _liquidationBonus, false));
+        liquidate(
+            LiquidationConfig({
+                assetsToRepay: assetsToRepay,
+                amountsToRepay: amountsToRepay,
+                liquidationBonus: _liquidationBonus,
+                allowUnprofitableLiquidation: false
+            })
+        );
     }
 
     /**
