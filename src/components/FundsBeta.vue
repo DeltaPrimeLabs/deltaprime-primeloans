@@ -10,8 +10,8 @@
 <!--    <button v-on:click="createLoanClick()">create loan</button>-->
 <!--    <button v-on:click="createAndFundLoanClick()">create and fund loan</button>-->
 <!--    <button v-on:click="debts()">Debts</button>-->
-    <button v-on:click="collateral()">Collateral</button>
-    <button v-on:click="update()">update</button>
+<!--    <button v-on:click="collateral()">Collateral</button>-->
+<!--    <button v-on:click="update()">update</button>-->
     <div class="funds">
       <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
