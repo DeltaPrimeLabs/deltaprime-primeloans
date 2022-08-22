@@ -12,7 +12,7 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
   deployAllFaucets,
-  deployAndInitializeLendingPool,
+  deployAndInitializeLendingPool, extractAssetNameBalances,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -232,9 +232,9 @@ describe('Smart loan',  () => {
       )
 
       expect(fromWei(await tokenContracts['ETH'].balanceOf(wrappedLoan.address))).to.be.closeTo(10 - swappedEthAmount, 0.1);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[2])).to.be.closeTo(10 - swappedEthAmount, 0.05);
+      expect(fromWei((await extractAssetNameBalances(wrappedLoan))["ETH"])).to.be.closeTo(10 - swappedEthAmount, 0.05);
       expect(fromWei(await tokenContracts['mcUSD'].balanceOf(wrappedLoan.address))).to.be.closeTo(expectedUSDAmount, 400);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[1])).to.be.closeTo(expectedUSDAmount, 400);
+      expect(fromWei((await extractAssetNameBalances(wrappedLoan))["mcUSD"])).to.be.closeTo(expectedUSDAmount, 400);
 
       // total value should stay similar to before swap
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 300);
@@ -243,7 +243,7 @@ describe('Smart loan',  () => {
     });
 
     it("should swap back", async () => {
-      const initialUsdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
+      const initialUsdTokenBalance = (await extractAssetNameBalances(wrappedLoan))["mcUSD"];
 
       const slippageTolerance = 0.1;
 
@@ -256,7 +256,7 @@ describe('Smart loan',  () => {
         toWei(ethAmount.toString())
       );
 
-      const currentUsdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
+      const currentUsdTokenBalance = (await extractAssetNameBalances(wrappedLoan))["mcUSD"];
 
       expect(fromWei(currentUsdTokenBalance)).to.be.closeTo(0, 1);
 

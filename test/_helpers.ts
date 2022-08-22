@@ -208,6 +208,28 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
     )
 };
 
+export const extractAssetNameBalances = async function (
+    wrappedLoan: any
+) {
+    let assetsNamesBalances = await wrappedLoan.getAllAssetsBalances();
+    let result: any = {};
+    for (const assetNameBalance of assetsNamesBalances) {
+        result[fromBytes32(assetNameBalance[0])] = assetNameBalance[1];
+    }
+    return result;
+}
+
+export const extractAssetNamePrices = async function (
+    wrappedLoan: any
+) {
+    let assetsNamesPrices = await wrappedLoan.getAllAssetsPrices();
+    let result: any = {};
+    for (const assetNamePrice of assetsNamesPrices) {
+        result[fromBytes32(assetNamePrice[0])] = assetNamePrice[1];
+    }
+    return result;
+}
+
 
 export const deployAndInitExchangeContract = async function (
     owner: SignerWithAddress,
