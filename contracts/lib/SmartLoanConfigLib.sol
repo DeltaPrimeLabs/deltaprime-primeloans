@@ -12,6 +12,7 @@ import "../RedstoneConfigManager.sol";
 
 library SmartLoanConfigLib {
 
+    // Used for LTV (TotalValue, Debt) and LiquidationBonus calculations
     uint256 private constant _PERCENTAGE_PRECISION = 1000;
     // 5%
     uint256 private constant _MAX_LIQUIDATION_BONUS = 50;
@@ -22,20 +23,11 @@ library SmartLoanConfigLib {
 
     address private constant _POOL_ADDRESS = 0x5ff1DE6091871adAAe64E2Ec4feD754628482868;
 
-    // TODO: Remove after using RestoneConfigManager on production
-    // redstone-evm-connector price providers
-    address private constant _PRICE_PROVIDER_1 = 0x981bdA8276ae93F567922497153de7A5683708d3;
-
-    address private constant _PRICE_PROVIDER_2 = 0x3BEFDd935b50F172e696A5187DBaCfEf0D208e48;
-
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
     address private constant _DIAMOND_BEACON_ADDRESS = 0x1c85638e118b37167e9298c2268758e058DdfDA0;
 
     address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82;
-
-    // redstone-evm-connector max block.timestamp acceptable delay
-    uint256 internal constant MAX_BLOCK_TIMESTAMP_DELAY = 30; // 30 seconds
 
     function getSmartLoansFactoryAddress() internal view returns (address) {
         return _SMART_LOANS_FACTORY_ADDRESS;
@@ -75,18 +67,6 @@ library SmartLoanConfigLib {
 
     function getNativeToken() internal view returns (address payable) {
         return payable(_NATIVE_ADDRESS);
-    }
-
-    function getMaxBlockTimestampDelay() internal view returns (uint256) {
-        return MAX_BLOCK_TIMESTAMP_DELAY;
-    }
-
-    function getPriceProvider1() internal view returns (address) {
-        return _PRICE_PROVIDER_1;
-    }
-
-    function getPriceProvider2() internal view returns (address) {
-        return _PRICE_PROVIDER_2;
     }
 
     /**

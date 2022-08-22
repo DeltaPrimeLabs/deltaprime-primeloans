@@ -32,7 +32,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanConfigLib.getMaxBlockTimestampDelay();
+        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
     }
 
     /**
