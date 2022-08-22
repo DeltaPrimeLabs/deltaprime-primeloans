@@ -97,7 +97,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
 
         {
             uint256 initialTotal = _getTotalValue();
-            uint256 initialDebt = _calculateDebt();
+            uint256 initialDebt = _getDebt();
 
             require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
             require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
@@ -105,7 +105,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
         // TODO: Recalculating TV and Debt because of stack to deep. Could be optimized
-        bool healingLoan = config.allowUnprofitableLiquidation && _calculateDebt() > _getTotalValue();
+        bool healingLoan = config.allowUnprofitableLiquidation && _getDebt() > _getTotalValue();
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;

@@ -7,7 +7,7 @@ import "../interfaces/IDiamondBeacon.sol";
 // TODO Rename to contract instead of lib
 contract SolvencyMethodsLib {
     // This function executes SolvencyFacet.calculateDebt()
-    function _calculateDebt() internal virtual returns (uint256 debt) {
+    function _getDebt() internal virtual returns (uint256 debt) {
         debt = abi.decode(
             ProxyConnector.proxyDelegateCalldata(
                 _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.getDebt.selector)),
