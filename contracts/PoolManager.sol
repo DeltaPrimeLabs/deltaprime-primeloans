@@ -2,6 +2,7 @@ pragma solidity ^0.8.4;
 
 import "./lib/Bytes32EnumerableMap.sol";
 import "./interfaces/IAssetsExchange.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract PoolManager {
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
@@ -59,6 +60,7 @@ contract PoolManager {
     }
 
     function _addPoolAsset(bytes32 _asset, address _poolAddress) internal {
+        require(Address.isContract(_poolAddress), "PoolManager: Pool must be a contract");
         require(!assetToPoolAddress.contains(_asset), "Asset's pool already exists");
         assetToPoolAddress.set(_asset, _poolAddress);
         emit PoolAssetAdded(msg.sender, _asset, _poolAddress, block.timestamp);

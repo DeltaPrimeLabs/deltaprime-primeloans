@@ -59,6 +59,7 @@ describe('Smart loan - upgrading',  () => {
       owner: SignerWithAddress,
       other: SignerWithAddress,
       oracle: SignerWithAddress,
+      poolManager: any,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
       tokenContracts: any = {},
@@ -104,7 +105,7 @@ describe('Smart loan - upgrading',  () => {
         new Asset(toBytes32('USDC'), tokenContracts['USDC'].address)
       ]
 
-      let poolManager = await deployContract(
+      poolManager = await deployContract(
           owner,
           PoolManagerArtifact,
           [
@@ -173,6 +174,10 @@ describe('Smart loan - upgrading',  () => {
               })
 
 
+    });
+
+    it("should fail addign a Pool Asset to the PoolManager that is not a contract", async () => {
+      await expect(poolManager.addPoolAssets([new PoolAsset(toBytes32("TEST1"), other.address)])).to.be.revertedWith("PoolManager: Pool must be a contract");
     });
 
 
