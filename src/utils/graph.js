@@ -1,10 +1,10 @@
-import config from "@/config";
-import ApolloClient, {gql} from "apollo-boost";
-import {fromWei} from "./calculate";
+import config from '@/config';
+import ApolloClient, {gql} from 'apollo-boost';
+import {fromWei} from './calculate';
 
 
 export async function fetchEventsForSmartLoan(address) {
-    let query = `
+  let query = `
     {
       smartLoanEvents(where: { smartLoan: "${address.toString()}"}, orderBy: timestamp) {
         id
@@ -16,15 +16,15 @@ export async function fetchEventsForSmartLoan(address) {
     }
    `;
 
-    const client = new ApolloClient({
-        uri: config.subgraph
-    })
+  const client = new ApolloClient({
+    uri: config.subgraph
+  });
 
-    return (await client.query({query: gql(query)})).data.smartLoanEvents;
+  return (await client.query({query: gql(query)})).data.smartLoanEvents;
 }
 
 export async function fetchCollateralFromPayments(address) {
-    let query = `
+  let query = `
     {   
         smartLoan(id: "${address}") {
             collateralFromPayments
@@ -32,15 +32,17 @@ export async function fetchCollateralFromPayments(address) {
     }
    `;
 
-    const client = new ApolloClient({
-        uri: config.subgraph
-    })
+  const client = new ApolloClient({
+    uri: config.subgraph
+  });
 
-    return fromWei((await client.query({query: gql(query)})).data.smartLoan.collateralFromPayments);
+  const response = await client.query({query: gql(query)});
+  console.log(response);
+  return fromWei(response.data.smartLoan.collateralFromPayments);
 }
 
 export async function fetchEventsForPool(address) {
-    let query = `
+  let query = `
     {
       poolEvents(where: { user: "${address.toString()}"}, orderBy: timestamp) {
         id
@@ -51,15 +53,15 @@ export async function fetchEventsForPool(address) {
     }
    `;
 
-    const client = new ApolloClient({
-        uri: config.subgraph
-    })
+  const client = new ApolloClient({
+    uri: config.subgraph
+  });
 
-    return (await client.query({query: gql(query)})).data.poolEvents;
+  return (await client.query({query: gql(query)})).data.poolEvents;
 }
 
 export async function fetchDepositFromPayments(address) {
-    let query = `
+  let query = `
     {   
         poolUser(id: "${address}") {
             depositFromPayments
@@ -67,12 +69,12 @@ export async function fetchDepositFromPayments(address) {
     }
    `;
 
-    const client = new ApolloClient({
-        uri: config.subgraph
-    })
+  const client = new ApolloClient({
+    uri: config.subgraph
+  });
 
-    let user = (await client.query({query: gql(query)})).data.poolUser;
-    if (user) {
-        return fromWei((await client.query({query: gql(query)})).data.poolUser.depositFromPayments);
-    } else return 0;
+  let user = (await client.query({query: gql(query)})).data.poolUser;
+  if (user) {
+    return fromWei((await client.query({query: gql(query)})).data.poolUser.depositFromPayments);
+  } else return 0;
 }

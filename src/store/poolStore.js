@@ -6,7 +6,9 @@ import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
 import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import POOL from '@artifacts/contracts/WavaxPool.sol/WavaxPool.json';
+import USDC_POOL from '@artifacts/contracts/UsdcPool.sol/UsdcPool.json';
 import POOL_TUP from '@contracts/WavaxPoolTUP.json';
+import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
 import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
 import config from '@/config';
 import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from '../utils/calculate';
@@ -41,7 +43,9 @@ export default {
   namespaced: true,
   state: {
     poolContract: null,
+    usdcPoolContract: null,
     pool: null,
+    usdcPool: null,
   },
   getters: {},
   mutations: {
@@ -49,21 +53,38 @@ export default {
       state.poolContract = poolContract;
     },
 
+    setUsdcPoolContract(state, poolContract) {
+      state.usdcPoolContract = poolContract;
+    },
+
     setPool(state, pool) {
       state.pool = pool;
+    },
+
+    setUsdcPool(state, pool) {
+      state.usdcPool = pool;
     },
   },
   actions: {
 
     async poolStoreSetup({dispatch}) {
       await dispatch('setupPoolContract');
-      await dispatch('setupPool')
+      await dispatch('setupPool');
+      await dispatch('setupUsdcPoolContract');
+      await dispatch('setupUsdcPool');
     },
 
     async setupPoolContract({rootState, commit}) {
       const provider = rootState.network.provider;
       const poolContract = new ethers.Contract(POOL_TUP.address, POOL.abi, provider.getSigner());
       commit('setPoolContract', poolContract);
+    },
+
+    async setupUsdcPoolContract({rootState, commit}) {
+      const provider = rootState.network.provider;
+      const poolContract = new ethers.Contract(USDC_POOL_TUP.address, USDC_POOL.abi, provider.getSigner());
+      console.log(poolContract);
+      commit('setUsdcPoolContract', poolContract);
     },
 
     async setupPool({state, rootState, commit}) {
@@ -79,6 +100,19 @@ export default {
       commit('setPool', pool);
     },
 
+    async setupUsdcPool({state, rootState, commit}) {
+      const tvl = await state.usdcPoolContract.totalSupply();
+      const deposit = await state.usdcPoolContract.balanceOf(rootState.network.account);
+      const depositAPY = await state.usdcPoolContract.getDepositRate();
+
+      const pool = {
+        tvl: tvl,
+        deposit: deposit,
+        apy: depositAPY
+      };
+      commit('setUsdcPool', pool);
+    },
+
     async deposit({state, rootState, commit, dispatch}, {amount}) {
       const provider = rootState.network.provider;
 
@@ -89,13 +123,32 @@ export default {
 
     },
 
+    async depositUsdc({state, rootState, commit, dispatch}, {amount}) {
+      const provider = rootState.network.provider;
+
+      const usdcTokenContract = rootState.fundsStore.usdcTokenContract;
+
+      await usdcTokenContract.connect(provider.getSigner()).approve(state.usdcPoolContract.address, toWei(String(amount)));
+      await state.poolContract.connect(provider.getSigner()).deposit(toWei(String(amount)));
+
+    },
+
     async withdraw({state, rootState, commit, dispatch}, {amount}) {
       const provider = rootState.network.provider;
 
       const wavaxTokenContract = rootState.fundsStore.wavaxTokenContract;
 
       await wavaxTokenContract.connect(provider.getSigner()).approve(state.poolContract.address, toWei(String(amount)));
-      await state.poolContract.connect(provider.getSigner()).withdraw(toWei(String(amount)));
+      await state.usdcPoolContract.connect(provider.getSigner()).withdraw(toWei(String(amount)));
+    },
+
+    async withdrawUsdc({state, rootState, commit, dispatch}, {amount}) {
+      const provider = rootState.network.provider;
+
+      const usdcTokenContract = rootState.fundsStore.usdcTokenContract;
+
+      await usdcTokenContract.connect(provider.getSigner()).approve(state.usdcPoolContract.address, toWei(String(amount)));
+      await state.usdcPoolContract.connect(provider.getSigner()).withdraw(toWei(String(amount)));
     },
   },
 }

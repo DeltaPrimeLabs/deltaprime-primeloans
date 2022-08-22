@@ -19,6 +19,7 @@ const ethereum = window.ethereum;
 const ethers = require('ethers');
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+const usdcTokenAddress = '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -45,6 +46,7 @@ export default {
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wavaxTokenContract: null,
+    usdcTokenContract: null,
     assetBalances: [],
     avaxDebt: null,
     ltv: null,
@@ -68,6 +70,10 @@ export default {
 
     setWavaxTokenContract(state, wavaxTokenContract) {
       state.wavaxTokenContract = wavaxTokenContract;
+    },
+
+    setUsdcTokenContract(state, usdcTokenContract) {
+      state.usdcTokenContract = usdcTokenContract;
     },
 
     setAssetBalances(state, assetBalances) {
@@ -139,10 +145,12 @@ export default {
 
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
+      const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
       const smartLoanContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
       commit('setWavaxTokenContract', wavaxTokenContract);
+      commit('setUsdcTokenContract', usdcTokenContract);
 
       await dispatch('setupSmartLoanContract');
     },
@@ -213,7 +221,7 @@ export default {
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(withdrawRequest.amount)));
+      // await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(withdrawRequest.amount)));
       const transaction = await state.smartLoanContract.withdraw(toBytes32(withdrawRequest.asset), toWei(String(withdrawRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'withdraw');

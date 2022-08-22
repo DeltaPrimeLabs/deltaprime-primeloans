@@ -10,6 +10,8 @@
 <!--    <button v-on:click="createLoanClick()">create loan</button>-->
 <!--    <button v-on:click="createAndFundLoanClick()">create and fund loan</button>-->
 <!--    <button v-on:click="debts()">Debts</button>-->
+    <button v-on:click="collateral()">Collateral</button>
+    <button v-on:click="update()">update</button>
     <div class="funds">
       <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
@@ -45,6 +47,7 @@ import Vue from 'vue';
 import Loader from './Loader';
 import {fromWei, formatUnits} from '../utils/calculate';
 import SwapModal from './SwapModal';
+import {fetchCollateralFromPayments} from '../utils/graph';
 
 
 export default {
@@ -56,7 +59,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('fundsStore', ['assets', 'assetBalances']),
+    ...mapState('fundsStore', ['assets', 'assetBalances', 'smartLoanContract']),
     calculateAvailableValue() {
       if (this.funds) {
         let availableValue = 0;
@@ -78,7 +81,8 @@ export default {
         'setupSmartLoanContract',
         'getAllAssetsBalances',
         'getDebts',
-        'setAvailableAssetsValue'
+        'setAvailableAssetsValue',
+        'updateFunds'
       ]),
     ...mapActions('poolStore', ['deposit']),
     fundClick() {
@@ -123,6 +127,16 @@ export default {
       this.getDebts();
     },
 
+    async collateral() {
+      const collateral = await fetchCollateralFromPayments(this.smartLoanContract.address);
+      console.log(collateral);
+    },
+
+    update() {
+      this.updateFunds();
+    },
+
+
     updateFund(symbol, key, value) {
       Vue.set(this.funds[symbol], key, value);
     },
@@ -151,7 +165,7 @@ export default {
       return [dataPoints, minValue, maxValue];
     },
 
-    async updateFunds(funds) {
+    async updateInternalFunds(funds) {
       console.log(funds);
       this.funds = funds;
 
@@ -189,7 +203,7 @@ export default {
   watch: {
     assets: {
       handler(newFunds) {
-        this.updateFunds(newFunds);
+        this.updateInternalFunds(newFunds);
       },
       immediate: true
     }

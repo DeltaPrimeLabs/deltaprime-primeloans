@@ -110,6 +110,7 @@ export default {
     },
 
     getAssetIcon(assetSymbol) {
+      console.log(assetSymbol);
       const asset = config.ASSETS_CONFIG[assetSymbol.toUpperCase()];
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },

@@ -5,7 +5,7 @@
         Withdraw
       </div>
 
-      <CurrencyInput :symbol="'AVAX'"
+      <CurrencyInput :symbol="asset.name"
                      v-on:newValue="withdrawValueChange"
                      :max="Number(asset.balance)"
                      :validators="validators"></CurrencyInput>

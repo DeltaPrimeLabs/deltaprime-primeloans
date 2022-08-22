@@ -86,7 +86,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw']),
+    ...mapActions('poolStore', ['deposit', 'withdraw', 'depositUsdc', 'withdrawUsdc']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -118,22 +118,37 @@ export default {
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
+      modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.$on('DEPOSIT', deposit => {
-        this.handleTransaction(this.deposit, {amount: deposit}).then(() => {
-          this.closeModal();
-        })
+        if (this.pool.asset.name === 'AVAX') {
+          this.handleTransaction(this.deposit, {amount: deposit}).then(() => {
+            this.closeModal();
+          });
+        } else if (this.pool.asset.name === 'USDC') {
+          this.handleTransaction(this.depositUsdc(), {amount: deposit}).then(() => {
+            this.closeModal();
+          });
+        }
       });
     },
 
     openWithdrawModal() {
+      console.log(this.pool);
       const modalInstance = this.openModal(PoolWithdrawModal);
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
+      modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.$on('WITHDRAW', withdraw => {
-        this.handleTransaction(this.withdraw, {amount: withdraw}).then(() => {
-          this.closeModal();
-        })
+        if (this.pool.asset.name === 'AVAX') {
+          this.handleTransaction(this.withdraw, {amount: withdraw}).then(() => {
+            this.closeModal();
+          });
+        } else if (this.pool.asset.name === 'USDC') {
+          this.handleTransaction(this.withdrawUsdc(), {amount: withdraw}).then(() => {
+            this.closeModal();
+          });
+        }
       });
     },
 

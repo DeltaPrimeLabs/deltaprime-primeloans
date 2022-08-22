@@ -72,7 +72,7 @@ export default {
   },
   computed: {
     ...mapState('fundsStore', ['assets']),
-    ...mapState('poolStore', ['pool']),
+    ...mapState('poolStore', ['pool', 'usdcPool']),
   },
 
   methods: {
@@ -86,7 +86,15 @@ export default {
           apy: fromWei(this.pool.apy),
           interest: 0.0112,
           tvl: fromWei(this.pool.tvl)
-        }
+        },
+        {
+          asset: config.ASSETS_CONFIG['USDC'],
+          deposit: fromWei(this.usdcPool.deposit),
+          apy: fromWei(this.usdcPool.apy),
+          interest: 0.0271,
+          tvl: fromWei(this.usdcPool.tvl)
+        },
+
       ];
       this.setupTotalTVL();
     },

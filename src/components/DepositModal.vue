@@ -13,14 +13,15 @@
         <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="'AVAX'" v-on:newValue="depositValueChange" :max="Number(available)"></CurrencyInput>
+      <CurrencyInput :symbol="assetSymbol" v-on:newValue="depositValueChange" :max="Number(available)"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
             <div class="pool">
-              <img class="pool__icon" src="src/assets/logo/avax.svg">
-              <div class="pool__name">AVAX Pool</div>
+              <img v-if="assetSymbol === 'AVAX'" class="pool__icon" src="src/assets/logo/avax.svg">
+              <img v-if="assetSymbol === 'USDC'" class="pool__icon" src="src/assets/logo/usdc.svg">
+              <div class="pool__name">{{ assetSymbol }} Pool</div>
               ,
             </div>
             Values after confirmation:
@@ -69,6 +70,7 @@ export default {
     apy: null,
     available: null,
     deposit: null,
+    assetSymbol: null,
   },
 
   data() {
