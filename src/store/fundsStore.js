@@ -94,6 +94,13 @@ export default {
       }
     },
 
+    async updateFunds({dispatch}) {
+      await dispatch('setupAssets');
+      await dispatch('getAllAssetsBalances');
+      await dispatch('getDebts');
+      await dispatch('getLTV');
+    },
+
 
     async setupSupportedAssets({rootState, commit}) {
       const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
@@ -199,6 +206,9 @@ export default {
 
       await awaitConfirmation(transaction, provider, 'fund');
       await dispatch('getAllAssetsBalances');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
     },
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
@@ -207,6 +217,9 @@ export default {
       const transaction = await state.smartLoanContract.withdraw(toBytes32(withdrawRequest.asset), toWei(String(withdrawRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'withdraw');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
@@ -216,6 +229,9 @@ export default {
       const transaction = await state.smartLoanContract.borrow(toBytes32(borrowRequest.asset), toWei(String(borrowRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'borrow');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
@@ -225,6 +241,9 @@ export default {
       const transaction = await state.smartLoanContract.repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'repay');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
@@ -236,7 +255,10 @@ export default {
         parseUnits(String(0), config.ASSETS_CONFIG[swapRequest.targetAsset].decimals),
       )
 
-      await awaitConfirmatieon(transaction, provider, 'swap');
+      await awaitConfirmation(transaction, provider, 'swap');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
     },
 
 
