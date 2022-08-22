@@ -91,7 +91,6 @@ export default {
 
 
     stakeValueChange(event) {
-      console.log(event.value);
       this.stakeValue = event.value;
     },
   }

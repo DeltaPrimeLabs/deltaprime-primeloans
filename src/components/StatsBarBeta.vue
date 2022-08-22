@@ -1,7 +1,7 @@
 <template>
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
-      <stats-bar-element-beta :label="'Total value'" :value="avaxToUSD(8) | usd">
+      <stats-bar-element-beta :label="'Total value'" :value="totalValue | usd">
         <div class="total-value-extra">
           Today: <colored-value-beta :value="23.45" :formatting="'usd'"></colored-value-beta>
         </div>

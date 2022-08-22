@@ -56,9 +56,7 @@ export default {
   actions: {
 
     async stakeStoreSetup({dispatch}) {
-      console.log('stakeStoreSetup start');
       await dispatch('updateStakedAvaxYakBalance');
-      console.log('stakeStoreSetup end');
     },
 
     async stakeAvaxYak({state, rootState, dispatch, commit}, {amount}) {
@@ -96,11 +94,8 @@ export default {
     },
 
     async updateStakedAvaxYakBalance({state, rootState, dispatch, commit}) {
-      console.log('updateStakedAvaxYakBalance');
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
-      console.log(smartLoanContract);
       const stakingContractAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
-      console.log(stakingContractAddress);
       const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
       const totalSupply = Number(await tokenContract.totalSupply());
       const totalDeposits = Number(await tokenContract.totalDeposits());
@@ -121,7 +116,6 @@ export default {
           }
         }
       }
-      console.log(stakedAssets.AVAX.protocols.YAK_YIELD);
 
       commit('setStakedAssets', stakedAssets);
     },

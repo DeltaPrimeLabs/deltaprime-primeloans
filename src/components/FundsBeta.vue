@@ -9,6 +9,7 @@
 <!--    <button v-on:click="wavaxSwap()">WavaxSwap</button>-->
 <!--    <button v-on:click="createLoanClick()">create loan</button>-->
 <!--    <button v-on:click="createAndFundLoanClick()">create and fund loan</button>-->
+<!--    <button v-on:click="debts()">Debts</button>-->
     <div class="funds">
       <NameValueBadgeBeta v-if="calculateAvailableValue" :name="'Value of available funds'">{{ calculateAvailableValue | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
@@ -67,7 +68,18 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['fund', 'borrow', 'swapToWavax', 'createLoan', 'createAndFundLoan', 'setupSmartLoanContract', 'getAllAssetsBalances']),
+    ...mapActions('fundsStore',
+      [
+        'fund',
+        'borrow',
+        'swapToWavax',
+        'createLoan',
+        'createAndFundLoan',
+        'setupSmartLoanContract',
+        'getAllAssetsBalances',
+        'getDebts',
+        'setAvailableAssetsValue'
+      ]),
     ...mapActions('poolStore', ['deposit']),
     fundClick() {
       this.fund();
@@ -105,6 +117,10 @@ export default {
 
     getAllAssetsBalancesClick() {
       this.getAllAssetsBalances();
+    },
+
+    debts() {
+      this.getDebts();
     },
 
     updateFund(symbol, key, value) {

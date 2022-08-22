@@ -89,7 +89,7 @@ export default {
         top: 0;
         left: 0;
         width: 30px;
-        min-width: 7px;
+        min-width: 17px;
         height: 17px;
         border-radius: 9.5px;
         background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);

@@ -95,7 +95,6 @@ export default {
 
 
     withdrawValueChange(event) {
-      console.log(event.value);
       this.withdrawValue = event.value;
     },
   }

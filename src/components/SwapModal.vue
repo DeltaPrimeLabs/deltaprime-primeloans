@@ -125,14 +125,11 @@ export default {
     },
 
     sourceInputChange(change) {
-      console.log('sourceInputChange');
-      console.log(change);
       if (change.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
         this.sourceAsset = change.asset;
         const targetAssetAmount = change.value / this.conversionRate;
-        console.log(targetAssetAmount);
         if (!Number.isNaN(targetAssetAmount)) {
           const value = Math.ceil(targetAssetAmount * 1000000) / 1000000;
           this.sourceAssetAmount = change.value;
@@ -147,14 +144,11 @@ export default {
     },
 
     targetInputChange(change) {
-      console.log('targetInputChange');
-      console.log(change);
       if (change.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
         this.targetAsset = change.asset;
         const sourceAssetAmount = change.value * this.conversionRate;
-        console.log(sourceAssetAmount);
         if (!Number.isNaN(sourceAssetAmount)) {
           const value = Math.ceil(sourceAssetAmount * 1000000) / 1000000;
           this.targetAssetAmount = change.value;
@@ -169,12 +163,8 @@ export default {
     },
 
     setupConversionRate() {
-      console.log(this.targetAsset);
-      console.log(this.sourceAsset);
       const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
       const targetAsset = config.ASSETS_CONFIG[this.targetAsset];
-      console.log(sourceAsset);
-      console.log(targetAsset);
       this.conversionRate = targetAsset.price / sourceAsset.price;
     },
 
@@ -198,8 +188,6 @@ export default {
       this.sourceValidators = [
         {
           validate: (value) => {
-            console.log('validate function');
-            console.log(value);
             const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
             sourceAsset.balance;
             if (value > sourceAsset.balance) {

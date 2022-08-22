@@ -14,7 +14,6 @@
     methods: {
       checkIfOutside(event) {
         if (this.$refs.menu && !this.$refs.menu.contains(event.target) && !document.getElementById(this.clickElementId).contains(event.target)) {
-          console.log('closing')
           this.$emit('close',true);
         }
       }

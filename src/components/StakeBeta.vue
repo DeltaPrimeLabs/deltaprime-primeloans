@@ -28,7 +28,6 @@ export default {
     setupStakedAssets(stakedAssets) {
       if (stakedAssets) {
         this.assetsAvailableForStaking = Object.keys(stakedAssets);
-        console.log(this.assetsAvailableForStaking);
       }
     }
   },

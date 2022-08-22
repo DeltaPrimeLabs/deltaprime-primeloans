@@ -91,7 +91,6 @@ export default {
     };
   },
   mounted() {
-    console.log(this.asset);
     this.setupMaxStakingApy();
     this.setupTotalStaked();
     this.setupAvailableProtocols();
@@ -136,7 +135,6 @@ export default {
     },
 
     setupTotalStaked() {
-      console.log(this.stakingOptions);
       const protocols = Object.keys(this.stakingOptions.protocols);
       protocols.forEach(protocol => {
         this.totalStaked += this.stakingOptions.protocols[protocol].balance;
@@ -145,8 +143,6 @@ export default {
 
     setupAvailableProtocols() {
       this.availableProtocols = Object.keys(this.stakingOptions.protocols);
-      console.log(this.availableProtocols);
-      console.log(this.availableProtocols['YAK_YIELD']);
     }
   }
 };

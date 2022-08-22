@@ -61,10 +61,8 @@ export default {
     },
 
     async setupPoolContract({rootState, commit}) {
-      console.log('setupPoolContract');
       const provider = rootState.network.provider;
       const poolContract = new ethers.Contract(POOL_TUP.address, POOL.abi, provider.getSigner());
-      console.log(poolContract);
       commit('setPoolContract', poolContract);
     },
 
@@ -78,7 +76,6 @@ export default {
         deposit: deposit,
         apy: depositAPY
       };
-      console.log(pool);
       commit('setPool', pool);
     },
 

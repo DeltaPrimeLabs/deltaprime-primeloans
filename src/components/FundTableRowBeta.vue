@@ -25,8 +25,8 @@
 
       <div class="table__cell table__cell--double-value loan">
         <template v-if="asset.symbol === 'AVAX'">
-          <div class="double-value__pieces">{{ loanValue }}</div>
-          <div class="double-value__usd">{{ loanValue * asset.price | usd }}</div>
+          <div class="double-value__pieces">{{ avaxDebt | smartRound }}</div>
+          <div class="double-value__usd">{{ avaxDebt * asset.price | usd }}</div>
         </template>
         <template v-if="asset.symbol !== 'AVAX'">
           <div class="no-value-dash"></div>
@@ -125,7 +125,7 @@ export default {
   computed: {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt']),
-    ...mapState('fundsStore', ['smartLoanContract']),
+    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt']),
     ...mapState('poolStore', ['pool']),
 
     loanAPY() {
@@ -137,8 +137,6 @@ export default {
     },
 
     hasSmartLoanContract() {
-      console.log('HAS SMART LOAN CONTRACT');
-      console.log(this.smartLoanContract.address !== NULL_ADDRESS);
       return this.smartLoanContract.address !== NULL_ADDRESS;
     }
   },
@@ -219,7 +217,6 @@ export default {
     },
 
     actionClick(key) {
-      console.log(key);
       switch (key) {
         case 'BORROW':
           this.openBorrowModal()
@@ -242,7 +239,7 @@ export default {
     openBorrowModal() {
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = 1.5;
+      modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 101;
       modalInstance.poolTVL = 11245;
       modalInstance.loanAPY = this.loanAPY;
@@ -262,7 +259,6 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.asset.balance;
-      console.log(this.asset);
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.$on('SWAP', swapRequest => {
         this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
@@ -274,7 +270,7 @@ export default {
     openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = 1.5;
+      modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 101;
       modalInstance.$on('ADD_FROM_WALLET', value => {
         if (this.smartLoanContract) {
@@ -293,10 +289,9 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = 4.3;
+      modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 900;
       modalInstance.$on('WITHDRAW', value => {
-        console.log(value);
         const withdrawRequest = {
           asset: this.asset.symbol,
           amount: value
@@ -310,10 +305,9 @@ export default {
     openRepayModal() {
       const modalInstance = this.openModal(RepayModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = 1.5;
+      modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 101;
       modalInstance.$on('REPAY', value => {
-        console.log(value);
         const repayRequest = {
           asset: this.asset.symbol,
           amount: value

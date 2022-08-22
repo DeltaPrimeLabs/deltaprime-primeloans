@@ -106,8 +106,6 @@ export default {
   watch: {
     assets: {
       handler(newFunds) {
-        console.log('updateFunds');
-        console.log(newFunds);
         this.updateFunds(newFunds);
       },
       immediate: true

@@ -90,7 +90,6 @@ export default {
 
 
     depositValueChange(event) {
-      console.log(event.value);
       this.depositValue = event.value;
     },
   }

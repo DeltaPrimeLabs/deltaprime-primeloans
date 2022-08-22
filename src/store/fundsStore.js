@@ -46,6 +46,8 @@ export default {
     smartLoanFactoryContract: null,
     wavaxTokenContract: null,
     assetBalances: [],
+    avaxDebt: null,
+    ltv: null,
   },
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
@@ -71,15 +73,24 @@ export default {
     setAssetBalances(state, assetBalances) {
       state.assetBalances = assetBalances;
     },
+
+    setAvaxDebt(state, avaxDebt) {
+      state.avaxDebt = avaxDebt;
+    },
+
+    setLTV(state, ltv) {
+      state.ltv = ltv;
+    },
   },
   actions: {
     async fundsStoreSetup({state, dispatch}) {
-      console.log('fundsStoreSetup');
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
       await dispatch('setupContracts');
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         await dispatch('getAllAssetsBalances');
+        await dispatch('getDebts');
+        await dispatch('getLTV');
       }
     },
 
@@ -161,9 +172,18 @@ export default {
 
     async getAllAssetsBalances({state, rootState, commit}) {
       const balances = await state.smartLoanContract.getAllAssetsBalances();
-      console.log('getAllAssetBalances');
-      console.log(balances);
       commit('setAssetBalances', balances);
+    },
+
+    async getDebts({state, rootState, commit}) {
+      const debts = await state.smartLoanContract.getDebts();
+      commit('setAvaxDebt', fromWei(debts[0]));
+    },
+
+    async getLTV({state, rootState, commit}) {
+      const ltvResponse = await state.smartLoanContract.getLTV();
+      const ltv = parseInt(ltvResponse) / 1000;
+      commit('setLTV', ltv);
     },
 
     async swapToWavax({state, rootState}) {
@@ -208,7 +228,6 @@ export default {
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
-      console.log(swapRequest);
       const provider = rootState.network.provider;
       const transaction = await state.smartLoanContract.swap(
         toBytes32(swapRequest.sourceAsset),

@@ -98,7 +98,6 @@ export default {
 
     async fetchLoan({state, rootState, dispatch, commit}) {
       dispatch('updateAssets');
-      console.log('async fetchLoan({state, rootState, dispatch, commit}) {');
       dispatch('initSupportedAssets');
 
       const provider = rootState.network.provider;
@@ -167,11 +166,9 @@ export default {
     },
 
     async updateLoanStats({state, commit}) {
-      console.log('async updateLoanStats({state, commit}) {');
 
       const loan = state.loan;
       const status = await handleCall(loan.getFullLoanStatus);
-      console.log(status);
 
       commit('setTotalValue', fromWei(status[0]));
       commit('setDebt', fromWei(status[1]));

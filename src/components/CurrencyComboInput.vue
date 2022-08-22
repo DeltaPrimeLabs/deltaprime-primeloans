@@ -127,7 +127,6 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
-      console.log(value);
       this.assetAmount = value;
       if (!disableEmitValue) {
         this.emitValue();

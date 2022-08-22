@@ -27,7 +27,6 @@ export default {
   },
   actions: {
     async initNetwork({ dispatch }) {
-      console.log('init network');
       //TODO: Promise.all?
       await dispatch('initProvider');
       await dispatch('initAccount');
@@ -39,7 +38,6 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       window.provider = provider;
 
-      console.log(provider);
       commit('setProvider', provider);
     },
     async initAccount({ commit, state }) {
@@ -60,8 +58,6 @@ export default {
     async updateBalance({ state, commit }) {
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
-      console.log(balance);
-      console.log('setBalance');
 
       commit('setBalance', balance);
     },

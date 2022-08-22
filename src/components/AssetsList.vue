@@ -355,8 +355,6 @@ export default {
       this.updateAsset(symbol, 'showChart', false);
     },
     investValue(asset, value) {
-      console.log('invest value');
-      console.log(asset);
       this.updateAsset(asset.symbol, 'waiting', true);
       this.handleTransaction(
         this.invest,
@@ -368,7 +366,6 @@ export default {
           slippage: asset.buySlippage
         })
         .then(() => {
-          console.log('invest success');
           this.updateAsset(asset.symbol, 'waiting', false);
           this.updateAsset(asset.symbol, 'sellInput', false);
           this.updateAsset(asset.symbol, 'buyInput', false);

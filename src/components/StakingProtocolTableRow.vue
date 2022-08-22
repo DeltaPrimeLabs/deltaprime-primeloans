@@ -65,7 +65,6 @@ export default {
   },
   mounted() {
     this.setupStakingApy();
-    console.log(this.protocol);
   },
   data() {
     return {

@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="container">
-      <StatsBarBeta :total-value="totalValue" :today-p-n-l="1" :ltv="1.53" :profit="1" :profit-percentage="1"></StatsBarBeta>
+      <StatsBarBeta :total-value="1053.33" :today-p-n-l="1" :ltv="ltv" :profit="1" :profit-percentage="1"></StatsBarBeta>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
@@ -34,7 +34,7 @@ export default {
   name: 'SmartLoanBeta',
   components: {StakeBeta, FundsBeta, Block, StatsBarBeta, Tabs, Tab},
   computed: {
-    ...mapState('loan', ['totalValue', 'ltv']),
+    ...mapState('fundsStore', ['ltv']),
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
@@ -42,12 +42,9 @@ export default {
   },
   async mounted() {
     if (window.provider) {
-      console.log('provider');
       await this.fundsStoreSetup();
       await this.stakeStoreSetup();
     } else {
-      console.log('no provider');
-
       setTimeout(async () => {
         await this.fundsStoreSetup();
         await this.stakeStoreSetup();

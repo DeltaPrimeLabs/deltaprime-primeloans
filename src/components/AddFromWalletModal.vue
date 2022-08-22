@@ -85,12 +85,10 @@ export default {
 
     inputChange(change) {
       this.value = change;
-      console.log(this.value);
       this.calculateLTVAfterTransaction();
     },
 
     calculateLTVAfterTransaction() {
-      console.log(this.ltv);
       if (this.value) {
         const loan = this.totalCollateral * this.ltv;
         this.ltvAfterTransaction = loan / (this.totalCollateral + (this.value * this.asset.price));
@@ -100,7 +98,6 @@ export default {
     },
 
     setupValidators() {
-      console.log(this.balance);
     },
   }
 };
