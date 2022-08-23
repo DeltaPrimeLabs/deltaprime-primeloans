@@ -78,9 +78,10 @@ describe('PangolinExchange', () => {
             ) as PoolManager;
 
             await recompileSmartLoanLib(
-                "SmartLoanLib",
+                "SmartLoanConfigLib",
                 [],
                 poolManager.address,
+                ethers.constants.AddressZero,
                 ethers.constants.AddressZero,
                 ethers.constants.AddressZero,
                 'lib'
@@ -193,9 +194,10 @@ describe('PangolinExchange', () => {
           ) as PoolManager;
 
           await recompileSmartLoanLib(
-              "SmartLoanLib",
+              "SmartLoanConfigLib",
               [],
               poolManager.address,
+              ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               'lib'

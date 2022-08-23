@@ -8,10 +8,10 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset,
+  Asset, AssetNameBalance, AssetNamePrice,
   deployAllFaucets,
-  deployAndInitializeLendingPool,
-  formatUnits,
+  deployAndInitializeLendingPool, extractAssetNameBalances, extractAssetNamePrices,
+  formatUnits, fromBytes32,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -109,11 +109,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -122,7 +123,7 @@ describe('Smart loan',  () => {
       await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [
             {
               facetPath: './contracts/faucets/PangolinDEXFacet.sol',
@@ -132,6 +133,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -213,6 +215,21 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+
+    it("should fail to swap from a non-owner account", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.swapPangolin(
+          toBytes32('AVAX'), toBytes32('ETH'), 0,0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+    });
+
     it("should buy an asset from funded", async () => {
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(AVAX_PRICE * 100 + 900, 2);
       const expectedEthAmount = 1;
@@ -229,10 +246,13 @@ describe('Smart loan',  () => {
         toWei(expectedEthAmount.toString())
       )
 
+      let assetsNameBalance: any = await extractAssetNameBalances(wrappedLoan);
+
       expect(fromWei(await tokenContracts['AVAX'].connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100 - requiredAvaxAmount, 0.1);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[0])).to.be.closeTo(100 - requiredAvaxAmount, 0.05);
+      expect(fromWei(assetsNameBalance["AVAX"])).to.be.closeTo(100 - requiredAvaxAmount, 0.05);
+
       expect(fromWei(await tokenContracts['ETH'].connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(1, 0.05);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[2])).to.be.closeTo(1, 0.05);
+      expect(fromWei(assetsNameBalance["ETH"])).to.be.closeTo(1, 0.05);
 
       // total value should stay similar to before swap
       // big delta of 80 because of slippage
@@ -255,11 +275,11 @@ describe('Smart loan',  () => {
     });
 
     it("should provide assets balances and prices", async () => {
-      const usdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
-      expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(900);
+      let assetsNameBalance: any = await extractAssetNameBalances(wrappedLoan);
+      let assetsNamePrices: any = await extractAssetNamePrices(wrappedLoan);
 
-      const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[1];
-      expect(formatUnits(usdTokenPrice, BigNumber.from(8))).to.be.closeTo(USD_PRICE, 0.001);
+      expect(formatUnits(assetsNameBalance["MCKUSD"], usdTokenDecimalPlaces)).to.be.equal(900);
+      expect(formatUnits(assetsNamePrices["MCKUSD"], BigNumber.from(8))).to.be.closeTo(USD_PRICE, 0.001);
     });
 
 
@@ -294,7 +314,7 @@ describe('Smart loan',  () => {
 
 
     it("should swap back", async () => {
-      const initialEthTokenBalance = (await wrappedLoan.getAllAssetsBalances())[2];
+      const initialEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["ETH"];
 
       const slippageTolerance = 0.1;
 
@@ -307,7 +327,7 @@ describe('Smart loan',  () => {
         toWei(avaxAmount.toString())
       );
 
-      const currentEthTokenBalance = (await wrappedLoan.getAllAssetsBalances())[2];
+      const currentEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["ETH"];
 
       expect(currentEthTokenBalance).to.be.equal(0);
 

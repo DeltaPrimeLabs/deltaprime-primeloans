@@ -24,10 +24,10 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
     CompoundingIndex,
     Pool,
-    MockBorrowAccessNFT, MockSmartLoanLogicFacetRedstoneProvider,
+    MockBorrowAccessNFT,
     OpenBorrowersRegistry__factory, PoolManager, RedstoneConfigManager__factory,
     SmartLoansFactoryWithAccessNFT,
-    VariableUtilisationRatesCalculator,
+    VariableUtilisationRatesCalculator, SmartLoanGigaChadInterface,
 } from "../../../typechain";
 import {Contract} from "ethers";
 
@@ -56,7 +56,7 @@ describe('Smart loan',  () => {
     describe('A loan with an access NFT', () => {
         let owner: SignerWithAddress,
             depositor: SignerWithAddress,
-            loan: MockSmartLoanLogicFacetRedstoneProvider,
+            loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             tokenContracts: any = {},
             nftContract: Contract,
@@ -103,11 +103,12 @@ describe('Smart loan',  () => {
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
 
             await recompileSmartLoanLib(
-                "SmartLoanLib",
+                "SmartLoanConfigLib",
                 [],
                 poolManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
+                smartLoansFactory.address,
                 'lib',
             );
 

@@ -5,13 +5,13 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "../lib/SmartLoanLib.sol";
-import { LibDiamond } from "../lib/LibDiamond.sol";
+import "../lib/SmartLoanConfigLib.sol";
+import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../PoolManager.sol";
 
-contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -27,7 +27,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         if(token.balanceOf(address(this)) > 0) {
-            LibDiamond.addOwnedAsset(_fundedAsset, address(token));
+            DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
         }
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
@@ -47,7 +47,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         address(token).safeTransfer(msg.sender, _amount);
         if(token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_withdrawnAsset);
+            DiamondStorageLib.removeOwnedAsset(_withdrawnAsset);
         }
 
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
@@ -60,12 +60,13 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @dev This function uses the redstone-evm-connector
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
         Pool pool = Pool(poolManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
-        if(pool.getBorrowed(address(this)) > 0) {
-            LibDiamond.addOwnedAsset(_asset, poolManager.getAssetAddress(_asset));
+        IERC20Metadata token = getERC20TokenInstance(_asset);
+        if (token.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(_asset, address(token));
         }
 
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
@@ -81,14 +82,14 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     function repay(bytes32 _asset, uint256 _amount) public payable {
         IERC20Metadata token = getERC20TokenInstance(_asset);
 
-        if (_isSolvent() && SmartLoanLib.getLiquidationInProgress() == false) {
-            LibDiamond.enforceIsContractOwner();
+        if (_isSolvent()) {
+            DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(SmartLoanLib.getPoolManager().getPoolAddress(_asset));
+        Pool pool = Pool(SmartLoanConfigLib.getPoolManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
-        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay the loan");
+        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
@@ -96,7 +97,7 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
         pool.repay(_amount);
 
         if (token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_asset);
+            DiamondStorageLib.removeOwnedAsset(_asset);
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
@@ -105,35 +106,18 @@ contract FundingFacet is ReentrancyGuard, SolvencyMethodsLib {
     /* ======= VIEW FUNCTIONS ======*/
 
     /**
-     * Returns IERC20Metadata instance of a token
-     * @param _asset the code of an asset
-     **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
-    }
-
-    /**
     * Returns a current balance of the asset held by the smart loan
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 
     /* ========== MODIFIERS ========== */
 
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-        require(_isSolvent(), "The action may cause an account to become insolvent");
-    }
-
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

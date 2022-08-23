@@ -97,11 +97,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
       await deployAllFaucets(diamondAddress)
@@ -159,6 +160,19 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+    it("should fail to borrow funds as a non-owner", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+    });
+
 
     it("should borrow funds in the same token as funded", async () => {
       await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"));
@@ -177,7 +191,18 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.closeTo(((300 + AVAX_PRICE) * 1000 / 300).toFixed(0), 1)
     });
 
-
+    it("should fail to repay funds as a non-owner", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.repay(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+    });
 
     it("should repay funds", async () => {
       await wrappedLoan.repay(toBytes32("MCKUSD"), toWei("100"));

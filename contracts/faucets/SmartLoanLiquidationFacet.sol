@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./SolvencyFacet.sol";
 import "../lib/SolvencyMethodsLib.sol";
 
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import "../Pool.sol";
 import "../PoolManager.sol";
 
@@ -17,19 +17,16 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    /** @param amountsToRepay amounts of tokens to be repaid to pools (the same order as in getPools() method)
+    /** @param assetsToRepay names of tokens to be repaid to pools
+    /** @param amountsToRepay amounts of tokens to be repaid to pools
       * @param liquidationBonus per mille bonus for liquidator. Must be smaller or equal to getMaxLiquidationBonus(). Defined for
       * liquidating loans where debt ~ total value
       * @param allowUnprofitableLiquidation allows performing liquidation of bankrupt loans (total value smaller than debt)
     **/
 
-    struct AssetAmountPair {
-        bytes32 asset;
-        uint256 amount;
-    }
-
     struct LiquidationConfig {
-        AssetAmountPair[] assetsAmountsToRepay;
+        bytes32[] assetsToRepay;
+        uint256[] amountsToRepay;
         uint256 liquidationBonus;
         bool allowUnprofitableLiquidation;
     }
@@ -40,14 +37,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getMaxBlockTimestampDelay();
+        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
 
@@ -59,11 +56,19 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * BE CAREFUL: in contrast to liquidateLoan() method, this one doesn't necessarily return tokens to liquidator, nor give him
     * a bonus. It's purpose is to bring the loan to a solvent position even if it's unprofitable for liquidator.
     * @dev This function uses the redstone-evm-connector
-    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
+    * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to getMaxLiquidationBonus()
     **/
-    function unsafeLiquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, true));
+    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(
+            LiquidationConfig({
+                assetsToRepay: assetsToRepay,
+                amountsToRepay: amountsToRepay,
+                liquidationBonus: _liquidationBonus,
+                allowUnprofitableLiquidation: true
+            })
+        );
     }
 
     /**
@@ -73,11 +78,19 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * there is not enough of them in a SmartLoan. For that he will receive the corresponding amount from SmartLoan
     * with the same USD value + bonus.
     * @dev This function uses the redstone-evm-connector
-    * @param _assetsAmountsToRepay assets' names and amounts of tokens provided by liquidator for repayment
+    * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
+    * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
-    function liquidateLoan(AssetAmountPair[] memory _assetsAmountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
-        liquidate(LiquidationConfig(_assetsAmountsToRepay, _liquidationBonus, false));
+    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+        liquidate(
+            LiquidationConfig({
+                assetsToRepay: assetsToRepay,
+                amountsToRepay: amountsToRepay,
+                liquidationBonus: _liquidationBonus,
+                allowUnprofitableLiquidation: false
+            })
+        );
     }
 
     /**
@@ -91,54 +104,49 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        SmartLoanLib.setLiquidationInProgress(true);
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
 
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
-        // TODO: this is not optimal - let's later check if changing list of AssetAmount to two separate lists will be more efficient
-        bytes32[] memory assetsToRepay = new bytes32[](config.assetsAmountsToRepay.length);
-        for(uint i=0; i< assetsToRepay.length; i++){
-            assetsToRepay[i] = config.assetsAmountsToRepay[i].asset;
-        }
-        uint256[] memory prices = getPricesFromMsg(assetsToRepay);
+        uint256[] memory prices = getPricesFromMsg(config.assetsToRepay);
 
 
         {
-            uint256 initialTotal = _calculateTotalValue();
-            uint256 initialDebt = _calculateDebt();
+            uint256 initialTotal = _getTotalValue();
+            uint256 initialDebt = _getDebt();
 
-            require(config.liquidationBonus <= SmartLoanLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-            require(_calculateLTV() >= SmartLoanLib.getMaxLtv(), "Cannot sellout a solvent account");
+            require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+            require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
             require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
         }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
         // TODO: Recalculating TV and Debt because of stack to deep. Could be optimized
-        bool healingLoan = config.allowUnprofitableLiquidation && _calculateDebt() > _calculateTotalValue();
+        bool healingLoan = config.allowUnprofitableLiquidation && _getDebt() > _getTotalValue();
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
 
-        for (uint256 i = 0; i < config.assetsAmountsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsAmountsToRepay[i].asset));
+        for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
+            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsToRepay[i]));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
 
             if (healingLoan) {
-                needed = config.assetsAmountsToRepay[i].amount;
-            } else if (config.assetsAmountsToRepay[i].amount > balance) {
-                needed = config.assetsAmountsToRepay[i].amount - balance;
+                needed = config.amountsToRepay[i];
+            } else if (config.amountsToRepay[i] > balance) {
+                needed = config.amountsToRepay[i] - balance;
             }
 
             if (needed > 0) {
                 require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
+                require(needed <= token.balanceOf(msg.sender), "Msg.sender supplied token balance is insufficient");
 
                 address(token).safeTransferFrom(msg.sender, address(this), needed);
                 suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
             }
 
-            Pool pool = Pool(poolManager.getPoolAddress(assetsToRepay[i]));
+            Pool pool = Pool(poolManager.getPoolAddress(config.assetsToRepay[i]));
 
-            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.assetsAmountsToRepay[i].amount);
+            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.amountsToRepay[i]);
 
             address(token).safeApprove(address(pool), 0);
             address(token).safeApprove(address(pool), repayAmount);
@@ -146,22 +154,33 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             repaidInUSD += repayAmount * prices[i] * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
+
+            if (token.balanceOf(address(this)) == 0) {
+                DiamondStorageLib.removeOwnedAsset(config.assetsToRepay[i]);
+            }
+
+            emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
         }
 
-        uint256 total = _calculateTotalValue();
-        bytes32[] memory assetsOwned = SmartLoanLib.getAllOwnedAssets();
+        uint256 total = _getTotalValue();
+        bytes32[] memory assetsOwned = SmartLoanConfigLib.getAllOwnedAssets();
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
         if (!healingLoan) {
             uint256 valueOfTokens = _getTotalValue();
 
-            bonus = repaidInUSD * config.liquidationBonus / SmartLoanLib.getPercentagePrecision();
+            bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
 
             uint256 partToReturn = 10 ** 18;
 
             if (valueOfTokens >= suppliedInUSD + bonus) {
                 partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
+            }
+
+            // Native token transfer
+            if (address(this).balance > 0) {
+                payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
             }
 
             for (uint256 i; i < assetsOwned.length; i++) {
@@ -172,39 +191,19 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
             }
         }
 
-        uint256 LTV = _calculateLTV();
+        uint256 LTV = _getLTV();
 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
-        if (msg.sender != LibDiamond.smartLoanStorage().contractOwner) {
-            require(LTV >= SmartLoanLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+        if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner) {
+            require(LTV >= SmartLoanConfigLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
-        require(LTV < SmartLoanLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
-        SmartLoanLib.setLiquidationInProgress(false);
-    }
-
-    /**
-     * Returns IERC20Metadata instance of a token
-     * @param _asset the code of an asset
-     **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
-    }
-
-
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-
-        require(_isSolvent(), "The action may cause an account to become insolvent");
+        require(LTV < SmartLoanConfigLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
     }
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 
@@ -223,5 +222,14 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param timestamp a time of the loan's closure
     **/
     event LoanClosed(uint256 timestamp);
+
+    /**
+     * @dev emitted when funds are repaid to the pool during a liquidation
+     * @param borrower the address initiating repayment
+     * @param _asset asset repaid by an investor
+     * @param amount of repaid funds
+     * @param timestamp of the repayment
+     **/
+    event LiquidationRepay(address indexed borrower, bytes32 indexed _asset, uint256 amount, uint256 timestamp);
 }
 

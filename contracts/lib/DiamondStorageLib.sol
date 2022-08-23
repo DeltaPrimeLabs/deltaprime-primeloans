@@ -11,11 +11,10 @@ import "../lib/Bytes32EnumerableMap.sol";
 // Remember to add the loupe functions from DiamondLoupeFacet to the diamond.
 // The loupe functions are required by the EIP2535 Diamonds standard
 
-library LibDiamond {
+library DiamondStorageLib {
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
-    bytes32 constant LIQUIDATION_STORAGE_POSITION = keccak256("diamond.standard.liquidation.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
 
     struct FacetAddressAndPosition {
@@ -53,20 +52,8 @@ library LibDiamond {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
     }
 
-    struct LiquidationStorage {
-        // Is liquidation in progress?
-        bool _liquidationInProgress;
-    }
-
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;
-        assembly {
-            ds.slot := position
-        }
-    }
-
-    function liquidationStorage() internal pure returns (LiquidationStorage storage ds) {
-        bytes32 position = LIQUIDATION_STORAGE_POSITION;
         assembly {
             ds.slot := position
         }
@@ -103,7 +90,7 @@ library LibDiamond {
     }
 
     function enforceIsContractOwner() internal view {
-        require(msg.sender == smartLoanStorage().contractOwner, "LibDiamond: Must be contract owner");
+        require(msg.sender == smartLoanStorage().contractOwner, "DiamondStorageLib: Must be contract owner");
     }
 
     event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);
@@ -123,7 +110,7 @@ library LibDiamond {
             } else if (action == IDiamondCut.FacetCutAction.Remove) {
                 removeFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
             } else {
-                revert("LibDiamondCut: Incorrect FacetCutAction");
+                revert("DiamondStorageLibCut: Incorrect FacetCutAction");
             }
         }
         emit DiamondCut(_diamondCut, _init, _calldata);
@@ -131,9 +118,9 @@ library LibDiamond {
     }
 
     function addFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
-        require(_functionSelectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
+        require(_functionSelectors.length > 0, "DiamondStorageLibCut: No selectors in facet to cut");
         DiamondStorage storage ds = diamondStorage();
-        require(_facetAddress != address(0), "LibDiamondCut: Add facet can't be address(0)");
+        require(_facetAddress != address(0), "DiamondStorageLibCut: Add facet can't be address(0)");
         uint96 selectorPosition = uint96(ds.facetFunctionSelectors[_facetAddress].functionSelectors.length);
         // add new facet address if it does not exist
         if (selectorPosition == 0) {
@@ -142,16 +129,16 @@ library LibDiamond {
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
             address oldFacetAddress = ds.selectorToFacetAndPosition[selector].facetAddress;
-            require(oldFacetAddress == address(0), "LibDiamondCut: Can't add function that already exists");
+            require(oldFacetAddress == address(0), "DiamondStorageLibCut: Can't add function that already exists");
             addFunction(ds, selector, selectorPosition, _facetAddress);
             selectorPosition++;
         }
     }
 
     function replaceFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
-        require(_functionSelectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
+        require(_functionSelectors.length > 0, "DiamondStorageLibCut: No selectors in facet to cut");
         DiamondStorage storage ds = diamondStorage();
-        require(_facetAddress != address(0), "LibDiamondCut: Add facet can't be address(0)");
+        require(_facetAddress != address(0), "DiamondStorageLibCut: Add facet can't be address(0)");
         uint96 selectorPosition = uint96(ds.facetFunctionSelectors[_facetAddress].functionSelectors.length);
         // add new facet address if it does not exist
         if (selectorPosition == 0) {
@@ -160,7 +147,7 @@ library LibDiamond {
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
             address oldFacetAddress = ds.selectorToFacetAndPosition[selector].facetAddress;
-            require(oldFacetAddress != _facetAddress, "LibDiamondCut: Can't replace function with same function");
+            require(oldFacetAddress != _facetAddress, "DiamondStorageLibCut: Can't replace function with same function");
             removeFunction(ds, oldFacetAddress, selector);
             addFunction(ds, selector, selectorPosition, _facetAddress);
             selectorPosition++;
@@ -168,10 +155,10 @@ library LibDiamond {
     }
 
     function removeFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
-        require(_functionSelectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
+        require(_functionSelectors.length > 0, "DiamondStorageLibCut: No selectors in facet to cut");
         DiamondStorage storage ds = diamondStorage();
         // if function does not exist then do nothing and return
-        require(_facetAddress == address(0), "LibDiamondCut: Remove facet address must be address(0)");
+        require(_facetAddress == address(0), "DiamondStorageLibCut: Remove facet address must be address(0)");
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
             address oldFacetAddress = ds.selectorToFacetAndPosition[selector].facetAddress;
@@ -180,7 +167,7 @@ library LibDiamond {
     }
 
     function addFacet(DiamondStorage storage ds, address _facetAddress) internal {
-        enforceHasContractCode(_facetAddress, "LibDiamondCut: New facet has no code");
+        enforceHasContractCode(_facetAddress, "DiamondStorageLibCut: New facet has no code");
         ds.facetFunctionSelectors[_facetAddress].facetAddressPosition = ds.facetAddresses.length;
         ds.facetAddresses.push(_facetAddress);
     }
@@ -193,9 +180,9 @@ library LibDiamond {
     }
 
     function removeFunction(DiamondStorage storage ds, address _facetAddress, bytes4 _selector) internal {
-        require(_facetAddress != address(0), "LibDiamondCut: Can't remove function that doesn't exist");
+        require(_facetAddress != address(0), "DiamondStorageLibCut: Can't remove function that doesn't exist");
         // an immutable function is a function defined directly in a diamond
-        require(_facetAddress != address(this), "LibDiamondCut: Can't remove immutable function");
+        require(_facetAddress != address(this), "DiamondStorageLibCut: Can't remove immutable function");
         // replace selector with last selector, then delete last selector
         uint256 selectorPosition = ds.selectorToFacetAndPosition[_selector].functionSelectorPosition;
         uint256 lastSelectorPosition = ds.facetFunctionSelectors[_facetAddress].functionSelectors.length - 1;
@@ -226,11 +213,11 @@ library LibDiamond {
 
     function initializeDiamondCut(address _init, bytes memory _calldata) internal {
         if (_init == address(0)) {
-            require(_calldata.length == 0, "LibDiamondCut: _init is address(0) but_calldata is not empty");
+            require(_calldata.length == 0, "DiamondStorageLibCut: _init is address(0) but_calldata is not empty");
         } else {
-            require(_calldata.length > 0, "LibDiamondCut: _calldata is empty but _init is not address(0)");
+            require(_calldata.length > 0, "DiamondStorageLibCut: _calldata is empty but _init is not address(0)");
             if (_init != address(this)) {
-                enforceHasContractCode(_init, "LibDiamondCut: _init address has no code");
+                enforceHasContractCode(_init, "DiamondStorageLibCut: _init address has no code");
             }
             (bool success, bytes memory error) = _init.delegatecall(_calldata);
             if (!success) {
@@ -238,7 +225,7 @@ library LibDiamond {
                     // bubble up the error
                     revert(string(error));
                 } else {
-                    revert("LibDiamondCut: _init function reverted");
+                    revert("DiamondStorageLibCut: _init function reverted");
                 }
             }
         }

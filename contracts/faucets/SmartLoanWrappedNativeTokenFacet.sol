@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../lib/SmartLoanLib.sol";
+import "../lib/SmartLoanConfigLib.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 
 contract SmartLoanWrappedNativeTokenFacet {
@@ -9,18 +9,18 @@ contract SmartLoanWrappedNativeTokenFacet {
 
     function wrapNativeToken(uint256 amount) onlyOwner public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: amount}();
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: amount}();
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
 
     function depositNativeToken() public payable virtual {
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: msg.value}();
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: msg.value}();
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
     function unwrapAndWithdraw(uint256 _amount) public payable virtual {
-        IWrappedNativeToken wrapped = IWrappedNativeToken(SmartLoanLib.getNativeToken());
+        IWrappedNativeToken wrapped = IWrappedNativeToken(SmartLoanConfigLib.getNativeToken());
         require(wrapped.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 
         wrapped.withdraw(_amount);
@@ -33,7 +33,7 @@ contract SmartLoanWrappedNativeTokenFacet {
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

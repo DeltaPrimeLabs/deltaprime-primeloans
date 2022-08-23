@@ -116,9 +116,10 @@ function removeObsoleteFunctions(functionsToRemove) {
 
 function createFaucetsInterfaces() {
     const faucetsList = [
-        'FundingFacet',
+        'AssetsOperationsFacet',
         'OwnershipFacet',
         'PangolinDEXFacet',
+        'UbeswapDEXFacet',
         'SmartLoanLiquidationFacet',
         'SmartLoanLogicFacet',
         'SolvencyFacet',
@@ -129,6 +130,7 @@ function createFaucetsInterfaces() {
         'routerContractAddress',
         'isTimestampValid',
         'isSignerAuthorized',
+        'getRouterContract',
         'getMaxDataTimestampDelay',
         'getMaxBlockTimestampDelay',
         'getERC20TokenInstance',

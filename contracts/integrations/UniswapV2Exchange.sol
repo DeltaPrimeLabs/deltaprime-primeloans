@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "./lib/Bytes32EnumerableMap.sol";
-import "./lib/SmartLoanLib.sol";
+import "./lib/SmartLoanConfigLib.sol";
 import "./PoolManager.sol";
 
 /**
@@ -79,7 +79,7 @@ contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGua
    * @dev _assets assets to be added or updated
    **/
   function _updateAssets(Asset[] memory _assets) internal {
-    PoolManager poolManager = SmartLoanLib.getPoolManager();
+    PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
     for (uint256 i = 0; i < _assets.length; i++) {
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");

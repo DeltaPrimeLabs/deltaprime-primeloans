@@ -6,8 +6,8 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
-import "../lib/SmartLoanLib.sol";
-import {LibDiamond} from "../lib/LibDiamond.sol";
+import "../lib/SmartLoanConfigLib.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -31,28 +31,19 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 
-        PoolManager poolManager = SmartLoanLib.getPoolManager();
+        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = poolManager.getAssetAddress(_boughtAsset);
-        LibDiamond.addOwnedAsset(_boughtAsset, boughtAssetAddress);
+        DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        IERC20 token = IERC20(poolManager.getAssetAddress(_soldAsset));
-        if(token.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset(_soldAsset);
+        if(soldToken.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
 
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0],  amounts[amounts.length - 1], block.timestamp);
 
         return amounts;
-    }
-
-    /**
-     * Returns IERC20Metadata instance of a token
-     * @param _asset the code of an asset
-     **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(SmartLoanLib.getPoolManager().getAssetAddress(_asset));
     }
 
     /**
@@ -63,18 +54,8 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
         return address(0);
     }
 
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-
-        require(_isSolvent(), "The action may cause an account to become insolvent");
-    }
-
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

@@ -7,7 +7,7 @@ import "../interfaces/IDiamondBeacon.sol";
 // TODO Rename to contract instead of lib
 contract SolvencyMethodsLib {
     // This function executes SolvencyFacet.calculateDebt()
-    function _calculateDebt() internal virtual returns (uint256 debt) {
+    function _getDebt() internal virtual returns (uint256 debt) {
         debt = abi.decode(
             ProxyConnector.proxyDelegateCalldata(
                 _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.getDebt.selector)),
@@ -18,7 +18,7 @@ contract SolvencyMethodsLib {
     }
 
     function _getDiamondBeaconContract(bytes memory methodSig) internal returns(address solvencyFacetAddress) {
-        solvencyFacetAddress = IDiamondBeacon(payable(SmartLoanLib.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
+        solvencyFacetAddress = IDiamondBeacon(payable(SmartLoanConfigLib.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
     }
 
     function convertBytesToBytes4(bytes memory inBytes) internal returns (bytes4 outBytes4) {
@@ -38,17 +38,6 @@ contract SolvencyMethodsLib {
                 abi.encodeWithSelector(SolvencyFacet.isSolvent.selector)
             ),
             (bool)
-        );
-    }
-
-    // This function executes SolvencyFacet.calculateTotalValue()
-    function _calculateTotalValue() internal virtual returns (uint256 totalValue) {
-        totalValue = abi.decode(
-            ProxyConnector.proxyDelegateCalldata(
-                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.getTotalValue.selector)),
-                abi.encodeWithSelector(SolvencyFacet.getTotalValue.selector)
-            ),
-            (uint256)
         );
     }
 
@@ -74,14 +63,21 @@ contract SolvencyMethodsLib {
         );
     }
 
-    // This function executes SolvencyFacet.calculateLTV() but allows for in-memory uint256[] _prices re-use
-    function _calculateLTV() internal virtual returns (uint256 ltv) {
-        ltv = abi.decode(
-            ProxyConnector.proxyDelegateCalldata(
-                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.calculateLTV.selector)),
-                abi.encodeWithSelector(SolvencyFacet.calculateLTV.selector)
-            ),
-            (uint256)
-        );
+    /**
+     * Returns IERC20Metadata instance of a token
+     * @param _asset the code of an asset
+     **/
+    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
+        return IERC20Metadata(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
+    }
+
+    /**
+    * Checks whether account is solvent (LTV lower than SmartLoanConfigLib.getMaxLtv())
+    * @dev This modifier uses the redstone-evm-connector
+    **/
+    modifier remainsSolvent() {
+        _;
+
+        require(_isSolvent(), "The action may cause an account to become insolvent");
     }
 }

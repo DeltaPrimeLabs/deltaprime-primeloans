@@ -12,7 +12,7 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
   deployAllFaucets,
-  deployAndInitializeLendingPool,
+  deployAndInitializeLendingPool, extractAssetNameBalances,
   fromWei,
   getFixedGasSigners,
   PoolAsset,
@@ -114,11 +114,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib',
           undefined,
           undefined,
@@ -130,7 +131,7 @@ describe('Smart loan',  () => {
       await exchange.initialize(ubeswapRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
 [
             {
               facetPath: './contracts/faucets/UbeswapDEXFacet.sol',
@@ -140,6 +141,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -198,6 +200,20 @@ describe('Smart loan',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+    it("should fail to swap from a non-owner account", async () => {
+      let nonOwnerWrappedLoan = WrapperBuilder
+          .mockLite(loan.connect(depositor))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              })
+      await expect(nonOwnerWrappedLoan.swapUbeswap(
+          toBytes32('ETH'), toBytes32('mcUSD'), 0,0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+    });
+
 
     it("should buy an asset from funded", async () => {
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 2);
@@ -216,9 +232,9 @@ describe('Smart loan',  () => {
       )
 
       expect(fromWei(await tokenContracts['ETH'].balanceOf(wrappedLoan.address))).to.be.closeTo(10 - swappedEthAmount, 0.1);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[2])).to.be.closeTo(10 - swappedEthAmount, 0.05);
+      expect(fromWei((await extractAssetNameBalances(wrappedLoan))["ETH"])).to.be.closeTo(10 - swappedEthAmount, 0.05);
       expect(fromWei(await tokenContracts['mcUSD'].balanceOf(wrappedLoan.address))).to.be.closeTo(expectedUSDAmount, 400);
-      expect(fromWei((await wrappedLoan.getAllAssetsBalances())[1])).to.be.closeTo(expectedUSDAmount, 400);
+      expect(fromWei((await extractAssetNameBalances(wrappedLoan))["mcUSD"])).to.be.closeTo(expectedUSDAmount, 400);
 
       // total value should stay similar to before swap
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 300);
@@ -227,7 +243,7 @@ describe('Smart loan',  () => {
     });
 
     it("should swap back", async () => {
-      const initialUsdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
+      const initialUsdTokenBalance = (await extractAssetNameBalances(wrappedLoan))["mcUSD"];
 
       const slippageTolerance = 0.1;
 
@@ -240,7 +256,7 @@ describe('Smart loan',  () => {
         toWei(ethAmount.toString())
       );
 
-      const currentUsdTokenBalance = (await wrappedLoan.getAllAssetsBalances())[1];
+      const currentUsdTokenBalance = (await extractAssetNameBalances(wrappedLoan))["mcUSD"];
 
       expect(fromWei(currentUsdTokenBalance)).to.be.closeTo(0, 1);
 

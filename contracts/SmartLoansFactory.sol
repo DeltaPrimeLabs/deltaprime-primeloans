@@ -7,73 +7,109 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "./SmartLoanDiamond.sol";
-import "./proxies/DiamondBeaconProxy.sol";
+import "./SmartLoanDiamondBeacon.sol";
+import "./proxies/SmartLoanDiamondProxy.sol";
 import "./faucets/DiamondInit.sol";
-import "./faucets/FundingFacet.sol";
+import "./faucets/AssetsOperationsFacet.sol";
 import "./faucets/OwnershipFacet.sol";
+import "./faucets/SmartLoanLogicFacet.sol";
 
 /**
  * @title SmartLoansFactory
- * It creates and fund the Smart Loan.
- * It's also responsible for keeping track of the loans and ensuring they follow the solvency protection rules
- * and could be authorised to access the lending pool.
- *
+ * @dev Contract responsible for creating new instances of SmartLoans (SmartLoanDiamondBeacon).
+ * It's possible to either simply create a new loan or create and fund it with an ERC20 asset as well as borrow in a single transaction.
+ * At the time of creating a loan, SmartLoansFactory contract is the owner for the sake of being able to perform the fund() and borrow() operations.
+ * At the end of the createAndFundLoan the ownership is transferred to the msg.sender.
+ * It's also responsible for keeping track of the loans, ensuring one loan per wallet rule, ownership transfers proposals/execution and
+ * authorizes registered loans to borrow from lending pools.
  */
 contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   using TransferHelper for address;
 
-  modifier oneLoanPerOwner() {
-    require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed");
+  modifier hasNoLoan() {
+    require(!_hasLoan(msg.sender), "Only one loan per owner is allowed");
     _;
   }
 
-  SmartLoanDiamond public smartLoanDiamond;
+
+  SmartLoanDiamondBeacon public smartLoanDiamond;
 
   mapping(address => address) public ownersToLoans;
   mapping(address => address) public loansToOwners;
+  mapping(address => address) public ownershipTransferProposal;
 
   address[] loans;
 
+  function _hasLoan(address user) internal view returns (bool) {
+    return ownersToLoans[user] != address(0);
+  }
+
+  function _proposeOwnershipTransfer(address _oldOwner, address _newOwner) internal {
+    require(_hasLoan(_oldOwner), "Previous owner does not have a loan");
+    require(!_hasLoan(_newOwner), "New owner already has a loan");
+    ownershipTransferProposal[_oldOwner] = _newOwner;
+  }
+
+  function proposeOwnershipTransfer(address _newOwner) public {
+    require(_hasLoan(msg.sender), "Msg.sender does not own a loan");
+    _proposeOwnershipTransfer(msg.sender, _newOwner);
+  }
+
+  function executeOwnershipTransfer(address _oldOwner, address _newOwner) public {
+    require(ownershipTransferProposal[_oldOwner] == _newOwner, "Ownership transfer proposal not found.");
+    require(!_hasLoan(_newOwner), "New owner already has a loan");
+
+    ownershipTransferProposal[_oldOwner] = address(0);
+
+    address loan = ownersToLoans[_oldOwner];
+    ownersToLoans[_newOwner] = loan;
+    ownersToLoans[_oldOwner] = address(0);
+    loansToOwners[loan] = _newOwner;
+  }
+
   function initialize(address payable _smartLoanDiamond) external initializer {
-    smartLoanDiamond = SmartLoanDiamond(_smartLoanDiamond);
+    smartLoanDiamond = SmartLoanDiamondBeacon(_smartLoanDiamond);
     __Ownable_init();
   }
 
-  function createLoan() public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
-    DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(
+  function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
       payable(address(smartLoanDiamond)),
-      abi.encodeWithSelector(DiamondInit.init.selector)
+      // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
+      // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
+        abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, msg.sender)
     );
-    SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
+    SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(address(smartLoan));
-    OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
+    updateRegistry(address(smartLoan), msg.sender);
 
     emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, "", 0);
     return smartLoan;
   }
 
   //TODO: check how much calling an external contract for asset address would cost
-  function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public virtual oneLoanPerOwner returns (SmartLoanDiamond) {
-    DiamondBeaconProxy beaconProxy = new DiamondBeaconProxy(payable(address(smartLoanDiamond)),
-      abi.encodeWithSelector(DiamondInit.init.selector)
+  function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
+    // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
+    // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
+      abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, address(this))
     );
-    SmartLoanDiamond smartLoan = SmartLoanDiamond(payable(address(beaconProxy)));
+    SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(address(smartLoan));
+    updateRegistry(address(smartLoan), address(this));
 
     //Fund account with own funds and credit
     IERC20Metadata token = IERC20Metadata(_assetAddress);
     address(token).safeTransferFrom(msg.sender, address(this), _amount);
     token.approve(address(smartLoan), _amount);
 
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.fund.selector, _fundedAsset, _amount), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
 
-    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(FundingFacet.borrow.selector, _debtAsset, _initialDebt), false);
+    ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.borrow.selector, _debtAsset, _initialDebt), false);
 
+    _proposeOwnershipTransfer(address(this), msg.sender);
     OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
 
     emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount, _debtAsset, _initialDebt);
@@ -81,9 +117,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     return smartLoan;
   }
 
-  function updateRegistry(address loan) internal {
-    ownersToLoans[msg.sender] = loan;
-    loansToOwners[loan] = msg.sender;
+  function updateRegistry(address loan, address owner) internal {
+    ownersToLoans[owner] = loan;
+    loansToOwners[loan] = owner;
     loans.push(loan);
   }
 
@@ -92,7 +128,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   function getLoanForOwner(address _user) external view override returns (address) {
-    return address(ownersToLoans[_user]);
+    return ownersToLoans[_user];
   }
 
   function getOwnerOfLoan(address _loan) external view override returns (address) {
@@ -104,13 +140,13 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
   }
 
   /**
-   * @dev emitted after closing a loan by the owner
-   * @param accountAddress address of a new SmartLoanDiamond
-   * @param creator account creating a SmartLoanDiamond
+   * @dev emitted after creating a loan by the owner
+   * @param accountAddress address of a new SmartLoanDiamondBeacon
+   * @param creator account creating a SmartLoanDiamondBeacon
    * @param collateralAsset asset used as initial collateral
    * @param collateralAmount amount of asset used as initial collateral
    * @param debtAsset asset initially borrowed
-   * @param initialDebt initial debt of a SmartLoanDiamond
+   * @param initialDebt initial debt of a SmartLoanDiamondBeacon
    **/
   event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount, bytes32 debtAsset, uint256 initialDebt);
 }

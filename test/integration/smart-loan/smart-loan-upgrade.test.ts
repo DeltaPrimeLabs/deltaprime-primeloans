@@ -59,6 +59,7 @@ describe('Smart loan - upgrading',  () => {
       owner: SignerWithAddress,
       other: SignerWithAddress,
       oracle: SignerWithAddress,
+      poolManager: any,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
       tokenContracts: any = {},
@@ -104,7 +105,7 @@ describe('Smart loan - upgrading',  () => {
         new Asset(toBytes32('USDC'), tokenContracts['USDC'].address)
       ]
 
-      let poolManager = await deployContract(
+      poolManager = await deployContract(
           owner,
           PoolManagerArtifact,
           [
@@ -119,18 +120,19 @@ describe('Smart loan - upgrading',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
       exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [
             {
               facetPath: './contracts/faucets/PangolinDEXFacet.sol',
@@ -140,6 +142,7 @@ describe('Smart loan - upgrading',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
       await deployAllFaucets(diamondAddress)
@@ -169,12 +172,33 @@ describe('Smart loan - upgrading',  () => {
                   timestamp: Date.now()
                 }
               })
+
+
     });
+
+
 
 
     it("should check if only one loan per owner is allowed", async () => {
       await expect(smartLoansFactory.connect(borrower).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
       await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'],0, toBytes32(""), 0)).to.be.revertedWith("Only one loan per owner is allowed");
+    });
+
+    it("should check if only one loan per owner is allowed during transferOwnership", async () => {
+      await smartLoansFactory.connect(borrower).proposeOwnershipTransfer(other.address);
+      let otherWrappedSmartLoansFactory = WrapperBuilder
+          .mockLite(smartLoansFactory.connect(other))
+          .using(
+              () => {
+                return {
+                  prices: MOCK_PRICES,
+                  timestamp: Date.now()
+                }
+              });
+
+      await otherWrappedSmartLoansFactory.createLoan();
+      await expect(smartLoansFactory.connect(borrower).proposeOwnershipTransfer(other.address)).to.be.revertedWith("New owner already has a loan");
+      await expect(wrappedLoan.connect(borrower).transferOwnership(other.address)).to.be.revertedWith("New owner already has a loan");
     });
 
 
@@ -192,9 +216,13 @@ describe('Smart loan - upgrading',  () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
+    it("should not allow to re-initialize", async () => {
+      await expect(wrappedLoan.initialize(owner.address)).to.be.revertedWith('DiamondInit: contract is already initialized');
+    });
+
     it("should not allow to upgrade from non-owner", async () => {
       const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, borrower);
-      await expect(diamondCut.diamondCut([], ethers.constants.AddressZero, [])).to.be.revertedWith('LibDiamond: Must be contract owner');
+      await expect(diamondCut.diamondCut([], ethers.constants.AddressZero, [])).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
     });
 
 

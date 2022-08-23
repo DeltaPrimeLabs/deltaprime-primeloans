@@ -2,11 +2,11 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import { LibDiamond } from "./lib/LibDiamond.sol";
+import { DiamondStorageLib } from "./lib/DiamondStorageLib.sol";
 import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 
 /**
- * @title SmartLoanDiamond
+ * @title SmartLoanDiamondBeacon
  * A contract that is authorised to borrow funds using delegated credit.
  * It maintains solvency calculating the current value of assets and borrowings.
  * In case the value of assets held drops below certain level, part of the funds may be forcibly repaid.
@@ -14,9 +14,9 @@ import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
  *
  */
 
-contract SmartLoanDiamond {
+contract SmartLoanDiamondBeacon {
     constructor(address _contractOwner, address _diamondCutFacet) payable {
-        LibDiamond.setContractOwner(_contractOwner);
+        DiamondStorageLib.setContractOwner(_contractOwner);
 
         // Add the diamondCut external function from the diamondCutFacet
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
@@ -27,7 +27,7 @@ contract SmartLoanDiamond {
         action: IDiamondCut.FacetCutAction.Add,
         functionSelectors: functionSelectors
         });
-        LibDiamond.diamondCut(cut, address(0), "");
+        DiamondStorageLib.diamondCut(cut, address(0), "");
     }
 
     function implementation() public view returns (address) {
@@ -35,8 +35,8 @@ contract SmartLoanDiamond {
     }
 
     function implementation(bytes4 funcSignature) public view returns (address) {
-        LibDiamond.DiamondStorage storage ds;
-        bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
+        DiamondStorageLib.DiamondStorage storage ds;
+        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
         // get diamond storage
         assembly {
             ds.slot := position
@@ -52,15 +52,7 @@ contract SmartLoanDiamond {
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
     fallback() external payable {
-        LibDiamond.DiamondStorage storage ds;
-        bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
-        // get diamond storage
-        assembly {
-            ds.slot := position
-        }
-        // get facet from function selector
-        address facet = ds.selectorToFacetAndPosition[msg.sig].facetAddress;
-        require(facet != address(0), "Diamond: Function does not exist");
+        address facet = implementation(msg.sig);
         // Execute external function from facet using delegatecall and return any value.
         assembly {
             // copy function selector and any arguments

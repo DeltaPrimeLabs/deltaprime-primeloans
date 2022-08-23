@@ -108,11 +108,12 @@ describe('Smart loan',  () => {
       await smartLoansFactory.initialize(diamondAddress);
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          smartLoansFactory.address,
           'lib'
       );
 
@@ -171,8 +172,6 @@ describe('Smart loan',  () => {
 
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(2 * AVAX_PRICE, 0.05)
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(3 * AVAX_PRICE, 0.05)
-      expect(fromWei((await wrappedLoan.getOwnedAssetsBalances())[0])).to.equal(1);
-      expect(fromWei((await wrappedLoan.getOwnedAssetsBalances())[1])).to.be.closeTo(2 * AVAX_PRICE, 0.05);
       expect(fromWei(await tokenContracts['AVAX'].balanceOf(loan.address))).to.equal(1);
       expect(fromWei(await tokenContracts['MCKUSD'].balanceOf(loan.address))).to.be.closeTo(2 * AVAX_PRICE, 0.05);
     });

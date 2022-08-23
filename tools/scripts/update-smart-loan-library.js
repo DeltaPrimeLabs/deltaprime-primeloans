@@ -1,6 +1,6 @@
-export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, maxLTV, minSelloutLTV, nativeAssetSymbol) {
+export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, nativeAssetSymbol) {
     var fs = require('fs')
-    let libcontract = fs.readFileSync('./contracts/lib/SmartLoanLib.sol', 'utf8')
+    let libcontract = fs.readFileSync('./contracts/lib/SmartLoanConfigLib.sol', 'utf8')
 
     let fileArray = libcontract.split('\n');
 
@@ -44,7 +44,17 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
-    //SolvencyFacetAddress
+    //SmartLoansFactory address
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_SMART_LOANS_FACTORY_ADDRESS =')
+    );
+
+    newLine = `    address private constant _SMART_LOANS_FACTORY_ADDRESS = ${smartLoansFactoryAddress};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    //Diamond beacon address
 
     lineWithFunctionDeclaration = fileArray.findIndex(
         line => line.includes('_DIAMOND_BEACON_ADDRESS =')
@@ -64,11 +74,11 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
 
     fileArray.splice(lineWithFunctionDeclaration + 1, 1, newLine);
 
-    //write changes to SmartLoanLib.sol
+    //write changes to SmartLoanConfigLib.sol
 
     let result = fileArray.join("\n");
 
-    fs.writeFileSync('./contracts/lib/SmartLoanLib.sol', result, 'utf8');
+    fs.writeFileSync('./contracts/lib/SmartLoanConfigLib.sol', result, 'utf8');
 
     // exchanges
 
@@ -86,5 +96,5 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
         fs.writeFileSync(exchange.facetPath, fileArray.join("\n"), 'utf8');
     }
 
-    return 'lib/SmartLoanLib.sol, PangolinExchange.sol and UbeswapExchange.sol updated!'
+    return 'lib/SmartLoanConfigLib.sol, PangolinExchange.sol and UbeswapExchange.sol updated!'
 }

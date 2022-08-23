@@ -7,7 +7,6 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
-  AssetAmount,
   calculateBonus,
   deployAllFaucets, deployAndInitExchangeContract,
   deployAndInitializeLendingPool,
@@ -27,15 +26,14 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Pool,
-  MockSmartLoanLogicFacetRedstoneProvider,
   PangolinExchange,
   PoolManager,
   RedstoneConfigManager__factory,
-  SmartLoansFactory,
+  SmartLoansFactory, SmartLoanGigaChadInterface,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
@@ -56,7 +54,7 @@ const INITIAL_PRICES = {
   USDC: 1,
   ETH: 1000,
   BTC: 20000,
-  $YYAV3SA1: 15.2,
+  YYAV3SA1: 15.2,
 }
 
 const TEST_TABLE =  [
@@ -151,7 +149,7 @@ describe('Smart loan',  () => {
 
   describe('An insolvent loan - mock prices', () => {
     let exchange: PangolinExchange,
-        loan: MockSmartLoanLogicFacetRedstoneProvider,
+        loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         owner: SignerWithAddress,
         borrower: SignerWithAddress,
@@ -188,14 +186,14 @@ describe('Smart loan',  () => {
         tokenContracts[token.name] = tokenContract;
       }
       tokenContracts['BTC'] = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
-      tokenContracts['$YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['$YYAV3SA1'], erc20ABI, provider);
+      tokenContracts['YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['YYAV3SA1'], erc20ABI, provider);
 
       supportedAssets = [
         new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
         new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
         new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
-        new Asset(toBytes32('$YYAV3SA1'), TOKEN_ADDRESSES['$YYAV3SA1']),
+        new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
       ];
 
       INITIAL_MOCK_PRICES = [
@@ -216,8 +214,8 @@ describe('Smart loan',  () => {
           value: INITIAL_PRICES.BTC
         },
         {
-          symbol: '$YYAV3SA1',
-          value: INITIAL_PRICES.$YYAV3SA1
+          symbol: 'YYAV3SA1',
+          value: INITIAL_PRICES.YYAV3SA1
         },
       ];
       poolManager = await deployContract(
@@ -232,11 +230,12 @@ describe('Smart loan',  () => {
       diamondAddress = await deployDiamond();
 
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [],
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          ethers.constants.AddressZero,
           'lib'
       );
 
@@ -278,7 +277,7 @@ describe('Smart loan',  () => {
 
     before("prepare smart loan implementations", async () => {
       await recompileSmartLoanLib(
-          "SmartLoanLib",
+          "SmartLoanConfigLib",
           [
             {
               facetPath: './contracts/faucets/PangolinDEXFacet.sol',
@@ -288,6 +287,7 @@ describe('Smart loan',  () => {
           poolManager.address,
           redstoneConfigManager.address,
           diamondAddress,
+          ethers.constants.AddressZero,
           'lib'
       );
 
@@ -297,6 +297,22 @@ describe('Smart loan',  () => {
     beforeEach("create a loan", async () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
+
+      await recompileSmartLoanLib(
+          "SmartLoanConfigLib",
+          [
+            {
+              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              contractAddress: exchange.address,
+            }
+          ],
+          poolManager.address,
+          redstoneConfigManager.address,
+          diamondAddress,
+          smartLoansFactory.address,
+          'lib'
+      );
+      await replaceFacet("OwnershipFacet", diamondAddress, ['transferOwnership']);
 
       await smartLoansFactory.connect(borrower).createLoan();
 
@@ -450,7 +466,7 @@ describe('Smart loan',  () => {
         stake: any
         ) {
       const performer = performedAction === 'CLOSE' ? borrower : liquidator;
-      const initialStakedYakTokensBalance = await tokenContracts['$YYAV3SA1'].balanceOf(performer.address);
+      const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
 
@@ -465,10 +481,12 @@ describe('Smart loan',  () => {
             }
           });
 
-      let repayAmountsInWei: Array<AssetAmount> = [];
+      let amountsToRepayInWei = [];
+      let assetsToRepay = [];
       for (const [asset, amount] of Object.entries(repayAmounts) ) {
         let decimals = await tokenContracts[asset].decimals();
-        repayAmountsInWei.push(new AssetAmount(toBytes32(asset), parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals)));
+        amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
+        assetsToRepay.push(toBytes32(asset));
       }
 
       for (const [asset, amount] of Object.entries(allowanceAmounts)) {
@@ -481,16 +499,16 @@ describe('Smart loan',  () => {
 
       switch (performedAction) {
         case 'LIQUIDATE':
-          await wrappedLoan.liquidateLoan(repayAmountsInWei, bonusInWei);
+          await wrappedLoan.liquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei);
           break;
         case 'HEAL':
-          await wrappedLoan.unsafeLiquidateLoan(repayAmountsInWei, bonusInWei);
+          await wrappedLoan.unsafeLiquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei);
           break;
       }
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       if(stake) {
-        expect(await tokenContracts['$YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
+        expect(await tokenContracts['YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
       }
     }
 
@@ -499,6 +517,7 @@ describe('Smart loan',  () => {
       if (symbol == "USDC") return tokenContracts['USDC'];
       if (symbol == "ETH") return tokenContracts['ETH'];
       if (symbol == "BTC") return tokenContracts['BTC'];
+      if (symbol == "YYAV3SA1") return tokenContracts['YYAV3SA1'];
     }
 
     function getPrice(symbol: string) {
@@ -506,6 +525,7 @@ describe('Smart loan',  () => {
       if (symbol == "USDC") return INITIAL_PRICES.USDC;
       if (symbol == "ETH") return INITIAL_PRICES.ETH;
       if (symbol == "BTC") return INITIAL_PRICES.BTC;
+      if (symbol == "YYAV3SA1") return INITIAL_PRICES.YYAV3SA1;
     }
   });
 });

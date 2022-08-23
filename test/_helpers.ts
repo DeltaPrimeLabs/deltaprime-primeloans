@@ -166,7 +166,14 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 
 export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVAX') {
     await deployFacet(
-        "FundingFacet",
+        "OwnershipFacet",
+        diamondAddress,
+        [
+            'transferOwnership',
+        ]
+    )
+    await deployFacet(
+        "AssetsOperationsFacet",
         diamondAddress,
         [
             'borrow',
@@ -180,7 +187,7 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
     if (chain == 'AVAX') {
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'getTotalStakedValueYYAV3SA1', 'getTotalStakedValueYYVSAVAXV2'])
+        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak'])
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])
@@ -190,16 +197,38 @@ export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVA
         "SmartLoanLogicFacet",
         diamondAddress,
         [
-            'getOwnedAssetsBalances',
-            'getOwnedAssetsPrices',
+            'initialize',
+            'getAllAssetsBalances',
+            'getAllAssetsPrices',
             'getMaxLiquidationBonus',
             'getBalance',
             'getAllAssetsBalances',
             'getAllOwnedAssets',
-            'getAllAssetsPrices',
         ]
     )
 };
+
+export const extractAssetNameBalances = async function (
+    wrappedLoan: any
+) {
+    let assetsNamesBalances = await wrappedLoan.getAllAssetsBalances();
+    let result: any = {};
+    for (const assetNameBalance of assetsNamesBalances) {
+        result[fromBytes32(assetNameBalance[0])] = assetNameBalance[1];
+    }
+    return result;
+}
+
+export const extractAssetNamePrices = async function (
+    wrappedLoan: any
+) {
+    let assetsNamesPrices = await wrappedLoan.getAllAssetsPrices();
+    let result: any = {};
+    for (const assetNamePrice of assetsNamesPrices) {
+        result[fromBytes32(assetNamePrice[0])] = assetNamePrice[1];
+    }
+    return result;
+}
 
 
 export const deployAndInitExchangeContract = async function (
@@ -295,11 +324,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, poolManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath +'/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(exchanges, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, maxLTV, minSelloutLTV, nativeAssetSymbol);
+    await updateSmartLoanLibrary(exchanges, poolManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, nativeAssetSymbol);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }
@@ -314,13 +343,23 @@ export class Asset {
     }
 }
 
-export class AssetAmount {
-    asset: string;
-    amount: BigNumber;
+export class AssetNamePrice {
+    name: string;
+    price: BigNumber;
 
-    constructor(asset: string, amount: BigNumber) {
-        this.asset = asset;
-        this.amount = amount;
+    constructor(name: string, price: BigNumber) {
+        this.name = name;
+        this.price = price;
+    }
+}
+
+export class AssetNameBalance {
+    name: string;
+    balance: BigNumber;
+
+    constructor(name: string, balance: BigNumber) {
+        this.name = name;
+        this.balance = balance;
     }
 }
 

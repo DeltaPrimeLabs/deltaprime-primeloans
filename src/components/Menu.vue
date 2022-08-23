@@ -23,7 +23,6 @@
       document.body.addEventListener('click', this.checkIfOutside);
     },
     unmounted() {
-      console.log('asfd')
       document.body.removeEventListener('click', this.checkIfOutside);
     }
   }

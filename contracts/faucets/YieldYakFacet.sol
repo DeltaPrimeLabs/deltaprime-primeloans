@@ -10,8 +10,8 @@ import "./SolvencyFacet.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../interfaces/IYakStakingVectorSAV2.sol";
-import "../lib/SmartLoanLib.sol";
-import {LibDiamond} from "../lib/LibDiamond.sol";
+import "../lib/SmartLoanConfigLib.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 
 contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, PriceAware {
@@ -28,14 +28,14 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanLib.getRedstoneConfigManager().maxBlockTimestampDelay();
+        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     // TODO: Change name to a more unique one for this exact investment strategy
@@ -46,14 +46,14 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     **/
     function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
-        require(IWrappedNativeToken(SmartLoanLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
+        require(IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
 
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).withdraw(amount);
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).withdraw(amount);
         IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address).deposit{value: amount}();
 
         // TODO make staking more generic
         // Add asset to ownedAssets
-        LibDiamond.addOwnedAsset("$YYAV3SA1", YAKStakingAVAXAAVEV1Address);
+        DiamondStorageLib.addOwnedAsset("YYAV3SA1", YAKStakingAVAXAAVEV1Address);
 
         emit Staked(msg.sender, "AVAX", amount, block.timestamp);
     }
@@ -73,7 +73,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
         // TODO make staking more generic
         // Add asset to ownedAssets
-        LibDiamond.addOwnedAsset("$YYVSAVAXV2", YAKStakingVectorSAV2Address);
+        DiamondStorageLib.addOwnedAsset("$YYVSAVAXV2", YAKStakingVectorSAV2Address);
 
         emit Staked(msg.sender, "SAVAX", amount, block.timestamp);
     }
@@ -81,17 +81,14 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     function unstakeSAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
+
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
 
-        // TODO: Maybe perform a standard function call?
-        (bool success, ) = address(yakStakingContract).call(abi.encodeWithSignature("withdraw(uint256)", amount));
-        if (!success) {
-            revert("Unstaking failed");
-        }
+        yakStakingContract.withdraw(amount);
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset("$YYVSAVAXV2");
+            DiamondStorageLib.removeOwnedAsset("$YYVSAVAXV2");
         }
 
         emit Unstaked(msg.sender, "SAVAX", amount, block.timestamp);
@@ -107,64 +104,24 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     function unstakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
+
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
 
-        // TODO: Maybe perform a standard function call?
-        (bool success, ) = address(yakStakingContract).call(abi.encodeWithSignature("withdraw(uint256)", amount));
-        if (!success) {
-            revert("Unstaking failed");
-        }
+        yakStakingContract.withdraw(amount);
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
-            LibDiamond.removeOwnedAsset("$YYAV3SA1");
+            DiamondStorageLib.removeOwnedAsset("YYAV3SA1");
         }
 
         emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
 
-        IWrappedNativeToken(SmartLoanLib.getNativeToken()).deposit{value: amount}();
+        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: amount}();
     }
 
-
-    function getTotalStakedValueYYVSAVAXV2() public view override returns (uint256 totalValue) {
-        // TODO: Make more generic whith supporting multiple staking strategies
-        IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);
-        uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-        if (stakedBalance == 0) {
-            totalValue = 0;
-        } else {
-            PoolManager poolManager = SmartLoanLib.getPoolManager();
-            uint256 price = getPriceFromMsg("$YYVSAVAXV2");
-            totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
-        }
-    }
-
-
-    function getTotalStakedValueYYAV3SA1() public view override returns (uint256 totalValue) {
-        // TODO: Make more generic whith supporting multiple staking strategies
-        IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
-        uint256 stakedBalance = yakStakingContract.balanceOf(address(this));
-        if (stakedBalance == 0) {
-            totalValue = 0;
-        } else {
-            PoolManager poolManager = SmartLoanLib.getPoolManager();
-            uint256 price = getPriceFromMsg("$YYAV3SA1");
-            totalValue = price * stakedBalance * 10**10 / 10 ** yakStakingContract.decimals();
-        }
-    }
-
-    /**
-    * Checks whether account is solvent (LTV lower than SmartLoanLib.getMaxLtv())
-    * @dev This modifier uses the redstone-evm-connector
-    **/
-    modifier remainsSolvent() {
-        _;
-
-        require(_isSolvent(), "The action may cause an account to become insolvent");
-    }
 
     modifier onlyOwner() {
-        LibDiamond.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsContractOwner();
         _;
     }
 

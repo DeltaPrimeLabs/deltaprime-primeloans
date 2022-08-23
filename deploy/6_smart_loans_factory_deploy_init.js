@@ -41,7 +41,7 @@ module.exports = async ({
         "type": "function"
     };
 
-    const smartLoanImplementation = await ethers.getContract("SmartLoanDiamond");
+    const smartLoanImplementation = await ethers.getContract("SmartLoanDiamondBeacon");
 
     const calldata = web3Abi.encodeFunctionCall(
         initializeInterface,

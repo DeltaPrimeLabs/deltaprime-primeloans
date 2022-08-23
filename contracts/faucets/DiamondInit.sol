@@ -8,7 +8,7 @@ pragma solidity ^0.8.4;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import {LibDiamond} from "../lib/LibDiamond.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import { IDiamondLoupe } from "../interfaces/IDiamondLoupe.sol";
 import { IDiamondCut } from "../interfaces/IDiamondCut.sol";
 import { IERC173 } from "../interfaces/IERC173.sol";
@@ -24,11 +24,9 @@ contract DiamondInit {
     // data to set your own state variables
     function init() external {
         // DiamondStorage
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         // SmartLoanStorage
-        LibDiamond.SmartLoanStorage storage sls = LibDiamond.smartLoanStorage();
-        // LiquidationStorage
-        LibDiamond.LiquidationStorage storage ls = LibDiamond.liquidationStorage();
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
 
         require(!sls._initialized, "DiamondInit: contract is already initialized");
 
@@ -38,9 +36,8 @@ contract DiamondInit {
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
-        // SmartLoanLib ds default values initialization
-        ls._liquidationInProgress = false;
-        LibDiamond.setContractOwner(msg.sender);
+        DiamondStorageLib.setContractOwner(msg.sender);
+        sls._initialized = true;
 
         // add your own state variables 
         // EIP-2535 specifies that the `diamondCut` function takes two optional 

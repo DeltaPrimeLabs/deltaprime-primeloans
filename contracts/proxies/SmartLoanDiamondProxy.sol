@@ -7,7 +7,7 @@ import "./openzeppelinVirtual/BeaconProxyVirtual.sol";
  * The only difference is usage of overriding the ERC1967Upgrade._upgradeBeaconToAndCall and BeaconProxy._implementation() methods.
  */
 
-contract DiamondBeaconProxy is BeaconProxyVirtual {
+contract SmartLoanDiamondProxy is BeaconProxyVirtual {
     constructor(address beacon, bytes memory data) payable BeaconProxyVirtual(beacon, data) {}
 
     /* ========== RECEIVE AVAX FUNCTION ========== */
@@ -34,8 +34,8 @@ contract DiamondBeaconProxy is BeaconProxyVirtual {
         _setBeacon(newBeacon);
         emit BeaconUpgraded(newBeacon);
         if (data.length > 0 || forceCall) {
-            // 0xe1c7392a = init()
-            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0xe1c7392a), data);
+            // 0xc4d66de8 = initialize(address owner)
+            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0xc4d66de8), data);
         }
     }
 }
