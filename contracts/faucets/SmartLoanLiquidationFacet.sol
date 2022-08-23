@@ -11,7 +11,7 @@ import "../lib/SolvencyMethodsLib.sol";
 
 import "../lib/SmartLoanConfigLib.sol";
 import "../Pool.sol";
-import "../PoolManager.sol";
+import "../TokenManager.sol";
 
 contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -104,7 +104,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
+        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
 
         uint256[] memory prices = getPricesFromMsg(config.assetsToRepay);
 
@@ -125,7 +125,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         uint256 repaidInUSD;
 
         for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(config.assetsToRepay[i]));
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i]));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
@@ -144,7 +144,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
                 suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
             }
 
-            Pool pool = Pool(poolManager.getPoolAddress(config.assetsToRepay[i]));
+            Pool pool = Pool(tokenManager.getPoolAddress(config.assetsToRepay[i]));
 
             uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.amountsToRepay[i]);
 

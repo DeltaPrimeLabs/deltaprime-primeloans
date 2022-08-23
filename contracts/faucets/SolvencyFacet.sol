@@ -5,7 +5,7 @@ import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../lib/SmartLoanConfigLib.sol";
-import "../PoolManager.sol";
+import "../TokenManager.sol";
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 
@@ -44,14 +44,14 @@ contract SolvencyFacet is PriceAware {
    **/
     function getDebt() public view virtual returns (uint256) {
         uint256 debt = 0;
-        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
-        bytes32[] memory assets = poolManager.getAllPoolAssets();
+        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        bytes32[] memory assets = tokenManager.getAllPoolAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
 
         for (uint256 i = 0; i < assets.length; i++) {
-            IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i]));
 
-            Pool pool = Pool(poolManager.getPoolAddress(assets[i]));
+            Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
             debt = debt + pool.getBorrowed(address(this)) * prices[i] * 10**10
             / 10 ** token.decimals();
@@ -69,14 +69,14 @@ contract SolvencyFacet is PriceAware {
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(SmartLoanConfigLib.getNativeTokenSymbol());
         if(prices.length > 0) {
-            PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
+            TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
 
             uint256 total = address(this).balance * nativeTokenPrice / 10**8;
 
             for (uint256 i = 0; i < prices.length; i++) {
                 require(prices[i] != 0, "Asset price returned from oracle is zero");
 
-                IERC20Metadata token = IERC20Metadata(poolManager.getAssetAddress(assets[i]));
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i]));
                 uint256 assetBalance = token.balanceOf(address(this));
 
                 total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));

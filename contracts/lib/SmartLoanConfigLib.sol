@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../Pool.sol";
-import "../PoolManager.sol";
+import "../TokenManager.sol";
 import "../interfaces/IYieldYakRouter.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../Pool.sol";
@@ -53,8 +53,8 @@ library SmartLoanConfigLib {
         return _MIN_SELLOUT_LTV;
     }
 
-    function getPoolManager() internal view returns (PoolManager) {
-    return PoolManager(0x5BD774039675883C6072E109E462328111B29600);
+    function getTokenManager() internal view returns (TokenManager) {
+    return TokenManager(0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32 symbol) {

@@ -73,7 +73,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) public view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(SmartLoanConfigLib.getTokenManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 
@@ -82,15 +82,15 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
-        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
-        bytes32[] memory assets = poolManager.getAllTokenAssets();
+        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        bytes32[] memory assets = tokenManager.getAllTokenAssets();
         uint256[] memory balances = new uint256[](assets.length);
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
 
         for (uint256 i = 0; i<assets.length; i++) {
             result[i] = AssetNameBalance({
                 name: assets[i],
-                balance: IERC20(poolManager.getAssetAddress(assets[i])).balanceOf(address(this))
+                balance: IERC20(tokenManager.getAssetAddress(assets[i])).balanceOf(address(this))
             });
         }
 
@@ -98,12 +98,12 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     }
 
     /**
-     * Returns the prices of all assets supported by the PoolManager
+     * Returns the prices of all assets supported by the TokenManager
      * It could be used as a helper method for UI
      * @dev This function uses the redstone-evm-connector
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
-        bytes32[] memory assets = SmartLoanConfigLib.getPoolManager().getAllTokenAssets();
+        bytes32[] memory assets = SmartLoanConfigLib.getTokenManager().getAllTokenAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for(uint i=0; i<assets.length; i++){

@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -18,7 +18,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
+  TokenManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory, PangolinIntermediary,
 } from "../../../typechain";
 import {BigNumber} from "ethers";
@@ -83,14 +83,14 @@ describe('Smart loan',  () => {
       ]
 
 
-      let poolManager = await deployContract(
+      let tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       let diamondAddress = await deployDiamond();
 
@@ -100,7 +100,7 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
@@ -117,7 +117,7 @@ describe('Smart loan',  () => {
               contractAddress: exchange.address,
             }
           ],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,

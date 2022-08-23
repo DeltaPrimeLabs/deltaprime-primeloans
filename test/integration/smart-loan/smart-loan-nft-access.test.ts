@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import MockBorrowAccessNFTArtifact
     from '../../../artifacts/contracts/mock/MockBorrowAccessNFT.sol/MockBorrowAccessNFT.json';
 
@@ -25,7 +25,7 @@ import {
     CompoundingIndex,
     Pool,
     MockBorrowAccessNFT,
-    OpenBorrowersRegistry__factory, PoolManager, RedstoneConfigManager__factory,
+    OpenBorrowersRegistry__factory, TokenManager, RedstoneConfigManager__factory,
     SmartLoansFactoryWithAccessNFT,
     VariableUtilisationRatesCalculator, SmartLoanGigaChadInterface,
 } from "../../../typechain";
@@ -86,14 +86,14 @@ describe('Smart loan',  () => {
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             ]
 
-            let poolManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                PoolManagerArtifact,
+                TokenManagerArtifact,
                 [
                     supportedAssets,
                     lendingPools
                 ]
-            ) as PoolManager;
+            ) as TokenManager;
 
             let diamondAddress = await deployDiamond();
 
@@ -105,7 +105,7 @@ describe('Smart loan',  () => {
             await recompileSmartLoanLib(
                 "SmartLoanConfigLib",
                 [],
-                poolManager.address,
+                tokenManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,

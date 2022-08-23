@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -23,7 +23,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
-  PoolManager,
+  TokenManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory,
@@ -95,14 +95,14 @@ describe('Smart loan',  () => {
         new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
       ]
 
-      let poolManager = await deployContract(
+      let tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 
@@ -115,7 +115,7 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
@@ -307,14 +307,14 @@ describe('Smart loan',  () => {
         }
       ]
 
-      let poolManager = await deployContract(
+      let tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       let diamondAddress = await deployDiamond();
 
@@ -324,7 +324,7 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
@@ -343,7 +343,7 @@ describe('Smart loan',  () => {
               contractAddress: exchange.address,
             }
           ],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,

@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import DestructableArtifact from '../../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -19,7 +19,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   DestructableContract,
-  PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
+  TokenManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
   SmartLoansFactory,
 } from "../../../typechain";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -94,14 +94,14 @@ describe('Smart loan',  () => {
         new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
       ]
 
-      let poolManager = await deployContract(
+      let tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       let diamondAddress = await deployDiamond();
 
@@ -111,7 +111,7 @@ describe('Smart loan',  () => {
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,

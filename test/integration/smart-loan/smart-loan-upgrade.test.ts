@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -22,7 +22,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
   PangolinIntermediary,
-  PoolManager,
+  TokenManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory
@@ -59,7 +59,7 @@ describe('Smart loan - upgrading',  () => {
       owner: SignerWithAddress,
       other: SignerWithAddress,
       oracle: SignerWithAddress,
-      poolManager: any,
+      tokenManager: any,
       borrower: SignerWithAddress,
       depositor: SignerWithAddress,
       tokenContracts: any = {},
@@ -105,14 +105,14 @@ describe('Smart loan - upgrading',  () => {
         new Asset(toBytes32('USDC'), tokenContracts['USDC'].address)
       ]
 
-      poolManager = await deployContract(
+      tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       diamondAddress = await deployDiamond();
 
@@ -122,7 +122,7 @@ describe('Smart loan - upgrading',  () => {
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
@@ -139,7 +139,7 @@ describe('Smart loan - upgrading',  () => {
               contractAddress: exchange.address,
             }
           ],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,

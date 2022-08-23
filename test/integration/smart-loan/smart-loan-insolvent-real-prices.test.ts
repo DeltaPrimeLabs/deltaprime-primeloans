@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -27,7 +27,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Pool,
-  PoolManager,
+  TokenManager,
   RedstoneConfigManager__factory,
   SmartLoansFactory, PangolinIntermediary,
 } from "../../../typechain";
@@ -238,7 +238,7 @@ describe('Smart loan - real prices',  () => {
         redstoneConfigManager: any,
         tokenContracts: any = {},
         poolContracts: any = {},
-        poolManager: any,
+        tokenManager: any,
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         LINK_PRICE: number,
@@ -280,21 +280,21 @@ describe('Smart loan - real prices',  () => {
         new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
       ];
 
-      poolManager = await deployContract(
+      tokenManager = await deployContract(
           owner,
-          PoolManagerArtifact,
+          TokenManagerArtifact,
           [
             supportedAssets,
             lendingPools
           ]
-      ) as PoolManager;
+      ) as TokenManager;
 
       diamondAddress = await deployDiamond();
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
           [],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           ethers.constants.AddressZero,
@@ -384,7 +384,7 @@ describe('Smart loan - real prices',  () => {
               contractAddress: exchange.address,
             }
           ],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           ethers.constants.AddressZero,
@@ -405,7 +405,7 @@ describe('Smart loan - real prices',  () => {
               contractAddress: exchange.address,
             }
           ],
-          poolManager.address,
+          tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
@@ -527,7 +527,7 @@ describe('Smart loan - real prices',  () => {
 
           const debts: any = {};
 
-          for (const asset of (await poolManager.getAllPoolAssets())){
+          for (const asset of (await tokenManager.getAllPoolAssets())){
             if(poolContracts.hasOwnProperty(fromBytes32(asset))) {
               let debt = (await poolContracts[fromBytes32(asset)].getBorrowed(wrappedLoan.address));
               let decimals = await tokenContracts[fromBytes32(asset)].decimals();

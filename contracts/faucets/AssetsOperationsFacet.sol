@@ -9,7 +9,7 @@ import "../lib/SmartLoanConfigLib.sol";
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
-import "../PoolManager.sol";
+import "../TokenManager.sol";
 
 contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -60,8 +60,8 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @dev This function uses the redstone-evm-connector
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
-        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
-        Pool pool = Pool(poolManager.getPoolAddress(_asset));
+        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        Pool pool = Pool(tokenManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
         IERC20Metadata token = getERC20TokenInstance(_asset);
@@ -86,7 +86,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
             DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(SmartLoanConfigLib.getPoolManager().getPoolAddress(_asset));
+        Pool pool = Pool(SmartLoanConfigLib.getTokenManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
@@ -110,7 +110,7 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanConfigLib.getPoolManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(SmartLoanConfigLib.getTokenManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 

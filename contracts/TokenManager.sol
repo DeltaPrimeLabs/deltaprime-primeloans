@@ -4,7 +4,7 @@ import "./lib/Bytes32EnumerableMap.sol";
 import "./interfaces/IAssetsExchange.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract PoolManager {
+contract TokenManager {
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     address public admin;
@@ -70,7 +70,7 @@ contract PoolManager {
     }
 
     function _addPoolAsset(bytes32 _asset, address _poolAddress) internal {
-        require(Address.isContract(_poolAddress), "PoolManager: Pool must be a contract");
+        require(Address.isContract(_poolAddress), "TokenManager: Pool must be a contract");
         require(!assetToPoolAddress.contains(_asset), "Asset's pool already exists");
         assetToPoolAddress.set(_asset, _poolAddress);
         emit PoolAssetAdded(msg.sender, _asset, _poolAddress, block.timestamp);

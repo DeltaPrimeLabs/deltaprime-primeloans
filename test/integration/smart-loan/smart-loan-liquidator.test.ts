@@ -1,7 +1,7 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -18,7 +18,7 @@ import {
     toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {PoolManager, RedstoneConfigManager__factory, SmartLoansFactory, PangolinIntermediary,} from "../../../typechain";
+import {TokenManager, RedstoneConfigManager__factory, SmartLoansFactory, PangolinIntermediary,} from "../../../typechain";
 import {BigNumber, Contract, ContractFactory} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import redstone from "redstone-api";
@@ -62,7 +62,7 @@ describe('Test liquidator',  () => {
             loan: Contract,
             wrappedLoan: any,
             redstoneConfigManager: any,
-            poolManager: any,
+            tokenManager: any,
             tokenContracts: any = {},
             poolContracts: any = {},
             MOCK_PRICES: any,
@@ -130,21 +130,21 @@ describe('Test liquidator',  () => {
                 },
             ];
 
-            poolManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
-                PoolManagerArtifact,
+                TokenManagerArtifact,
                 [
                     supportedAssets,
                     lendingPools
                 ]
-            ) as PoolManager;
+            ) as TokenManager;
 
             diamondAddress = await deployDiamond();
 
             await recompileSmartLoanLib(
                 "SmartLoanConfigLib",
                 [],
-                poolManager.address,
+                tokenManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
@@ -164,7 +164,7 @@ describe('Test liquidator',  () => {
                         contractAddress: exchange.address,
                     }
                 ],
-                poolManager.address,
+                tokenManager.address,
                 redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
@@ -218,7 +218,7 @@ describe('Test liquidator',  () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, poolManager.address);
+            await liquidateLoan(wrappedLoan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });

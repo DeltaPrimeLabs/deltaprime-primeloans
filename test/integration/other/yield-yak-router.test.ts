@@ -3,13 +3,13 @@ import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
     PangolinIntermediary,
-    PoolManager,
+    TokenManager,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {
     Asset,
@@ -64,14 +64,14 @@ describe('Yield Yak test stake AVAX', () => {
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
         ]
-        let poolManager = await deployContract(
+        let tokenManager = await deployContract(
             owner,
-            PoolManagerArtifact,
+            TokenManagerArtifact,
             [
                 supportedAssets,
                 []
             ]
-        ) as PoolManager;
+        ) as TokenManager;
 
         let diamondAddress = await deployDiamond();
 
@@ -81,7 +81,7 @@ describe('Yield Yak test stake AVAX', () => {
         await recompileSmartLoanLib(
             "SmartLoanConfigLib",
             [],
-            poolManager.address,
+            tokenManager.address,
             redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,
@@ -184,14 +184,14 @@ describe('Yield Yak test stake SAVAX', () => {
             new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['SAVAX']),
             new Asset(toBytes32('$YYVSAVAXV2'), TOKEN_ADDRESSES['$YYVSAVAXV2']),
         ]
-        let poolManager = await deployContract(
+        let tokenManager = await deployContract(
             owner,
-            PoolManagerArtifact,
+            TokenManagerArtifact,
             [
                 supportedAssets,
                 []
             ]
-        ) as PoolManager;
+        ) as TokenManager;
 
         let diamondAddress = await deployDiamond();
 
@@ -201,7 +201,7 @@ describe('Yield Yak test stake SAVAX', () => {
         await recompileSmartLoanLib(
             "SmartLoanConfigLib",
             [],
-            poolManager.address,
+            tokenManager.address,
             redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,
@@ -220,7 +220,7 @@ describe('Yield Yak test stake SAVAX', () => {
                     contractAddress: exchange.address,
                 }
             ],
-            poolManager.address,
+            tokenManager.address,
             redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,

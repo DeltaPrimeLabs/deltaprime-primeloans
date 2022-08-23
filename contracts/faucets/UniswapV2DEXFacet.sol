@@ -31,9 +31,9 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 
-        PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
+        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
         // Add asset to ownedAssets
-        address boughtAssetAddress = poolManager.getAssetAddress(_boughtAsset);
+        address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset);
         DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap

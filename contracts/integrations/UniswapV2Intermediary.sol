@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../lib/Bytes32EnumerableMap.sol";
 import "../lib/SmartLoanConfigLib.sol";
-import "../PoolManager.sol";
+import "../TokenManager.sol";
 
 /**
  * @title UniswapV2Intermediary
@@ -79,11 +79,11 @@ contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, Reentranc
    * @dev _assets assets to be added or updated
    **/
   function _updateAssets(Asset[] memory _assets) internal {
-    PoolManager poolManager = SmartLoanConfigLib.getPoolManager();
+    TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
     for (uint256 i = 0; i < _assets.length; i++) {
       require(_assets[i].asset != "", "Cannot set an empty string asset.");
       require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
-      require(poolManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
+      require(tokenManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
 
       supportedAssetsMap.set(_assets[i].asset, _assets[i].assetAddress);
     }

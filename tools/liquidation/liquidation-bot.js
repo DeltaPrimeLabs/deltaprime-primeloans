@@ -5,7 +5,7 @@ import SOLVENCY_LOGIC from '../../artifacts/contracts/faucets/SolvencyFacet.sol/
 import LOAN_LIQUIDATION from '../../artifacts/contracts/faucets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, toSupply} from "../../test/_helpers";
-import POOL_MANAGER from '../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
 import redstone from "redstone-api";
@@ -78,12 +78,12 @@ function wrapLiquidationFacet(loanAddress) {
     return loan
 }
 
-function getPoolManager(poolManagerAddress) {
-    return new ethers.Contract(poolManagerAddress, POOL_MANAGER.abi, wallet);
+function getTokenManager(tokenManagerAddress) {
+    return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, wallet);
 }
 
-async function getPoolContract(poolManager, asset) {
-    let poolAddress = await poolManager.getPoolAddress(asset);
+async function getPoolContract(tokenManager, asset) {
+    let poolAddress = await tokenManager.getPoolAddress(asset);
     return new ethers.Contract(poolAddress, POOL.abi, wallet);
 }
 
@@ -102,11 +102,11 @@ async function getInsolventLoans() {
     return insolventLoans
 }
 
-export async function liquidateLoan(loanAddress, poolManagerAddress) {
+export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let loan = wrapLogicFacet(loanAddress);
     let solvencyLoan = getSolvencyLoan(loanAddress);
     let liquidateFacet = wrapLiquidationFacet(loanAddress);
-    let poolManager = getPoolManager(poolManagerAddress);
+    let tokenManager = getTokenManager(tokenManagerAddress);
     let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
     const bonus = calculateBonus(
@@ -134,15 +134,15 @@ export async function liquidateLoan(loanAddress, poolManagerAddress) {
 
     const debts = {};
 
-    for (const asset of (await poolManager.getAllPoolAssets())){
-        let poolContract = await getPoolContract(poolManager, asset);
+    for (const asset of (await tokenManager.getAllPoolAssets())){
+        let poolContract = await getPoolContract(tokenManager, asset);
         let debt = await poolContract.getBorrowed(loan.address)
         let decimals = await getTokenContract(addresses[fromBytes32(asset)]).decimals();
         debts[fromBytes32(asset)] = formatUnits(debt, decimals);
     }
 
     let pricesArg = {}
-    for (const asset of await poolManager.getAllPoolAssets()) {
+    for (const asset of await tokenManager.getAllPoolAssets()) {
         pricesArg[fromBytes32(asset)] = (await redstone.getPrice(fromBytes32(asset), {provider: "redstone-avalanche-prod-node-3"})).value;
     }
 

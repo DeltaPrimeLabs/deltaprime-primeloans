@@ -1,4 +1,4 @@
-export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, nativeAssetSymbol) {
+export default function updateSmartLoanLibrary(exchanges, tokenManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, nativeAssetSymbol) {
     var fs = require('fs')
     let libcontract = fs.readFileSync('./contracts/lib/SmartLoanConfigLib.sol', 'utf8')
 
@@ -27,10 +27,10 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
     //Pool Manager
 
     lineWithFunctionDeclaration = fileArray.findIndex(
-        line => line.includes('return PoolManager')
+        line => line.includes('return TokenManager')
     );
 
-    newLine = `    return PoolManager(${poolManager});`;
+    newLine = `    return TokenManager(${tokenManager});`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

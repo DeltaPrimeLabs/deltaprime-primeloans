@@ -4,9 +4,9 @@ import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
 import PangolinIntermediaryArtifact from '../../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
-import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PoolManager, PangolinIntermediary} from '../../../typechain';
+import {TokenManager, PangolinIntermediary} from '../../../typechain';
 import {
     Asset,
     fromBytes32,
@@ -68,19 +68,19 @@ describe('PangolinIntermediary', () => {
                 new Asset(toBytes32("USDC"), TOKEN_ADDRESSES['USDC']),
             ];
 
-            let poolManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                PoolManagerArtifact,
+                TokenManagerArtifact,
                 [
                     supportedAssets,
                     []
                 ]
-            ) as PoolManager;
+            ) as TokenManager;
 
             await recompileSmartLoanLib(
                 "SmartLoanConfigLib",
                 [],
-                poolManager.address,
+                tokenManager.address,
                 ethers.constants.AddressZero,
                 ethers.constants.AddressZero,
                 ethers.constants.AddressZero,
@@ -165,7 +165,7 @@ describe('PangolinIntermediary', () => {
 
     describe('Set and read assets', () => {
       let sut: PangolinIntermediary,
-          poolManager: Contract;
+          tokenManager: Contract;
 
       const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
       const token2Address = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
@@ -184,19 +184,19 @@ describe('PangolinIntermediary', () => {
               new Asset(toBytes32("TOKEN_3"), token3Address),
           ];
 
-          poolManager = await deployContract(
+          tokenManager = await deployContract(
               owner,
-              PoolManagerArtifact,
+              TokenManagerArtifact,
               [
                   supportedAssets,
                   []
               ]
-          ) as PoolManager;
+          ) as TokenManager;
 
           await recompileSmartLoanLib(
               "SmartLoanConfigLib",
               [],
-              poolManager.address,
+              tokenManager.address,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
@@ -281,8 +281,8 @@ describe('PangolinIntermediary', () => {
       it("should update asset address", async () => {
         const newToken1Address = "0xb794F5eA0ba39494cE839613fffBA74279579268";
         // TODO: Add updateAsset functions
-        await poolManager.removeTokenAssets([toBytes32("TOKEN_1")]);
-        await poolManager.addTokenAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
+        await tokenManager.removeTokenAssets([toBytes32("TOKEN_1")]);
+        await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
         await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
         await expect((await sut.getAssetAddress(toBytes32("TOKEN_1"))).toString()).to.be.equal(newToken1Address);
       });
@@ -291,9 +291,9 @@ describe('PangolinIntermediary', () => {
       it("should update one token and a add new one", async () => {
         const newToken2Address = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
         const token4Address = "0xB155f7e2769a24f1D3E76ACdCed934950f5da410";
-          await poolManager.removeTokenAssets([toBytes32("TOKEN_2")]);
-          await poolManager.addTokenAssets([new Asset(toBytes32("TOKEN_2"), newToken2Address)]);
-        await poolManager.addTokenAssets([new Asset(toBytes32("TOKEN_4"), token4Address)]);
+          await tokenManager.removeTokenAssets([toBytes32("TOKEN_2")]);
+          await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_2"), newToken2Address)]);
+        await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_4"), token4Address)]);
         await sut.updateAssets([
           new Asset(toBytes32("TOKEN_2"), newToken2Address),
           new Asset(toBytes32("TOKEN_4"), token4Address)
