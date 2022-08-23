@@ -2,7 +2,7 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
-    PangolinExchange,
+    PangolinIntermediary,
     PoolManager,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
@@ -163,7 +163,7 @@ describe('Yield Yak test stake AVAX', () => {
 describe('Yield Yak test stake SAVAX', () => {
     let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
-        exchange: PangolinExchange,
+        exchange: PangolinIntermediary,
         wrappedLoan: any,
         user: SignerWithAddress,
         owner: SignerWithAddress,
@@ -208,8 +208,8 @@ describe('Yield Yak test stake SAVAX', () => {
             'lib'
         );
 
-        let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
-        exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+        let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
+        exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
         await exchange.initialize(pangolinRouterAddress, supportedAssets);
 
         await recompileSmartLoanLib(

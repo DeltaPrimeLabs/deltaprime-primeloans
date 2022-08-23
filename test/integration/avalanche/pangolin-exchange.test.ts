@@ -3,10 +3,10 @@ import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
-import PangolinExchangeArtifact from '../../../artifacts/contracts/integrations/avalanche/PangolinExchange.sol/PangolinExchange.json';
+import PangolinIntermediaryArtifact from '../../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
 import PoolManagerArtifact from '../../../artifacts/contracts/PoolManager.sol/PoolManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PoolManager, PangolinExchange} from '../../../typechain';
+import {PoolManager, PangolinIntermediary} from '../../../typechain';
 import {
     Asset,
     fromBytes32,
@@ -41,26 +41,26 @@ const WavaxAbi = [
     ...ERC20Abi
 ]
 
-const uniswapV2ExchangeAbi = [
+const UniswapV2IntermediaryAbi = [
     'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
     'function getAmountsOut (uint256 amountIn, address[] path) view returns (uint256[])'
 ]
 
 
-describe('PangolinExchange', () => {
+describe('PangolinIntermediary', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
 
     describe('Test buying and selling an asset', () => {
-        let sut: PangolinExchange,
+        let sut: PangolinIntermediary,
             wavaxToken: Contract,
             usdToken: Contract,
             router: Contract,
             owner: SignerWithAddress,
             usdTokenDecimalPlaces: BigNumber;
 
-        before('Deploy the UniswapV2Exchange contract', async () => {
+        before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
 
             let supportedAssets = [
@@ -89,15 +89,15 @@ describe('PangolinExchange', () => {
 
             await new Promise(r => setTimeout(r, 20000));
 
-            let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
-            sut = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+            let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
+            sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
             await sut.initialize(pangolinRouterAddress, supportedAssets);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
             usdTokenDecimalPlaces = await usdToken.decimals();
-            router = await new ethers.Contract(pangolinRouterAddress, uniswapV2ExchangeAbi);
+            router = await new ethers.Contract(pangolinRouterAddress, UniswapV2IntermediaryAbi);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});
         });
@@ -164,7 +164,7 @@ describe('PangolinExchange', () => {
     });
 
     describe('Set and read assets', () => {
-      let sut: PangolinExchange,
+      let sut: PangolinIntermediary,
           poolManager: Contract;
 
       const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
@@ -205,8 +205,8 @@ describe('PangolinExchange', () => {
 
           await new Promise(r => setTimeout(r, 5000));
 
-          let exchangeFactory = await ethers.getContractFactory("PangolinExchange");
-          sut = (await exchangeFactory.deploy()).connect(owner) as PangolinExchange;
+          let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
+          sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
         await sut.initialize(pangolinRouterAddress, supportedAssets.slice(0, 2));
       });
@@ -389,11 +389,11 @@ describe('PangolinExchange', () => {
 
       it("should deploy a contract with an empty asset array", async () => {
         let owner2: SignerWithAddress,
-          sut2: PangolinExchange;
+          sut2: PangolinIntermediary;
 
         [,owner2] = await getFixedGasSigners(10000000);
 
-        sut2 = await deployContract(owner2, PangolinExchangeArtifact) as PangolinExchange;
+        sut2 = await deployContract(owner2, PangolinIntermediaryArtifact) as PangolinIntermediary;
         await sut2.initialize(pangolinRouterAddress, []);
         expect(await sut2.getAllSupportedAssets()).to.be.empty;
       });

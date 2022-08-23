@@ -25,9 +25,9 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
-        address(soldToken).safeTransfer(getRouterContract(), _exactSold);
+        address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
 
-        IAssetsExchange exchange = IAssetsExchange(getRouterContract());
+        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
         uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
 
@@ -47,10 +47,10 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     }
 
     /**
-     * Returns address of UniswapV2-like exchange
+     * Returns address of DeltaPrime intermediary contract of UniswapV2-like exchange
      **/
     //TO BE OVERRIDDEN
-    function getRouterContract() public virtual returns (address) {
+    function getExchangeIntermediaryContract() public virtual returns (address) {
         return address(0);
     }
 

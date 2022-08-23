@@ -32,10 +32,10 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer, admin} = await getNamedAccounts();
 
-    embedCommitHash('PangolinExchange');
-    embedCommitHash('PangolinExchangeTUP', './contracts/proxies');
+    embedCommitHash('PangolinIntermediary');
+    embedCommitHash('PangolinIntermediaryTUP', './contracts/proxies');
 
-    let resultImpl = await deploy('PangolinExchange', {
+    let resultImpl = await deploy('PangolinIntermediary', {
         from: deployer,
         gasLimit: 8000000,
         args: [],
@@ -45,9 +45,9 @@ module.exports = async ({
         address: resultImpl.address
     })
 
-    console.log(`PangolinExchange implementation deployed at address: ${resultImpl.address} by a factory`);
+    console.log(`PangolinIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
 
-    const exchange = await ethers.getContract("PangolinExchange");
+    const exchange = await ethers.getContract("PangolinIntermediary");
 
     const initializeInterface = {
         "inputs": [
@@ -86,7 +86,7 @@ module.exports = async ({
         [pangolinRouter, supportedAssets]
     )
 
-    let resultTup = await deploy('PangolinExchangeTUP', {
+    let resultTup = await deploy('PangolinIntermediaryTUP', {
         from: deployer,
         gasLimit: 8000000,
         args: [exchange.address, admin, calldata],
@@ -94,7 +94,7 @@ module.exports = async ({
 
     await verifyContract(hre, {
         address: resultTup.address,
-        contract: "contracts/proxies/PangolinExchangeTUP.sol:PangolinExchangeTUP",
+        contract: "contracts/proxies/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
         constructorArguments: [
             exchange.address,
             admin,
@@ -102,7 +102,7 @@ module.exports = async ({
         ]
     });
 
-    console.log(`PangolinExchangeTUP deployed at address: ${resultTup.address} by a factory`);
+    console.log(`PangolinIntermediaryTUP deployed at address: ${resultTup.address} by a factory`);
 
 };
 

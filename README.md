@@ -130,7 +130,7 @@ A user can reduce the liquidation risk adjusting amount of personal funds deposi
 
 * **SmartLoansFactory.sol** - a helper contract that orchestrates loans creation and initial funding in one transaction. It also manages data about loan creators acting as a Borrowers Registry.
 
-* **PangolinExchange.sol** - an exchange contract that allows investing AVAX into other popular crypto-tokens on Pangolin DEX.
+* **PangolinIntermediary.sol** - an exchange contract that allows investing AVAX into other popular crypto-tokens on Pangolin DEX.
 
 # Building and running UI
 

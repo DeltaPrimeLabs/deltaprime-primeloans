@@ -11,9 +11,9 @@ import WrappedNativeTokenPoolArtifact from '../../artifacts/contracts/WrappedNat
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {LinearIndex, OpenBorrowersRegistry, WrappedNativeTokenPool} from "../../typechain";
+import WETH9Artifact from "../../artifacts/contracts/lib/WETH9.sol/WETH9.json";
+import {LinearIndex, OpenBorrowersRegistry, WrappedNativeTokenPool, WETH9} from "../../typechain";
 import {Contract} from "ethers";
-import AVAX_TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -32,7 +32,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-describe('Pool with variable utilisation interest rates', () => {
+describe('Wrapped native token pool', () => {
     let sut: WrappedNativeTokenPool,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
@@ -49,7 +49,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
         sut = (await deployContract(owner, WrappedNativeTokenPoolArtifact)) as WrappedNativeTokenPool;
 
-        wavax = new ethers.Contract(AVAX_TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+        wavax = (await deployContract(owner, WETH9Artifact)) as WETH9;
 
         const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
         const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;

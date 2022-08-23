@@ -18,7 +18,7 @@ import {
     toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {PoolManager, RedstoneConfigManager__factory, SmartLoansFactory, PangolinExchange,} from "../../../typechain";
+import {PoolManager, RedstoneConfigManager__factory, SmartLoansFactory, PangolinIntermediary,} from "../../../typechain";
 import {BigNumber, Contract, ContractFactory} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import redstone from "redstone-api";
@@ -57,7 +57,7 @@ describe('Test liquidator',  () => {
 
 
     describe('A loan with debt and repayment', () => {
-        let exchange: PangolinExchange,
+        let exchange: PangolinIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             wrappedLoan: any,
@@ -151,7 +151,7 @@ describe('Test liquidator',  () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);

@@ -7,17 +7,17 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./interfaces/IAssetsExchange.sol";
-import "./lib/Bytes32EnumerableMap.sol";
-import "./lib/SmartLoanConfigLib.sol";
-import "./PoolManager.sol";
+import "../interfaces/IAssetsExchange.sol";
+import "../lib/Bytes32EnumerableMap.sol";
+import "../lib/SmartLoanConfigLib.sol";
+import "../PoolManager.sol";
 
 /**
- * @title UniswapV2Exchange
+ * @title UniswapV2Intermediary
  * @dev Contract allows user to swap ERC20 tokens on DEX
- * This implementation supports UniswapV2Exchange-like DEXs
+ * This implementation supports UniswapV2Intermediary-like DEXs
  */
-contract UniswapV2Exchange is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 

@@ -21,7 +21,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-  PangolinExchange,
+  PangolinIntermediary,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
@@ -52,7 +52,7 @@ describe('Smart loan - upgrading',  () => {
   });
 
   describe('Check basic logic before and after upgrade', () => {
-    let exchange: PangolinExchange,
+    let exchange: PangolinIntermediary,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
@@ -129,7 +129,7 @@ describe('Smart loan - upgrading',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",

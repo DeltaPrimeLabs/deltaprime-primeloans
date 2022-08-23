@@ -23,7 +23,7 @@ module.exports = async ({
 
     const WrappedNativeTokenPoolTUP = await ethers.getContract("WrappedNativeTokenPoolTUP");
     const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP");
-    const exchangeTUP = await ethers.getContract("PangolinExchangeTUP");
+    const exchangeTUP = await ethers.getContract("PangolinIntermediaryTUP");
     const yieldYakRouter = await ethers.getContract("YieldYakRouter");
 
     updateSmartLoanLibrary(

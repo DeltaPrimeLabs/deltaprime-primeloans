@@ -26,7 +26,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Pool,
-  PangolinExchange,
+  PangolinIntermediary,
   PoolManager,
   RedstoneConfigManager__factory,
   SmartLoansFactory, SmartLoanGigaChadInterface,
@@ -148,7 +148,7 @@ describe('Smart loan',  () => {
   });
 
   describe('An insolvent loan - mock prices', () => {
-    let exchange: PangolinExchange,
+    let exchange: PangolinIntermediary,
         loan: SmartLoanGigaChadInterface,
         wrappedLoan: any,
         owner: SignerWithAddress,
@@ -239,7 +239,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
       //deposit other tokens
       await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);

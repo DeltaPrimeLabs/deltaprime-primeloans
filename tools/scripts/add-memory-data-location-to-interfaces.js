@@ -130,7 +130,7 @@ function createFaucetsInterfaces() {
         'routerContractAddress',
         'isTimestampValid',
         'isSignerAuthorized',
-        'getRouterContract',
+        'getExchangeIntermediary',
         'getMaxDataTimestampDelay',
         'getMaxBlockTimestampDelay',
         'getERC20TokenInstance',

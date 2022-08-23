@@ -86,7 +86,7 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
         let exchangeContract = fs.readFileSync(exchange.facetPath, 'utf8');
         let fileArray = exchangeContract.split('\n');
         lineWithFunctionDeclaration = fileArray.findIndex(
-            line => line.includes('getRouterContract')
+            line => line.includes('getExchangeIntermediary')
         );
 
         newLine = `        return ${exchange.contractAddress};`;
@@ -96,5 +96,5 @@ export default function updateSmartLoanLibrary(exchanges, poolManager, redstoneC
         fs.writeFileSync(exchange.facetPath, fileArray.join("\n"), 'utf8');
     }
 
-    return 'lib/SmartLoanConfigLib.sol, PangolinExchange.sol and UbeswapExchange.sol updated!'
+    return 'lib/SmartLoanConfigLib.sol, PangolinIntermediary.sol and UbeswapIntermediary.sol updated!'
 }

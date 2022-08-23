@@ -1,5 +1,3 @@
-import PANGOLIN_EXCHANGETUP from '../../deployments/mainnet/PangolinExchangeTUP.json'
-import PANGOLIN_EXCHANGE from '../../artifacts/contracts/UniswapV2Exchange.sol/UniswapV2Exchange.json'
 import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
 import LOAN_LOGIC from '../../artifacts/contracts/faucets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
@@ -39,7 +37,6 @@ const RPC_URL = getUrlForNetwork(network);
 let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
 let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);
 const factory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, wallet);
-const exchange = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, wallet);
 
 
 async function wrapLoanStatus(loanAddress) {

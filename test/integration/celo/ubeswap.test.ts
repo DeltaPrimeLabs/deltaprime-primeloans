@@ -25,7 +25,7 @@ import {
   RedstoneConfigManager__factory,
   SmartLoanGigaChadInterface,
   SmartLoansFactory,
-  UbeswapExchange,
+  UbeswapIntermediary,
 } from "../../../typechain";
 import {BigNumber, Wallet} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -47,7 +47,7 @@ const erc20ABI = [
 describe('Smart loan',  () => {
 
   describe('A loan without debt', () => {
-    let exchange: UbeswapExchange,
+    let exchange: UbeswapIntermediary,
       smartLoansFactory: SmartLoansFactory,
       loan: SmartLoanGigaChadInterface,
       wrappedLoan: any,
@@ -126,8 +126,8 @@ describe('Smart loan',  () => {
           'CELO'
       );
 
-      let exchangeFactory = await ethers.getContractFactory("UbeswapExchange");
-      exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapExchange;
+      let exchangeFactory = await ethers.getContractFactory("UbeswapIntermediary");
+      exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapIntermediary;
       await exchange.initialize(ubeswapRouterAddress, supportedAssets);
 
       await recompileSmartLoanLib(

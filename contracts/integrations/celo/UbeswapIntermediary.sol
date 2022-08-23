@@ -2,14 +2,14 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import "../../UniswapV2Exchange.sol";
+import "../UniswapV2Intermediary.sol";
 
 /**
- * @title UbeswapExchange
+ * @title UbeswapIntermediary
  * @dev Contract allows user to swap ERC20 tokens on DEX
  * This implementation uses the Ubeswap DEX
  */
-contract UbeswapExchange is UniswapV2Exchange {
+contract UbeswapIntermediary is UniswapV2Intermediary {
 
   /**
    * Returns a path containing tokens' addresses

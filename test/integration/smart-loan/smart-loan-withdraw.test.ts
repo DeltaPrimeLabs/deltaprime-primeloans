@@ -19,7 +19,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   PoolManager, RedstoneConfigManager__factory, SmartLoanGigaChadInterface,
-  SmartLoansFactory, PangolinExchange,
+  SmartLoansFactory, PangolinIntermediary,
 } from "../../../typechain";
 import {BigNumber} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -44,7 +44,7 @@ describe('Smart loan',  () => {
   });
 
   describe('A loan with withdrawal', () => {
-    let exchange: PangolinExchange,
+    let exchange: PangolinIntermediary,
         loan: SmartLoanGigaChadInterface,
         smartLoansFactory: SmartLoansFactory,
         wrappedLoan: any,
@@ -107,7 +107,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinExchange") as PangolinExchange;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",
