@@ -7,7 +7,7 @@ import "./openzeppelinVirtual/BeaconProxyVirtual.sol";
  * The only difference is usage of overriding the ERC1967Upgrade._upgradeBeaconToAndCall and BeaconProxy._implementation() methods.
  */
 
-contract DiamondBeaconProxy is BeaconProxyVirtual {
+contract SmartLoanDiamondProxy is BeaconProxyVirtual {
     constructor(address beacon, bytes memory data) payable BeaconProxyVirtual(beacon, data) {}
 
     /* ========== RECEIVE AVAX FUNCTION ========== */

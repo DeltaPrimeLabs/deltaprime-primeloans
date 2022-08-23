@@ -12,7 +12,7 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    embedCommitHash('SmartLoanDiamond');
+    embedCommitHash('SmartLoanDiamondBeacon');
     embedCommitHash('SmartLoanConfigLib', 'contracts/lib');
     embedCommitHash('DiamondStorageLib', 'contracts/lib');
 
@@ -51,7 +51,7 @@ module.exports = async ({
 
 
     //TODO: verify contracts
-    console.log(`Deployed SmartLoanDiamond at address: ${diamondAddress}`);
+    console.log(`Deployed SmartLoanDiamondBeacon at address: ${diamondAddress}`);
 
 };
 

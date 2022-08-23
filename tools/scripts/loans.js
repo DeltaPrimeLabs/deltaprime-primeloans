@@ -4,7 +4,7 @@ const ethers = require('ethers');
 const FACTORY = require('@contracts/SmartLoansFactory.json');
 const FACTORY_TUP = require('@contracts/SmartLoansFactoryTUP.json');
 // TODO: Change liquidation bot to use logic faucets' interfaces
-const LOAN = require('@contracts/SmartLoanDiamond.json');
+const LOAN = require('@contracts/SmartLoanDiamondBeacon.json');
 const {WrapperBuilder} = require("redstone-evm-connector");
 
 const mnemonic = fs.readFileSync(".secret").toString().trim();

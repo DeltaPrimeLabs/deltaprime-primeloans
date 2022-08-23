@@ -84,7 +84,7 @@ async function deployDiamond(hardhatConfig = undefined) {
     console.log('DiamondCutFacet deployed:', diamondCutFacet.address)
 
     // deploy Diamond
-    const diamond = await deployContract('SmartLoanDiamond', [contractOwner.address, diamondCutFacet.address], {}, hardhatConfig);
+    const diamond = await deployContract('SmartLoanDiamondBeacon', [contractOwner.address, diamondCutFacet.address], {}, hardhatConfig);
 
     console.log('Diamond deployed:', diamond.address)
 
