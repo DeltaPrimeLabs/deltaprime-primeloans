@@ -23,11 +23,11 @@ interface IAssetsExchange {
   /**
    * Returns the minimum _soldToken amount that is required to be sold to receive _exactAmountOut of a _boughtToken.
    **/
-  function getEstimatedTokensFromTokens(uint256 _exactAmountOut, address _soldToken, address _boughtToken) external returns (uint256);
+  function getMinimumTokensNeeded(uint256 _exactAmountOut, address _soldToken, address _boughtToken) external returns (uint256);
 
   /**
    * Returns the maximum _boughtToken amount that will be obtained in the event of selling _amountIn of _soldToken token.
    **/
-  function getEstimatedTokensForTokens(uint256 _amountIn, address _soldToken, address _boughtToken) external returns (uint256);
+  function getMaximumTokensReceived(uint256 _amountIn, address _soldToken, address _boughtToken) external returns (uint256);
 
 }

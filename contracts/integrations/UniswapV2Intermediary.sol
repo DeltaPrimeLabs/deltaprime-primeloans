@@ -47,7 +47,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     require(isTokenWhitelisted[_boughtToken], 'Trying to buy unsupported token');
 
     if (_minimumBought > 0) {
-      require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
+      require(_exactSold >= getMaximumTokensReceived(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
     }
 
     (bool success, bytes memory result) = address(router).call{value: 0}(
@@ -80,7 +80,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
   /**
    * Returns the minimum _soldToken amount that is required to be sold to receive _exactAmountOut of a _boughtToken.
    **/
-  function getEstimatedTokensForTokens(uint256 _exactAmountOut, address _soldToken, address _boughtToken) public view override returns (uint256) {
+  function getMaximumTokensReceived(uint256 _exactAmountOut, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
     return router.getAmountsIn(_exactAmountOut, path)[0];
@@ -89,7 +89,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
   /**
    * Returns the maximum _boughtToken amount that will be obtained in the event of selling _amountIn of _soldToken token.
    **/
-  function getEstimatedTokensFromTokens(uint256 _amountIn, address _soldToken, address _boughtToken) public view override returns (uint256) {
+  function getMinimumTokensNeeded(uint256 _amountIn, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
     return router.getAmountsOut(_amountIn, path)[1];
