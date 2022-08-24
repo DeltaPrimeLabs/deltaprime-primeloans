@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../Pool.sol";
 import "../TokenManager.sol";
-import "../interfaces/IYieldYakRouter.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../Pool.sol";
 import "../RedstoneConfigManager.sol";

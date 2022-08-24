@@ -6,14 +6,13 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
-import "../interfaces/IYieldYakRouter.sol";
 import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 import "../interfaces/IYakStakingVectorSAV2.sol";
 import "../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 
-contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
+contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -27,7 +26,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be staked
     **/
-    function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
+    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         require(IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).balanceOf(address(this)) >= amount, "Not enough AVAX available");
 
@@ -46,7 +45,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
        * @dev This function uses the redstone-evm-connector
        * @param amount amount of SAVAX to be staked
    **/
-    function stakeSAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
+    function stakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         require(IERC20Metadata(SAVAXAddress).balanceOf(address(this)) >= amount, "Not enough SAVAX available");
 
@@ -61,7 +60,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
         emit Staked(msg.sender, "SAVAX", amount, block.timestamp);
     }
 
-    function unstakeSAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
+    function unstakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
 
@@ -84,7 +83,7 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter {
     * @dev This function uses the redstone-evm-connector
     * @param amount amount of AVAX to be unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
+    function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);
         uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
 
