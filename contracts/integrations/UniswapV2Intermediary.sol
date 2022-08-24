@@ -50,14 +50,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
       require(_exactSold >= getMaximumTokensReceived(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
     }
 
-    (bool success, bytes memory result) = address(router).call{value: 0}(
-      abi.encodeWithSignature("swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
-      _exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp)
-    );
-
-    require(success, "Swap was unsuccessful.");
-
-    amounts = abi.decode(result, (uint256[]));
+    uint256[] memory amounts = router.swapExactTokensForTokens(_exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp);
 
     _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
 
