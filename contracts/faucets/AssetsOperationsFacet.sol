@@ -19,9 +19,9 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
 
     /**
     * Funds the loan with a specified amount of a defined token
+    * @dev Requires approval for ERC20 token on frontend side
     * @param _fundedAsset asset to be funded
     * @param _amount to be funded
-    * @dev Requires approval for ERC20 token on frontend side
     **/
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
@@ -37,9 +37,9 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
     * Withdraws an amount of a defined asset from the loan
     * This method could be used to cash out profits from investments
     * The loan needs to remain solvent after the withdrawal
+    * @dev This function uses the redstone-evm-connector
     * @param _withdrawnAsset asset to be withdrawn
     * @param _amount to be withdrawn
-    * @dev This function uses the redstone-evm-connector
     **/
     function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset);
@@ -55,9 +55,9 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
 
     /**
     * Borrows funds from the pool
+    * @dev This function uses the redstone-evm-connector
     * @param _asset to be borrowed
     * @param _amount of funds to borrow
-    * @dev This function uses the redstone-evm-connector
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
         TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
@@ -75,9 +75,9 @@ contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
 
     /**
      * Repays funds to the pool
+     * @dev This function uses the redstone-evm-connector
      * @param _asset to be repaid
      * @param _amount of funds to repay
-     * @dev This function uses the redstone-evm-connector
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
         IERC20Metadata token = getERC20TokenInstance(_asset);

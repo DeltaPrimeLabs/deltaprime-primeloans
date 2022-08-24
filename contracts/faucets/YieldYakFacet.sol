@@ -41,8 +41,8 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     // TODO: Change name to a more unique one for this exact investment strategy
     /**
         * Stakes AVAX in Yield Yak protocol
-        * @param amount amount of AVAX to be staked
         * @dev This function uses the redstone-evm-connector
+        * @param amount amount of AVAX to be staked
     **/
     function stakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
@@ -60,8 +60,8 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
 
     /**
        * Stakes SAVAX in Yield Yak protocol
-       * @param amount amount of SAVAX to be staked
        * @dev This function uses the redstone-evm-connector
+       * @param amount amount of SAVAX to be staked
    **/
     function stakeSAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
@@ -98,8 +98,8 @@ contract YieldYakFacet is ReentrancyGuard, SolvencyMethodsLib, IYieldYakRouter, 
     // TODO: Change name to a more unique one for this exact investment strategy
     /**
     * Unstakes AVAX from Yield Yak protocol
-    * @param amount amount of AVAX to be unstaked
     * @dev This function uses the redstone-evm-connector
+    * @param amount amount of AVAX to be unstaked
     **/
     function unstakeAVAXYak(uint256 amount) public override onlyOwner nonReentrant remainsSolvent {
         IYakStakingAVAXAAVEV1 yakStakingContract = IYakStakingAVAXAAVEV1(YAKStakingAVAXAAVEV1Address);

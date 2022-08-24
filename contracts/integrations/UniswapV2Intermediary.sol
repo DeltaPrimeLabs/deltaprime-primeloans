@@ -37,10 +37,10 @@ contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, Reentranc
 
   /*
    * Swaps selected ERC20 token with other ERC20 token
-   * @dev soldToken_ sold ERC20 token's symbol
-   * @dev boughtToken_ bought ERC20 token's symbol
-   * @dev _exactSold exact amount of ERC20 token to be sold
-   * @dev _minimumBought minimum amount of ERC20 token to be bought
+   * @param soldToken_ sold ERC20 token's symbol
+   * @param boughtToken_ bought ERC20 token's symbol
+   * @param _exactSold exact amount of ERC20 token to be sold
+   * @param _minimumBought minimum amount of ERC20 token to be bought
    **/
   function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _exactSold, uint256 _minimumBought) external override nonReentrant returns (uint256[] memory amounts) {
     require(_exactSold > 0, "Amount of tokens to sell has to be greater than 0");

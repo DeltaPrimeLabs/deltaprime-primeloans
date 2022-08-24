@@ -40,8 +40,8 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
   /**
    * Returns the pool utilisation, which is a ratio between loans and deposits
    * utilisation = value_of_loans / value_of_deposits
-   * @dev _totalLoans total value of loans
-   * @dev _totalDeposits total value of deposits
+   * @param _totalLoans total value of loans
+   * @param _totalDeposits total value of deposits
    **/
   function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
     if (_totalDeposits == 0) return 0;
@@ -53,8 +53,8 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
    * Returns the current deposit rate
    * The value is based on the current borrowing rate and satisfies the invariant:
    * value_of_loans * borrowing_rate = value_of_deposits * deposit_rate
-   * @dev _totalLoans total value of loans
-   * @dev _totalDeposits total value of deposits
+   * @param _totalLoans total value of loans
+   * @param _totalDeposits total value of deposits
    **/
   function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
     if (_totalDeposits == 0) return 0;
@@ -74,8 +74,8 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
    * borrowing_rate = SLOPE_1 * utilisation + OFFSET
    * 2) for pool utilisation greater than breakpoint:
    * borrowing_rate = SLOPE_2 * utilisation + MAX_RATE - SLOPE_2
-   * @dev _totalLoans total value of loans
-   * @dev _totalDeposits total value of deposits
+   * @param totalLoans total value of loans
+   * @param totalDeposits total value of deposits
    **/
   function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     if (totalDeposits == 0) return OFFSET_1;
@@ -99,7 +99,7 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
   /**
    * Sets deposit rate factor
    * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
-   * @dev _newRate total value of loans
+   * @param factor total value of loans
    **/
   function setDepositRateFactor(uint256 factor) external onlyOwner {
     depositRateFactor = factor;
