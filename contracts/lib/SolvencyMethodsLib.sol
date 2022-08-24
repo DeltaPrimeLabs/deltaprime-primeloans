@@ -17,11 +17,11 @@ contract SolvencyMethodsLib {
         );
     }
 
-    function _getDiamondBeaconContract(bytes memory methodSig) internal returns(address solvencyFacetAddress) {
+    function _getDiamondBeaconContract(bytes memory methodSig) internal view returns(address solvencyFacetAddress) {
         solvencyFacetAddress = IDiamondBeacon(payable(SmartLoanConfigLib.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
     }
 
-    function convertBytesToBytes4(bytes memory inBytes) internal returns (bytes4 outBytes4) {
+    function convertBytesToBytes4(bytes memory inBytes) internal view returns (bytes4 outBytes4) {
         if (inBytes.length == 0) {
             return 0x0;
         }
@@ -60,6 +60,17 @@ contract SolvencyMethodsLib {
                 abi.encodeWithSelector(SolvencyFacet.getLTV.selector)
             ),
             (uint256)
+        );
+    }
+
+    // This function executes SolvencyFacet.executeGetPricesFromMsg()
+    function executeGetPricesFromMsg(bytes32[] memory symbols) public view virtual returns (uint256[] memory prices) {
+        prices = abi.decode(
+            ProxyConnector.proxyCalldataView(
+                _getDiamondBeaconContract(abi.encodeWithSelector(SolvencyFacet.executeGetPricesFromMsg.selector)),
+                abi.encodeWithSelector(SolvencyFacet.executeGetPricesFromMsg.selector, symbols)
+            ),
+            (uint256[])
         );
     }
 

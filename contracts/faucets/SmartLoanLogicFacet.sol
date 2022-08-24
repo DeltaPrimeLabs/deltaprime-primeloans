@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "../lib/SmartLoanConfigLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
@@ -12,7 +11,7 @@ import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
-contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
+contract SmartLoanLogicFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -24,22 +23,6 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
     struct AssetNamePrice {
         bytes32 name;
         uint256 price;
-    }
-
-    /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
-
-    /**
-     * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
-     **/
-    function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
-    }
-
-    /**
-     * Override PriceAware method, addresses below belong to authorized signers of data feeds
-     **/
-    function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
@@ -104,7 +87,7 @@ contract SmartLoanLogicFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib 
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
         bytes32[] memory assets = SmartLoanConfigLib.getTokenManager().getAllTokenAssets();
-        uint256[] memory prices = getPricesFromMsg(assets);
+        uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for(uint i=0; i<assets.length; i++){
             result[i] = AssetNamePrice({

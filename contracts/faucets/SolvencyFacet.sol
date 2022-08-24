@@ -38,6 +38,10 @@ contract SolvencyFacet is PriceAware {
         return getLTV() < SmartLoanConfigLib.getMaxLtv();
     }
 
+    function executeGetPricesFromMsg(bytes32[] memory symbols) external returns (uint256[] memory) {
+        return getPricesFromMsg(symbols);
+    }
+
     /**
    * Returns the current debt from all lending pools
    * @dev This function uses the redstone-evm-connector

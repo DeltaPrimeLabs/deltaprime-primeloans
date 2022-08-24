@@ -1,7 +1,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
@@ -13,7 +12,7 @@ import "../lib/SmartLoanConfigLib.sol";
 import "../Pool.sol";
 import "../TokenManager.sol";
 
-contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMethodsLib {
+contract SmartLoanLiquidationFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -30,23 +29,6 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
         uint256 liquidationBonus;
         bool allowUnprofitableLiquidation;
     }
-
-    /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
-
-    /**
-     * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
-     **/
-    function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
-    }
-
-    /**
-     * Override PriceAware method, addresses below belong to authorized signers of data feeds
-     **/
-    function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
-    }
-
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -106,7 +88,7 @@ contract SmartLoanLiquidationFacet is PriceAware, ReentrancyGuard, SolvencyMetho
     function liquidate(LiquidationConfig memory config) internal {
         TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
 
-        uint256[] memory prices = getPricesFromMsg(config.assetsToRepay);
+        uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(config.assetsToRepay);
 
 
         {
