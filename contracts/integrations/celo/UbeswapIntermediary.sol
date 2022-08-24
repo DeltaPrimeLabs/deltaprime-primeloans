@@ -24,7 +24,7 @@ contract UbeswapIntermediary is UniswapV2Intermediary {
     return path;
   }
 
-  function getNativeTokenSymbol() override internal view returns (bytes32) {
-    return "CELO";
+  function getNativeTokenAddress() override internal view returns (address) {
+    return 0x471EcE3750Da237f93B8E339c536989b8978a438;
   }
 }

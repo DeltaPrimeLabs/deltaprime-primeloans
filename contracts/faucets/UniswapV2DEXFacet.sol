@@ -20,8 +20,7 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal returns(uint256[] memory) {
-        // mew
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns(uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
@@ -29,7 +28,7 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
-        uint256[] memory amounts = exchange.swap(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
+        uint256[] memory amounts = exchange.swap(address(soldToken), address(getERC20TokenInstance(_boughtAsset)), _exactSold, _minimumBought);
 
         TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
         // Add asset to ownedAssets

@@ -151,7 +151,7 @@ describe('Test liquidator',  () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress), "PangolinIntermediary") as PangolinIntermediary;
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);

@@ -128,7 +128,7 @@ describe('Smart loan',  () => {
 
       let exchangeFactory = await ethers.getContractFactory("UbeswapIntermediary");
       exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapIntermediary;
-      await exchange.initialize(ubeswapRouterAddress, supportedAssets);
+      await exchange.initialize(ubeswapRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",

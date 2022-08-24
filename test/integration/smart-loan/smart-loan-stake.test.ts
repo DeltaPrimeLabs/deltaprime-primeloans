@@ -333,7 +333,7 @@ describe('Smart loan',  () => {
 
       let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
       exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
-      await exchange.initialize(pangolinRouterAddress, supportedAssets);
+      await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",

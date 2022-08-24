@@ -239,8 +239,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
-
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress), "PangolinIntermediary") as PangolinIntermediary;
       //deposit other tokens
       await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);
       await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, INITIAL_PRICES.ETH);
@@ -254,7 +253,7 @@ describe('Smart loan',  () => {
 
         await tokenContracts['AVAX'].connect(depositor).deposit({value: requiredAvax});
         await tokenContracts['AVAX'].connect(depositor).transfer(exchange.address, requiredAvax);
-        await exchange.connect(depositor).swap(toBytes32("AVAX"), toBytes32(symbol), requiredAvax, initialTokenDepositWei);
+        await exchange.connect(depositor).swap(tokenContracts['AVAX'].address, tokenContract.address, requiredAvax, initialTokenDepositWei);
 
         await tokenContract.connect(depositor).approve(pool.address, initialTokenDepositWei);
         await pool.connect(depositor).deposit(initialTokenDepositWei);
@@ -265,13 +264,13 @@ describe('Smart loan',  () => {
 
         const amountSwapped = toWei((10000 / INITIAL_PRICES.AVAX).toString());
         await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
-        await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("USDC"), amountSwapped, 0);
+        await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDC'].address, amountSwapped, 0);
 
         await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
-        await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("ETH"), amountSwapped, 0);
+        await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['ETH'].address, amountSwapped, 0);
 
         await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
-        await exchange.connect(user).swap(toBytes32("AVAX"), toBytes32("BTC"), amountSwapped, 0);
+        await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['BTC'].address, amountSwapped, 0);
       }
     });
 
@@ -348,7 +347,7 @@ describe('Smart loan',  () => {
 
                 if (symbol !== 'AVAX') {
                   await tokenContracts['AVAX'].connect(borrower).transfer(exchange.address, requiredAvax);
-                  await exchange.connect(borrower).swap(toBytes32("AVAX"), toBytes32(symbol), requiredAvax, toWei(value.toString(), tokenDecimals));
+                  await exchange.connect(borrower).swap(tokenContracts['AVAX'].address, tokenContracts[symbol].address, requiredAvax, toWei(value.toString(), tokenDecimals));
                 }
 
                 await contract.connect(borrower).approve(wrappedLoan.address, toWei(value.toString(), tokenDecimals));

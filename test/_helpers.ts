@@ -234,7 +234,7 @@ export const extractAssetNamePrices = async function (
 export const deployAndInitExchangeContract = async function (
     owner: SignerWithAddress,
     routerAddress: string,
-    supportedAssets: Asset[],
+    supportedAssets: string[],
     name: string
 ) {
     let exchangeFactory = await ethers.getContractFactory(name);

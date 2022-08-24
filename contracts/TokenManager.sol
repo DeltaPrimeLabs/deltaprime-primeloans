@@ -5,6 +5,21 @@ import "./interfaces/IAssetsExchange.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract TokenManager {
+    /**
+     * For adding supported assets
+     **/
+    struct Asset {
+        bytes32 asset;
+        address assetAddress;
+    }
+
+    /**
+     * For adding supported lending pools
+     **/
+    struct poolAsset {
+        bytes32 asset;
+        address poolAddress;
+    }
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     address public admin;
@@ -14,7 +29,7 @@ contract TokenManager {
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
     address public adminTransferProposal;
 
-    constructor(IAssetsExchange.Asset[] memory tokenAssets, IAssetsExchange.poolAsset[] memory poolAssets) {
+    constructor(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) {
         admin = msg.sender;
         emit AdminChanged(address(0), msg.sender, block.timestamp);
         addTokenAssets(tokenAssets);
@@ -63,7 +78,7 @@ contract TokenManager {
         return assetAddress;
     }
 
-    function addPoolAssets(IAssetsExchange.poolAsset[] memory poolAssets) public onlyAdmin {
+    function addPoolAssets(poolAsset[] memory poolAssets) public onlyAdmin {
         for(uint256 i=0; i<poolAssets.length; i++) {
             _addPoolAsset(poolAssets[i].asset, poolAssets[i].poolAddress);
         }
@@ -76,7 +91,7 @@ contract TokenManager {
         emit PoolAssetAdded(msg.sender, _asset, _poolAddress, block.timestamp);
     }
 
-    function addTokenAssets(IAssetsExchange.Asset[] memory tokenAssets) public onlyAdmin {
+    function addTokenAssets(Asset[] memory tokenAssets) public onlyAdmin {
         for(uint256 i=0; i<tokenAssets.length; i++) {
             _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress);
         }

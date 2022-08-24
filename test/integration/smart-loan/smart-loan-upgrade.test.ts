@@ -129,7 +129,7 @@ describe('Smart loan - upgrading',  () => {
           'lib'
       );
 
-      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+      exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress), "PangolinIntermediary") as PangolinIntermediary;
 
       await recompileSmartLoanLib(
           "SmartLoanConfigLib",

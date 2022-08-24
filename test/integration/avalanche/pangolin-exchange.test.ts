@@ -3,21 +3,11 @@ import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
-import PangolinIntermediaryArtifact from '../../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import PangolinIntermediaryArtifact
+    from '../../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {TokenManager, PangolinIntermediary} from '../../../typechain';
-import {
-    Asset,
-    fromBytes32,
-    getFixedGasSigners,
-    toBytes32,
-    toWei,
-    syncTime,
-    fromWei,
-    formatUnits,
-    recompileSmartLoanLib
-} from "../../_helpers";
+import {PangolinIntermediary} from '../../../typechain';
+import {formatUnits, fromWei, getFixedGasSigners, syncTime, toWei} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
@@ -62,37 +52,11 @@ describe('PangolinIntermediary', () => {
 
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
-
-            let supportedAssets = [
-                new Asset(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32("USDC"), TOKEN_ADDRESSES['USDC']),
-            ];
-
-            let tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    []
-                ]
-            ) as TokenManager;
-
-            await recompileSmartLoanLib(
-                "SmartLoanConfigLib",
-                [],
-                tokenManager.address,
-                ethers.constants.AddressZero,
-                ethers.constants.AddressZero,
-                ethers.constants.AddressZero,
-                'lib'
-            );
-
-            await new Promise(r => setTimeout(r, 20000));
-
+            
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            await sut.initialize(pangolinRouterAddress, supportedAssets);
+            await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
@@ -106,7 +70,7 @@ describe('PangolinIntermediary', () => {
         it('should check for the amount of tokens to swap to be greater than 0', async () => {
             await wavaxToken.connect(owner).approve(sut.address, parseUnits("1", usdTokenDecimalPlaces));
             await wavaxToken.connect(owner).transfer(sut.address, parseUnits("1", usdTokenDecimalPlaces));
-            await expect(sut.swap(toBytes32('USDC'), toBytes32('AVAX'), 0, 1)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
+            await expect(sut.swap(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], 0, 1)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
         });
 
 
@@ -114,7 +78,7 @@ describe('PangolinIntermediary', () => {
             const usdTokenPurchaseAmount = 1e8;
             const estimatedAvax = (await router.connect(owner).getAmountsIn(usdTokenPurchaseAmount.toString(), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
-            await expect(sut.swap(toBytes32('AVAX'), toBytes32('USDC'), Math.floor(estimatedAvax * 0.9).toString(), usdTokenPurchaseAmount.toString())).to.be.revertedWith('Not enough funds were provided');
+            await expect(sut.swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], Math.floor(estimatedAvax * 0.9).toString(), usdTokenPurchaseAmount.toString())).to.be.revertedWith('Not enough funds were provided');
         });
 
 
@@ -128,7 +92,7 @@ describe('PangolinIntermediary', () => {
 
             await wavaxToken.connect(owner).transfer(sut.address, estimatedAvax);
 
-            await sut.connect(owner).swap(toBytes32('AVAX'), toBytes32('USDC'), estimatedAvax, usdTokenPurchaseAmountWei);
+            await sut.connect(owner).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], estimatedAvax, usdTokenPurchaseAmountWei);
 
             const currentUsdTokenBalance = await usdToken.connect(owner).balanceOf(owner.address);
             const currentWavaxBalance = await wavaxToken.connect(owner).balanceOf(owner.address);
@@ -151,7 +115,7 @@ describe('PangolinIntermediary', () => {
 
             const initialWavaxBalance = await wavaxToken.connect(owner).balanceOf(owner.address);
 
-            await expect(sut.swap(toBytes32('AVAX'), toBytes32('USDC'), (estimatedAvaxNeeded * 0.9).toString(), parseUnits("100", usdTokenDecimalPlaces))).to.be.revertedWith("Not enough funds were provided");
+            await expect(sut.swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], (estimatedAvaxNeeded * 0.9).toString(), parseUnits("100", usdTokenDecimalPlaces))).to.be.revertedWith("Not enough funds were provided");
 
             expect(fromWei(await wavaxToken.connect(owner).balanceOf(sut.address))).to.be.equal(0);
             expect(formatUnits(await usdToken.connect(owner).balanceOf(sut.address), usdTokenDecimalPlaces)).to.be.equal(0);
@@ -163,227 +127,134 @@ describe('PangolinIntermediary', () => {
 
     });
 
-    describe('Set and read assets', () => {
-      let sut: PangolinIntermediary,
-          tokenManager: Contract;
+    describe('Whitelist and delist tokens', () => {
+      let sut: PangolinIntermediary;
 
       const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
-      const token2Address = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-      const token3Address = '0x5947bb275c521040051d82396192181b413227a3';
+      const token2Address = '0x6a7e213F8ad56bEA9d85cC8a59c1f940fD5d176B';
+      const token3Address = '0x5947BB275c521040051D82396192181b413227A3';
+      const token4Address = "0x3cc936b795a188f0e246cbb2d74c5bd190aecf18";
 
       before("deploy a contract with a predefined supported assets", async () => {
          let owner: SignerWithAddress;
 
         [owner] = await getFixedGasSigners(10000000);
-        let token1 = "TOKEN_1";
-
-          let supportedAssets = [
-              new Asset(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX']),
-              new Asset(toBytes32("TOKEN_1"), token1Address),
-              new Asset(toBytes32("TOKEN_2"), token2Address),
-              new Asset(toBytes32("TOKEN_3"), token3Address),
-          ];
-
-          tokenManager = await deployContract(
-              owner,
-              TokenManagerArtifact,
-              [
-                  supportedAssets,
-                  []
-              ]
-          ) as TokenManager;
-
-          await recompileSmartLoanLib(
-              "SmartLoanConfigLib",
-              [],
-              tokenManager.address,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              'lib'
-          );
-
-          await new Promise(r => setTimeout(r, 5000));
 
           let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
           sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-        await sut.initialize(pangolinRouterAddress, supportedAssets.slice(0, 2));
+        await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], token1Address]);
       });
 
       it("should add asset at a contract deploy", async () => {
-        await expect((fromBytes32((await sut.getAllSupportedAssets())[0])))
-          .to.be.equal("AVAX");
-        await expect((fromBytes32((await sut.getAllSupportedAssets())[1])))
-            .to.be.equal("TOKEN_1");
+        expect((await sut.getAllWhitelistedTokens()).length).to.equal(2);
+
+        expect((await sut.getAllWhitelistedTokens())[0])
+          .to.be.equal(TOKEN_ADDRESSES['AVAX']);
+        expect((await sut.getAllWhitelistedTokens())[1])
+            .to.be.equal(token1Address);
       });
 
       it("should add new assets without changing the sequence of previous ones", async () => {
-        let token2 = "TOKEN_2";
 
-        await sut.updateAssets([new Asset(toBytes32(token2), token2Address)]);
+        await sut.whitelistTokens([token2Address]);
 
-        await expect((fromBytes32((await sut.getAllSupportedAssets())[0])))
-          .to.be.equal("AVAX");
+          expect((await sut.getAllWhitelistedTokens()).length).to.equal(3);
 
-        await expect((fromBytes32((await sut.getAllSupportedAssets())[1])))
-          .to.be.equal("TOKEN_1");
+        await expect((await sut.getAllWhitelistedTokens())[0])
+          .to.be.equal(TOKEN_ADDRESSES['AVAX']);
 
-        await expect((fromBytes32((await sut.getAllSupportedAssets())[2])))
-          .to.be.equal(token2);
-
-        await expect((await sut.getAssetAddress(toBytes32("AVAX"))).toUpperCase())
-          .to.be.equal(TOKEN_ADDRESSES['AVAX'].toUpperCase());
-
-        await expect((await sut.getAssetAddress(toBytes32("TOKEN_1"))))
+        await expect((await sut.getAllWhitelistedTokens())[1])
           .to.be.equal(token1Address);
 
-        await expect((await sut.getAssetAddress(toBytes32(token2))))
+        await expect((await sut.getAllWhitelistedTokens())[2])
           .to.be.equal(token2Address);
       });
 
 
       it("should correctly remove an asset", async () => {
-        await sut.updateAssets([
-          new Asset(toBytes32("TOKEN_1"), token1Address),
-          new Asset(toBytes32("TOKEN_2"), token2Address),
-          new Asset(toBytes32("TOKEN_3"), token3Address)
-        ]);
+        await sut.delistTokens([token1Address]);
 
-        await sut.removeAssets([toBytes32("TOKEN_2")]);
-
-        await expect((await sut.getAllSupportedAssets()).includes("TOKEN_2"))
+        await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
           .to.be.false
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_3")
-        await expect(sut.getAssetAddress(toBytes32("TOKEN_2")))
-          .to.be.revertedWith("Asset not supported.");
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
       });
 
 
       it("should not add a new asset if already supported", async () => {
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_3");
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`);
 
-        await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), token1Address)]);
+        await expect(sut.whitelistTokens([token2Address])).to.be.revertedWith('Token already whitelisted');
 
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_3")
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
       });
 
 
-      it("should update asset address", async () => {
-        const newToken1Address = "0xb794F5eA0ba39494cE839613fffBA74279579268";
-        // TODO: Add updateAsset functions
-        await tokenManager.removeTokenAssets([toBytes32("TOKEN_1")]);
-        await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
-        await sut.updateAssets([new Asset(toBytes32("TOKEN_1"), newToken1Address)]);
-        await expect((await sut.getAssetAddress(toBytes32("TOKEN_1"))).toString()).to.be.equal(newToken1Address);
-      });
+      it("should correctly whitelist and delist multiple tokens", async () => {
+      await sut.whitelistTokens([token1Address, token3Address]);
 
+      await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address},${token1Address},${token3Address}`)
 
-      it("should update one token and a add new one", async () => {
-        const newToken2Address = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
-        const token4Address = "0xB155f7e2769a24f1D3E76ACdCed934950f5da410";
-          await tokenManager.removeTokenAssets([toBytes32("TOKEN_2")]);
-          await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_2"), newToken2Address)]);
-        await tokenManager.addTokenAssets([new Asset(toBytes32("TOKEN_4"), token4Address)]);
-        await sut.updateAssets([
-          new Asset(toBytes32("TOKEN_2"), newToken2Address),
-          new Asset(toBytes32("TOKEN_4"), token4Address)
-        ]);
+        await sut.delistTokens([token1Address, token2Address]);
 
-        await expect((await sut.getAssetAddress(toBytes32("TOKEN_2"))).toString()).to.be.equal(newToken2Address);
-        await expect((await sut.getAssetAddress(toBytes32("TOKEN_4"))).toString()).to.be.equal(token4Address);
-      });
-
-
-      it("should correctly remove multiple assets", async () => {
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_3,TOKEN_2,TOKEN_4")
-
-        await sut.removeAssets([toBytes32("TOKEN_2"), toBytes32("TOKEN_3")]);
-
-        await expect((await sut.getAllSupportedAssets()).includes("TOKEN_2"))
+        await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
           .to.be.false;
-        await expect((await sut.getAllSupportedAssets()).includes("TOKEN_3"))
+        await expect((await sut.getAllWhitelistedTokens()).includes(token2Address))
           .to.be.false;
 
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
-
-        await expect(sut.getAssetAddress(toBytes32("TOKEN_2")))
-          .to.be.revertedWith("Asset not supported.");
-        await expect(sut.getAssetAddress(toBytes32("TOKEN_3")))
-          .to.be.revertedWith("Asset not supported.");
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
       });
 
 
       it("should not add any assets if one of them is corrupted", async () => {
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
 
-        await expect(sut.updateAssets([
-          new Asset(toBytes32(""), token1Address),
-          new Asset(toBytes32("TOKEN_5"), token1Address)
+        await expect(sut.whitelistTokens([
+            ethers.constants.AddressZero, token4Address
         ]))
-          .to.be.revertedWith("Cannot set an empty string asset.");
+          .to.be.revertedWith("Cannot whitelist a zero address");
 
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
+      });
+
+      it("should correctly add assets", async () => {
+          await sut.whitelistTokens([
+              token2Address
+          ]);
+
+          await expect((await sut.getAllWhitelistedTokens()).join(","))
+              .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
       });
 
 
-      it("should correctly remove assets even if some don't exist", async () => {
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1,TOKEN_4")
+      it("should not remove assets if some are corrupted", async () => {
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
 
-        await sut.removeAssets([toBytes32("TOKEN_4"), toBytes32("TOKEN_THAT_NOT_EXISTS")]);
+        let randomAddress = '0x6e5fb70ee18388b54faba431cd84ca05099444ff';
+        await expect(sut.delistTokens([token3Address, randomAddress])).to.be.revertedWith('Token was not whitelisted before');
 
-        await expect(((await sut.getAllSupportedAssets()).map(
-          el => fromBytes32(el)
-        )).join(","))
-          .to.be.equal("AVAX,TOKEN_1")
+        await expect((await sut.getAllWhitelistedTokens()).join(","))
+          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
       });
 
 
-      it("should not set an empty string asset", async () => {
-        await expect(sut.updateAssets([new Asset(toBytes32(""), token1Address)]))
-          .to.be.revertedWith("Cannot set an empty string asset.");
-      });
-
-
-      it("should revert for a wrong format address", async () => {
-        await expect(sut.updateAssets([new Asset(toBytes32("TOKEN_4"), "bad_address")]))
+      it("should revert whitelisting for a wrong format address", async () => {
+        await expect(sut.whitelistTokens(["bad_address"]))
           .to.be.reverted;
       });
 
 
-      it("should revert for a zero address", async () => {
-        await expect(sut.updateAssets([new Asset(toBytes32("TOKEN_4"), "0x")]))
+      it("should revert whitelisting for a zero address", async () => {
+        await expect(sut.whitelistTokens(["0x"]))
           .to.be.reverted;
-      });
-
-
-      it("should revert for a not supported asset", async () => {
-        await expect(sut.getAssetAddress(toBytes32("TOKEN_NOT_DEFINED")))
-          .to.be.revertedWith("Asset not supported.");
       });
 
 
@@ -395,7 +266,7 @@ describe('PangolinIntermediary', () => {
 
         sut2 = await deployContract(owner2, PangolinIntermediaryArtifact) as PangolinIntermediary;
         await sut2.initialize(pangolinRouterAddress, []);
-        expect(await sut2.getAllSupportedAssets()).to.be.empty;
+        expect(await sut2.getAllWhitelistedTokens()).to.be.empty;
       });
     });
 });

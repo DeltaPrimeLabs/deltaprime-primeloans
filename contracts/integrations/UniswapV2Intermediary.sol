@@ -6,130 +6,70 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../lib/Bytes32EnumerableMap.sol";
 import "../lib/SmartLoanConfigLib.sol";
 import "../TokenManager.sol";
+import "../TokenList.sol";
 
 /**
  * @title UniswapV2Intermediary
  * @dev Contract allows user to swap ERC20 tokens on DEX
  * This implementation supports UniswapV2Intermediary-like DEXs
  */
-contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
   /* ========= STATE VARIABLES ========= */
   IUniswapV2Router01 router;
 
-  using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
-  EnumerableMap.Bytes32ToAddressMap private supportedAssetsMap;
-
-  function initialize(address _router, Asset[] memory supportedAssets) external initializer {
+  function initialize(address _router, address[] memory _whitelistedTokens) external initializer {
     router = IUniswapV2Router01(_router);
 
-    _updateAssets(supportedAssets);
-    __Ownable_init();
+    __TokenList_init(_whitelistedTokens);
     __ReentrancyGuard_init();
   }
 
   /*
    * Swaps selected ERC20 token with other ERC20 token
-   * @param soldToken_ sold ERC20 token's symbol
-   * @param boughtToken_ bought ERC20 token's symbol
+   * @param soldToken_ sold ERC20 token's address
+   * @param boughtToken_ bought ERC20 token's address
    * @param _exactSold exact amount of ERC20 token to be sold
    * @param _minimumBought minimum amount of ERC20 token to be bought
    **/
-  function swap(bytes32 soldToken_, bytes32 boughtToken_, uint256 _exactSold, uint256 _minimumBought) external override nonReentrant returns (uint256[] memory amounts) {
+  function swap(address _soldToken, address _boughtToken, uint256 _exactSold, uint256 _minimumBought) external override nonReentrant returns (uint256[] memory amounts) {
     require(_exactSold > 0, "Amount of tokens to sell has to be greater than 0");
 
-    address soldTokenAddress = getAssetAddress(soldToken_);
-    address boughtTokenAddress = getAssetAddress(boughtToken_);
+    _soldToken.safeApprove(address(router), 0);
+    _soldToken.safeApprove(address(router), _exactSold);
 
-    IERC20 soldToken = IERC20(soldTokenAddress);
-    IERC20 boughtToken = IERC20(boughtTokenAddress);
-
-    address(soldToken).safeApprove(address(router), 0);
-    address(soldToken).safeApprove(address(router), _exactSold);
+    require(isTokenWhitelisted[_boughtToken], 'Trying to buy unsupported token');
 
     if (_minimumBought > 0) {
-      require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, soldTokenAddress, boughtTokenAddress), "Not enough funds were provided");
+      require(_exactSold >= getEstimatedTokensForTokens(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
     }
 
     (bool success, bytes memory result) = address(router).call{value: 0}(
       abi.encodeWithSignature("swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
-      _exactSold, _minimumBought, getPath(soldTokenAddress, boughtTokenAddress), msg.sender, block.timestamp)
+      _exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp)
     );
 
     require(success, "Swap was unsuccessful.");
 
     amounts = abi.decode(result, (uint256[]));
 
-    address(soldToken).safeTransfer(msg.sender, soldToken.balanceOf(address(this)));
+    _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
 
-    emit TokenSwap(msg.sender, soldToken_, boughtToken_, amounts[0], amounts[amounts.length - 1], block.timestamp);
+    emit TokenSwap(msg.sender, _soldToken, _boughtToken, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
     return amounts;
   }
 
-  /**
-   * Adds or updates supported assets
-   * @dev _assets assets to be added or updated
-   **/
-  function _updateAssets(Asset[] memory _assets) internal {
-    TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
-    for (uint256 i = 0; i < _assets.length; i++) {
-      require(_assets[i].asset != "", "Cannot set an empty string asset.");
-      require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
-      require(tokenManager.getAssetAddress(_assets[i].asset) == _assets[i].assetAddress, "Asset address mismatch");
-
-      supportedAssetsMap.set(_assets[i].asset, _assets[i].assetAddress);
-    }
-
-    emit AssetsAdded(msg.sender, _assets);
-  }
-
-  /**
-   * Adds or updates supported assets
-   * @dev _assets assets to be added/updated
-   **/
-  function updateAssets(Asset[] memory _assets) external override onlyOwner {
-    _updateAssets(_assets);
-  }
-
-  /**
-   * Removes supported assets
-   * @dev _assets assets to be removed
-   **/
-  function removeAssets(bytes32[] calldata _assets) external override onlyOwner {
-    for (uint256 i = 0; i < _assets.length; i++) {
-      EnumerableMap.remove(supportedAssetsMap, _assets[i]);
-    }
-
-    emit AssetsRemoved(msg.sender, _assets);
-  }
-
-  /**
-   * Returns all the supported assets keys
-   **/
-  function getAllSupportedAssets() public override view returns (bytes32[] memory result) {
-    return supportedAssetsMap._inner._keys._inner._values;
-  }
-
-  /**
-   * Returns address of an asset
-   **/
-  function getAssetAddress(bytes32 _asset) public view override returns (address) {
-    (, address assetAddress) = EnumerableMap.tryGet(supportedAssetsMap, _asset);
-    require(assetAddress != address(0), "Asset not supported.");
-
-    return assetAddress;
-  }
 
   /* ========== RECEIVE AVAX FUNCTION ========== */
   receive() external payable {}
+
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -161,12 +101,11 @@ contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, Reentranc
    **/
   function getPath(address _token1, address _token2) internal virtual view returns (address[] memory) {
     address[] memory path;
-    address nativeTokenAddress = getAssetAddress(getNativeTokenSymbol());
 
-    if (_token1 != nativeTokenAddress && _token2 != nativeTokenAddress) {
+    if (_token1 != getNativeTokenAddress() && _token2 != getNativeTokenAddress()) {
       path = new address[](3);
       path[0] = _token1;
-      path[1] = nativeTokenAddress;
+      path[1] = getNativeTokenAddress();
       path[2] = _token2;
     } else {
       path = new address[](2);
@@ -177,8 +116,8 @@ contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, Reentranc
     return path;
   }
 
-  function getNativeTokenSymbol() virtual internal view returns (bytes32) {
-    return "ETH";
+  function getNativeTokenAddress() virtual internal view returns (address) {
+    return 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   }
 
   /* ========== EVENTS ========== */
@@ -186,26 +125,11 @@ contract UniswapV2Intermediary is OwnableUpgradeable, IAssetsExchange, Reentranc
   /**
    * @dev emitted after tokens were swapped
    * @param seller the address which sold tokens
-   * @param soldToken the name of sold token
-   * @param boughtToken the name of bought token
+   * @param soldToken the address of sold token
+   * @param boughtToken the address of bought token
    * @param amountSold the amount of token sold
    * @param amountBought the amount of token bought
    **/
-  event TokenSwap(address indexed seller, bytes32 soldToken, bytes32 boughtToken, uint256 amountSold, uint256 amountBought, uint256 timestamp);
+  event TokenSwap(address indexed seller, address soldToken, address boughtToken, uint256 amountSold, uint256 amountBought, uint256 timestamp);
 
-  /* ========== EVENTS ========== */
-
-  /**
-   * @dev emitted after the owner adds/updates assets
-   * @param performer an address of wallet adding the assets
-   * @param assets added/updated assets
-   **/
-  event AssetsAdded(address performer, Asset[] assets);
-
-  /**
-   * @dev emitted after the owner removes assets
-   * @param performer an address of wallet removing the assets
-   * @param removedAssets removed assets
-   **/
-  event AssetsRemoved(address performer, bytes32[] removedAssets);
 }
