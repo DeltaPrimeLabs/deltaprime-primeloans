@@ -22,18 +22,22 @@ contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
     **/
     function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns(uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
+        IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
         address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
-        uint256[] memory amounts = exchange.swap(address(soldToken), address(getERC20TokenInstance(_boughtAsset)), _exactSold, _minimumBought);
+        uint256[] memory amounts = exchange.swap(address(soldToken), address(boughtToken), _exactSold, _minimumBought);
 
         TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset);
-        DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
+
+        if (boughtToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
+        }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
         if(soldToken.balanceOf(address(this)) == 0) {
