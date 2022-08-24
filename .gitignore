@@ -11,6 +11,7 @@ cache
 .secret
 deployments/local
 deployments/localhost
+tools/liquidation/.private
 
 .vercel
 .openzeppelin
