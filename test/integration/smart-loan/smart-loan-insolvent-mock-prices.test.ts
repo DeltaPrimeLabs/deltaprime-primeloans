@@ -8,7 +8,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   Asset,
   calculateBonus,
-  deployAllFaucets, deployAndInitExchangeContract,
+  deployAllFacets, deployAndInitExchangeContract,
   deployAndInitializeLendingPool,
   formatUnits,
   fromBytes32,
@@ -279,7 +279,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
           [
             {
-              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],
@@ -290,7 +290,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     beforeEach("create a loan", async () => {
@@ -301,7 +301,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
           [
             {
-              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BUSL-1.1
+// Last deployed from commit: ;
 pragma solidity >=0.7.0 <0.9.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";

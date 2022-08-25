@@ -11,7 +11,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
-  deployAllFaucets,
+  deployAllFacets,
   deployAndInitializeLendingPool, extractAssetNameBalances,
   fromWei,
   getFixedGasSigners,
@@ -134,7 +134,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
 [
             {
-              facetPath: './contracts/faucets/UbeswapDEXFacet.sol',
+              facetPath: './contracts/facets/celo/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],
@@ -145,7 +145,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress, 'CELO')
+      await deployAllFacets(diamondAddress, 'CELO')
     });
 
     it("should deploy a smart loan", async () => {

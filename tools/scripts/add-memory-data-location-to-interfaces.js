@@ -3,7 +3,7 @@ let fs = require('fs')
 let path = require('path')
 
 function fixDataLocation() {
-    const dir = './contracts/interfaces/faucets'
+    const dir = './contracts/interfaces/facets'
     const files = fs.readdirSync(dir)
 
     for (const file of files) {
@@ -36,7 +36,7 @@ function fixDataLocation() {
 }
 
 function fixPayableFunctions(payableFunctions) {
-    const dir = './contracts/interfaces/faucets'
+    const dir = './contracts/interfaces/facets'
     const files = fs.readdirSync(dir)
 
     for (const file of files) {
@@ -70,12 +70,12 @@ function fixPayableFunctions(payableFunctions) {
     }
 }
 
-function generateFaucetsInterfaces(faucetsList) {
-    for (const facet of faucetsList) {
+function generateFacetsInterfaces(facetsList) {
+    for (const facet of facetsList) {
         const output = execSync(`npx hardhat gen-interface ${facet}`, { encoding: 'utf-8' });
         console.log(output)
-        let oldPath = path.join('./contracts/faucets', `I${facet}.sol`);
-        let newPath = path.join('./contracts/interfaces/faucets', `I${facet}.sol`);
+        let oldPath = path.join('./contracts/facets', `I${facet}.sol`);
+        let newPath = path.join('./contracts/interfaces/facets', `I${facet}.sol`);
         fs.rename(oldPath, newPath, (err) => {if(err !== null) console.log(err)});
         console.log(`Moved ${oldPath} -> ${newPath}`)
     }
@@ -83,7 +83,7 @@ function generateFaucetsInterfaces(faucetsList) {
 }
 
 function removeObsoleteFunctions(functionsToRemove) {
-    const dir = './contracts/interfaces/faucets'
+    const dir = './contracts/interfaces/facets'
     const files = fs.readdirSync(dir)
 
     for (const file of files) {
@@ -114,8 +114,8 @@ function removeObsoleteFunctions(functionsToRemove) {
     }
 }
 
-function createFaucetsInterfaces() {
-    const faucetsList = [
+function createFacetsInterfaces() {
+    const facetsList = [
         'AssetsOperationsFacet',
         'OwnershipFacet',
         'PangolinDEXFacet',
@@ -143,13 +143,13 @@ function createFaucetsInterfaces() {
         'liquidateLoan',
         'unwrapAndWithdraw',
     ]
-    generateFaucetsInterfaces(faucetsList);
+    generateFacetsInterfaces(facetsList);
     fixDataLocation();
     removeObsoleteFunctions(functionsToRemove);
     fixPayableFunctions(payableFunctions);
 }
 
-module.exports.generateFaucetsInterfaces = generateFaucetsInterfaces;
+module.exports.generateFacetsInterfaces = generateFacetsInterfaces;
 module.exports.fixDataLocation = fixDataLocation;
 module.exports.removeObsoleteFunctions = removeObsoleteFunctions;
-module.exports.createFaucetsInterfaces = createFaucetsInterfaces;
+module.exports.createFacetsInterfaces = createFacetsInterfaces;

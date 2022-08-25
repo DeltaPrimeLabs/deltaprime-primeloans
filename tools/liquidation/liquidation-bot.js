@@ -1,8 +1,8 @@
 import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
-import LOAN_LOGIC from '../../artifacts/contracts/faucets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
-import SOLVENCY_LOGIC from '../../artifacts/contracts/faucets/SolvencyFacet.sol/SolvencyFacet.json'
-import LOAN_LIQUIDATION from '../../artifacts/contracts/faucets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
+import LOAN_LOGIC from '../../artifacts/contracts/facets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
+import SOLVENCY_LOGIC from '../../artifacts/contracts/facets/SolvencyFacet.sol/SolvencyFacet.json'
+import LOAN_LIQUIDATION from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, toSupply} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';

@@ -8,7 +8,7 @@ import {WrapperBuilder} from "redstone-evm-connector";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     Asset,
-    deployAllFaucets,
+    deployAllFacets,
     deployAndInitExchangeContract,
     deployAndInitializeLendingPool,
     getFixedGasSigners,
@@ -160,7 +160,7 @@ describe('Test liquidator',  () => {
                 "SmartLoanConfigLib",
                 [
                     {
-                        facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -170,7 +170,7 @@ describe('Test liquidator',  () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFaucets(diamondAddress);
+            await deployAllFacets(diamondAddress);
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
         });
 

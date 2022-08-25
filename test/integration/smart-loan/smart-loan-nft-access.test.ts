@@ -12,7 +12,7 @@ import SmartLoansFactoryWithAccessNFTArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
-    Asset, deployAllFaucets, deployAndInitializeLendingPool,
+    Asset, deployAllFacets, deployAndInitializeLendingPool,
     fromWei,
     getFixedGasSigners, PoolAsset,
     recompileSmartLoanLib,
@@ -112,7 +112,7 @@ describe('Smart loan',  () => {
                 'lib',
             );
 
-            await deployAllFaucets(diamondAddress)
+            await deployAllFacets(diamondAddress)
         });
 
         it("should fail to create a loan without the access NFT", async () => {

@@ -7,7 +7,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset,
-  deployAllFaucets,
+  deployAllFacets,
   deployAndInitializeLendingPool,
   fromWei,
   getFixedGasSigners,
@@ -117,7 +117,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
 

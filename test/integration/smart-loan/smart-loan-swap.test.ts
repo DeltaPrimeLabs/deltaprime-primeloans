@@ -9,7 +9,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
   Asset, AssetNameBalance, AssetNamePrice,
-  deployAllFaucets,
+  deployAllFacets,
   deployAndInitializeLendingPool, extractAssetNameBalances, extractAssetNamePrices,
   formatUnits, fromBytes32,
   fromWei,
@@ -126,7 +126,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
           [
             {
-              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],
@@ -137,7 +137,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     it("should deploy a smart loan", async () => {

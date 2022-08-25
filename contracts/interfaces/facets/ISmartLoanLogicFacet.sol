@@ -1,4 +1,4 @@
-import "../../faucets/SmartLoanLogicFacet.sol";
+import "../../facets/SmartLoanLogicFacet.sol";
 
 interface ISmartLoanLogicFacet {
   function getAllAssetsBalances (  ) external view returns ( SmartLoanLogicFacet.AssetNameBalance[] memory  );

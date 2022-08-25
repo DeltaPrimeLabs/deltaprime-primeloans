@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: BUSL-1.1
+// Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "../faucets/SolvencyFacet.sol";
+import "../facets/SolvencyFacet.sol";
 import "../interfaces/IDiamondBeacon.sol";
 
 // TODO Rename to contract instead of lib

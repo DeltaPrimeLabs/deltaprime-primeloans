@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: f97d683e94fbb14f55819d6782c1f6a20998b10e;
 pragma solidity ^0.8.4;
 
@@ -9,10 +9,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./SmartLoanDiamondBeacon.sol";
 import "./proxies/SmartLoanDiamondProxy.sol";
-import "./faucets/DiamondInit.sol";
-import "./faucets/AssetsOperationsFacet.sol";
-import "./faucets/OwnershipFacet.sol";
-import "./faucets/SmartLoanLogicFacet.sol";
+import "./facets/DiamondInit.sol";
+import "./facets/AssetsOperationsFacet.sol";
+import "./facets/OwnershipFacet.sol";
+import "./facets/SmartLoanLogicFacet.sol";
 
 /**
  * @title SmartLoansFactory

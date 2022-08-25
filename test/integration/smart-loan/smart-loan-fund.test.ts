@@ -9,7 +9,7 @@ import DestructableArtifact from '../../../artifacts/contracts/mock/Destructable
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset, AssetNameBalance, AssetNamePrice, deployAllFaucets, deployAndInitializeLendingPool, formatUnits, fromBytes32,
+  Asset, AssetNameBalance, AssetNamePrice, deployAllFacets, deployAndInitializeLendingPool, formatUnits, fromBytes32,
   fromWei, getFixedGasSigners,
   PoolAsset,
   recompileSmartLoanLib,
@@ -118,7 +118,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
 
 
     });

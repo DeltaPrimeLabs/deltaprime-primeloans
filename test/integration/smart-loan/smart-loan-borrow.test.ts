@@ -8,7 +8,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset, deployAllFaucets, deployAndInitializeLendingPool,
+  Asset, deployAllFacets, deployAndInitializeLendingPool,
   fromWei,
   getFixedGasSigners, PoolAsset,
   recompileSmartLoanLib,
@@ -105,7 +105,7 @@ describe('Smart loan',  () => {
           smartLoansFactory.address,
           'lib'
       );
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
 

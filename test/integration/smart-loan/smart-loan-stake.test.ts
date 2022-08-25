@@ -10,7 +10,7 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 import {
   Asset,
   calculateStakingTokensAmountBasedOnAvaxValue,
-  deployAllFaucets,
+  deployAllFacets,
   deployAndInitializeLendingPool,
   fromWei,
   getFixedGasSigners,
@@ -122,7 +122,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     it("should deploy a smart loan", async () => {
@@ -339,7 +339,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
           [
             {
-              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],
@@ -350,7 +350,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {

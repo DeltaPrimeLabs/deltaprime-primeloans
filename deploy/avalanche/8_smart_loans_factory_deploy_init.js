@@ -67,7 +67,7 @@ module.exports = async ({
     updateSmartLoanLibrary(
         [
             {
-                facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
                 contractAddress: pangolinIntermediaryTUP.address,
             }
         ],

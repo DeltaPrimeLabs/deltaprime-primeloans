@@ -13,7 +13,7 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {
     Asset,
-    calculateStakingTokensAmountBasedOnAvaxValue, deployAllFaucets,
+    calculateStakingTokensAmountBasedOnAvaxValue, deployAllFacets,
     fromWei,
     getFixedGasSigners, recompileSmartLoanLib,
     toBytes32,
@@ -87,7 +87,7 @@ describe('Yield Yak test stake AVAX', () => {
             smartLoansFactory.address,
             'lib'
         );
-        await deployAllFaucets(diamondAddress)
+        await deployAllFacets(diamondAddress)
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
         YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', { provider: "redstone-avalanche-prod-1"})).value;
@@ -216,7 +216,7 @@ describe('Yield Yak test stake SAVAX', () => {
             "SmartLoanConfigLib",
             [
                 {
-                    facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                    facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
                     contractAddress: exchange.address,
                 }
             ],
@@ -227,7 +227,7 @@ describe('Yield Yak test stake SAVAX', () => {
             'lib'
         );
 
-        await deployAllFaucets(diamondAddress)
+        await deployAllFacets(diamondAddress)
 
         // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;

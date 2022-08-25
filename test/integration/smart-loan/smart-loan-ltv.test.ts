@@ -5,7 +5,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {
   Asset,
-  deployAllFaucets,
+  deployAllFacets,
   deployAndInitializeLendingPool,
     getFixedGasSigners,
   PoolAsset,
@@ -94,7 +94,7 @@ describe('Smart loan',  () => {
           5020
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     it("should deploy a smart loan", async () => {

@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import "./faucets/IYieldYakFacet.sol";
-import "./faucets/IPangolinDEXFacet.sol";
-import "./faucets/IAssetsOperationsFacet.sol";
-import "./faucets/IOwnershipFacet.sol";
-import "./faucets/ISmartLoanLogicFacet.sol";
-import "./faucets/ISmartLoanLiquidationFacet.sol";
-import "./faucets/ISolvencyFacet.sol";
-import "./faucets/IUbeswapDEXFacet.sol";
+import "./facets/IYieldYakFacet.sol";
+import "./facets/IPangolinDEXFacet.sol";
+import "./facets/IAssetsOperationsFacet.sol";
+import "./facets/IOwnershipFacet.sol";
+import "./facets/ISmartLoanLogicFacet.sol";
+import "./facets/ISmartLoanLiquidationFacet.sol";
+import "./facets/ISolvencyFacet.sol";
+import "./facets/IUbeswapDEXFacet.sol";
 
 interface SmartLoanGigaChadInterface is IPangolinDEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanLogicFacet, ISolvencyFacet, IYieldYakFacet, IUbeswapDEXFacet {
 

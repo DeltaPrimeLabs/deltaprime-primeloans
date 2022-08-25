@@ -7,7 +7,7 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-  Asset, deployAllFaucets, deployAndInitializeLendingPool,
+  Asset, deployAllFacets, deployAndInitializeLendingPool,
   deployAndInitExchangeContract, formatUnits,
   fromWei,
   getFixedGasSigners, PoolAsset,
@@ -113,7 +113,7 @@ describe('Smart loan',  () => {
           "SmartLoanConfigLib",
           [
             {
-              facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+              facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
               contractAddress: exchange.address,
             }
           ],
@@ -124,7 +124,7 @@ describe('Smart loan',  () => {
           'lib'
       );
 
-      await deployAllFaucets(diamondAddress)
+      await deployAllFacets(diamondAddress)
     });
 
     it("should deploy a smart loan, fund, borrow and swap", async () => {

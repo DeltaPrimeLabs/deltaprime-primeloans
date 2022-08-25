@@ -164,7 +164,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFaucets = async function(diamondAddress: any, chain = 'AVAX') {
+export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX') {
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,

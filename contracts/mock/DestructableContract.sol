@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Last deployed from commit: ;
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
 /**
