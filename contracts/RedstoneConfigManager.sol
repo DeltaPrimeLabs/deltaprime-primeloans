@@ -2,13 +2,14 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RedstoneConfigManager is Ownable{
-    address[] internal trustedSigners;
+    mapping(address => bool) internal signerAuthorized;
+    address[] public trustedSigners;
     uint256 public maxBlockTimestampDelay;
 
     constructor(address[] memory _trustedSigners, uint256 _maxBlockTimestampDelay) {
         maxBlockTimestampDelay = _maxBlockTimestampDelay;
         for(uint256 i=0; i<_trustedSigners.length; i++) {
-            trustedSigners.push(_trustedSigners[i]);
+            _addTrustedSigner(_trustedSigners[i]);
         }
     }
 
@@ -16,38 +17,46 @@ contract RedstoneConfigManager is Ownable{
         return trustedSigners;
     }
 
-    function setMaxBlockTimestampDelay(uint256 _maxBlockTimestampDelay) public onlyOwner {
-        maxBlockTimestampDelay = _maxBlockTimestampDelay;
+    function signerExists(address signer) public view returns(bool) {
+        return signerAuthorized[signer];
     }
 
-    function signerExists(address signer) public view returns(bool exists) {
-        exists = false;
-        for(uint256 i=0; i<trustedSigners.length; i++) {
-            if(trustedSigners[i] == signer) {
-                return true;
-            }
-        }
+    function setMaxBlockTimestampDelay(uint256 _maxBlockTimestampDelay) public onlyOwner {
+        maxBlockTimestampDelay = _maxBlockTimestampDelay;
     }
 
     function addTrustedSigners(address[] memory _trustedSigners) public onlyOwner {
         for(uint256 i=0; i<_trustedSigners.length; i++) {
             require(!signerExists(_trustedSigners[i]), "Signer already exists");
-            trustedSigners.push(_trustedSigners[i]);
+            _addTrustedSigner(_trustedSigners[i]);
         }
+    }
+
+    function _addTrustedSigner(address newSigner) private {
+        signerAuthorized[newSigner] = true;
+        trustedSigners.push(newSigner);
     }
 
     function removeTrustedSigners(address[] memory _trustedSigners) public onlyOwner {
         for(uint256 i=0; i<_trustedSigners.length; i++) {
+            require(signerExists(_trustedSigners[i]), "Signer does not exists");
             _removeTrustedSigner(_trustedSigners[i]);
         }
     }
 
-    function _removeTrustedSigner(address _trustedSigner) private {
-        for(uint256 i=0; i<trustedSigners.length; i++) {
-            if(_trustedSigner == trustedSigners[i]) {
-                if(i < (trustedSigners.length-1)) {
-                    trustedSigners[i] = trustedSigners[trustedSigners.length-1];
+    function _removeTrustedSigner(address signerToRemove) private {
+        // Signer is no longer authorized
+        signerAuthorized[signerToRemove] = false;
+
+        // Remove signerToRemove from the trustedSigners list
+        for(uint256 i=0; i< trustedSigners.length; i++) {
+            // Lookup signerToRemove position in the trustedSigners list
+            if(trustedSigners[i] == signerToRemove) {
+                // If signerToRemove is not at the last place in the list, copy last list's element to it's place
+                if(i != trustedSigners.length - 1) {
+                    trustedSigners[i] = trustedSigners[trustedSigners.length - 1];
                 }
+                // Remove last list's element
                 trustedSigners.pop();
             }
         }
