@@ -1,10 +1,10 @@
-import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 
 const {ethers} = require("hardhat");
 import hre from 'hardhat'
 const networkName = hre.network.name
-import createMigrationFile from "../tools/scripts/create-migration-file"
-import verifyContract from "../tools/scripts/verify-contract";
+import createMigrationFile from "../../tools/scripts/create-migration-file"
+import verifyContract from "../../tools/scripts/verify-contract";
 
 module.exports = async ({
   getNamedAccounts,
@@ -15,19 +15,20 @@ module.exports = async ({
 
   embedCommitHash('Pool', './contracts');
   embedCommitHash('WrappedNativeTokenPool', './contracts');
-  embedCommitHash('UsdcPool', './contracts');
-  embedCommitHash('WrappedNativeTokenPoolTUP', './contracts/proxies');
-  embedCommitHash('UsdcPoolTUP', './contracts/proxies');
 
-  await deployPool(deploy, deployer, admin, 'WrappedNativeTokenPool', 'WrappedNativeTokenPoolFactory', 'WrappedNativeTokenPoolTUP');
-  await deployPool(deploy, deployer, admin, 'UsdcPool', 'PoolFactory', 'UsdcPoolTUP');
+  embedCommitHash('WavaxPool', './contracts/deployment/avalanche');
+  embedCommitHash('WavaxPoolFactory', './contracts/deployment/avalanche');
+  embedCommitHash('WavaxPoolTUP', './contracts/proxies/tup/avalanche');
+
+  embedCommitHash('UsdcPool', './contracts/deployment/avalanche');
+  embedCommitHash('UsdcPoolFactory', './contracts/deployment/avalanche');
+  embedCommitHash('UsdcPoolTUP', './contracts/proxies/tup/avalanche');
+
+  await deployPool(deploy, deployer, admin, 'WavaxPool', 'WavaxPoolFactory', 'WavaxPoolTUP');
+  await deployPool(deploy, deployer, admin, 'UsdcPool', 'UsdcPoolFactory', 'UsdcPoolTUP');
 };
 
 async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
-  embedCommitHash(poolFactory, './contracts/deployment');
-  embedCommitHash(contract, './contracts');
-  embedCommitHash(tup, './contracts/proxies');
-
   let resultFactory = await deploy(poolFactory, {
     from: deployer,
     gasLimit: 8000000,
@@ -43,7 +44,7 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
 
   const tx = await factory.deployPool();
   const receipt = await tx.wait();
-  let poolAddress = receipt.events[0].args[0];
+  let poolAddress = receipt.events[0].args[1];
 
   await verifyContract(hre, {
     address: poolAddress
@@ -72,4 +73,4 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   console.log(`${tup} deployed at address: ${result.address}`);
 }
 
-module.exports.tags = ['init'];
+module.exports.tags = ['avalanche'];

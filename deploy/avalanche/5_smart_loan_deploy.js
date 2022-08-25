@@ -1,9 +1,9 @@
-import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
-import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
-import {deployDiamond, deployFacet} from "../tools/diamond/deploy-diamond";
+import updateSmartLoanLibrary from "../../tools/scripts/update-smart-loan-library"
+import {deployDiamond, deployFacet} from "../../tools/diamond/deploy-diamond";
 
 module.exports = async ({
                             getNamedAccounts,
@@ -21,19 +21,22 @@ module.exports = async ({
         deploy: deploy
     });
 
-    const WrappedNativeTokenPoolTUP = await ethers.getContract("WrappedNativeTokenPoolTUP");
-    const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP");
-    const exchangeTUP = await ethers.getContract("PangolinIntermediaryTUP");
-    const yieldYakRouter = await ethers.getContract("YieldYakRouter");
+    const pangolinIntermediary = await ethers.getContract("PangolinIntermediaryTUP");
+    const tokenManager = await ethers.getContract("TokenManager");
+    const redstoneConfigManager = await ethers.getContract("RedstoneConfigManager");
 
     updateSmartLoanLibrary(
-        [0, 1],
-        ["0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664"],
-        {'AVAX': WrappedNativeTokenPoolTUP.address, 'USDC': usdcPoolTUP.address},
-        exchangeTUP.address,
-        yieldYakRouter.address,
-        5000,
-        4000
+        [
+            {
+                facetPath: './contracts/faucets/PangolinDEXFacet.sol',
+                contractAddress: pangolinIntermediary.address,
+            }
+        ],
+        tokenManager.address,
+        redstoneConfigManager.address,
+        diamondAddress,
+        ethers.constants.AddressZero,
+        'lib'
     );
 
     const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
@@ -55,4 +58,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['init'];
+module.exports.tags = ['avalanche'];

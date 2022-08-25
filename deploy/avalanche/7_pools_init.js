@@ -1,6 +1,6 @@
 const {ethers} = require("hardhat");
 
-import TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 
 module.exports = async ({
     getNamedAccounts,
@@ -9,7 +9,7 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "WrappedNativeTokenPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", TOKEN_ADDRESSES['AVAX']);
+    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "WavaxPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", TOKEN_ADDRESSES['AVAX']);
     await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "UsdcPoolTUP", "UsdcDepositIndexTUP", "UsdcBorrowIndexTUP",TOKEN_ADDRESSES['USDC']);
 };
 
@@ -37,4 +37,4 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
     tokenAddress: ${tokenAddress}`);
 }
 
-module.exports.tags = ['init'];
+module.exports.tags = ['avalanche'];

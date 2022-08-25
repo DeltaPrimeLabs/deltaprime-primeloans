@@ -1,6 +1,6 @@
-import verifyContract from "../tools/scripts/verify-contract";
+import verifyContract from "../../tools/scripts/verify-contract";
 import {ethers} from "hardhat";
-import {embedCommitHash} from "../tools/scripts/embed-commit-hash";
+import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 import {renameSync} from "fs";
 const hre = require("hardhat");
 const networkName = hre.network.name
@@ -17,8 +17,8 @@ module.exports = async ({
     embedCommitHash('UsdcBorrowIndex');
     embedCommitHash('UsdcDepositIndex');
 
-    await deployLinearIndex("WavaxBorrowIndex", "WrappedNativeTokenPoolTUP", deploy, deployer, admin);
-    await deployLinearIndex("WavaxDepositIndex", "WrappedNativeTokenPoolTUP", deploy, deployer, admin);
+    await deployLinearIndex("WavaxBorrowIndex", "WavaxPoolTUP", deploy, deployer, admin);
+    await deployLinearIndex("WavaxDepositIndex", "WavaxPoolTUP", deploy, deployer, admin);
     await deployLinearIndex("UsdcBorrowIndex", "UsdcPoolTUP", deploy, deployer, admin);
     await deployLinearIndex("UsdcDepositIndex", "UsdcPoolTUP", deploy, deployer, admin);
 
@@ -70,4 +70,4 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     await initializeTx.wait();
 }
 
-module.exports.tags = ['init'];
+module.exports.tags = ['avalanche'];

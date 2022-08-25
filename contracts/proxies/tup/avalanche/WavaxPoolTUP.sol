@@ -4,6 +4,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract WrappedNativeTokenPoolTUP is TransparentUpgradeableProxy {
+contract WavaxPoolTUP is TransparentUpgradeableProxy {
     constructor(address _logic, address admin_, bytes memory _data) TransparentUpgradeableProxy(_logic, admin_, _data) {}
 }

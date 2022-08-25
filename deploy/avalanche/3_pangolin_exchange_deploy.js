@@ -1,14 +1,15 @@
 const web3Abi  = require('web3-eth-abi');
-const addresses = require("../common/addresses/avax/token_addresses.json");
+const addresses = require("../../common/addresses/avax/token_addresses.json");
 const {ethers} = require("hardhat");
-const {embedCommitHash} = require("../tools/scripts/embed-commit-hash");
+const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 const hre = require("hardhat");
-import verifyContract from "../tools/scripts/verify-contract";
+import verifyContract from "../../tools/scripts/verify-contract";
 const toBytes32 = require("ethers").utils.formatBytes32String;
+import PangolinIntermediaryArtifact from "../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json";
 
 const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
-const supportedAssets = [
+const pangolinSupportedAssets = [
     asset('AVAX'),
     asset('USDC'),
     asset('BTC'),
@@ -32,8 +33,8 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer, admin} = await getNamedAccounts();
 
-    embedCommitHash('PangolinIntermediary');
-    embedCommitHash('PangolinIntermediaryTUP', './contracts/proxies');
+    embedCommitHash('PangolinIntermediary', './contracts/integrations/avalanche');
+    embedCommitHash('PangolinIntermediaryTUP', './contracts/proxies/tup/avalanche');
 
     let resultImpl = await deploy('PangolinIntermediary', {
         from: deployer,
@@ -49,41 +50,9 @@ module.exports = async ({
 
     const exchange = await ethers.getContract("PangolinIntermediary");
 
-    const initializeInterface = {
-        "inputs": [
-        {
-            "internalType": "address",
-            "name": "_pangolinRouter",
-            "type": "address"
-        },
-        {
-            "components": [
-                {
-                    "internalType": "bytes32",
-                    "name": "asset",
-                    "type": "bytes32"
-                },
-                {
-                    "internalType": "address",
-                    "name": "assetAddress",
-                    "type": "address"
-                }
-            ],
-            "internalType": "struct IAssetsExchange.Asset[]",
-            "name": "supportedAssets",
-            "type": "tuple[]"
-        }
-    ],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-
-
     const calldata = web3Abi.encodeFunctionCall(
-        initializeInterface,
-        [pangolinRouter, supportedAssets]
+        PangolinIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
+        [pangolinRouter, pangolinSupportedAssets.map(asset => asset.assetAddress)]
     )
 
     let resultTup = await deploy('PangolinIntermediaryTUP', {
@@ -94,7 +63,7 @@ module.exports = async ({
 
     await verifyContract(hre, {
         address: resultTup.address,
-        contract: "contracts/proxies/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
+        contract: "contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
         constructorArguments: [
             exchange.address,
             admin,
@@ -106,4 +75,4 @@ module.exports = async ({
 
 };
 
-module.exports.tags = ['init'];
+module.exports.tags = ['avalanche'];

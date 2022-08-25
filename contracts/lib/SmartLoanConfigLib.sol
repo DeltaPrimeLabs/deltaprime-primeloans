@@ -24,9 +24,9 @@ library SmartLoanConfigLib {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x1c85638e118b37167e9298c2268758e058DdfDA0;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B;
 
     function getSmartLoansFactoryAddress() internal view returns (address) {
         return _SMART_LOANS_FACTORY_ADDRESS;
@@ -53,7 +53,7 @@ library SmartLoanConfigLib {
     }
 
     function getTokenManager() internal view returns (TokenManager) {
-    return TokenManager(0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B);
+    return TokenManager(0x51A1ceB83B83F1985a81C295d1fF28Afef186E02);
     }
 
     function getNativeTokenSymbol() internal pure returns (bytes32 symbol) {
@@ -61,7 +61,7 @@ library SmartLoanConfigLib {
     }
 
     function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
-    return RedstoneConfigManager(0x7151E5129F386e6B4c497F151030Fa5eD6b4453c);
+    return RedstoneConfigManager(0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6);
     }
 
     function getNativeToken() internal view returns (address payable) {
