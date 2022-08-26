@@ -12,7 +12,7 @@ import "./proxies/SmartLoanDiamondProxy.sol";
 import "./facets/DiamondInit.sol";
 import "./facets/AssetsOperationsFacet.sol";
 import "./facets/OwnershipFacet.sol";
-import "./facets/SmartLoanLogicFacet.sol";
+import "./facets/SmartLoanViewFacet.sol";
 
 /**
  * @title SmartLoansFactory
@@ -77,7 +77,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
       payable(address(smartLoanDiamond)),
       // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
       // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-        abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, msg.sender)
+        abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
     );
     SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
@@ -93,7 +93,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
     // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
     // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-      abi.encodeWithSelector(SmartLoanLogicFacet.initialize.selector, address(this))
+      abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, address(this))
     );
     SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 

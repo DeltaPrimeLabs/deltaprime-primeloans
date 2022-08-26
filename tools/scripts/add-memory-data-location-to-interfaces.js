@@ -121,7 +121,7 @@ function createFacetsInterfaces() {
         'PangolinDEXFacet',
         'UbeswapDEXFacet',
         'SmartLoanLiquidationFacet',
-        'SmartLoanLogicFacet',
+        'SmartLoanViewFacet',
         'SolvencyFacet',
         'YieldYakFacet',
     ]

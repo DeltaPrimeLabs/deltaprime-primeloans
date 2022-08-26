@@ -194,7 +194,7 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
     }
     await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['liquidateLoan', 'unsafeLiquidateLoan'])
     await deployFacet(
-        "SmartLoanLogicFacet",
+        "SmartLoanViewFacet",
         diamondAddress,
         [
             'initialize',

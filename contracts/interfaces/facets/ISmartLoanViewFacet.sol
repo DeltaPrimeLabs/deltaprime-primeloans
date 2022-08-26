@@ -1,8 +1,8 @@
-import "../../facets/SmartLoanLogicFacet.sol";
+import "../../facets/SmartLoanViewFacet.sol";
 
-interface ISmartLoanLogicFacet {
-  function getAllAssetsBalances (  ) external view returns ( SmartLoanLogicFacet.AssetNameBalance[] memory  );
-  function getAllAssetsPrices (  ) external view returns ( SmartLoanLogicFacet.AssetNamePrice[] memory );
+interface ISmartLoanViewFacet {
+  function getAllAssetsBalances (  ) external view returns ( SmartLoanViewFacet.AssetNameBalance[] memory  );
+  function getAllAssetsPrices (  ) external view returns ( SmartLoanViewFacet.AssetNamePrice[] memory );
   function wrapNativeToken( uint256 amount ) external;
   function depositNativeToken( ) payable external;
   function unwrapAndWithdraw ( uint256 amount ) payable external;

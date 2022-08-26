@@ -1,6 +1,6 @@
 import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
-import LOAN_LOGIC from '../../artifacts/contracts/facets/SmartLoanLogicFacet.sol/SmartLoanLogicFacet.json'
+import LOAN_VIEW_METHODS from '../../artifacts/contracts/facets/SmartLoanViewFacet.sol/SmartLoanViewFacet.json'
 import SOLVENCY_LOGIC from '../../artifacts/contracts/facets/SolvencyFacet.sol/SolvencyFacet.json'
 import LOAN_LIQUIDATION from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
@@ -52,7 +52,7 @@ async function wrapLoanStatus(loanAddress) {
 }
 
 function wrapLogicFacet(loanAddress) {
-    let loan = new ethers.Contract(loanAddress, LOAN_LOGIC.abi, wallet);
+    let loan = new ethers.Contract(loanAddress, LOAN_VIEW_METHODS.abi, wallet);
 
     loan = WrapperBuilder
         .wrapLite(loan)

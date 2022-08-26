@@ -13,7 +13,7 @@ import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
-contract SmartLoanLogicFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract SmartLoanViewFacet is ReentrancyGuard, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

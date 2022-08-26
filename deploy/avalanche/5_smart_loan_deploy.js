@@ -42,7 +42,7 @@ module.exports = async ({
     const output = execSync('npx hardhat compile', { encoding: 'utf-8' });
     console.log(output);
 
-    await deployFacet("SmartLoanLogicFacet", diamondAddress, [], {
+    await deployFacet("SmartLoanViewFacet", diamondAddress, [], {
         deployer: deployer,
         deploy: deploy
     });

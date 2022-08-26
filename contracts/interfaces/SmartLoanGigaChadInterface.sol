@@ -5,11 +5,11 @@ import "./facets/IYieldYakFacet.sol";
 import "./facets/IPangolinDEXFacet.sol";
 import "./facets/IAssetsOperationsFacet.sol";
 import "./facets/IOwnershipFacet.sol";
-import "./facets/ISmartLoanLogicFacet.sol";
+import "./facets/ISmartLoanViewFacet.sol";
 import "./facets/ISmartLoanLiquidationFacet.sol";
 import "./facets/ISolvencyFacet.sol";
 import "./facets/IUbeswapDEXFacet.sol";
 
-interface SmartLoanGigaChadInterface is IPangolinDEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanLogicFacet, ISolvencyFacet, IYieldYakFacet, IUbeswapDEXFacet {
+interface SmartLoanGigaChadInterface is IPangolinDEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacet, IYieldYakFacet, IUbeswapDEXFacet {
 
 }
