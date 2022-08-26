@@ -8,7 +8,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-  Asset, AssetNameBalance, AssetNamePrice,
+  Asset,
   deployAllFacets,
   deployAndInitializeLendingPool, extractAssetNameBalances, extractAssetNamePrices,
   formatUnits, fromBytes32,

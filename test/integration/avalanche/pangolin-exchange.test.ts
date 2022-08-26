@@ -125,6 +125,14 @@ describe('PangolinIntermediary', () => {
             expect(await wavaxToken.connect(owner).balanceOf(owner.address)).to.be.gt(BigNumber.from(initialWavaxBalance.toString()).sub(BigNumber.from(estimatedAvaxNeeded.toString())))
         });
 
+        it('should properly handle view methods for extreme amounts', async () => {
+            //numbers higher than available liquidity
+            let avaxAmount = 100000000000;
+            let usdAmount = 100000000000;
+
+            await expect(sut.getMinimumTokensNeeded(parseUnits(usdAmount.toString(), usdTokenDecimalPlaces), wavaxToken.address, usdToken.address)).to.be.revertedWith('Error when calculating amounts needed');
+            await expect(sut.getMaximumTokensReceived(toWei(avaxAmount.toString()), wavaxToken.address, usdToken.address)).not.to.be.reverted;
+        });
     });
 
     describe('Whitelist and delist tokens', () => {

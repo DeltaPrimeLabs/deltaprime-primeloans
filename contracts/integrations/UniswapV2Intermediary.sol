@@ -15,7 +15,7 @@ import "../TokenList.sol";
 /**
  * @title UniswapV2Intermediary
  * @dev Contract allows user to swap ERC20 tokens on DEX
- * This implementation supports UniswapV2Intermediary-like DEXs
+ * This implementation supports UniswapV2-like DEXs
  */
 contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, ReentrancyGuardUpgradeable {
   using TransferHelper for address payable;
@@ -47,7 +47,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     require(isTokenWhitelisted[_boughtToken], 'Trying to buy unsupported token');
 
     if (_minimumBought > 0) {
-      require(_exactSold >= getMaximumTokensReceived(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
+      require(_exactSold >= getMinimumTokensNeeded(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
     }
 
     uint256[] memory amounts = router.swapExactTokensForTokens(_exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp);
@@ -66,23 +66,28 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
   /* ========== VIEW FUNCTIONS ========== */
 
-  // Initial audit comment: Three below functions can in theory fail if there would be no liquidity at DEX but in this case
-  // we can just remove a given asset from supported assets or change all calls to the below functions to an external .call
-  // and handle a failure in our code. It is yet to be decided upon.
-
   /**
    * Returns the minimum _soldToken amount that is required to be sold to receive _exactAmountOut of a _boughtToken.
+   * Can revert due to insufficient liquidity
    **/
-  function getMaximumTokensReceived(uint256 _exactAmountOut, address _soldToken, address _boughtToken) public view override returns (uint256) {
+  function getMinimumTokensNeeded(uint256 _exactAmountOut, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
-    return router.getAmountsIn(_exactAmountOut, path)[0];
+    (bool success, bytes memory result) = address(router).staticcall(
+      abi.encodeWithSignature("getAmountsIn(uint256,address[])", _exactAmountOut, path)
+    );
+
+    require(success, "Error when calculating amounts needed");
+
+    uint256[] memory amounts = abi.decode(result, (uint256[]));
+
+    return amounts[0];
   }
 
   /**
    * Returns the maximum _boughtToken amount that will be obtained in the event of selling _amountIn of _soldToken token.
    **/
-  function getMinimumTokensNeeded(uint256 _amountIn, address _soldToken, address _boughtToken) public view override returns (uint256) {
+  function getMaximumTokensReceived(uint256 _amountIn, address _soldToken, address _boughtToken) public view override returns (uint256) {
     address[] memory path = getPath(_soldToken, _boughtToken);
 
     return router.getAmountsOut(_amountIn, path)[1];
@@ -90,7 +95,8 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
   /**
    * Returns a path containing tokens' addresses
-   * @dev _token ERC20 token's address
+   * @param _token1 ERC20 token's address
+   * @param _token2 ERC20 token's address
    **/
   function getPath(address _token1, address _token2) internal virtual view returns (address[] memory) {
     address[] memory path;
