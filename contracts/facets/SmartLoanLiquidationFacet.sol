@@ -151,36 +151,41 @@ contract SmartLoanLiquidationFacet is ReentrancyGuard, SolvencyMethodsLib {
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
-        if (!healingLoan) {
-            uint256 valueOfTokens = _getTotalValue();
+        uint256 valueOfTokens = _getTotalValue();
 
-            bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
+        bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
 
-            uint256 partToReturn = 10 ** 18;
+        //meaning returning all tokens
+        uint256 partToReturn = 10 ** 18;
 
-            if (valueOfTokens >= suppliedInUSD + bonus) {
-                partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
-            }
+        if (!healingLoan && valueOfTokens >= suppliedInUSD + bonus) {
+            //in that scenario we calculate how big part of token to return
+            partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
+        }
 
-            // Native token transfer
-            if (address(this).balance > 0) {
-                payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
-            }
+        // Native token transfer
+        if (address(this).balance > 0) {
+            payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
+        }
 
-            for (uint256 i; i < assetsOwned.length; i++) {
-                IERC20Metadata token = getERC20TokenInstance(assetsOwned[i]);
-                uint256 balance = token.balanceOf(address(this));
+        for (uint256 i; i < assetsOwned.length; i++) {
+            IERC20Metadata token = getERC20TokenInstance(assetsOwned[i]);
+            uint256 balance = token.balanceOf(address(this));
 
-                address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
-            }
+            address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
         }
 
         uint256 LTV = _getLTV();
 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
-        if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner) {
+        if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
             require(LTV >= SmartLoanConfigLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+        }
+
+        if (healingLoan) {
+            require(_getDebt() == 0, "Healing a loan must end up with 0 debt");
+            require(_getTotalValue() == 0, "Healing a loan must end up with 0 total value");
         }
 
         require(LTV < SmartLoanConfigLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");

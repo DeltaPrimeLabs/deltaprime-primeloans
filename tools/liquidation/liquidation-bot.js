@@ -147,6 +147,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     }
 
     const repayAmounts = getRepayAmounts(
+        'LIQUIDATE',
         debts,
         neededToRepay,
         pricesArg

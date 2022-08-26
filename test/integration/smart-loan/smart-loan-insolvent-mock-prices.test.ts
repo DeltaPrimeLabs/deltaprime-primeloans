@@ -430,6 +430,7 @@ describe('Smart loan',  () => {
             let newPricesArg = newPrices.reduce((acc, current:any) => Object.assign(acc, {[current.symbol]: current.value}), {})
 
             const repayAmounts = getRepayAmounts(
+                testCase.action,
                 debts,
                 neededToRepay,
                 newPricesArg

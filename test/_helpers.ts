@@ -90,7 +90,7 @@ export const toRepay = function (
             return debt;
         case 'HEAL':
             //bankrupt loan
-            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
+            return debt;
         default:
             //liquidate
             return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
@@ -119,17 +119,24 @@ export const calculateBonus = function (
 
 //simple model: we iterate over pools and repay their debts based on how much is left to repay in USD
 export const getRepayAmounts = function (
+    action: string,
     debts: any,
     toRepayInUsd: number,
     mockPrices: any
 ) {
     let repayAmounts: any = {};
+
     let leftToRepayInUsd = toRepayInUsd;
+
     for (const [asset, debt] of Object.entries(debts)) {
-        let availableToRepayInUsd = Number(debt) * mockPrices[asset];
-        let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
-        leftToRepayInUsd -= repaidToPool;
-        repayAmounts[asset] = repaidToPool / mockPrices[asset];
+        if (action === 'HEAL' || action === 'CLOSE') {
+            repayAmounts[asset] = Number(debt) * 1.00001;
+        } else {
+            let availableToRepayInUsd = Number(debt) * mockPrices[asset];
+            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+            leftToRepayInUsd -= repaidToPool;
+            repayAmounts[asset] = repaidToPool / mockPrices[asset];
+        }
     }
 
     //repayAmounts are measured in appropriate tokens (not USD)
