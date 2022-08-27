@@ -92,18 +92,15 @@ contract SmartLoanLiquidationFacet is ReentrancyGuard, SolvencyMethodsLib {
 
         uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(config.assetsToRepay);
 
+        uint256 initialTotal = _getTotalValue();
+        uint256 initialDebt = _getDebt();
 
-        {
-            uint256 initialTotal = _getTotalValue();
-            uint256 initialDebt = _getDebt();
+        require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+        require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
+        require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
-            require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-            require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
-            require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
-        }
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
-        // TODO: Recalculating TV and Debt because of stack to deep. Could be optimized
-        bool healingLoan = config.allowUnprofitableLiquidation && _getDebt() > _getTotalValue();
+        bool healingLoan = config.allowUnprofitableLiquidation && initialDebt > initialTotal;
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
@@ -151,14 +148,13 @@ contract SmartLoanLiquidationFacet is ReentrancyGuard, SolvencyMethodsLib {
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
-        uint256 valueOfTokens = _getTotalValue();
 
         bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18;
 
-        if (!healingLoan && valueOfTokens >= suppliedInUSD + bonus) {
+        if (!healingLoan && total >= suppliedInUSD + bonus) {
             //in that scenario we calculate how big part of token to return
             partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
         }

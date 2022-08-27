@@ -115,7 +115,7 @@ const TEST_TABLE =  [
     fundInUsd: {
       AVAX: 0,
       USDC: 0,
-      ETH: 20,
+      ETH: 40,
       BTC: 0,
       LINK: 0
     },
@@ -617,7 +617,7 @@ describe('Smart loan - real prices',  () => {
             expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
           }
 
-          expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, 0.01);
+          expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, 0.02);
         });
       }
    );
