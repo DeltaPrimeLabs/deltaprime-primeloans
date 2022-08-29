@@ -54,8 +54,6 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
     _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
 
-    emit TokenSwap(msg.sender, _soldToken, _boughtToken, amounts[0], amounts[amounts.length - 1], block.timestamp);
-
     return amounts;
   }
 
@@ -118,17 +116,4 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
   function getNativeTokenAddress() virtual internal view returns (address) {
     return 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   }
-
-  /* ========== EVENTS ========== */
-
-  /**
-   * @dev emitted after tokens were swapped
-   * @param seller the address which sold tokens
-   * @param soldToken the address of sold token
-   * @param boughtToken the address of bought token
-   * @param amountSold the amount of token sold
-   * @param amountBought the amount of token bought
-   **/
-  event TokenSwap(address indexed seller, address soldToken, address boughtToken, uint256 amountSold, uint256 amountBought, uint256 timestamp);
-
 }
