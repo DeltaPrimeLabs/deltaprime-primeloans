@@ -1,4 +1,3 @@
 interface IPangolinDEXFacet {
-  function getRouterContract (  ) external returns ( address );
   function swapPangolin ( bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought ) external returns ( uint256[] memory );
 }

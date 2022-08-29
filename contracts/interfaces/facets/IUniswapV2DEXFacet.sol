@@ -1,0 +1,2 @@
+interface IUniswapV2DEXFacet {
+}
