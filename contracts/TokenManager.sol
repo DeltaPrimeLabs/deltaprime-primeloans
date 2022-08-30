@@ -75,7 +75,7 @@ contract TokenManager {
     **/
     function getPoolAddress(bytes32 _asset) public view returns (address) {
         (, address assetAddress) = assetToPoolAddress.tryGet(_asset);
-        require(assetAddress != address(0), "Asset not supported.");
+        require(assetAddress != address(0), "Pool asset not supported.");
 
         return assetAddress;
     }
