@@ -3,7 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
@@ -11,7 +11,7 @@ import "./SolvencyFacet.sol";
 import "../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
-contract UniswapV2DEXFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

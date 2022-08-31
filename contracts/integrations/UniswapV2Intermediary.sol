@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../lib/Bytes32EnumerableMap.sol";
@@ -17,7 +17,7 @@ import "../TokenList.sol";
  * @dev Contract allows user to swap ERC20 tokens on DEX
  * This implementation supports UniswapV2-like DEXs
  */
-contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, ReentrancyGuardUpgradeable {
+contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, ReentrancyGuardKeccak {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -28,7 +28,6 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     router = IUniswapV2Router01(_router);
 
     __TokenList_init(_whitelistedTokens);
-    __ReentrancyGuard_init();
   }
 
   /*

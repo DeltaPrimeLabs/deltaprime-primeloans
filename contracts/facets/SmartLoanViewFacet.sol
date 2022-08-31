@@ -2,7 +2,7 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../lib/SmartLoanConfigLib.sol";
@@ -13,7 +13,7 @@ import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
-contract SmartLoanViewFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

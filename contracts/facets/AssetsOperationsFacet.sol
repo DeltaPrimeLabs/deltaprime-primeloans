@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SmartLoanConfigLib.sol";
@@ -13,7 +13,7 @@ import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../TokenManager.sol";
 
-contract AssetsOperationsFacet is ReentrancyGuard, SolvencyMethodsLib {
+contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

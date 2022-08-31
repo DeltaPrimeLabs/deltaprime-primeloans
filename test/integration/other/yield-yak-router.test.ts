@@ -230,9 +230,9 @@ describe('Yield Yak test stake SAVAX', () => {
         await deployAllFacets(diamondAddress)
 
         // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
-        AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        SAVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        $YYVSAVAXV2_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-1"})).value;
+        AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-1"})).value;
+        SAVAX_PRICE = (await redstone.getPrice('SAVAX', { provider: "redstone-avalanche-prod-1"})).value;
+        $YYVSAVAXV2_PRICE = (await redstone.getPrice('SAV2', { provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {

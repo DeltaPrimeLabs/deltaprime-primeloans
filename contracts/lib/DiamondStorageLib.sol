@@ -16,6 +16,7 @@ library DiamondStorageLib {
 
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
+    bytes32 constant REENTRANCY_GUARD_STORAGE_POSITION = keccak256("diamond.standard.reentrancy.guard.storage");
 
     struct FacetAddressAndPosition {
         address facetAddress;
@@ -52,6 +53,17 @@ library DiamondStorageLib {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
     }
 
+    struct ReentrancyGuardStorage {
+        uint256 _status;
+    }
+
+    function reentrancyGuardStorage() internal pure returns (ReentrancyGuardStorage storage rgs) {
+        bytes32 position = REENTRANCY_GUARD_STORAGE_POSITION;
+        assembly {
+            rgs.slot := position
+        }
+    }
+
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;
         assembly {
@@ -59,10 +71,10 @@ library DiamondStorageLib {
         }
     }
 
-    function smartLoanStorage() internal pure returns (SmartLoanStorage storage ds) {
+    function smartLoanStorage() internal pure returns (SmartLoanStorage storage sls) {
         bytes32 position = SMARTLOAN_STORAGE_POSITION;
         assembly {
-            ds.slot := position
+            sls.slot := position
         }
     }
 

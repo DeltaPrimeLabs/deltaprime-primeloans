@@ -4,12 +4,9 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../lib/SmartLoanConfigLib.sol";
 import "../TokenManager.sol";
-import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
-import "../interfaces/IYakStakingAVAXAAVEV1.sol";
 
 contract SolvencyFacet is PriceAware {
     /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
