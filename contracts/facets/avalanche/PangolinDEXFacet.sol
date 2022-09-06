@@ -22,6 +22,6 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0xC9a43158891282A2B1475592D5719c001986Aaec;
+        return 0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9;
     }
 }

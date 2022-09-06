@@ -9,12 +9,23 @@ import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./SolvencyFacet.sol";
 import "../lib/SolvencyMethodsLib.sol";
-
-import "../lib/SmartLoanConfigLib.sol";
 import "../Pool.sol";
 import "../TokenManager.sol";
 
+//This path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
+
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
+
+    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
+    uint256 private constant _MAX_LTV = 5000;
+
+    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
+    uint256 private constant _MIN_LTV_AFTER_LIQUIDATION = 4000;
+
+    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
+    uint256 private constant _MAX_LIQUIDATION_BONUS = 100;
+
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -32,7 +43,31 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         bool allowUnprofitableLiquidation;
     }
 
-    /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
+    /* ========== VIEW FUNCTIONS ========== */
+
+    /**
+     * Returns max LTV (with the accuracy in a thousandth)
+     * IMPORTANT: when changing, update other facets as well
+     **/
+    function getMaxLtv() public view returns (uint256) {
+        return _MAX_LTV;
+    }
+
+    /**
+      * Returns minimum acceptable LTV after liquidation
+      **/
+    function getMinLtvAfterLiquidation() public view returns (uint256) {
+        return _MIN_LTV_AFTER_LIQUIDATION;
+    }
+
+    /**
+      * Returns maximum acceptable liquidation bonus (bonus is provided by a liquidator)
+      **/
+    function getMaxLiquidationBonus() public view returns (uint256) {
+        return _MAX_LIQUIDATION_BONUS;
+    }
+
+/* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
     * This function can be accessed by any user when Prime Account is insolvent or bankrupt and repay part of the loan
@@ -88,15 +123,15 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(config.assetsToRepay);
 
         uint256 initialTotal = _getTotalValue();
         uint256 initialDebt = _getDebt();
 
-        require(config.liquidationBonus <= SmartLoanConfigLib.getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-        require(_getLTV() >= SmartLoanConfigLib.getMaxLtv(), "Cannot sellout a solvent account");
+        require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+        require(_getLTV() >= getMaxLtv(), "Cannot sellout a solvent account");
         require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
@@ -144,12 +179,12 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         }
 
         uint256 total = _getTotalValue();
-        bytes32[] memory assetsOwned = SmartLoanConfigLib.getAllOwnedAssets();
+        bytes32[] memory assetsOwned = DeploymentConstants.getAllOwnedAssets();
         uint256 bonus;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
 
-        bonus = repaidInUSD * config.liquidationBonus / SmartLoanConfigLib.getPercentagePrecision();
+        bonus = repaidInUSD * config.liquidationBonus / DeploymentConstants.getPercentagePrecision();
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18;
@@ -176,7 +211,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
-            require(LTV >= SmartLoanConfigLib.getMinSelloutLtv(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+            require(LTV >= getMinLtvAfterLiquidation(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
         if (healingLoan) {
@@ -184,7 +219,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
             require(_getTotalValue() == 0, "Healing a loan must end up with 0 total value");
         }
 
-        require(LTV < SmartLoanConfigLib.getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+        require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
     }
 
     modifier onlyOwner() {

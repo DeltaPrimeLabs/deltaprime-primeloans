@@ -6,9 +6,9 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../lib/Bytes32EnumerableMap.sol";
-import "../lib/SmartLoanConfigLib.sol";
 import "../TokenManager.sol";
 import "../TokenList.sol";
 

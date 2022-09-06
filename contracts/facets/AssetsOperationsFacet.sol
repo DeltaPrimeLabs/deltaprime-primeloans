@@ -7,11 +7,13 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "../lib/SmartLoanConfigLib.sol";
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../TokenManager.sol";
+
+//this path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -62,7 +64,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _amount of funds to borrow
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
-        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool pool = Pool(tokenManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
@@ -88,7 +90,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
             DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(SmartLoanConfigLib.getTokenManager().getPoolAddress(_asset));
+        Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
 
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
@@ -112,7 +114,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanConfigLib.getTokenManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 

@@ -4,25 +4,33 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../lib/SmartLoanConfigLib.sol";
 import "../TokenManager.sol";
 
+//This path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
+
 contract SolvencyFacet is PriceAware {
+
+    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
+    uint256 private constant _MAX_LTV = 5000;
+
     /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
 
     /**
      * Override PriceAware method to consider Avalanche guaranteed block timestamp time accuracy
      **/
     function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().maxBlockTimestampDelay();
+        return 30;
     }
 
     /**
      * Override PriceAware method, addresses below belong to authorized signers of data feeds
      **/
     function isSignerAuthorized(address _receivedSigner) public override virtual view returns (bool) {
-        return SmartLoanConfigLib.getRedstoneConfigManager().signerExists(_receivedSigner);
+        return DeploymentConstants.getRedstoneConfigManager().signerExists(_receivedSigner);
     }
 
     /* ================== */
@@ -34,7 +42,7 @@ contract SolvencyFacet is PriceAware {
     * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
-        return getLTV() < SmartLoanConfigLib.getMaxLtv();
+        return getLTV() < getMaxLtv();
     }
 
     function executeGetPricesFromMsg(bytes32[] memory symbols) external returns (uint256[] memory) {
@@ -47,7 +55,7 @@ contract SolvencyFacet is PriceAware {
    **/
     function getDebt() public view virtual returns (uint256) {
         uint256 debt = 0;
-        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllPoolAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
 
@@ -68,11 +76,11 @@ contract SolvencyFacet is PriceAware {
      * @dev This function uses the redstone-evm-connector
      **/
     function getTotalValue() public view virtual returns (uint256) {
-        bytes32[] memory assets = SmartLoanConfigLib.getAllOwnedAssets();
+        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
-        uint256 nativeTokenPrice = getPriceFromMsg(SmartLoanConfigLib.getNativeTokenSymbol());
+        uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
         if(prices.length > 0) {
-            TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+            TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
             uint256 total = address(this).balance * nativeTokenPrice / 10**8;
 
@@ -108,9 +116,17 @@ contract SolvencyFacet is PriceAware {
         if (debt == 0) {
             return 0;
         } else if (debt < totalValue) {
-            return (debt * SmartLoanConfigLib.getPercentagePrecision()) / (totalValue - debt);
+            return (debt * DeploymentConstants.getPercentagePrecision()) / (totalValue - debt);
         } else {
-            return SmartLoanConfigLib.getMaxLtv();
+            return getMaxLtv();
         }
+    }
+
+    /**
+     * Returns max LTV (with the accuracy in a thousandth)
+     * IMPORTANT: when changing, update other facets as well
+     **/
+    function getMaxLtv() public view returns (uint256) {
+        return _MAX_LTV;
     }
 }

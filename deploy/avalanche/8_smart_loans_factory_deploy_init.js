@@ -1,4 +1,4 @@
-import updateSmartLoanLibrary from "../../tools/scripts/update-smart-loan-library";
+import updateConstants from "../../tools/scripts/update-constants";
 
 const web3Abi  = require('web3-eth-abi');
 const {ethers} = require("hardhat");
@@ -64,7 +64,8 @@ module.exports = async ({
     const smartLoansFactoryTUP = await ethers.getContract("SmartLoansFactoryTUP");
     const smartLoanDiamondBeacon = await ethers.getContract("SmartLoanDiamondBeacon");
 
-    updateSmartLoanLibrary(
+    updateConstants(
+        'avalanche',
         [
             {
                 facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',

@@ -16,7 +16,7 @@ import {
   fromWei,
   getFixedGasSigners,
   PoolAsset,
-  recompileSmartLoanLib,
+  recompileConstantsFile,
   toBytes32,
   toWei
 } from "../../_helpers";
@@ -80,7 +80,7 @@ describe('Smart loan',  () => {
       tokenContracts['mcUSD'] =  new ethers.Contract(TOKEN_ADDRESSES['mcUSD'], erc20ABI, provider);
       tokenContracts['ETH'] =  new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
 
-      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
       let lendingPools = [];
       for (const token of [
@@ -113,14 +113,16 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,
           diamondAddress,
           smartLoansFactory.address,
           'lib',
+          undefined,
           undefined,
           undefined,
           'CELO'
@@ -130,8 +132,9 @@ describe('Smart loan',  () => {
       exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapIntermediary;
       await exchange.initialize(ubeswapRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
 [
             {
               facetPath: './contracts/facets/celo/PangolinDEXFacet.sol',

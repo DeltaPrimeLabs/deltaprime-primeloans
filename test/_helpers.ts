@@ -15,7 +15,7 @@ import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.so
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 
 import {execSync} from "child_process";
-import updateSmartLoanLibrary from "../tools/scripts/update-smart-loan-library"
+import updateConstants from "../tools/scripts/update-constants"
 
 const {provider} = waffle;
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
@@ -199,7 +199,15 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])
     }
-    await deployFacet("SmartLoanLiquidationFacet", diamondAddress, ['liquidateLoan', 'unsafeLiquidateLoan'])
+    await deployFacet(
+        "SmartLoanLiquidationFacet",
+        diamondAddress,
+        [
+            'liquidateLoan',
+            'unsafeLiquidateLoan',
+            'getMaxLiquidationBonus'
+        ]
+    )
     await deployFacet(
         "SmartLoanViewFacet",
         diamondAddress,
@@ -207,7 +215,6 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
             'initialize',
             'getAllAssetsBalances',
             'getAllAssetsPrices',
-            'getMaxLiquidationBonus',
             'getBalance',
             'getAllAssetsBalances',
             'getAllOwnedAssets',
@@ -331,11 +338,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileSmartLoanLib(contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath +'/' : "";
-    const artifactsDirectory = `../artifacts/contracts/${subPath}${contractName}.sol/${contractName}.json`;
+    const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateSmartLoanLibrary(exchanges, tokenManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, nativeAssetSymbol);
+    await updateConstants(chain, exchanges, tokenManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
     execSync(`npx hardhat compile`, { encoding: 'utf-8' });
     return require(artifactsDirectory);
 }

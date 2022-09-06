@@ -17,7 +17,7 @@ import {
     getFixedGasSigners,
     getRepayAmounts,
     PoolAsset,
-    recompileSmartLoanLib,
+    recompileConstantsFile,
     toBytes32,
     toRepay,
     toSupply,
@@ -273,7 +273,7 @@ describe('Smart loan - real prices',  () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor, borrower, admin, liquidator] = await getFixedGasSigners(10000000);
 
-      redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
       let lendingPools = [];
       for (const token of [
         {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
@@ -313,8 +313,9 @@ describe('Smart loan - real prices',  () => {
 
       diamondAddress = await deployDiamond();
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,
@@ -398,8 +399,9 @@ describe('Smart loan - real prices',  () => {
     });
 
     before("prepare smart loan facets", async () => {
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [
             {
               facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
@@ -419,8 +421,9 @@ describe('Smart loan - real prices',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [
             {
               facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
@@ -633,7 +636,8 @@ describe('Smart loan - real prices',  () => {
         performer: any
     ) {
 
-      await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+      //this facet is used to override max data timestamp delay
+      await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getLTV', 'executeGetPricesFromMsg']);
 
       const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
 
@@ -677,7 +681,7 @@ describe('Smart loan - real prices',  () => {
           break;
       }
       // TODO: Remove await?
-      await new Promise(r => setTimeout(r, 5000));
+      // await new Promise(r => setTimeout(r, 5000));
       // TODO: Add checks for returned staking contracts
       expect(await wrappedLoan.isSolvent()).to.be.true;
       if(stake) {

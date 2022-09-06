@@ -15,7 +15,7 @@ import {
   fromWei,
   getFixedGasSigners,
   PoolAsset,
-  recompileSmartLoanLib,
+  recompileConstantsFile,
   toBytes32,
   toWei
 } from "../../_helpers";
@@ -71,7 +71,7 @@ describe('Smart loan',  () => {
     before("deploy factory, exchange, WrappedNativeTokenPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
       let lendingPools = [];
       for (const token of [
@@ -108,8 +108,9 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,
@@ -122,8 +123,9 @@ describe('Smart loan',  () => {
       exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
       await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [
             {
               facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',

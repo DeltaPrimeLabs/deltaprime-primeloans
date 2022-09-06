@@ -2,7 +2,7 @@ import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 
 const {execSync} = require("child_process");
 const {ethers} = require("hardhat");
-import updateSmartLoanLibrary from "../../tools/scripts/update-smart-loan-library"
+import updateConstants from "../../tools/scripts/update-constants"
 import {deployDiamond, deployFacet} from "../../tools/diamond/deploy-diamond";
 
 module.exports = async ({
@@ -13,7 +13,7 @@ module.exports = async ({
     const {deployer} = await getNamedAccounts();
 
     embedCommitHash('SmartLoanDiamondBeacon');
-    embedCommitHash('SmartLoanConfigLib', 'contracts/lib');
+    embedCommitHash('DeploymentConstants', 'contracts/lib');
     embedCommitHash('DiamondStorageLib', 'contracts/lib');
 
     const diamondAddress = await deployDiamond({
@@ -25,7 +25,8 @@ module.exports = async ({
     const tokenManager = await ethers.getContract("TokenManager");
     const redstoneConfigManager = await ethers.getContract("RedstoneConfigManager");
 
-    updateSmartLoanLibrary(
+    updateConstants(
+        'avalanche',
         [
             {
                 facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',

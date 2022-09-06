@@ -5,13 +5,15 @@ pragma solidity ^0.8.4;
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../lib/SmartLoanConfigLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
+
+//This path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
 
 contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -40,16 +42,8 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 
     /* ========== VIEW FUNCTIONS ========== */
 
-    function getMaxLiquidationBonus() public view virtual returns (uint256) {
-        return SmartLoanConfigLib.getMaxLiquidationBonus();
-    }
-
-    function getMaxLtv() public view virtual returns (uint256) {
-        return SmartLoanConfigLib.getMaxLtv();
-    }
-
     function getPercentagePrecision() public view virtual returns (uint256) {
-        return SmartLoanConfigLib.getPercentagePrecision();
+        return DeploymentConstants.getPercentagePrecision();
     }
 
 
@@ -58,16 +52,16 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) public view returns (uint256) {
-        IERC20 token = IERC20(SmartLoanConfigLib.getTokenManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset));
         return token.balanceOf(address(this));
     }
 
     function getAllOwnedAssets() external view returns (bytes32[] memory result) {
-        return SmartLoanConfigLib.getAllOwnedAssets();
+        return DeploymentConstants.getAllOwnedAssets();
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
-        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllTokenAssets();
         uint256[] memory balances = new uint256[](assets.length);
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
@@ -88,7 +82,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
      * @dev This function uses the redstone-evm-connector
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
-        bytes32[] memory assets = SmartLoanConfigLib.getTokenManager().getAllTokenAssets();
+        bytes32[] memory assets = DeploymentConstants.getTokenManager().getAllTokenAssets();
         uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for(uint i=0; i<assets.length; i++){

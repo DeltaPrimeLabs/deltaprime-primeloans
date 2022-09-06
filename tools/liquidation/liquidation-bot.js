@@ -107,7 +107,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let solvencyLoan = getSolvencyLoan(loanAddress);
     let liquidateFacet = wrapLiquidationFacet(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
-    let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
+    let maxBonus = (await liquidateFacet.getMaxLiquidationBonus()).toNumber() / 1000;
 
     const bonus = calculateBonus(
         'LIQUIDATE',

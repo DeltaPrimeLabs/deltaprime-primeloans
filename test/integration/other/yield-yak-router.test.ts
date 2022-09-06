@@ -15,7 +15,7 @@ import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue, deployAllFacets,
     fromWei,
-    getFixedGasSigners, recompileSmartLoanLib,
+    getFixedGasSigners, recompileConstantsFile,
     toBytes32,
     toWei
 } from "../../_helpers";
@@ -59,7 +59,7 @@ describe('Yield Yak test stake AVAX', () => {
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 120));
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
@@ -78,8 +78,9 @@ describe('Yield Yak test stake AVAX', () => {
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
 
-        await recompileSmartLoanLib(
-            "SmartLoanConfigLib",
+        await recompileConstantsFile(
+            'local',
+            "DeploymentConstants",
             [],
             tokenManager.address,
             redstoneConfigManager.address,
@@ -178,7 +179,7 @@ describe('Yield Yak test stake SAVAX', () => {
     before(async() => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingSAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 120));
+        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['SAVAX']),
@@ -198,8 +199,9 @@ describe('Yield Yak test stake SAVAX', () => {
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
 
-        await recompileSmartLoanLib(
-            "SmartLoanConfigLib",
+        await recompileConstantsFile(
+            'local',
+            "DeploymentConstants",
             [],
             tokenManager.address,
             redstoneConfigManager.address,
@@ -212,8 +214,9 @@ describe('Yield Yak test stake SAVAX', () => {
         exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
         await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
-        await recompileSmartLoanLib(
-            "SmartLoanConfigLib",
+        await recompileConstantsFile(
+            'local',
+            "DeploymentConstants",
             [
                 {
                     facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',

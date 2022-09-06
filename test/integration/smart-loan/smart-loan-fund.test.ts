@@ -12,7 +12,7 @@ import {
   Asset, AssetNameBalance, AssetNamePrice, deployAllFacets, deployAndInitializeLendingPool, formatUnits, fromBytes32,
   fromWei, getFixedGasSigners,
   PoolAsset,
-  recompileSmartLoanLib,
+  recompileConstantsFile,
   toBytes32,
   toWei
 } from "../../_helpers";
@@ -55,7 +55,7 @@ describe('Smart loan',  () => {
       destructable = (await deployContract(depositor, DestructableArtifact)) as DestructableContract;
       await depositor.sendTransaction({to: destructable.address, value: toWei("21.37")});
 
-      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       USD_PRICE = (await redstone.getPrice('USDC')).value;
@@ -108,8 +108,9 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,

@@ -6,10 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract RedstoneConfigManager is Ownable{
     mapping(address => bool) internal signerAuthorized;
     address[] public trustedSigners;
-    uint256 public maxBlockTimestampDelay;
 
-    constructor(address[] memory _trustedSigners, uint256 _maxBlockTimestampDelay) {
-        maxBlockTimestampDelay = _maxBlockTimestampDelay;
+    constructor(address[] memory _trustedSigners) {
         for(uint256 i=0; i<_trustedSigners.length; i++) {
             _addTrustedSigner(_trustedSigners[i]);
         }
@@ -21,10 +19,6 @@ contract RedstoneConfigManager is Ownable{
 
     function signerExists(address signer) public view returns(bool) {
         return signerAuthorized[signer];
-    }
-
-    function setMaxBlockTimestampDelay(uint256 _maxBlockTimestampDelay) public onlyOwner {
-        maxBlockTimestampDelay = _maxBlockTimestampDelay;
     }
 
     function addTrustedSigners(address[] memory _trustedSigners) public onlyOwner {

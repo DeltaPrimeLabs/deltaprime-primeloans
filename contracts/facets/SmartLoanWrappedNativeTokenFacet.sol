@@ -3,26 +3,28 @@
 pragma solidity ^0.8.4;
 
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../lib/SmartLoanConfigLib.sol";
 import "../interfaces/IWrappedNativeToken.sol";
+
+//This path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
 
 contract SmartLoanWrappedNativeTokenFacet {
     using TransferHelper for address payable;
 
     function wrapNativeToken(uint256 amount) onlyOwner public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
-        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: amount}();
+        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value: amount}();
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
 
     function depositNativeToken() public payable virtual {
-        IWrappedNativeToken(SmartLoanConfigLib.getNativeToken()).deposit{value: msg.value}();
+        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value: msg.value}();
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
     function unwrapAndWithdraw(uint256 _amount) public payable virtual {
-        IWrappedNativeToken wrapped = IWrappedNativeToken(SmartLoanConfigLib.getNativeToken());
+        IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
         require(wrapped.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 
         wrapped.withdraw(_amount);

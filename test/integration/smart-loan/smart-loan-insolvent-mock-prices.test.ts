@@ -16,7 +16,7 @@ import {
   getFixedGasSigners,
   getRepayAmounts,
   PoolAsset,
-  recompileSmartLoanLib,
+  recompileConstantsFile,
   toBytes32,
   toRepay,
   toSupply,
@@ -169,7 +169,7 @@ describe('Smart loan',  () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor, borrower, admin, liquidator] = await getFixedGasSigners(10000000);
 
-      redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
       let lendingPools = [];
       for (const token of [
         {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
@@ -229,8 +229,9 @@ describe('Smart loan',  () => {
 
       diamondAddress = await deployDiamond();
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,
@@ -275,8 +276,9 @@ describe('Smart loan',  () => {
     });
 
     before("prepare smart loan implementations", async () => {
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [
             {
               facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
@@ -297,8 +299,9 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [
             {
               facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',

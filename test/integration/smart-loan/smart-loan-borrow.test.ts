@@ -11,7 +11,7 @@ import {
   Asset, deployAllFacets, deployAndInitializeLendingPool,
   fromWei,
   getFixedGasSigners, PoolAsset,
-  recompileSmartLoanLib,
+  recompileConstantsFile,
   toBytes32,
   toWei
 } from "../../_helpers";
@@ -27,18 +27,6 @@ chai.use(solidity);
 
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 const {deployContract} = waffle;
-
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-  'function deposit() public payable',
-  ...erc20ABI
-]
 
 describe('Smart loan',  () => {
   before("Synchronize blockchain time", async () => {
@@ -61,7 +49,7 @@ describe('Smart loan',  () => {
     before("deploy factory, WrappedNativeTokenPool and usdPool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+      let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
       let lendingPools = [];
       // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
@@ -96,8 +84,9 @@ describe('Smart loan',  () => {
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
       await smartLoansFactory.initialize(diamondAddress);
 
-      await recompileSmartLoanLib(
-          "SmartLoanConfigLib",
+      await recompileConstantsFile(
+          'local',
+          "DeploymentConstants",
           [],
           tokenManager.address,
           redstoneConfigManager.address,

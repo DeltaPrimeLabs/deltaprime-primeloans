@@ -15,7 +15,7 @@ import {
     Asset, deployAllFacets, deployAndInitializeLendingPool,
     fromWei,
     getFixedGasSigners, PoolAsset,
-    recompileSmartLoanLib,
+    recompileConstantsFile,
     toBytes32,
     toWei,
 } from "../../_helpers";
@@ -67,7 +67,7 @@ describe('Smart loan',  () => {
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
 
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"], 30));
+            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
             nftContract = (await deployContract(owner, MockBorrowAccessNFTArtifact)) as MockBorrowAccessNFT;
 
@@ -102,8 +102,9 @@ describe('Smart loan',  () => {
             await smartLoansFactory.initialize(diamondAddress);
             await smartLoansFactory.connect(owner).setAccessNFT(nftContract.address);
 
-            await recompileSmartLoanLib(
-                "SmartLoanConfigLib",
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
                 [],
                 tokenManager.address,
                 redstoneConfigManager.address,

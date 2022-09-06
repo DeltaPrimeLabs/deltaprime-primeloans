@@ -8,8 +8,10 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
-import "../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
+
+//This path is updated during deployment
+import "../lib/local/DeploymentConstants.sol";
 
 contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     using TransferHelper for address payable;
@@ -33,7 +35,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 
         uint256[] memory amounts = exchange.swap(address(soldToken), address(boughtToken), _exactSold, _minimumBought);
 
-        TokenManager tokenManager = SmartLoanConfigLib.getTokenManager();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset);
 

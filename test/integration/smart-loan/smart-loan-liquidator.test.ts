@@ -13,7 +13,7 @@ import {
     deployAndInitializeLendingPool,
     getFixedGasSigners,
     PoolAsset,
-    recompileSmartLoanLib,
+    recompileConstantsFile,
     toBytes32,
     toWei
 } from "../../_helpers";
@@ -33,18 +33,6 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address dst, uint wad) public returns (bool)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 const LIQUIDATOR_PRIVATE_KEY =  fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
@@ -88,8 +76,7 @@ describe('Test liquidator',  () => {
                     "0x496f4e8ac11076350a59b88d2ad62bc20d410ea3",
                     "0xe9fa2869c5f6fc3a0933981825564fd90573a86d",
                     "0xdf6b1ca313bee470d0142279791fa760abf5c537",
-                ],
-                    30)
+                ])
             );
 
             let lendingPools = [];
@@ -141,8 +128,9 @@ describe('Test liquidator',  () => {
 
             diamondAddress = await deployDiamond();
 
-            await recompileSmartLoanLib(
-                "SmartLoanConfigLib",
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
                 [],
                 tokenManager.address,
                 redstoneConfigManager.address,
@@ -156,8 +144,9 @@ describe('Test liquidator',  () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            await recompileSmartLoanLib(
-                "SmartLoanConfigLib",
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
                 [
                     {
                         facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
