@@ -69,7 +69,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 
         IERC20Metadata(stakedToken).approve(VectorMainStaking, amount);
 
-        IVectorFinanceStaking(YAKStakingAVAXAAVEV1Address).deposit(amount);
+        IVectorFinanceStaking(receiptToken).deposit(amount);
 
         // Add asset to ownedAssets
         DiamondStorageLib.addOwnedAsset(receiptTokenSymbol, receiptToken);
@@ -79,7 +79,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 
     function unstakeToken(bytes32 receiptTokenSymbol, bytes32 stakedTokenSymbol, address stakedToken, address receiptToken, uint256 amount) internal
     onlyOwner nonReentrant remainsSolvent {
-        IVectorFinanceStaking stakingContract = IYakStakingVectorSAV2(receiptToken);
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(receiptToken);
         uint256 initialStakedBalance = stakingContract.balance(address(this));
 
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
