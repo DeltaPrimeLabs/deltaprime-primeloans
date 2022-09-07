@@ -122,8 +122,7 @@ function createFacetsInterfaces() {
         'UbeswapDEXFacet',
         'SmartLoanLiquidationFacet',
         'SmartLoanViewFacet',
-        'SolvencyFacet',
-        'YieldYakFacet',
+        'SolvencyFacet'
     ]
     const functionsToRemove = [
         '_getLTV',

@@ -6,9 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "../../lib/SolvencyMethodsLib.sol";
 import "../../interfaces/IVectorFinanceStaking.sol";
-import "../../lib/SmartLoanConfigLib.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
+
+//This path is updated during deployment
+import "../../lib/local/DeploymentConstants.sol";
 
 contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 

@@ -5,8 +5,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-import "../lib/SmartLoanConfigLib.sol";
 import "../TokenManager.sol";
 
 //This path is updated during deployment
