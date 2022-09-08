@@ -119,6 +119,7 @@ function createFacetsInterfaces() {
         'AssetsOperationsFacet',
         'OwnershipFacet',
         'PangolinDEXFacet',
+        'TraderJoeDEXFacet',
         'UbeswapDEXFacet',
         'SmartLoanLiquidationFacet',
         'SmartLoanViewFacet',

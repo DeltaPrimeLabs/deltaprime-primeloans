@@ -22,6 +22,7 @@ module.exports = async ({
     });
 
     const pangolinIntermediary = await ethers.getContract("PangolinIntermediaryTUP");
+    const traderJoeIntermediary = await ethers.getContract("TraderJoeIntermediaryTUP");
     const tokenManager = await ethers.getContract("TokenManager");
     const redstoneConfigManager = await ethers.getContract("RedstoneConfigManager");
 
@@ -31,6 +32,10 @@ module.exports = async ({
             {
                 facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
                 contractAddress: pangolinIntermediary.address,
+            },
+            {
+                facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
+                contractAddress: traderJoeIntermediary.address,
             }
         ],
         tokenManager.address,
