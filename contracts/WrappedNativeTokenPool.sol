@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 import "./Pool.sol";
 import "./interfaces/IWrappedNativeToken.sol";
-
+import "hardhat/console.sol";
 
 /**
  * @title Pool
@@ -14,7 +14,12 @@ import "./interfaces/IWrappedNativeToken.sol";
  * The interest rates calculation is delegated to the external calculator contract.
  */
 contract WrappedNativeTokenPool is Pool {
+  using TransferHelper for address payable;
+  using TransferHelper for address;
 
+  /**
+   * Wraps and deposits amount attached to the transaction
+   **/
   function depositNativeToken() public payable virtual {
     IWrappedNativeToken(tokenAddress).deposit{value: msg.value}();
 
@@ -26,4 +31,27 @@ contract WrappedNativeTokenPool is Pool {
 
     emit Deposit(msg.sender, msg.value, block.timestamp);
   }
+
+  /**
+   * Unwraps and withdraws selected amount from the user deposits
+   * @dev _amount the amount to be withdrawn
+   **/
+  function withdrawNativeToken(uint256 _amount) external nonReentrant {
+    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
+
+    _accumulateDepositInterest(msg.sender);
+
+    _burn(msg.sender, _amount);
+
+    IWrappedNativeToken(tokenAddress).withdraw(_amount);
+    payable(msg.sender).safeTransferETH(_amount);
+
+    _updateRates();
+
+    emit Withdrawal(msg.sender, _amount, block.timestamp);
+  }
+
+  /* ========== RECEIVE AVAX FUNCTION ========== */
+  //needed for withdrawNativeToken
+  receive() external payable {}
 }

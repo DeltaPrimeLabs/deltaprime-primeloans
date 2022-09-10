@@ -21,27 +21,13 @@ describe('Redstone config manager', () => {
 
     before(async() => {
         [owner, other, signer1, signer2, signer3, signer4] = await getFixedGasSigners(10000000);
-        redstoneConfigManagerContract = await (new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address], 777));
+        redstoneConfigManagerContract = await (new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address]));
     })
 
     it("should check if the values set during deployment were properly saved in contract's storage", async () => {
-        let maxBlockTimestampDelay = await redstoneConfigManagerContract.maxBlockTimestampDelay();
         let trustedSigners = await redstoneConfigManagerContract.getTrustedSigners();
-        expect(maxBlockTimestampDelay).to.be.equal(777);
         expect(trustedSigners).to.have.all.members([signer1.address, signer2.address]);
         expect(trustedSigners.length).to.be.equal(2);
-    });
-
-    it("should fail to set maxBlockTimestampDelay as a non-owner", async () => {
-        await expect(redstoneConfigManagerContract.connect(other).setMaxBlockTimestampDelay(1337)).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("should set a new maxBlockTimestampDelay as an owner", async () => {
-        let maxBlockTimestampDelay = await redstoneConfigManagerContract.maxBlockTimestampDelay();
-        expect(maxBlockTimestampDelay).to.be.equal(777);
-        await redstoneConfigManagerContract.connect(owner).setMaxBlockTimestampDelay(1337);
-        maxBlockTimestampDelay = await redstoneConfigManagerContract.maxBlockTimestampDelay();
-        expect(maxBlockTimestampDelay).to.be.equal(1337);
     });
 
     it("should fail to add a new trusted signer as a non-owner", async () => {

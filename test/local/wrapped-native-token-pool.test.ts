@@ -15,19 +15,6 @@ import WETH9Artifact from "../../artifacts/contracts/lib/WETH9.sol/WETH9.json";
 import {LinearIndex, OpenBorrowersRegistry, WrappedNativeTokenPool, WETH9} from "../../typechain";
 import {Contract} from "ethers";
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
-
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
@@ -85,6 +72,18 @@ describe('Wrapped native token pool', () => {
         expect(fromWei(await sut.totalSupply())).to.be.closeTo(2, 0.000001);
 
         expect(fromWei(await sut.balanceOf(depositor.address))).to.be.closeTo(2, 0.000001);
+    });
+
+    it("should withdraw requested value in native token", async () => {
+        let nativeTokenUserBalanceBefore = fromWei(await provider.getBalance(depositor.address));
+        await sut.connect(depositor).withdrawNativeToken(toWei("1"));
+        let nativeTokenUserBalanceAfter = fromWei(await provider.getBalance(depositor.address));
+        expect(nativeTokenUserBalanceAfter - nativeTokenUserBalanceBefore).to.closeTo(1, 0.001);
+
+
+        expect(fromWei(await wavax.balanceOf(sut.address))).to.equal(1);
+        expect(fromWei(await sut.totalSupply())).to.be.closeTo(1, 0.001);
+        expect(fromWei(await sut.balanceOf(depositor.address))).to.closeTo(1, 0.001);
     });
 });
 
