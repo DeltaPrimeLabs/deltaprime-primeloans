@@ -12,10 +12,10 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer, admin} = await getNamedAccounts();
 
-    embedCommitHash('WavaxBorrowIndex');
-    embedCommitHash('WavaxDepositIndex');
-    embedCommitHash('UsdcBorrowIndex');
-    embedCommitHash('UsdcDepositIndex');
+    embedCommitHash('WavaxBorrowIndex', './contracts/deployment/avalanche');
+    embedCommitHash('WavaxDepositIndex', './contracts/deployment/avalanche');
+    embedCommitHash('UsdcBorrowIndex', './contracts/deployment/avalanche');
+    embedCommitHash('UsdcDepositIndex', './contracts/deployment/avalanche');
 
     await deployLinearIndex("WavaxBorrowIndex", "WavaxPoolTUP", deploy, deployer, admin);
     await deployLinearIndex("WavaxDepositIndex", "WavaxPoolTUP", deploy, deployer, admin);

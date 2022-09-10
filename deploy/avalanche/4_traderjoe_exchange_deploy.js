@@ -9,6 +9,7 @@ import TraderJoeIntermediaryArtifact from "../../artifacts/contracts/integration
 
 const traderJoeRouter = "0x60aE616a2155Ee3d9A68541Ba4544862310933d4";
 
+//TODO: update list of tokens:
 const traderJoeSupportedAssets = [
     asset('AVAX'),
     asset('USDC'),

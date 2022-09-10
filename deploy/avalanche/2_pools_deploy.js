@@ -50,7 +50,7 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
     address: poolAddress
   });
 
-  console.log(`Pool deployed at address: ${poolAddress} by a factory`);
+  console.log(`${contract} pool deployed at address: ${poolAddress} by a factory`);
 
   createMigrationFile(networkName, contract, poolAddress, receipt.transactionHash);
 

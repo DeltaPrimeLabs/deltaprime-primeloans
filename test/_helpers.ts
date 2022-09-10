@@ -194,7 +194,16 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
     if (chain == 'AVAX') {
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak'])
+        await deployFacet("VectorFinanceFacet", diamondAddress, [
+            'vectorStakeUSDC1',
+            'vectorUnstakeUSDC1' ,
+            'vectorStakeUSDC2',
+            'vectorUnstakeUSDC2',
+            'vectorStakeWAVAX1',
+            'vectorUnstakeWAVAX1',
+            'vectorStakeSAVAX1',
+            'vectorUnstakeSAVAX1'
+        ])
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])

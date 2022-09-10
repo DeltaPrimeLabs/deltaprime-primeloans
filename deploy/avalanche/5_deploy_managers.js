@@ -12,11 +12,9 @@ const supportedAssets = [
     asset('BTC'),
     asset('ETH'),
     asset('USDT'),
-    asset('PNG'),
-    asset('XAVA'),
     asset('LINK'),
-    asset('YAK'),
-    asset('QI')
+    asset('QI'),
+    asset('SAVAX')
 ]
 
 function asset(symbol) {
@@ -61,6 +59,7 @@ module.exports = async ({
 
     console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
 
+    //TODO: update signers
     let redstoneConfigManager = await deploy('RedstoneConfigManager', {
         from: deployer,
         gasLimit: 8000000,
@@ -76,8 +75,7 @@ module.exports = async ({
                 "0x496f4e8ac11076350a59b88d2ad62bc20d410ea3",
                 "0xe9fa2869c5f6fc3a0933981825564fd90573a86d",
                 "0xdf6b1ca313bee470d0142279791fa760abf5c537",
-            ],
-            30
+            ]
         ]
     });
 
