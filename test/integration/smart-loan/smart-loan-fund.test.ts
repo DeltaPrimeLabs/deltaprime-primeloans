@@ -151,6 +151,13 @@ describe('Smart loan',  () => {
       expect(fromWei(await tokenContracts['MCKUSD'].connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
     });
 
+    it("should return all supported assets addresses", async () => {
+      let result = await wrappedLoan.getSupportedTokensAddresses();
+      expect(result[0].toLowerCase()).to.be.equal(TOKEN_ADDRESSES['AVAX'].toLowerCase());
+      expect(result[1].toLowerCase()).to.be.equal(tokenContracts['MCKUSD'].address.toLowerCase());
+      expect(result[2].toLowerCase()).to.be.equal(TOKEN_ADDRESSES['ETH'].toLowerCase());
+    });
+
     it("should return all assets balances", async () => {
       let result = await wrappedLoan.getAllAssetsBalances();
       let assetsNameBalance = [];

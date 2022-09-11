@@ -60,6 +60,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         return DeploymentConstants.getAllOwnedAssets();
     }
 
+    function getSupportedTokensAddresses() external view returns (address[] memory) {
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        return tokenManager.getSupportedTokensAddresses();
+    }
+
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllTokenAssets();

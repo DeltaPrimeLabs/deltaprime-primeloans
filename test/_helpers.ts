@@ -225,7 +225,7 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
             'getAllAssetsBalances',
             'getAllAssetsPrices',
             'getBalance',
-            'getAllAssetsBalances',
+            'getSupportedTokensAddresses',
             'getAllOwnedAssets',
         ]
     )

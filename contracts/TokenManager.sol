@@ -33,6 +33,8 @@ contract TokenManager {
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
+    mapping(address=>uint256) private tokenPositionInList;
+    address[] public supportedTokensList;
 
     address public adminTransferProposal;
 
@@ -61,6 +63,10 @@ contract TokenManager {
 
     function getAllPoolAssets() public view returns (bytes32[] memory result) {
         return assetToPoolAddress._inner._keys._inner._values;
+    }
+
+    function getSupportedTokensAddresses() public view returns (address[] memory) {
+        return supportedTokensList;
     }
 
     function getAllTokenAssets() public view returns (bytes32[] memory result) {
@@ -125,9 +131,29 @@ contract TokenManager {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
+
         assetToTokenAddress.set(_asset, _tokenAddress);
         tokenToStatus[_tokenAddress] = _ACTIVE;
+
+        supportedTokensList.push(_tokenAddress);
+        tokenPositionInList[_tokenAddress] = supportedTokensList.length - 1;
+
         emit TokenAssetAdded(msg.sender, _asset, _tokenAddress, block.timestamp);
+    }
+
+    function _removeTokenFromList(address tokenToRemove) internal {
+        // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] supportedTokensList
+        // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
+        uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
+        if(tokenToRemoveIndex != (supportedTokensList.length - 1)){
+            address currentLastToken = supportedTokensList[supportedTokensList.length - 1];
+            tokenPositionInList[currentLastToken] = tokenToRemoveIndex;
+            supportedTokensList[tokenToRemoveIndex] = currentLastToken;
+        }
+        // Remove last element - that is either the token that is being removed (if was already at the end)
+        // or some other asset that at this point was already copied to the `index` positon
+        supportedTokensList.pop();
+        tokenPositionInList[tokenToRemove] = 0;
     }
 
     function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyAdmin{
@@ -140,6 +166,7 @@ contract TokenManager {
         address tokenAddress = getAssetAddress(_tokenAsset, true);
         EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
         tokenToStatus[tokenAddress] = _NOT_SUPPORTED;
+        _removeTokenFromList(tokenAddress);
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
     }
 

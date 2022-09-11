@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract TokenListOwnableUpgreadable is OwnableUpgradeable {
     mapping(address=>bool) isTokenWhitelisted;
-    mapping(address=>uint256) tokenPostitionInList;
+    mapping(address=>uint256) tokenPositionInList;
     address[] whitelistedTokensList;
 
     function __TokenList_init(address[] memory _whitelistedTokens) internal onlyInitializing {
@@ -49,7 +49,7 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
 
         if(!isTokenWhitelisted[token]){
             whitelistedTokensList.push(token);
-            tokenPostitionInList[token] = whitelistedTokensList.length - 1;
+            tokenPositionInList[token] = whitelistedTokensList.length - 1;
             isTokenWhitelisted[token] = true;
             emit TokenWhitelisted(msg.sender, token, block.timestamp);
             return true;
@@ -78,16 +78,16 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
     function _removeTokenFromList(address tokenToRemove) internal {
         // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] whitelistedTokensList
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
-        uint256 tokenToRemoveIndex = tokenPostitionInList[tokenToRemove];
+        uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
         if(tokenToRemoveIndex != (whitelistedTokensList.length - 1)){
             address currentLastToken = whitelistedTokensList[whitelistedTokensList.length - 1];
-            tokenPostitionInList[currentLastToken] = tokenToRemoveIndex;
+            tokenPositionInList[currentLastToken] = tokenToRemoveIndex;
             whitelistedTokensList[tokenToRemoveIndex] = currentLastToken;
         }
         // Remove last element - that is either the token that is being removed (if was already at the end)
         // or some other asset that at this point was already copied to the `index` positon
         whitelistedTokensList.pop();
-        tokenPostitionInList[tokenToRemove] = 0;
+        tokenPositionInList[tokenToRemove] = 0;
     }
 
     // EVENTS
