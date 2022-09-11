@@ -3,14 +3,10 @@
 pragma solidity ^0.8.4;
 
 import "../ReentrancyGuardKeccak.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../lib/SolvencyMethodsLib.sol";
-import "./SolvencyFacet.sol";
-import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../Pool.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";

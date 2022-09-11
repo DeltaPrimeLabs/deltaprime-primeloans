@@ -16,7 +16,7 @@ describe('Pool Manager tests', () => {
         owner: SignerWithAddress,
         tokenManager: Contract;
 
-    before(async() => {
+    before(async () => {
         [user, owner] = await getFixedGasSigners(10000000);
 
         tokenManager = await deployContract(

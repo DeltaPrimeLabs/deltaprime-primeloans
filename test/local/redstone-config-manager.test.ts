@@ -1,13 +1,9 @@
 import chai, {expect} from 'chai'
-import {ethers} from 'hardhat'
 import {solidity} from "ethereum-waffle";
-import {
-    RedstoneConfigManager,
-    RedstoneConfigManager__factory,
-} from "../../typechain";
+import {RedstoneConfigManager, RedstoneConfigManager__factory,} from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getFixedGasSigners} from "../_helpers";
-import {sign} from "crypto";
+
 chai.use(solidity);
 
 describe('Redstone config manager', () => {
@@ -19,7 +15,7 @@ describe('Redstone config manager', () => {
         signer3: SignerWithAddress,
         signer4: SignerWithAddress;
 
-    before(async() => {
+    before(async () => {
         [owner, other, signer1, signer2, signer3, signer4] = await getFixedGasSigners(10000000);
         redstoneConfigManagerContract = await (new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address]));
     })

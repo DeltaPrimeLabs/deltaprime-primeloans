@@ -7,10 +7,6 @@ import "../../ReentrancyGuardKeccak.sol";
 import "../../lib/SolvencyMethodsLib.sol";
 import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../interfaces/IWrappedNativeToken.sol";
-
-//This path is updated during deployment
-import "../../lib/local/DeploymentConstants.sol";
 
 contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 

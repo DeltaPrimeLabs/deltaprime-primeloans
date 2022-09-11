@@ -5,11 +5,13 @@ import {
     MockBorrowAccessNFT,
     MockBorrowAccessNFT__factory,
     MockNFTAccess,
-    MockNFTAccess__factory, OpenBorrowersRegistry,
+    MockNFTAccess__factory,
+    OpenBorrowersRegistry,
     OpenBorrowersRegistry__factory
 } from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getFixedGasSigners} from "../_helpers";
+
 chai.use(solidity);
 
 describe('NFT Access test', () => {
@@ -19,7 +21,7 @@ describe('NFT Access test', () => {
         owner: SignerWithAddress,
         other: SignerWithAddress;
 
-    before(async() => {
+    before(async () => {
         [owner, other] = await getFixedGasSigners(10000000);
         nftContract = await (new MockBorrowAccessNFT__factory(owner).deploy());
         nonERC721Contract = await (new OpenBorrowersRegistry__factory(owner).deploy());

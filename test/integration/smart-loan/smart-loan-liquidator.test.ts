@@ -18,8 +18,13 @@ import {
     toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {TokenManager, RedstoneConfigManager__factory, SmartLoansFactory, PangolinIntermediary,} from "../../../typechain";
-import {BigNumber, Contract, ContractFactory} from "ethers";
+import {
+    PangolinIntermediary,
+    RedstoneConfigManager__factory,
+    SmartLoansFactory,
+    TokenManager,
+} from "../../../typechain";
+import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import redstone from "redstone-api";
 import {parseUnits} from "ethers/lib/utils";
@@ -34,11 +39,11 @@ const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 
-const LIQUIDATOR_PRIVATE_KEY =  fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
+const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
 const liquidatorWallet = (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(rpcProvider);
 
-describe('Test liquidator',  () => {
+describe('Test liquidator', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
@@ -66,17 +71,17 @@ describe('Test liquidator',  () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
 
             redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(
-                [
-                    "0xFE71e9691B9524BC932C23d0EeD5c9CE41161884",
-                    "0x1cd8f9627a2838a7dae6b98cf71c08b9cbf5174a",
-                    "0x981bda8276ae93f567922497153de7a5683708d3",
-                    "0x3befdd935b50f172e696a5187dbacfef0d208e48",
-                    "0xc1d5b940659e57b7bdf8870cdfc43f41ca699460",
-                    "0xbc5a06815ee80de7d20071703c1f1b8fc511c7d4",
-                    "0x496f4e8ac11076350a59b88d2ad62bc20d410ea3",
-                    "0xe9fa2869c5f6fc3a0933981825564fd90573a86d",
-                    "0xdf6b1ca313bee470d0142279791fa760abf5c537",
-                ])
+                    [
+                        "0xFE71e9691B9524BC932C23d0EeD5c9CE41161884",
+                        "0x1cd8f9627a2838a7dae6b98cf71c08b9cbf5174a",
+                        "0x981bda8276ae93f567922497153de7a5683708d3",
+                        "0x3befdd935b50f172e696a5187dbacfef0d208e48",
+                        "0xc1d5b940659e57b7bdf8870cdfc43f41ca699460",
+                        "0xbc5a06815ee80de7d20071703c1f1b8fc511c7d4",
+                        "0x496f4e8ac11076350a59b88d2ad62bc20d410ea3",
+                        "0xe9fa2869c5f6fc3a0933981825564fd90573a86d",
+                        "0xdf6b1ca313bee470d0142279791fa760abf5c537",
+                    ])
             );
 
             let lendingPools = [];
@@ -84,8 +89,11 @@ describe('Test liquidator',  () => {
                 {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
                 {'name': 'AVAX', 'airdropList': [depositor, borrower], 'autoPoolDeposit': true},
             ]) {
-                let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
-                if(token.autoPoolDeposit) {
+                let {
+                    poolContract,
+                    tokenContract
+                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+                if (token.autoPoolDeposit) {
                     await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
                     await poolContract.connect(depositor).deposit(toWei("1000"));
                 }
@@ -103,8 +111,8 @@ describe('Test liquidator',  () => {
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
             ];
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-node-3"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', { provider: "redstone-avalanche-prod-node-3"})).value;
+            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-node-3"})).value;
+            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-node-3"})).value;
 
             MOCK_PRICES = [
                 {

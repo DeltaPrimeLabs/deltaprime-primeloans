@@ -14,7 +14,7 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 
 
-describe('Reentrancy Guard Keccak Test',  () => {
+describe('Reentrancy Guard Keccak Test', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });

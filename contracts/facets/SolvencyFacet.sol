@@ -9,6 +9,7 @@ import "../TokenManager.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
+import "../Pool.sol";
 
 contract SolvencyFacet is PriceAware {
 

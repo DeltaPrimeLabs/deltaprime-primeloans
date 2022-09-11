@@ -12,7 +12,7 @@ import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {Pool, LinearIndex, MockToken, OpenBorrowersRegistry} from "../../typechain";
+import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -289,7 +289,7 @@ describe('Pool with variable utilisation interest rates', () => {
         it("should allow to withdraw part of the deposit", async () => {
             await mockToken.connect(depositor).approve(sut.address, toWei("1.0"));
             await sut.connect(depositor).deposit(toWei("1.0"));
-            
+
             await time.increase(time.duration.years(1));
             await sut.connect(depositor).withdraw(toWei("0.2000"));
             expect(fromWei(await sut.balanceOf(depositor.address))).to.be.closeTo(0.85, 0.00001);

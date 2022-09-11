@@ -52,7 +52,7 @@ describe('TraderJoeIntermediary', () => {
 
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
-            
+
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
 
@@ -136,145 +136,145 @@ describe('TraderJoeIntermediary', () => {
     });
 
     describe('Whitelist and delist tokens', () => {
-      let sut: TraderJoeIntermediary;
+        let sut: TraderJoeIntermediary;
 
-      const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
-      const token2Address = '0x6a7e213F8ad56bEA9d85cC8a59c1f940fD5d176B';
-      const token3Address = '0x5947BB275c521040051D82396192181b413227A3';
-      const token4Address = "0x3cc936b795a188f0e246cbb2d74c5bd190aecf18";
+        const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
+        const token2Address = '0x6a7e213F8ad56bEA9d85cC8a59c1f940fD5d176B';
+        const token3Address = '0x5947BB275c521040051D82396192181b413227A3';
+        const token4Address = "0x3cc936b795a188f0e246cbb2d74c5bd190aecf18";
 
-      before("deploy a contract with a predefined supported assets", async () => {
-         let owner: SignerWithAddress;
+        before("deploy a contract with a predefined supported assets", async () => {
+            let owner: SignerWithAddress;
 
-        [owner] = await getFixedGasSigners(10000000);
+            [owner] = await getFixedGasSigners(10000000);
 
-          let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
-          sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
+            let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
+            sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
 
-        await sut.initialize(traderjoeRouterAddress, [TOKEN_ADDRESSES['AVAX'], token1Address]);
-      });
+            await sut.initialize(traderjoeRouterAddress, [TOKEN_ADDRESSES['AVAX'], token1Address]);
+        });
 
-      it("should add asset at a contract deploy", async () => {
-        expect((await sut.getAllWhitelistedTokens()).length).to.equal(2);
+        it("should add asset at a contract deploy", async () => {
+            expect((await sut.getAllWhitelistedTokens()).length).to.equal(2);
 
-        expect((await sut.getAllWhitelistedTokens())[0])
-          .to.be.equal(TOKEN_ADDRESSES['AVAX']);
-        expect((await sut.getAllWhitelistedTokens())[1])
-            .to.be.equal(token1Address);
-      });
+            expect((await sut.getAllWhitelistedTokens())[0])
+                .to.be.equal(TOKEN_ADDRESSES['AVAX']);
+            expect((await sut.getAllWhitelistedTokens())[1])
+                .to.be.equal(token1Address);
+        });
 
-      it("should add new assets without changing the sequence of previous ones", async () => {
+        it("should add new assets without changing the sequence of previous ones", async () => {
 
-        await sut.whitelistTokens([token2Address]);
+            await sut.whitelistTokens([token2Address]);
 
-          expect((await sut.getAllWhitelistedTokens()).length).to.equal(3);
+            expect((await sut.getAllWhitelistedTokens()).length).to.equal(3);
 
-        await expect((await sut.getAllWhitelistedTokens())[0])
-          .to.be.equal(TOKEN_ADDRESSES['AVAX']);
+            await expect((await sut.getAllWhitelistedTokens())[0])
+                .to.be.equal(TOKEN_ADDRESSES['AVAX']);
 
-        await expect((await sut.getAllWhitelistedTokens())[1])
-          .to.be.equal(token1Address);
+            await expect((await sut.getAllWhitelistedTokens())[1])
+                .to.be.equal(token1Address);
 
-        await expect((await sut.getAllWhitelistedTokens())[2])
-          .to.be.equal(token2Address);
-      });
-
-
-      it("should correctly remove an asset", async () => {
-        await sut.delistTokens([token1Address]);
-
-        await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
-          .to.be.false
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
-      });
+            await expect((await sut.getAllWhitelistedTokens())[2])
+                .to.be.equal(token2Address);
+        });
 
 
-      it("should not add a new asset if already supported", async () => {
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`);
+        it("should correctly remove an asset", async () => {
+            await sut.delistTokens([token1Address]);
 
-        await expect(sut.whitelistTokens([token2Address])).to.be.revertedWith('Token already whitelisted');
-
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
-      });
-
-
-      it("should correctly whitelist and delist multiple tokens", async () => {
-      await sut.whitelistTokens([token1Address, token3Address]);
-
-      await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address},${token1Address},${token3Address}`)
-
-        await sut.delistTokens([token1Address, token2Address]);
-
-        await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
-          .to.be.false;
-        await expect((await sut.getAllWhitelistedTokens()).includes(token2Address))
-          .to.be.false;
-
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
-      });
+            await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
+                .to.be.false
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
+        });
 
 
-      it("should not add any assets if one of them is corrupted", async () => {
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
+        it("should not add a new asset if already supported", async () => {
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`);
 
-        await expect(sut.whitelistTokens([
-            ethers.constants.AddressZero, token4Address
-        ]))
-          .to.be.revertedWith("Cannot whitelist a zero address");
+            await expect(sut.whitelistTokens([token2Address])).to.be.revertedWith('Token already whitelisted');
 
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
-      });
-
-      it("should correctly add assets", async () => {
-          await sut.whitelistTokens([
-              token2Address
-          ]);
-
-          await expect((await sut.getAllWhitelistedTokens()).join(","))
-              .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
-      });
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address}`)
+        });
 
 
-      it("should not remove assets if some are corrupted", async () => {
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
+        it("should correctly whitelist and delist multiple tokens", async () => {
+            await sut.whitelistTokens([token1Address, token3Address]);
 
-        let randomAddress = '0x6e5fb70ee18388b54faba431cd84ca05099444ff';
-        await expect(sut.delistTokens([token3Address, randomAddress])).to.be.revertedWith('Token was not whitelisted before');
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token2Address},${token1Address},${token3Address}`)
 
-        await expect((await sut.getAllWhitelistedTokens()).join(","))
-          .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
-      });
+            await sut.delistTokens([token1Address, token2Address]);
 
+            await expect((await sut.getAllWhitelistedTokens()).includes(token1Address))
+                .to.be.false;
+            await expect((await sut.getAllWhitelistedTokens()).includes(token2Address))
+                .to.be.false;
 
-      it("should revert whitelisting for a wrong format address", async () => {
-        await expect(sut.whitelistTokens(["bad_address"]))
-          .to.be.reverted;
-      });
-
-
-      it("should revert whitelisting for a zero address", async () => {
-        await expect(sut.whitelistTokens(["0x"]))
-          .to.be.reverted;
-      });
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
+        });
 
 
-      it("should deploy a contract with an empty asset array", async () => {
-        let owner2: SignerWithAddress,
-          sut2: TraderJoeIntermediary;
+        it("should not add any assets if one of them is corrupted", async () => {
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
 
-        [,owner2] = await getFixedGasSigners(10000000);
+            await expect(sut.whitelistTokens([
+                ethers.constants.AddressZero, token4Address
+            ]))
+                .to.be.revertedWith("Cannot whitelist a zero address");
 
-        sut2 = await deployContract(owner2, TraderJoeIntermediaryArtifact) as TraderJoeIntermediary;
-        await sut2.initialize(traderjoeRouterAddress, []);
-        expect(await sut2.getAllWhitelistedTokens()).to.be.empty;
-      });
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address}`)
+        });
+
+        it("should correctly add assets", async () => {
+            await sut.whitelistTokens([
+                token2Address
+            ]);
+
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
+        });
+
+
+        it("should not remove assets if some are corrupted", async () => {
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
+
+            let randomAddress = '0x6e5fb70ee18388b54faba431cd84ca05099444ff';
+            await expect(sut.delistTokens([token3Address, randomAddress])).to.be.revertedWith('Token was not whitelisted before');
+
+            await expect((await sut.getAllWhitelistedTokens()).join(","))
+                .to.be.equal(`${TOKEN_ADDRESSES['AVAX']},${token3Address},${token2Address}`)
+        });
+
+
+        it("should revert whitelisting for a wrong format address", async () => {
+            await expect(sut.whitelistTokens(["bad_address"]))
+                .to.be.reverted;
+        });
+
+
+        it("should revert whitelisting for a zero address", async () => {
+            await expect(sut.whitelistTokens(["0x"]))
+                .to.be.reverted;
+        });
+
+
+        it("should deploy a contract with an empty asset array", async () => {
+            let owner2: SignerWithAddress,
+                sut2: TraderJoeIntermediary;
+
+            [, owner2] = await getFixedGasSigners(10000000);
+
+            sut2 = await deployContract(owner2, TraderJoeIntermediaryArtifact) as TraderJoeIntermediary;
+            await sut2.initialize(traderjoeRouterAddress, []);
+            expect(await sut2.getAllWhitelistedTokens()).to.be.empty;
+        });
     });
 });

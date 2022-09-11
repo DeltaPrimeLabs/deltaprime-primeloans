@@ -3,13 +3,11 @@
 pragma solidity ^0.8.4;
 
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./SmartLoanDiamondBeacon.sol";
 import "./proxies/SmartLoanDiamondProxy.sol";
-import "./facets/DiamondInit.sol";
 import "./facets/AssetsOperationsFacet.sol";
 import "./facets/OwnershipFacet.sol";
 import "./facets/SmartLoanViewFacet.sol";

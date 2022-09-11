@@ -3,7 +3,9 @@ import {BigNumber, Contract} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     CompoundingIndex,
-    Pool, MockToken, OpenBorrowersRegistry__factory,
+    MockToken,
+    OpenBorrowersRegistry__factory,
+    Pool,
     VariableUtilisationRatesCalculator
 } from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
@@ -143,7 +145,7 @@ export const getRepayAmounts = function (
     return repayAmounts;
 }
 
-export const toSupply = function(
+export const toSupply = function (
     balances: any,
     repayAmounts: any
 ) {
@@ -171,7 +173,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX') {
+export const deployAllFacets = async function (diamondAddress: any, chain = 'AVAX') {
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,
@@ -196,7 +198,7 @@ export const deployAllFacets = async function(diamondAddress: any, chain = 'AVAX
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin'])
         await deployFacet("VectorFinanceFacet", diamondAddress, [
             'vectorStakeUSDC1',
-            'vectorUnstakeUSDC1' ,
+            'vectorUnstakeUSDC1',
             'vectorStakeUSDC2',
             'vectorUnstakeUSDC2',
             'vectorStakeWAVAX1',
@@ -347,12 +349,12 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{facetPath: string, contractAddress: string}>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number=5000, minSelloutLTV: number=4000, maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
-    const subPath = subpath ? subpath +'/' : "";
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: number = 4000, maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+    const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
     await updateConstants(chain, exchanges, tokenManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
-    execSync(`npx hardhat compile`, { encoding: 'utf-8' });
+    execSync(`npx hardhat compile`, {encoding: 'utf-8'});
     return require(artifactsDirectory);
 }
 

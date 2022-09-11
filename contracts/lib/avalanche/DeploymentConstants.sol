@@ -2,10 +2,6 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../interfaces/IAssetsExchange.sol";
-import "../../Pool.sol";
 import "../../TokenManager.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../RedstoneConfigManager.sol";

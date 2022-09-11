@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import { IERC173 } from "../interfaces/IERC173.sol";
 import "../SmartLoansFactory.sol";
-import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";

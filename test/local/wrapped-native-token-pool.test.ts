@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
@@ -7,12 +7,13 @@ import VariableUtilisationRatesCalculatorArtifact
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
-import WrappedNativeTokenPoolArtifact from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
+import WrappedNativeTokenPoolArtifact
+    from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import WETH9Artifact from "../../artifacts/contracts/lib/WETH9.sol/WETH9.json";
-import {LinearIndex, OpenBorrowersRegistry, WrappedNativeTokenPool, WETH9} from "../../typechain";
+import {LinearIndex, OpenBorrowersRegistry, WETH9, WrappedNativeTokenPool} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);

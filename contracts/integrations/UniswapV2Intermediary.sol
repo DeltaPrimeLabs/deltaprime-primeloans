@@ -8,8 +8,6 @@ import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/IAssetsExchange.sol";
-import "../lib/Bytes32EnumerableMap.sol";
-import "../TokenManager.sol";
 import "../TokenList.sol";
 
 /**

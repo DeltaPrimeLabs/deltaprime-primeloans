@@ -3,14 +3,13 @@ import {solidity} from "ethereum-waffle";
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {LinearIndex} from "../../typechain";
-import {LinearIndex__factory} from "../../typechain";
+import {LinearIndex, LinearIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 
 const {expect} = chai;
 
-describe('LinearIndex',() => {
+describe('LinearIndex', () => {
 
     let owner: SignerWithAddress;
 

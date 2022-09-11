@@ -46,7 +46,7 @@ describe('ERC721 with multi URI, owner-only minting and pausability', () => {
     });
 
     it("should airdrop only once to 2 users skipping 1 that already has an NFT and double addresses", async () => {
-        await(nftContract.connect(owner).airdropMint([user.address, user2.address, user3.address, user3.address]));
+        await (nftContract.connect(owner).airdropMint([user.address, user2.address, user3.address, user3.address]));
 
         expect(await nftContract.balanceOf(user.address)).to.be.equal(1);
         expect(await nftContract.tokenURI(0)).to.be.equal("test-arweave-link");

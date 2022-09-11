@@ -3,28 +3,31 @@ import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
     PangolinIntermediary,
-    TokenManager,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
-    SmartLoansFactory
+    SmartLoansFactory,
+    TokenManager
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {
     Asset,
-    calculateStakingTokensAmountBasedOnAvaxValue, deployAllFacets,
+    calculateStakingTokensAmountBasedOnAvaxValue,
+    deployAllFacets,
     fromWei,
-    getFixedGasSigners, recompileConstantsFile,
+    getFixedGasSigners,
+    recompileConstantsFile,
     toBytes32,
     toWei
 } from "../../_helpers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-const {deployContract} = waffle;
 import {BigNumber, Contract} from "ethers";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import redstone from "redstone-api";
 import {WrapperBuilder} from "redstone-evm-connector";
+
+const {deployContract} = waffle;
 chai.use(solidity);
 const {provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
@@ -56,7 +59,7 @@ describe('Yield Yak test stake AVAX', () => {
         yakStakingContract: Contract,
         avaxTokenContract: Contract;
 
-    before(async() => {
+    before(async () => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingAVAXTokenAddress, erc20ABI, provider);
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
@@ -91,7 +94,7 @@ describe('Yield Yak test stake AVAX', () => {
         await deployAllFacets(diamondAddress)
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', { provider: "redstone-avalanche-prod-1"})).value;
+        YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', {provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
@@ -176,7 +179,7 @@ describe('Yield Yak test stake SAVAX', () => {
         sAvaxTokenContract: Contract,
         avaxTokenContract: Contract;
 
-    before(async() => {
+    before(async () => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingSAVAXTokenAddress, erc20ABI, provider);
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
@@ -233,9 +236,9 @@ describe('Yield Yak test stake SAVAX', () => {
         await deployAllFacets(diamondAddress)
 
         // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
-        AVAX_PRICE = (await redstone.getPrice('AVAX', { provider: "redstone-avalanche-prod-1"})).value;
-        SAVAX_PRICE = (await redstone.getPrice('SAVAX', { provider: "redstone-avalanche-prod-1"})).value;
-        $YYVSAVAXV2_PRICE = (await redstone.getPrice('SAV2', { provider: "redstone-avalanche-prod-1"})).value;
+        AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+        SAVAX_PRICE = (await redstone.getPrice('SAVAX', {provider: "redstone-avalanche-prod-1"})).value;
+        $YYVSAVAXV2_PRICE = (await redstone.getPrice('SAV2', {provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {

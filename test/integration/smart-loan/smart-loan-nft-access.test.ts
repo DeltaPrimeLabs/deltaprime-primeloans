@@ -12,9 +12,12 @@ import SmartLoansFactoryWithAccessNFTArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
-    Asset, deployAllFacets, deployAndInitializeLendingPool,
+    Asset,
+    deployAllFacets,
+    deployAndInitializeLendingPool,
     fromWei,
-    getFixedGasSigners, PoolAsset,
+    getFixedGasSigners,
+    PoolAsset,
     recompileConstantsFile,
     toBytes32,
     toWei,
@@ -22,18 +25,17 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
-    CompoundingIndex,
-    Pool,
     MockBorrowAccessNFT,
-    OpenBorrowersRegistry__factory, TokenManager, RedstoneConfigManager__factory,
+    RedstoneConfigManager__factory,
+    SmartLoanGigaChadInterface,
     SmartLoansFactoryWithAccessNFT,
-    VariableUtilisationRatesCalculator, SmartLoanGigaChadInterface,
+    TokenManager,
 } from "../../../typechain";
 import {Contract} from "ethers";
+import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
-import {deployDiamond, deployFacet} from '../../../tools/diamond/deploy-diamond';
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
@@ -48,7 +50,7 @@ const wavaxAbi = [
     'function deposit() public payable',
     ...erc20ABI
 ]
-describe('Smart loan',  () => {
+describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
@@ -75,7 +77,10 @@ describe('Smart loan',  () => {
             for (const token of [
                 {'name': 'AVAX', 'airdropList': [depositor]}
             ]) {
-                let {poolContract, tokenContract} = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+                let {
+                    poolContract,
+                    tokenContract
+                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
                 await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
                 await poolContract.connect(depositor).deposit(toWei("1000"));
                 lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));

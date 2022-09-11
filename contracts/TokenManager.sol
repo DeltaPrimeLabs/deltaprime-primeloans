@@ -3,7 +3,6 @@
 pragma solidity ^0.8.4;
 
 import "./lib/Bytes32EnumerableMap.sol";
-import "./interfaces/IAssetsExchange.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract TokenManager {
