@@ -8,7 +8,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Pool.sol";
 
@@ -71,10 +71,10 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         uint256[] memory balances = new uint256[](assets.length);
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
 
-        for (uint256 i = 0; i<assets.length; i++) {
+        for (uint256 i = 0; i < assets.length; i++) {
             result[i] = AssetNameBalance({
-                name: assets[i],
-                balance: IERC20(tokenManager.getAssetAddress(assets[i], true)).balanceOf(address(this))
+            name : assets[i],
+            balance : IERC20(tokenManager.getAssetAddress(assets[i], true)).balanceOf(address(this))
             });
         }
 
@@ -90,10 +90,10 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         bytes32[] memory assets = DeploymentConstants.getTokenManager().getAllTokenAssets();
         uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
-        for(uint i=0; i<assets.length; i++){
+        for (uint i = 0; i < assets.length; i++) {
             result[i] = AssetNamePrice({
-                name: assets[i],
-                price: prices[i]
+            name : assets[i],
+            price : prices[i]
             });
         }
         return result;

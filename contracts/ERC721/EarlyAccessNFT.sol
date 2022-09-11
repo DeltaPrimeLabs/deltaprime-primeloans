@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../abstract/ECDSAVerify.sol";
 
-contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify  {
+contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify {
     using Counters for Counters.Counter;
 
     Counters.Counter public _tokenIdCounter;
@@ -59,7 +59,7 @@ contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify  {
     function airdropMint(address[] memory _accounts) external onlyOwner returns (uint256 _NFTsMinted){
         uint256 tokenId;
         _NFTsMinted = 0;
-        for (uint i=0; i< _accounts.length; i++) {
+        for (uint i = 0; i < _accounts.length; i++) {
             if (balanceOf(_accounts[i]) > 0) continue;
             tokenId = _tokenIdCounter.current();
             _tokenIdCounter.increment();
@@ -69,7 +69,7 @@ contract EarlyAccessNFT is ERC721, Pausable, Ownable, ECDSAVerify  {
     }
 
     modifier whenNotPausedMintingExemption(address from) {
-        if(from != address(0)) {
+        if (from != address(0)) {
             require(!paused(), "Pausable: paused");
         }
         _;

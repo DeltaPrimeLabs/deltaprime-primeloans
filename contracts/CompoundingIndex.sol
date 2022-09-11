@@ -12,98 +12,98 @@ import "./interfaces/IIndex.sol";
  * It could be used as a base building block for any index-based entities like deposits and loans.
  **/
 contract CompoundingIndex is IIndex, Ownable {
-  using WadRayMath for uint256;
+    using WadRayMath for uint256;
 
-  uint256 private constant SECONDS_IN_YEAR = 365 days;
-  uint256 private constant BASE_RATE = 1e18;
+    uint256 private constant SECONDS_IN_YEAR = 365 days;
+    uint256 private constant BASE_RATE = 1e18;
 
-  uint256 public index = BASE_RATE;
-  uint256 public indexUpdateTime = block.timestamp;
+    uint256 public index = BASE_RATE;
+    uint256 public indexUpdateTime = block.timestamp;
 
-  mapping(uint256 => uint256) prevIndex;
-  mapping(address => uint256) userUpdateTime;
+    mapping(uint256 => uint256) prevIndex;
+    mapping(address => uint256) userUpdateTime;
 
-  uint256 public rate;
+    uint256 public rate;
 
-  constructor(address owner_) {
-    if (address(owner_) != address(0)) {
-      transferOwnership(owner_);
+    constructor(address owner_) {
+        if (address(owner_) != address(0)) {
+            transferOwnership(owner_);
+        }
     }
-  }
 
-  /* ========== SETTERS ========== */
+    /* ========== SETTERS ========== */
 
-  /**
-   * Sets the new rate
-   * Before the new rate is set, the index is updated accumulating interest
-   * @dev _rate the value of updated rate
-   **/
-  function setRate(uint256 _rate) public override onlyOwner  {
-    updateIndex();
-    rate = _rate;
-    emit RateUpdated(rate);
-  }
-
-  /* ========== MUTATIVE FUNCTIONS ========== */
-
-  /**
-   * Updates user index
-   * It persists the update time and the update index time->index mapping
-   * @dev user address of the index owner
-   **/
-  function updateUser(address user) public override onlyOwner {
-    userUpdateTime[user] = block.timestamp;
-    prevIndex[block.timestamp] = getIndex();
-  }
-
-  /* ========== VIEW FUNCTIONS ========== */
-
-  /**
-   * Gets current value of the compounding index
-   * It recalculates the value on-demand without updating the storage
-   **/
-  function getIndex() public view override returns (uint256) {
-    uint256 period = block.timestamp - indexUpdateTime;
-    if (period > 0) {
-      return index.wadToRay().rayMul(getCompoundedFactor(period)).rayToWad();
-    } else {
-      return index;
+    /**
+     * Sets the new rate
+     * Before the new rate is set, the index is updated accumulating interest
+     * @dev _rate the value of updated rate
+     **/
+    function setRate(uint256 _rate) public override onlyOwner {
+        updateIndex();
+        rate = _rate;
+        emit RateUpdated(rate);
     }
-  }
 
-  /**
-   * Gets the user value recalculated to the current index
-   * It recalculates the value on-demand without updating the storage
-   * Ray operations round up the result, but it is only an issue for very small values (with an order of magnitude
-   * of 1 Wei)
-   **/
-  function getIndexedValue(uint256 value, address user) public view override returns (uint256) {
-    uint256 userTime = userUpdateTime[user];
-    uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
+    /* ========== MUTATIVE FUNCTIONS ========== */
 
-    return value.wadToRay().rayMul(getIndex().wadToRay()).rayDiv(prevUserIndex.wadToRay()).rayToWad();
-  }
+    /**
+     * Updates user index
+     * It persists the update time and the update index time->index mapping
+     * @dev user address of the index owner
+     **/
+    function updateUser(address user) public override onlyOwner {
+        userUpdateTime[user] = block.timestamp;
+        prevIndex[block.timestamp] = getIndex();
+    }
 
-  /* ========== INTERNAL FUNCTIONS ========== */
+    /* ========== VIEW FUNCTIONS ========== */
 
-  function updateIndex() internal {
-    prevIndex[indexUpdateTime] = index;
+    /**
+     * Gets current value of the compounding index
+     * It recalculates the value on-demand without updating the storage
+     **/
+    function getIndex() public view override returns (uint256) {
+        uint256 period = block.timestamp - indexUpdateTime;
+        if (period > 0) {
+            return index.wadToRay().rayMul(getCompoundedFactor(period)).rayToWad();
+        } else {
+            return index;
+        }
+    }
 
-    index = getIndex();
-    indexUpdateTime = block.timestamp;
-  }
+    /**
+     * Gets the user value recalculated to the current index
+     * It recalculates the value on-demand without updating the storage
+     * Ray operations round up the result, but it is only an issue for very small values (with an order of magnitude
+     * of 1 Wei)
+     **/
+    function getIndexedValue(uint256 value, address user) public view override returns (uint256) {
+        uint256 userTime = userUpdateTime[user];
+        uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
 
-  /**
-   * Returns compounded factor in Ray
-   **/
-  function getCompoundedFactor(uint256 period) internal view returns (uint256) {
-    return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
-  }
+        return value.wadToRay().rayMul(getIndex().wadToRay()).rayDiv(prevUserIndex.wadToRay()).rayToWad();
+    }
 
-  /* ========== EVENTS ========== */
+    /* ========== INTERNAL FUNCTIONS ========== */
 
-  /**
-   * @dev updatedRate the value of updated rate
-   **/
-  event RateUpdated(uint256 updatedRate);
+    function updateIndex() internal {
+        prevIndex[indexUpdateTime] = index;
+
+        index = getIndex();
+        indexUpdateTime = block.timestamp;
+    }
+
+    /**
+     * Returns compounded factor in Ray
+     **/
+    function getCompoundedFactor(uint256 period) internal view returns (uint256) {
+        return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
+    }
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @dev updatedRate the value of updated rate
+     **/
+    event RateUpdated(uint256 updatedRate);
 }

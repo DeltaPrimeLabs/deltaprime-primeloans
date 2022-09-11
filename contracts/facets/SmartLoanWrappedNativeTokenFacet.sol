@@ -13,12 +13,12 @@ contract SmartLoanWrappedNativeTokenFacet {
 
     function wrapNativeToken(uint256 amount) onlyOwner public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
-        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value: amount}();
+        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value : amount}();
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
 
     function depositNativeToken() public payable virtual {
-        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value: msg.value}();
+        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value : msg.value}();
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
@@ -49,7 +49,7 @@ contract SmartLoanWrappedNativeTokenFacet {
     * @param amount of wrapped funds
     * @param timestamp of wrap
     **/
-    event WrapNative(address indexed owner,  uint256 amount, uint256 timestamp);
+    event WrapNative(address indexed owner, uint256 amount, uint256 timestamp);
 
     /**
     * @dev emitted when native tokens are deposited to the SmartLoan
@@ -57,7 +57,7 @@ contract SmartLoanWrappedNativeTokenFacet {
     * @param amount of deposited funds
     * @param timestamp of deposit
     **/
-    event DepositNative(address indexed owner,  uint256 amount, uint256 timestamp);
+    event DepositNative(address indexed owner, uint256 amount, uint256 timestamp);
 
     /**
     * @dev emitted when native tokens are unwrapped and withdrawn from the SmartLoan
@@ -65,6 +65,6 @@ contract SmartLoanWrappedNativeTokenFacet {
     * @param amount of unwrapped and withdrawn funds
     * @param timestamp of unwrap and withdraw
     **/
-    event UnwrapAndWithdraw(address indexed owner,  uint256 amount, uint256 timestamp);
+    event UnwrapAndWithdraw(address indexed owner, uint256 amount, uint256 timestamp);
 
 }

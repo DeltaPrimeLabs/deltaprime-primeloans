@@ -14,44 +14,44 @@ import "hardhat/console.sol";
  * The interest rates calculation is delegated to the external calculator contract.
  */
 contract WrappedNativeTokenPool is Pool {
-  using TransferHelper for address payable;
-  using TransferHelper for address;
+    using TransferHelper for address payable;
+    using TransferHelper for address;
 
-  /**
-   * Wraps and deposits amount attached to the transaction
-   **/
-  function depositNativeToken() public payable virtual {
-    IWrappedNativeToken(tokenAddress).deposit{value: msg.value}();
+    /**
+     * Wraps and deposits amount attached to the transaction
+     **/
+    function depositNativeToken() public payable virtual {
+        IWrappedNativeToken(tokenAddress).deposit{value : msg.value}();
 
-    _accumulateDepositInterest(msg.sender);
+        _accumulateDepositInterest(msg.sender);
 
-    _mint(msg.sender, msg.value);
-    _deposited[address(this)] += msg.value;
-    _updateRates();
+        _mint(msg.sender, msg.value);
+        _deposited[address(this)] += msg.value;
+        _updateRates();
 
-    emit Deposit(msg.sender, msg.value, block.timestamp);
-  }
+        emit Deposit(msg.sender, msg.value, block.timestamp);
+    }
 
-  /**
-   * Unwraps and withdraws selected amount from the user deposits
-   * @dev _amount the amount to be withdrawn
-   **/
-  function withdrawNativeToken(uint256 _amount) external nonReentrant {
-    require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
+    /**
+     * Unwraps and withdraws selected amount from the user deposits
+     * @dev _amount the amount to be withdrawn
+     **/
+    function withdrawNativeToken(uint256 _amount) external nonReentrant {
+        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
 
-    _accumulateDepositInterest(msg.sender);
+        _accumulateDepositInterest(msg.sender);
 
-    _burn(msg.sender, _amount);
+        _burn(msg.sender, _amount);
 
-    IWrappedNativeToken(tokenAddress).withdraw(_amount);
-    payable(msg.sender).safeTransferETH(_amount);
+        IWrappedNativeToken(tokenAddress).withdraw(_amount);
+        payable(msg.sender).safeTransferETH(_amount);
 
-    _updateRates();
+        _updateRates();
 
-    emit Withdrawal(msg.sender, _amount, block.timestamp);
-  }
+        emit Withdrawal(msg.sender, _amount, block.timestamp);
+    }
 
-  /* ========== RECEIVE AVAX FUNCTION ========== */
-  //needed for withdrawNativeToken
-  receive() external payable {}
+    /* ========== RECEIVE AVAX FUNCTION ========== */
+    //needed for withdrawNativeToken
+    receive() external payable {}
 }

@@ -19,7 +19,7 @@ contract SolvencyMethodsLib {
         );
     }
 
-    function _getDiamondBeaconContract(bytes memory methodSig) internal view returns(address solvencyFacetAddress) {
+    function _getDiamondBeaconContract(bytes memory methodSig) internal view returns (address solvencyFacetAddress) {
         solvencyFacetAddress = IDiamondBeacon(payable(DeploymentConstants.getDiamondAddress())).implementation(convertBytesToBytes4(methodSig));
     }
 

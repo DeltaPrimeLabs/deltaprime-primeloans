@@ -10,7 +10,7 @@ contract ReentrantAttack {
 
     /* ========== RECEIVE AVAX FUNCTION ========== */
     receive() external payable {
-        if(callCounter < targetCallCount) {
+        if (callCounter < targetCallCount) {
             callCounter += 1;
             AntiReentrantDiamondStorage(payable(msg.sender)).antiReentrant();
         } else {

@@ -32,16 +32,16 @@ abstract contract AccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausa
     }
 
     function addAvailableUri(string[] memory _uris) external onlyOwner {
-        for(uint i=0;i<_uris.length;i++) {
+        for (uint i = 0; i < _uris.length; i++) {
             availableUris.push(_uris[i]);
         }
     }
 
-    function getAvailableUri(uint256 index) external view returns(string memory) {
+    function getAvailableUri(uint256 index) external view returns (string memory) {
         return availableUris[index];
     }
 
-    function getAvailableUrisCount() external view returns(uint256) {
+    function getAvailableUrisCount() external view returns (uint256) {
         return availableUris.length;
     }
 
@@ -67,7 +67,7 @@ abstract contract AccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausa
         _tokenIdCounter.increment();
         accessTokens[accessToken] = _msgSender();
         _safeMint(_msgSender(), tokenId);
-        _setTokenURI(tokenId, availableUris[availableUris.length-1]);
+        _setTokenURI(tokenId, availableUris[availableUris.length - 1]);
         availableUris.pop();
         return tokenId;
     }
@@ -81,7 +81,7 @@ abstract contract AccessNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausa
     }
 
     modifier whenNotPausedMintingExemption(address from) {
-        if(from != address(0)) {
+        if (from != address(0)) {
             require(!paused(), "Pausable: paused");
         }
         _;

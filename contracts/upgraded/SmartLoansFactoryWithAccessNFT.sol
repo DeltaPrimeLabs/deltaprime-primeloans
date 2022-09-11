@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: 0fbd3d2132ce3d3a12c966ee5e6ffba53aae9d33;
 pragma solidity ^0.8.4;
+
 import "../abstract/NFTAccess.sol";
 import "../SmartLoansFactory.sol";
 

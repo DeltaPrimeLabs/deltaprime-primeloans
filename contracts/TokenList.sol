@@ -5,12 +5,12 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract TokenListOwnableUpgreadable is OwnableUpgradeable {
-    mapping(address=>bool) isTokenWhitelisted;
-    mapping(address=>uint256) tokenPositionInList;
+    mapping(address => bool) isTokenWhitelisted;
+    mapping(address => uint256) tokenPositionInList;
     address[] whitelistedTokensList;
 
     function __TokenList_init(address[] memory _whitelistedTokens) internal onlyInitializing {
-        for (uint256 i=0; i<_whitelistedTokens.length; i++) {
+        for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
             require(_whitelistToken(_whitelistedTokens[i], false), "Whitelisting token failed");
         }
 
@@ -20,13 +20,13 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
     // PUBLIC MUTATIVE FUNCTIONS
 
     function whitelistTokens(address[] memory tokensToWhitelist) public onlyOwner {
-        for(uint256 i=0; i<tokensToWhitelist.length; i++) {
+        for (uint256 i = 0; i < tokensToWhitelist.length; i++) {
             require(_whitelistToken(tokensToWhitelist[i], true), "Whitelisting token failed");
         }
     }
 
     function delistTokens(address[] memory tokensToDelist) public onlyOwner {
-        for(uint256 i=0; i<tokensToDelist.length; i++) {
+        for (uint256 i = 0; i < tokensToDelist.length; i++) {
             require(_delistToken(tokensToDelist[i], true), "Delisting token failed");
         }
     }
@@ -47,27 +47,27 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
     function _whitelistToken(address token, bool revertOnDuplicates) internal returns (bool){
         require(token != address(0), "Cannot whitelist a zero address");
 
-        if(!isTokenWhitelisted[token]){
+        if (!isTokenWhitelisted[token]) {
             whitelistedTokensList.push(token);
             tokenPositionInList[token] = whitelistedTokensList.length - 1;
             isTokenWhitelisted[token] = true;
             emit TokenWhitelisted(msg.sender, token, block.timestamp);
             return true;
 
-        } else if(revertOnDuplicates) {
+        } else if (revertOnDuplicates) {
             revert("Token already whitelisted");
         }
         return false;
     }
 
     function _delistToken(address token, bool revertOnNonListedTokens) internal returns (bool){
-        if(isTokenWhitelisted[token]){
+        if (isTokenWhitelisted[token]) {
             _removeTokenFromList(token);
             isTokenWhitelisted[token] = false;
             emit TokenDelisted(msg.sender, token, block.timestamp);
             return true;
 
-        } else if(revertOnNonListedTokens) {
+        } else if (revertOnNonListedTokens) {
             revert("Token was not whitelisted before");
         }
         return false;
@@ -79,7 +79,7 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
         // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] whitelistedTokensList
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
         uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
-        if(tokenToRemoveIndex != (whitelistedTokensList.length - 1)){
+        if (tokenToRemoveIndex != (whitelistedTokensList.length - 1)) {
             address currentLastToken = whitelistedTokensList[whitelistedTokensList.length - 1];
             tokenPositionInList[currentLastToken] = tokenToRemoveIndex;
             whitelistedTokensList[tokenToRemoveIndex] = currentLastToken;

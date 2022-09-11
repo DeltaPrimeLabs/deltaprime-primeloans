@@ -10,10 +10,10 @@ pragma solidity ^0.8.4;
 /******************************************************************************/
 
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
-import { IDiamondLoupe } from "../interfaces/IDiamondLoupe.sol";
-import { IDiamondCut } from "../interfaces/IDiamondCut.sol";
-import { IERC173 } from "../interfaces/IERC173.sol";
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {IDiamondLoupe} from "../interfaces/IDiamondLoupe.sol";
+import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
+import {IERC173} from "../interfaces/IERC173.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 // It is exapected that this contract is customized if you want to deploy your diamond
 // with data from a deployment script. Use the init function to initialize state variables

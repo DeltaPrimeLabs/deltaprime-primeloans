@@ -24,7 +24,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns(uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns (uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
@@ -44,11 +44,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if(soldToken.balanceOf(address(this)) == 0) {
+        if (soldToken.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
 
-        emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0],  amounts[amounts.length - 1], block.timestamp);
+        emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
         return amounts;
     }

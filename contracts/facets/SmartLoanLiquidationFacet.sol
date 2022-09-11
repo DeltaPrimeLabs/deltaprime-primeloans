@@ -67,7 +67,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         return _MAX_LIQUIDATION_BONUS;
     }
 
-/* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
+    /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
     * This function can be accessed by any user when Prime Account is insolvent or bankrupt and repay part of the loan
@@ -82,11 +82,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
-                assetsToRepay: assetsToRepay,
-                amountsToRepay: amountsToRepay,
-                liquidationBonus: _liquidationBonus,
-                allowUnprofitableLiquidation: true
-            })
+        assetsToRepay : assetsToRepay,
+        amountsToRepay : amountsToRepay,
+        liquidationBonus : _liquidationBonus,
+        allowUnprofitableLiquidation : true
+        })
         );
     }
 
@@ -104,11 +104,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
-                assetsToRepay: assetsToRepay,
-                amountsToRepay: amountsToRepay,
-                liquidationBonus: _liquidationBonus,
-                allowUnprofitableLiquidation: false
-            })
+        assetsToRepay : assetsToRepay,
+        amountsToRepay : amountsToRepay,
+        liquidationBonus : _liquidationBonus,
+        allowUnprofitableLiquidation : false
+        })
         );
     }
 

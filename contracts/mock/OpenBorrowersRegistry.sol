@@ -10,15 +10,15 @@ import "../interfaces/IBorrowersRegistry.sol";
  * Should be used for test purpose only
  */
 contract OpenBorrowersRegistry is IBorrowersRegistry {
-  function canBorrow(address _account) external pure override returns (bool) {
-    return true;
-  }
+    function canBorrow(address _account) external pure override returns (bool) {
+        return true;
+    }
 
-  function getLoanForOwner(address _user) external pure override returns (address) {
-    return address(0);
-  }
+    function getLoanForOwner(address _user) external pure override returns (address) {
+        return address(0);
+    }
 
-  function getOwnerOfLoan(address _loan) external pure override returns (address) {
-    return address(0);
-  }
+    function getOwnerOfLoan(address _loan) external pure override returns (address) {
+        return address(0);
+    }
 }

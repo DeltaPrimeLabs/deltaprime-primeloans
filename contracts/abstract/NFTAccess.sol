@@ -25,7 +25,7 @@ abstract contract NFTAccess is OwnableUpgradeable {
         }
     }
 
-    function getAccessNFT() external view returns(ERC721 accessNFT) {
+    function getAccessNFT() external view returns (ERC721 accessNFT) {
         bytes32 slot = ACCESS_NFT_SLOT;
         assembly {
             accessNFT := sload(slot)
@@ -38,7 +38,7 @@ abstract contract NFTAccess is OwnableUpgradeable {
         assembly {
             accessNFT := sload(slot)
         }
-        if(address(accessNFT) != address(0)) {
+        if (address(accessNFT) != address(0)) {
             require(accessNFT.balanceOf(msg.sender) > 0, "Access NFT required");
         }
         _;

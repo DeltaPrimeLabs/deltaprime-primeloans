@@ -62,7 +62,7 @@ contract SolvencyFacet is PriceAware {
 
             Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + pool.getBorrowed(address(this)) * prices[i] * 10**10
+            debt = debt + pool.getBorrowed(address(this)) * prices[i] * 10 ** 10
             / 10 ** token.decimals();
         }
 
@@ -77,10 +77,10 @@ contract SolvencyFacet is PriceAware {
         bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
-        if(prices.length > 0) {
+        if (prices.length > 0) {
             TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-            uint256 total = address(this).balance * nativeTokenPrice / 10**8;
+            uint256 total = address(this).balance * nativeTokenPrice / 10 ** 8;
 
             for (uint256 i = 0; i < prices.length; i++) {
                 require(prices[i] != 0, "Asset price returned from oracle is zero");
@@ -88,7 +88,7 @@ contract SolvencyFacet is PriceAware {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
                 uint256 assetBalance = token.balanceOf(address(this));
 
-                total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
+                total = total + (prices[i] * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
 
             return total;

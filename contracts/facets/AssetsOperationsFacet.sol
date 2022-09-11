@@ -7,7 +7,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
+import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethodsLib.sol";
 import "./SolvencyFacet.sol";
 import "../TokenManager.sol";
@@ -30,7 +30,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
-        if(token.balanceOf(address(this)) > 0) {
+        if (token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
         }
 
@@ -50,7 +50,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         require(getBalance(_withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
 
         address(token).safeTransfer(msg.sender, _amount);
-        if(token.balanceOf(address(this)) == 0) {
+        if (token.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_withdrawnAsset);
         }
 

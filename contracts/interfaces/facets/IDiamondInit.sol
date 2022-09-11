@@ -1,3 +1,3 @@
 interface IDiamondInit {
-  function init (  ) external;
+    function init() external;
 }

@@ -2,8 +2,8 @@
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
 pragma solidity ^0.8.4;
 
-import { DiamondStorageLib } from "./lib/DiamondStorageLib.sol";
-import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
+import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
+import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
 /**
  * @title SmartLoanDiamondBeacon
@@ -23,9 +23,9 @@ contract SmartLoanDiamondBeacon {
         bytes4[] memory functionSelectors = new bytes4[](1);
         functionSelectors[0] = IDiamondCut.diamondCut.selector;
         cut[0] = IDiamondCut.FacetCut({
-        facetAddress: _diamondCutFacet,
-        action: IDiamondCut.FacetCutAction.Add,
-        functionSelectors: functionSelectors
+        facetAddress : _diamondCutFacet,
+        action : IDiamondCut.FacetCutAction.Add,
+        functionSelectors : functionSelectors
         });
         DiamondStorageLib.diamondCut(cut, address(0), "");
     }
@@ -55,19 +55,19 @@ contract SmartLoanDiamondBeacon {
         address facet = implementation(msg.sig);
         // Execute external function from facet using delegatecall and return any value.
         assembly {
-            // copy function selector and any arguments
+        // copy function selector and any arguments
             calldatacopy(0, 0, calldatasize())
-            // execute function call using the facet
+        // execute function call using the facet
             let result := delegatecall(gas(), facet, 0, calldatasize(), 0, 0)
-            // get any return value
+        // get any return value
             returndatacopy(0, 0, returndatasize())
-            // return any return value or error back to the caller
+        // return any return value or error back to the caller
             switch result
             case 0 {
                 revert(0, returndatasize())
             }
             default {
-                return(0, returndatasize())
+                return (0, returndatasize())
             }
         }
     }

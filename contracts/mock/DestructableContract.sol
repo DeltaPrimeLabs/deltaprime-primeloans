@@ -6,11 +6,11 @@ pragma solidity ^0.8.4;
  * @dev For tests
  */
 contract DestructableContract {
-  fallback() external payable {
-    //just receive funds
-  }
+    fallback() external payable {
+        //just receive funds
+    }
 
-  function destruct(address payable receiverOfFunds) public {
-    selfdestruct(receiverOfFunds);
-  }
+    function destruct(address payable receiverOfFunds) public {
+        selfdestruct(receiverOfFunds);
+    }
 }

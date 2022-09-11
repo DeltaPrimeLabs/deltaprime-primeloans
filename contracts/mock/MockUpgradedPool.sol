@@ -10,19 +10,19 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
  * @dev A mock implementation of a Pool to check if upgrade mechanism correctly update contrac logic
  */
 contract MockUpgradedPool is Pool {
-  /**
-   * Dummy implementation recording double deposits
-   * used to test upgrade of contract logic
-   **/
-  function deposit(uint256 amount) public override nonReentrant {
-    _accumulateDepositInterest(msg.sender);
+    /**
+     * Dummy implementation recording double deposits
+     * used to test upgrade of contract logic
+     **/
+    function deposit(uint256 amount) public override nonReentrant {
+        _accumulateDepositInterest(msg.sender);
 
-    _transferToPool(msg.sender, amount);
+        _transferToPool(msg.sender, amount);
 
-    //change to original deposit method
-    _mint(msg.sender, amount * 2);
-    _updateRates();
+        //change to original deposit method
+        _mint(msg.sender, amount * 2);
+        _updateRates();
 
-    emit Deposit(msg.sender, amount, block.timestamp);
-  }
+        emit Deposit(msg.sender, amount, block.timestamp);
+    }
 }

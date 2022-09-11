@@ -33,7 +33,7 @@ contract TokenManager {
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
-    mapping(address=>uint256) private tokenPositionInList;
+    mapping(address => uint256) private tokenPositionInList;
     address[] public supportedTokensList;
 
     address public adminTransferProposal;
@@ -79,7 +79,7 @@ contract TokenManager {
     function getAssetAddress(bytes32 _asset, bool allowInactive) public view returns (address) {
         (, address assetAddress) = assetToTokenAddress.tryGet(_asset);
         require(assetAddress != address(0), "Asset not supported.");
-        if(!allowInactive) {
+        if (!allowInactive) {
             require(tokenToStatus[assetAddress] == _ACTIVE, "Asset inactive");
         }
 
@@ -97,7 +97,7 @@ contract TokenManager {
     }
 
     function addPoolAssets(poolAsset[] memory poolAssets) public onlyAdmin {
-        for(uint256 i=0; i<poolAssets.length; i++) {
+        for (uint256 i = 0; i < poolAssets.length; i++) {
             _addPoolAsset(poolAssets[i].asset, poolAssets[i].poolAddress);
         }
     }
@@ -110,7 +110,7 @@ contract TokenManager {
     }
 
     function addTokenAssets(Asset[] memory tokenAssets) public onlyAdmin {
-        for(uint256 i=0; i<tokenAssets.length; i++) {
+        for (uint256 i = 0; i < tokenAssets.length; i++) {
             _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress);
         }
     }
@@ -145,7 +145,7 @@ contract TokenManager {
         // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] supportedTokensList
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
         uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
-        if(tokenToRemoveIndex != (supportedTokensList.length - 1)){
+        if (tokenToRemoveIndex != (supportedTokensList.length - 1)) {
             address currentLastToken = supportedTokensList[supportedTokensList.length - 1];
             tokenPositionInList[currentLastToken] = tokenToRemoveIndex;
             supportedTokensList[tokenToRemoveIndex] = currentLastToken;
@@ -156,8 +156,8 @@ contract TokenManager {
         tokenPositionInList[tokenToRemove] = 0;
     }
 
-    function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyAdmin{
-        for(uint256 i=0; i<_tokenAssets.length; i++) {
+    function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyAdmin {
+        for (uint256 i = 0; i < _tokenAssets.length; i++) {
             _removeTokenAsset(_tokenAssets[i]);
         }
     }
@@ -171,7 +171,7 @@ contract TokenManager {
     }
 
     function removePoolAssets(bytes32[] memory _poolAssets) public onlyAdmin {
-        for(uint256 i=0; i<_poolAssets.length; i++) {
+        for (uint256 i = 0; i < _poolAssets.length; i++) {
             _removePoolAsset(_poolAssets[i]);
         }
     }

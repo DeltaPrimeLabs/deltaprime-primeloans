@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IWrappedNativeToken is IERC20 {
 
-    function receive() external payable;
+function receive() external payable;
 
-    function deposit() external payable;
+function deposit() external payable;
 
-    function withdraw(uint256 wad) external;
+function withdraw(uint256 wad) external;
 
 }

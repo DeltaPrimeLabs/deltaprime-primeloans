@@ -2,7 +2,7 @@
 // Modified version of Openzeppelin (OpenZeppelin Contracts v4.4.1 (security/ReentrancyGuard.sol)) ReentrancyGuard
 // contract that uses keccak slots instead of the standard storage layout.
 
-import { DiamondStorageLib } from "./lib/DiamondStorageLib.sol";
+import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
 
 pragma solidity ^0.8.0;
 
