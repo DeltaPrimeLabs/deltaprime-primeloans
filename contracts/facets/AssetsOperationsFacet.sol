@@ -28,7 +28,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _amount to be funded
     **/
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
-        IERC20Metadata token = getERC20TokenInstance(_fundedAsset);
+        IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         if(token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
@@ -46,7 +46,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _amount to be withdrawn
     **/
     function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
-        IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset);
+        IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset, true);
         require(getBalance(_withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
 
         address(token).safeTransfer(msg.sender, _amount);
@@ -68,7 +68,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         Pool pool = Pool(tokenManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 
-        IERC20Metadata token = getERC20TokenInstance(_asset);
+        IERC20Metadata token = getERC20TokenInstance(_asset, false);
         if (token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_asset, address(token));
         }
@@ -84,7 +84,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
      * @param _amount of funds to repay
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
-        IERC20Metadata token = getERC20TokenInstance(_asset);
+        IERC20Metadata token = getERC20TokenInstance(_asset, true);
 
         if (_isSolvent()) {
             DiamondStorageLib.enforceIsContractOwner();
@@ -114,7 +114,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset, true));
         return token.balanceOf(address(this));
     }
 

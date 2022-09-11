@@ -52,7 +52,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) public view returns (uint256) {
-        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset));
+        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset, true));
         return token.balanceOf(address(this));
     }
 
@@ -69,7 +69,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
         for (uint256 i = 0; i<assets.length; i++) {
             result[i] = AssetNameBalance({
                 name: assets[i],
-                balance: IERC20(tokenManager.getAssetAddress(assets[i])).balanceOf(address(this))
+                balance: IERC20(tokenManager.getAssetAddress(assets[i], true)).balanceOf(address(this))
             });
         }
 

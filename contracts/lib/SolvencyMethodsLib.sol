@@ -80,8 +80,8 @@ contract SolvencyMethodsLib {
      * Returns IERC20Metadata instance of a token
      * @param _asset the code of an asset
      **/
-    function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-        return IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset));
+    function getERC20TokenInstance(bytes32 _asset, bool allowInactive) internal view returns (IERC20Metadata) {
+        return IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset, allowInactive));
     }
 
     /**

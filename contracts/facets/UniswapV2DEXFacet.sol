@@ -25,8 +25,8 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     * @param _minimumBought minimum amount of asset to be bought
     **/
     function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns(uint256[] memory) {
-        IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset);
-        IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset);
+        IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
+        IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
         address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
@@ -37,7 +37,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
 
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         // Add asset to ownedAssets
-        address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset);
+        address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset, false);
 
         if (boughtToken.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);

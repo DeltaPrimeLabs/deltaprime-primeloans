@@ -141,7 +141,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         uint256 repaidInUSD;
 
         for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i]));
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
@@ -200,7 +200,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         }
 
         for (uint256 i; i < assetsOwned.length; i++) {
-            IERC20Metadata token = getERC20TokenInstance(assetsOwned[i]);
+            IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
             uint256 balance = token.balanceOf(address(this));
 
             address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);

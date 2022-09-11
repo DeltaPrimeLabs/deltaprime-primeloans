@@ -24,12 +24,19 @@ contract TokenManager {
     }
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
+    uint256 private constant _NOT_SUPPORTED = 0;
+    uint256 private constant _INACTIVE = 1;
+    uint256 private constant _ACTIVE = 2;
+
     address public admin;
     // Stores an asset's bytes32 symbol representation to pool's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
+
     address public adminTransferProposal;
+
+    mapping(address => uint256) public tokenToStatus;
 
     constructor(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) {
         admin = msg.sender;
@@ -63,9 +70,12 @@ contract TokenManager {
     /**
     * Returns address of an asset
     **/
-    function getAssetAddress(bytes32 _asset) public view returns (address) {
+    function getAssetAddress(bytes32 _asset, bool allowInactive) public view returns (address) {
         (, address assetAddress) = assetToTokenAddress.tryGet(_asset);
         require(assetAddress != address(0), "Asset not supported.");
+        if(!allowInactive) {
+            require(tokenToStatus[assetAddress] == _ACTIVE, "Asset inactive");
+        }
 
         return assetAddress;
     }
@@ -99,11 +109,24 @@ contract TokenManager {
         }
     }
 
+    function activateToken(address token) public onlyAdmin {
+        require(tokenToStatus[token] == _INACTIVE, "Must be inactive");
+        tokenToStatus[token] = _ACTIVE;
+        emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
+    }
+
+    function deactivateToken(address token) public onlyAdmin {
+        require(tokenToStatus[token] == _ACTIVE, "Must be active");
+        tokenToStatus[token] = _INACTIVE;
+        emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
+    }
+
     function _addTokenAsset(bytes32 _asset, address _tokenAddress) internal {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
         assetToTokenAddress.set(_asset, _tokenAddress);
+        tokenToStatus[_tokenAddress] = _ACTIVE;
         emit TokenAssetAdded(msg.sender, _asset, _tokenAddress, block.timestamp);
     }
 
@@ -114,7 +137,9 @@ contract TokenManager {
     }
 
     function _removeTokenAsset(bytes32 _tokenAsset) internal {
+        address tokenAddress = getAssetAddress(_tokenAsset, true);
         EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
+        tokenToStatus[tokenAddress] = _NOT_SUPPORTED;
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
     }
 
@@ -144,6 +169,14 @@ contract TokenManager {
      * @param timestamp time of adding a token asset
      **/
     event TokenAssetAdded(address indexed performer, bytes32 indexed tokenAsset, address assetAddress, uint256 timestamp);
+
+    /**
+     * @dev emitted after deactivating a token asset
+     * @param performer an address of the wallet deactivating a token asset
+     * @param assetAddress an address of the token asset
+     * @param timestamp time of deactivating a token asset
+     **/
+    event TokenAssetDeactivated(address indexed performer, address assetAddress, uint256 timestamp);
 
     /**
      * @dev emitted after removing a token asset

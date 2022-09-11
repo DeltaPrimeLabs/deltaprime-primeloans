@@ -58,7 +58,7 @@ contract SolvencyFacet is PriceAware {
         uint256[] memory prices = getPricesFromMsg(assets);
 
         for (uint256 i = 0; i < assets.length; i++) {
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i]));
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
 
             Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
@@ -85,7 +85,7 @@ contract SolvencyFacet is PriceAware {
             for (uint256 i = 0; i < prices.length; i++) {
                 require(prices[i] != 0, "Asset price returned from oracle is zero");
 
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i]));
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
                 uint256 assetBalance = token.balanceOf(address(this));
 
                 total = total + (prices[i] * 10**10 * assetBalance / (10 ** token.decimals()));
