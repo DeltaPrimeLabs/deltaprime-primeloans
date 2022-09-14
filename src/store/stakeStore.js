@@ -1,20 +1,5 @@
 import {awaitConfirmation, handleCall} from '../utils/blockchain';
-import SMART_LOAN from '@contracts/SmartLoanLogicFacet.json';
-import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
-import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
-import PANGOLIN_EXCHANGETUP from '@contracts/PangolinExchangeTUP.json';
-import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
-import EXCHANGE from '@artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
-import POOL from '@artifacts/contracts/WavaxPool.sol/WavaxPool.json';
-import POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
-import config from '@/config';
-import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from '../utils/calculate';
-import {WrapperBuilder} from 'redstone-evm-connector';
-import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from '../utils/graph';
-import redstone from 'redstone-api';
-import {BigNumber} from 'ethers';
-
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 
@@ -63,9 +48,7 @@ export default {
 
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
-      const wavaxTokenContract = rootState.fundsStore.wavaxTokenContract;
 
-      await wavaxTokenContract.connect(provider.getSigner()).approve(smartLoanContract.address, toWei(String(amount)));
       const stakeTransaction = await smartLoanContract.stakeAVAXYak(toWei(String(amount)), {gasLimit: 1100000});
 
       await awaitConfirmation(stakeTransaction, provider, 'stakeAvaxYak');
@@ -94,6 +77,7 @@ export default {
     },
 
     async updateStakedAvaxYakBalance({state, rootState, dispatch, commit}) {
+      console.log('updateStakedAvax');
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
       const stakingContractAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
       const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
@@ -117,6 +101,7 @@ export default {
         }
       }
 
+      console.log(stakedAssets);
       commit('setStakedAssets', stakedAssets);
     },
   }

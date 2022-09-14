@@ -72,31 +72,32 @@ export default {
   },
   computed: {
     ...mapState('fundsStore', ['assets']),
-    ...mapState('poolStore', ['pool', 'usdcPool']),
+    ...mapState('poolStore', ['avaxPool', 'usdcPool']),
   },
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     setupPools() {
-      this.pools = [
-        {
-          asset: config.ASSETS_CONFIG['AVAX'],
-          deposit: fromWei(this.pool.deposit),
-          apy: fromWei(this.pool.apy),
-          interest: 0.0112,
-          tvl: fromWei(this.pool.tvl)
-        },
-        {
-          asset: config.ASSETS_CONFIG['USDC'],
-          deposit: fromWei(this.usdcPool.deposit),
-          apy: fromWei(this.usdcPool.apy),
-          interest: 0.0271,
-          tvl: fromWei(this.usdcPool.tvl)
-        },
-
-      ];
-      this.setupTotalTVL();
+      if (this.avaxPool && this.usdcPool) {
+        this.pools = [
+          {
+            asset: config.ASSETS_CONFIG['AVAX'],
+            deposit: this.avaxPool.deposit,
+            apy: this.avaxPool.apy,
+            interest: 0.0112,
+            tvl: this.avaxPool.tvl
+          },
+          {
+            asset: config.ASSETS_CONFIG['USDC'],
+            deposit: this.usdcPool.deposit,
+            apy: this.usdcPool.apy,
+            interest: 0.0271,
+            tvl: this.usdcPool.tvl
+          },
+        ];
+        this.setupTotalTVL();
+      }
     },
 
     async updateFunds(funds) {
@@ -107,7 +108,7 @@ export default {
       let totalTVL = 0;
       this.pools.forEach(pool => {
         totalTVL += pool.tvl * pool.asset.price;
-      })
+      });
       this.totalTVL = totalTVL;
     }
   },
@@ -117,6 +118,12 @@ export default {
         this.updateFunds(newFunds);
       },
       immediate: true
+    },
+
+    avaxPool: {
+      handler() {
+        this.setupPools();
+      }
     }
   }
 };
@@ -139,6 +146,10 @@ export default {
     .pools {
       margin-top: 65px;
       width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
 
       .pools-table {
         width: 100%;

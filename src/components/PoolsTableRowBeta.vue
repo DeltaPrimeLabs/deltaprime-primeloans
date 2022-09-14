@@ -125,7 +125,7 @@ export default {
             this.closeModal();
           });
         } else if (this.pool.asset.name === 'USDC') {
-          this.handleTransaction(this.depositUsdc(), {amount: deposit}).then(() => {
+          this.handleTransaction(this.depositUsdc, {amount: deposit}).then(() => {
             this.closeModal();
           });
         }

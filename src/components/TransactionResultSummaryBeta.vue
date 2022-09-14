@@ -2,25 +2,7 @@
   <div class="transaction-result-summary-beta-component">
     <div class="summary-wrapper">
       <div class="summary">
-<!--        <div class="summary__title">
-          Values after transaction:
-        </div>
-        <div class="summary__values">
-          <div class="summary__label">
-            LTV:
-          </div>
-          <div class="summary__value">
-            {{2.511 | percent}}
-          </div>
-          <BarGaugeBeta :min="0" :max="5" :value="2.511" :slim="true"></BarGaugeBeta>
-          <div class="summary__divider"></div>
-          <div class="summary__label">
-            Balance:
-          </div>
-          <div class="summary__value">
-            73.12 AVAX
-          </div>
-        </div>-->
+
         <slot></slot>
       </div>
     </div>

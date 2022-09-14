@@ -6,7 +6,7 @@
     <button v-on:click="depositClick()">deposit</button>
     <button v-on:click="getAllAssetsBalancesClick()">balances</button>
     <button v-on:click="testModal()">test swap</button>-->
-<!--    <button v-on:click="wavaxSwap()">WavaxSwap</button>-->
+    <button v-on:click="wavaxSwap()">WavaxSwap</button>
 <!--    <button v-on:click="createLoanClick()">create loan</button>-->
 <!--    <button v-on:click="createAndFundLoanClick()">create and fund loan</button>-->
 <!--    <button v-on:click="debts()">Debts</button>-->
@@ -24,11 +24,11 @@
           <div></div>
           <div class="header__cell actions">Actions</div>
         </div>
-        <div class="funds-table__body">
+        <div class="funds-table__body" v-if="assetBalances">
           <FundTableRowBeta v-for="(asset, index) in funds" v-bind:key="asset.symbol" :asset="asset" :balance="assetBalances[index]"></FundTableRowBeta>
         </div>
       </div>
-      <div v-if="!funds">
+      <div v-if="!funds || !assetBalances">
         <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
       </div>
     </div>
@@ -59,7 +59,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('fundsStore', ['assets', 'assetBalances', 'smartLoanContract']),
+    ...mapState('fundsStore', ['assets', 'assetBalances', 'smartLoanContract', 'noSmartLoan']),
     calculateAvailableValue() {
       if (this.funds) {
         let availableValue = 0;
@@ -69,6 +69,14 @@ export default {
         return availableValue;
       }
     }
+  },
+  watch: {
+    assets: {
+      handler(newFunds) {
+        this.updateInternalFunds(newFunds);
+      },
+      immediate: true
+    },
   },
   methods: {
     ...mapActions('fundsStore',
@@ -200,14 +208,6 @@ export default {
       }
     },
   },
-  watch: {
-    assets: {
-      handler(newFunds) {
-        this.updateInternalFunds(newFunds);
-      },
-      immediate: true
-    }
-  }
 };
 </script>
 

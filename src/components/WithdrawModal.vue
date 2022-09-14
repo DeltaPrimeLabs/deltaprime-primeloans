@@ -1,6 +1,6 @@
 <template>
   <div v-if="asset" id="modal" class="withdraw-modal-component modal-component">
-    <Modal>
+    <Modal :height="getModalHeight">
       <div class="modal__title">
         Withdraw
       </div>
@@ -39,6 +39,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
+        <Toggle v-on:change="assetToggleChange(asset)"></Toggle>
+      </div>
+
       <div class="button-wrapper">
         <Button :label="'Withdraw'" v-on:click="submit()" :disabled="currencyInputError"></Button>
       </div>
@@ -51,6 +55,7 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 
@@ -61,7 +66,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    BarGaugeBeta
+    BarGaugeBeta,
+    Toggle,
   },
 
   props: {
@@ -78,6 +84,7 @@ export default {
       validators: [],
       currencyInputError: false,
       MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
+      selectedDepositAsset: 'AVAX'
     };
   },
 
@@ -86,6 +93,12 @@ export default {
       this.setupValidators();
       this.updateLTVAfterTransaction();
     });
+  },
+
+  computed: {
+    getModalHeight() {
+      return this.asset.symbol === 'AVAX' ? '561px' : null;
+    },
   },
 
   methods: {
@@ -111,6 +124,10 @@ export default {
       } else {
         return this.ltv;
       }
+    },
+
+    assetToggleChange(asset) {
+      this.selectedDepositAsset = asset;
     },
 
     updateLTVAfterTransaction() {
@@ -146,5 +163,11 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+
+.withdraw-modal-component {
+  .toggle-container {
+    margin-top: 40px;
+  }
+}
 
 </style>

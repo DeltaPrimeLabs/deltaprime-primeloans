@@ -82,6 +82,7 @@ export default {
 
         .bar__value {
           height: 11px;
+          min-width: 11px;
         }
       }
 

@@ -7,10 +7,16 @@
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
       <div class="menu__option"
            v-for="option in config.menuOptions"
+           v-if="option"
            v-bind:class="{'menu__option--disabled': option.disabled}"
            v-bind:key="option.key"
            v-on:click="menuOptionClick(option)">
-        {{ option.name }}
+        <div class="option__text" v-bind:class="{'option__text--disabled': option.disabled}">
+          {{ option.name }}
+        </div>
+        <img class="option__info-icon"
+             v-if="option.disabled" src="src/assets/icons/info-colorful.svg"
+             v-tooltip="{content: option.disabledInfo, classes: 'info-tooltip'}">
       </div>
     </div>
   </div>
@@ -107,28 +113,42 @@ export default {
     }
 
     .menu__option {
+      display: flex;
+      flex-direction: row;
       white-space: nowrap;
       color: $dark-gray;
       font-weight: 600;
       cursor: pointer;
 
-      &:hover {
-        color: $delta-primary;
-      }
-
       &:not(:last-child) {
         margin-bottom: 10px;
       }
 
-      &.menu__option--disabled {
+      &:hover {
+        color: $dark-gray;
+      }
+
+      .option__text {
+        &:hover {
+          color: $delta-primary;
+        }
+      }
+
+      .option__text--disabled {
         opacity: 0.5;
         cursor: default;
+      }
 
-        &:hover {
-          color: $dark-gray;
-        }
+      .option__info-icon {
+        margin-left: 5px;
       }
     }
   }
+}
+</style>
+
+<style lang="scss">
+.info-tooltip {
+  max-width: 156px;
 }
 </style>

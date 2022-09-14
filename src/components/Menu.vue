@@ -12,17 +12,17 @@
       clickElementId: String
     },
     methods: {
-      checkIfOutside(event) {
+      closeIfClickOutside(event) {
         if (this.$refs.menu && !this.$refs.menu.contains(event.target) && !document.getElementById(this.clickElementId).contains(event.target)) {
           this.$emit('close',true);
         }
       }
     },
     mounted() {
-      document.body.addEventListener('click', this.checkIfOutside);
+      document.body.addEventListener('click', this.closeIfClickOutside);
     },
     unmounted() {
-      document.body.removeEventListener('click', this.checkIfOutside);
+      document.body.removeEventListener('click', this.closeIfClickOutside);
     }
   }
 </script>

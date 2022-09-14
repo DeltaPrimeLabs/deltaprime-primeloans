@@ -1,7 +1,13 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="container">
-      <StatsBarBeta :total-value="fullLoanStatus.totalValue" :today-p-n-l="todayValue - yesterdayValue" :ltv="ltv" :profit="1" :profit-percentage="1"></StatsBarBeta>
+      <StatsBarBeta
+        :total-value="noSmartLoan ? 0 : fullLoanStatus.totalValue"
+        :today-p-n-l="todayValue - yesterdayValue"
+        :ltv="noSmartLoan ? 0 : ltv"
+        :profit="noSmartLoan ? 0 : 785.12"
+        :profit-percentage="noSmartLoan ? 0 : 0.2352">
+      </StatsBarBeta>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
@@ -37,13 +43,21 @@ export default {
   name: 'SmartLoanBeta',
   components: {StakeBeta, FundsBeta, Block, StatsBarBeta, Tabs, Tab},
   computed: {
-    ...mapState('fundsStore', ['ltv', 'assetBalances', 'fullLoanStatus']),
+    ...mapState('fundsStore', ['ltv', 'assetBalances', 'fullLoanStatus', 'noSmartLoan']),
+  },
+  watch: {
+    assetBalances: {
+      handler(balances) {
+        console.log('watch asset balacnces SmartLoanBeta');
+        this.assetBalancesChange(balances);
+      },
+    }
   },
   data() {
     return {
       todayValue: 0,
       yesterdayValue: 0,
-    }
+    };
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
@@ -51,21 +65,22 @@ export default {
     ...mapActions('stakeStore', ['stakeStoreSetup']),
 
     async assetBalancesChange(balances) {
-      let todayValue = 0;
-      let yesterdayValue = 0;
-      const assets = config.ASSETS_CONFIG;
-      const assetSymbols = Object.keys(assets);
-      const todayPrices = await redstone.getPrice(assetSymbols);
-      const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24})
-      assetSymbols.forEach((symbol, index) => {
-        const balance = formatUnits(balances[index], config.ASSETS_CONFIG[symbol].decimals);
-        todayValue += balance * todayPrices[symbol].value;
-        yesterdayValue += balance * yesterdayPrices[symbol].value;
-      });
+      if (balances.length > 0) {
+        let todayValue = 0;
+        let yesterdayValue = 0;
+        const assets = config.ASSETS_CONFIG;
+        const assetSymbols = Object.keys(assets);
+        const todayPrices = await redstone.getPrice(assetSymbols);
+        const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24});
+        assetSymbols.forEach((symbol, index) => {
+          const balance = formatUnits(balances[index], config.ASSETS_CONFIG[symbol].decimals);
+          todayValue += balance * todayPrices[symbol].value;
+          yesterdayValue += balance * yesterdayPrices[symbol].value;
+        });
 
-      this.todayValue = todayValue;
-      this.yesterdayValue = yesterdayValue;
-
+        this.todayValue = todayValue;
+        this.yesterdayValue = yesterdayValue;
+      }
     },
   },
   async mounted() {
@@ -79,14 +94,6 @@ export default {
         await this.poolStoreSetup();
         await this.stakeStoreSetup();
       }, 1000);
-    }
-  },
-
-  watch: {
-    assetBalances: {
-      handler(balances) {
-        this.assetBalancesChange(balances);
-      },
     }
   }
 };

@@ -2,7 +2,7 @@
   <div class="modal-component">
     <div class="modal-container">
       <div class="backdrop">
-        <div class="modal">
+        <div class="modal" v-bind:style="{height: height}">
           <div class="close-button-container">
             <img class="close-button" src="../assets/icons/cross.svg" v-on:click="close()">
           </div>
@@ -19,6 +19,12 @@ export default {
   methods: {
     close() {
       this.closeModal();
+    }
+  },
+  props: {
+    height: {
+      type: String,
+      default: '528px'
     }
   }
 };

@@ -5,8 +5,12 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name" v-on:click="logAsset(asset)">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="asset.symbol === 'AVAX' && pool">Loan APY: {{ pool.borrowingAPY / 1000000000000000000 | percent }}</div>
-          <div class="asset__loan" v-if="asset.symbol === 'USDC' && usdcPool">Loan APY: {{ usdcPool.borrowingAPY / 1000000000000000000 | percent }}</div>
+          <div class="asset__loan" v-if="asset.symbol === 'AVAX' && avaxPool">Loan APY:
+            {{ avaxPool.borrowingAPY | percent }}
+          </div>
+          <div class="asset__loan" v-if="asset.symbol === 'USDC' && usdcPool">Loan APY:
+            {{ usdcPool.borrowingAPY | percent }}
+          </div>
         </div>
       </div>
 
@@ -25,11 +29,15 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        <template v-if="asset.symbol === 'AVAX'">
+        <template v-if="asset.symbol === 'AVAX' && avaxDebt">
           <div class="double-value__pieces">{{ avaxDebt | smartRound }}</div>
           <div class="double-value__usd">{{ avaxDebt * asset.price | usd }}</div>
         </template>
-        <template v-if="asset.symbol !== 'AVAX'">
+        <template v-if="asset.symbol === 'USDC' && usdcDebt">
+          <div class="double-value__pieces">{{ usdcDebt | smartRound }}</div>
+          <div class="double-value__usd">{{ usdcDebt * asset.price | usd }}</div>
+        </template>
+        <template v-if="(asset.symbol !== 'AVAX' && asset.symbol !== 'USDC') || !avaxDebt && !usdcDebt">
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -105,6 +113,8 @@ import RepayModal from './RepayModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
+const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
+
 
 export default {
   name: 'FundTableRowBeta',
@@ -126,8 +136,8 @@ export default {
   computed: {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt']),
-    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt']),
-    ...mapState('poolStore', ['pool', 'usdcPool']),
+    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt']),
+    ...mapState('poolStore', ['avaxPool', 'usdcPool']),
 
     loanAPY() {
       return aprToApy(this.borrowingRate);
@@ -142,7 +152,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'repay', 'createAndFundLoan']),
+    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'repay', 'createAndFundLoan', 'fundNativeToken']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -153,11 +163,14 @@ export default {
               key: 'ADD_FROM_WALLET',
               name: 'Add from wallet'
             },
-            {
-              key: 'BORROW',
-              name: 'Borrow',
-              disabled: !this.hasSmartLoanContract
-            }
+            BORROWABLE_ASSETS.includes(this.asset.symbol) ?
+              {
+                key: 'BORROW',
+                name: 'Borrow',
+                disabled: !this.hasSmartLoanContract || !BORROWABLE_ASSETS.includes(this.asset.symbol),
+                disabledInfo: 'To borrow, you need to add some funds from you wallet first'
+              }
+              : null
           ]
         },
         {
@@ -220,13 +233,13 @@ export default {
     actionClick(key) {
       switch (key) {
         case 'BORROW':
-          this.openBorrowModal()
+          this.openBorrowModal();
           break;
         case 'ADD_FROM_WALLET':
           this.openAddFromWalletModal();
           break;
-          case 'WITHDRAW':
-          this.openWithdrawModal()
+        case 'WITHDRAW':
+          this.openWithdrawModal();
           break;
         case 'REPAY':
           this.openRepayModal();
@@ -249,7 +262,7 @@ export default {
         const borrowRequest = {
           asset: this.asset.symbol,
           amount: value
-        }
+        };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}).then(() => {
           this.closeModal();
         });
@@ -264,7 +277,7 @@ export default {
       modalInstance.$on('SWAP', swapRequest => {
         this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
           this.closeModal();
-        })
+        });
       });
     },
 
@@ -273,17 +286,25 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 101;
-      modalInstance.$on('ADD_FROM_WALLET', value => {
+      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           if (this.smartLoanContract.address === NULL_ADDRESS) {
-            this.handleTransaction(this.createAndFundLoan, {value: value}).then(() => {
+            this.handleTransaction(this.createAndFundLoan, {value: addFromWalletEvent.value}).then(() => {
               this.closeModal();
             });
+          } else {
+            if (addFromWalletEvent.asset === 'AVAX') {
+              console.log('fund native token');
+              this.handleTransaction(this.fundNativeToken, {value: addFromWalletEvent.value}).then(() => {
+                this.closeModal();
+              });
+            } else {
+              this.handleTransaction(this.fund, {value: addFromWalletEvent.value}).then(() => {
+                this.closeModal();
+              });
+            }
           }
         }
-        this.handleTransaction(this.fund, {value: value}).then(() => {
-          this.closeModal();
-        });
       });
     },
 
@@ -296,11 +317,11 @@ export default {
         const withdrawRequest = {
           asset: this.asset.symbol,
           amount: value
-        }
+        };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
           this.closeModal();
-        })
-      })
+        });
+      });
     },
 
     openRepayModal() {
@@ -312,13 +333,25 @@ export default {
         const repayRequest = {
           asset: this.asset.symbol,
           amount: value
-        }
+        };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}).then(() => {
           this.closeModal();
-        })
-      })
+        });
+      });
     },
-  }
+  },
+  watch: {
+    smartLoanContract: {
+      handler(smartLoanContract) {
+        console.log('watchSmartLoanContract');
+        if (this) {
+          this.setupActionsConfiguration();
+        } else {
+          console.log('this is null');
+        }
+      },
+    }
+  },
 };
 </script>
 

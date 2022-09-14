@@ -1,6 +1,6 @@
 <template>
-  <div v-if="asset" id="modal" class="borrow-modal-component modal-component">
-    <Modal>
+  <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
+    <Modal :height="getModalHeight">
       <div class="modal__title">
         Add from wallet
       </div>
@@ -24,11 +24,18 @@
             <div class="summary__label">
               Balance:
             </div>
-            <div class="summary__value">
+            <div v-if="asset.balance" class="summary__value">
               {{ Number(asset.balance) + value | smartRound }} {{ asset.symbol }}
+            </div>
+            <div v-if="!asset.balance" class="summary__value">
+              {{ value | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
+      </div>
+
+      <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
+        <Toggle v-on:change="assetToggleChange(asset)"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -43,8 +50,8 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
-import {mapState} from 'vuex';
 
 
 export default {
@@ -54,7 +61,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    BarGaugeBeta
+    BarGaugeBeta,
+    Toggle
   },
 
   props: {
@@ -68,6 +76,7 @@ export default {
       value: 0,
       ltvAfterTransaction: 0,
       validators: {},
+      selectedDepositAsset: 'AVAX'
     };
   },
 
@@ -78,9 +87,19 @@ export default {
     });
   },
 
+  computed: {
+    getModalHeight() {
+      return this.asset.symbol === 'AVAX' ? '561px' : null;
+    },
+  },
+
   methods: {
     submit() {
-      this.$emit('ADD_FROM_WALLET', this.value);
+      if (this.asset.symbol === 'AVAX') {
+        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.selectedDepositAsset});
+      } else {
+        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.asset});
+      }
     },
 
     inputChange(change) {
@@ -93,11 +112,15 @@ export default {
         const loan = this.totalCollateral * this.ltv;
         this.ltvAfterTransaction = loan / (this.totalCollateral + (this.value * this.asset.price));
       } else {
-        this.ltvAfterTransaction = this.ltv;
+        this.ltvAfterTransaction = this.ltv !== null ? this.ltv : 0;
       }
     },
 
     setupValidators() {
+    },
+
+    assetToggleChange(asset) {
+      this.selectedDepositAsset = asset;
     },
   }
 };
@@ -106,6 +129,13 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+
+.add-from-wallet-modal-component {
+
+  .toggle-container {
+    margin-top: 40px;
+  }
+}
 
 
 </style>

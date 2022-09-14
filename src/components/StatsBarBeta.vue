@@ -6,17 +6,18 @@
           Today: <colored-value-beta :value="todayPNL" :formatting="'usd'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
-      <stats-bar-element-beta v-if="ltv" :label="'LTV'" :value="ltv | percent">
+      <stats-bar-element-beta v-if="ltv != null" :label="'LTV'" :value="ltv | percent">
         <bar-gauge-beta :min="0" :max="5" :value="ltv"></bar-gauge-beta>
       </stats-bar-element-beta>
 
-      <vue-loaders-ball-beat v-if="!ltv" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
+      <vue-loaders-ball-beat v-if="ltv == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
 
-      <stats-bar-element-beta :label="'Profit'" :value="12.56 | usd">
-        <div class="profit-extra">
-          <colored-value-beta :value="0.1593" :formatting="'percent'"></colored-value-beta>
+      <stats-bar-element-beta :label="'Profit'" :value="profit | usd">
+        <div class="profit-extra" v-if="profit != null">
+          <colored-value-beta :value="profitPercentage" :formatting="'percent'"></colored-value-beta>
         </div>
+        <vue-loaders-ball-beat v-if="profit == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </stats-bar-element-beta>
     </div>
   </div>
