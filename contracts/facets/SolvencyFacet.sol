@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../TokenManager.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 import "../Pool.sol";
 
 contract SolvencyFacet is PriceAware {
@@ -98,7 +98,7 @@ contract SolvencyFacet is PriceAware {
         }
     }
 
-    function getFullLoanStatus() public returns (uint256[4] memory) {
+    function getFullLoanStatus() public view returns (uint256[4] memory) {
         return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
     }
 

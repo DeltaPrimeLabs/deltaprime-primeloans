@@ -1,7 +1,7 @@
 interface ISolvencyFacet {
     function getDebt() external view returns (uint256);
 
-    function getFullLoanStatus() external returns (uint256[4] memory);
+    function getFullLoanStatus() external view returns (uint256[4] memory);
 
     function getLTV() external view returns (uint256);
 
