@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../TokenManager.sol";
 
 //This path is updated during deployment
-import "../lib/avalanche/DeploymentConstants.sol";
+import "../lib/local/DeploymentConstants.sol";
 import "../Pool.sol";
 
 contract SolvencyFacet is PriceAware {
