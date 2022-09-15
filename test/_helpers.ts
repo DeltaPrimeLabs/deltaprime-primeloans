@@ -226,6 +226,7 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         [
             'initialize',
             'getAllAssetsBalances',
+            'getDebts',
             'getPercentagePrecision',
             'getAllAssetsPrices',
             'getBalance',
@@ -387,6 +388,16 @@ export class AssetNameBalance {
     constructor(name: string, balance: BigNumber) {
         this.name = name;
         this.balance = balance;
+    }
+}
+
+export class AssetNameDebt {
+    name: string;
+    debt: BigNumber;
+
+    constructor(name: string, debt: BigNumber) {
+        this.name = name;
+        this.debt = debt;
     }
 }
 

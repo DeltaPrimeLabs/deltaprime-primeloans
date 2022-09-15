@@ -3,6 +3,8 @@ import "../../facets/SmartLoanViewFacet.sol";
 interface ISmartLoanViewFacet {
     function getAllAssetsBalances() external view returns (SmartLoanViewFacet.AssetNameBalance[] memory);
 
+    function getDebts() external view returns (SmartLoanViewFacet.AssetNameDebt[] memory);
+
     function getAllAssetsPrices() external view returns (SmartLoanViewFacet.AssetNamePrice[] memory);
 
     function getAllOwnedAssets() external view returns (bytes32[] memory result);

@@ -10,7 +10,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
     Asset,
-    AssetNameBalance,
+    AssetNameBalance, AssetNameDebt,
     AssetNamePrice,
     deployAllFacets,
     deployAndInitializeLendingPool,
@@ -49,6 +49,7 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             tokenContracts: any = {},
+            poolContracts: any = {},
             destructable: DestructableContract,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
@@ -98,6 +99,7 @@ describe('Smart loan', () => {
                 await poolContract.connect(depositor).deposit(toWei("1000"));
                 lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
                 tokenContracts[token.name] = tokenContract;
+                poolContracts[token.name] = poolContract;
             }
 
             let supportedAssets = [
@@ -180,6 +182,34 @@ describe('Smart loan', () => {
                 new AssetNameBalance("AVAX", BigNumber.from("0")),
                 new AssetNameBalance("MCKUSD", toWei("300")),
                 new AssetNameBalance("ETH", BigNumber.from("0")),
+            ])
+        });
+
+        it("should borrow, return all debts, repay", async () => {
+            await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("21.37"));
+
+            let mckusdDebt = await poolContracts["MCKUSD"].getBorrowed(wrappedLoan.address);
+
+            let result = await wrappedLoan.getDebts();
+            let assetsNameDebt = [];
+            for (const r of result) {
+                assetsNameDebt.push(new AssetNameDebt(fromBytes32(r[0]), r[1]));
+            }
+            expect(assetsNameDebt).to.eql([
+                new AssetNameDebt("MCKUSD", mckusdDebt),
+                new AssetNameDebt("AVAX", BigNumber.from("0")),
+            ])
+
+            await wrappedLoan.repay(toBytes32("MCKUSD"), toWei("100"));
+
+            result = await wrappedLoan.getDebts();
+            assetsNameDebt = [];
+            for (const r of result) {
+                assetsNameDebt.push(new AssetNameDebt(fromBytes32(r[0]), r[1]));
+            }
+            expect(assetsNameDebt).to.eql([
+                new AssetNameDebt("MCKUSD", toWei("0")),
+                new AssetNameDebt("AVAX", toWei("0")),
             ])
         });
 

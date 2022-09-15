@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../lib/SolvencyMethodsLib.sol";
+import "../Pool.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -18,6 +19,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     struct AssetNameBalance {
         bytes32 name;
         uint256 balance;
+    }
+
+    struct AssetNameDebt {
+        bytes32 name;
+        uint256 debt;
     }
 
     struct AssetNamePrice {
@@ -64,13 +70,29 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllTokenAssets();
-        uint256[] memory balances = new uint256[](assets.length);
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
 
         for (uint256 i = 0; i < assets.length; i++) {
             result[i] = AssetNameBalance({
             name : assets[i],
             balance : IERC20(tokenManager.getAssetAddress(assets[i], true)).balanceOf(address(this))
+            });
+        }
+
+        return result;
+    }
+
+    function getDebts() public view returns (AssetNameDebt[] memory) {
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32[] memory assets = tokenManager.getAllPoolAssets();
+        AssetNameDebt[] memory result = new AssetNameDebt[](assets.length);
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
+
+            result[i] = AssetNameDebt({
+            name : assets[i],
+            debt : pool.getBorrowed(address(this))
             });
         }
 
