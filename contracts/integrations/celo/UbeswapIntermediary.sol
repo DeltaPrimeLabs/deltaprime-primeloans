@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "../UniswapV2Intermediary.sol";
+import "../../lib/celo/DeploymentConstants.sol";
 
 /**
  * @title UbeswapIntermediary
@@ -25,6 +26,6 @@ contract UbeswapIntermediary is UniswapV2Intermediary {
   }
 
   function getNativeTokenAddress() override internal view returns (address) {
-    return 0x471EcE3750Da237f93B8E339c536989b8978a438;
+    return DeploymentConstants.getNativeToken();
   }
 }

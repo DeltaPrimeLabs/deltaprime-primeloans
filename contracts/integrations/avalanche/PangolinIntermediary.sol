@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "../UniswapV2Intermediary.sol";
+import "../../lib/avalanche/DeploymentConstants.sol";
 
 /**
  * @title PangolinIntermediary
@@ -12,6 +13,6 @@ import "../UniswapV2Intermediary.sol";
 contract PangolinIntermediary is UniswapV2Intermediary {
 
     function getNativeTokenAddress() override internal view returns (address) {
-        return 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+        return DeploymentConstants.getNativeToken();
     }
 }
