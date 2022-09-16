@@ -58,7 +58,7 @@ describe('Smart loan', () => {
             USD_PRICE: number,
             ETH_PRICE: number;
 
-        before("deploy factory, exchange, WrappedNativeTokenPool and usdPool", async () => {
+        before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
 
             // Prepare the Destructable contract to send AVAX to a SmartLoan contract

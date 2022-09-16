@@ -61,7 +61,7 @@ describe('Smart loan', () => {
             USD_PRICE: number,
             ETH_PRICE: number;
 
-        before("deploy factory, exchange, WrappedNativeTokenPool and usdPool", async () => {
+        before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [random] = await getFixedGasSigners(6500000);
 
             owner = provider.getSigner('0x5839Dd13ad2C78dDcF3365D54302D65764619737');
