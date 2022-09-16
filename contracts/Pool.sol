@@ -14,7 +14,7 @@ import "./interfaces/IBorrowersRegistry.sol";
 
 /**
  * @title Pool
- * @dev Contract allowing user to deposit to and borrow from a single smart contract
+ * @dev Contract allowing user to deposit to and borrow from a dedicated user account
  * Depositors are rewarded with the interest rates collected from borrowers.
  * The interest rates calculation is delegated to an external calculator contract.
  */

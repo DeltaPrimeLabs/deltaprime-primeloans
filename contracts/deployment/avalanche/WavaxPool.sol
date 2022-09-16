@@ -7,7 +7,7 @@ import "../../WrappedNativeTokenPool.sol";
 
 /**
  * @title WavaxPool
- * @dev Contract allowing user to deposit to and borrow WAVAX from a single smart contract
+ * @dev Contract allowing user to deposit to and borrow WAVAX from a dedicated user account
  */
 contract WavaxPool is WrappedNativeTokenPool {
 }

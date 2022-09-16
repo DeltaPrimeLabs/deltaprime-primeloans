@@ -7,7 +7,7 @@ import "../../Pool.sol";
 
 /**
  * @title UsdcPool
- * @dev Contract allowing user to deposit to and borrow USDC from a single smart contract
+ * @dev Contract allowing user to deposit to and borrow USDC from a dedicated user account
  */
 contract UsdcPool is Pool {
 }
