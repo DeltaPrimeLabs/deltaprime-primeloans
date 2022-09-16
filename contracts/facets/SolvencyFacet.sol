@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
