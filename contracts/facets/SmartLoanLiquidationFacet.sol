@@ -80,11 +80,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
-        assetsToRepay : assetsToRepay,
-        amountsToRepay : amountsToRepay,
-        liquidationBonus : _liquidationBonus,
-        allowUnprofitableLiquidation : true
-        })
+                assetsToRepay : assetsToRepay,
+                amountsToRepay : amountsToRepay,
+                liquidationBonus : _liquidationBonus,
+                allowUnprofitableLiquidation : true
+            })
         );
     }
 
@@ -102,11 +102,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
-        assetsToRepay : assetsToRepay,
-        amountsToRepay : amountsToRepay,
-        liquidationBonus : _liquidationBonus,
-        allowUnprofitableLiquidation : false
-        })
+                assetsToRepay : assetsToRepay,
+                amountsToRepay : amountsToRepay,
+                liquidationBonus : _liquidationBonus,
+                allowUnprofitableLiquidation : false
+            })
         );
     }
 

@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 
 import "./Pool.sol";
 import "./interfaces/IWrappedNativeToken.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Pool

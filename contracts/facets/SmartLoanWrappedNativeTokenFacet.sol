@@ -23,7 +23,7 @@ contract SmartLoanWrappedNativeTokenFacet {
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
-    function unwrapAndWithdraw(uint256 _amount) public payable virtual {
+    function unwrapAndWithdraw(uint256 _amount) onlyOwner public payable virtual {
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
         require(wrapped.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 

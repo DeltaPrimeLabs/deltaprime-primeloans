@@ -48,6 +48,7 @@ contract TokenManager {
 
     // Set to address(0) to reset proposal
     function proposeAdminTransfer(address _newOwner) onlyAdmin public {
+        require(_newOwner != msg.sender, "Can't propose oneself as a contract owner");
         adminTransferProposal = _newOwner;
     }
 
