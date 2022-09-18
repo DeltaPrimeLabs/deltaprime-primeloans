@@ -34,7 +34,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
 
     mapping(address => address) public ownersToLoans;
     mapping(address => address) public loansToOwners;
-    mapping(address => address) public ownershipTransferProposal;
 
     address[] loans;
 
@@ -42,26 +41,15 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
         return ownersToLoans[user] != address(0);
     }
 
-    function _proposeOwnershipTransfer(address _oldOwner, address _newOwner) internal {
-        require(_hasLoan(_oldOwner), "Previous owner does not have a loan");
-        require(!_hasLoan(_newOwner), "New owner already has a loan");
-        ownershipTransferProposal[_oldOwner] = _newOwner;
-    }
+    function changeOwnership(address _newOwner) public {
+        address loan = msg.sender;
+        address oldOwner = loansToOwners[loan];
 
-    function proposeOwnershipTransfer(address _newOwner) public {
-        require(_hasLoan(msg.sender), "Msg.sender does not own a loan");
-        _proposeOwnershipTransfer(msg.sender, _newOwner);
-    }
-
-    function executeOwnershipTransfer(address _oldOwner, address _newOwner) public {
-        require(ownershipTransferProposal[_oldOwner] == _newOwner, "Ownership transfer proposal not found.");
+        require(oldOwner != address(0), "Only a SmartLoan can change it's owner");
         require(!_hasLoan(_newOwner), "New owner already has a loan");
 
-        ownershipTransferProposal[_oldOwner] = address(0);
-
-        address loan = ownersToLoans[_oldOwner];
+        ownersToLoans[oldOwner] = address(0);
         ownersToLoans[_newOwner] = loan;
-        ownersToLoans[_oldOwner] = address(0);
         loansToOwners[loan] = _newOwner;
     }
 
@@ -82,21 +70,18 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
         //Update registry and emit event
         updateRegistry(address(smartLoan), msg.sender);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, "", 0);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0);
         return smartLoan;
     }
 
     //TODO: check how much calling an external contract for asset address would cost
-    function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
         // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, address(this))
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
-
-        //Update registry and emit event
-        updateRegistry(address(smartLoan), address(this));
 
         //Fund account with own funds and credit
         IERC20Metadata token = IERC20Metadata(_assetAddress);
@@ -105,12 +90,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
 
         ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
 
-        ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.borrow.selector, _debtAsset, _initialDebt), false);
+        //Update registry and emit event
+        updateRegistry(address(smartLoan), msg.sender);
 
-        _proposeOwnershipTransfer(address(this), msg.sender);
-        OwnershipFacet(address(smartLoan)).transferOwnership(msg.sender);
-
-        emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount, _debtAsset, _initialDebt);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount);
 
         return smartLoan;
     }
@@ -143,8 +126,6 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
      * @param creator account creating a SmartLoanDiamondBeacon
      * @param collateralAsset asset used as initial collateral
      * @param collateralAmount amount of asset used as initial collateral
-     * @param debtAsset asset initially borrowed
-     * @param initialDebt initial debt of a SmartLoanDiamondBeacon
      **/
-    event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount, bytes32 debtAsset, uint256 initialDebt);
+    event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount);
 }

@@ -319,7 +319,6 @@ describe('Smart loan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await replaceFacet("OwnershipFacet", diamondAddress, ['transferOwnership']);
 
             await smartLoansFactory.connect(borrower).createLoan();
 

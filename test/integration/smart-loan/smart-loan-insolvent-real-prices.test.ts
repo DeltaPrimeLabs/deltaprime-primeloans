@@ -440,7 +440,6 @@ describe('Smart loan - real prices', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await replaceFacet("OwnershipFacet", diamondAddress, ['transferOwnership']);
 
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
 

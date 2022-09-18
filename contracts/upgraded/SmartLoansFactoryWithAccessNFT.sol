@@ -10,7 +10,7 @@ contract SmartLoansFactoryWithAccessNFT is NFTAccess, SmartLoansFactory {
         return super.createLoan();
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount, bytes32 _debtAsset, uint256 _initialDebt) public override hasNoLoan hasAccessNFT returns (SmartLoanDiamondBeacon) {
-        return super.createAndFundLoan(_fundedAsset, _assetAddress, _amount, _debtAsset, _initialDebt);
+    function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount) public override hasNoLoan hasAccessNFT returns (SmartLoanDiamondBeacon) {
+        return super.createAndFundLoan(_fundedAsset, _assetAddress, _amount);
     }
 }

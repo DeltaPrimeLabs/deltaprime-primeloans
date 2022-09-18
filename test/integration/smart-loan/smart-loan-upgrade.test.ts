@@ -184,26 +184,8 @@ describe('Smart loan - upgrading', () => {
 
         it("should check if only one loan per owner is allowed", async () => {
             await expect(smartLoansFactory.connect(borrower).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
-            await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], 0, toBytes32(""), 0)).to.be.revertedWith("Only one loan per owner is allowed");
+            await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], 0)).to.be.revertedWith("Only one loan per owner is allowed");
         });
-
-        it("should check if only one loan per owner is allowed during transferOwnership", async () => {
-            await smartLoansFactory.connect(borrower).proposeOwnershipTransfer(other.address);
-            let otherWrappedSmartLoansFactory = WrapperBuilder
-                .mockLite(smartLoansFactory.connect(other))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    });
-
-            await otherWrappedSmartLoansFactory.createLoan();
-            await expect(smartLoansFactory.connect(borrower).proposeOwnershipTransfer(other.address)).to.be.revertedWith("New owner already has a loan");
-            await expect(wrappedLoan.connect(borrower).transferOwnership(other.address)).to.be.revertedWith("New owner already has a loan");
-        });
-
 
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
