@@ -10,26 +10,30 @@ import "../SmartLoansFactory.sol";
 import "../lib/local/DeploymentConstants.sol";
 
 contract OwnershipFacet {
-    function proposeOwnershipTransfer(address _newOwner) external {
+    function transferOwnership(address _newOwner) external {
         DiamondStorageLib.enforceIsContractOwner();
         require(_newOwner != msg.sender, "Can't propose oneself as a contract owner");
         require(SmartLoansFactory(DeploymentConstants.getSmartLoansFactoryAddress()).getLoanForOwner(_newOwner) == address(0),
             "Can't propose an address that already has a loan");
-        DiamondStorageLib.setProposedOwner(_newOwner);
+        DiamondStorageLib.setPendingOwner(_newOwner);
+
+        emit OwnershipTransferStarted(owner(), _newOwner);
     }
 
     function acceptOwnership() external {
-        require(DiamondStorageLib.proposedOwner() == msg.sender, "Only a proposed user can accept ownership");
+        require(DiamondStorageLib.pendingOwner() == msg.sender, "Only a proposed user can accept ownership");
         DiamondStorageLib.setContractOwner(msg.sender);
-        DiamondStorageLib.setProposedOwner(address(0));
+        DiamondStorageLib.setPendingOwner(address(0));
         SmartLoansFactory(DeploymentConstants.getSmartLoansFactoryAddress()).changeOwnership(msg.sender);
     }
 
-    function owner() external view returns (address owner_) {
+    function owner() public view returns (address owner_) {
         owner_ = DiamondStorageLib.contractOwner();
     }
 
-    function proposedOwner() external view returns (address proposedOwner_) {
-        proposedOwner_ = DiamondStorageLib.proposedOwner();
+    function pendingOwner() public view returns (address pendingOwner_) {
+        pendingOwner_ = DiamondStorageLib.pendingOwner();
     }
+
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 }

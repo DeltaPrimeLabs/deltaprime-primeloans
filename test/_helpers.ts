@@ -178,10 +178,10 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         "OwnershipFacet",
         diamondAddress,
         [
-            'proposeOwnershipTransfer',
+            'transferOwnership',
             'acceptOwnership',
             'owner',
-            'proposedOwner'
+            'pendingOwner'
         ]
     )
     await deployFacet(

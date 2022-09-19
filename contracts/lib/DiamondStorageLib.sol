@@ -48,7 +48,7 @@ library DiamondStorageLib {
         // Owner of the contract
         address contractOwner;
         // Proposed owner of the contract
-        address proposedOwner;
+        address pendingOwner;
         // Is contract initialized?
         bool _initialized;
         // TODO: mock staking tokens until redstone oracle supports them
@@ -93,13 +93,13 @@ library DiamondStorageLib {
         contractOwner_ = smartLoanStorage().contractOwner;
     }
 
-    function setProposedOwner(address _newOwner) internal {
+    function setPendingOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
-        sls.proposedOwner = _newOwner;
+        sls.pendingOwner = _newOwner;
     }
 
-    function proposedOwner() internal view returns (address proposedOwner_) {
-        proposedOwner_ = smartLoanStorage().proposedOwner;
+    function pendingOwner() internal view returns (address pendingOwner_) {
+        pendingOwner_ = smartLoanStorage().pendingOwner;
     }
 
     function addOwnedAsset(bytes32 _symbol, address _address) internal {

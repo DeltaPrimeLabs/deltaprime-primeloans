@@ -111,7 +111,7 @@ describe('Smart loan', () => {
             loan = new ethers.Contract(loanProxyAddress, SmartLoanGigaChadInterfaceArtifact.abi, provider);
 
             expect(await loan.owner()).to.equal(owner1.address);
-            expect(await loan.proposedOwner()).to.equal(ZERO);
+            expect(await loan.pendingOwner()).to.equal(ZERO);
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
 
             expect(await smartLoansFactory.ownersToLoans(owner1.address)).to.equal(loan.address);
@@ -119,12 +119,12 @@ describe('Smart loan', () => {
         });
 
         it("Propose ownership transfer", async () => {
-            await expect(loan.connect(badGuy).proposeOwnershipTransfer(owner2.address)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(loan.connect(badGuy).transferOwnership(owner2.address)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
 
-            await loan.connect(owner1).proposeOwnershipTransfer(owner2.address);
+            await loan.connect(owner1).transferOwnership(owner2.address);
 
             expect(await loan.owner()).to.equal(owner1.address);
-            expect(await loan.proposedOwner()).to.equal(owner2.address);
+            expect(await loan.pendingOwner()).to.equal(owner2.address);
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("ECDSA: invalid signature 'v' value'");
             await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
@@ -139,7 +139,7 @@ describe('Smart loan', () => {
             await loan.connect(owner2).acceptOwnership();
 
             expect(await loan.owner()).to.equal(owner2.address);
-            expect(await loan.proposedOwner()).to.equal(ZERO);
+            expect(await loan.pendingOwner()).to.equal(ZERO);
 
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
@@ -152,15 +152,15 @@ describe('Smart loan', () => {
         });
 
         it("Change proposed ownership two times", async () => {
-            await loan.connect(owner2).proposeOwnershipTransfer(owner3.address);
+            await loan.connect(owner2).transferOwnership(owner3.address);
 
             expect(await loan.owner()).to.equal(owner2.address);
-            expect(await loan.proposedOwner()).to.equal(owner3.address);
+            expect(await loan.pendingOwner()).to.equal(owner3.address);
 
-            await loan.connect(owner2).proposeOwnershipTransfer(owner4.address);
+            await loan.connect(owner2).transferOwnership(owner4.address);
 
             expect(await loan.owner()).to.equal(owner2.address);
-            expect(await loan.proposedOwner()).to.equal(owner4.address);
+            expect(await loan.pendingOwner()).to.equal(owner4.address);
 
             await expect(loan.connect(owner3).acceptOwnership()).to.be.revertedWith("Only a proposed user can accept ownership");
             await loan.connect(owner4).acceptOwnership();
@@ -169,35 +169,35 @@ describe('Smart loan', () => {
         });
 
         it("Propose zero address (remove proposal)", async () => {
-            await loan.connect(owner4).proposeOwnershipTransfer(owner5.address);
-            await loan.connect(owner4).proposeOwnershipTransfer(ZERO);
+            await loan.connect(owner4).transferOwnership(owner5.address);
+            await loan.connect(owner4).transferOwnership(ZERO);
 
             await expect(loan.connect(owner5).acceptOwnership()).to.be.revertedWith("Only a proposed user can accept ownership");
 
 
             expect(await loan.owner()).to.equal(owner4.address);
-            expect(await loan.proposedOwner()).to.equal(ZERO);
+            expect(await loan.pendingOwner()).to.equal(ZERO);
         });
 
         it("Propose zero address (remove proposal)", async () => {
-            await loan.connect(owner4).proposeOwnershipTransfer(owner5.address);
-            await loan.connect(owner4).proposeOwnershipTransfer(ZERO);
+            await loan.connect(owner4).transferOwnership(owner5.address);
+            await loan.connect(owner4).transferOwnership(ZERO);
 
             await expect(loan.connect(owner5).acceptOwnership()).to.be.revertedWith("Only a proposed user can accept ownership");
 
 
             expect(await loan.owner()).to.equal(owner4.address);
-            expect(await loan.proposedOwner()).to.equal(ZERO);
+            expect(await loan.pendingOwner()).to.equal(ZERO);
         });
 
         it("Revert proposal of an address that has a loan", async () => {
             await smartLoansFactory.connect(owner5).createLoan();
 
-            await expect(loan.connect(owner4).proposeOwnershipTransfer(owner5.address)).to.be.revertedWith("Can't propose an address that already has a loan");
+            await expect(loan.connect(owner4).transferOwnership(owner5.address)).to.be.revertedWith("Can't propose an address that already has a loan");
         });
 
         it("Revert acceptance of ownership transfer to an address that created a loan in the meantime", async () => {
-            await loan.connect(owner4).proposeOwnershipTransfer(owner6.address)
+            await loan.connect(owner4).transferOwnership(owner6.address)
 
             await smartLoansFactory.connect(owner6).createLoan();
 
