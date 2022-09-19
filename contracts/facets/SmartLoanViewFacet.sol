@@ -106,7 +106,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
         bytes32[] memory assets = DeploymentConstants.getTokenManager().getAllTokenAssets();
-        uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(assets);
+        uint256[] memory prices = SolvencyMethodsLib.getPrices(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for (uint i = 0; i < assets.length; i++) {
             result[i] = AssetNamePrice({

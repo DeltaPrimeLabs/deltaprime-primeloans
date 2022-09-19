@@ -1,4 +1,4 @@
-interface IYieldYakFacet {
+interface IVectorFinanceFacet {
     function vectorStakeUSDC1(uint256 amount) external;
 
     function vectorStakeUSDC2(uint256 amount) external;
@@ -14,4 +14,12 @@ interface IYieldYakFacet {
     function vectorUnstakeWAVAX1(uint256 amount, uint256 minAmount) external;
 
     function vectorUnstakeSAVAX1(uint256 amount, uint256 minAmount) external;
+
+    function vectorUSDC1Balance() external view returns(uint256);
+
+    function vectorUSDC2Balance() external view returns(uint256);
+
+    function vectorWAVAX1Balance() external view returns(uint256);
+
+    function vectorSAVAX1Balance() external view returns(uint256);
 }

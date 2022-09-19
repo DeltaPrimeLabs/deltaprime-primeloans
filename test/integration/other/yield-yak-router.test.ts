@@ -185,7 +185,7 @@ describe('Yield Yak test stake SAVAX', () => {
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-            new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['SAVAX']),
+            new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['sAVAX']),
             new Asset(toBytes32('$YYVSAVAXV2'), TOKEN_ADDRESSES['$YYVSAVAXV2']),
         ]
         let tokenManager = await deployContract(
@@ -271,7 +271,7 @@ describe('Yield Yak test stake SAVAX', () => {
                 })
 
         avaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
-        sAvaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['SAVAX'], wavaxAbi, provider);
+        sAvaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['sAVAX'], wavaxAbi, provider);
         await avaxTokenContract.connect(user).deposit({value: toWei('1000')});
         await avaxTokenContract.connect(user).approve(loan.address, toWei('1000'));
         await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));

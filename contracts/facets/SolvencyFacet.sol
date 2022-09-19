@@ -6,12 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../TokenManager.sol";
+import "../Pool.sol";
+import "../DiamondHelper.sol";
+import "../interfaces/IStakingPositions.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
-import "../Pool.sol";
 
-contract SolvencyFacet is PriceAware {
+contract SolvencyFacet is PriceAware, DiamondHelper {
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
     uint256 private constant _MAX_LTV = 5000;
@@ -44,8 +46,12 @@ contract SolvencyFacet is PriceAware {
         return getLTV() < getMaxLtv();
     }
 
-    function executeGetPricesFromMsg(bytes32[] memory symbols) external returns (uint256[] memory) {
+    function getPrices(bytes32[] memory symbols) external view returns (uint256[] memory) {
         return getPricesFromMsg(symbols);
+    }
+
+    function getPrice(bytes32 symbol) external view returns (uint256) {
+        return getPriceFromMsg(symbol);
     }
 
     /**
@@ -74,7 +80,7 @@ contract SolvencyFacet is PriceAware {
      * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
      * @dev This function uses the redstone-evm-connector
      **/
-    function getTotalValue() public view virtual returns (uint256) {
+    function getTotalAssetsValue() public view virtual returns (uint256) {
         bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
@@ -96,6 +102,33 @@ contract SolvencyFacet is PriceAware {
         } else {
             return 0;
         }
+    }
+
+    function getStakedValue() public view virtual returns (uint256) {
+        uint256 valueOfStaked;
+
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+
+        uint256 usdValue;
+
+        for (uint256 i; i < positions.length; i++) {
+            uint256 price = getPriceFromMsg(positions[i].symbol);
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
+
+            if (success) {
+                uint256 balance = abi.decode(result, (uint256));
+
+                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
+
+                usdValue += price * 10 ** 10 * balance / (10 ** token.decimals());
+            }
+        }
+
+        return usdValue;
+    }
+
+    function getTotalValue() public view virtual returns (uint256) {
+        return getTotalAssetsValue() + getStakedValue();
     }
 
     function getFullLoanStatus() public returns (uint256[4] memory) {

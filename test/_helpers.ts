@@ -204,12 +204,16 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1',
                 'vectorUnstakeUSDC1',
+                'vectorUSDC1Balance',
                 'vectorStakeUSDC2',
                 'vectorUnstakeUSDC2',
+                'vectorUSDC2Balance',
                 'vectorStakeWAVAX1',
                 'vectorUnstakeWAVAX1',
+                'vectorWAVAX1Balance',
                 'vectorStakeSAVAX1',
-                'vectorUnstakeSAVAX1'
+                'vectorUnstakeSAVAX1',
+                'vectorSAVAX1Balance'
             ])
 
     }
@@ -316,7 +320,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
             case 'AVAX':
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
                 for (const user of tokenAirdropList) {
-                    await tokenContract.connect(user).deposit({value: toWei("1000")});
+                    await tokenContract.connect(user).deposit({value: toWei("2000")});
                 }
                 break;
             case 'ETH':

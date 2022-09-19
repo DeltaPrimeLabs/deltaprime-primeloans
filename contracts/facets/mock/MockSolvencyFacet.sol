@@ -8,4 +8,8 @@ contract MockSolvencyFacet is SolvencyFacet {
     function getMaxDataTimestampDelay() public virtual override view returns (uint256) {
         return 300;
     }
+
+    function getMaxBlockTimestampDelay() public virtual override view returns (uint256) {
+        return 300;
+    }
 }

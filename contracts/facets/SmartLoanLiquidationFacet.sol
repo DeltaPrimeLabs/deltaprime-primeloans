@@ -123,7 +123,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function liquidate(LiquidationConfig memory config) internal {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256[] memory prices = SolvencyMethodsLib.executeGetPricesFromMsg(config.assetsToRepay);
+        uint256[] memory prices = SolvencyMethodsLib.getPrices(config.assetsToRepay);
 
         uint256 initialTotal = _getTotalValue();
         uint256 initialDebt = _getDebt();
@@ -185,11 +185,12 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
         bonus = repaidInUSD * config.liquidationBonus / DeploymentConstants.getPercentagePrecision();
 
         //meaning returning all tokens
-        uint256 partToReturn = 10 ** 18;
+        uint256 partToReturn = 10 ** 18; // 1
+        uint256 assetsValue = _getTotalAssetsValue();
 
-        if (!healingLoan && total >= suppliedInUSD + bonus) {
+        if (!healingLoan && assetsValue >= suppliedInUSD + bonus) {
             //in that scenario we calculate how big part of token to return
-            partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / total;
+            partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / assetsValue;
         }
 
         // Native token transfer
