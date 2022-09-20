@@ -3,6 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -21,9 +22,11 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
     /* ========= STATE VARIABLES ========= */
     IUniswapV2Router01 router;
+    IUniswapV2Factory factory;
 
     function initialize(address _router, address[] memory _whitelistedTokens) external initializer {
         router = IUniswapV2Router01(_router);
+        factory = IUniswapV2Factory(router.factory());
 
         __TokenList_init(_whitelistedTokens);
     }
@@ -52,6 +55,61 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
 
         return amounts;
+    }
+
+
+    /*
+     * addLiquidity selected ERC20 tokens
+     **/
+    function addLiquidity(address tokenA, address tokenB, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) external override nonReentrant returns (address) {
+        require(amountADesired > 0, "amountADesired has to be greater than 0");
+        require(amountBDesired > 0, "amountBDesired to sell has to be greater than 0");
+        require(amountAMin > 0, "amountAMin has to be greater than 0");
+        require(amountBMin > 0, "amountBMin has to be greater than 0");
+
+        tokenA.safeApprove(address(router), amountADesired);
+        tokenB.safeApprove(address(router), amountBDesired);
+
+        address lpTokenAddress = getPair(tokenA, tokenB);
+
+        require(isTokenWhitelisted[tokenA], 'Trying to LP unsupported token');
+        require(isTokenWhitelisted[tokenB], 'Trying to LP unsupported token');
+        //TODO
+//        require(isTokenWhitelisted[lpTokenAddress], 'Trying to add unsupported LP token');
+
+        router.addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, address(this), block.timestamp);
+
+        lpTokenAddress.safeTransfer(msg.sender, IERC20Metadata(lpTokenAddress).balanceOf(address(this)));
+        tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
+        tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
+
+        return lpTokenAddress;
+    }
+
+
+    /*
+     *  removeLiquidity selected ERC20 tokens
+     **/
+    function removeLiquidity(address tokenA, address tokenB, uint liquidity, uint amountAMin, uint amountBMin) external override nonReentrant returns (address) {
+        require(amountAMin > 0, "amountAMin has to be greater than 0");
+        require(amountBMin > 0, "amountBMin has to be greater than 0");
+
+        address lpTokenAddress = getPair(tokenA, tokenB);
+
+        lpTokenAddress.safeApprove(address(router), liquidity);
+
+        require(isTokenWhitelisted[tokenA], 'Trying to remove LP of unsupported token');
+        require(isTokenWhitelisted[tokenB], 'Trying to remove LP of unsupported token');
+        //TODO
+//        require(isTokenWhitelisted[lpTokenAddress], 'Trying to remove unsupported LP token');
+
+        router.removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, address(this), block.timestamp);
+
+        lpTokenAddress.safeTransfer(msg.sender, IERC20Metadata(lpTokenAddress).balanceOf(address(this)));
+        tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
+        tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
+
+        return lpTokenAddress;
     }
 
 
@@ -108,6 +166,15 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         }
 
         return path;
+    }
+
+    /**
+     * Returns an address of LP token
+     * @param _token1 ERC20 token's address
+     * @param _token2 ERC20 token's address
+     **/
+    function getPair(address _token1, address _token2) public virtual view returns (address) {
+        return factory.getPair(_token1, _token2);
     }
 
     function getNativeTokenAddress() virtual internal view returns (address) {

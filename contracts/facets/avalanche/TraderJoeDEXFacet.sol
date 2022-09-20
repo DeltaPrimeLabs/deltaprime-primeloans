@@ -18,6 +18,14 @@ contract TraderJoeDEXFacet is UniswapV2DEXFacet {
         return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
     }
 
+    function addLiquidityTraderJoe(bytes32 _firstAsset, bytes32 _secondAsset, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) public onlyOwner {
+        addLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin);
+    }
+
+    function removeLiquidityTraderJoe(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public onlyOwner {
+        removeLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin);
+    }
+
     /**
      * Returns address of UniswapV2-like exchange
      **/

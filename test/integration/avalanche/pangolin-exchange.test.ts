@@ -10,6 +10,7 @@ import {PangolinIntermediary} from '../../../typechain';
 import {formatUnits, fromWei, getFixedGasSigners, syncTime, toWei} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -132,6 +133,87 @@ describe('PangolinIntermediary', () => {
 
             await expect(sut.getMinimumTokensNeeded(parseUnits(usdAmount.toString(), usdTokenDecimalPlaces), wavaxToken.address, usdToken.address)).to.be.revertedWith('Error when calculating amounts needed');
             await expect(sut.getMaximumTokensReceived(toWei(avaxAmount.toString()), wavaxToken.address, usdToken.address)).not.to.be.reverted;
+        });
+    });
+
+    describe('Test providing liquidity', () => {
+        let sut: PangolinIntermediary,
+            AVAX_PRICE: number,
+            USD_PRICE: number,
+            lpTokenAddress: string,
+            lpToken: Contract,
+            wavaxToken: Contract,
+            usdToken: Contract,
+            router: Contract,
+            owner: SignerWithAddress,
+            usdTokenDecimalPlaces: BigNumber;
+
+        before('Deploy the UniswapV2Intermediary contract', async () => {
+            [, owner] = await getFixedGasSigners(10000000);
+
+            let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
+            sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
+
+            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+
+            await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
+
+            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
+            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
+            usdTokenDecimalPlaces = await usdToken.decimals();
+            router = await new ethers.Contract(pangolinRouterAddress, UniswapV2IntermediaryAbi);
+
+            lpTokenAddress = await sut.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
+            lpToken = new ethers.Contract(lpTokenAddress, ERC20Abi, provider);
+
+            await wavaxToken.connect(owner).deposit({value: toWei("1000")});
+        });
+
+        it('should swap tokens', async () => {
+            const usdTokenPurchaseAmount = 100;
+            const usdTokenPurchaseAmountWei = parseUnits(usdTokenPurchaseAmount.toString(), usdTokenDecimalPlaces);
+            const estimatedAvax = (await router.connect(owner).getAmountsIn(usdTokenPurchaseAmountWei, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
+
+            await wavaxToken.connect(owner).transfer(sut.address, estimatedAvax);
+
+            await sut.connect(owner).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], estimatedAvax, usdTokenPurchaseAmountWei);
+        });
+
+
+        it('provide liquidity', async () => {
+            await wavaxToken.connect(owner).transfer(sut.address, toWei("3"));
+            await usdToken.connect(owner).transfer(sut.address, parseUnits((AVAX_PRICE * 3).toFixed(6), BigNumber.from("6")));
+
+            console.log(fromWei(await lpToken.balanceOf(owner.address)))
+
+            await sut.connect(owner).addLiquidity(
+                TOKEN_ADDRESSES['AVAX'],
+                TOKEN_ADDRESSES['USDC'],
+                toWei("3"),
+                parseUnits((AVAX_PRICE * 3).toFixed(6), BigNumber.from("6")),
+                toWei("2.5"),
+                parseUnits((AVAX_PRICE * 2.5).toFixed(6), BigNumber.from("6"))
+            );
+
+            console.log(fromWei(await lpToken.balanceOf(owner.address)))
+        });
+
+
+        it('remove liquidity', async () => {
+            const lpBalanceBeforeRemove = await lpToken.balanceOf(owner.address);
+
+            await lpToken.connect(owner).transfer(sut.address, lpBalanceBeforeRemove);
+
+            await sut.connect(owner).removeLiquidity(
+                TOKEN_ADDRESSES['AVAX'],
+                TOKEN_ADDRESSES['USDC'],
+                lpBalanceBeforeRemove,
+                toWei("2"),
+                parseUnits((AVAX_PRICE * 2).toFixed(6), BigNumber.from("6"))
+            );
+
+            console.log(fromWei(await lpToken.balanceOf(owner.address)));
         });
     });
 

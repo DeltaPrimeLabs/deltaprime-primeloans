@@ -18,10 +18,18 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
         return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
     }
 
+    function addLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) public onlyOwner {
+        addLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin);
+    }
+
+    function removeLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public onlyOwner {
+        removeLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin);
+    }
+
     /**
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x96F3Ce39Ad2BfDCf92C0F6E2C2CAbF83874660Fc;
+        return 0x9fD16eA9E31233279975D99D5e8Fc91dd214c7Da;
     }
 }

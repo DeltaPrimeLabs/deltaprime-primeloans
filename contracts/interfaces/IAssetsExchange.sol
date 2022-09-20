@@ -20,6 +20,16 @@ interface IAssetsExchange {
      **/
     function swap(address soldToken_, address boughtToken_, uint256 _exactAmountIn, uint256 _minAmountOut) external returns (uint256[] memory);
 
+    /*
+     * Adds liquidity of ERC20 tokens
+     */
+    function addLiquidity(address tokenA, address tokenB, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) external returns (address);
+
+    /*
+     * Removes liquidity of ERC20 tokens
+     */
+    function removeLiquidity(address tokenA, address tokenB, uint liquidity, uint amountAMin, uint amountBMin) external returns (address);
+
     /**
      * Returns the minimum _soldToken amount that is required to be sold to receive _exactAmountOut of a _boughtToken.
      **/
@@ -29,5 +39,10 @@ interface IAssetsExchange {
      * Returns the maximum _boughtToken amount that will be obtained in the event of selling _amountIn of _soldToken token.
      **/
     function getMaximumTokensReceived(uint256 _amountIn, address _soldToken, address _boughtToken) external returns (uint256);
+
+    /**
+     * getPair
+     **/
+    function getPair(address _tokenA, address _tokenB) external returns (address);
 
 }
