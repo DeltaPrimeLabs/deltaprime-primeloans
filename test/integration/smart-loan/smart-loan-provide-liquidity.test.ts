@@ -9,7 +9,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     Asset,
-    calculateStakingTokensAmountBasedOnAvaxValue,
     deployAllFacets,
     deployAndInitializeLendingPool, formatUnits,
     fromWei,
@@ -23,12 +22,10 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
-    ERC20,
-    PangolinIntermediary,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
+    TokenManager, TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -56,7 +53,7 @@ const wavaxAbi = [
     'function deposit() public payable',
     ...erc20ABI
 ]
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const traderJoeRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -64,7 +61,7 @@ describe('Smart loan', () => {
     });
 
     describe('A loan with staking operations', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             yakStakingContract: Contract,
             lpTokenAddress: string,
@@ -104,10 +101,10 @@ describe('Smart loan', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            tokenContracts['PNG_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC'], lpABI, provider);
+            tokenContracts['TJ_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC'], lpABI, provider);
 
-            let lpTokenTotalSupply = await tokenContracts['PNG_AVAX_USDC'].totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_AVAX_USDC'].getReserves());
+            let lpTokenTotalSupply = await tokenContracts['TJ_AVAX_USDC'].totalSupply();
+            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['TJ_AVAX_USDC'].getReserves());
 
             let token0USDValue = fromWei(lpTokenToken0Reserve) * AVAX_PRICE;
             let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * USD_PRICE;
@@ -115,10 +112,12 @@ describe('Smart loan', () => {
 
             lpTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
 
+            console.log('lpTokenPrice: ', lpTokenPrice);
+
             let supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
-                new Asset(toBytes32('PNG_AVAX_USDC'), TOKEN_ADDRESSES['PNG_AVAX_USDC'])
+                new Asset(toBytes32('TJ_AVAX_USDC'), TOKEN_ADDRESSES['TJ_AVAX_USDC'])
             ]
 
             let tokenManager = await deployContract(
@@ -138,9 +137,9 @@ describe('Smart loan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
-            exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
-            await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
+            let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
+            exchange = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
+            await exchange.initialize(traderJoeRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
@@ -150,7 +149,7 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -182,7 +181,7 @@ describe('Smart loan', () => {
                     value: AVAX_PRICE
                 },
                 {
-                    symbol: 'PNG_AVAX_USDC',
+                    symbol: 'TJ_AVAX_USDC',
                     value: lpTokenPrice
                 },
             ]
@@ -213,7 +212,7 @@ describe('Smart loan', () => {
             await tokenContracts['AVAX'].connect(owner).approve(wrappedLoan.address, toWei("500"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("500"));
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei('200'),
@@ -222,7 +221,10 @@ describe('Smart loan', () => {
         });
 
         it("should provide liquidity", async () => {
-            await wrappedLoan.addLiquidityPangolin(
+            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
+
+            await wrappedLoan.addLiquidityTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("180"),
@@ -230,16 +232,29 @@ describe('Smart loan', () => {
                 toWei("160"),
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
+
+            console.log('lp balance: ', await lpToken.balanceOf(wrappedLoan.address))
+
+            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+
+            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
         });
 
         it("should remove liquidity", async () => {
-            await wrappedLoan.removeLiquidityPangolin(
+            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            expect(await lpToken.balanceOf(wrappedLoan.address)).not.to.be.equal(0);
+
+            await wrappedLoan.removeLiquidityTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 await lpToken.balanceOf(wrappedLoan.address),
                 toWei("160"),
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
+
+
+            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
     });
 });
