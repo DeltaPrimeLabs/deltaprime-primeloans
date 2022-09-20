@@ -3,14 +3,14 @@
 // contract that uses keccak slots instead of the standard storage layout.
 
 import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
-import "./lib/SolvencyMethodsLib.sol";
+import "./lib/SolvencyMethods.sol";
 
 pragma solidity ^0.8.0;
 
 /**
  * @dev Enforces ownership only if there is no liquidation ongoing
  */
-abstract contract OnlyOwnerOrInsolvent is SolvencyMethodsLib {
+abstract contract OnlyOwnerOrInsolvent is SolvencyMethods {
 
     /**
      * @dev Enforces ownership only if there is no liquidation ongoing

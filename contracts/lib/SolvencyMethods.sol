@@ -7,7 +7,7 @@ import "../facets/SolvencyFacet.sol";
 import "../DiamondHelper.sol";
 
 // TODO Rename to contract instead of lib
-contract SolvencyMethodsLib is DiamondHelper {
+contract SolvencyMethods is DiamondHelper {
     // This function executes SolvencyFacet.calculateDebt()
     function _getDebt() internal virtual returns (uint256 debt) {
         debt = abi.decode(

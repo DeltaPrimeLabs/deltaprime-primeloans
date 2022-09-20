@@ -7,13 +7,13 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
-import "../lib/SolvencyMethodsLib.sol";
+import "../lib/SolvencyMethods.sol";
 import "../TokenManager.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
+contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

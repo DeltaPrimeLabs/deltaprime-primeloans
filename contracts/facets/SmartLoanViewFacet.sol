@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../lib/SolvencyMethodsLib.sol";
+import "../lib/SolvencyMethods.sol";
 import "../Pool.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
+contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -106,7 +106,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
      **/
     function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
         bytes32[] memory assets = DeploymentConstants.getTokenManager().getAllTokenAssets();
-        uint256[] memory prices = SolvencyMethodsLib.getPrices(assets);
+        uint256[] memory prices = SolvencyMethods.getPrices(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for (uint i = 0; i < assets.length; i++) {
             result[i] = AssetNamePrice({

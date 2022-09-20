@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../lib/SolvencyMethodsLib.sol";
+import "../lib/SolvencyMethods.sol";
 import "../Pool.sol";
 import "../TokenManager.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
+contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
     uint256 private constant _MAX_LTV = 5000;
@@ -123,7 +123,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethodsLib 
     function liquidate(LiquidationConfig memory config) internal {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256[] memory prices = SolvencyMethodsLib.getPrices(config.assetsToRepay);
+        uint256[] memory prices = SolvencyMethods.getPrices(config.assetsToRepay);
 
         uint256 initialTotal = _getTotalValue();
         uint256 initialDebt = _getDebt();

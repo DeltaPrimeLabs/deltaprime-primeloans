@@ -3,8 +3,8 @@
 pragma solidity ^0.8.17;
 
 /**
- * @title IBorrowersRegistry
- * Keeps a registry of created trading accounts to verify their borrowing rights
+ * @title IStakingPositions
+ * Types for staking
  */
 interface IStakingPositions {
     struct StakedPosition {

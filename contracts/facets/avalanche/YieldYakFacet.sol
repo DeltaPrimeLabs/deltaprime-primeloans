@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
-import "../../lib/SolvencyMethodsLib.sol";
+import "../../lib/SolvencyMethods.sol";
 import "../SolvencyFacet.sol";
 import "../../interfaces/facets/avalanche/IYakStakingAVAXAAVEV1.sol";
 import "../../interfaces/facets/avalanche/IYakStakingVectorSAV2.sol";
@@ -17,7 +17,7 @@ import "../../interfaces/IWrappedNativeToken.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethodsLib {
+contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 

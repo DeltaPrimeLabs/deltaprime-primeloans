@@ -126,11 +126,11 @@ library DiamondStorageLib {
         }
     }
 
-    function removeStakedPosition(IStakingPositions.StakedPosition memory position) internal {
+    function removeStakedPosition(bytes4 balanceSelector) internal {
         IStakingPositions.StakedPosition[] storage positions = stakedPositions();
 
         for (uint256 i; i < positions.length; i++) {
-            if (positions[i].balanceSelector == position.balanceSelector) {
+            if (positions[i].balanceSelector == balanceSelector) {
                 positions[i] = positions[positions.length - 1];
                 positions.pop();
             }

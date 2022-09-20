@@ -112,7 +112,10 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
         uint256 usdValue;
 
         for (uint256 i; i < positions.length; i++) {
+            //TODO: fetch multiple prices to reduce cost
             uint256 price = getPriceFromMsg(positions[i].symbol);
+            require(price != 0, "Asset price returned from oracle is zero");
+
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
             if (success) {
