@@ -25,6 +25,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     address private constant SAVAXAddress = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
     address private constant YAKStakingVectorSAV2Address = 0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557;
 
+    // LPs
+    address private constant YY_TJ_AVAX_USDC = 0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC;
+    address private constant TJ_AVAX_USDC_ADDRESS = 0xf4003F4efBE8691B60249E6afbD307aBE7758adb;
+
     // TODO: Change name to a more unique one for this exact investment strategy
     /**
         * Stakes AVAX in Yield Yak protocol
@@ -64,6 +68,45 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         emit Staked(msg.sender, "SAVAX", amount, block.timestamp);
     }
+
+    /**
+      * Stakes TJ_AVAX_USDC in Yield Yak protocol
+      * @dev This function uses the redstone-evm-connector
+      * @param amount amount of TJ_AVAX_USDC to be staked
+  **/
+    function stakeTJAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+        require(amount > 0, "Cannot stake 0 tokens");
+        require(IERC20Metadata(TJ_AVAX_USDC_ADDRESS).balanceOf(address(this)) >= amount, "Not enough TJ_AVAX_USDC available");
+
+        IERC20Metadata(TJ_AVAX_USDC_ADDRESS).approve(address(YY_TJ_AVAX_USDC), amount);
+
+        // TODO: Change the name of interface
+        IYakStakingVectorSAV2(YY_TJ_AVAX_USDC).deposit(amount);
+
+        // TODO make staking more generic
+        // Add asset to ownedAssets
+        DiamondStorageLib.addOwnedAsset("YY_TJ_AVAX_USDC", YY_TJ_AVAX_USDC);
+
+        emit Staked(msg.sender, "TJ_AVAX_USDC", amount, block.timestamp);
+    }
+
+
+    function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+        IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YY_TJ_AVAX_USDC);
+        uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
+
+        require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
+
+        yakStakingContract.withdraw(amount);
+
+        // TODO make unstaking more generic
+        if(yakStakingContract.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset("$YYVSAVAXV2");
+        }
+
+        emit Unstaked(msg.sender, "SAVAX", amount, block.timestamp);
+    }
+
 
     function unstakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYakStakingVectorSAV2 yakStakingContract = IYakStakingVectorSAV2(YAKStakingVectorSAV2Address);

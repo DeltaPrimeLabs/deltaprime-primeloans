@@ -22,11 +22,10 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
-    PangolinIntermediary,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
+    TokenManager, TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -34,7 +33,6 @@ import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -54,7 +52,8 @@ const wavaxAbi = [
     'function deposit() public payable',
     ...erc20ABI
 ]
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const yakStakingLPTJAVAXUSDCTokenAddress = "0xdef94a13ff31fb6363f1e03bf18fe0f59db83bbc";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -62,9 +61,8 @@ describe('Smart loan', () => {
     });
 
     describe('A loan with staking operations', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
-            yakStakingContract: Contract,
             lpTokenAddress: string,
             lpToken: Contract,
             loan: SmartLoanGigaChadInterface,
@@ -73,10 +71,12 @@ describe('Smart loan', () => {
             tokenContracts: any = {},
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            yakLPStakingContract: Contract,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             USD_PRICE: number,
-            lpTokenPrice: number,
+            tjLPTokenPrice: number,
+            yyTJLPTokenPrice: number,
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
@@ -102,21 +102,26 @@ describe('Smart loan', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            tokenContracts['PNG_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC'], lpABI, provider);
+            tokenContracts['TJ_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC'], lpABI, provider);
+            tokenContracts['YY_TJ_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC'], lpABI, provider);
 
-            let lpTokenTotalSupply = await tokenContracts['PNG_AVAX_USDC'].totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_AVAX_USDC'].getReserves());
+            let lpTokenTotalSupply = await tokenContracts['TJ_AVAX_USDC'].totalSupply();
+            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['TJ_AVAX_USDC'].getReserves());
 
             let token0USDValue = fromWei(lpTokenToken0Reserve) * AVAX_PRICE;
             let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * USD_PRICE;
 
 
-            lpTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
+            tjLPTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
+            let yyTotalSupply = await tokenContracts['YY_TJ_AVAX_USDC'].totalSupply();
+            let yyTotalDeposits = await tokenContracts['YY_TJ_AVAX_USDC'].totalDeposits();
+            yyTJLPTokenPrice = tjLPTokenPrice * fromWei(yyTotalDeposits) / fromWei(yyTotalSupply)
 
             let supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
-                new Asset(toBytes32('PNG_AVAX_USDC'), TOKEN_ADDRESSES['PNG_AVAX_USDC'])
+                new Asset(toBytes32('TJ_AVAX_USDC'), TOKEN_ADDRESSES['TJ_AVAX_USDC']),
+                new Asset(toBytes32('YY_TJ_AVAX_USDC'), TOKEN_ADDRESSES['YY_TJ_AVAX_USDC'])
             ]
 
             let tokenManager = await deployContract(
@@ -128,17 +133,15 @@ describe('Smart loan', () => {
                 ]
             ) as TokenManager;
 
-            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
-
             diamondAddress = await deployDiamond();
 
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
-            exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
-            await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
+            let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
+            exchange = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
+            await exchange.initialize(traderJoeRouterAddress, supportedAssets.map(asset => asset.assetAddress));
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
@@ -148,7 +151,7 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -180,8 +183,12 @@ describe('Smart loan', () => {
                     value: AVAX_PRICE
                 },
                 {
-                    symbol: 'PNG_AVAX_USDC',
-                    value: lpTokenPrice
+                    symbol: 'TJ_AVAX_USDC',
+                    value: tjLPTokenPrice
+                },
+                {
+                    symbol: 'YY_TJ_AVAX_USDC',
+                    value: yyTJLPTokenPrice
                 },
             ]
 
@@ -211,7 +218,7 @@ describe('Smart loan', () => {
             await tokenContracts['AVAX'].connect(owner).approve(wrappedLoan.address, toWei("500"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("500"));
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei('200'),
@@ -219,11 +226,8 @@ describe('Smart loan', () => {
             );
         });
 
-        it("should provide liquidity", async () => {
-            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
-            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
-
-            await wrappedLoan.addLiquidityPangolin(
+        it("should stake TJ LP tokens on YY", async () => {
+            await wrappedLoan.addLiquidityTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("180"),
@@ -232,28 +236,41 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
 
-            console.log('lp balance: ', await lpToken.balanceOf(wrappedLoan.address))
+            let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
 
-            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+            expect(initialTJAVAXUSDCBalance).to.be.gt(0);
+            expect(initialStakedBalance).to.be.eq(0);
 
+            await wrappedLoan.stakeTJAVAXUSDCYak(initialTJAVAXUSDCBalance);
+
+            let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+
+            expect(endTJAVAXUSDCBalance).to.be.eq(0);
+            expect(endStakedBalance).to.be.gt(0);
+p
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
         });
 
-        it("should remove liquidity", async () => {
+        it("should unstake TJ LP tokens on YY", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
-            expect(await lpToken.balanceOf(wrappedLoan.address)).not.to.be.equal(0);
+            let initialStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
 
-            await wrappedLoan.removeLiquidityPangolin(
-                toBytes32('AVAX'),
-                toBytes32('USDC'),
-                await lpToken.balanceOf(wrappedLoan.address),
-                toWei("160"),
-                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
-            );
+            expect(initialTJAVAXUSDCBalance).to.be.eq(0);
+            expect(initialStakedBalance).to.be.gt(0);
 
+            await wrappedLoan.unstakeTJAVAXUSDCYak(initialStakedBalance);
+
+            let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+
+            expect(endTJAVAXUSDCBalance).to.be.gt(0);
+            expect(endStakedBalance).to.be.eq(0);
 
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
-            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
     });
 });

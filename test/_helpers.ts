@@ -200,7 +200,7 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'])
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'])
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak'])
+        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak'])
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1',
                 'vectorUnstakeUSDC1',
