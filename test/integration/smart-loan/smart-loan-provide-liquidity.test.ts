@@ -11,7 +11,7 @@ import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
     deployAllFacets,
-    deployAndInitializeLendingPool,
+    deployAndInitializeLendingPool, formatUnits,
     fromWei,
     getFixedGasSigners,
     PoolAsset,
@@ -23,6 +23,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    ERC20,
     PangolinIntermediary,
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
@@ -44,6 +45,11 @@ const erc20ABI = [
     'function allowance(address owner, address spender) public view returns (uint256)',
     'function totalSupply() external view returns (uint256)',
     'function totalDeposits() external view returns (uint256)'
+]
+
+const lpABI = [
+    ...erc20ABI,
+    'function getReserves() public view returns (uint112, uint112, uint32)',
 ]
 
 const wavaxAbi = [
@@ -72,6 +78,7 @@ describe('Smart loan', () => {
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             USD_PRICE: number,
+            lpTokenPrice: number,
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
@@ -94,9 +101,24 @@ describe('Smart loan', () => {
                 tokenContracts[token.name] = tokenContract;
             }
 
+            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+
+            tokenContracts['PNG_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC'], lpABI, provider);
+
+            let lpTokenTotalSupply = await tokenContracts['PNG_AVAX_USDC'].totalSupply();
+            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_AVAX_USDC'].getReserves());
+
+            let token0USDValue = fromWei(lpTokenToken0Reserve) * AVAX_PRICE;
+            let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * USD_PRICE;
+
+
+            lpTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
+
             let supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
+                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                new Asset(toBytes32('PNG_AVAX_USDC'), TOKEN_ADDRESSES['PNG_AVAX_USDC'])
             ]
 
             let tokenManager = await deployContract(
@@ -150,9 +172,6 @@ describe('Smart loan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
-
             MOCK_PRICES = [
                 {
                     symbol: 'USDC',
@@ -161,7 +180,11 @@ describe('Smart loan', () => {
                 {
                     symbol: 'AVAX',
                     value: AVAX_PRICE
-                }
+                },
+                {
+                    symbol: 'PNG_AVAX_USDC',
+                    value: lpTokenPrice
+                },
             ]
 
             wrappedLoan = WrapperBuilder

@@ -16,6 +16,33 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    function getProtocolID() pure internal virtual returns (bytes32) {
+        return "";
+    }
+
+    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
+
+    function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+        uint8 i = 0;
+        while(i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
+    }
+
     /**
     * Swaps one asset with another
     * @param _soldAsset asset to be sold
@@ -72,8 +99,16 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
-            //TODO
-//            DiamondStorageLib.addOwnedAsset(IERC20Metadata(lpTokenAddress).symbol(), lpTokenAddress); //check the names
+            (bytes32 token0, bytes32 token1) = _firstAsset < _secondAsset ? (_firstAsset, _secondAsset) : (_secondAsset, _firstAsset);
+            bytes32 lpToken = stringToBytes32(string.concat(
+                    bytes32ToString(getProtocolID()),
+                        '_',
+                        bytes32ToString(token0),
+                        '_',
+                        bytes32ToString(token1)
+                )
+            );
+            DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
@@ -107,8 +142,16 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
-            //TODO
-//            DiamondStorageLib.removeOwnedAsset(IERC20Metadata(lpTokenAddress).symbol());
+            (bytes32 token0, bytes32 token1) = _firstAsset < _secondAsset ? (_firstAsset, _secondAsset) : (_secondAsset, _firstAsset);
+            bytes32 lpToken = stringToBytes32(string.concat(
+                    bytes32ToString(getProtocolID()),
+                    '_',
+                    bytes32ToString(token0),
+                    '_',
+                    bytes32ToString(token1)
+                )
+            );
+            DiamondStorageLib.removeOwnedAsset(lpToken);
         }
 
         emit RemoveLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin, block.timestamp);
