@@ -7,7 +7,16 @@ import TraderJoeIntermediaryArtifact
     from '../../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TraderJoeIntermediary} from '../../../typechain';
-import {formatUnits, fromWei, getFixedGasSigners, syncTime, toWei} from "../../_helpers";
+import {
+    addMissingTokenContracts,
+    formatUnits,
+    fromWei,
+    getFixedGasSigners,
+    getRedstonePrices,
+    getTokensPricesMap,
+    syncTime,
+    toWei
+} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
@@ -47,11 +56,16 @@ describe('TraderJoeIntermediary', () => {
             wavaxToken: Contract,
             usdToken: Contract,
             router: Contract,
-            owner: SignerWithAddress,
-            usdTokenDecimalPlaces: BigNumber;
+            tokenContracts: Map<string, Contract> = new Map(),
+            tokensPrices: Map<string, number>,
+            owner: SignerWithAddress;
 
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'USDC'];
+
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
+            addMissingTokenContracts(tokenContracts, assetsList);
 
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
@@ -60,7 +74,6 @@ describe('TraderJoeIntermediary', () => {
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
-            usdTokenDecimalPlaces = await usdToken.decimals();
             router = await new ethers.Contract(traderjoeRouterAddress, UniswapV2IntermediaryAbi);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});
@@ -68,8 +81,8 @@ describe('TraderJoeIntermediary', () => {
 
 
         it('should check for the amount of tokens to swap to be greater than 0', async () => {
-            await wavaxToken.connect(owner).approve(sut.address, parseUnits("1", usdTokenDecimalPlaces));
-            await wavaxToken.connect(owner).transfer(sut.address, parseUnits("1", usdTokenDecimalPlaces));
+            await wavaxToken.connect(owner).approve(sut.address, parseUnits("1", await tokenContracts.get('USDC')!.decimals()));
+            await wavaxToken.connect(owner).transfer(sut.address, parseUnits("1", await tokenContracts.get('USDC')!.decimals()));
             await expect(sut.swap(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], 0, 1)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
         });
 
@@ -84,7 +97,7 @@ describe('TraderJoeIntermediary', () => {
 
         it('should check if an erc20 tokens were purchased successfully', async () => {
             const usdTokenPurchaseAmount = 100;
-            const usdTokenPurchaseAmountWei = parseUnits(usdTokenPurchaseAmount.toString(), usdTokenDecimalPlaces);
+            const usdTokenPurchaseAmountWei = parseUnits(usdTokenPurchaseAmount.toString(), await tokenContracts.get('USDC')!.decimals());
             const estimatedAvax = (await router.connect(owner).getAmountsIn(usdTokenPurchaseAmountWei, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
             const initialWavaxBalance = await wavaxToken.connect(owner).balanceOf(owner.address);
@@ -108,17 +121,17 @@ describe('TraderJoeIntermediary', () => {
             expect(await wavaxToken.connect(owner).balanceOf(sut.address)).to.be.equal(0);
             expect(await usdToken.connect(owner).balanceOf(sut.address)).to.be.equal(0);
 
-            const estimatedAvaxNeeded = (await router.connect(owner).getAmountsIn(parseUnits("100", usdTokenDecimalPlaces), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
+            const estimatedAvaxNeeded = (await router.connect(owner).getAmountsIn(parseUnits("100", await tokenContracts.get('USDC')!.decimals()), [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]))[0];
 
             await wavaxToken.connect(owner).deposit({value: estimatedAvaxNeeded});
             await wavaxToken.connect(owner).approve(sut.address, estimatedAvaxNeeded);
 
             const initialWavaxBalance = await wavaxToken.connect(owner).balanceOf(owner.address);
 
-            await expect(sut.swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], (estimatedAvaxNeeded * 0.9).toString(), parseUnits("100", usdTokenDecimalPlaces))).to.be.revertedWith("Not enough funds were provided");
+            await expect(sut.swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], (estimatedAvaxNeeded * 0.9).toString(), parseUnits("100", await tokenContracts.get('USDC')!.decimals()))).to.be.revertedWith("Not enough funds were provided");
 
             expect(fromWei(await wavaxToken.connect(owner).balanceOf(sut.address))).to.be.equal(0);
-            expect(formatUnits(await usdToken.connect(owner).balanceOf(sut.address), usdTokenDecimalPlaces)).to.be.equal(0);
+            expect(formatUnits(await usdToken.connect(owner).balanceOf(sut.address), await tokenContracts.get('USDC')!.decimals())).to.be.equal(0);
 
             let newUsdBalance = await usdToken.connect(owner).balanceOf(sut.address);
             expect(newUsdBalance).to.be.equal(initialusdTokenBalance);
@@ -130,7 +143,7 @@ describe('TraderJoeIntermediary', () => {
             let avaxAmount = 100000000000;
             let usdAmount = 100000000000;
 
-            await expect(sut.getMinimumTokensNeeded(parseUnits(usdAmount.toString(), usdTokenDecimalPlaces), wavaxToken.address, usdToken.address)).to.be.revertedWith('Error when calculating amounts needed');
+            await expect(sut.getMinimumTokensNeeded(parseUnits(usdAmount.toString(), await tokenContracts.get('USDC')!.decimals()), wavaxToken.address, usdToken.address)).to.be.revertedWith('Error when calculating amounts needed');
             await expect(sut.getMaximumTokensReceived(toWei(avaxAmount.toString()), wavaxToken.address, usdToken.address)).not.to.be.reverted;
         });
     });

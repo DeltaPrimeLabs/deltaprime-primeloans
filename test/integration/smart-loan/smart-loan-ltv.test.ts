@@ -4,11 +4,12 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {
-    Asset,
+    addMissingTokenContracts,
+    Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
     deployAllFacets,
-    deployAndInitializeLendingPool,
-    getFixedGasSigners,
-    PoolAsset,
+    deployAndInitializeLendingPool, deployPools,
+    getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
+    PoolAsset, PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
     toWei
@@ -25,6 +26,7 @@ import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {WrapperBuilder} from "redstone-evm-connector";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import redstone from "redstone-api";
+import {Contract} from "ethers";
 
 chai.use(solidity);
 
@@ -39,39 +41,29 @@ describe('Smart loan', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
-            tokenContracts: any = {},
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
-            AVAX_PRICE: number,
-            USD_PRICE: number,
-            ETH_PRICE: number;
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'MCKUSD', 'ETH'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [depositor]},
+                {name: 'MCKUSD', airdropList: [owner, depositor]}
+            ];
 
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-
-            let lendingPools = [];
-            for (const token of [
-                {'name': 'MCKUSD', 'airdropList': [owner.address, depositor.address]},
-                {'name': 'AVAX', 'airdropList': [depositor]}
-            ]) {
-                let {
-                    poolContract,
-                    tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
-                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
-                await poolContract.connect(depositor).deposit(toWei("1000"));
-                lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
-                tokenContracts[token.name] = tokenContract;
-            }
-
-            let supportedAssets = [
-                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32('MCKUSD'), tokenContracts['MCKUSD'].address),
-                new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
-            ]
+            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
+            addMissingTokenContracts(tokenContracts, assetsList);
 
             let tokenManager = await deployContract(
                 owner,
@@ -103,25 +95,6 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan", async () => {
-            AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-            USD_PRICE = (await redstone.getPrice('USDC')).value;
-            ETH_PRICE = (await redstone.getPrice('ETH')).value;
-
-            MOCK_PRICES = [
-                {
-                    symbol: 'AVAX',
-                    value: AVAX_PRICE
-                },
-                {
-                    symbol: 'MCKUSD',
-                    value: USD_PRICE
-                },
-                {
-                    symbol: 'ETH',
-                    value: ETH_PRICE
-                }
-            ];
-
             await smartLoansFactory.connect(owner).createLoan();
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
@@ -142,7 +115,7 @@ describe('Smart loan', () => {
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
             expect(await wrappedLoan.isSolvent()).to.be.true;
 
-            await tokenContracts['MCKUSD'].connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("100"));
 
             expect(await wrappedLoan.getLTV()).to.be.equal(0);

@@ -1,19 +1,26 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import redstone from 'redstone-api';
 
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
+    addMissingTokenContracts,
     Asset,
+    convertAssetsListToSupportedAssets,
+    convertTokenPricesMapToMockPrices,
     deployAllFacets,
-    deployAndInitializeLendingPool, formatUnits,
+    deployAndInitExchangeContract,
+    deployPools,
+    formatUnits,
     fromWei,
     getFixedGasSigners,
+    getRedstonePrices,
+    getTokensPricesMap,
     PoolAsset,
+    PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
     toWei,
@@ -25,7 +32,8 @@ import {
     RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager, TraderJoeIntermediary,
+    TokenManager,
+    TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -60,7 +68,7 @@ describe('Smart loan', () => {
         await syncTime();
     });
 
-    describe('A loan with staking operations', () => {
+    describe('A loan with staking TJ LP tokens on YY', () => {
         let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             lpTokenAddress: string,
@@ -68,61 +76,53 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
-            tokenContracts: any = {},
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
-            yakLPStakingContract: Contract,
             MOCK_PRICES: any,
-            AVAX_PRICE: number,
-            USD_PRICE: number,
             tjLPTokenPrice: number,
             yyTJLPTokenPrice: number,
-            diamondAddress: any;
+            diamondAddress: any,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'USDC', 'TJ_AVAX_USDC', 'YY_TJ_AVAX_USDC'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [depositor]},
+            ];
 
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
+            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC', 'YY_TJ_AVAX_USDC'].includes(el))), getRedstonePrices, []);
 
-            let lendingPools = [];
-            // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
-            for (const token of [
-                {'name': 'AVAX', 'airdropList': [depositor]}
-            ]) {
-                let {
-                    poolContract,
-                    tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
-                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
-                await poolContract.connect(depositor).deposit(toWei("1000"));
-                lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
-                tokenContracts[token.name] = tokenContract;
-            }
+            // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
+            tokenContracts.set('TJ_AVAX_USDC', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC'], lpABI, provider));
+            tokenContracts.set('YY_TJ_AVAX_USDC', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC'], lpABI, provider));
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
-
-            tokenContracts['TJ_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC'], lpABI, provider);
-            tokenContracts['YY_TJ_AVAX_USDC'] = new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC'], lpABI, provider);
-
-            let lpTokenTotalSupply = await tokenContracts['TJ_AVAX_USDC'].totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['TJ_AVAX_USDC'].getReserves());
-
-            let token0USDValue = fromWei(lpTokenToken0Reserve) * AVAX_PRICE;
-            let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * USD_PRICE;
-
-
+            let lpTokenTotalSupply = await tokenContracts.get('TJ_AVAX_USDC')!.totalSupply();
+            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = await tokenContracts.get('TJ_AVAX_USDC')!.getReserves();
+            let token0USDValue = fromWei(lpTokenToken0Reserve) * tokensPrices.get('AVAX')!;
+            let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * tokensPrices.get('USDC')!;
             tjLPTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
-            let yyTotalSupply = await tokenContracts['YY_TJ_AVAX_USDC'].totalSupply();
-            let yyTotalDeposits = await tokenContracts['YY_TJ_AVAX_USDC'].totalDeposits();
+            let yyTotalSupply = await tokenContracts.get('YY_TJ_AVAX_USDC')!.totalSupply();
+            let yyTotalDeposits = await tokenContracts.get('YY_TJ_AVAX_USDC')!.totalDeposits();
             yyTJLPTokenPrice = tjLPTokenPrice * fromWei(yyTotalDeposits) / fromWei(yyTotalSupply)
 
-            let supportedAssets = [
-                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
-                new Asset(toBytes32('TJ_AVAX_USDC'), TOKEN_ADDRESSES['TJ_AVAX_USDC']),
-                new Asset(toBytes32('YY_TJ_AVAX_USDC'), TOKEN_ADDRESSES['YY_TJ_AVAX_USDC'])
-            ]
+            tokensPrices = await getTokensPricesMap(
+                [],
+                getRedstonePrices,
+                [
+                        {symbol: 'TJ_AVAX_USDC', value: tjLPTokenPrice},
+                        {symbol: 'YY_TJ_AVAX_USDC', value: yyTJLPTokenPrice},
+                    ],
+                tokensPrices
+            );
+            addMissingTokenContracts(tokenContracts, assetsList);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
 
             let tokenManager = await deployContract(
                 owner,
@@ -139,9 +139,7 @@ describe('Smart loan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
-            exchange = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
-            await exchange.initialize(traderJoeRouterAddress, supportedAssets.map(asset => asset.assetAddress));
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
@@ -173,24 +171,16 @@ describe('Smart loan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
-            MOCK_PRICES = [
-                {
-                    symbol: 'USDC',
-                    value: USD_PRICE
-                },
-                {
-                    symbol: 'AVAX',
-                    value: AVAX_PRICE
-                },
-                {
-                    symbol: 'TJ_AVAX_USDC',
-                    value: tjLPTokenPrice
-                },
+            tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices,
+                [{
+                symbol: 'TJ_AVAX_USDC',
+                value: tjLPTokenPrice
+            },
                 {
                     symbol: 'YY_TJ_AVAX_USDC',
                     value: yyTJLPTokenPrice
-                },
-            ]
+                }]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)
@@ -214,8 +204,8 @@ describe('Smart loan', () => {
         });
 
         it("should swap", async () => {
-            await tokenContracts['AVAX'].connect(owner).deposit({value: toWei("500")});
-            await tokenContracts['AVAX'].connect(owner).approve(wrappedLoan.address, toWei("500"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("500")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("500"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("500"));
 
             await wrappedLoan.swapTraderJoe(
@@ -231,13 +221,13 @@ describe('Smart loan', () => {
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("180"),
-                parseUnits((AVAX_PRICE * 180).toFixed(6), BigNumber.from("6")),
+                parseUnits((tokensPrices.get('AVAX')! * 180).toFixed(6), BigNumber.from("6")),
                 toWei("160"),
-                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
+                parseUnits((tokensPrices.get('AVAX')! * 160).toFixed(6), BigNumber.from("6"))
             );
 
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let initialStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC')!.balanceOf(wrappedLoan.address);
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
 
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
@@ -246,7 +236,7 @@ describe('Smart loan', () => {
             await wrappedLoan.stakeTJAVAXUSDCYak(initialTJAVAXUSDCBalance);
 
             let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let endStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC')!.balanceOf(wrappedLoan.address);
 
             expect(endTJAVAXUSDCBalance).to.be.eq(0);
             expect(endStakedBalance).to.be.gt(0);
@@ -256,7 +246,7 @@ describe('Smart loan', () => {
 
         it("should unstake TJ LP tokens on YY", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
-            let initialStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC')!.balanceOf(wrappedLoan.address);
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
 
             expect(initialTJAVAXUSDCBalance).to.be.eq(0);
@@ -265,7 +255,7 @@ describe('Smart loan', () => {
             await wrappedLoan.unstakeTJAVAXUSDCYak(initialStakedBalance);
 
             let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let endStakedBalance = await tokenContracts['YY_TJ_AVAX_USDC'].balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC')!.balanceOf(wrappedLoan.address);
 
             expect(endTJAVAXUSDCBalance).to.be.gt(0);
             expect(endStakedBalance).to.be.eq(0);

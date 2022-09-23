@@ -3,20 +3,26 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import redstone from 'redstone-api';
 import {JsonRpcSigner} from "@ethersproject/providers";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
 import {
+    addMissingTokenContracts,
     Asset,
+    convertAssetsListToSupportedAssets,
+    convertTokenPricesMapToMockPrices,
     deployAllFacets,
-    deployAndInitializeLendingPool,
+    deployAndInitExchangeContract,
+    deployPools,
     extractAssetNameBalances,
     fromWei,
     getFixedGasSigners,
+    getRedstonePrices,
+    getTokensPricesMap,
     PoolAsset,
+    PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
     toWei
@@ -28,9 +34,8 @@ import {
     TokenManager,
     UbeswapIntermediary,
 } from "../../../typechain";
-import {Wallet} from "ethers";
+import {Contract, Wallet} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/celo/token_addresses.json';
 
 chai.use(solidity);
 
@@ -55,14 +60,19 @@ describe('Smart loan', () => {
             owner: JsonRpcSigner,
             depositor: Wallet,
             random: SignerWithAddress,
-            tokenContracts: any = {},
             MOCK_PRICES: any,
-            CELO_PRICE: number,
-            USD_PRICE: number,
-            ETH_PRICE: number;
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [random] = await getFixedGasSigners(6500000);
+            let assetsList = ['CELO', 'ETH', 'mcUSD'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'CELO', airdropList: []}
+            ];
 
             owner = provider.getSigner('0x5839Dd13ad2C78dDcF3365D54302D65764619737');
             depositor = ethers.Wallet.createRandom().connect(provider);
@@ -77,32 +87,12 @@ describe('Smart loan', () => {
                 value: toWei("20")
             })
 
-            tokenContracts['CELO'] = new ethers.Contract(TOKEN_ADDRESSES['CELO'], erc20ABI, provider);
-            tokenContracts['mcUSD'] = new ethers.Contract(TOKEN_ADDRESSES['mcUSD'], erc20ABI, provider);
-            tokenContracts['ETH'] = new ethers.Contract(TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
-
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-
-            let lendingPools = [];
-            for (const token of [
-                {'name': 'CELO', 'airdropList': []}
-            ]) {
-                let {
-                    poolContract,
-                    tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList, 'CELO');
-                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("10"));
-                await poolContract.connect(depositor).deposit(toWei("10"));
-                lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
-                tokenContracts[token.name] = tokenContract;
-            }
-
-            let supportedAssets = [
-                new Asset(toBytes32('CELO'), TOKEN_ADDRESSES['CELO']),
-                new Asset(toBytes32('mcUSD'), TOKEN_ADDRESSES['mcUSD']),
-                new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH'])
-            ]
-
+            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000, 'CELO');
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'mcUSD'), getRedstonePrices, [{symbol: 'mcUSD', value: 1}]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'CELO');
+            addMissingTokenContracts(tokenContracts, assetsList, 'CELO');
             let tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
@@ -111,12 +101,10 @@ describe('Smart loan', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-
             let diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -132,16 +120,13 @@ describe('Smart loan', () => {
                 'CELO'
             );
 
-            let exchangeFactory = await ethers.getContractFactory("UbeswapIntermediary");
-            exchange = (await exchangeFactory.deploy()).connect(owner) as UbeswapIntermediary;
-            await exchange.initialize(ubeswapRouterAddress, supportedAssets.map(asset => asset.assetAddress));
-
+            exchange = await deployAndInitExchangeContract(owner, ubeswapRouterAddress, supportedAssets, "UbeswapIntermediary") as UbeswapIntermediary;
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/celo/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/celo/UbeswapDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -156,25 +141,6 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan", async () => {
-            CELO_PRICE = (await redstone.getPrice('CELO')).value;
-            USD_PRICE = (await redstone.getPrice('USDC')).value;
-            ETH_PRICE = (await redstone.getPrice('ETH')).value;
-
-            MOCK_PRICES = [
-                {
-                    symbol: 'CELO',
-                    value: CELO_PRICE
-                },
-                {
-                    symbol: 'mcUSD',
-                    value: USD_PRICE
-                },
-                {
-                    symbol: 'ETH',
-                    value: ETH_PRICE
-                }
-            ];
-
             await smartLoansFactory.connect(owner).createLoan();
 
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(await owner.getAddress());
@@ -197,12 +163,12 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
-            await tokenContracts['ETH'].connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
             await wrappedLoan.fund(toBytes32("ETH"), toWei("10"));
 
-            expect(fromWei(await tokenContracts['ETH'].balanceOf(wrappedLoan.address))).to.be.closeTo(10, 0.1);
+            expect(fromWei(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address))).to.be.closeTo(10, 0.1);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 0.01);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('ETH')! * 10, 0.01);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
         });
@@ -223,13 +189,13 @@ describe('Smart loan', () => {
 
 
         it("should buy an asset from funded", async () => {
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 2);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('ETH')! * 10, 2);
 
             const slippageTolerance = 0.1;
             const swappedEthAmount = 3;
-            const expectedUSDAmount = ETH_PRICE * swappedEthAmount / (1 + slippageTolerance);
+            const expectedUSDAmount = tokensPrices.get('ETH')! * swappedEthAmount / (1 + slippageTolerance);
 
-            expect(fromWei(await tokenContracts['ETH'].balanceOf(wrappedLoan.address))).to.be.closeTo(10, 0.1);
+            expect(fromWei(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address))).to.be.closeTo(10, 0.1);
 
             await wrappedLoan.swapUbeswap(
                 toBytes32('ETH'),
@@ -238,13 +204,13 @@ describe('Smart loan', () => {
                 toWei(expectedUSDAmount.toString())
             )
 
-            expect(fromWei(await tokenContracts['ETH'].balanceOf(wrappedLoan.address))).to.be.closeTo(10 - swappedEthAmount, 0.1);
+            expect(fromWei(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address))).to.be.closeTo(10 - swappedEthAmount, 0.1);
             expect(fromWei((await extractAssetNameBalances(wrappedLoan))["ETH"])).to.be.closeTo(10 - swappedEthAmount, 0.05);
-            expect(fromWei(await tokenContracts['mcUSD'].balanceOf(wrappedLoan.address))).to.be.closeTo(expectedUSDAmount, 400);
+            expect(fromWei(await tokenContracts.get('mcUSD')!.balanceOf(wrappedLoan.address))).to.be.closeTo(expectedUSDAmount, 400);
             expect(fromWei((await extractAssetNameBalances(wrappedLoan))["mcUSD"])).to.be.closeTo(expectedUSDAmount, 400);
 
             // total value should stay similar to before swap
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(ETH_PRICE * 10, 300);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('ETH')! * 10, 300);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
         });
@@ -254,7 +220,7 @@ describe('Smart loan', () => {
 
             const slippageTolerance = 0.1;
 
-            const ethAmount = fromWei(initialUsdTokenBalance) / ETH_PRICE / (1 + slippageTolerance);
+            const ethAmount = fromWei(initialUsdTokenBalance) / tokensPrices.get('ETH')! / (1 + slippageTolerance);
 
             await wrappedLoan.swapUbeswap(
                 toBytes32('mcUSD'),

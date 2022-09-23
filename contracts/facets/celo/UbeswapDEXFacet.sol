@@ -22,6 +22,6 @@ contract UbeswapDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x5C858338E60Efa214446Ca0d0Ec88ad2F09AB996;
+        return 0xd8edCc7162281abFFbd65d4a1b260ef1275e1EAc;
     }
 }

@@ -5,14 +5,19 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "redstone-evm-connector";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
+    addMissingTokenContracts,
     Asset,
+    convertAssetsListToSupportedAssets,
+    convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployAndInitializeLendingPool,
+    deployPools,
     getFixedGasSigners,
+    getRedstonePrices,
+    getTokensPricesMap,
     PoolAsset,
+    PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
     toWei
@@ -26,7 +31,6 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
-import redstone from "redstone-api";
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
@@ -56,11 +60,12 @@ describe('Test liquidator', () => {
             wrappedLoan: any,
             redstoneConfigManager: any,
             tokenManager: any,
-            tokenContracts: any = {},
-            poolContracts: any = {},
             MOCK_PRICES: any,
-            AVAX_PRICE: number,
-            USD_PRICE: number,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
@@ -69,6 +74,11 @@ describe('Test liquidator', () => {
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'USDC'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [borrower, depositor]},
+                {name: 'USDC', airdropList: []}
+            ];
 
             redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(
                     [
@@ -84,46 +94,14 @@ describe('Test liquidator', () => {
                     ])
             );
 
-            let lendingPools = [];
-            for (const token of [
-                {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
-                {'name': 'AVAX', 'airdropList': [depositor, borrower], 'autoPoolDeposit': true},
-            ]) {
-                let {
-                    poolContract,
-                    tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
-                if (token.autoPoolDeposit) {
-                    await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
-                    await poolContract.connect(depositor).deposit(toWei("1000"));
-                }
-                lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
-                poolContracts[token.name] = poolContract;
-                tokenContracts[token.name] = tokenContract;
-            }
+            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+            addMissingTokenContracts(tokenContracts, assetsList);
 
             //load liquidator wallet
-            await tokenContracts['AVAX'].connect(liquidatorWallet).deposit({value: toWei("1000")});
-
-
-            const supportedAssets = [
-                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC'])
-            ];
-
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-node-3"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-node-3"})).value;
-
-            MOCK_PRICES = [
-                {
-                    symbol: 'AVAX',
-                    value: AVAX_PRICE
-                },
-                {
-                    symbol: 'USDC',
-                    value: USD_PRICE
-                },
-            ];
+            await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
             tokenManager = await deployContract(
                 owner,
@@ -147,7 +125,7 @@ describe('Test liquidator', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress), "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
@@ -192,8 +170,8 @@ describe('Test liquidator', () => {
 
 
         it("should fund, borrow and withdraw, making loan LTV higher than 500%", async () => {
-            await tokenContracts['AVAX'].connect(borrower).deposit({value: toWei("100")});
-            await tokenContracts['AVAX'].connect(borrower).approve(wrappedLoan.address, toWei("100"));
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
+            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("600"));
@@ -202,7 +180,7 @@ describe('Test liquidator', () => {
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("700"),
-                parseUnits((0.97 * 700 * AVAX_PRICE).toFixed(6), BigNumber.from("6"))
+                parseUnits((0.97 * 700 * tokensPrices.get('AVAX')!).toFixed(6), BigNumber.from("6"))
             );
 
             expect((await wrappedLoan.getLTV()).toNumber()).to.be.gt(5000);

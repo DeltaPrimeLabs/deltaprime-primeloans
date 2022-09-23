@@ -1,5 +1,5 @@
 import {ethers, network, waffle} from "hardhat";
-import {BigNumber, Contract} from "ethers";
+import {BigNumber, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     CompoundingIndex,
@@ -18,6 +18,10 @@ import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockTok
 
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
+import redstone from "redstone-api";
+import {AsyncFunc} from "mocha";
+import TOKEN_ADDRESSES from "../common/addresses/avax/token_addresses.json";
+import {JsonRpcSigner} from "@ethersproject/providers";
 
 const {provider} = waffle;
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
@@ -35,6 +39,19 @@ const wavaxAbi = [
     'function deposit() public payable',
     ...erc20ABI
 ]
+
+interface PoolInitializationObject {
+    name: string,
+    airdropList: Array<SignerWithAddress>
+}
+
+interface MockTokenPriceObject {
+    symbol: string,
+    value: number
+}
+
+export {PoolInitializationObject, MockTokenPriceObject};
+
 
 export const toWei = ethers.utils.parseUnits;
 export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
@@ -160,6 +177,65 @@ export const toSupply = function (
     return toSupply;
 }
 
+export const deployPools = async function(
+   tokens: Array<PoolInitializationObject>,
+   tokenContracts: Map<string, Contract>,
+   poolContracts: Map<string, Contract>,
+   lendingPools: Array<PoolAsset>,
+   owner: SignerWithAddress | JsonRpcSigner,
+   depositor: SignerWithAddress | Wallet,
+   depositAmount: number = 2000,
+   chain: string = 'AVAX'
+) {
+    for (const token of tokens) {
+        let {
+            poolContract,
+            tokenContract
+        } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList, chain);
+        for (const user of token.airdropList) {
+            await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
+            await poolContract.connect(user).deposit(toWei(depositAmount.toString()));
+        }
+        lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
+        tokenContracts.set(token.name, tokenContract);
+        poolContracts.set(token.name, poolContract);
+    }
+}
+
+function zip(arrays: any) {
+    return arrays[0].map(function(_: any,i: any){
+        return arrays.map(function(array: any){return array[i]})
+    });
+}
+
+export const getRedstonePrices = async function(tokenSymbols: Array<string>, priceProvider: string = "redstone-avalanche-prod-1"): Promise<Array<number>> {
+    return await Promise.all(tokenSymbols.map(async (tokenSymbol: string) => (await redstone.getPrice(tokenSymbol, {provider: priceProvider})).value));
+}
+
+export const getTokensPricesMap = async function(tokenSymbols: Array<string>, priceProviderFunc: Function, additionalMockTokensPrices: Array<MockTokenPriceObject> = [], resultMap: Map<string, number> = new Map()): Promise<Map<string, number>> {
+    for (const [tokenSymbol, tokenPrice] of zip([tokenSymbols, await priceProviderFunc(tokenSymbols)])) {
+        resultMap.set(tokenSymbol, tokenPrice);
+    }
+    if(additionalMockTokensPrices.length > 0) {
+        additionalMockTokensPrices.forEach(obj => (resultMap.set(obj.symbol, obj.value)));
+    }
+    return resultMap
+}
+
+export const convertTokenPricesMapToMockPrices = function(tokensPrices: Map<string, number>) {
+    return Array.from(tokensPrices).map( ([token, price]) => ({symbol: token, value: price}));
+}
+
+export const convertAssetsListToSupportedAssets = function(assetsList: Array<string>, customTokensAddresses: any = [], chain = 'AVAX') {
+    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
+    return assetsList.map(asset => {
+        // @ts-ignore
+        return new Asset(toBytes32(asset), tokenAddresses[asset] === undefined ? customTokensAddresses[asset] : tokenAddresses[asset]);
+    });
+}
+
+
+
 export const getFixedGasSigners = async function (gasLimit: number) {
     const signers: SignerWithAddress[] = await ethers.getSigners();
     signers.forEach(signer => {
@@ -268,15 +344,29 @@ export const extractAssetNamePrices = async function (
 }
 
 
+function getMissingTokenContracts(assetsList: Array<string>, tokenContracts: Map<string, Contract>) {
+    return assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset))
+}
+
+
+export const addMissingTokenContracts = function (tokensContract: Map<string, Contract>, assetsList: Array<string>, chain: string = 'AVAX') {
+    let missingTokens: Array<string> = getMissingTokenContracts(assetsList, tokensContract);
+    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
+    for (const missingToken of missingTokens) {
+        // @ts-ignore
+        tokensContract.set(missingToken, new ethers.Contract(tokenAddresses[missingToken] , wavaxAbi, provider));
+    }
+}
+
 export const deployAndInitExchangeContract = async function (
-    owner: SignerWithAddress,
+    owner: SignerWithAddress | JsonRpcSigner,
     routerAddress: string,
-    supportedAssets: string[],
+    supportedAssets: Array<Asset>,
     name: string
 ) {
     let exchangeFactory = await ethers.getContractFactory(name);
     const exchange = (await exchangeFactory.deploy()).connect(owner);
-    await exchange.initialize(routerAddress, supportedAssets);
+    await exchange.initialize(routerAddress, supportedAssets.map(asset => asset.assetAddress));
     return exchange
 };
 
@@ -315,7 +405,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         switch (tokenName) {
             case 'MCKUSD':
                 //it's a mock implementation of USD token with 18 decimal places
-                tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList])) as MockToken;
+                tokenContract = (await deployContract(owner, MockTokenArtifact, [tokenAirdropList.map((user: SignerWithAddress) => user.address)])) as MockToken;
                 break;
             case 'AVAX':
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
