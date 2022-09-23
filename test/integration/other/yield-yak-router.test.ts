@@ -164,7 +164,7 @@ describe('Yield Yak test stake AVAX', () => {
 
 });
 
-describe('Yield Yak test stake SAVAX', () => {
+describe('Yield Yak test stake sAVAX', () => {
     let smartLoansFactory: SmartLoansFactory,
         loan: SmartLoanGigaChadInterface,
         exchange: PangolinIntermediary,
@@ -174,7 +174,7 @@ describe('Yield Yak test stake SAVAX', () => {
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         SAVAX_PRICE: number,
-        $YYVSAVAXV2_PRICE: any,
+        SAV2_PRICE: any,
         yakStakingContract: Contract,
         sAvaxTokenContract: Contract,
         avaxTokenContract: Contract;
@@ -185,8 +185,8 @@ describe('Yield Yak test stake SAVAX', () => {
         let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-            new Asset(toBytes32('SAVAX'), TOKEN_ADDRESSES['sAVAX']),
-            new Asset(toBytes32('$YYVSAVAXV2'), TOKEN_ADDRESSES['$YYVSAVAXV2']),
+            new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
+            new Asset(toBytes32('SAV2'), TOKEN_ADDRESSES['SAV2']),
         ]
         let tokenManager = await deployContract(
             owner,
@@ -235,10 +235,10 @@ describe('Yield Yak test stake SAVAX', () => {
 
         await deployAllFacets(diamondAddress)
 
-        // TODO: Include SAVAX and $YYVSAVAXV2 prices once available in redstone
+        // TODO: Include sAVAX and $YYVSAVAXV2 prices once available in redstone
         AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
         SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
-        $YYVSAVAXV2_PRICE = (await redstone.getPrice('SAV2', {provider: "redstone-avalanche-prod-1"})).value;
+        SAV2_PRICE = (await redstone.getPrice('SAV2', {provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
@@ -246,12 +246,12 @@ describe('Yield Yak test stake SAVAX', () => {
                 value: AVAX_PRICE
             },
             {
-                symbol: 'SAVAX',
+                symbol: 'sAVAX',
                 value: SAVAX_PRICE
             },
             {
-                symbol: '$YYVSAVAXV2',
-                value: $YYVSAVAXV2_PRICE
+                symbol: 'SAV2',
+                value: SAV2_PRICE
             },
         ];
 
@@ -278,16 +278,16 @@ describe('Yield Yak test stake SAVAX', () => {
     });
 
     // TODO: Calculate more accurate expected sAvax output once Redstone data feed provides sAvax price
-    it("should buy 50 SAVAX", async () => {
+    it("should buy 50 sAVAX", async () => {
         await wrappedLoan.swapPangolin(
             toBytes32('AVAX'),
-            toBytes32('SAVAX'),
+            toBytes32('sAVAX'),
             toWei("50"),
             toWei("40")
         )
     });
 
-    it("should successfully stake SAVAX with YieldYak", async () => {
+    it("should successfully stake sAVAX with YieldYak", async () => {
         let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
         let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
         let investedAvaxAmount = BigNumber.from(toWei("10"));
@@ -306,7 +306,7 @@ describe('Yield Yak test stake SAVAX', () => {
         expect(fromWei(sAvaxBalanceDifference)).to.be.closeTo(10, 1);
     });
 
-    it("should unstake remaining SAVAX", async () => {
+    it("should unstake remaining sAVAX", async () => {
         let initialSAvaxBalance = BigNumber.from(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
         let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 

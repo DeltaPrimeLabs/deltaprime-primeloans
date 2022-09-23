@@ -157,7 +157,11 @@ describe('PangolinIntermediary', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
+            await sut.initialize(pangolinRouterAddress, [
+                TOKEN_ADDRESSES['AVAX'],
+                TOKEN_ADDRESSES['USDC'],
+                TOKEN_ADDRESSES['PNG_AVAX_USDC'],
+            ]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
@@ -185,8 +189,6 @@ describe('PangolinIntermediary', () => {
             await wavaxToken.connect(owner).transfer(sut.address, toWei("3"));
             await usdToken.connect(owner).transfer(sut.address, parseUnits((AVAX_PRICE * 3).toFixed(6), BigNumber.from("6")));
 
-            console.log(fromWei(await lpToken.balanceOf(owner.address)))
-
             await sut.connect(owner).addLiquidity(
                 TOKEN_ADDRESSES['AVAX'],
                 TOKEN_ADDRESSES['USDC'],
@@ -212,8 +214,6 @@ describe('PangolinIntermediary', () => {
                 toWei("2"),
                 parseUnits((AVAX_PRICE * 2).toFixed(6), BigNumber.from("6"))
             );
-
-            console.log(fromWei(await lpToken.balanceOf(owner.address)));
         });
     });
 

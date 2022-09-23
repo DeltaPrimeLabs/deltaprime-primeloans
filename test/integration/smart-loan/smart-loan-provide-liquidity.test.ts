@@ -232,8 +232,6 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
 
-            console.log('lp balance: ', await lpToken.balanceOf(wrappedLoan.address))
-
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
 
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);

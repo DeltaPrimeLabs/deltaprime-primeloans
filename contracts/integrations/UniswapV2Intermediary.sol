@@ -74,8 +74,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
         require(isTokenWhitelisted[tokenA], 'Trying to LP unsupported token');
         require(isTokenWhitelisted[tokenB], 'Trying to LP unsupported token');
-        //TODO
-//        require(isTokenWhitelisted[lpTokenAddress], 'Trying to add unsupported LP token');
+        require(isTokenWhitelisted[lpTokenAddress], 'Trying to add unsupported LP token');
 
         router.addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, address(this), block.timestamp);
 
@@ -100,8 +99,8 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
         require(isTokenWhitelisted[tokenA], 'Trying to remove LP of unsupported token');
         require(isTokenWhitelisted[tokenB], 'Trying to remove LP of unsupported token');
-        //TODO
-//        require(isTokenWhitelisted[lpTokenAddress], 'Trying to remove unsupported LP token');
+        //TODO: handle paused LP tokens
+        require(isTokenWhitelisted[lpTokenAddress], 'Trying to remove unsupported LP token');
 
         router.removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, address(this), block.timestamp);
 

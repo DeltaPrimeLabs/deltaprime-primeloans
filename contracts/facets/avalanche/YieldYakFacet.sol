@@ -64,7 +64,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // TODO make staking more generic
         // Add asset to ownedAssets
-        DiamondStorageLib.addOwnedAsset("$YYVSAVAXV2", YAKStakingVectorSAV2Address);
+        DiamondStorageLib.addOwnedAsset("SAV2", YAKStakingVectorSAV2Address);
 
         emit Staked(msg.sender, "SAVAX", amount, block.timestamp);
     }
@@ -101,7 +101,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("$YYVSAVAXV2");
+            DiamondStorageLib.removeOwnedAsset("YY_TJ_AVAX_USDC");
         }
 
         emit Unstaked(msg.sender, "SAVAX", amount, block.timestamp);
@@ -118,7 +118,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // TODO make unstaking more generic
         if(yakStakingContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("$YYVSAVAXV2");
+            DiamondStorageLib.removeOwnedAsset("SAV2");
         }
 
         emit Unstaked(msg.sender, "SAVAX", amount, block.timestamp);
