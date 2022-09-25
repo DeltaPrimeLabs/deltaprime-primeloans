@@ -7,7 +7,6 @@ import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../../lib/SolvencyMethods.sol";
-import "../SolvencyFacet.sol";
 import "../../interfaces/facets/avalanche/IYieldYak.sol";
 
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
