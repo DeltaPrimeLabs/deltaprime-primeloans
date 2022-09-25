@@ -3,6 +3,12 @@ const {ethers} = require("hardhat");
 
 
 const { getSelectors, FacetCutAction } = require('./selectors.js')
+const debug = false;
+console.log = (message) => {
+    if (debug) {
+        console.log(message);
+    }
+}
 
 
 async function replaceFacet(facetName, diamondAddress, onlySpecificFunctions = [], hardhatConfig = undefined) {

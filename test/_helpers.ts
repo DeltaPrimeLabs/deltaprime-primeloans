@@ -456,7 +456,7 @@ export async function recompileConstantsFile(chain: string, contractName: string
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
     await updateConstants(chain, exchanges, tokenManagerAddress, redstoneConfigManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
-    execSync(`npx hardhat compile`, {encoding: 'utf-8'});
+    execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }
 
