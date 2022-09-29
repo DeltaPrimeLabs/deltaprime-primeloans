@@ -1,5 +1,5 @@
 import POOLTUP from '@contracts/WavaxPoolTUP.json';
-import POOL from '@artifacts/contracts/WavaxPool.sol/WavaxPool.json'
+import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json'
 import {
   awaitConfirmation
 } from "../utils/blockchain";

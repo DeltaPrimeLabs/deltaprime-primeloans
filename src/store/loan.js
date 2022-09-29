@@ -1,9 +1,9 @@
 import {awaitConfirmation, handleCall} from "../utils/blockchain";
-import LOAN from '@contracts/SmartLoanLogicFacet.json'
+import LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import PANGOLIN_EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json'
-import PANGOLIN_EXCHANGE from '@artifacts/contracts/PangolinIntermediary.sol/PangolinIntermediary.json'
+import PANGOLIN_EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json'
 import {formatUnits, fromWei, parseUnits, round, toWei} from "@/utils/calculate";
 import config from "@/config";
 import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from "../utils/calculate";

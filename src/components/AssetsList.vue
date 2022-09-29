@@ -822,14 +822,4 @@ export default {
   margin-left: 2px;
 }
 
-.loader-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100px;
-  margin-top: 40px;
-}
-
 </style>

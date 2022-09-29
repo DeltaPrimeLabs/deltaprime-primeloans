@@ -35,7 +35,7 @@
       </div>
 
       <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange(asset)"></Toggle>
+        <Toggle v-on:change="assetToggleChange"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -120,6 +120,7 @@ export default {
     },
 
     assetToggleChange(asset) {
+      console.log(asset);
       this.selectedDepositAsset = asset;
     },
   }

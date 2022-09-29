@@ -5,7 +5,7 @@
         Withdraw
       </div>
 
-      <CurrencyInput :symbol="asset.name"
+      <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
                      :max="Number(asset.balance)"
                      :validators="validators"></CurrencyInput>
@@ -40,7 +40,7 @@
       </div>
 
       <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange(asset)"></Toggle>
+        <Toggle v-on:change="assetToggleChange"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -84,7 +84,7 @@ export default {
       validators: [],
       currencyInputError: false,
       MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
-      selectedDepositAsset: 'AVAX'
+      selectedWithdrawAsset: 'AVAX'
     };
   },
 
@@ -103,7 +103,20 @@ export default {
 
   methods: {
     submit() {
-      this.$emit('WITHDRAW', this.withdrawValue);
+      let withdrawEvent = {};
+      if (this.asset.symbol === 'AVAX') {
+        withdrawEvent = {
+          withdrawAsset: this.selectedWithdrawAsset,
+          value: this.withdrawValue,
+        };
+      } else {
+        withdrawEvent = {
+          withdrawAsset: this.asset.symbol,
+          value: this.withdrawValue,
+        };
+      }
+      console.log(withdrawEvent);
+      this.$emit('WITHDRAW', withdrawEvent);
     },
 
 
@@ -115,11 +128,7 @@ export default {
 
     calculateLTVAfterTransaction() {
       if (this.withdrawValue) {
-        console.log(this.withdrawValue);
-        console.log(this.totalCollateral);
         const loan = this.totalCollateral * this.ltv;
-        console.log(loan);
-        console.log(this.totalCollateral - (this.withdrawValue * this.asset.price));
         return loan / (this.totalCollateral - (this.withdrawValue * this.asset.price));
       } else {
         return this.ltv;
@@ -127,7 +136,7 @@ export default {
     },
 
     assetToggleChange(asset) {
-      this.selectedDepositAsset = asset;
+      this.selectedWithdrawAsset = asset;
     },
 
     updateLTVAfterTransaction() {
@@ -138,12 +147,8 @@ export default {
       this.validators = [
         {
           validate: (value) => {
-            console.log(this.ltvAfterTransaction);
             if (this.calculateLTVAfterTransaction() > config.MAX_ALLOWED_LTV) {
-              console.log('ltv above');
               return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
-            } else {
-              console.log('ltv ok');
             }
           }
         },

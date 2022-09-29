@@ -76,6 +76,7 @@ export default {
   },
 
   mounted() {
+    console.log(this.pool);
     this.setupActionsConfiguration();
   },
 
@@ -120,15 +121,14 @@ export default {
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.$on('DEPOSIT', deposit => {
-        if (this.pool.asset.name === 'AVAX') {
-          this.handleTransaction(this.deposit, {amount: deposit}).then(() => {
-            this.closeModal();
-          });
-        } else if (this.pool.asset.name === 'USDC') {
-          this.handleTransaction(this.depositUsdc, {amount: deposit}).then(() => {
-            this.closeModal();
-          });
-        }
+        const depositRequest = {
+          assetSymbol: this.pool.asset.symbol,
+          amount: deposit
+        };
+
+        this.handleTransaction(this.deposit, {depositRequest: depositRequest}).then(() => {
+          this.closeModal();
+        });
       });
     },
 
@@ -140,15 +140,13 @@ export default {
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.$on('WITHDRAW', withdraw => {
-        if (this.pool.asset.name === 'AVAX') {
-          this.handleTransaction(this.withdraw, {amount: withdraw}).then(() => {
-            this.closeModal();
-          });
-        } else if (this.pool.asset.name === 'USDC') {
-          this.handleTransaction(this.withdrawUsdc(), {amount: withdraw}).then(() => {
-            this.closeModal();
-          });
-        }
+        const withdrawRequest = {
+          assetSymbol: this.pool.asset.symbol,
+          amount: withdraw
+        };
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+          this.closeModal();
+        });
       });
     },
 

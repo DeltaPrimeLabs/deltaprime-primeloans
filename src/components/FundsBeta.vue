@@ -28,7 +28,7 @@
           <FundTableRowBeta v-for="(asset, index) in funds" v-bind:key="asset.symbol" :asset="asset" :balance="assetBalances[index]"></FundTableRowBeta>
         </div>
       </div>
-      <div v-if="!funds || !assetBalances">
+      <div class="loader-container" v-if="!funds || !assetBalances">
         <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
       </div>
     </div>
@@ -195,7 +195,7 @@ export default {
               this.updateFund(symbol, 'minPrice', minPrice);
               this.updateFund(symbol, 'maxPrice', maxPrice);
               if (this.assetBalances && this.assetBalances[index]) {
-                const balance = formatUnits(this.assetBalances[index], config.ASSETS_CONFIG[symbol].decimals);
+                const balance = formatUnits(this.assetBalances[index].balance, config.ASSETS_CONFIG[symbol].decimals);
                 if (balance > 0) {
                   this.updateFund(symbol, 'balance', balance);
                 } else {
@@ -273,6 +273,10 @@ export default {
     .funds-table__body {
       display: flex;
       flex-direction: column;
+    }
+
+    .loader-container {
+      margin-top: 40px;
     }
   }
 }

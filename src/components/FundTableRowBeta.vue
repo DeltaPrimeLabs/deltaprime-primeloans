@@ -152,7 +152,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'repay', 'createAndFundLoan', 'fundNativeToken']),
+    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -254,7 +254,7 @@ export default {
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = 101;
+      modalInstance.totalCollateral = 1000;
       modalInstance.poolTVL = 11245;
       modalInstance.loanAPY = this.loanAPY;
       modalInstance.maxLTV = 4.5;
@@ -275,6 +275,7 @@ export default {
       modalInstance.sourceAssetBalance = this.asset.balance;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.$on('SWAP', swapRequest => {
+        console.log(swapRequest);
         this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
           this.closeModal();
         });
@@ -299,7 +300,12 @@ export default {
                 this.closeModal();
               });
             } else {
-              this.handleTransaction(this.fund, {value: addFromWalletEvent.value}).then(() => {
+              const fundRequest = {
+                value: String(addFromWalletEvent.value),
+                asset: this.asset.symbol,
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+              };
+              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
                 this.closeModal();
               });
             }
@@ -313,14 +319,26 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = 900;
-      modalInstance.$on('WITHDRAW', value => {
-        const withdrawRequest = {
-          asset: this.asset.symbol,
-          amount: value
-        };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
-          this.closeModal();
-        });
+      console.log(this.asset);
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
+        if (withdrawEvent.withdrawAsset === 'AVAX') {
+          const withdrawRequest = {
+            asset: withdrawEvent.withdrawAsset,
+            value: withdrawEvent.value
+          };
+          console.log('native');
+          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}).then(() => {
+            this.closeModal();
+          });
+        } else {
+          const withdrawRequest = {
+            asset: this.asset.symbol,
+            value: withdrawEvent.value
+          };
+          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+            this.closeModal();
+          });
+        }
       });
     },
 
@@ -343,7 +361,6 @@ export default {
   watch: {
     smartLoanContract: {
       handler(smartLoanContract) {
-        console.log('watchSmartLoanContract');
         if (this) {
           this.setupActionsConfiguration();
         } else {

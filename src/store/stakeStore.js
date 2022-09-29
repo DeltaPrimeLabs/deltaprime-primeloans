@@ -2,6 +2,8 @@ import {awaitConfirmation, handleCall} from '../utils/blockchain';
 import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
+const fromBytes32 = require('ethers').utils.parseBytes32String;
+
 
 const ethereum = window.ethereum;
 
@@ -49,7 +51,8 @@ export default {
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const stakeTransaction = await smartLoanContract.stakeAVAXYak(toWei(String(amount)), {gasLimit: 1100000});
+      // TODO method does not exist
+      const stakeTransaction = await smartLoanContract.stakeAVAXYak(toWei(String(amount)), {gasLimit: 110000000});
 
       await awaitConfirmation(stakeTransaction, provider, 'stakeAvaxYak');
 

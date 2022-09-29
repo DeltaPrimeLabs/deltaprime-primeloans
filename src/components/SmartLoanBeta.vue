@@ -65,7 +65,7 @@ export default {
     ...mapActions('stakeStore', ['stakeStoreSetup']),
 
     async assetBalancesChange(balances) {
-      if (balances.length > 0) {
+      if (balances && balances.length > 0) {
         let todayValue = 0;
         let yesterdayValue = 0;
         const assets = config.ASSETS_CONFIG;
@@ -73,9 +73,11 @@ export default {
         const todayPrices = await redstone.getPrice(assetSymbols);
         const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24});
         assetSymbols.forEach((symbol, index) => {
-          const balance = formatUnits(balances[index], config.ASSETS_CONFIG[symbol].decimals);
-          todayValue += balance * todayPrices[symbol].value;
-          yesterdayValue += balance * yesterdayPrices[symbol].value;
+          if (balances[index]) {
+            const balance = formatUnits(balances[index].balance, config.ASSETS_CONFIG[symbol].decimals);
+            todayValue += balance * todayPrices[symbol].value;
+            yesterdayValue += balance * yesterdayPrices[symbol].value;
+          }
         });
 
         this.todayValue = todayValue;

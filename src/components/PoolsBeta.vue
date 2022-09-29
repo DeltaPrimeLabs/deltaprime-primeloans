@@ -6,7 +6,7 @@
           <div class="title">Deposits</div>
           <NameValueBadgeBeta :name="'All deposits'">{{ totalTVL | usd }}</NameValueBadgeBeta>
           <div class="pools">
-            <div class="pools-table" v-if="funds">
+            <div class="pools-table">
               <div class="pools-table__header">
                 <div class="header__cell asset">Asset</div>
                 <div class="header__cell deposit">Deposit</div>
@@ -16,13 +16,13 @@
                 <div></div>
                 <div class="header__cell actions">Actions</div>
               </div>
-              <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in pools" v-bind:key="pool.asset.symbol"
+              <div class="pools-table__body" v-if="funds && pools">
+                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
               </div>
-            </div>
-            <div v-if="!funds">
-              <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
+              <div class="loader-container" v-if="!funds || !poolsList">
+                <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
+              </div>
             </div>
           </div>
         </Block>
@@ -52,12 +52,10 @@ export default {
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
-      this.setupPools();
     } else {
       setTimeout(async () => {
         await this.fundsStoreSetup();
         await this.poolStoreSetup();
-        this.setupPools();
       }, 1000);
 
     }
@@ -65,39 +63,24 @@ export default {
 
   data() {
     return {
-      pools: null,
       funds: config.ASSETS_CONFIG,
       totalTVL: 0,
+      poolsList: null,
     };
   },
   computed: {
     ...mapState('fundsStore', ['assets']),
-    ...mapState('poolStore', ['avaxPool', 'usdcPool']),
+    ...mapState('poolStore', ['pools']),
   },
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('fundsStore', ['fundsStoreSetup']),
-    setupPools() {
-      if (this.avaxPool && this.usdcPool) {
-        this.pools = [
-          {
-            asset: config.ASSETS_CONFIG['AVAX'],
-            deposit: this.avaxPool.deposit,
-            apy: this.avaxPool.apy,
-            interest: 0.0112,
-            tvl: this.avaxPool.tvl
-          },
-          {
-            asset: config.ASSETS_CONFIG['USDC'],
-            deposit: this.usdcPool.deposit,
-            apy: this.usdcPool.apy,
-            interest: 0.0271,
-            tvl: this.usdcPool.tvl
-          },
-        ];
+    setupPoolsList() {
+      setTimeout(() => {
+        this.poolsList = Object.values(this.pools);
         this.setupTotalTVL();
-      }
+      }, 100);
     },
 
     async updateFunds(funds) {
@@ -106,7 +89,7 @@ export default {
 
     setupTotalTVL() {
       let totalTVL = 0;
-      this.pools.forEach(pool => {
+      this.poolsList.forEach(pool => {
         totalTVL += pool.tvl * pool.asset.price;
       });
       this.totalTVL = totalTVL;
@@ -120,9 +103,11 @@ export default {
       immediate: true
     },
 
-    avaxPool: {
+    pools: {
       handler() {
-        this.setupPools();
+        setTimeout(() => {
+          this.setupPoolsList();
+        });
       }
     }
   }
@@ -195,6 +180,14 @@ export default {
             }
 
           }
+        }
+
+        .loader-container {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          margin-top: 40px;
         }
       }
     }
