@@ -1,5 +1,9 @@
 <template>
 <div class="page-content">
+  <Banner>
+    This is the alpha version of DeltaPrime. At the full launch lots of new features will come out. Join our
+    <a href="https://discord.gg/57EdDsvhxK" target="_blank"><b>Discord</b></a> to learn more.
+  </Banner>
   <Banner v-if="showNetworkBanner">
     You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the correct one.
   </Banner>
