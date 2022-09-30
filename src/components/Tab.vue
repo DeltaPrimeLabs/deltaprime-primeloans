@@ -12,7 +12,7 @@ export default {
       default: 'Tab'
     },
     imgActive: String,
-    img: String,
+    imgNotActive: String,
     imgPosition: String,
     titleWidth: String
   },

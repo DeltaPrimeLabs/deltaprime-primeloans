@@ -218,6 +218,7 @@ export default {
 
     logAsset(asset) {
       console.log(asset);
+      console.log(JSON.stringify(asset.prices));
     },
 
     setup24HourChange() {

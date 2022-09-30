@@ -9,6 +9,10 @@
         <div class="tab-button">
           <div :style="{'width': tab.titleWidth}">{{ tab.title }}</div>
         </div>
+        <div class="tab-icon">
+          <img v-if="index === selectedIndex" :src="tab.imgActive">
+          <img v-if="index !== selectedIndex" :src="tab.imgNotActive">
+        </div>
         <img v-if="index !== tabs.length - 1" src="src/assets/icons/slash.svg" class="slash">
       </li>
     </ul>
@@ -97,6 +101,10 @@ export default {
       padding-left: 0px;
       padding-right: 20px;
     }
+  }
+
+  .tab-icon {
+    cursor: pointer;
   }
 
   .tab-selected .tab-button {

@@ -11,14 +11,15 @@
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
-            <Tab title="Funds">
+            <Tab :title="'Assets'"
+                 :img-active="'src/assets/icons/assets_on.svg'"
+                 :img-not-active="'src/assets/icons/assets_off.svg'">
               <FundsBeta></FundsBeta>
             </Tab>
-            <Tab title="Stake">
+            <Tab :title="'Farms'"
+                 :img-active="'src/assets/icons/plant_on.svg'"
+                 :img-not-active="'src/assets/icons/plant_off.svg'">
               <StakeBeta></StakeBeta>
-            </Tab>
-            <Tab title="Provide Liquidity">
-              provide liquidity
             </Tab>
           </Tabs>
         </Block>
