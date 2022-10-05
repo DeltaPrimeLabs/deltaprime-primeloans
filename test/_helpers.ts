@@ -397,7 +397,7 @@ export async function syncTime() {
     }
 }
 
-export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any, chain = 'AVAX') {
+export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
 
     const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -439,6 +439,8 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         }
     }
 
+    rewarder !== '' ? rewarder : ethers.constants.AddressZero;
+
     const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -447,7 +449,8 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         borrowersRegistry.address,
         depositIndex.address,
         borrowingIndex.address,
-        tokenContract!.address
+        tokenContract!.address,
+        rewarder
     );
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }

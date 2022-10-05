@@ -10,6 +10,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
+import "./PoolRewarder.sol";
 
 
 /**
@@ -30,13 +31,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     IRatesCalculator public ratesCalculator;
     IBorrowersRegistry public borrowersRegistry;
+    PoolRewarder public poolRewarder;
 
     IIndex public depositIndex;
     IIndex public borrowIndex;
 
     address payable public tokenAddress;
 
-    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_) public initializer {
+    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, PoolRewarder _poolRewarder) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_)), "RatesCalculator must be a contract");
         require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "BorrowersRegistry must be a contract");
         require(AddressUpgradeable.isContract(address(depositIndex_)), "DepositIndex must be a contract");
@@ -46,6 +48,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         ratesCalculator = ratesCalculator_;
         depositIndex = depositIndex_;
         borrowIndex = borrowIndex_;
+        poolRewarder = _poolRewarder;
         tokenAddress = tokenAddress_;
 
         __Ownable_init();
@@ -54,6 +57,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /* ========== SETTERS ========== */
+
+    /**
+     * Sets the new Pool Rewarder.
+     * The PoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
+     * Only the owner of the Contract can execute this function.
+     * @dev ratesCalculator the address of rates calculator
+    **/
+    function setPoolRewarder(PoolRewarder _poolRewarder) external onlyOwner {
+        // setting address(0) ratesCalculator_ freezes the pool
+        require(AddressUpgradeable.isContract(address(_poolRewarder)) || address(_poolRewarder) == address(0), "Must be a contract");
+        poolRewarder = _poolRewarder;
+
+        emit PoolRewarderChanged(address(_poolRewarder), block.timestamp);
+    }
 
     /**
      * Sets the new rate calculator.
@@ -175,6 +192,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[address(this)] += amount;
         _updateRates();
 
+        poolRewarder.stakeFor(amount, msg.sender);
+
         emit Deposit(msg.sender, amount, block.timestamp);
     }
 
@@ -200,6 +219,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _transferFromPool(msg.sender, _amount);
 
         _updateRates();
+
+        poolRewarder.withdrawFor(_amount, msg.sender);
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
     }
@@ -262,6 +283,17 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     function totalBorrowed() public view returns (uint256) {
         return getBorrowed(address(this));
+    }
+
+
+    // Calls the PoolRewarder.getRewardsFor() that sends pending rewards to msg.sender
+    function getRewards() external {
+        poolRewarder.getRewardsFor(msg.sender);
+    }
+
+    // Returns number of pending rewards for msg.sender
+    function checkRewards() external view returns (uint256) {
+        return poolRewarder.earned(msg.sender);
     }
 
     /**
@@ -416,4 +448,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     * @param timestamp of the borrowers registry change
     **/
     event RatesCalculatorChanged(address indexed calculator, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing pool rewarder
+    * @param poolRewarder an address of the newly set pool rewarder
+    * @param timestamp of the pool rewarder change
+    **/
+    event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
 }
