@@ -1,20 +1,20 @@
 <template>
-  <div class="staking-protocol-table-row-component" v-if="protocol">
+  <div class="staking-farm-table-row-component" v-if="farm">
     <div class="table__row">
-      <div class="table__cell protocol-cell">
-        <div class="protocol">
-          <img class="protocol__icon" src="src/assets/logo/yak.svg">
+      <div class="table__cell farm-cell">
+        <div class="farm">
+          <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
           <div class="protocol__details">
-            <div class="asset-name">AVAX</div>
-            <div class="by-protocol">by YAK</div>
+            <div class="asset-name">{{asset.name}}</div>
+            <div class="by-farm">by {{protocol.name}}</div>
           </div>
         </div>
       </div>
 
       <div class="table__cell">
         <div class="double-value staked-balance">
-          <div class="double-value__pieces">{{ protocol.balance | smartRound }}</div>
-          <div class="double-value__usd">{{ avaxToUSD(protocol.balance) | usd}}</div>
+          <div class="double-value__pieces">{{ balance | smartRound }}</div>
+          <div class="double-value__usd">{{ avaxToUSD(balance) | usd}}</div>
         </div>
       </div>
 
@@ -31,8 +31,8 @@
 
       <div class="table__cell">
         <div class="double-value">
-          <div class="double-value__pieces">0.78</div>
-          <div class="double-value__usd">{{ 3.35 | usd }}</div>
+          <div class="double-value__pieces">0</div>
+          <div class="double-value__usd">{{ 0 | usd }}</div>
         </div>
       </div>
 
@@ -51,45 +51,51 @@
 import StakeModal from './StakeModal';
 import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
+import config from "../config";
 
 
 export default {
   name: 'StakingProtocolTableRow',
   props: {
-    protocol: {
+    farm: {
       required: true,
     },
     asset: {
       required: true,
     }
   },
-  mounted() {
-    this.setupStakingApy();
+  async mounted() {
+    this.balance = await this.farm.staked(this.loan.address);
+    this.apy = await this.farm.apy();
   },
   data() {
     return {
-      staked: null,
-      apy: null,
       dailyInterest: 0,
       totalInterest: 0,
+      balance: 0,
+      apy: 0
     };
   },
   computed: {
     ...mapState('stakeStore', ['stakedAssets']),
+    ...mapState('loan', ['loan']),
     calculateDailyInterest() {
-      return this.apy / 365 * this.protocol.balance;
+      return this.apy / 365 * this.balance;
+    },
+    protocol() {
+      return config.PROTOCOLS_CONFIG[this.farm.protocol];
     }
   },
   methods: {
-    ...mapActions('stakeStore', ['stakeAvaxYak', 'unstakeAvaxYak']),
+    ...mapActions('stakeStore', ['stake', 'unstake']),
     openStakeModal() {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.available = this.asset.balance;
-      modalInstance.staked = this.protocol.balance;
+      modalInstance.available = this.balance;
+      modalInstance.staked = this.farm.balance;
       modalInstance.asset = this.asset;
       modalInstance.$on('STAKE', (stakeValue) => {
-        this.handleTransaction(this.stakeAvaxYak({amount: stakeValue})).then(result => {
+        this.handleTransaction(this.stake({amount: stakeValue, method: this.farm.stakeMethod})).then(result => {
           this.closeModal();
         })
       });
@@ -98,24 +104,14 @@ export default {
     openUnstakeModal() {
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.staked = this.protocol.balance;
+      modalInstance.staked = this.balance;
       modalInstance.asset = this.asset;
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
-        this.handleTransaction(this.unstakeAvaxYak({amount: unstakeValue})).then(result => {
+        this.handleTransaction(this.unstake({amount: unstakeValue, method: this.farm.unstakeMethod})).then(result => {
           this.closeModal();
         })
       });
     },
-
-    setupStakingApy() {
-      const avaxFarmAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
-      const apysUrl = 'https://staging-api.yieldyak.com/apys';
-      fetch(apysUrl).then(response => {
-        return response.json();
-      }).then(apys => {
-        this.apy = apys[avaxFarmAddress].apy / 100;
-      });
-    }
   }
 };
 </script>
@@ -123,7 +119,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.staking-protocol-table-row-component {
+.staking-farm-table-row-component {
 
   .table__row {
     display: grid;
@@ -143,11 +139,11 @@ export default {
       font-weight: 500;
       font-size: $font-size-xsm;
 
-      &.protocol-cell {
+      &.farm-cell {
         justify-content: flex-start;
       }
 
-      .protocol {
+      .farm {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -168,7 +164,7 @@ export default {
             font-weight: 500;
           }
 
-          .by-protocol {
+          .by-farm {
             font-size: $font-size-xxs;
             font-weight: 500;
             color: $medium-gray;

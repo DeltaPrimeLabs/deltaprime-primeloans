@@ -5,7 +5,8 @@
         Add from wallet
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
+      <CurrencyInput v-if="isLP" :symbol="asset.primary" :symbol-secondary="asset.secondary" v-on:inputChange="inputChange"></CurrencyInput>
+      <CurrencyInput v-else :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -25,10 +26,10 @@
               Balance:
             </div>
             <div v-if="asset.balance" class="summary__value">
-              {{ Number(asset.balance) + value | smartRound }} {{ asset.symbol }}
+              {{ Number(asset.balance) + value | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
             <div v-if="!asset.balance" class="summary__value">
-              {{ value | smartRound }} {{ asset.symbol }}
+              {{ value | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -68,7 +69,8 @@ export default {
   props: {
     asset: {},
     ltv: {},
-    totalCollateral: {}
+    totalCollateral: {},
+    isLP: false
   },
 
   data() {

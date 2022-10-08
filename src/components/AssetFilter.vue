@@ -28,7 +28,7 @@ export default {
     setupFilterValue() {
       this.filterValue = {};
       this.assetOptions.forEach(option => {
-        this.filterValue[option] = {asset: option, active: false};
+        this.filterValue[option] = {asset: option, active: true};
       });
     },
 

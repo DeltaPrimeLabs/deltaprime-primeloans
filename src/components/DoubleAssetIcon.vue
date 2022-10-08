@@ -40,7 +40,6 @@ export default {
         width: 24px;
         height: 24px;
         border: 1px solid white;
-        z-index: 1;
       }
 
       &.icon__secondary {

@@ -1,9 +1,10 @@
 <template>
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
-      <stats-bar-element-beta :label="'Total value'" :value="totalValue | usd">
+
+      <stats-bar-element-beta :label="'Borrowed'" :value="debt | usd">
         <div class="total-value-extra">
-          Today: <colored-value-beta :value="todayPNL" :formatting="'usd'"></colored-value-beta>
+          Max: <colored-value-beta :value="borrowingCapacity" :formatting="'usd'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
       <stats-bar-element-beta v-if="ltv != null" :label="'LTV'" :value="ltv | percent">
@@ -12,13 +13,7 @@
 
       <vue-loaders-ball-beat v-if="ltv == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
-
-      <stats-bar-element-beta :label="'Profit'" :value="profit | usd">
-        <div class="profit-extra" v-if="profit != null">
-          <colored-value-beta :value="profitPercentage" :formatting="'percent'"></colored-value-beta>
-        </div>
-        <vue-loaders-ball-beat v-if="profit == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
-      </stats-bar-element-beta>
+      <stats-bar-element-beta :label="'Collateral'" :value="totalValue - debt | usd"></stats-bar-element-beta>
     </div>
   </div>
 </template>
@@ -28,19 +23,25 @@ import Bar from './Bar';
 import StatsBarElementBeta from './StatsBarElementBeta';
 import BarGaugeBeta from './BarGaugeBeta';
 import ColoredValueBeta from './ColoredValueBeta';
+import config from "../config";
 
 export default {
   name: 'StatsBarBeta',
   components: {ColoredValueBeta, BarGaugeBeta, StatsBarElementBeta},
   props: {
     totalValue: null,
-    todayPNL: null,
+    debt: null,
     ltv: null,
     profit: null,
     profitPercentage: null,
   },
   comments: {
     Bar
+  },
+  computed: {
+    borrowingCapacity() {
+      return config.MAX_ALLOWED_LTV * (this.totalValue - this.debt);
+    },
   }
 };
 </script>
@@ -55,12 +56,12 @@ export default {
   font-weight: 500;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   padding: 16px 210px 16px 210px;
 
   .total-value-extra, .profit-extra {
-    font-size: $font-size-md;
+    font-size: $font-size-sm;
     margin-bottom: 19px;
   }
 }

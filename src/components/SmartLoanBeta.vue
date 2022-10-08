@@ -4,22 +4,27 @@
       <StatsBarBeta
         :total-value="noSmartLoan ? 0 : fullLoanStatus.totalValue"
         :today-p-n-l="todayValue - yesterdayValue"
+        :debt="noSmartLoan ? 0 : fullLoanStatus.debt"
         :ltv="noSmartLoan ? 0 : ltv"
         :profit="noSmartLoan ? 0 : 785.12"
         :profit-percentage="noSmartLoan ? 0 : 0.2352">
       </StatsBarBeta>
+      <InfoBubble v-if="noSmartLoan" cacheKey="ACCOUNT-INIT">
+        Add funds from your wallet to start investing. <br>
+        The first transaction creates your Prime Account.
+      </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs>
             <Tab :title="'Assets'"
                  :img-active="'src/assets/icons/assets_on.svg'"
                  :img-not-active="'src/assets/icons/assets_off.svg'">
-              <FundsBeta></FundsBeta>
+              <Assets></Assets>
             </Tab>
             <Tab :title="'Farms'"
                  :img-active="'src/assets/icons/plant_on.svg'"
                  :img-not-active="'src/assets/icons/plant_off.svg'">
-              <StakeBeta></StakeBeta>
+              <Farm></Farm>
             </Tab>
           </Tabs>
         </Block>
@@ -33,16 +38,17 @@ import StatsBarBeta from './StatsBarBeta';
 import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
-import FundsBeta from './FundsBeta';
+import Assets from './Assets';
+import InfoBubble from "@/components/InfoBubble.vue";
 import {mapActions, mapState} from 'vuex';
-import StakeBeta from './StakeBeta';
+import Farm from './Farm';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {StakeBeta, FundsBeta, Block, StatsBarBeta, Tabs, Tab},
+  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble},
   computed: {
     ...mapState('fundsStore', ['ltv', 'assetBalances', 'fullLoanStatus', 'noSmartLoan']),
   },

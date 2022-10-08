@@ -5,7 +5,14 @@
         Withdraw
       </div>
 
-      <CurrencyInput :symbol="asset.symbol"
+      <CurrencyInput v-if="isLP"
+                     :symbol="asset.primary"
+                     :symbol-secondary="asset.secondary"
+                     v-on:newValue="withdrawValueChange"
+                     :max="Number(asset.balance)"
+                     :validators="validators"></CurrencyInput>
+      <CurrencyInput v-else
+                     :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
                      :max="Number(asset.balance)"
                      :validators="validators"></CurrencyInput>
@@ -33,7 +40,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance - withdrawValue | smartRound }} {{ asset.symbol }}
+              {{ asset.balance - withdrawValue | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol  }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -74,7 +81,7 @@ export default {
     asset: {},
     ltv: {},
     totalCollateral: {},
-
+    isLp: false
   },
 
   data() {
@@ -115,7 +122,7 @@ export default {
           value: this.withdrawValue,
         };
       }
-      console.log(withdrawEvent);
+
       this.$emit('WITHDRAW', withdrawEvent);
     },
 

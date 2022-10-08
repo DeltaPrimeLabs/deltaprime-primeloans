@@ -5,7 +5,7 @@
       <div class="total">
         <span class="total-value-wrapper">
           <span class="total-value">
-            Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
+            Value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span>
             <span class="vertical-line"></span>
             Your {{ profit >= 0 ? 'profit' : 'loss' }}: <span class="value" :class="{'red': profit < 0}">
             {{ (profit !== null && avaxPrice) ? profit.toFixed(2) : '' }}

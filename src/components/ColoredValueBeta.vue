@@ -1,7 +1,7 @@
 <template>
   <span class="colored-value-component">
     <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 }">
-      <span class="plus-sign" v-if="value > 0">+</span>
+      <span class="plus-sign" v-if="value > 0 && showSign">+</span>
       {{ formattedValue }}
     </span>
   </span>
@@ -24,6 +24,10 @@ export default {
       type: Number,
       required: false,
       default: 3,
+    },
+    showSign: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {

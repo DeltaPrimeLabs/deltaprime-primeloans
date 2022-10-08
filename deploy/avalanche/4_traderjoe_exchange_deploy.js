@@ -15,7 +15,8 @@ const traderJoeSupportedAssets = [
     asset('USDC'),
     asset('BTC'),
     asset('ETH'),
-    asset('USDT')
+    asset('USDT'),
+    asset('TJ_AVAX_USDC_LP'),
 ]
 
 function asset(symbol) {

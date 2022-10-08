@@ -15,15 +15,15 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="asset.balance">
+        <template v-if="assetBalances && assetBalances[asset.symbol]">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => asset.balance != null" :value="formatTokenBalance(asset.balance)"></LoadedValue>
+            <LoadedValue :check="() => assetBalances[asset.symbol] != null" :value="formatTokenBalance(assetBalances[asset.symbol])"></LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="asset.balance">{{ asset.balance * asset.price | usd }}</span>
+            <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
           </div>
         </template>
-        <template v-if="!asset.balance">
+        <template v-if="!(assetBalances && assetBalances[asset.symbol])">
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -52,7 +52,7 @@
                           :positive-change="asset.todayPriceChange > 0">
           </SmallChartBeta>
           <ColoredValueBeta v-if="asset.todayPriceChange" :value="asset.todayPriceChange" :formatting="'percent'"
-                            :percentage-rounding-precision="2"></ColoredValueBeta>
+                            :percentage-rounding-precision="2" :show-sign="true"></ColoredValueBeta>
         </div>
         <IconButtonMenuBeta
           class="chart__icon-button"
@@ -117,7 +117,7 @@ const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
 
 
 export default {
-  name: 'FundTableRowBeta',
+  name: 'AssetsTableRow',
   components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, PoolEventsList, ColoredValueBeta, SmallChartBeta},
   props: {
     asset: {},
@@ -135,8 +135,8 @@ export default {
   },
   computed: {
     ...mapState('pool', ['borrowingRate']),
-    ...mapState('loan', ['debt']),
-    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt']),
+    ...mapState('loan', ['debt', 'totalValue']),
+    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances']),
     ...mapState('poolStore', ['avaxPool', 'usdcPool']),
 
     loanAPY() {
@@ -255,7 +255,7 @@ export default {
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = 1000;
+      modalInstance.totalCollateral = this.totalValue - this.debt;
       modalInstance.poolTVL = 11245;
       modalInstance.loanAPY = this.loanAPY;
       modalInstance.maxLTV = 4.5;
@@ -273,10 +273,9 @@ export default {
     openSwapModal() {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.sourceAsset = this.asset.symbol;
-      modalInstance.sourceAssetBalance = this.asset.balance;
+      modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.$on('SWAP', swapRequest => {
-        console.log(swapRequest);
         this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
           this.closeModal();
         });
@@ -287,16 +286,15 @@ export default {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = 101;
+      modalInstance.totalCollateral = this.totalValue - this.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           if (this.smartLoanContract.address === NULL_ADDRESS) {
-            this.handleTransaction(this.createAndFundLoan, {value: addFromWalletEvent.value}).then(() => {
+            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: addFromWalletEvent.value}).then(() => {
               this.closeModal();
             });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
-              console.log('fund native token');
               this.handleTransaction(this.fundNativeToken, {value: addFromWalletEvent.value}).then(() => {
                 this.closeModal();
               });
@@ -304,7 +302,7 @@ export default {
               const fundRequest = {
                 value: String(addFromWalletEvent.value),
                 asset: this.asset.symbol,
-                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
                 this.closeModal();
@@ -319,22 +317,25 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = 900;
-      console.log(this.asset);
+      modalInstance.totalCollateral = this.totalValue - this.debt;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
-            value: withdrawEvent.value
+            value: withdrawEvent.value,
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
-          console.log('native');
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}).then(() => {
             this.closeModal();
           });
         } else {
+          console.log(withdrawEvent.value)
+          console.log(config.ASSETS_CONFIG[this.asset.symbol].decimals)
+
           const withdrawRequest = {
             asset: this.asset.symbol,
-            value: withdrawEvent.value
+            value: withdrawEvent.value,
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
             this.closeModal();
@@ -493,6 +494,10 @@ export default {
 
   .chart-container {
     margin: 2rem 0;
+
+    .colored-value {
+      font-weight: 500;
+    }
   }
 }
 

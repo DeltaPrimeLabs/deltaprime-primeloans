@@ -1,43 +1,24 @@
-import {awaitConfirmation, handleCall} from '../utils/blockchain';
+import {awaitConfirmation} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
-import PANGOLIN_EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json';
-import PANGOLIN_EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
-import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
+import TOKEN_MANANGER from '@contracts/TokenManager.json';
+import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
-import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from '../utils/calculate';
 import {WrapperBuilder} from 'redstone-evm-connector';
-import {fetchCollateralFromPayments, fetchEventsForSmartLoan} from '../utils/graph';
 import redstone from 'redstone-api';
-
+import {BigNumber} from "ethers";
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
-
-const ethereum = window.ethereum;
 
 const ethers = require('ethers');
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
-const tokenAddresses = {
-  'AVAX': '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-  'USDC': '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
-  'ETH': '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab',
-  'BTC': '0x50b7545627a5162f82a992c33b87adc75187b218',
-  'USDT': '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
-  'PNG': '0x60781C2586D68229fde47564546784ab3fACA982',
-  'SAVAX': '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
-  'XAVA': '0xd1c3f94de7e5b45fa4edbba472491a9f4b166fc4',
-  'LINK': '0x5947bb275c521040051d82396192181b413227a3',
-  'YAK': '0x59414b3089ce2af0010e7523dea7e2b35d776ec7',
-  'QI': '0x8729438eb15e2c8b576fcc6aecda6a148776c0f5',
-  'JOE': '0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd',
-  'YYAV3SA1': '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95',
-  '$YYVSAVAXV2': '0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557'
-}
+const tokenAddresses = TOKEN_ADDRESSES;
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -59,6 +40,7 @@ export default {
   namespaced: true,
   state: {
     assets: null,
+    lpAssets: null,
     supportedAssets: null,
     provider: null,
     smartLoanContract: null,
@@ -66,6 +48,7 @@ export default {
     wavaxTokenContract: null,
     usdcTokenContract: null,
     assetBalances: null,
+    lpBalances: null,
     avaxDebt: null,
     usdcDebt: null,
     ltv: null,
@@ -79,6 +62,10 @@ export default {
 
     setAssets(state, assets) {
       state.assets = assets;
+    },
+
+    setLpAssets(state, assets) {
+      state.lpAssets = assets;
     },
 
     setSupportedAssets(state, assets) {
@@ -99,6 +86,10 @@ export default {
 
     setAssetBalances(state, assetBalances) {
       state.assetBalances = assetBalances;
+    },
+
+    setLpBalances(state, lpBalances) {
+      state.lpBalances = lpBalances;
     },
 
     setAvaxDebt(state, avaxDebt) {
@@ -126,6 +117,7 @@ export default {
       await dispatch('setupContracts');
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
+      await dispatch('setupLpAssets');
       state.assetBalances = [];
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
@@ -140,6 +132,7 @@ export default {
 
     async updateFunds({dispatch}) {
       await dispatch('setupAssets');
+      await dispatch('setupLpAssets');
       await dispatch('getAllAssetsBalances');
       await dispatch('getDebts');
       await dispatch('getLTV');
@@ -147,26 +140,28 @@ export default {
     },
 
 
-    async setupSupportedAssets({rootState, commit}) {
-      const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
-      const whiteListedTokenAddresses = await pangolinContract.getAllWhitelistedTokens();
-      // const supported = [];
+    async setupSupportedAssets({commit}) {
+      const tokenManager = new ethers.Contract(TOKEN_MANANGER.address, TOKEN_MANANGER.abi, provider.getSigner());
+      const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
 
       const supported = whiteListedTokenAddresses.map(address => Object.keys(tokenAddresses).find(symbol => tokenAddresses[symbol].toLowerCase() === address.toLowerCase()));
 
       commit('setSupportedAssets', supported);
     },
 
-    async setupAssets({state, commit, dispatch}) {
-
+    async setupAssets({state, commit}) {
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
       let assets = {};
       assets[nativeToken[0]] = nativeToken[1];
-      state.supportedAssets.forEach(
-        asset => assets[asset] = config.ASSETS_CONFIG[asset]
-      );
 
+      Object.values(config.ASSETS_CONFIG).forEach(
+          asset => {
+            if (state.supportedAssets.includes(asset.symbol)) {
+              assets[asset.symbol] = asset;
+            }
+          }
+      );
 
       await redstone.getPrice(Object.keys(assets)).then(prices => {
         Object.keys(assets).forEach(assetSymbol => {
@@ -176,13 +171,31 @@ export default {
       commit('setAssets', assets);
     },
 
-    async setupContracts({state, rootState, commit, dispatch}) {
+    async setupLpAssets({state, commit}) {
+      let lpTokens = {};
+
+      Object.values(config.LP_ASSETS_CONFIG).forEach(
+          asset => {
+            if (state.supportedAssets.includes(asset.symbol)) {
+              lpTokens[asset.symbol] = asset;
+            }
+          }
+      );
+
+      await redstone.getPrice(Object.keys(lpTokens)).then(prices => {
+        Object.keys(lpTokens).forEach(assetSymbol => {
+          lpTokens[assetSymbol].price = prices[assetSymbol].value;
+        });
+      });
+      commit('setLpAssets', lpTokens);
+    },
+
+    async setupContracts({rootState, commit, dispatch}) {
       const provider = rootState.network.provider;
 
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
       const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
-      const smartLoanContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
       commit('setWavaxTokenContract', wavaxTokenContract);
@@ -211,12 +224,26 @@ export default {
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
 
-    async createAndFundLoan({state, rootState, commit, dispatch}, {value}) {
+    async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
       const provider = rootState.network.provider;
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(state.smartLoanFactoryContract.address, toWei(String(value)));
+
+      //TODO: make it more robust
+      if (asset === 'AVAX') {
+        asset = config.ASSETS_CONFIG['AVAX']
+        await state.wavaxTokenContract.deposit({ value: toWei(String(value)) });
+      }
+
+      if (asset === 'WAVAX') {
+        asset = config.ASSETS_CONFIG['AVAX']
+      }
+
+      const amount = parseUnits(String(value), config.ASSETS_CONFIG[asset.symbol].decimals);
+      const fundToken = new ethers.Contract(tokenAddresses[asset.symbol], erc20ABI, provider.getSigner());
+
+      await fundToken.approve(state.smartLoanFactoryContract.address, amount);
       const wrappedSmartLoanFactoryContract = WrapperBuilder.wrapLite(state.smartLoanFactoryContract).usingPriceFeed(config.dataProviderId);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32('AVAX'), state.wavaxTokenContract.address, toWei(String(value)), {gasLimit: 50000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundToken.address, amount, {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'createAndFundLoan');
       await dispatch('setupSmartLoanContract');
@@ -226,12 +253,27 @@ export default {
       }, 5000);
     },
 
-    async getAllAssetsBalances({state, rootState, commit}) {
-      const balances = await state.smartLoanContract.getAllAssetsBalances();
+    async getAllAssetsBalances({state, commit}) {
+      const balances = {};
+      const lpBalances = {};
+      const assetBalances = await state.smartLoanContract.getAllAssetsBalances();
+      assetBalances.forEach(
+          el => {
+            let symbol = fromBytes32(el.name);
+            if (config.ASSETS_CONFIG[symbol]) {
+              balances[symbol] = formatUnits(el.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
+            }
+            if (config.LP_ASSETS_CONFIG[symbol]) {
+              lpBalances[symbol] = formatUnits(el.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals);
+            }
+          }
+      );
+
       await commit('setAssetBalances', balances);
+      await commit('setLpBalances', lpBalances);
     },
 
-    async getDebts({state, rootState, commit}) {
+    async getDebts({state, commit}) {
       const debts = await state.smartLoanContract.getDebts();
       debts.forEach(debt => {
         const debtAsset = fromBytes32(debt.name);
@@ -266,9 +308,10 @@ export default {
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
       const provider = rootState.network.provider;
 
-      const fundTokenAddress = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
+      const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
 
-      await fundTokenAddress.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
+      await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
+
       const transaction = await state.smartLoanContract.fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'fund');
@@ -293,8 +336,7 @@ export default {
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
       const transaction = await state.smartLoanContract.withdraw(toBytes32(withdrawRequest.asset),
-        parseUnits(String(withdrawRequest.value), config.ASSETS_CONFIG[withdrawRequest.asset].decimals), {gasLimit: 50000000});
-
+        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 50000000});
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -306,6 +348,32 @@ export default {
       const transaction = await state.smartLoanContract.unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
 
       await awaitConfirmation(transaction, provider, 'withdraw');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
+    },
+
+    async provideLiquidity({state, rootState, commit, dispatch}, {lpRequest}) {
+      const provider = rootState.network.provider;
+
+      const firstDecimals = config.ASSETS_CONFIG[lpRequest.firstAsset].decimals;
+      const secondDecimals = config.ASSETS_CONFIG[lpRequest.secondAsset].decimals;
+
+      let minAmount = .9;
+
+      const transaction = await state.smartLoanContract[config.DEX_CONFIG[lpRequest.dex].addLiquidityMethod](
+        toBytes32(lpRequest.firstAsset),
+        toBytes32(lpRequest.secondAsset),
+        parseUnits(lpRequest.firstAmount.toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+        parseUnits(lpRequest.secondAmount.toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+        parseUnits((minAmount * lpRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+        parseUnits((minAmount * lpRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+        {gasLimit: 50000000}
+      );
+
+      await awaitConfirmation(transaction, provider, 'provide liquidity');
+
+      await dispatch('getAllAssetsBalances');
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, 1000);

@@ -13,7 +13,8 @@
         </div>
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
+          <img class="logo" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
+          <span v-if="!isMobile" class="symbol">{{ symbol }}{{ symbolSecondary ? ' - ' + symbolSecondary : ''}}</span>
         </div>
       </div>
     </div>
@@ -53,6 +54,7 @@ export default {
     price: {type: Number},
     max: {type: Number, default: null},
     symbol: {type: String, default: 'AVAX'},
+    symbolSecondary: {type: String, default: null},
     flexDirection: {type: String, default: 'column'},
     validators: {
       type: Array, default: () => []

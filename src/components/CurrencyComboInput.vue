@@ -204,8 +204,8 @@ export default {
         }
 
         .selected-asset__symbol {
-          font-weight: 900;
-          font-size: $font-size-md;
+          font-weight: 700;
+          font-size: $font-size-sm;
           flex-grow: 1;
         }
       }
@@ -246,8 +246,8 @@ export default {
           outline: none;
           background: none;
           padding: 10px 0 10px 16px;
-          font-size: $font-size-md;
-          font-weight: 900;
+          font-size: $font-size-sm;
+          font-weight: 700;
           text-transform: uppercase;
           font-family: 'Montserrat', sans-serif;
           border-bottom: 2px solid $smoke-gray;
@@ -286,14 +286,14 @@ export default {
             }
 
             .option__symbol {
-              font-size: $font-size-md;
-              font-weight: 900;
+              font-size: $font-size-sm;
+              font-weight: 700;
               text-transform: uppercase;
               margin-right: 10px;
             }
 
             .option__name {
-              font-size: $font-size-md;
+              font-size: $font-size-sm;
               color: $medium-gray;
             }
           }

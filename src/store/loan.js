@@ -2,8 +2,6 @@ import {awaitConfirmation, handleCall} from "../utils/blockchain";
 import LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json'
 import LOAN_FACTORYTUP from '@contracts/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
-import PANGOLIN_EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json'
-import PANGOLIN_EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json'
 import {formatUnits, fromWei, parseUnits, round, toWei} from "@/utils/calculate";
 import config from "@/config";
 import {acceptableSlippage, maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from "../utils/calculate";
@@ -21,6 +19,7 @@ const erc20ABI = [
   'function allowance(address owner, address spender) public view returns (uint256)'
 ]
 
+//TODO: can we remove that?
 export default {
   namespaced: true,
   state: {
@@ -86,20 +85,7 @@ export default {
     },
   },
   actions: {
-    async initSupportedAssets({rootState, commit}) {
-      const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGETUP.address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
-      // the first returned asset is a blockchain native currency, therefore used .slice(1)
-      let supported = ((await pangolinContract.getAllAssets()).slice(1)).map(
-        asset => ethers.utils.parseBytes32String(asset)
-      );
-
-      commit('setSupportedAssets', supported);
-    },
-
     async fetchLoan({state, rootState, dispatch, commit}) {
-      dispatch('updateAssets');
-      dispatch('initSupportedAssets');
-
       const provider = rootState.network.provider;
       const account = rootState.network.account;
 
@@ -122,17 +108,11 @@ export default {
         dispatch('updateLoanStats');
         dispatch('updateLoanBalance');
         dispatch('updateLoanHistory');
-        dispatch('updateAssets');
-        dispatch('updateStakedAvaxYakBalance');
       }
       return true;
     },
 
-    async updateAssets({state, commit, dispatch}) {
-      console.log('async updateAssets({state, commit, dispatch}) {');
-
-      // dispatch('updateLoanBalance');
-
+    async updateAssets({state, commit}) {
       const loan = state.loan;
 
       const prices = await handleCall(loan.getAllAssetsPrices);
@@ -200,29 +180,6 @@ export default {
 
       commit('setCollateralFromPayments', collateral);
       commit('setLoanEvents', loanEvents);
-    },
-
-    async createNewLoan({rootState, dispatch, commit}, {amount, collateral}) {
-      const provider = rootState.network.provider;
-
-      const loanFactory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, provider.getSigner());
-
-      const wrappedLoanFactory = WrapperBuilder
-        .wrapLite(loanFactory)
-        .usingPriceFeed(config.dataProviderId);
-
-      //TODO: find optimal value of gas
-      const tx = await wrappedLoanFactory.createAndFundLoan(toWei(amount.toString()), {
-        value: toWei(collateral.toString()),
-        gasLimit: 1400000
-      });
-
-      await awaitConfirmation(tx, provider, 'create a Prime Account');
-
-      dispatch('fetchLoan');
-      dispatch('network/updateBalance', {}, {root: true})
-
-      return tx;
     },
 
     async borrow({state, rootState, dispatch, commit}, {amount}) {
@@ -345,11 +302,11 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const receiptToAvaxConversionRate = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptToAvaxConversionRate;
+      const receiptToAvaxConversionRate = state.stakedAssets.YIELD_YAK.assets.AVAX.receiptToAvaxConversionRate;
       const receiptTokenAmount = amount / receiptToAvaxConversionRate;
       let receiptTokenAmountWei = toWei(String(receiptTokenAmount));
-      if (receiptTokenAmountWei.gt(state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei)) {
-        receiptTokenAmountWei = state.stakedAssets.YAK_YIELD.assets.AVAX.receiptTokenBalanceWei
+      if (receiptTokenAmountWei.gt(state.stakedAssets.YIELD_YAK.assets.AVAX.receiptTokenBalanceWei)) {
+        receiptTokenAmountWei = state.stakedAssets.YIELD_YAK.assets.AVAX.receiptTokenBalanceWei
       }
 
       const unstakeTransaction = await loan.unstakeAVAXYak(receiptTokenAmountWei, {gasLimit: 1100000});
@@ -371,7 +328,7 @@ export default {
       const stakedYrt = Number(fromWei(stakedYrtWei));
       const stakedAvax = stakedYrt * yrtToAvaxConversionRate;
       const stakedAssets = {
-        YAK_YIELD: {
+        YIELD_YAK: {
           assets: {
             AVAX: {
               balance: stakedAvax,

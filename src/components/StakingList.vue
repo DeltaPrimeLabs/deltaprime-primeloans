@@ -170,7 +170,7 @@ export default {
   data() {
     return {
       protocols: {
-        'YAK_YIELD': {
+        'YIELD_YAK': {
           symbol: 'YAK',
           name: 'Yield Yak',
           totalStaked: 0,
@@ -235,7 +235,7 @@ export default {
 
     getTotalStakedPerProtocol() {
       if (this.stakedAssets) {
-        return this.avaxToUSD(this.stakedAssets.YAK_YIELD.assets.AVAX.balance).toFixed(2);
+        return this.avaxToUSD(this.stakedAssets.YIELD_YAK.assets.AVAX.balance).toFixed(2);
       }
     },
 
@@ -278,14 +278,14 @@ export default {
         const avaxFarm = farms.find(farm => farm.address === avaxFarmAddress);
         let tvlM = this.avaxToUSD(avaxFarm.totalDeposits) / 10 ** 6;
         tvlM = Math.round(tvlM * 100) / 100;
-        this.protocols.YAK_YIELD.stakingOptions.AVAX.tvl = tvlM;
+        this.protocols.YIELD_YAK.stakingOptions.AVAX.tvl = tvlM;
 
         fetch(apysUrl).then(response => {
           return response.json();
         }).then(apys => {
           const avaxApy = apys[avaxFarmAddress].apy / 100;
-          this.protocols.YAK_YIELD.stakingOptions.AVAX.apy = avaxApy;
-          this.protocols.YAK_YIELD.maxApy = avaxApy;
+          this.protocols.YIELD_YAK.stakingOptions.AVAX.apy = avaxApy;
+          this.protocols.YIELD_YAK.maxApy = avaxApy;
         });
       });
     }

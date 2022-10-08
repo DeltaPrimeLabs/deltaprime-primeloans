@@ -93,7 +93,9 @@ export default {
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
       const assetData = config.ASSETS_CONFIG[asset.toUpperCase()];
-      return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
+      if (assetData) {
+        return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
+      }
     },
 
     openModal(component) {
@@ -146,6 +148,7 @@ export default {
       },
       wrongFormatValidator: {
         validate: function (value) {
+          console.log(value)
           if (!value.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting. Please use only alphanumeric values.`;
           }

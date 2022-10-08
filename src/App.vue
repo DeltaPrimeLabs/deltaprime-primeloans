@@ -64,7 +64,7 @@ export default {
     await this.initNetwork();
     // await this.initNfts();
     await this.initPool();
-    // await this.fetchLoan();
+    await this.fetchLoan();
     await this.updatePoolData();
     this.initGasPrices();
   },

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="assetSymbol && asset" class="staking-asset-component">
+  <div v-if="asset" class="staking-asset-component">
     <div class="staking-asset">
       <div class="staking-asset__header"
            v-bind:class="{'body-collapsed': bodyHasCollapsed, 'round-bottom': stakingHeaderRoundBottom}">
@@ -27,7 +27,7 @@
         <div class="header__cell">
           <div class="header__cell__label">Available protocols:</div>
           <div class="protocols-list">
-            <img class="protocol__icon" src="src/assets/logo/yak.svg">
+            <img v-for="protocol in availableFarms" class="protocol__icon" :src="protocol.logo">
           </div>
         </div>
 
@@ -49,9 +49,9 @@
             <div class="table__header__cell">Actions</div>
           </div>
           <div class="table__body">
-            <StakingProtocolTableRow v-for="protocol in availableProtocols"
-                                     v-bind:key="protocol"
-                                     :protocol="stakingOptions.protocols[protocol]"
+            <StakingProtocolTableRow v-for="farm in availableFarms"
+                                     v-bind:key="farm.protocol"
+                                     :farm="farm"
                                      :asset="asset">
             </StakingProtocolTableRow>
           </div>
@@ -72,9 +72,6 @@ export default {
   name: 'StakingAssetBeta',
   components: {PoolEventsList, StakingProtocolTableRow},
   props: {
-    stakingOptions: {
-      required: true,
-    },
     assetSymbol: {
       required: true,
     }
@@ -86,29 +83,34 @@ export default {
       stakingHeaderRoundBottom: false,
       maxStakingApy: 0,
       totalStaked: 0,
-      availableProtocols: null,
-      asset: null,
+      availableFarms: []
     };
   },
   mounted() {
+    this.setupAvailableProtocols();
     this.setupMaxStakingApy();
     this.setupTotalStaked();
-    this.setupAvailableProtocols();
-
-    this.asset = config.ASSETS_CONFIG[this.assetSymbol];
   },
 
   computed: {
+    asset() {
+      console.log('asset()')
+      console.log(this.assetSymbol)
+      console.log(config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol])
+      return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
+    },
     calculateStakingProtocolsHeight() {
       const headerHeight = 53;
-      const numberOfProtocols = Object.keys(this.stakingOptions.protocols).length;
-      return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+      if (this.availableFarms) {
+        const numberOfProtocols = Object.keys(this.availableFarms).length;
+
+        return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+      }
     }
   },
 
   methods: {
     toggleExpanded() {
-
       if (!this.tableBodyExpanded) {
         this.tableBodyExpanded = true;
         this.bodyHasCollapsed = false;
@@ -125,24 +127,24 @@ export default {
     },
 
     setupMaxStakingApy() {
-      const avaxFarmAddress = '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95';
-      const apysUrl = 'https://staging-api.yieldyak.com/apys';
-      fetch(apysUrl).then(response => {
-        return response.json();
-      }).then(apys => {
-        this.maxStakingApy = apys[avaxFarmAddress].apy / 100;
-      });
+      return 0;
     },
 
     setupTotalStaked() {
-      const protocols = Object.keys(this.stakingOptions.protocols);
-      protocols.forEach(protocol => {
-        this.totalStaked += this.stakingOptions.protocols[protocol].balance;
+      this.availableFarms.forEach(protocol => {
+        this.totalStaked += protocol.balance;
       });
     },
 
     setupAvailableProtocols() {
-      this.availableProtocols = Object.keys(this.stakingOptions.protocols);
+      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.assetSymbol];
+    },
+
+    protocolLogo(protocol) {
+      console.log(protocol)
+      console.log(config.PROTOCOLS_CONFIG[protocol])
+      return config.PROTOCOLS_CONFIG[protocol];
+      // return config.PROTOCOLS_CONFIG[protocol].logo;
     }
   }
 };

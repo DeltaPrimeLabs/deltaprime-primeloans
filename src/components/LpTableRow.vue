@@ -6,22 +6,22 @@
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
           <div class="asset__loan">
-            on {{ lpToken.source }}
+            on {{ lpToken.dex }}
           </div>
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpToken.balance">
+        <template v-if="lpBalances">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => lpToken.balance != null"
-                         :value="formatTokenBalance(lpToken.balance)"></LoadedValue>
+            <LoadedValue :check="() => lpBalances[lpToken.symbol] != null"
+                         :value="formatTokenBalance(lpBalances[lpToken.symbol])"></LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="lpToken.balance">{{ lpToken.balance * lpToken.price | usd }}</span>
+            <span v-if="lpBalances[lpToken.symbol]">{{ lpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
           </div>
         </template>
-        <template v-if="!lpToken.balance">
+        <template v-if="!lpBalances || !lpBalances[lpToken.symbol]">
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -30,23 +30,7 @@
         {{ lpToken.apr | percent }}
       </div>
 
-      <div class="table__cell trend">
-        <div class="trend__chart-change">
-          <SmallChartBeta :data-points="lpToken.priceGraphData"
-                          :is-stable-coin="true"
-                          :line-width="2"
-                          :width="60"
-                          :height="25"
-                          :positive-change="lpToken.todayPriceChange > 0">
-          </SmallChartBeta>
-          <ColoredValueBeta v-if="lpToken.todayPriceChange" :value="lpToken.todayPriceChange" :formatting="'percent'"
-                            :percentage-rounding-precision="2"></ColoredValueBeta>
-        </div>
-        <IconButtonMenuBeta
-          class="chart__icon-button"
-          :config="{iconSrc: 'src/assets/icons/enlarge.svg', tooltip: 'Show chart'}"
-          v-on:iconButtonClick="toggleChart()">
-        </IconButtonMenuBeta>
+      <div class="table__cell">
       </div>
 
       <div class="table__cell price">
@@ -87,6 +71,11 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import PoolEventsList from './PoolHistoryList';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
+import AddFromWalletModal from "./AddFromWalletModal";
+import config from "../config";
+import {mapActions, mapState} from "vuex";
+import ProvideLiquidityModal from "./ProvideLiquidityModal";
+import WithdrawModal from "./WithdrawModal";
 
 export default {
   name: 'LpTableRow',
@@ -116,7 +105,13 @@ export default {
     };
   },
 
+  computed: {
+    ...mapState('loan', ['debt', 'totalValue']),
+    ...mapState('fundsStore', ['ltv', 'lpBalances', 'smartLoanContract']),
+  },
+
   methods: {
+    ...mapActions('fundsStore', ['fund', 'provideLiquidity', 'withdraw']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -143,7 +138,7 @@ export default {
             },
             {
               key: 'REMOVE_LIQUIDITY',
-              name: 'Rremove liquidity',
+              name: 'Remove liquidity',
             }
           ]
         },
@@ -162,9 +157,83 @@ export default {
       }
     },
 
-    actionClick() {
+    actionClick(key) {
+      switch (key) {
+        case 'ADD_FROM_WALLET':
+          this.openAddFromWalletModal();
+          break;
+        case 'PROVIDE_LIQUIDITY':
+          this.openProvideLiquidityModal();
+          break;
+        case 'WITHDRAW':
+          this.openWithdrawModal();
+          break;
+        case 'REMOVE_LIQUIDITY':
+          // this.openSwapModal();
+          break;
+      }
     },
-  }
+
+    //TODO: duplicated code
+    openAddFromWalletModal() {
+      const modalInstance = this.openModal(AddFromWalletModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.ltv = this.ltv;
+      modalInstance.isLP = true;
+      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+              const fundRequest = {
+                value: String(addFromWalletEvent.value),
+                asset: this.lpToken.symbol,
+                assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+              };
+              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
+                this.closeModal();
+              });
+          }
+      });
+    },
+
+    //TODO: duplicated code
+    openWithdrawModal() {
+      const modalInstance = this.openModal(WithdrawModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.ltv = this.ltv;
+      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.isLP = true;
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
+        const withdrawRequest = {
+          value: String(withdrawEvent.value),
+          asset: this.lpToken.symbol,
+          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
+        }
+
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+          this.closeModal();
+        });
+      });
+    },
+
+    openProvideLiquidityModal() {
+      const modalInstance = this.openModal(ProvideLiquidityModal);
+      modalInstance.lpToken = this.lpToken;
+      modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
+        if (this.smartLoanContract) {
+          const lpRequest = {
+            firstAsset: this.lpToken.primary,
+            secondAsset: this.lpToken.secondary,
+            firstAmount: provideLiquidityEvent.firstAmount,
+            secondAmount: provideLiquidityEvent.secondAmount,
+            dex: this.lpToken.dex
+        };
+          this.handleTransaction(this.provideLiquidity, {lpRequest: lpRequest}).then(() => {
+            this.closeModal();
+          });
+        }
+      });
+    },
+  },
 };
 </script>
 
