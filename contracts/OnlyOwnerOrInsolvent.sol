@@ -5,7 +5,7 @@
 import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
 import "./lib/SolvencyMethods.sol";
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 /**
  * @dev Enforces ownership only if there is no liquidation ongoing

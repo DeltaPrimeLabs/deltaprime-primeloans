@@ -51,6 +51,10 @@ describe("Pool ERC20 token functions", () => {
 
     describe("transfer", () => {
 
+        it("should fail to deposit 0 tokens", async () => {
+            await expect(sut.connect(user1).deposit(0)).to.be.revertedWith("Deposit amount must be > 0");
+        });
+
         it("should deposit and withdraw", async () => {
             const depositValue = toWei("1.0");
             await mockToken.connect(user1).approve(sut.address, depositValue);

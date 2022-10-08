@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: f97d683e94fbb14f55819d6782c1f6a20998b10e;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
@@ -116,6 +116,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
     function getAllLoans() public view returns (address[] memory) {
         return loans;
     }
+
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
+
+    function renounceOwnership() public virtual override {}
 
     /**
      * @dev emitted after creating a loan by the owner

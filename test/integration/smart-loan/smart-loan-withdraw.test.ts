@@ -76,7 +76,13 @@ describe('Smart loan', () => {
                 {name: 'AVAX', airdropList: [depositor]}
             ];
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
+
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
 
             tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
@@ -91,11 +97,6 @@ describe('Smart loan', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-
-            let diamondAddress = await deployDiamond();
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await recompileConstantsFile(
                 'local',

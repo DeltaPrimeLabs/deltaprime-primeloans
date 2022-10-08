@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
@@ -50,7 +50,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
             require(_exactSold >= getMinimumTokensNeeded(_minimumBought, _soldToken, _boughtToken), "Not enough funds were provided");
         }
 
-        uint256[] memory amounts = router.swapExactTokensForTokens(_exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp);
+        amounts = router.swapExactTokensForTokens(_exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp);
 
         _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
 

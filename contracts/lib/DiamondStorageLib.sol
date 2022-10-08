@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -42,7 +42,8 @@ library DiamondStorageLib {
         // Used to implement ERC-165.
         mapping(bytes4 => bool) supportedInterfaces;
 
-
+        bool _initialized;
+        bool _active;
     }
 
     struct SmartLoanStorage {

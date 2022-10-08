@@ -1,3 +1,5 @@
+pragma solidity ^0.8.17;
+
 interface IVectorFinanceFacet {
     function vectorStakeUSDC1(uint256 amount) external;
 

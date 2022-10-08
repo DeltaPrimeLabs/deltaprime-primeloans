@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Last deployed from commit: ;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -26,10 +26,8 @@ contract DiamondInit {
     function init() external {
         // DiamondStorage
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
-        // SmartLoanStorage
-        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
 
-        require(!sls._initialized, "DiamondInit: contract is already initialized");
+        require(!ds._initialized, "DiamondInit: contract is already initialized");
 
         // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
@@ -38,7 +36,8 @@ contract DiamondInit {
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
         DiamondStorageLib.setContractOwner(msg.sender);
-        sls._initialized = true;
+        ds._initialized = true;
+        ds._active = false;
 
         // add your own state variables 
         // EIP-2535 specifies that the `diamondCut` function takes two optional 

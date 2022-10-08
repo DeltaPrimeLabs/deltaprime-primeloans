@@ -178,6 +178,7 @@ export const toSupply = function (
 }
 
 export const deployPools = async function(
+   smartLoansFactory: Contract,
    tokens: Array<PoolInitializationObject>,
    tokenContracts: Map<string, Contract>,
    poolContracts: Map<string, Contract>,
@@ -191,7 +192,7 @@ export const deployPools = async function(
         let {
             poolContract,
             tokenContract
-        } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList, chain);
+        } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList, chain);
         for (const user of token.airdropList) {
             await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
             await poolContract.connect(user).deposit(toWei(depositAmount.toString()));
@@ -250,6 +251,9 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 
 
 export const deployAllFacets = async function (diamondAddress: any, chain = 'AVAX') {
+    const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
+    console.log('Pausing')
+    await diamondCut.pause();
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,
@@ -320,6 +324,8 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
             'getAllOwnedAssets',
         ]
     )
+    await diamondCut.unpause();
+    console.log('Unpaused')
 };
 
 export const extractAssetNameBalances = async function (
@@ -397,7 +403,7 @@ export async function syncTime() {
     }
 }
 
-export async function deployAndInitializeLendingPool(owner: any, tokenName: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
+export async function deployAndInitializeLendingPool(owner: any, tokenName: string, smartLoansFactoryAddress: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
 
     const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -441,12 +447,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
 
     rewarder = rewarder !== '' ? rewarder : ethers.constants.AddressZero;
 
-    const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     await pool.initialize(
         variableUtilisationRatesCalculator.address,
-        borrowersRegistry.address,
+        smartLoansFactoryAddress,
         depositIndex.address,
         borrowingIndex.address,
         tokenContract!.address,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -184,6 +184,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * It updates user deposited balance, total deposited and rates
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
+        require(_amount>0, "Deposit amount must be > 0");
         _accumulateDepositInterest(msg.sender);
 
         _transferToPool(msg.sender, _amount);
@@ -360,11 +361,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function _updateRates() internal {
-        uint256 totalBorrowed = totalBorrowed();
-        uint256 totalSupply = totalSupply();
+        uint256 _totalBorrowed = totalBorrowed();
+        uint256 _totalSupply = totalSupply();
         require(address(ratesCalculator) != address(0), "Pool is frozen");
-        depositIndex.setRate(ratesCalculator.calculateDepositRate(totalBorrowed, totalSupply));
-        borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(totalBorrowed, totalSupply));
+        depositIndex.setRate(ratesCalculator.calculateDepositRate(_totalBorrowed, _totalSupply));
+        borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(_totalBorrowed, _totalSupply));
     }
 
     function _accumulateDepositInterest(address user) internal {
@@ -386,6 +387,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         borrowIndex.updateUser(user);
         borrowIndex.updateUser(address(this));
     }
+
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
+
+    function renounceOwnership() public virtual override {}
 
     /* ========== MODIFIERS ========== */
 

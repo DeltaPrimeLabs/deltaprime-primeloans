@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "../../TokenManager.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
@@ -31,7 +31,7 @@ library DeploymentConstants {
 
     //implementation-specific
 
-    function getPercentagePrecision() internal view returns (uint256) {
+    function getPercentagePrecision() internal pure returns (uint256) {
         return _PERCENTAGE_PRECISION;
     }
 
@@ -41,25 +41,25 @@ library DeploymentConstants {
         return _NATIVE_TOKEN_SYMBOL;
     }
 
-    function getNativeToken() internal view returns (address payable) {
+    function getNativeToken() internal pure returns (address payable) {
         return payable(_NATIVE_ADDRESS);
     }
 
     //deployment-specific
 
-    function getDiamondAddress() internal view returns (address) {
+    function getDiamondAddress() internal pure returns (address) {
         return _DIAMOND_BEACON_ADDRESS;
     }
 
-    function getSmartLoansFactoryAddress() internal view returns (address) {
+    function getSmartLoansFactoryAddress() internal pure returns (address) {
         return _SMART_LOANS_FACTORY_ADDRESS;
     }
 
-    function getTokenManager() internal view returns (TokenManager) {
+    function getTokenManager() internal pure returns (TokenManager) {
         return TokenManager(_TOKEN_MANAGER_ADDRESS);
     }
 
-    function getRedstoneConfigManager() internal view returns (RedstoneConfigManager) {
+    function getRedstoneConfigManager() internal pure returns (RedstoneConfigManager) {
         return RedstoneConfigManager(_REDSTONE_CONFIG_MANAGER_ADDRESS);
     }
 

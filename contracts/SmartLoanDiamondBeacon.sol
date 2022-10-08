@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: c5c938a0524b45376dd482cd5c8fb83fa94c2fcc;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
@@ -20,8 +20,10 @@ contract SmartLoanDiamondBeacon {
 
         // Add the diamondCut external function from the diamondCutFacet
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        bytes4[] memory functionSelectors = new bytes4[](1);
+        bytes4[] memory functionSelectors = new bytes4[](3);
         functionSelectors[0] = IDiamondCut.diamondCut.selector;
+        functionSelectors[1] = IDiamondCut.pause.selector;
+        functionSelectors[2] = IDiamondCut.unpause.selector;
         cut[0] = IDiamondCut.FacetCut({
         facetAddress : _diamondCutFacet,
         action : IDiamondCut.FacetCutAction.Add,
@@ -34,7 +36,12 @@ contract SmartLoanDiamondBeacon {
         return address(this);
     }
 
-    function implementation(bytes4 funcSignature) public view returns (address) {
+    function getStatus() public view returns(bool) {
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        return ds._active;
+    }
+
+    function implementation(bytes4 funcSignature) public view notPausedOrUpgrading returns (address) {
         DiamondStorageLib.DiamondStorage storage ds;
         bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
         // get diamond storage
@@ -70,5 +77,14 @@ contract SmartLoanDiamondBeacon {
                 return (0, returndatasize())
             }
         }
+    }
+
+    modifier notPausedOrUpgrading() {
+        // diamondCut(); unpause()
+        if(msg.sig != 0x1f931c1c && msg.sig != 0x3f4ba83a) {
+            DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+            require(ds._active, "ProtocolUpgrade: paused.");
+        }
+        _;
     }
 }

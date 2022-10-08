@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../ReentrancyGuardKeccak.sol";
@@ -100,8 +100,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         (lpTokenAddress, amountA, amountB, liquidity)
           = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
 
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
-
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
             (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
             bytes32 lpToken = stringToBytes32(string.concat(
@@ -142,8 +140,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
 
         (uint amountA, uint amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
-
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {

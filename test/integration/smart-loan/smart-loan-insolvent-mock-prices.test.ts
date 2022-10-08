@@ -154,7 +154,12 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             owner: SignerWithAddress,
+            borrowers: SignerWithAddress[],
             borrower: SignerWithAddress,
+            borrower1: SignerWithAddress,
+            borrower2: SignerWithAddress,
+            borrower3: SignerWithAddress,
+            borrower4: SignerWithAddress,
             depositor: SignerWithAddress,
             admin: SignerWithAddress,
             liquidator: SignerWithAddress,
@@ -169,19 +174,25 @@ describe('Smart loan', () => {
             diamondAddress: any;
 
         before("deploy provider, exchange and pool", async () => {
-            [owner, depositor, borrower, admin, liquidator] = await getFixedGasSigners(10000000);
+            [owner, depositor, borrower1, borrower2, borrower3, borrower4, admin, liquidator] = await getFixedGasSigners(10000000);
+
+            borrowers = [borrower1, borrower2, borrower3, borrower4];
+
+            diamondAddress = await deployDiamond();
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
 
             redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
             let lendingPools = [];
             for (const token of [
                 {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
-                {'name': 'AVAX', 'airdropList': [depositor, borrower], 'autoPoolDeposit': true},
+                {'name': 'AVAX', 'airdropList': [depositor, borrower1, borrower2, borrower3, borrower4], 'autoPoolDeposit': true},
                 {'name': 'ETH', 'airdropList': [], 'autoPoolDeposit': false},
             ]) {
                 let {
                     poolContract,
                     tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+                } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList);
                 if (token.autoPoolDeposit) {
                     await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
                     await poolContract.connect(depositor).deposit(toWei("1000"));
@@ -232,8 +243,6 @@ describe('Smart loan', () => {
                 ]
             ) as TokenManager;
 
-            diamondAddress = await deployDiamond();
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -251,7 +260,10 @@ describe('Smart loan', () => {
             await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, INITIAL_PRICES.ETH);
 
             await topupUser(liquidator);
-            await topupUser(borrower);
+
+            for (let user of borrowers) {
+                await topupUser(user);
+            }
 
             async function depositToPool(symbol: string, tokenContract: Contract, pool: Pool, amount: number, price: number) {
                 const initialTokenDepositWei = parseUnits(amount.toString(), await tokenContract.decimals());
@@ -301,9 +313,6 @@ describe('Smart loan', () => {
         });
 
         beforeEach("create a loan", async () => {
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -319,22 +328,6 @@ describe('Smart loan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-
-            await smartLoansFactory.connect(borrower).createLoan();
-
-            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-
-            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
-
-            wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: INITIAL_MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    });
         });
 
         TEST_TABLE.forEach(
@@ -343,6 +336,24 @@ describe('Smart loan', () => {
         fund AVAX: ${testCase.fund.AVAX}, USDC: ${testCase.fund.USDC}, ETH: ${testCase.fund.ETH}, BTC: ${testCase.fund.BTC}\n
         borrow AVAX: ${testCase.borrow.AVAX}, USDC: ${testCase.borrow.USDC}, ETH: ${testCase.borrow.ETH}`,
                     async () => {
+                        //create loan
+                        borrower = borrowers[testCase.id - 1];
+
+                        await smartLoansFactory.connect(borrower).createLoan();
+
+                        const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+
+                        loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
+
+                        wrappedLoan = WrapperBuilder
+                            .mockLite(loan)
+                            .using(
+                                () => {
+                                    return {
+                                        prices: INITIAL_MOCK_PRICES,
+                                        timestamp: Date.now()
+                                    }
+                                });
                         //fund
                         for (const [symbol, value] of Object.entries(testCase.fund)) {
                             if (value > 0) {

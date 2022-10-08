@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -10,6 +10,7 @@ contract RedstoneConfigManager is Ownable {
 
     constructor(address[] memory _trustedSigners) {
         for (uint256 i = 0; i < _trustedSigners.length; i++) {
+            require(!signerExists(_trustedSigners[i]), "Signer already exists");
             _addTrustedSigner(_trustedSigners[i]);
         }
     }
@@ -60,6 +61,10 @@ contract RedstoneConfigManager is Ownable {
             }
         }
     }
+
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
+
+    function renounceOwnership() public virtual override {}
 
     // EVENTS
     /**

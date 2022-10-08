@@ -1,3 +1,5 @@
+pragma solidity ^0.8.17;
+
 interface ISolvencyFacet {
     function getDebt() external view returns (uint256);
 

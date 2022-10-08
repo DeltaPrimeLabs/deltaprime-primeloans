@@ -93,7 +93,13 @@ describe('Smart loan', () => {
                 {name: 'AVAX', airdropList: [depositor]}
             ];
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
+
+            diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
 
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'PTP'), getRedstonePrices, [{symbol: 'PTP', value: 0.072}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
@@ -108,11 +114,6 @@ describe('Smart loan', () => {
                     lendingPools,
                 ]
             ) as TokenManager;
-
-            diamondAddress = await deployDiamond();
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await recompileConstantsFile(
                 'local',
@@ -331,11 +332,16 @@ describe('Smart loan', () => {
         it("should allow anyone to unstake if insolvent", async () => {
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");;
 
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
 
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1100"));
 
+            await diamondCut.pause();
             await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
 

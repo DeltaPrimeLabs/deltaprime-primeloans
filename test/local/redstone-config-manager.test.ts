@@ -17,8 +17,13 @@ describe('Redstone config manager', () => {
 
     before(async () => {
         [owner, other, signer1, signer2, signer3, signer4] = await getFixedGasSigners(10000000);
-        redstoneConfigManagerContract = await (new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address]));
     })
+
+    it("should deploy the config manger", async () => {
+        await expect(new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address, signer2.address])).to.be.revertedWith("Signer already exists");
+
+        redstoneConfigManagerContract = await (new RedstoneConfigManager__factory(owner).deploy([signer1.address, signer2.address]));
+    });
 
     it("should check if the values set during deployment were properly saved in contract's storage", async () => {
         let trustedSigners = await redstoneConfigManagerContract.getTrustedSigners();

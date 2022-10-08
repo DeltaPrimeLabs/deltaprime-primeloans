@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Last deployed from commit: ;
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -24,8 +24,36 @@ contract DiamondCutFacet is IDiamondCut {
         FacetCut[] calldata _diamondCut,
         address _init,
         bytes calldata _calldata
-    ) external override {
+    ) external override paused {
         DiamondStorageLib.enforceIsContractOwner();
         DiamondStorageLib.diamondCut(_diamondCut, _init, _calldata);
+    }
+
+    function unpause() external override {
+        DiamondStorageLib.enforceIsContractOwner();
+
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        require(!ds._active, "ProtocolUpgrade: already unpaused.");
+        ds._active = true;
+    }
+
+    function pause() external override {
+        DiamondStorageLib.enforceIsContractOwner();
+
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        require(ds._active, "ProtocolUpgrade: already paused.");
+        ds._active = false;
+    }
+
+    modifier paused() {
+        DiamondStorageLib.DiamondStorage storage ds;
+        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
+        // get diamond storage
+        assembly {
+            ds.slot := position
+        }
+        require(!ds._active, "ProtocolUpgrade: not paused.");
+
+        _;
     }
 }

@@ -99,7 +99,13 @@ describe('Smart loan', () => {
             ];
 
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
+
+            diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
@@ -126,12 +132,6 @@ describe('Smart loan', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-
-            diamondAddress = await deployDiamond();
-
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
@@ -254,7 +254,7 @@ describe('Smart loan', () => {
 
             let totalValueDifference = initialTotalValue - fromWei(await wrappedLoan.getTotalValue());
 
-            await expect(totalValueDifference).to.be.closeTo(0, 0.3);
+            await expect(totalValueDifference).to.be.closeTo(0, 1);
         });
 
         it("should fail to unstake TJ LP tokens from YY", async () => {
@@ -277,7 +277,7 @@ describe('Smart loan', () => {
             expect(endTJAVAXUSDCBalance).to.be.gt(0);
             expect(endStakedBalance).to.be.eq(0);
 
-            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 1);
         });
     });
 
@@ -310,7 +310,13 @@ describe('Smart loan', () => {
             ];
 
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
+
+            diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
@@ -347,12 +353,6 @@ describe('Smart loan', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-
-            diamondAddress = await deployDiamond();
-
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 

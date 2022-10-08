@@ -47,7 +47,8 @@ describe('Smart loan', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
-            owner: SignerWithAddress,
+            admin: SignerWithAddress,
+            borrower: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -57,33 +58,33 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory, wrapped native token pool and USD pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [admin, depositor, borrower] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'ETH', 'MCKUSD'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
-                {name: 'MCKUSD', airdropList: [owner, depositor]}
+                {name: 'MCKUSD', airdropList: [borrower, depositor]}
             ];
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
+            let redstoneConfigManager = await (new RedstoneConfigManager__factory(admin).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(admin, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor);
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
             let tokenManager = await deployContract(
-                owner,
+                admin,
                 TokenManagerArtifact,
                 [
                     supportedAssets,
                     lendingPools
                 ]
             ) as TokenManager;
-
-            let diamondAddress = await deployDiamond();
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await recompileConstantsFile(
                 'local',
@@ -100,10 +101,10 @@ describe('Smart loan', () => {
 
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(borrower).createLoan();
 
-            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)
@@ -116,19 +117,28 @@ describe('Smart loan', () => {
                     })
         });
 
+        it("should fail to borrow funds without a collateral in place", async () => {
+            await expect(wrappedLoan.borrow(toBytes32("MCKUSD"), 1)).to.be.revertedWith("The action may cause an account to become insolvent");
+        });
+
 
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
-            await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("1000"));
+            await tokenContracts.get('MCKUSD')!.connect(borrower).approve(wrappedLoan.address, toWei("1000"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("300"));
 
-            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
+            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(300);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300, 0.5);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(await wrappedLoan.getLTV()).to.be.equal(0);
+        });
+
+        it("should fail to borrow funds from the pool as a non-registered account", async () => {
+            await expect(poolContracts.get('MCKUSD')!.connect(depositor).borrow(toWei("300"))).to.be.revertedWith("Only authorized accounts may borrow");
+            await expect(poolContracts.get('MCKUSD')!.connect(borrower).borrow(toWei("300"))).to.be.revertedWith("Only authorized accounts may borrow");
         });
 
         it("should fail to borrow funds as a non-owner", async () => {
@@ -147,7 +157,7 @@ describe('Smart loan', () => {
 
         it("should borrow funds in the same token as funded", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"));
-            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
+            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(600);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300 + 300, 1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300, 0.5);
             expect(await wrappedLoan.getLTV()).to.be.equal(1000);
@@ -156,7 +166,7 @@ describe('Smart loan', () => {
         it("should borrow funds in a different token than funded", async () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
 
-            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(1);
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(1);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(600 + tokensPrices.get('AVAX')! * 1, 1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300 + tokensPrices.get('AVAX')! * 1, 1);
             expect(await wrappedLoan.getLTV()).to.be.closeTo(((300 + tokensPrices.get('AVAX')!) * 1000 / 300).toFixed(0), 1)
@@ -179,7 +189,7 @@ describe('Smart loan', () => {
             await wrappedLoan.repay(toBytes32("MCKUSD"), toWei("100"));
             await wrappedLoan.repay(toBytes32("AVAX"), toWei("0.5"));
 
-            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(500);
+            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(500);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(500 + tokensPrices.get('AVAX')! * 0.5, 1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(200 + tokensPrices.get('AVAX')! * 0.5, 1);
             expect(await wrappedLoan.getLTV()).to.be.closeTo(((200 + tokensPrices.get('AVAX')! * 0.5) * 1000 / 300).toFixed(0), 1)
@@ -188,17 +198,17 @@ describe('Smart loan', () => {
 
         it("should prevent borrowing too much", async () => {
             await expect(wrappedLoan.borrow(toBytes32("AVAX"), toWei("900"))).to.be.revertedWith("The action may cause an account to become insolvent");
-            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(0.5);
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(0.5);
         });
 
         it("should repay the debt when specified too much", async () => {
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("0.1")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("0.1"));
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("0.1")});
+            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("0.1"));
 
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("0.1"));
             await wrappedLoan.repay(toBytes32("AVAX"), toWei("0.6"));
 
-            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(0.1, 0.000001);
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.closeTo(0.1, 0.000001);
         });
     });
 });

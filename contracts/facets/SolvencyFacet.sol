@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
@@ -105,8 +105,6 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
     }
 
     function getStakedValue() public view virtual returns (uint256) {
-        uint256 valueOfStaked;
-
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
         uint256 usdValue;
@@ -134,7 +132,7 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
         return getTotalAssetsValue() + getStakedValue();
     }
 
-    function getFullLoanStatus() public returns (uint256[4] memory) {
+    function getFullLoanStatus() public view returns (uint256[4] memory) {
         return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
     }
 
@@ -161,7 +159,7 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
      * Returns max LTV (with the accuracy in a thousandth)
      * IMPORTANT: when changing, update other facets as well
      **/
-    function getMaxLtv() public view returns (uint256) {
+    function getMaxLtv() public pure returns (uint256) {
         return _MAX_LTV;
     }
 }

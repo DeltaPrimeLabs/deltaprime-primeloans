@@ -88,7 +88,15 @@ describe('Smart loan', () => {
             })
 
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000, 'CELO');
+
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000, 'CELO');
+
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'mcUSD'), getRedstonePrices, [{symbol: 'mcUSD', value: 1}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'CELO');
@@ -101,10 +109,7 @@ describe('Smart loan', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-            let diamondAddress = await deployDiamond();
 
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -121,6 +126,7 @@ describe('Smart loan', () => {
             );
 
             exchange = await deployAndInitExchangeContract(owner, ubeswapRouterAddress, supportedAssets, "UbeswapIntermediary") as UbeswapIntermediary;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",

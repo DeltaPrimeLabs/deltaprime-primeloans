@@ -100,15 +100,19 @@ async function deployDiamond(hardhatConfig = undefined) {
     const diamondInit = await deployContract('DiamondInit', [], {}, hardhatConfig);
     console.log('DiamondInit deployed:', diamondInit.address)
 
+    const cut = []
+    cut.push({
+        facetAddress: diamondInit.address,
+        action: FacetCutAction.Add,
+        functionSelectors: getSelectors(diamondInit, hardhatConfig)
+    })
+
     // deploy facets
-    console.log('')
     console.log('Deploying facets')
     // TODO: Deploy normal SolvencyFacet and Mock - RP only in tests
     const FacetNames = [
-        'DiamondInit',
         'DiamondLoupeFacet',
     ]
-    const cut = []
     for (const FacetName of FacetNames) {
         const facet = await deployContract(FacetName, [], {}, hardhatConfig);
         console.log(`${FacetName} deployed: ${facet.address}`)
@@ -125,6 +129,8 @@ async function deployDiamond(hardhatConfig = undefined) {
     let receipt
     // call to init function
     let functionCall = diamondInit.interface.encodeFunctionData('init')
+    console.log('DiamondCut calldata:')
+    console.log(functionCall)
     tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall)
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()
@@ -132,6 +138,13 @@ async function deployDiamond(hardhatConfig = undefined) {
         throw Error(`Diamond upgrade failed: ${tx.hash}`)
     }
     console.log('Completed diamond cut')
+
+    tx = await diamondCut.unpause();
+    receipt = await tx.wait();
+    if (!receipt.status) {
+        throw Error(`Diamond unpausing failed: ${tx.hash}`)
+    }
+    console.log(`Completed diamond unpause (tx: ${tx.hash})`)
     return diamond.address
 }
 

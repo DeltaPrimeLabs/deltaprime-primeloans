@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -27,6 +27,10 @@ interface IDiamondCut {
         address _init,
         bytes calldata _calldata
     ) external;
+
+    function pause() external;
+
+    function unpause() external;
 
     event DiamondCut(FacetCut[] _diamondCut, address _init, bytes _calldata);
 }

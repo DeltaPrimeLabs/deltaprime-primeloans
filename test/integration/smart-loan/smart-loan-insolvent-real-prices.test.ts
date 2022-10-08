@@ -252,7 +252,17 @@ describe('Smart loan - real prices', () => {
             loan: Contract,
             wrappedLoan: any,
             owner: SignerWithAddress,
+            borrowers: SignerWithAddress[],
             borrower: SignerWithAddress,
+            borrower1: SignerWithAddress,
+            borrower2: SignerWithAddress,
+            borrower3: SignerWithAddress,
+            borrower4: SignerWithAddress,
+            borrower5: SignerWithAddress,
+            borrower6: SignerWithAddress,
+            borrower7: SignerWithAddress,
+            borrower8: SignerWithAddress,
+            borrower9: SignerWithAddress,
             depositor: SignerWithAddress,
             admin: SignerWithAddress,
             liquidator: SignerWithAddress,
@@ -272,19 +282,26 @@ describe('Smart loan - real prices', () => {
             diamondAddress: any;
 
         before("deploy provider, exchange and pool", async () => {
-            [owner, depositor, borrower, admin, liquidator] = await getFixedGasSigners(10000000);
+            [owner, depositor, borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9, admin, liquidator] = await getFixedGasSigners(10000000);
+
+            borrowers = [borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9];
+
+            diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
 
             redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
             let lendingPools = [];
             for (const token of [
                 {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
-                {'name': 'AVAX', 'airdropList': [depositor, borrower], 'autoPoolDeposit': true},
+                {'name': 'AVAX', 'airdropList': [depositor, borrower1, borrower2, borrower3, borrower4], 'autoPoolDeposit': true},
                 {'name': 'ETH', 'airdropList': [], 'autoPoolDeposit': false},
             ]) {
                 let {
                     poolContract,
                     tokenContract
-                } = await deployAndInitializeLendingPool(owner, token.name, token.airdropList);
+                } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList);
                 if (token.autoPoolDeposit) {
                     await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
                     await poolContract.connect(depositor).deposit(toWei("1000"));
@@ -314,8 +331,6 @@ describe('Smart loan - real prices', () => {
                     lendingPools
                 ]
             ) as TokenManager;
-
-            diamondAddress = await deployDiamond();
 
             await recompileConstantsFile(
                 'local',
@@ -370,7 +385,9 @@ describe('Smart loan - real prices', () => {
             await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, ETH_PRICE);
 
             await topupUser(liquidator);
-            await topupUser(borrower);
+            for (let user of borrowers) {
+                await topupUser(user);
+            }
 
             async function depositToPool(symbol: string, tokenContract: Contract, pool: Pool, amount: number, price: number) {
                 const initialTokenDepositWei = parseUnits(amount.toString(), await tokenContract.decimals());
@@ -385,9 +402,9 @@ describe('Smart loan - real prices', () => {
             }
 
             async function topupUser(user: SignerWithAddress) {
-                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 10000 / AVAX_PRICE).toString())});
+                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 1000 / AVAX_PRICE).toString())});
 
-                const amountSwapped = toWei((10000 / AVAX_PRICE).toString());
+                const amountSwapped = toWei((1000 / AVAX_PRICE).toString());
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDC'].address, amountSwapped, 0);
 
@@ -420,14 +437,14 @@ describe('Smart loan - real prices', () => {
             );
             await deployAllFacets(diamondAddress);
 
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             //this facet is used to override max data timestamp delay
             await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getTotalAssetsValue', 'getLTV', 'getPrices']);
+            await diamondCut.unpause();
         });
 
         beforeEach("create a loan", async () => {
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -444,190 +461,196 @@ describe('Smart loan - real prices', () => {
                 'lib'
             );
 
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
-
-            await smartLoansFactory.connect(borrower).createLoan();
-
-            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
-
-            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
-
-            wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    });
+            await diamondCut.unpause();
         });
 
 
         TEST_TABLE.forEach(
             async testCase => {
-                it(`Testcase ${testCase.id}:\n
+                    it(`Testcase ${testCase.id}:\n
         fund AVAX: ${testCase.fundInUsd.AVAX}, USDC: ${testCase.fundInUsd.USDC}, ETH: ${testCase.fundInUsd.ETH}, BTC: ${testCase.fundInUsd.BTC}, LINK: ${testCase.fundInUsd.LINK}\n
         borrow AVAX: ${testCase.borrowInUsd.AVAX}, USDC: ${testCase.borrowInUsd.USDC}, ETH: ${testCase.borrowInUsd.ETH}`,
-                    async () => {
-                        //fund
-                        for (const [symbol, value] of Object.entries(testCase.fundInUsd)) {
-                            if (value > 0) {
-                                let contract = getTokenContract(symbol)!;
-                                let tokenDecimals = await contract.decimals();
+                        async () => {
 
-                                let requiredAvax = toWei((value * 1.3 / AVAX_PRICE).toString());
-                                await tokenContracts['AVAX'].connect(borrower).deposit({value: requiredAvax});
+                            borrower = borrowers[testCase.id - 1];
 
-                                if (symbol !== 'AVAX') {
-                                    await tokenContracts['AVAX'].connect(borrower).transfer(exchange.address, requiredAvax);
+                            await smartLoansFactory.connect(borrower).createLoan();
 
-                                    let amountOfToken = value / getPrice(symbol)!;
+                            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
 
-                                    await exchange.connect(borrower).swap(tokenContracts['AVAX'].address, tokenContracts[symbol].address, requiredAvax, parseUnits(amountOfToken.toFixed(tokenDecimals), tokenDecimals));
+                            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
+
+                            wrappedLoan = WrapperBuilder
+                                .mockLite(loan)
+                                .using(
+                                    () => {
+                                        return {
+                                            prices: MOCK_PRICES,
+                                            timestamp: Date.now()
+                                        }
+                                    });
+
+                            //fund
+                            for (const [symbol, value] of Object.entries(testCase.fundInUsd)) {
+                                if (value > 0) {
+                                    let contract = getTokenContract(symbol)!;
+                                    let tokenDecimals = await contract.decimals();
+
+                                    let requiredAvax = toWei((value * 1.3 / AVAX_PRICE).toString());
+                                    await tokenContracts['AVAX'].connect(borrower).deposit({value: requiredAvax});
+
+                                    if (symbol !== 'AVAX') {
+                                        await tokenContracts['AVAX'].connect(borrower).transfer(exchange.address, requiredAvax);
+
+                                        let amountOfToken = value / getPrice(symbol)!;
+
+                                        await exchange.connect(borrower).swap(tokenContracts['AVAX'].address, tokenContracts[symbol].address, requiredAvax, parseUnits(amountOfToken.toFixed(tokenDecimals), tokenDecimals));
+                                    }
+
+                                    let amountOfTokens = value / getPrice(symbol)!;
+                                    await contract.connect(borrower).approve(wrappedLoan.address, parseUnits(amountOfTokens.toFixed(tokenDecimals), tokenDecimals));
+                                    await wrappedLoan.fund(toBytes32(symbol), parseUnits(amountOfTokens.toFixed(tokenDecimals), tokenDecimals));
                                 }
-
-                                let amountOfTokens = value / getPrice(symbol)!;
-                                await contract.connect(borrower).approve(wrappedLoan.address, parseUnits(amountOfTokens.toFixed(tokenDecimals), tokenDecimals));
-                                await wrappedLoan.fund(toBytes32(symbol), parseUnits(amountOfTokens.toFixed(tokenDecimals), tokenDecimals));
                             }
-                        }
-                        // borrow
-                        for (const [symbol, value] of Object.entries(testCase.borrowInUsd)) {
-                            if (value > 0) {
-                                let contract = getTokenContract(symbol)!;
-                                let decimals = await contract.decimals();
-                                let amountOfTokens = value / getPrice(symbol)!;
-
-                                await wrappedLoan.borrow(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
-                            }
-                        }
-
-                        if (testCase.withdrawInUsd) {
-                            for (const [symbol, value] of Object.entries(testCase.withdrawInUsd)) {
+                            // borrow
+                            for (const [symbol, value] of Object.entries(testCase.borrowInUsd)) {
                                 if (value > 0) {
                                     let contract = getTokenContract(symbol)!;
                                     let decimals = await contract.decimals();
                                     let amountOfTokens = value / getPrice(symbol)!;
 
-                                    await wrappedLoan.withdraw(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
+                                    await wrappedLoan.borrow(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
                                 }
                             }
-                        }
-
-                        if (testCase.swaps) {
-                            for (const swap of testCase.swaps) {
-                                let contract = getTokenContract(swap.from)!;
-                                let tokenDecimals = await contract.decimals();
-                                if (swap.all) {
-                                    await wrappedLoan.swapPangolin(toBytes32(swap.from), toBytes32(swap.to), await wrappedLoan.getBalance(toBytes32(swap.from)), 0);
-                                } else if (swap.amountInUsd) {
-                                    let amountOfTokens = 0.99 * swap.amountInUsd / getPrice(swap.from)!;
-                                    await wrappedLoan.swapPangolin(toBytes32(swap.from), toBytes32(swap.to), toWei(amountOfTokens.toFixed(tokenDecimals), tokenDecimals), 0);
-                                }
-                            }
-                        }
-
-                        if (testCase.stakeInUsd) {
-                            //YAK AVAX
-                            let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
-                            await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
-                        }
-
-                        let maxBonus = 0.05;
-
-                        const bonus = calculateBonus(
-                            testCase.action,
-                            fromWei(await wrappedLoan.getDebt()),
-                            fromWei(await wrappedLoan.getTotalValue()),
-                            testCase.targetLtv,
-                            maxBonus
-                        );
-
-                        const neededToRepay = toRepay(
-                            testCase.action,
-                            fromWei(await wrappedLoan.getDebt()),
-                            fromWei(await wrappedLoan.getTotalValue()),
-                            testCase.targetLtv,
-                            bonus
-                        )
-
-                        const balances: any = {};
-                        for (const asset of (await wrappedLoan.getAllOwnedAssets())) {
-                            let balance = await tokenContracts[fromBytes32(asset)].balanceOf(wrappedLoan.address);
-                            let decimals = await tokenContracts[fromBytes32(asset)].decimals();
-                            balances[fromBytes32(asset)] = formatUnits(balance, decimals);
-                        }
-
-                        const debts: any = {};
-
-                        for (const asset of (await tokenManager.getAllPoolAssets())) {
-                            if (poolContracts.hasOwnProperty(fromBytes32(asset))) {
-                                let debt = (await poolContracts[fromBytes32(asset)].getBorrowed(wrappedLoan.address));
-                                let decimals = await tokenContracts[fromBytes32(asset)].decimals();
-                                debts[fromBytes32(asset)] = formatUnits(debt, decimals);
-                            }
-                        }
-
-                        // From [{symbol: AVAX, value: 10}, {symbol: BTC, value: 2137}] to => {AVAX: 10, BTC: 2137}
-                        let mockPricesArg = MOCK_PRICES.reduce((acc: any, current: any) => Object.assign(acc, {[current.symbol]: current.value}), {})
-
-                        const repayAmounts = getRepayAmounts(
-                            testCase.action,
-                            debts,
-                            neededToRepay,
-                            mockPricesArg
-                        );
-
-                        let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
-
-                        let allowanceAmounts;
-
-                        if (!loanIsBankrupt) {
-                            allowanceAmounts = toSupply(
-                                balances,
-                                repayAmounts
-                            );
-                        } else {
-                            allowanceAmounts = repayAmounts;
-                        }
-
-                        const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
-
-                        let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
-
-                        await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
-
-                        let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
-
-                        if (loanIsBankrupt) {
-                            let funded = 0;
-
-                            if (testCase.fundInUsd) {
-                                for (const [, value] of Object.entries(testCase.fundInUsd)) {
-                                    funded += value;
-                                }
-                            }
-
-                            let withdrawn = 0;
 
                             if (testCase.withdrawInUsd) {
-                                for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
-                                    withdrawn += value;
+                                for (const [symbol, value] of Object.entries(testCase.withdrawInUsd)) {
+                                    if (value > 0) {
+                                        let contract = getTokenContract(symbol)!;
+                                        let decimals = await contract.decimals();
+                                        let amountOfTokens = value / getPrice(symbol)!;
+
+                                        await wrappedLoan.withdraw(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
+                                    }
                                 }
                             }
 
-                            let badDebt = withdrawn - funded;
+                            if (testCase.swaps) {
+                                for (const swap of testCase.swaps) {
+                                    let contract = getTokenContract(swap.from)!;
+                                    let tokenDecimals = await contract.decimals();
+                                    if (swap.all) {
+                                        await wrappedLoan.swapPangolin(toBytes32(swap.from), toBytes32(swap.to), await wrappedLoan.getBalance(toBytes32(swap.from)), 0);
+                                    } else if (swap.amountInUsd) {
+                                        let amountOfTokens = 0.99 * swap.amountInUsd / getPrice(swap.from)!;
+                                        await wrappedLoan.swapPangolin(toBytes32(swap.from), toBytes32(swap.to), toWei(amountOfTokens.toFixed(tokenDecimals), tokenDecimals), 0);
+                                    }
+                                }
+                            }
 
-                            expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
-                        }
+                            if (testCase.stakeInUsd) {
+                                //YAK AVAX
+                                let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
+                                await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
+                            }
 
-                        if (!loanIsBankrupt) {
-                            expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
-                        }
+                            let maxBonus = 0.05;
 
-                        expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, 0.02);
-                    });
+                            const bonus = calculateBonus(
+                                testCase.action,
+                                fromWei(await wrappedLoan.getDebt()),
+                                fromWei(await wrappedLoan.getTotalValue()),
+                                testCase.targetLtv,
+                                maxBonus
+                            );
+
+                            const neededToRepay = toRepay(
+                                testCase.action,
+                                fromWei(await wrappedLoan.getDebt()),
+                                fromWei(await wrappedLoan.getTotalValue()),
+                                testCase.targetLtv,
+                                bonus
+                            )
+
+                            const balances: any = {};
+                            for (const asset of (await wrappedLoan.getAllOwnedAssets())) {
+                                let balance = await tokenContracts[fromBytes32(asset)].balanceOf(wrappedLoan.address);
+                                let decimals = await tokenContracts[fromBytes32(asset)].decimals();
+                                balances[fromBytes32(asset)] = formatUnits(balance, decimals);
+                            }
+
+                            const debts: any = {};
+
+                            for (const asset of (await tokenManager.getAllPoolAssets())) {
+                                if (poolContracts.hasOwnProperty(fromBytes32(asset))) {
+                                    let debt = (await poolContracts[fromBytes32(asset)].getBorrowed(wrappedLoan.address));
+                                    let decimals = await tokenContracts[fromBytes32(asset)].decimals();
+                                    debts[fromBytes32(asset)] = formatUnits(debt, decimals);
+                                }
+                            }
+
+                            // From [{symbol: AVAX, value: 10}, {symbol: BTC, value: 2137}] to => {AVAX: 10, BTC: 2137}
+                            let mockPricesArg = MOCK_PRICES.reduce((acc: any, current: any) => Object.assign(acc, {[current.symbol]: current.value}), {})
+
+                            const repayAmounts = getRepayAmounts(
+                                testCase.action,
+                                debts,
+                                neededToRepay,
+                                mockPricesArg
+                            );
+
+                            let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
+
+                            let allowanceAmounts;
+
+                            if (!loanIsBankrupt) {
+                                allowanceAmounts = toSupply(
+                                    balances,
+                                    repayAmounts
+                                );
+                            } else {
+                                allowanceAmounts = repayAmounts;
+                            }
+
+                            const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
+
+                            let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+
+                            await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
+
+                            let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+
+                            if (loanIsBankrupt) {
+                                let funded = 0;
+
+                                if (testCase.fundInUsd) {
+                                    for (const [, value] of Object.entries(testCase.fundInUsd)) {
+                                        funded += value;
+                                    }
+                                }
+
+                                let withdrawn = 0;
+
+                                if (testCase.withdrawInUsd) {
+                                    for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
+                                        withdrawn += value;
+                                    }
+                                }
+
+                                let badDebt = withdrawn - funded;
+
+                                expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
+                            }
+
+                            if (!loanIsBankrupt) {
+                                expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
+                            }
+
+                            expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, 0.02);
+                        });
             }
         );
 
@@ -642,8 +665,11 @@ describe('Smart loan - real prices', () => {
             performer: any
         ) {
 
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             //this facet is used to override max data timestamp delay
             await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getTotalAssetsValue', 'getLTV', 'getPrices']);
+            await diamondCut.unpause();
 
             const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
 

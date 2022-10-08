@@ -94,7 +94,12 @@ describe('Test liquidator', () => {
                     ])
             );
 
-            await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
@@ -112,8 +117,6 @@ describe('Test liquidator', () => {
                 ]
             ) as TokenManager;
 
-            diamondAddress = await deployDiamond();
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -126,9 +129,6 @@ describe('Test liquidator', () => {
             );
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
-
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await recompileConstantsFile(
                 'local',
@@ -146,7 +146,10 @@ describe('Test liquidator', () => {
                 'lib'
             );
             await deployAllFacets(diamondAddress);
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
         });
 
 
@@ -187,7 +190,10 @@ describe('Test liquidator', () => {
         });
 
         it("replace facet", async () => {
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
         });

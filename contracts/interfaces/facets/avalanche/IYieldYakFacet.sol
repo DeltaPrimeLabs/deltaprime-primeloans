@@ -1,3 +1,5 @@
+pragma solidity ^0.8.17;
+
 interface IYieldYakFacet {
     function stakeAVAXYak(uint256 amount) external;
 
