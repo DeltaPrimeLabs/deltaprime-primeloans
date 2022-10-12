@@ -13,9 +13,19 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
+  IUniswapV2Router01 uniswapV2Router;
+  address wrappedNativeToken;
+
   struct AssetAmount {
     address asset;
     uint256 amount;
+  }
+
+  struct LiqEnrichedParams {
+    address loan;
+    address liquidator;
+    address tokenManager;
+    uint256 bonus;
   }
 
   struct FlashLoanArgs {
@@ -29,16 +39,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
     address tokenManager;
   }
 
-  address loan;
-  IUniswapV2Router01 uniswapV2Router;
-
-  AssetAmount[] assetSurplus;
-  AssetAmount[] assetDeficit;
-  address liquidator;
-  uint256 bonus;
-  address tokenManager;
-  address wrappedNativeToken;
-
   constructor(
     address _addressProvider,
     address _uniswapV2Router,
@@ -48,38 +48,75 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
     wrappedNativeToken = _wrappedNativeToken;
   }
 
+  // ---- Extract calldata arguments ----
+  function getAssets() internal view returns (address[] calldata result) {
+    assembly {
+      result.length := calldataload(add(calldataload(0x04), 0x04))
+      result.offset := add(calldataload(0x04), 0x24)
+    }
+    return result;
+  }
+
+  function getAmounts() internal view returns (uint256[] calldata result) {
+    assembly {
+      result.length := calldataload(add(calldataload(0x24), 0x04))
+      result.offset := add(calldataload(0x24), 0x24)
+    }
+    return result;
+  }
+
+  function getPremiums() internal view returns (uint256[] calldata result) {
+    assembly {
+      result.length := calldataload(add(calldataload(0x44), 0x04))
+      result.offset := add(calldataload(0x44), 0x24)
+    }
+    return result;
+  }
+  // --------------------------------------
+
   /**
    * @notice Executes an operation after receiving the flash-borrowed assets
    * @dev Ensure that the contract can return the debt + premium, e.g., has
    *      enough funds to repay and has approved the Pool to pull the total amount
-   * @param _assets The addresses of the flash-borrowed assets
-   * @param _amounts The amounts of the flash-borrowed assets
-   * @param _premiums The fee of each flash-borrowed asset
+   * assets The addresses of the flash-borrowed assets
+   * amounts The amounts of the flash-borrowed assets
+   * premiums The fee of each flash-borrowed asset
    * @param _initiator The address of the flashloan initiator
    * @param _params The byte-encoded params passed when initiating the flashloan
    * @return True if the execution of the operation succeeds, false otherwise
    */
   function executeOperation(
-    address[] calldata _assets,
-    uint256[] calldata _amounts,
-    uint256[] calldata _premiums,
+    address[] calldata,
+    uint256[] calldata,
+    uint256[] calldata,
     address _initiator,
     bytes calldata _params
   ) public override returns (bool) {
-    for (uint32 i = 0; i < _assets.length; i++) {
-      IERC20(_assets[i]).approve(loan, 0);
-      IERC20(_assets[i]).approve(loan, _amounts[i]);
+    LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
+    address[] memory supportedTokens = TokenManager(lep.tokenManager).getSupportedTokensAddresses();
+
+    AssetAmount[] memory assetSurplus = new AssetAmount[](supportedTokens.length);
+    AssetAmount[] memory assetDeficit = new AssetAmount[](supportedTokens.length);
+
+    // Use calldata instead of memory in order to avoid the "Stack Too deep" CompileError
+    address[] calldata assets = getAssets();
+    uint256[] calldata amounts = getAmounts();
+    uint256[] calldata premiums = getPremiums();
+
+    for (uint32 i = 0; i < assets.length; i++) {
+      IERC20(assets[i]).approve(lep.loan, 0);
+      IERC20(assets[i]).approve(lep.loan, amounts[i]);
     }
 
-    // liquidate loan
+    // Liquidate loan
     {
-      (bool success, ) = loan.call(
+      (bool success,) = lep.loan.call(
         abi.encodePacked(
           abi.encodeWithSelector(
             SmartLoanLiquidationFacet.liquidateLoan.selector,
-            TokenManager(tokenManager).getAllPoolAssets(),
-            _amounts,
-            bonus
+            TokenManager(lep.tokenManager).getAllPoolAssets(),
+            amounts,
+            lep.bonus
           ),
           _params
         )
@@ -87,77 +124,60 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
       require(success, "Liquidation failed");
     }
 
-    address[] memory supportedTokens = TokenManager(tokenManager).getSupportedTokensAddresses();
-
-    // calculate surpluses & deficits
+    // Calculate surpluses & deficits
     for (uint32 i = 0; i < supportedTokens.length; i++) {
-      int256 index = findIndex(supportedTokens[i], _assets);
+      int256 index = findIndex(supportedTokens[i], assets);
+      uint256 balance = IERC20Metadata(supportedTokens[i]).balanceOf(address(this));
 
-      if (index != -1) {
-        int256 amount = int256(
-          IERC20Metadata(_assets[uint256(index)]).balanceOf(address(this))
-        ) -
-          int256(_amounts[uint256(index)]) -
-          int256(_premiums[uint256(index)]);
-
+      if (index != - 1) {
+        int256 amount = int256(balance) - int256(amounts[uint256(index)]) - int256(premiums[uint256(index)]);
         if (amount > 0) {
-          assetSurplus.push(
-            AssetAmount(supportedTokens[uint256(index)], uint256(amount))
-          );
+          assetSurplus[i] = AssetAmount(supportedTokens[uint256(index)], uint256(amount));
         } else if (amount < 0) {
-          assetDeficit.push(
-            AssetAmount(supportedTokens[uint256(index)], uint256(amount * -1))
-          );
+          assetDeficit[i] = AssetAmount(supportedTokens[uint256(index)], uint256(amount * - 1));
         }
-      } else if (
-        IERC20Metadata(supportedTokens[i]).balanceOf(address(this)) > 0
-      ) {
-        assetSurplus.push(
-          AssetAmount(
+      } else if (balance > 0){
+          assetSurplus[i] = AssetAmount(
             supportedTokens[i],
-            uint256(IERC20Metadata(supportedTokens[i]).balanceOf(address(this)))
-          )
+            balance
+          );
+      }
+    }
+
+    // Swap to negate deficits
+    for (uint32 i = 0; i < assetDeficit.length; i++) {
+      if (assetDeficit[i].amount != 0) {
+        for (uint32 j = 0; j < assetSurplus.length; j++) {
+          if (assetSurplus[j].amount != 0) {
+            if (swapToNegateDeficits(assetDeficit[i], assetSurplus[j])) {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Send remaining tokens (bonus) to initiator
+    for (uint32 i = 0; i < assetSurplus.length; i++) {
+      if (assetSurplus[i].amount != 0) {
+        address(assetSurplus[i].asset).safeTransfer(
+          lep.liquidator,
+          assetSurplus[i].amount
         );
       }
     }
 
-    // swap to negate deficits
-    for (uint32 i = 0; i < assetDeficit.length; i++) {
-      for (uint32 j = 0; j < assetSurplus.length; j++) {
-        if (swapToNegateDeficits(assetDeficit[i], assetSurplus[j])) {
-          break;
-        }
-      }
+    // Approve AAVE POOL
+    for (uint32 i = 0; i < assets.length; i++) {
+      IERC20(assets[i]).approve(address(POOL), 0);
+      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
     }
 
-    // send remaining tokens (bonus) to initiator
-    for (uint32 i = 0; i < assetSurplus.length; i++) {
-      address(assetSurplus[i].asset).safeTransfer(
-        liquidator,
-        assetSurplus[i].amount
-      );
-    }
-
-    // approves
-    for (uint32 i = 0; i < _assets.length; i++) {
-      IERC20(_assets[i]).approve(address(POOL), 0);
-      IERC20(_assets[i]).approve(address(POOL), _amounts[i] + _premiums[i]);
-    }
-
-    //empty arrays
-    delete assetSurplus;
-    delete assetDeficit;
-
-    // success
     return true;
   }
 
   function executeFlashloan(FlashLoanArgs calldata _args) public {
-    //TODO: this shouldn't be kept in contract
-    loan = _args.loanAddress;
-    bonus = _args.bonus;
-    liquidator = _args.liquidator;
-    tokenManager = _args.tokenManager;
+    bytes memory enrichedParams = bytes.concat(abi.encodePacked(_args.loanAddress), abi.encodePacked(_args.liquidator), abi.encodePacked(_args.tokenManager), abi.encodePacked(_args.bonus), _args.params);
 
     IPool(address(POOL)).flashLoan(
       address(this),
@@ -165,22 +185,45 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
       _args.amounts,
       _args.interestRateModes,
       address(this),
-      _args.params,
+      enrichedParams,
       0
     );
   }
 
-  //argument storage, bo przechowujemy w tablicy storage
+  function getLiqEnrichedParams(bytes memory _enrichedParams) internal returns (LiqEnrichedParams memory) {
+    address _loan;
+    address _liquidator;
+    address _tokenManager;
+    uint256 _bonus;
+    assembly {
+    // Read 32 bytes from _enrichedParams ptr + 32 bytes offset, shift right 12 bytes
+      _loan := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x20)))
+    // Read 32 bytes from _enrichedParams ptr + 52 bytes offset, shift right 12 bytes
+      _liquidator := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x34)))
+    // Read 32 bytes from _enrichedParams ptr + 72 bytes offset, shift right 12 bytes
+      _tokenManager := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x48)))
+    // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
+      _bonus := mload(add(_enrichedParams, 0x5c))
+    }
+    return LiqEnrichedParams({
+      loan : _loan,
+      liquidator : _liquidator,
+      tokenManager : _tokenManager,
+      bonus : _bonus
+    });
+  }
+
   function swapToNegateDeficits(
-    AssetAmount storage _deficit,
-    AssetAmount storage _surplus
+    AssetAmount memory _deficit,
+    AssetAmount memory _surplus
   ) private returns (bool shouldBreak) {
+
     uint256[] memory amounts;
     uint256 soldTokenAmountNeeded = uniswapV2Router
-      .getAmountsIn(
-        _deficit.amount,
-        getPath(_surplus.asset, _deficit.asset)
-      )[0];
+    .getAmountsIn(
+      _deficit.amount,
+      getPath(_surplus.asset, _deficit.asset)
+    )[0];
 
     if (soldTokenAmountNeeded > _surplus.amount) {
       address(_surplus.asset).safeApprove(address(uniswapV2Router), 0);
@@ -191,11 +234,14 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
 
       amounts = uniswapV2Router.swapExactTokensForTokens(
         _surplus.amount,
+        // TODO: figure out the amount minOUT
         (soldTokenAmountNeeded * _deficit.amount) / _surplus.amount,
-        getPath(_deficit.asset, _surplus.asset), //todo: migrate getPath to this contract
+        getPath(_deficit.asset, _surplus.asset),
         address(this),
         block.timestamp
       );
+      _deficit.amount = _deficit.amount - amounts[amounts.length - 1];
+      _surplus.amount = _surplus.amount - amounts[0];
       return false;
     } else {
       address(_surplus.asset).safeApprove(address(uniswapV2Router), 0);
@@ -217,26 +263,17 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
     }
   }
 
-  function toUint256(bytes memory _bytes)
-    internal
-    pure
-    returns (uint256 value)
-  {
-    assembly {
-      value := mload(add(_bytes, 0x20))
-    }
-  }
-
   //TODO: pretty inefficient, find better way
   function findIndex(address addr, address[] memory array)
-    internal
-    view
-    returns (int256)
+  internal
+  view
+  returns (int256)
   {
-    int256 index = -1;
+    int256 index = - 1;
     for (uint256 i; i < array.length; i++) {
       if (array[i] == addr) {
         index = int256(i);
+        break;
       }
     }
 

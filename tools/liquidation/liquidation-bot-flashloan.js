@@ -35,8 +35,6 @@ let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);
 async function wrapLoan(loanAddress) {
     let loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, wallet);
 
-    await loan.getMaxLiquidationBonus();
-
     loan = WrapperBuilder
         .wrapLite(loan)
         .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
