@@ -122,7 +122,6 @@ export default {
     },
 
     assetToggleChange(asset) {
-      console.log(asset);
       this.selectedDepositAsset = asset;
     },
   }

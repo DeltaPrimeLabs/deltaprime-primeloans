@@ -92,7 +92,7 @@ export default {
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      const assetData = config.ASSETS_CONFIG[asset.toUpperCase()];
+      const assetData = config.ASSETS_CONFIG[asset];
       if (assetData) {
         return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
       }
@@ -112,7 +112,7 @@ export default {
     },
 
     getAssetIcon(assetSymbol) {
-      const asset = config.ASSETS_CONFIG[assetSymbol.toUpperCase()];
+      const asset = config.ASSETS_CONFIG[assetSymbol];
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
   },

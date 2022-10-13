@@ -65,7 +65,6 @@ export default {
     }
   },
   async mounted() {
-    this.balance = await this.farm.staked(this.loan.address);
     this.apy = await this.farm.apy();
   },
   data() {
@@ -75,6 +74,16 @@ export default {
       balance: 0,
       apy: 0
     };
+  },
+  watch: {
+    loan: {
+      async handler(loan) {
+        if (loan) {
+          this.balance = await this.farm.staked(this.loan.address);
+        }
+      },
+      immediate: true
+    },
   },
   computed: {
     ...mapState('stakeStore', ['stakedAssets']),
@@ -95,7 +104,7 @@ export default {
       modalInstance.staked = this.farm.balance;
       modalInstance.asset = this.asset;
       modalInstance.$on('STAKE', (stakeValue) => {
-        this.handleTransaction(this.stake({amount: stakeValue, method: this.farm.stakeMethod})).then(result => {
+        this.handleTransaction(this.stake({amount: stakeValue, method: this.farm.stakeMethod, decimals: this.asset.decimals})).then(result => {
           this.closeModal();
         })
       });

@@ -94,9 +94,6 @@ export default {
 
   computed: {
     asset() {
-      console.log('asset()')
-      console.log(this.assetSymbol)
-      console.log(config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol])
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     calculateStakingProtocolsHeight() {
@@ -141,8 +138,6 @@ export default {
     },
 
     protocolLogo(protocol) {
-      console.log(protocol)
-      console.log(config.PROTOCOLS_CONFIG[protocol])
       return config.PROTOCOLS_CONFIG[protocol];
       // return config.PROTOCOLS_CONFIG[protocol].logo;
     }

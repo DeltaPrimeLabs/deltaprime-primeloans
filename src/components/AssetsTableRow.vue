@@ -329,9 +329,6 @@ export default {
             this.closeModal();
           });
         } else {
-          console.log(withdrawEvent.value)
-          console.log(config.ASSETS_CONFIG[this.asset.symbol].decimals)
-
           const withdrawRequest = {
             asset: this.asset.symbol,
             value: withdrawEvent.value,

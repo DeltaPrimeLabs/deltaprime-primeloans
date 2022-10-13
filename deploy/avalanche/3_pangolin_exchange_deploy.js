@@ -14,9 +14,7 @@ const pangolinSupportedAssets = [
     asset('USDC'),
     asset('BTC'),
     asset('ETH'),
-    //TODO:
-    //add once included in RedStone price feed
-    // asset('sAVAX'),
+    asset('sAVAX'),
     asset('USDT'),
     asset('LINK'),
     asset('QI'),

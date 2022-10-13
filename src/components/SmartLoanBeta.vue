@@ -55,7 +55,6 @@ export default {
   watch: {
     assetBalances: {
       handler(balances) {
-        console.log('watch asset balacnces SmartLoanBeta');
         this.assetBalancesChange(balances);
       },
     }

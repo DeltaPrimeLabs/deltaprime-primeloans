@@ -16,6 +16,7 @@ const traderJoeSupportedAssets = [
     asset('BTC'),
     asset('ETH'),
     asset('USDT'),
+    asset('sAVAX'),
     asset('TJ_AVAX_USDC_LP'),
 ]
 

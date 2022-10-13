@@ -1,6 +1,8 @@
 import {awaitConfirmation} from '../utils/blockchain';
 import {toWei} from '@/utils/calculate';
 import config from "../config";
+import {parseUnits} from "ethers/lib/utils";
+import {BigNumber} from "ethers";
 
 
 export default {
@@ -25,12 +27,12 @@ export default {
     },
 
     //TODO: stakeRequest
-    async stake({state, rootState, dispatch, commit}, {method, amount}) {
+    async stake({state, rootState, dispatch, commit}, {method, amount, decimals}) {
 
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const stakeTransaction = await smartLoanContract[method](toWei(String(amount)), {gasLimit: 110000000});
+      const stakeTransaction = await smartLoanContract[method](parseUnits(String(amount), BigNumber.from(decimals.toString())), {gasLimit: 110000000});
 
       await awaitConfirmation(stakeTransaction, provider, method);
 
@@ -38,10 +40,10 @@ export default {
       await dispatch('network/updateBalance', {}, {root: true})
     },
 
-    async unstake({state, rootState, dispatch, commit}, {method, amount}) {
+    async unstake({state, rootState, dispatch, commit}, {method, amount, decimals}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const unstakeTransaction = await smartLoanContract[method](amount, {gasLimit: 1100000});
+      const unstakeTransaction = await smartLoanContract[method](parseUnits(String(amount), BigNumber.from(decimals.toString())), {gasLimit: 1100000});
       await awaitConfirmation(unstakeTransaction, provider, method)
 
       await dispatch('updateStakedBalances');

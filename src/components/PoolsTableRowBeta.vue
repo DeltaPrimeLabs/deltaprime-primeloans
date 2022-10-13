@@ -76,7 +76,6 @@ export default {
   },
 
   mounted() {
-    console.log(this.pool);
     this.setupActionsConfiguration();
   },
 
@@ -133,7 +132,6 @@ export default {
     },
 
     openWithdrawModal() {
-      console.log(this.pool);
       const modalInstance = this.openModal(PoolWithdrawModal);
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;

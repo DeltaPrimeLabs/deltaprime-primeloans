@@ -1,5 +1,8 @@
 import config from "@/config";
 const ethers = require('ethers');
+import IVectorFinanceStakingArtifact
+  from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
+import {BigNumber} from "ethers";
 //TODO: store in one place
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -68,21 +71,31 @@ export function aprToApy(apr) {
   return Math.pow(1 + (apr / compoundingPeriods), compoundingPeriods) - 1;
 }
 
-export async function yyApy(avaxFarmAddress) {
+export async function yieldYakApy(farmAddress) {
   const apysUrl = 'https://staging-api.yieldyak.com/apys';
-  return (await (await fetch(apysUrl)).json())[avaxFarmAddress].apy / 100;
+  return (await (await fetch(apysUrl)).json())[farmAddress].apy / 100;
 }
 
-export async function yyStaked(stakingContractAddress, smartLoanContractAddress) {
+export async function vectorFinanceApy(token) {
+  const apysUrl = 'https://api.vectorfinance.io/api/v1/vtx/apr';
+  return (await (await fetch(apysUrl)).json()).Staking[token].total / 100;
+}
+
+export async function yieldYakBalance(stakingContractAddress, address) {
   const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
   const totalSupply = Number(await tokenContract.totalSupply());
   const totalDeposits = Number(await tokenContract.totalDeposits());
   const yrtToAvaxConversionRate = totalDeposits / totalSupply;
-  const stakedYrtWei = await tokenContract.balanceOf(smartLoanContractAddress);
+  const stakedYrtWei = await tokenContract.balanceOf(address);
   const stakedYrt = Number(fromWei(stakedYrtWei));
-  console.log('yyStaked')
-  console.log(stakedYrt * yrtToAvaxConversionRate)
+
   return stakedYrt * yrtToAvaxConversionRate;
+}
+
+export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {
+  const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
+
+  return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
