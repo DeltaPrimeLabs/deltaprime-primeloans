@@ -30,9 +30,9 @@ export default {
       return parseInt(hex, 16);
     },
 
-    formatTokenBalance(value) {
+    formatTokenBalance(value, precision = 5) {
       const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
-      const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
+      const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
       return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
     },
@@ -148,7 +148,6 @@ export default {
       },
       wrongFormatValidator: {
         validate: function (value) {
-          console.log(value)
           if (!value.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting. Please use only alphanumeric values.`;
           }

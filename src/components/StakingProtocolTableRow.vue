@@ -5,8 +5,8 @@
         <div class="farm">
           <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
           <div class="protocol__details">
-            <div class="asset-name">{{asset.name}}</div>
-            <div class="by-farm">by {{protocol.name}}</div>
+            <div class="asset-name">{{ asset.name }}</div>
+            <div class="by-farm">by {{ protocol.name }}</div>
           </div>
         </div>
       </div>
@@ -14,7 +14,7 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">{{ balance | smartRound }}</div>
-          <div class="double-value__usd">{{ avaxToUSD(balance) | usd}}</div>
+          <div class="double-value__usd">{{ avaxToUSD(balance) | usd }}</div>
         </div>
       </div>
 
@@ -51,7 +51,7 @@
 import StakeModal from './StakeModal';
 import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
-import config from "../config";
+import config from '../config';
 
 
 export default {
@@ -88,6 +88,7 @@ export default {
   computed: {
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('loan', ['loan']),
+    ...mapState('fundsStore', ['assetBalances']),
     calculateDailyInterest() {
       return this.apy / 365 * this.balance;
     },
@@ -100,13 +101,22 @@ export default {
     openStakeModal() {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.available = this.balance;
-      modalInstance.staked = this.farm.balance;
+      modalInstance.available = this.assetBalances[this.asset.symbol];
+      modalInstance.staked = this.balance;
       modalInstance.asset = this.asset;
+      modalInstance.protocol = this.protocol;
       modalInstance.$on('STAKE', (stakeValue) => {
-        this.handleTransaction(this.stake({amount: stakeValue, method: this.farm.stakeMethod, decimals: this.asset.decimals})).then(result => {
+        const stakeRequest = {
+          amount: stakeValue,
+          method: this.farm.stakeMethod,
+          decimals: this.asset.decimals
+        };
+        this.handleTransaction(this.stake, {stakeRequest: stakeRequest}).then(() => {
           this.closeModal();
-        })
+          this.farm.staked(this.loan.address).then((balance) => {
+            this.balance = balance;
+          });
+        });
       });
     },
 
@@ -115,10 +125,19 @@ export default {
       modalInstance.apy = this.apy;
       modalInstance.staked = this.balance;
       modalInstance.asset = this.asset;
+      modalInstance.protocol = this.protocol;
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
-        this.handleTransaction(this.unstake({amount: unstakeValue, method: this.farm.unstakeMethod})).then(result => {
+        const unstakeRequest = {
+          amount: unstakeValue,
+          method: this.farm.unstakeMethod,
+          decimals: this.asset.decimals
+        };
+        this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}).then(result => {
           this.closeModal();
-        })
+          this.farm.staked(this.loan.address).then((balance) => {
+            this.balance = balance;
+          });
+        });
       });
     },
   }

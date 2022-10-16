@@ -195,12 +195,6 @@ export default {
             }
           }
         },
-
-        {
-          validate: async (value) => {
-            // console.log('slippage validator');
-          }
-        }
       ];
     }
   }

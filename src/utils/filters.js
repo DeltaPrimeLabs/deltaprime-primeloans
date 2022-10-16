@@ -57,9 +57,9 @@ export default function setupFilters() {
     return timeAgo.format(value.getTime());
   });
 
-  Vue.filter('smartRound', function (value) {
+  Vue.filter('smartRound', function (value, precision = 5) {
     const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
-    const precisionMultiplierExponent = 5 - valueOrderOfMagnitudeExponent;
+    const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
     const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
     return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
   });

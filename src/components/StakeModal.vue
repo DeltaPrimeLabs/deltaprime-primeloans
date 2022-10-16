@@ -10,17 +10,17 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">{{asset.name}}</span></div>
       </div>
 
-      <CurrencyInput :symbol="'AVAX'" v-on:newValue="stakeValueChange"></CurrencyInput>
+      <CurrencyInput :symbol="asset.name" v-on:newValue="stakeValueChange" :validators="validators"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div class="protocol">
-              <img class="protocol__icon" src="src/assets/logo/yak.svg">
-              <div class="protocol__name">Yak protocol</div>
+            <div v-if="protocol" class="protocol">
+              <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
+              <div class="protocol__name">{{ protocol.name }}</div>
               ,
             </div>
             Values after confirmation:
@@ -30,14 +30,14 @@
               Staked:
             </div>
             <div class="summary__value">
-              {{ staked + stakeValue | smartRound }} <span class="currency">AVAX</span>
+              {{ Number(staked) + Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">AVAX</span>
+              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -55,6 +55,7 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import config from '../config';
 
 export default {
   name: 'StakeModal',
@@ -69,15 +70,20 @@ export default {
     apy: {},
     available: {},
     staked: {},
-    asset: {}
+    asset: {},
+    protocol: null
   },
 
   data() {
     return {
       stakeValue: 0,
+      validators: [],
     }
   },
 
+  mounted() {
+    this.setupValidators();
+  },
   computed: {
     calculateDailyInterest() {
       return this.apy / 365 * (this.staked + this.stakeValue);
@@ -92,6 +98,18 @@ export default {
 
     stakeValueChange(event) {
       this.stakeValue = event.value;
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > this.available) {
+              return `Exceeds available`;
+            }
+          }
+        }
+      ];
     },
   }
 };

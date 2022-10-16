@@ -99,7 +99,6 @@ export default {
           pools[poolAsset] = pool;
         });
       });
-      console.log(pools);
       setTimeout(() => {
         commit('setPools', pools);
       }, 1000);

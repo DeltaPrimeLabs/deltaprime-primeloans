@@ -1,5 +1,6 @@
 <template>
   <div class="funds-beta-component">
+    <button v-on:click="swapToWavax">wavax</button>
     <div class="only-my-assets-checkbox">
       <Checkbox :label="'Show only my assets'"></Checkbox>
     </div>
@@ -13,6 +14,7 @@
         </div>
       </div>
       <div class="loader-container" v-if="!funds">
+        not funds
         <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
       </div>
     </div>
@@ -60,7 +62,7 @@ export default {
     LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta},
   data() {
     return {
-      funds: config.ASSETS_CONFIG,
+      funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
       fundsTableHeaderConfig: null,
       lpTableHeaderConfig: null,
@@ -85,6 +87,7 @@ export default {
     },
   },
   mounted() {
+    this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
     this.setupLpTableHeaderConfig();
     this.setupAssetsFilterOptions();
@@ -105,38 +108,10 @@ export default {
         'updateFunds'
       ]),
     ...mapActions('poolStore', ['deposit']),
-    fundClick() {
-      this.fund();
-    },
 
-    borrowClick() {
-      this.borrow();
+    wavaxSwap() {
+      this.swapToWavax();
     },
-
-    createLoanClick() {
-      this.createLoan();
-    },
-
-    createAndFundLoanClick() {
-      this.createAndFundLoan();
-    },
-
-    depositClick() {
-      this.deposit();
-    },
-
-    getAllAssetsBalancesClick() {
-      this.getAllAssetsBalances();
-    },
-
-    debts() {
-      this.getDebts();
-    },
-
-    update() {
-      this.updateFunds();
-    },
-
 
     updateFund(symbol, key, value) {
       Vue.set(this.funds[symbol], key, value);

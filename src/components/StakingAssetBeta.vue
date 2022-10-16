@@ -26,8 +26,8 @@
 
         <div class="header__cell">
           <div class="header__cell__label">Available protocols:</div>
-          <div class="protocols-list">
-            <img v-for="protocol in availableFarms" class="protocol__icon" :src="protocol.logo">
+          <div class="protocols-list" v-if="availableFarms && availableFarms.length > 0">
+            <img v-for="protocol in availableFarms" class="protocol__icon" :src="`src/assets/logo/${protocolLogo(protocol)}`">
           </div>
         </div>
 
@@ -49,8 +49,8 @@
             <div class="table__header__cell">Actions</div>
           </div>
           <div class="table__body">
-            <StakingProtocolTableRow v-for="farm in availableFarms"
-                                     v-bind:key="farm.protocol"
+            <StakingProtocolTableRow v-for="(farm, index) in availableFarms"
+                                     v-bind:key="index"
                                      :farm="farm"
                                      :asset="asset">
             </StakingProtocolTableRow>
@@ -83,7 +83,8 @@ export default {
       stakingHeaderRoundBottom: false,
       maxStakingApy: 0,
       totalStaked: 0,
-      availableFarms: []
+      availableFarms: [],
+      protocolConfig: null,
     };
   },
   mounted() {
@@ -138,8 +139,7 @@ export default {
     },
 
     protocolLogo(protocol) {
-      return config.PROTOCOLS_CONFIG[protocol];
-      // return config.PROTOCOLS_CONFIG[protocol].logo;
+      return config.PROTOCOLS_CONFIG[protocol.protocol].logo;
     }
   }
 };

@@ -15,7 +15,7 @@
         <template v-if="lpBalances">
           <div class="double-value__pieces">
             <LoadedValue :check="() => lpBalances[lpToken.symbol] != null"
-                         :value="formatTokenBalance(lpBalances[lpToken.symbol])"></LoadedValue>
+                         :value="formatTokenBalance(lpBalances[lpToken.symbol], 10)"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="lpBalances[lpToken.symbol]">{{ lpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
@@ -116,7 +116,7 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Add / Borrow',
+          tooltip: 'Add / Provide',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -130,7 +130,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: 'Withdraw / Repay',
+          tooltip: 'Withdraw / Remove',
           menuOptions: [
             {
               key: 'WITHDRAW',

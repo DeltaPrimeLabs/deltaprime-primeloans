@@ -10,17 +10,17 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Staked:</div>
-        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency">{{ asset.name }}</span></div>
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:newValue="unstakeValueChange"></CurrencyInput>
+      <CurrencyInput :symbol="asset.symbol" v-on:newValue="unstakeValueChange" :validators="validators"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div class="protocol">
-              <img class="protocol__icon" src="src/assets/logo/yak.svg">
-              <div class="protocol__name">Yak protocol</div>
+            <div v-if="protocol" class="protocol">
+              <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
+              <div class="protocol__name">{{ protocol.name }}</div>
               ,
             </div>
             Values after confirmation:
@@ -30,14 +30,14 @@
               Staked:
             </div>
             <div class="summary__value">
-              {{ staked - unstakeValue > 0 ? staked - unstakeValue : 0 | smartRound }} <span class="currency">AVAX</span>
+              {{ staked - unstakeValue > 0 ? staked - unstakeValue : 0 | smartRound }} <span class="currency">{{ asset.name }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">AVAX</span>
+              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -69,13 +69,19 @@ export default {
     apy: {},
     available: {},
     staked: {},
-    asset: {}
+    asset: {},
+    protocol: null,
   },
 
   data() {
     return {
       unstakeValue: 0,
+      validators: []
     }
+  },
+
+  mounted() {
+    this.setupValidators();
   },
 
   computed: {
@@ -96,6 +102,18 @@ export default {
 
     unstakeValueChange(event) {
       this.unstakeValue = event.value;
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > this.staked) {
+              return `Exceeds staked`;
+            }
+          }
+        }
+      ];
     },
   }
 };

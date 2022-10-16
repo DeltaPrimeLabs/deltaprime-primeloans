@@ -4,7 +4,7 @@
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
-          <div class="asset__name" v-on:click="logAsset(asset)">{{ asset.symbol }}</div>
+          <div class="asset__name">{{ asset.symbol }}</div>
           <div class="asset__loan" v-if="asset.symbol === 'AVAX' && avaxPool">Loan APY:
             {{ avaxPool.borrowingAPY | percent }}
           </div>
@@ -148,7 +148,7 @@ export default {
     },
 
     hasSmartLoanContract() {
-      return this.smartLoanContract.address !== NULL_ADDRESS;
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     }
   },
   methods: {
@@ -214,11 +214,6 @@ export default {
       const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
       return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
-    },
-
-    logAsset(asset) {
-      console.log(asset);
-      console.log(JSON.stringify(asset.prices));
     },
 
     setup24HourChange() {
@@ -362,8 +357,6 @@ export default {
       handler(smartLoanContract) {
         if (this) {
           this.setupActionsConfiguration();
-        } else {
-          console.log('this is null');
         }
       },
     }

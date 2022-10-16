@@ -4,8 +4,8 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input type="number" ref="input" pattern="[0-9]+" v-model="internalValue" @input="valueChange()" step="0.0001"
-               placeholder="0" min="0" max="999999" maxlength="15" lang="en-US">
+        <input type="number" ref="input" v-model="internalValue" v-on:input="valueChange"
+               placeholder="0" min="0" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
         <div v-if="max" class="max-wrapper" @click.stop="value = max">
@@ -103,7 +103,7 @@ export default {
   },
   methods: {
     async updateValue(value) {
-      this.internalValue = this.value;
+      // this.internalValue = this.value;
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
       await this.checkErrors(value);
@@ -141,7 +141,7 @@ export default {
       }
     },
     valueChange() {
-      const match = this.internalValue.match(/^\d*[\.|\,]?\d{1,8}$/);
+      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,8}$/);
       if (match) {
         this.value = Number(this.internalValue);
       } else {

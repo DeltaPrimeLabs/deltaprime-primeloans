@@ -93,7 +93,6 @@ export default {
         dispatch('loadBorrowAccessNfts')
       } catch(e) {
         console.error(e)
-        console.log('No access NFT for borrow required')
         commit('setBorrowNftContractSet', false);
       }
 
@@ -107,8 +106,7 @@ export default {
         commit('setDepositNftContract', depositContract);
         // dispatch('getDepositNftId');
       } catch(e) {
-        console.error(e)
-        console.log('No access NFT for deposit required')
+        console.error(e);
         commit('setDepositNftContractSet', false);
       }
     },

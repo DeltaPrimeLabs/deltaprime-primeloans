@@ -10,7 +10,7 @@
 
 <script>
 import StakingAssetBeta from './StakingAssetBeta';
-import config from "../config";
+import config from '../config';
 
 export default {
   name: 'Farm',
