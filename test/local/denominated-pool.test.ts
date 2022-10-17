@@ -1,4 +1,4 @@
-import {waffle} from "hardhat"
+import {ethers, waffle} from "hardhat"
 import chai, {expect} from "chai"
 import {solidity} from "ethereum-waffle";
 
@@ -17,6 +17,7 @@ import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisation
 chai.use(solidity);
 
 const {deployContract} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe("Pool ERC20 token functions", () => {
     let sut: Pool,
@@ -43,7 +44,8 @@ describe("Pool ERC20 token functions", () => {
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,
-            mockToken.address
+            mockToken.address,
+            ZERO
         );
     });
 

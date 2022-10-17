@@ -2,8 +2,9 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IPoolRewarder.sol";
 
-contract PoolRewarder {
+contract PoolRewarder is IPoolRewarder {
 //    IERC20 public immutable stakingToken;
     IERC20 public immutable rewardsToken;
 

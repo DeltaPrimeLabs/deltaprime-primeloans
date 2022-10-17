@@ -17,6 +17,7 @@ import {Contract} from "ethers";
 chai.use(solidity);
 
 const {deployContract} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe("Pool ERC20 token functions", () => {
     let sut: Pool,
@@ -54,7 +55,8 @@ describe("Pool ERC20 token functions", () => {
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,
-            mockToken.address
+            mockToken.address,
+            ZERO
         );
     });
 
@@ -114,7 +116,7 @@ describe("Pool ERC20 token functions", () => {
 
     describe("approve", () => {
         it("should revert upon setting an allowance for a zero address", async () => {
-            await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).to.be.revertedWith("Allowance spender cannot be a zero address");
+            await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).to.be.revertedWith("Spender cannot be a zero address");
         });
 
         it("should properly assign amount to different spenders within one owner", async () => {
@@ -167,7 +169,7 @@ describe("Pool ERC20 token functions", () => {
 
     describe("increaseAllowance", () => {
         it("should revert upon increasing an allowance for a zero address", async () => {
-            await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Allowance spender cannot be a zero address");
+            await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Spender cannot be a zero address");
         });
 
         it("should increase an allowance", async () => {
@@ -179,7 +181,7 @@ describe("Pool ERC20 token functions", () => {
 
     describe("decreaseAllowance", () => {
         it("should revert upon decreasing an allowance for a zero address", async () => {
-            await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Allowance spender cannot be a zero address");
+            await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).to.be.revertedWith("Spender cannot be a zero address");
         });
 
         it("should decrease an allowance", async () => {
@@ -214,7 +216,7 @@ describe("Pool ERC20 token functions", () => {
             await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
             await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
-                .to.be.revertedWith("Not enough tokens allowed to transfer required amount");
+                .to.be.revertedWith("Not enough tokens allowed");
         });
 
         it("should decrease allowance by the transfer amount", async () => {

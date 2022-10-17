@@ -36,7 +36,7 @@ contract WrappedNativeTokenPool is Pool {
      * @dev _amount the amount to be withdrawn
      **/
     function withdrawNativeToken(uint256 _amount) external nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
+        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool to withdraw");
 
         _accumulateDepositInterest(msg.sender);
 

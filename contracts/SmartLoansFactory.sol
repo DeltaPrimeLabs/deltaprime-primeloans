@@ -74,11 +74,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
         return smartLoan;
     }
 
-    //TODO: check how much calling an external contract for asset address would cost
     function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
-        // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
-        // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
             abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));

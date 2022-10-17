@@ -1,4 +1,4 @@
-import {waffle} from 'hardhat'
+import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
@@ -17,6 +17,7 @@ import {Contract} from "ethers";
 chai.use(solidity);
 
 const {deployContract} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with variable utilisation interest rates', () => {
     describe('Single borrowing with interest rates', () => {
@@ -44,7 +45,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
@@ -101,7 +103,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
@@ -165,7 +168,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));

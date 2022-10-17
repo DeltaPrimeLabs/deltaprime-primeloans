@@ -33,6 +33,7 @@ const erc20ABI = [
 ]
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with ERC721 Alpha access', () => {
     let sut: PoolWithAccessNFT,
@@ -67,7 +68,8 @@ describe('Pool with ERC721 Alpha access', () => {
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,
-            mockUsdToken.address
+            mockUsdToken.address,
+            ZERO
         );
     });
 

@@ -10,6 +10,7 @@ import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/Mock
 import DestructableArtifact from '../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import PoolRewarderArtifact from '../../artifacts/contracts/PoolRewarder.sol/PoolRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
@@ -18,18 +19,21 @@ import {
     MockToken,
     OpenBorrowersRegistry,
     OpenBorrowersRegistry__factory,
-    Pool,
+    Pool, PoolRewarder,
     VariableUtilisationRatesCalculator,
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
+import addresses from "../../common/addresses/avax/token_addresses.json";
 
 chai.use(solidity);
+const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
 describe('Safety tests of pool', () => {
     describe('Intializing a pool', () => {
         let pool: Pool,
+            rewarder: PoolRewarder,
             owner: SignerWithAddress,
             nonContractAddress: string,
             ratesCalculator: VariableUtilisationRatesCalculator,
@@ -48,6 +52,7 @@ describe('Safety tests of pool', () => {
             await depositIndex.initialize(pool.address);
             borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
             await borrowingIndex.initialize(pool.address);
+            rewarder = (await deployContract(owner, PoolRewarderArtifact, [addresses.AVAX, pool.address])) as PoolRewarder;
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address]])) as MockToken;
         });
@@ -59,8 +64,9 @@ describe('Safety tests of pool', () => {
                     borrowersRegistry.address,
                     depositIndex.address,
                     borrowingIndex.address,
-                    mockToken.address
-                )).to.be.revertedWith("RatesCalculator must be a contract");
+                    mockToken.address,
+                    rewarder.address
+                )).to.be.revertedWith("Wrong init arguments");
         });
 
         it("should not allow initializing pool with a non-contract borrowersRegistry", async () => {
@@ -70,8 +76,9 @@ describe('Safety tests of pool', () => {
                     nonContractAddress,
                     depositIndex.address,
                     borrowingIndex.address,
-                    mockToken.address
-                )).to.be.revertedWith("BorrowersRegistry must be a contract");
+                    mockToken.address,
+                    rewarder.address
+                )).to.be.revertedWith("Wrong init arguments");
         });
 
         it("should not allow initializing pool with a non-contract depositIndex", async () => {
@@ -81,8 +88,9 @@ describe('Safety tests of pool', () => {
                     borrowersRegistry.address,
                     nonContractAddress,
                     borrowingIndex.address,
-                    mockToken.address
-                )).to.be.revertedWith("DepositIndex must be a contract");
+                    mockToken.address,
+                    rewarder.address
+                )).to.be.revertedWith("Wrong init arguments");
         });
 
         it("should not allow initializing pool with a non-contract borrowIndex", async () => {
@@ -92,8 +100,21 @@ describe('Safety tests of pool', () => {
                     borrowersRegistry.address,
                     depositIndex.address,
                     nonContractAddress,
-                    mockToken.address
-                )).to.be.revertedWith("BorrowIndex must be a contract");
+                    mockToken.address,
+                    rewarder.address
+                )).to.be.revertedWith("Wrong init arguments");
+        });
+
+        it("should not allow initializing pool with a non-contract rewarder contract", async () => {
+            await expect(
+                pool.initialize(
+                    ratesCalculator.address,
+                    borrowersRegistry.address,
+                    depositIndex.address,
+                    borrowingIndex.address,
+                    mockToken.address,
+                    nonContractAddress
+                )).to.be.revertedWith("Wrong init arguments");
         });
 
         it("should initialize a pool", async () => {
@@ -102,7 +123,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                rewarder.address
             );
         });
 
@@ -111,6 +133,10 @@ describe('Safety tests of pool', () => {
         });
 
         it("should not allow setting a non-contract borrowersRegistry", async () => {
+            await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("Must be a contract");
+        });
+
+        it("should not allow setting a non-contract poolRewarder", async () => {
             await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("Must be a contract");
         });
     });
@@ -143,7 +169,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
         });
 
@@ -217,7 +244,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
         });
 
@@ -341,7 +369,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
         });
 
@@ -432,7 +461,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
         });
 
@@ -511,7 +541,7 @@ describe('Safety tests of pool', () => {
 
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
             expect(fromWei(receiverBalanceAfterRecover)).to.be.closeTo(fromWei(receiverBalanceBeforeRecover.add(maxAvailableSurplus)), 0.00001);
-            await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more surplus funds than pool balance");
+            await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more than pool balance");
 
             expect(fromWei(await pool.totalSupply())).to.be.closeTo(fromWei(totalSupply), 0.00001);
             expect(fromWei(await pool.getDepositRate())).to.equal(fromWei(depositRate));
@@ -592,7 +622,8 @@ describe('Safety tests of pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address
+                mockToken.address,
+                ZERO
             );
         });
 
@@ -625,13 +656,13 @@ describe('Safety tests of pool', () => {
 
         it("should revert basic actions for a freeze calculator ", async () => {
             await mockToken.connect(depositor).approve(pool.address, toWei("1.0"));
-            await expect(pool.connect(depositor).deposit(toWei("1.0"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+            await expect(pool.connect(depositor).deposit(toWei("1.0"))).to.be.revertedWith("Pool is frozen");
 
-            await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
-            await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+            await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("Pool is frozen");
+            await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("Pool is frozen");
 
             await mockToken.connect(borrower).approve(pool.address, toWei("0.5"));
-            await expect(pool.connect(borrower).repay(toWei("0.5"))).to.be.revertedWith("Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+            await expect(pool.connect(borrower).repay(toWei("0.5"))).to.be.revertedWith("Pool is frozen");
 
             expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
             expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);

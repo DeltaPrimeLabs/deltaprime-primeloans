@@ -1,4 +1,4 @@
-import {waffle} from 'hardhat'
+import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
@@ -17,6 +17,7 @@ import {LinearIndex, OpenBorrowersRegistry, WETH9, WrappedNativeTokenPool} from 
 import {Contract} from "ethers";
 
 chai.use(solidity);
+const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
@@ -50,7 +51,8 @@ describe('Wrapped native token pool', () => {
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,
-            wavax.address
+            wavax.address,
+            ZERO
         );
 
         await wavax.connect(depositor).deposit({value: toWei("10")});

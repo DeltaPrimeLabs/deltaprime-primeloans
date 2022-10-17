@@ -25,6 +25,7 @@ import {
 import {Contract} from "ethers";
 
 chai.use(solidity);
+const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
@@ -70,7 +71,8 @@ describe('Upgradeable pool', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockUsdToken.address
+                mockUsdToken.address,
+                ZERO
             );
         });
 

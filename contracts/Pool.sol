@@ -10,7 +10,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
-import "./PoolRewarder.sol";
+import "./interfaces/IPoolRewarder.sol";
 
 
 /**
@@ -31,24 +31,25 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     IRatesCalculator public ratesCalculator;
     IBorrowersRegistry public borrowersRegistry;
-    PoolRewarder public poolRewarder;
+    IPoolRewarder public poolRewarder;
 
     IIndex public depositIndex;
     IIndex public borrowIndex;
 
     address payable public tokenAddress;
 
-    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, PoolRewarder _poolRewarder) public initializer {
-        require(AddressUpgradeable.isContract(address(ratesCalculator_)), "RatesCalculator must be a contract");
-        require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "BorrowersRegistry must be a contract");
-        require(AddressUpgradeable.isContract(address(depositIndex_)), "DepositIndex must be a contract");
-        require(AddressUpgradeable.isContract(address(borrowIndex_)), "BorrowIndex must be a contract");
+    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_) public initializer {
+        require(AddressUpgradeable.isContract(address(ratesCalculator_))
+            && AddressUpgradeable.isContract(address(borrowersRegistry_))
+            && AddressUpgradeable.isContract(address(depositIndex_))
+            && AddressUpgradeable.isContract(address(borrowIndex_))
+            && (AddressUpgradeable.isContract(address(poolRewarder_)) || address(poolRewarder_) == address(0)), "Wrong init arguments");
 
         borrowersRegistry = borrowersRegistry_;
         ratesCalculator = ratesCalculator_;
         depositIndex = depositIndex_;
         borrowIndex = borrowIndex_;
-        poolRewarder = _poolRewarder;
+        poolRewarder = poolRewarder_;
         tokenAddress = tokenAddress_;
 
         __Ownable_init();
@@ -60,12 +61,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /**
      * Sets the new Pool Rewarder.
-     * The PoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
+     * The IPoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
      * Only the owner of the Contract can execute this function.
-     * @dev ratesCalculator the address of rates calculator
+     * @dev _poolRewarder the address of PoolRewarder
     **/
-    function setPoolRewarder(PoolRewarder _poolRewarder) external onlyOwner {
-        // setting address(0) ratesCalculator_ freezes the pool
+    function setPoolRewarder(IPoolRewarder _poolRewarder) external onlyOwner {
         require(AddressUpgradeable.isContract(address(_poolRewarder)) || address(_poolRewarder) == address(0), "Must be a contract");
         poolRewarder = _poolRewarder;
 
@@ -112,9 +112,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
 
         // (this is verified in "require" above)
-    unchecked {
-        _deposited[msg.sender] -= amount;
-    }
+        unchecked {
+            _deposited[msg.sender] -= amount;
+        }
 
         _accumulateDepositInterest(recipient);
         _deposited[recipient] += amount;
@@ -129,7 +129,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
-        require(spender != address(0), "Allowance spender cannot be a zero address");
+        require(spender != address(0), "Spender cannot be a zero address");
         uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
         _allowed[msg.sender][spender] = newAllowance;
 
@@ -138,7 +138,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
-        require(spender != address(0), "Allowance spender cannot be a zero address");
+        require(spender != address(0), "Spender cannot be a zero address");
         uint256 currentAllowance = _allowed[msg.sender][spender];
         require(currentAllowance >= subtractedValue, "Current allowance is smaller than the subtractedValue");
 
@@ -150,7 +150,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function approve(address spender, uint256 amount) external override returns (bool) {
-        require(spender != address(0), "Allowance spender cannot be a zero address");
+        require(spender != address(0), "Spender cannot be a zero address");
         _allowed[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -159,7 +159,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        require(_allowed[sender][msg.sender] >= amount, "Not enough tokens allowed to transfer required amount");
+        require(_allowed[sender][msg.sender] >= amount, "Not enough tokens allowed");
         require(recipient != address(0), "ERC20: cannot transfer to the zero address");
         require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
@@ -192,7 +192,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[address(this)] += amount;
         _updateRates();
 
-        poolRewarder.stakeFor(amount, msg.sender);
+        if (address(poolRewarder) != address(0)) {
+            poolRewarder.stakeFor(amount, msg.sender);
+        }
 
         emit Deposit(msg.sender, amount, block.timestamp);
     }
@@ -210,7 +212,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough available funds in the pool to withdraw");
+        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
 
         _accumulateDepositInterest(msg.sender);
 
@@ -220,7 +222,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _updateRates();
 
-        poolRewarder.withdrawFor(_amount, msg.sender);
+        if (address(poolRewarder) != address(0)) {
+            poolRewarder.withdrawFor(_amount, msg.sender);
+        }
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
     }
@@ -232,7 +236,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
     function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "There is not enough funds in the pool to fund the loan");
+        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
 
         _accumulateBorrowingInterest(msg.sender);
 
@@ -254,7 +258,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function repay(uint256 amount) external nonReentrant {
         _accumulateBorrowingInterest(msg.sender);
 
-        require(borrowed[msg.sender] >= amount, "You are trying to repay more that was borrowed by a user");
+        require(borrowed[msg.sender] >= amount, "Trying to repay more than was borrowed");
         _transferToPool(msg.sender, amount);
 
         borrowed[msg.sender] -= amount;
@@ -286,7 +290,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
 
-    // Calls the PoolRewarder.getRewardsFor() that sends pending rewards to msg.sender
+    // Calls the IPoolRewarder.getRewardsFor() that sends pending rewards to msg.sender
     function getRewards() external {
         poolRewarder.getRewardsFor(msg.sender);
     }
@@ -326,8 +330,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
         uint256 surplus = balance + totalBorrowed() - totalSupply();
 
-        require(amount <= balance, "Trying to recover more surplus funds than pool balance");
-        require(amount <= surplus, "Trying to recover more funds than current surplus");
+        require(amount <= balance, "Trying to recover more than pool balance");
+        require(amount <= surplus, "Trying to recover more than current surplus");
 
         _transferFromPool(account, amount);
     }
@@ -358,7 +362,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function _updateRates() internal {
         uint256 totalBorrowed = totalBorrowed();
         uint256 totalSupply = totalSupply();
-        require(address(ratesCalculator) != address(0), "Pool is frozen: cannot perform deposit, withdraw, borrow and repay operations");
+        require(address(ratesCalculator) != address(0), "Pool is frozen");
         depositIndex.setRate(ratesCalculator.calculateDepositRate(totalBorrowed, totalSupply));
         borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(totalBorrowed, totalSupply));
     }
@@ -386,8 +390,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     /* ========== MODIFIERS ========== */
 
     modifier canBorrow() {
-        require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured");
-        require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
+        require(address(borrowersRegistry) != address(0), "Borrowers registry not configured");
+        require(borrowersRegistry.canBorrow(msg.sender), "Only authorized accounts may borrow");
         require(totalSupply() != 0, "Cannot borrow from an empty pool");
         _;
         require((totalBorrowed() * 1e18) / totalSupply() <= MAX_POOL_UTILISATION_FOR_BORROWING, "The pool utilisation cannot be greater than 95%");

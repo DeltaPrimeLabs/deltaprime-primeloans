@@ -1,4 +1,4 @@
-import {waffle} from 'hardhat'
+import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
@@ -16,6 +16,7 @@ import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool} from "../../typecha
 import {Contract} from "ethers";
 
 chai.use(solidity);
+const ZERO = ethers.constants.AddressZero;
 
 const {deployContract} = waffle;
 
@@ -49,7 +50,8 @@ describe('Pool with variable utilisation interest rates', () => {
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,
-            mockToken.address
+            mockToken.address,
+            ZERO
         );
     });
 

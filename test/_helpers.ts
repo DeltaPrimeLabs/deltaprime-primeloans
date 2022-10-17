@@ -439,7 +439,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         }
     }
 
-    rewarder !== '' ? rewarder : ethers.constants.AddressZero;
+    rewarder = rewarder !== '' ? rewarder : ethers.constants.AddressZero;
 
     const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;

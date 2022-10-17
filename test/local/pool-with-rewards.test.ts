@@ -49,8 +49,8 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             depositor1: SignerWithAddress,
             depositor2: SignerWithAddress,
             depositor3: SignerWithAddress,
-            mockToken: Contract,
-            avaxContract: Contract,
+            poolToken: Contract,
+            rewardToken: Contract,
             VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
 
         before("Deploy Pool & PoolRewarder contracts", async () => {
@@ -58,15 +58,12 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             // Deploy Pool
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
-            // Top-up depositors' WAVAX balance
-            avaxContract = new ethers.Contract(addresses['AVAX'], wavaxAbi, provider);
-            await avaxContract.connect(depositor).deposit({value: toWei("1000")});
+            // Deploy tokens
+            poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
+            rewardToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address]])) as MockToken;
 
             // Deploy and initialize rewarder
-            rewarder = (await deployContract(owner, PoolRewarderArtifact, [addresses.AVAX, pool.address])) as PoolRewarder;
-
-            // Deploy Pool
-            mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
+            rewarder = (await deployContract(owner, PoolRewarderArtifact, [rewardToken.address, pool.address])) as PoolRewarder;
 
             VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -80,7 +77,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address,
+                poolToken.address,
                 rewarder.address
             );
         });
@@ -90,9 +87,9 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
         });
 
         it("should top-up rewarder contract", async () => {
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(0);
-            await avaxContract.connect(depositor).transfer(rewarder.address, toWei("500"));
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(0);
+            await rewardToken.connect(depositor).transfer(rewarder.address, toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
         });
 
         it("should fail to set up rewards rewarder contract", async () => {
@@ -116,9 +113,9 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
         });
 
         it("[360 days] should deposit (depositor1) to pool and check rewards after some time", async () => {
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
             // Deposit to pool DEPOSITOR1 -> +10.0
-            await mockToken.connect(depositor1).approve(pool.address, toWei("10.0"));
+            await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
 
             // check rewards
@@ -140,22 +137,22 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(100, 1e-4);
 
             // claim rewards
-            let initialWavaxBalance = fromWei(await avaxContract.balanceOf(depositor1.address));
+            let initialWavaxBalance = fromWei(await rewardToken.balanceOf(depositor1.address));
             await pool.connect(depositor1).getRewards();
-            expect(fromWei(await avaxContract.balanceOf(depositor1.address)) - initialWavaxBalance).to.be.closeTo(100, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialWavaxBalance).to.be.closeTo(100, 1e-4);
 
             await pool.connect(depositor1).withdraw(toWei("10.0"));
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
         });
 
         it("should successfully set a new duration target and add rewards", async () => {
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
             await rewarder.setRewardsDuration(time.duration.days(180));
             await rewarder.notifyRewardAmount(toWei("100"));
         });
 
         it("[180 days] should deposit (depositor1, 2 & 3) to pool and check rewards after some time", async () => {
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
 
             // check rewards
             expect(await pool.connect(depositor1).checkRewards()).to.be.equal(0);
@@ -163,7 +160,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(await pool.connect(depositor3).checkRewards()).to.be.equal(0);
 
             // Deposit to pool DEPOSITOR1 -> +10.0
-            await mockToken.connect(depositor1).approve(pool.address, toWei("10.0"));
+            await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
 
             // FastForward 90 days ahead (+90 days in total)
@@ -174,11 +171,11 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(await pool.connect(depositor3).checkRewards()).to.be.equal(0);
 
             // Deposit to pool DEPOSITOR2 -> +5.0
-            await mockToken.connect(depositor2).approve(pool.address, toWei("5.0"));
+            await poolToken.connect(depositor2).approve(pool.address, toWei("5.0"));
             await pool.connect(depositor2).deposit(toWei("5.0"));
 
             // Deposit to pool DEPOSITOR3 -> +5.0
-            await mockToken.connect(depositor3).approve(pool.address, toWei("5.0"));
+            await poolToken.connect(depositor3).approve(pool.address, toWei("5.0"));
             await pool.connect(depositor3).deposit(toWei("5.0"));
 
             // FastForward 45 days ahead (+135 days in total)
@@ -199,17 +196,17 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await pool.connect(depositor3).checkRewards())).to.be.closeTo(12.5, 1e-4);
 
             // claim rewards
-            let initialWavaxBalance1 = fromWei(await avaxContract.balanceOf(depositor1.address));
-            let initialWavaxBalance2 = fromWei(await avaxContract.balanceOf(depositor2.address));
-            let initialWavaxBalance3 = fromWei(await avaxContract.balanceOf(depositor3.address));
+            let initialWavaxBalance1 = fromWei(await rewardToken.balanceOf(depositor1.address));
+            let initialWavaxBalance2 = fromWei(await rewardToken.balanceOf(depositor2.address));
+            let initialWavaxBalance3 = fromWei(await rewardToken.balanceOf(depositor3.address));
             await pool.connect(depositor1).getRewards();
             await pool.connect(depositor2).getRewards();
             await pool.connect(depositor3).getRewards();
-            expect(fromWei(await avaxContract.balanceOf(depositor1.address)) - initialWavaxBalance1).to.be.closeTo(75, 1e-4);
-            expect(fromWei(await avaxContract.balanceOf(depositor2.address)) - initialWavaxBalance2).to.be.closeTo(12.5, 1e-4);
-            expect(fromWei(await avaxContract.balanceOf(depositor3.address)) - initialWavaxBalance3).to.be.closeTo(12.5, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialWavaxBalance1).to.be.closeTo(75, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialWavaxBalance2).to.be.closeTo(12.5, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor3.address)) - initialWavaxBalance3).to.be.closeTo(12.5, 1e-4);
 
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(300, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(300, 1e-4);
         });
     });
 
@@ -221,8 +218,8 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             depositor1: SignerWithAddress,
             depositor2: SignerWithAddress,
             depositor3: SignerWithAddress,
-            mockToken: Contract,
-            avaxContract: Contract,
+            poolToken: Contract,
+            rewardToken: Contract,
             VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
 
         before("Deploy Pool & PoolRewarder contracts", async () => {
@@ -230,15 +227,12 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             // Deploy Pool
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
-            // Top-up depositors' WAVAX balance
-            avaxContract = new ethers.Contract(addresses['AVAX'], wavaxAbi, provider);
-            await avaxContract.connect(depositor).deposit({value: toWei("1000")});
+            // Deploy tokens
+            poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
+            rewardToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address]])) as MockToken;
 
             // Deploy and initialize rewarder
-            rewarder = (await deployContract(owner, PoolRewarderArtifact, [addresses.AVAX, pool.address])) as PoolRewarder;
-
-            // Deploy Pool
-            mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
+            rewarder = (await deployContract(owner, PoolRewarderArtifact, [rewardToken.address, pool.address])) as PoolRewarder;
 
             VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -252,15 +246,15 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
-                mockToken.address,
+                poolToken.address,
                 rewarder.address
             );
         });
 
         it("should top-up rewarder contract", async () => {
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(0);
-            await avaxContract.connect(depositor).transfer(rewarder.address, toWei("500"));
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(0);
+            await rewardToken.connect(depositor).transfer(rewarder.address, toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
         });
 
         it("should successfully set the duration target", async () => {
@@ -274,9 +268,9 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
         });
 
         it("[360 days] should deposit (depositor1) to pool and check rewards after some time", async () => {
-            expect(await avaxContract.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
             // Deposit to pool DEPOSITOR1 -> +10.0
-            await mockToken.connect(depositor1).approve(pool.address, toWei("10.0"));
+            await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
 
             // check rewards
@@ -293,10 +287,10 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(75, 1e-4);
 
             // Withdraw everything
-            let initialWavaxBalance = fromWei(await avaxContract.balanceOf(depositor1.address));
+            let initialWavaxBalance = fromWei(await rewardToken.balanceOf(depositor1.address));
             await pool.connect(depositor1).withdraw(toWei("10.0"));
             await pool.connect(depositor1).getRewards();
-            expect(fromWei(await avaxContract.balanceOf(depositor1.address)) - initialWavaxBalance).to.be.closeTo(75, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialWavaxBalance).to.be.closeTo(75, 1e-4);
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.equal(0);
 
 
@@ -305,17 +299,17 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             // check rewards
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.equal(0);
 
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
         });
 
         it("should successfully set a new duration target and add rewards", async () => {
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
             await rewarder.setRewardsDuration(time.duration.days(180));
             await rewarder.notifyRewardAmount(toWei("100"));
         });
 
         it("[180 days] should deposit (depositor1, 2 & 3) to pool and check rewards after some time", async () => {
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(425, 1e-4);
 
             // check rewards
             expect(await pool.connect(depositor1).checkRewards()).to.be.equal(0);
@@ -323,7 +317,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(await pool.connect(depositor3).checkRewards()).to.be.equal(0);
 
             // Deposit to pool DEPOSITOR1 -> +10.0
-            await mockToken.connect(depositor1).approve(pool.address, toWei("10.0"));
+            await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
 
             // FastForward 90 days ahead (+90 days in total)
@@ -338,11 +332,11 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             await pool.connect(depositor1).getRewards();
 
             // Deposit to pool DEPOSITOR2 -> +5.0
-            await mockToken.connect(depositor2).approve(pool.address, toWei("5.0"));
+            await poolToken.connect(depositor2).approve(pool.address, toWei("5.0"));
             await pool.connect(depositor2).deposit(toWei("5.0"));
 
             // Deposit to pool DEPOSITOR3 -> +5.0
-            await mockToken.connect(depositor3).approve(pool.address, toWei("5.0"));
+            await poolToken.connect(depositor3).approve(pool.address, toWei("5.0"));
             await pool.connect(depositor3).deposit(toWei("5.0"));
 
             // FastForward 45 days ahead (+135 days in total)
@@ -363,17 +357,17 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await pool.connect(depositor3).checkRewards())).to.be.closeTo(25, 1e-4);
 
             // claim rewards
-            let initialWavaxBalance1 = fromWei(await avaxContract.balanceOf(depositor1.address));
-            let initialWavaxBalance2 = fromWei(await avaxContract.balanceOf(depositor2.address));
-            let initialWavaxBalance3 = fromWei(await avaxContract.balanceOf(depositor3.address));
+            let initialWavaxBalance1 = fromWei(await rewardToken.balanceOf(depositor1.address));
+            let initialWavaxBalance2 = fromWei(await rewardToken.balanceOf(depositor2.address));
+            let initialWavaxBalance3 = fromWei(await rewardToken.balanceOf(depositor3.address));
             await pool.connect(depositor1).getRewards();
             await pool.connect(depositor2).getRewards();
             await pool.connect(depositor3).getRewards();
-            expect(fromWei(await avaxContract.balanceOf(depositor1.address)) - initialWavaxBalance1).to.be.equal(0);
-            expect(fromWei(await avaxContract.balanceOf(depositor2.address)) - initialWavaxBalance2).to.be.closeTo(25, 1e-4);
-            expect(fromWei(await avaxContract.balanceOf(depositor3.address)) - initialWavaxBalance3).to.be.closeTo(25, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialWavaxBalance1).to.be.equal(0);
+            expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialWavaxBalance2).to.be.closeTo(25, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor3.address)) - initialWavaxBalance3).to.be.closeTo(25, 1e-4);
 
-            expect(fromWei(await avaxContract.balanceOf(rewarder.address))).to.be.closeTo(325, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(325, 1e-4);
         });
     });
 });

@@ -160,7 +160,7 @@ describe('PangolinIntermediary', () => {
             await sut.initialize(pangolinRouterAddress, [
                 TOKEN_ADDRESSES['AVAX'],
                 TOKEN_ADDRESSES['USDC'],
-                TOKEN_ADDRESSES['PNG_AVAX_USDC'],
+                TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'],
             ]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
