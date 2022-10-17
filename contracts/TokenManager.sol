@@ -32,6 +32,7 @@ contract TokenManager {
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
+    mapping(address => bytes32) public tokenAddressToSymbol;
     mapping(address => uint256) private tokenPositionInList;
     address[] public supportedTokensList;
 
@@ -133,6 +134,7 @@ contract TokenManager {
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
 
         assetToTokenAddress.set(_asset, _tokenAddress);
+        tokenAddressToSymbol[_tokenAddress] = _asset;
         tokenToStatus[_tokenAddress] = _ACTIVE;
 
         supportedTokensList.push(_tokenAddress);
@@ -165,6 +167,7 @@ contract TokenManager {
     function _removeTokenAsset(bytes32 _tokenAsset) internal {
         address tokenAddress = getAssetAddress(_tokenAsset, true);
         EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
+        tokenAddressToSymbol[tokenAddress] = 0;
         tokenToStatus[tokenAddress] = _NOT_SUPPORTED;
         _removeTokenFromList(tokenAddress);
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
