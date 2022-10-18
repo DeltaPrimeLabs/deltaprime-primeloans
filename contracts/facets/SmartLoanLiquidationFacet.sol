@@ -203,11 +203,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             uint256 balance = token.balanceOf(address(this));
 
             address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
+            emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
         }
 
         uint256 LTV = _getLTV();
-
-        emit Liquidated(msg.sender, repaidInUSD, bonus, LTV, block.timestamp);
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
             require(LTV >= getMinLtvAfterLiquidation(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
@@ -219,6 +218,9 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+
+        //TODO: include final debt and tv
+        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, LTV, block.timestamp);
     }
 
     modifier onlyOwner() {
@@ -229,26 +231,32 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
      * @dev emitted after a successful liquidation operation
      * @param liquidator the address that initiated the liquidation operation
+     * @param healing was the liquidation covering the bad debt (unprofitable liquidation)
+     * @param initialTotal total value of assets before the liquidation
+     * @param initialDebt sum of all debts before the liquidation
      * @param repayAmount requested amount (AVAX) of liquidation
      * @param bonus an amount of bonus (AVAX) received by the liquidator
      * @param ltv a new LTV after the liquidation operation
      * @param timestamp a time of the liquidation
      **/
-    event Liquidated(address indexed liquidator, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 timestamp);
-
-    /**
-    * @dev emitted after closing a loan by the owner
-    * @param timestamp a time of the loan's closure
-    **/
-    event LoanClosed(uint256 timestamp);
+    event Liquidated(address indexed liquidator, bool indexed healing, uint256 initialTotal, uint256 initialDebt, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 timestamp);
 
     /**
      * @dev emitted when funds are repaid to the pool during a liquidation
-     * @param borrower the address initiating repayment
-     * @param _asset asset repaid by an investor
+     * @param liquidator the address initiating repayment
+     * @param asset asset repaid by a liquidator
      * @param amount of repaid funds
      * @param timestamp of the repayment
      **/
-    event LiquidationRepay(address indexed borrower, bytes32 indexed _asset, uint256 amount, uint256 timestamp);
+    event LiquidationRepay(address indexed liquidator, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    /**
+     * @dev emitted when funds are sent to liquidator during liquidation
+     * @param liquidator the address initiating repayment
+     * @param asset token sent to a liquidator
+     * @param amount of sent funds
+     * @param timestamp of the transfer
+     **/
+    event LiquidationTransfer(address indexed liquidator, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 }
 

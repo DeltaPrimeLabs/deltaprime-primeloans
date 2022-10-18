@@ -104,5 +104,16 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     function setSpread(uint256 _spread) external onlyOwner {
         require(_spread < 1e18, "Spread must be smaller than 1e18");
         spread = _spread;
+        emit SpreadChanged(msg.sender, _spread, block.timestamp);
     }
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @dev emitted after changing the spread
+     * @param performer an address of wallet setting a new spread
+     * @param newSpread new spread
+     * @param timestamp time of a spread change
+     **/
+    event SpreadChanged(address indexed performer, uint256 newSpread, uint256 timestamp);
 }

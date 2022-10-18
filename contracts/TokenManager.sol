@@ -51,6 +51,7 @@ contract TokenManager {
     function proposeAdminTransfer(address _newOwner) onlyAdmin public {
         require(_newOwner != msg.sender, "Can't propose oneself as a contract owner");
         adminTransferProposal = _newOwner;
+        emit AdminProposed(msg.sender, _newOwner, block.timestamp);
     }
 
     function executeAdminTransfer() public {
@@ -119,7 +120,7 @@ contract TokenManager {
     function activateToken(address token) public onlyAdmin {
         require(tokenToStatus[token] == _INACTIVE, "Must be inactive");
         tokenToStatus[token] = _ACTIVE;
-        emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
+        emit TokenAssetActivated(msg.sender, token, block.timestamp);
     }
 
     function deactivateToken(address token) public onlyAdmin {
@@ -180,8 +181,9 @@ contract TokenManager {
     }
 
     function _removePoolAsset(bytes32 _poolAsset) internal {
+        address poolAddress = getPoolAddress(_poolAsset);
         EnumerableMap.remove(assetToPoolAddress, _poolAsset);
-        emit PoolAssetRemoved(msg.sender, _poolAsset, block.timestamp);
+        emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
     }
 
     modifier onlyAdmin {
@@ -189,7 +191,21 @@ contract TokenManager {
         _;
     }
 
-    event AdminChanged(address indexed olAdmin, address newAdmin, uint256 timestamp);
+    /**
+     * @dev emitted after proposing a new admin
+     * @param oldAdmin current admin
+     * @param newAdmin new admin proposed
+     * @param timestamp time of proposal
+     **/
+    event AdminProposed(address indexed oldAdmin, address newAdmin, uint256 timestamp);
+
+    /**
+     * @dev emitted after changing an admin
+     * @param oldAdmin previous admin
+     * @param newAdmin new admin being set
+     * @param timestamp time of changing an admin
+     **/
+    event AdminChanged(address indexed oldAdmin, address newAdmin, uint256 timestamp);
 
     /**
      * @dev emitted after adding a token asset
@@ -199,6 +215,14 @@ contract TokenManager {
      * @param timestamp time of adding a token asset
      **/
     event TokenAssetAdded(address indexed performer, bytes32 indexed tokenAsset, address assetAddress, uint256 timestamp);
+
+    /**
+     * @dev emitted after activating a token asset
+     * @param performer an address of the wallet activating a token asset
+     * @param assetAddress an address of the token asset
+     * @param timestamp time of activating a token asset
+     **/
+    event TokenAssetActivated(address indexed performer, address assetAddress, uint256 timestamp);
 
     /**
      * @dev emitted after deactivating a token asset
@@ -220,16 +244,17 @@ contract TokenManager {
      * @dev emitted after adding a pool asset
      * @param performer an address of wallet adding the pool asset
      * @param poolAsset pool asset
-     * @param poolAssetAddress an address of the pool asset
+     * @param poolAddress an address of the pool asset
      * @param timestamp time of the pool asset addition
      **/
-    event PoolAssetAdded(address indexed performer, bytes32 indexed poolAsset, address poolAssetAddress, uint256 timestamp);
+    event PoolAssetAdded(address indexed performer, bytes32 indexed poolAsset, address poolAddress, uint256 timestamp);
 
     /**
      * @dev emitted after removing a pool asset
      * @param performer an address of wallet removing the pool asset
      * @param poolAsset pool asset
+     * @param poolAddress an address of the pool asset
      * @param timestamp time of a pool asset removal
      **/
-    event PoolAssetRemoved(address indexed performer, bytes32 indexed poolAsset, uint256 timestamp);
+    event PoolAssetRemoved(address indexed performer, bytes32 indexed poolAsset, address poolAddress, uint256 timestamp);
 }

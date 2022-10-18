@@ -61,14 +61,14 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     /*
      * addLiquidity selected ERC20 tokens
      **/
-    function addLiquidity(address tokenA, address tokenB, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) external override nonReentrant returns (address) {
-        require(amountADesired > 0, "amountADesired has to be greater than 0");
-        require(amountBDesired > 0, "amountBDesired to sell has to be greater than 0");
+    function addLiquidity(address tokenA, address tokenB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) external override nonReentrant returns (address, uint, uint, uint) {
+        require(amountA > 0, "amountADesired has to be greater than 0");
+        require(amountB > 0, "amountBDesired to sell has to be greater than 0");
         require(amountAMin > 0, "amountAMin has to be greater than 0");
         require(amountBMin > 0, "amountBMin has to be greater than 0");
 
-        tokenA.safeApprove(address(router), amountADesired);
-        tokenB.safeApprove(address(router), amountBDesired);
+        tokenA.safeApprove(address(router), amountA);
+        tokenB.safeApprove(address(router), amountB);
 
         address lpTokenAddress = getPair(tokenA, tokenB);
 
@@ -76,22 +76,24 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         require(isTokenWhitelisted[tokenB], 'Trying to LP unsupported token');
         require(isTokenWhitelisted[lpTokenAddress], 'Trying to add unsupported LP token');
 
-        router.addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, address(this), block.timestamp);
+        uint liquidity;
+        (amountA, amountB, liquidity) =
+           router.addLiquidity(tokenA, tokenB, amountA, amountB, amountAMin, amountBMin, address(this), block.timestamp);
 
         lpTokenAddress.safeTransfer(msg.sender, IERC20Metadata(lpTokenAddress).balanceOf(address(this)));
         tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
         tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
 
-        return lpTokenAddress;
+        return (lpTokenAddress, amountA, amountB, liquidity);
     }
 
 
     /*
      *  removeLiquidity selected ERC20 tokens
      **/
-    function removeLiquidity(address tokenA, address tokenB, uint liquidity, uint amountAMin, uint amountBMin) external override nonReentrant returns (address) {
-        require(amountAMin > 0, "amountAMin has to be greater than 0");
-        require(amountBMin > 0, "amountBMin has to be greater than 0");
+    function removeLiquidity(address tokenA, address tokenB, uint liquidity, uint amountA, uint amountB) external override nonReentrant returns (uint, uint) {
+        require(amountA > 0, "amountA has to be greater than 0");
+        require(amountB > 0, "amountB has to be greater than 0");
 
         address lpTokenAddress = getPair(tokenA, tokenB);
 
@@ -102,13 +104,14 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         //TODO: handle paused LP tokens
         require(isTokenWhitelisted[lpTokenAddress], 'Trying to remove unsupported LP token');
 
-        router.removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, address(this), block.timestamp);
+        (amountA, amountB) =
+         router.removeLiquidity(tokenA, tokenB, liquidity, amountA, amountB, address(this), block.timestamp);
 
         lpTokenAddress.safeTransfer(msg.sender, IERC20Metadata(lpTokenAddress).balanceOf(address(this)));
         tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
         tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
 
-        return lpTokenAddress;
+        return (amountA, amountB);
     }
 
 

@@ -183,20 +183,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 amount) public virtual nonReentrant {
+    function deposit(uint256 _amount) public virtual nonReentrant {
         _accumulateDepositInterest(msg.sender);
 
-        _transferToPool(msg.sender, amount);
+        _transferToPool(msg.sender, _amount);
 
-        _mint(msg.sender, amount);
-        _deposited[address(this)] += amount;
+        _mint(msg.sender, _amount);
+        _deposited[address(this)] += _amount;
         _updateRates();
 
         if (address(poolRewarder) != address(0)) {
-            poolRewarder.stakeFor(amount, msg.sender);
+            poolRewarder.stakeFor(_amount, msg.sender);
         }
 
-        emit Deposit(msg.sender, amount, block.timestamp);
+        emit Deposit(msg.sender, _amount, block.timestamp);
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -351,10 +351,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
 
         // verified in "require" above
-    unchecked {
-        _deposited[account] -= amount;
-        _deposited[address(this)] -= amount;
-    }
+        unchecked {
+            _deposited[account] -= amount;
+            _deposited[address(this)] -= amount;
+        }
 
         emit Transfer(account, address(0), amount);
     }

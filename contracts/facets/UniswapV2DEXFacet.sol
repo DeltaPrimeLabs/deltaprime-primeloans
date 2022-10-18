@@ -82,24 +82,28 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _firstAsset, bytes32 _secondAsset, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin) internal remainsSolvent {
-        IERC20Metadata tokenA = getERC20TokenInstance(_firstAsset, true);
-        IERC20Metadata tokenB = getERC20TokenInstance(_secondAsset, false);
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal remainsSolvent {
+        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
+        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
-        require(tokenA.balanceOf(address(this)) >= amountADesired, "Not enough tokenA to provide");
-        require(tokenB.balanceOf(address(this)) >= amountBDesired, "Not enough tokenB to provide");
+        require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
+        require(tokenB.balanceOf(address(this)) >= amountB, "Not enough tokenB to provide");
 
-        address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountADesired);
-        address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountBDesired);
+        address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
+        address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
-        address lpTokenAddress = exchange.addLiquidity(address(tokenA), address(tokenB), amountADesired, amountBDesired, amountAMin, amountBMin);
+        address lpTokenAddress;
+        uint liquidity;
+
+        (lpTokenAddress, amountA, amountB, liquidity)
+          = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
 
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
-            (bytes32 token0, bytes32 token1) = _firstAsset < _secondAsset ? (_firstAsset, _secondAsset) : (_secondAsset, _firstAsset);
+            (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
             bytes32 lpToken = stringToBytes32(string.concat(
                     bytes32ToString(getProtocolID()),
                         '_',
@@ -114,22 +118,22 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (tokenA.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_firstAsset);
+            DiamondStorageLib.removeOwnedAsset(_assetA);
         }
 
         if (tokenB.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_secondAsset);
+            DiamondStorageLib.removeOwnedAsset(_assetB);
         }
 
-        emit AddLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin, block.timestamp);
+        emit AddLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
 
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
-        IERC20Metadata tokenA = getERC20TokenInstance(_firstAsset, true);
-        IERC20Metadata tokenB = getERC20TokenInstance(_secondAsset, false);
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
+        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
+        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
@@ -137,13 +141,13 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
 
-        exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
+        (uint amountA, uint amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
 
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
-            (bytes32 token0, bytes32 token1) = _firstAsset < _secondAsset ? (_firstAsset, _secondAsset) : (_secondAsset, _firstAsset);
+            (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
             bytes32 lpToken = stringToBytes32(string.concat(
                     bytes32ToString(getProtocolID()),
                     '_',
@@ -155,7 +159,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(lpToken);
         }
 
-        emit RemoveLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin, block.timestamp);
+        emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
 
     /**
@@ -173,22 +177,38 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     /**
      * @dev emitted after a swap of assets
-     * @param investor the address of investor making the purchase
-     * @param soldAsset sold by the investor
-     * @param boughtAsset bought by the investor
-     * @param _maximumSold maximum to be sold
-     * @param _minimumBought minimum to be bought
+     * @param user the address of user making the purchase
+     * @param soldAsset sold by the user
+     * @param boughtAsset bought by the user
+     * @param maximumSold maximum to be sold
+     * @param minimumBought minimum to be bought
      * @param timestamp time of the swap
      **/
-    event Swap(address indexed investor, bytes32 indexed soldAsset, bytes32 indexed boughtAsset, uint256 _maximumSold, uint256 _minimumBought, uint256 timestamp);
+    event Swap(address indexed user, bytes32 indexed soldAsset, bytes32 indexed boughtAsset, uint256 maximumSold, uint256 minimumBought, uint256 timestamp);
 
     /**
-     * @dev emitted after LP
+     * @dev emitted after providing liquidity
+     * @param user the address of user providing liquidity
+     * @param lpToken the address LP token
+     * @param firstAsset first asset provided for liquidity
+     * @param secondAsset second asset provided for liquidity
+     * @param liquidity amount of liquidity (LP token) added
+     * @param firstAmount amount of the first asset used
+     * @param secondAmount amount of the second asset used
+     * @param timestamp time of the transaction
      **/
-    event AddLiquidity(bytes32 _firstAsset, bytes32 _secondAsset, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin, uint256 timestamp);
+    event AddLiquidity(address indexed user, address indexed lpToken, bytes32 firstAsset, bytes32 secondAsset, uint liquidity, uint firstAmount, uint secondAmount, uint256 timestamp);
 
     /**
-     * @dev emitted after removing LP
+     * @dev emitted after removing liquidity
+     * @param user the address of user providing liquidity
+     * @param lpToken the address LP token
+     * @param firstAsset first asset from LP position
+     * @param secondAsset second asset from LP position
+     * @param liquidity amount of liquidity (LP token) removed
+     * @param firstAmount amount of the first asset obtained
+     * @param secondAmount amount of the second asset obtained
+     * @param timestamp time of the transaction
      **/
-    event RemoveLiquidity(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin, uint256 timestamp);
+    event RemoveLiquidity(address indexed user, address indexed lpToken, bytes32 firstAsset, bytes32 secondAsset, uint liquidity, uint firstAmount, uint secondAmount, uint256 timestamp);
 }

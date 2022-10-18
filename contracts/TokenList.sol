@@ -91,8 +91,19 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
     }
 
     // EVENTS
-
+    /**
+    * @dev emitted after whitelisting a token
+    * @param user performing the transaction
+    * @param token address of whitelisted token
+    * @param timestamp of change
+    **/
     event TokenWhitelisted(address indexed user, address token, uint256 timestamp);
 
+    /**
+    * @dev emitted after delisting a token
+    * @param user performing the transaction
+    * @param token address of delisted token
+    * @param timestamp of change
+    **/
     event TokenDelisted(address indexed user, address token, uint256 timestamp);
 }

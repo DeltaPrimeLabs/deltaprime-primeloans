@@ -49,7 +49,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         DiamondStorageLib.addOwnedAsset("YYAV3SA1", YY_AVAX_AAVE);
 
-        emit Staked(msg.sender, "AVAX", amount, block.timestamp);
+        emit Staked(msg.sender, "AVAX", YY_AVAX_AAVE, amount, block.timestamp);
     }
 
     /**
@@ -101,7 +101,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset("YYAV3SA1");
         }
 
-        emit Unstaked(msg.sender, "AVAX", amount, block.timestamp);
+        emit Unstaked(msg.sender, "AVAX", YY_AVAX_AAVE, amount, block.timestamp);
 
         IWrappedNativeToken(AVAX_TOKEN).deposit{value: amount}();
     }
@@ -151,7 +151,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
         }
 
-        emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.amount, block.timestamp);
+        emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
 
     /**
@@ -173,7 +173,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
         }
 
-        emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.amount, block.timestamp);
+        emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
 
 
@@ -188,18 +188,20 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
         * @dev emitted when user stakes an asset
         * @param user the address executing staking
+        * @param vault address of the vault token
         * @param asset the asset that was staked
         * @param amount of the asset that was staked
         * @param timestamp of staking
     **/
-    event Staked(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+    event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
 
     /**
         * @dev emitted when user unstakes an asset
         * @param user the address executing unstaking
+        * @param vault address of the vault token
         * @param asset the asset that was unstaked
         * @param amount of the asset that was unstaked
         * @param timestamp of unstaking
     **/
-    event Unstaked(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
 }

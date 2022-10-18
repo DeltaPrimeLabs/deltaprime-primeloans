@@ -44,7 +44,7 @@ contract LinearIndex is IIndex, OwnableUpgradeable {
     function setRate(uint256 _rate) public override onlyOwner {
         updateIndex();
         rate = _rate;
-        emit RateUpdated(rate);
+        emit RateUpdated(rate, block.timestamp);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -106,7 +106,9 @@ contract LinearIndex is IIndex, OwnableUpgradeable {
     /* ========== EVENTS ========== */
 
     /**
-     * @dev updatedRate the value of updated rate
-   **/
-    event RateUpdated(uint256 updatedRate);
+     * @dev Emitted after updating the current rate
+     * @param updatedRate the value of updated rate
+     * @param timestamp of the rate update
+     **/
+    event RateUpdated(uint256 updatedRate, uint256 timestamp);
 }
