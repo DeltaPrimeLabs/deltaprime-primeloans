@@ -161,7 +161,7 @@ const TEST_TABLE = [
             USDC: 0,
             ETH: 0,
             BTC: 0,
-            LINK: 20
+            LINK: 50
         },
         borrowInUsd: {
             AVAX: 0,
