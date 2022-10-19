@@ -1,6 +1,6 @@
 <template>
   <div id="modal" class="deposit-modal-component modal-component">
-    <Modal>
+    <Modal :height="getModalHeight">
       <div class="modal__title">
         Deposit
       </div>
@@ -31,17 +31,21 @@
               Deposit:
             </div>
             <div class="summary__value">
-              {{ deposit + depositValue | smartRound }} <span class="currency">AVAX</span>
+              {{ Number(deposit) + Number(depositValue) | smartRound }} <span class="currency">{{ assetSymbol }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">AVAX</span>
+              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
+      </div>
+
+      <div class="toggle-container" v-if="assetSymbol === 'AVAX'">
+        <Toggle v-on:change="assetToggleChange"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -56,6 +60,7 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import Toggle from './Toggle';
 
 export default {
   name: 'DepositModal',
@@ -63,7 +68,8 @@ export default {
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
-    Modal
+    Modal,
+    Toggle
   },
 
   props: {
@@ -76,23 +82,36 @@ export default {
   data() {
     return {
       depositValue: 0,
-    }
+      selectedDepositAsset: 'AVAX'
+    };
   },
 
   computed: {
     calculateDailyInterest() {
       return this.apy / 365 * (this.deposit + this.depositValue);
-    }
+    },
+
+    getModalHeight() {
+      return this.assetSymbol === 'AVAX' ? '561px' : null;
+    },
   },
 
   methods: {
     submit() {
-      this.$emit('DEPOSIT', this.depositValue);
+      const depositEvent = {
+        value: this.depositValue,
+        depositNativeToken: this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX',
+      };
+      this.$emit('DEPOSIT', depositEvent);
     },
 
 
     depositValueChange(event) {
       this.depositValue = event.value;
+    },
+
+    assetToggleChange(asset) {
+      this.selectedDepositAsset = asset;
     },
   }
 };

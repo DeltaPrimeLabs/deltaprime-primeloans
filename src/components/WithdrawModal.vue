@@ -176,10 +176,4 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.withdraw-modal-component {
-  .toggle-container {
-    margin-top: 40px;
-  }
-}
-
 </style>

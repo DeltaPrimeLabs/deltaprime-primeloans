@@ -132,12 +132,5 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.add-from-wallet-modal-component {
-
-  .toggle-container {
-    margin-top: 40px;
-  }
-}
-
 
 </style>

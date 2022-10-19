@@ -119,10 +119,11 @@ export default {
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
-      modalInstance.$on('DEPOSIT', deposit => {
+      modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
-          amount: deposit
+          amount: depositEvent.value,
+          depositNativeToken: depositEvent.depositNativeToken
         };
 
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}).then(() => {
@@ -137,10 +138,11 @@ export default {
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
-      modalInstance.$on('WITHDRAW', withdraw => {
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           assetSymbol: this.pool.asset.symbol,
-          amount: withdraw
+          amount: withdrawEvent.value,
+          withdrawNativeToken: withdrawEvent.withdrawNativeToken,
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
           this.closeModal();

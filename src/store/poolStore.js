@@ -36,7 +36,7 @@ const POOLS_CONFIG = {
     address: USDC_POOL_TUP.address,
     tokenAddress: usdcTokenAddress
   }
-}
+};
 
 export default {
   namespaced: true,
@@ -95,7 +95,7 @@ export default {
             apy: fromWei(poolDetails[2]),
             borrowingAPY: fromWei(poolDetails[3]),
             interest: 1.23456
-          }
+          };
           pools[poolAsset] = pool;
         });
       });
@@ -109,24 +109,44 @@ export default {
 
       const tokenContract = new ethers.Contract(POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
 
-      await tokenContract.connect(provider.getSigner())
-        .approve(state.pools[depositRequest.assetSymbol].contract.address,
-          parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
-      const depositTransaction = await state.pools[depositRequest.assetSymbol].contract
-        .connect(provider.getSigner())
-        .deposit(parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+      let depositTransaction;
+      if (depositRequest.depositNativeToken) {
+        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+          .connect(provider.getSigner())
+          .depositNativeToken({value: parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals)});
+      } else {
+        await tokenContract.connect(provider.getSigner())
+          .approve(state.pools[depositRequest.assetSymbol].contract.address,
+            parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+          .connect(provider.getSigner())
+          .deposit(parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+      }
       await awaitConfirmation(depositTransaction, provider, 'deposit');
-      await dispatch('setupPools');
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 1000);
     },
 
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
-      await state.pools[withdrawRequest.assetSymbol].contract.connect(provider.getSigner())
-        .withdraw(
-          parseUnits(String(withdrawRequest.amount),
-            config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+      let withdrawTransaction;
+      if (withdrawRequest.withdrawNativeToken) {
+        withdrawTransaction = await state.pools[withdrawRequest.assetSymbol].contract.connect(provider.getSigner())
+          .withdrawNativeToken(
+            parseUnits(String(withdrawRequest.amount),
+              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+      } else {
+        withdrawTransaction = await state.pools[withdrawRequest.assetSymbol].contract.connect(provider.getSigner())
+          .withdraw(
+            parseUnits(String(withdrawRequest.amount),
+              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+      }
+      await awaitConfirmation(withdrawTransaction, provider, 'deposit');
 
-      await dispatch('setupPools');
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 1000);
     },
   }
-}
+};

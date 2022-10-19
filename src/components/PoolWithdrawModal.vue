@@ -1,6 +1,6 @@
 <template>
   <div id="modal" class="pool-withdraw-modal-component modal-component">
-    <Modal>
+    <Modal :height="getModalHeight">
       <div class="modal__title">
         Withdraw
       </div>
@@ -31,21 +31,25 @@
               Deposit:
             </div>
             <div class="summary__value">
-              {{ deposit - withdrawValue > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">AVAX</span>
+              {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">{{ assetSymbol }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">AVAX</span>
+              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
+      <div class="toggle-container" v-if="assetSymbol === 'AVAX'">
+        <Toggle v-on:change="assetToggleChange"></Toggle>
+      </div>
+
       <div class="button-wrapper">
-        <Button :label="'Deposit'" v-on:click="submit()"></Button>
+        <Button :label="'Withdraw'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -56,6 +60,8 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import Toggle from './Toggle';
+
 
 export default {
   name: 'PoolWithdrawModal',
@@ -63,7 +69,8 @@ export default {
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
-    Modal
+    Modal,
+    Toggle
   },
 
   props: {
@@ -76,7 +83,12 @@ export default {
   data() {
     return {
       withdrawValue: 0,
+      selectedWithdrawAsset: 'AVAX'
     }
+  },
+
+  mounted() {
+    this.selectedWithdrawAsset = 'AVAX'
   },
 
   computed: {
@@ -87,17 +99,29 @@ export default {
       } else {
         return 0;
       }
-    }
+    },
+
+    getModalHeight() {
+      return this.assetSymbol === 'AVAX' ? '561px' : null;
+    },
   },
 
   methods: {
     submit() {
-      this.$emit('WITHDRAW', this.withdrawValue);
+      const withdrawEvent = {
+        value: this.withdrawValue,
+        withdrawNativeToken: this.assetSymbol === 'AVAX' && this.selectedWithdrawAsset === 'AVAX',
+      }
+      this.$emit('WITHDRAW', withdrawEvent);
     },
 
 
     withdrawValueChange(event) {
       this.withdrawValue = event.value;
+    },
+
+    assetToggleChange(asset) {
+      this.selectedWithdrawAsset = asset;
     },
   }
 };
