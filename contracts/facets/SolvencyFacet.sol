@@ -43,7 +43,8 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
     * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
-        return getLTV() < getMaxLtv();
+        uint256 debt = getDebt();
+        return debt == 0 ? true : debt < getBorrowingPower();
     }
 
     function getPrices(bytes32[] memory symbols) external view returns (uint256[] memory) {
@@ -96,6 +97,41 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
                 uint256 assetBalance = token.balanceOf(address(this));
 
                 total = total + (prices[i] * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+            }
+
+            return total;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Returns the current value of assets value in USD including all tokens as well as staking and LP positions
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function getBorrowingPower() public view virtual returns (uint256) {
+        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
+        uint256[] memory prices = getPricesFromMsg(assets);
+        uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
+        if (prices.length > 0) {
+            TokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+            uint256 total;
+
+            for (uint256 i = 0; i < prices.length; i++) {
+                require(prices[i] != 0, "Asset price returned from oracle is zero");
+
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
+                address poolAddress = tokenManager.getPoolAddress(assets[i]);
+                uint256 borrowed;
+
+                if (poolAddress != address(0)) {
+                    Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
+                    borrowed = pool.getBorrowed(address(this));
+                }
+
+                total = total + (prices[i] * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
             }
 
             return total;

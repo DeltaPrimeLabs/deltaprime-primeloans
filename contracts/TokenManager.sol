@@ -12,6 +12,7 @@ contract TokenManager {
     struct Asset {
         bytes32 asset;
         address assetAddress;
+        uint256 maxLeverage;
     }
 
     /**
@@ -34,6 +35,8 @@ contract TokenManager {
     EnumerableMap.Bytes32ToAddressMap private assetToTokenAddress;
     mapping(address => bytes32) public tokenAddressToSymbol;
     mapping(address => uint256) private tokenPositionInList;
+    // used for defining different leverage ratios for tokens
+    mapping(address => uint256) public maxTokenLeverage;
     address[] public supportedTokensList;
 
     address public adminTransferProposal;
@@ -93,7 +96,6 @@ contract TokenManager {
     **/
     function getPoolAddress(bytes32 _asset) public view returns (address) {
         (, address assetAddress) = assetToPoolAddress.tryGet(_asset);
-        require(assetAddress != address(0), "Pool asset not supported.");
 
         return assetAddress;
     }
@@ -113,7 +115,7 @@ contract TokenManager {
 
     function addTokenAssets(Asset[] memory tokenAssets) public onlyAdmin {
         for (uint256 i = 0; i < tokenAssets.length; i++) {
-            _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress);
+            _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress, tokenAssets[i].maxLeverage);
         }
     }
 
@@ -129,14 +131,16 @@ contract TokenManager {
         emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
     }
 
-    function _addTokenAsset(bytes32 _asset, address _tokenAddress) internal {
+    function _addTokenAsset(bytes32 _asset, address _tokenAddress, uint256 _maxLeverage) internal {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
+        require(_maxLeverage <= 1e18, 'Leverage higher than maximum acceptable');
 
         assetToTokenAddress.set(_asset, _tokenAddress);
         tokenAddressToSymbol[_tokenAddress] = _asset;
         tokenToStatus[_tokenAddress] = _ACTIVE;
+        maxTokenLeverage[_tokenAddress] = _maxLeverage;
 
         supportedTokensList.push(_tokenAddress);
         tokenPositionInList[_tokenAddress] = supportedTokensList.length - 1;
@@ -170,6 +174,7 @@ contract TokenManager {
         EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
         tokenAddressToSymbol[tokenAddress] = 0;
         tokenToStatus[tokenAddress] = _NOT_SUPPORTED;
+        maxTokenLeverage[tokenAddress] = 0;
         _removeTokenFromList(tokenAddress);
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
     }
@@ -184,6 +189,11 @@ contract TokenManager {
         address poolAddress = getPoolAddress(_poolAsset);
         EnumerableMap.remove(assetToPoolAddress, _poolAsset);
         emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
+    }
+
+    function setMaxTokenLeverage(address token, uint256 maxLeverage) external onlyAdmin {
+        require(maxLeverage <= 1e18, 'Leverage higher than maximum acceptable');
+        maxTokenLeverage[token] = maxLeverage;
     }
 
     modifier onlyAdmin {

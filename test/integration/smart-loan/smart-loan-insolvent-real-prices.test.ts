@@ -161,7 +161,7 @@ const TEST_TABLE = [
             USDC: 0,
             ETH: 0,
             BTC: 0,
-            LINK: 20
+            LINK: 50
         },
         borrowInUsd: {
             AVAX: 0,
@@ -385,9 +385,9 @@ describe('Smart loan - real prices', () => {
             }
 
             async function topupUser(user: SignerWithAddress) {
-                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 10000 / AVAX_PRICE).toString())});
+                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((25000 / AVAX_PRICE).toString())});
 
-                const amountSwapped = toWei((10000 / AVAX_PRICE).toString());
+                const amountSwapped = toWei((5000 / AVAX_PRICE).toString());
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDC'].address, amountSwapped, 0);
 

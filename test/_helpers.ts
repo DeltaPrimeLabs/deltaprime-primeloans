@@ -467,10 +467,12 @@ export async function recompileConstantsFile(chain: string, contractName: string
 export class Asset {
     asset: string;
     assetAddress: string;
+    maxLeverage: BigNumber;
 
-    constructor(asset: string, assetAddress: string) {
+    constructor(asset: string, assetAddress: string, maxLeverage: number = 0.8333333333333333) {
         this.asset = asset;
         this.assetAddress = assetAddress;
+        this.maxLeverage = toWei(maxLeverage.toString());
     }
 }
 
