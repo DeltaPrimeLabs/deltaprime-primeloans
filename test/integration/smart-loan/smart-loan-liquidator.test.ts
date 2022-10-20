@@ -12,7 +12,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools,
+    deployPools, fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
@@ -183,7 +183,7 @@ describe('Test liquidator', () => {
                 parseUnits((0.97 * 700 * tokensPrices.get('AVAX')!).toFixed(6), BigNumber.from("6"))
             );
 
-            expect((await wrappedLoan.getLTV()).toNumber()).to.be.gt(5000);
+            expect((fromWei(await wrappedLoan.getHealthRatio()))).to.be.lt(1);
         });
 
         it("replace facet", async () => {

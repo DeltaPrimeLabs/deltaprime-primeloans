@@ -52,12 +52,12 @@ contract SolvencyMethods is DiamondHelper {
         );
     }
 
-    // This function executes SolvencyFacet.getLTV()
-    function _getLTV() public virtual returns (uint256 ltv) {
-        ltv = abi.decode(
+    // This function executes SolvencyFacet.getHealthRatio()
+    function _getHealthRatio() public virtual returns (uint256 health) {
+        health = abi.decode(
             ProxyConnector.proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacet.getLTV.selector),
-                abi.encodeWithSelector(SolvencyFacet.getLTV.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacet.getHealthRatio.selector),
+                abi.encodeWithSelector(SolvencyFacet.getHealthRatio.selector)
             ),
             (uint256)
         );
@@ -94,7 +94,7 @@ contract SolvencyMethods is DiamondHelper {
     }
 
     /**
-    * Checks whether account is solvent (LTV lower than getMaxLtv())
+    * Checks whether account is solvent (health higher than 1)
     * @dev This modifier uses the redstone-evm-connector
     **/
     modifier remainsSolvent() {

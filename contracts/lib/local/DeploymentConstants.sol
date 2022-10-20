@@ -14,7 +14,7 @@ import "../../RedstoneConfigManager.sol";
  **/
 library DeploymentConstants {
 
-    // Used for LTV (TotalValue, Debt) and LiquidationBonus calculations
+    // Used for LiquidationBonus calculations
     uint256 private constant _PERCENTAGE_PRECISION = 1000;
 
     bytes32 private constant _NATIVE_TOKEN_SYMBOL = 'AVAX';

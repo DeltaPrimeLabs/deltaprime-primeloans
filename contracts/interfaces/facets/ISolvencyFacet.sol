@@ -3,7 +3,9 @@ interface ISolvencyFacet {
 
     function getFullLoanStatus() external returns (uint256[4] memory);
 
-    function getLTV() external view returns (uint256);
+    function getHealthRatio() external view returns (uint256);
+
+    function getMaxDebt() external view returns (uint256);
 
     function getMaxBlockTimestampDelay() external view returns (uint256);
 

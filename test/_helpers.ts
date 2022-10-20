@@ -19,8 +19,6 @@ import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockTok
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import redstone from "redstone-api";
-import {AsyncFunc} from "mocha";
-import TOKEN_ADDRESSES from "../common/addresses/avax/token_addresses.json";
 import {JsonRpcSigner} from "@ethersproject/providers";
 
 const {provider} = waffle;
@@ -87,10 +85,13 @@ export const time = {
 }
 
 export const getSelloutRepayAmount = async function (
+    assets: Asset[],
     totalValue: number,
     debt: number,
     bonus: number,
     targetLTV: number) {
+
+
 
     targetLTV = targetLTV / 1000;
     bonus = bonus / 1000;
@@ -455,7 +456,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: number = 4000, maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, redstoneConfigManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
