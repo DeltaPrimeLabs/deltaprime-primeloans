@@ -173,7 +173,7 @@ describe('Smart loan - upgrading', () => {
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
 
             await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("2")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("2"));
@@ -181,7 +181,7 @@ describe('Smart loan - upgrading', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(2 * tokensPrices.get('AVAX')!, 0.1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
 
         it("should not allow to re-initialize", async () => {

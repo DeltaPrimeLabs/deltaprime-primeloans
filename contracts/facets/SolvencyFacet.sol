@@ -15,9 +15,6 @@ import "../lib/local/DeploymentConstants.sol";
 
 contract SolvencyFacet is PriceAware, DiamondHelper {
 
-    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MAX_LTV = 5000;
-
     /* ========== REDSTONE-EVM-CONNECTOR OVERRIDDEN FUNCTIONS ========== */
 
     /**
@@ -38,13 +35,11 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
 
     /**
     * Checks if the loan is solvent.
-    * It means that the ratio between debt and current collateral (defined as total value minus debt) is below safe level,
-    * which is parametrized by the getMaxLtv()
+    * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level
     * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
-        uint256 debt = getDebt();
-        return debt == 0 ? true : debt < getBorrowingPower();
+        return getHealthRatio() >= 1e18;
     }
 
     function getPrices(bytes32[] memory symbols) external view returns (uint256[] memory) {
@@ -110,7 +105,7 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
      * Returns the current value of assets value in USD including all tokens as well as staking and LP positions
      * @dev This function uses the redstone-evm-connector
      **/
-    function getBorrowingPower() public view virtual returns (uint256) {
+    function getMaxDebt() public view virtual returns (uint256) {
         bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
@@ -169,7 +164,7 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
     }
 
     function getFullLoanStatus() public view returns (uint256[4] memory) {
-        return [getTotalValue(), getDebt(), getLTV(), isSolvent() ? uint256(1) : uint256(0)];
+        return [getTotalValue(), getDebt(), getHealthRatio(), isSolvent() ? uint256(1) : uint256(0)];
     }
 
     /**
@@ -177,25 +172,14 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
      * The collateral is equal to total loan value takeaway debt.
      * @dev This function uses the redstone-evm-connector
      **/
-    // TODO: Refactor - change usage in code and tests to use getLTV only
-    function getLTV() public view virtual returns (uint256) {
+    function getHealthRatio() public view virtual returns (uint256) {
         uint256 debt = getDebt();
-        uint256 totalValue = getTotalValue();
+        uint256 maxDebt = getMaxDebt();
 
         if (debt == 0) {
-            return 0;
-        } else if (debt < totalValue) {
-            return (debt * DeploymentConstants.getPercentagePrecision()) / (totalValue - debt);
+            return 1e18;
         } else {
-            return getMaxLtv();
+            return maxDebt * 1e18 / debt;
         }
-    }
-
-    /**
-     * Returns max LTV (with the accuracy in a thousandth)
-     * IMPORTANT: when changing, update other facets as well
-     **/
-    function getMaxLtv() public pure returns (uint256) {
-        return _MAX_LTV;
     }
 }
