@@ -16,10 +16,7 @@ import "../lib/local/DeploymentConstants.sol";
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MAX_LTV = 5000;
-
-    //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MIN_LTV_AFTER_LIQUIDATION = 4000;
+    uint256 private constant _MAX_HEALTH_AFTER_LIQUIDATION = 1.042e18;
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
     uint256 private constant _MAX_LIQUIDATION_BONUS = 100;
@@ -44,18 +41,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /* ========== VIEW FUNCTIONS ========== */
 
     /**
-     * Returns max LTV (with the accuracy in a thousandth)
-     * IMPORTANT: when changing, update other facets as well
-     **/
-    function getMaxLtv() public pure returns (uint256) {
-        return _MAX_LTV;
-    }
-
-    /**
-      * Returns minimum acceptable LTV after liquidation
+      * Returns maximum acceptable health ratio after liquidation
       **/
-    function getMinLtvAfterLiquidation() public pure returns (uint256) {
-        return _MIN_LTV_AFTER_LIQUIDATION;
+    function getMaxHealthAfterLiquidation() public pure returns (uint256) {
+        return _MAX_HEALTH_AFTER_LIQUIDATION;
     }
 
     /**
@@ -129,7 +118,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 initialDebt = _getDebt();
 
         require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-        require(_getLTV() >= getMaxLtv(), "Cannot sellout a solvent account");
+        require(!_isSolvent(), "Cannot sellout a solvent account");
         require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
@@ -205,10 +194,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
         }
 
-        uint256 LTV = _getLTV();
+        uint256 health = _getHealthRatio();
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
-            require(LTV >= getMinLtvAfterLiquidation(), "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss");
+            require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
         if (healingLoan) {
@@ -216,10 +205,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             require(_getTotalValue() == 0, "Healing a loan must end up with 0 total value");
         }
 
-        require(LTV < getMaxLtv(), "This operation would not result in bringing the loan back to a solvent state");
+        require(_isSolvent(), "This operation would not result in bringing the loan back to a solvent state");
 
         //TODO: include final debt and tv
-        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, LTV, block.timestamp);
+        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, health, block.timestamp);
     }
 
     modifier onlyOwner() {
@@ -235,10 +224,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param initialDebt sum of all debts before the liquidation
      * @param repayAmount requested amount (AVAX) of liquidation
      * @param bonus an amount of bonus (AVAX) received by the liquidator
-     * @param ltv a new LTV after the liquidation operation
+     * @param health a new health ratio after the liquidation operation
      * @param timestamp a time of the liquidation
      **/
-    event Liquidated(address indexed liquidator, bool indexed healing, uint256 initialTotal, uint256 initialDebt, uint256 repayAmount, uint256 bonus, uint256 ltv, uint256 timestamp);
+    event Liquidated(address indexed liquidator, bool indexed healing, uint256 initialTotal, uint256 initialDebt, uint256 repayAmount, uint256 bonus, uint256 health, uint256 timestamp);
 
     /**
      * @dev emitted when funds are repaid to the pool during a liquidation

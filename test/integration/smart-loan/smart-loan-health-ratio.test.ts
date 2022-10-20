@@ -7,7 +7,7 @@ import {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
     deployAllFacets,
-    deployAndInitializeLendingPool, deployPools,
+    deployAndInitializeLendingPool, deployPools, fromWei,
     getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
     PoolAsset, PoolInitializationObject,
     recompileConstantsFile,
@@ -22,10 +22,8 @@ import {
     TokenManager,
 } from "../../../typechain";
 import {ethers} from "hardhat";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import {WrapperBuilder} from "redstone-evm-connector";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
-import redstone from "redstone-api";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -92,7 +90,8 @@ describe('Smart loan', () => {
                 5020
             );
 
-            await deployAllFacets(diamondAddress)
+            await deployAllFacets(diamondAddress);
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
         });
 
         it("should deploy a smart loan", async () => {
@@ -113,37 +112,37 @@ describe('Smart loan', () => {
         });
 
         it("should check debt equal to 0", async () => {
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
             expect(await wrappedLoan.isSolvent()).to.be.true;
 
             await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("100"));
 
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
 
         it("should check debt greater than 0 and lesser than totalValue", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("25"));
 
-            expect(await wrappedLoan.getLTV()).to.be.equal(250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.000001);
         });
 
-        it("should check LTV 4999", async () => {
+        it("should check health ratio 4999", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("474"));
 
-            expect(await wrappedLoan.getLTV()).to.be.equal(4990);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1.000334, 0.000001);
         });
 
         it("should check LTV 5000", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
-            expect(await wrappedLoan.getLTV()).to.be.equal(5000);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1, 0.00001);
         });
 
         it("should check LTV 5010", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
-            expect(await wrappedLoan.getLTV()).to.be.equal(5010);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(0.999667, 0.000001);
         });
     });
 });

@@ -167,7 +167,7 @@ describe('Smart loan', () => {
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
 
             await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
             await wrappedLoan.fund(toBytes32("ETH"), toWei("10"));
@@ -176,7 +176,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('ETH')! * 10, 0.01);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
 
         it("should fail to swap from a non-owner account", async () => {
@@ -218,7 +218,7 @@ describe('Smart loan', () => {
             // total value should stay similar to before swap
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('ETH')! * 10, 300);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
 
         it("should swap back", async () => {
@@ -240,7 +240,7 @@ describe('Smart loan', () => {
             expect(fromWei(currentUsdTokenBalance)).to.be.closeTo(0, 1);
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(await wrappedLoan.getLTV()).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
     });
 });

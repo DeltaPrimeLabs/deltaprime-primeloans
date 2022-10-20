@@ -166,7 +166,11 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(400 * tokensPrices.get('AVAX')!, 0.1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300 * tokensPrices.get('AVAX')!, 0.1);
-            expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+
+            let debt = 300 * tokensPrices.get('AVAX')!;
+            let maxDebt = 0.833333 * 400 * tokensPrices.get('AVAX')!;
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(maxDebt / debt, 0.01);
 
             const slippageTolerance = 0.03;
             let usdAmount = 5000;

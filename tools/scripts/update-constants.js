@@ -1,4 +1,4 @@
-export default function updateConstants(chain, exchanges, tokenManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol) {
+export default function updateConstants(chain, exchanges, tokenManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
     var fs = require('fs')
     const replace = require('replace-in-file');
 
@@ -10,14 +10,8 @@ export default function updateConstants(chain, exchanges, tokenManager, redstone
 
     replace.sync({
         files: './contracts/**/*.sol',
-        from: /_MAX_LTV = .*/g,
-        to: `_MAX_LTV = ${maxLTV};`,
-    });
-
-    replace.sync({
-        files: './contracts/**/*.sol',
-        from: /_MIN_LTV_AFTER_LIQUIDATION = .*/g,
-        to: `_MIN_LTV_AFTER_LIQUIDATION = ${minSelloutLTV};`,
+        from: /_MAX_HEALTH_AFTER_LIQUIDATION = .*/g,
+        to: `_MAX_HEALTH_AFTER_LIQUIDATION = ${maxSelloutHealthRatio};`,
     });
 
     replace.sync({
