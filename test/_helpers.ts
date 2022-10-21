@@ -138,29 +138,112 @@ export const calculateBonus = function (
 }
 
 //simple model: we iterate over pools and repay their debts based on how much is left to repay in USD
-export const getRepayAmounts = function (
+export const getLiquidationAmounts = function (
     action: string,
-    debts: any,
-    toRepayInUsd: number,
-    mockPrices: any
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any,
+    finalHealthRatio: number
 ) {
-    let repayAmounts: any = {};
+    let repayAmounts = [];
+    let deliveredAmounts = [];
 
-    let leftToRepayInUsd = toRepayInUsd;
 
-    for (const [asset, debt] of Object.entries(debts)) {
-        if (action === 'HEAL' || action === 'CLOSE') {
-            repayAmounts[asset] = Number(debt) * 1.00001;
-        } else {
-            let availableToRepayInUsd = Number(debt) * mockPrices[asset];
-            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
-            leftToRepayInUsd -= repaidToPool;
-            repayAmounts[asset] = repaidToPool / mockPrices[asset];
+    // loop with repaying solely with account balance
+    for (let debt of debts) {
+        //repaying with account balance
+        let asset = assets.find(el => el.symbol == debt.symbol)!;
+        let repayAmount = 0;
+        let initialDebt = debt.amount;
+        let initialBalance = asset.balance;
+
+        //check if debts are updated
+        let ratio = calculateHealthRatio(debts, assets, prices);
+
+        let sign = 1;
+        let repayChange = Math.min(asset.balance, debt.amount);
+        repayAmount = 0;
+
+        //TODO: remove the last condition
+        while (repayChange != 0 && Math.abs(finalHealthRatio - ratio) > 0.001) {
+            repayAmount += repayChange;
+            debt.amount = initialDebt - repayAmount;
+            asset.balance = initialBalance - repayAmount;
+
+            //TODO: bonus
+            ratio = calculateHealthRatio(debts, assets, prices);
+
+            // if ratio is higher than desired, we decrease the repayAmount
+            sign = (ratio > finalHealthRatio || debt.amount == 0) ? -1 : 1;
+
+            repayChange = sign * Math.abs(repayChange) / 2;
         }
+
+        console.log('ratio after ')
+        repayAmounts.push(new Repayment(debt.symbol, repayAmount))
     }
 
-    //repayAmounts are measured in appropriate tokens (not USD)
-    return repayAmounts;
+    // loop with delivering tokens
+    for (let debt of debts) {
+        let asset = assets.find(el => el.symbol == debt.symbol)!;
+
+        //repaying with added tokens balance
+        let repayAmount: number = repayAmounts.find(el => el.symbol == debt.symbol)!.amount;
+        let initialDebt = debt.amount;
+        let initialBalance = asset.balance;
+        let repayChange = debt.amount - repayAmount;
+        let delivered = 0;
+
+        //check if debts are updated
+        let ratio = calculateHealthRatio(debts, assets, prices);
+        console.log('ratio: ', ratio)
+        console.log('finalHealthRatio: ', finalHealthRatio)
+        let sign = 1;
+
+        while (repayChange != 0 && Math.abs(ratio - finalHealthRatio) > 0.001) {
+            repayAmount += repayChange;
+            debt.amount = initialDebt - repayAmount;
+            asset.balance = initialBalance - repayAmount;
+
+            //TODO: include liquidation bonus
+            ratio = calculateHealthRatio(debts, assets, prices);
+
+            // if ratio is higher than desired, we decrease the repayAmount
+            sign = (ratio > finalHealthRatio || debt.amount == 0) ? -1 : 1;
+            repayChange = repayChange / 2;
+        }
+
+        delivered = repayChange;
+        deliveredAmounts.push(new Allowance(debt.symbol, delivered))
+    }
+
+    return {repayAmounts, deliveredAmounts};
+}
+
+export const calculateHealthRatio = function (
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any[]
+) {
+    let debt = 0;
+    debts.forEach(
+        asset => {
+            let price: number = prices.find(el => el.symbol == asset.symbol)!.value;
+
+            debt += asset.amount * price;
+        }
+    );
+
+    let maxDebt = 0;
+    assets.forEach(
+        asset => {
+            let price: number = prices.find(el => el.symbol == asset.symbol)!.value;
+
+            maxDebt += asset.balance * asset.maxLeverage * price;
+        }
+    );
+
+    return debt == 0 ? 1 : maxDebt / debt;
 }
 
 export const toSupply = function (
@@ -224,7 +307,7 @@ export const getTokensPricesMap = async function(tokenSymbols: Array<string>, pr
     return resultMap
 }
 
-export const convertTokenPricesMapToMockPrices = function(tokensPrices: Map<string, number>) {
+export const convertTokenPricesMapToprices = function(tokensPrices: Map<string, number>) {
     return Array.from(tokensPrices).map( ([token, price]) => ({symbol: token, value: price}));
 }
 
@@ -471,53 +554,85 @@ export async function recompileConstantsFile(chain: string, contractName: string
 }
 
 export class Asset {
-    asset: string;
+    symbol: string;
     assetAddress: string;
     maxLeverage: BigNumber;
 
-    constructor(asset: string, assetAddress: string, maxLeverage: number = 0.8333333333333333) {
-        this.asset = asset;
+    constructor(symbol: string, assetAddress: string, maxLeverage: number = 0.8333333333333333) {
+        this.symbol = symbol;
         this.assetAddress = assetAddress;
         this.maxLeverage = toWei(maxLeverage.toString());
     }
 }
 
 export class AssetNamePrice {
-    name: string;
-    price: BigNumber;
+    symbol: string;
+    price: number;
 
-    constructor(name: string, price: BigNumber) {
-        this.name = name;
+    constructor(symbol: string, price: number) {
+        this.symbol = symbol;
         this.price = price;
     }
 }
 
 export class AssetNameBalance {
-    name: string;
-    balance: BigNumber;
+    symbol: string;
+    balance: number;
 
-    constructor(name: string, balance: BigNumber) {
-        this.name = name;
+    constructor(symbol: string, balance: number) {
+        this.symbol = symbol;
         this.balance = balance;
     }
 }
 
-export class AssetNameDebt {
-    name: string;
-    debt: BigNumber;
+export class Debt {
+    symbol: string;
+    amount: number;
 
-    constructor(name: string, debt: BigNumber) {
-        this.name = name;
-        this.debt = debt;
+    constructor(symbol: string, debt: number) {
+        this.symbol = symbol;
+        this.amount = debt;
+    }
+}
+
+export class Repayment {
+    symbol: string;
+    amount: number;
+
+    constructor(symbol: string, amount: number) {
+        this.symbol = symbol;
+        this.amount = amount;
+    }
+}
+
+export class Allowance {
+    symbol: string;
+    amount: number;
+
+    constructor(symbol: string, amount: number) {
+        this.symbol = symbol;
+        this.amount = amount;
     }
 }
 
 export class PoolAsset {
-    asset: string;
+    symbol: string;
     poolAddress: string;
 
-    constructor(asset: string, poolAddress: string) {
-        this.asset = asset;
+    constructor(symbol: string, poolAddress: string) {
+        this.symbol = symbol;
         this.poolAddress = poolAddress;
+    }
+}
+
+export class AssetBalanceLeverage {
+    symbol: string;
+    balance: number;
+    maxLeverage: number
+
+    constructor(symbol: string, balance: number, maxLeverage: number = 0.8333333333333333) {
+        this.symbol = symbol;
+        this.balance = balance;
+        this.maxLeverage = maxLeverage;
     }
 }
