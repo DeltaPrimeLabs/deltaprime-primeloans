@@ -15,7 +15,7 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              LTV:
+              Health Ratio:
             </div>
             <div class="summary__value">
               {{ ltvAfterTransaction | percent }}

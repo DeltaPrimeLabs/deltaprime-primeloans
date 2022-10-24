@@ -7,7 +7,7 @@
           Max: <colored-value-beta :value="borrowingCapacity" :formatting="'usd'"></colored-value-beta>
         </div>
       </stats-bar-element-beta>
-      <stats-bar-element-beta v-if="ltv != null" :label="'LTV'" :value="ltv | percent">
+      <stats-bar-element-beta v-if="ltv != null" :label="'Health Ratio'" :value="ltv | percent">
         <bar-gauge-beta :min="0" :max="5" :value="ltv"></bar-gauge-beta>
       </stats-bar-element-beta>
 

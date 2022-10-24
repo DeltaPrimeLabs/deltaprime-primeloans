@@ -394,7 +394,6 @@ export default {
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
       const provider = rootState.network.provider;
 
-      await state.wavaxTokenContract.connect(provider.getSigner()).approve(SMART_LOAN_FACTORY_TUP.address, toWei(String(repayRequest.amount)));
       const transaction = await state.smartLoanContract.repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'repay');

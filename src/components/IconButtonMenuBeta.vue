@@ -32,16 +32,9 @@ export default {
     }
   },
   mounted() {
-    if (!this.config.disabled) {
-      document.addEventListener('click', (event) => {
-        const iconMenuButtonComponent = document.getElementById('icon-button-menu-component');
-        if (iconMenuButtonComponent && !iconMenuButtonComponent.contains(event.target) && event.target.id !== 'icon-button') {
-          if (this.menuOpen) {
-            this.menuOpen = false;
-          }
-        }
-      });
-    }
+    document.addEventListener('icon-menu-open', () => {
+      this.menuOpen = false;
+    }, false);
   },
   data() {
     return {
@@ -52,9 +45,13 @@ export default {
     iconButtonClick() {
       if (!this.config.disabled) {
         if (this.config.menuOptions) {
+          if (!this.menuOpen) {
+            this.emitGlobalCloseOfAllMenus();
+          }
           this.menuOpen = !this.menuOpen;
         } else {
           this.$emit('iconButtonClick', this.config.iconButtonActionKey);
+          this.emitGlobalCloseOfAllMenus();
         }
       }
     },
@@ -62,8 +59,14 @@ export default {
     menuOptionClick(option) {
       if (!option.disabled) {
         this.$emit('iconButtonClick', option.key);
+        this.emitGlobalCloseOfAllMenus();
       }
-    }
+    },
+
+    emitGlobalCloseOfAllMenus() {
+      const event = new Event('icon-menu-open');
+      document.dispatchEvent(event);
+    },
   },
 };
 </script>

@@ -25,7 +25,7 @@
           </div>
           <div class="summary__values">
             <div class="summary__label" v-bind:class="{'summary__label--error': ltvAfterTransaction > MAX_ALLOWED_LTV}">
-              LTV:
+              Health Ratio:
             </div>
             <div class="summary__value">
               <span class="summary__value--error" v-if="ltvAfterTransaction > MAX_ALLOWED_LTV">
@@ -123,15 +123,16 @@ export default {
     },
 
     setupValidators() {
-      this.validators = [
-        {
-          validate: (value) => {
-            if (this.ltvAfterTransaction > config.MAX_ALLOWED_LTV) {
-              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
-            }
-          }
-        }
-      ];
+      // this.validators = [
+      //   {
+      //     validate: (value) => {
+      //       if (this.ltvAfterTransaction > config.MAX_ALLOWED_LTV) {
+      //         return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
+      //       }
+      //     }
+      //   }
+      // ];
+      this.validators = [];
     },
   }
 };
