@@ -14,7 +14,7 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">{{ balance | smartRound }}</div>
-          <div class="double-value__usd">{{ avaxToUSD(balance) | usd }}</div>
+          <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
         </div>
       </div>
 
@@ -25,7 +25,7 @@
       <div class="table__cell">
         <div class="double-value">
           <div class="double-value__pieces">{{ calculateDailyInterest | smartRound }}</div>
-          <div class="double-value__usd">{{ avaxToUSD(calculateDailyInterest) | usd }}</div>
+          <div class="double-value__usd">{{ calculateDailyInterest * asset.price | usd }}</div>
         </div>
       </div>
 
