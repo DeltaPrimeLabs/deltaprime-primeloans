@@ -138,6 +138,8 @@ library DiamondStorageLib {
     }
 
     function addOwnedAsset(bytes32 _symbol, address _address) internal {
+        require(_symbol != "", "Symbol cannot be empty");
+        require(_address != address(0), "Invalid AddressZero");
         SmartLoanStorage storage sls = smartLoanStorage();
         EnumerableMap.set(sls.ownedAssets, _symbol, _address);
     }

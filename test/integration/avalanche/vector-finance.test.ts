@@ -7,9 +7,11 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
+import IVectorRewarderArtifact
+    from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
-import  {
+import {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
     deployAllFacets, deployAndInitExchangeContract,
@@ -20,7 +22,7 @@ import  {
     recompileConstantsFile,
     toBytes32,
     toWei,
-    PoolInitializationObject
+    PoolInitializationObject, time, fromBytes32
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -34,6 +36,7 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
+import {boolean} from "hardhat/internal/core/params/argumentTypes";
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -67,7 +70,9 @@ describe('Smart loan', () => {
     describe('A loan with Vector staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
+            otherloan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
+            otherwrappedLoan: any,
             nonOwnerWrappedLoan: any,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
@@ -75,24 +80,25 @@ describe('Smart loan', () => {
             supportedAssets: Array<Asset>,
             tokensPrices: Map<string, number>,
             owner: SignerWithAddress,
+            other: SignerWithAddress,
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
-            [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'sAVAX', 'USDC'];
+            [owner, nonOwner, depositor, other] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'sAVAX', 'USDC', 'PTP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
             let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
             await deployPools(poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'PTP'), getRedstonePrices, [{symbol: 'PTP', value: 0.072}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            addMissingTokenContracts(tokenContracts, assetsList.filter(asset => Array.from(tokenContracts.keys()).includes(asset)));
+            addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));
 
             let tokenManager = await deployContract(
                 owner,
@@ -142,8 +148,21 @@ describe('Smart loan', () => {
 
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(other).createLoan();
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+            const otherloan_proxy_address = await smartLoansFactory.getLoanForOwner(other.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+            otherloan = await ethers.getContractAt("SmartLoanGigaChadInterface", otherloan_proxy_address, other);
+
+            otherwrappedLoan = WrapperBuilder
+                .mockLite(otherloan)
+                .using(
+                    () => {
+                        return {
+                            prices: MOCK_PRICES,
+                            timestamp: Date.now()
+                        }
+                    })
 
             wrappedLoan = WrapperBuilder
                 .mockLite(loan)
@@ -175,8 +194,15 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
 
+            await tokenContracts.get('AVAX')!.connect(other).deposit({value: toWei("200")});
+            await tokenContracts.get('AVAX')!.connect(other).approve(otherwrappedLoan.address, toWei("200"));
+            await otherwrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
+
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("10"), 0);
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("20"), 0);
+
+            await otherwrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), 0);
+            await otherwrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("50"), 0);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 10);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
@@ -198,10 +224,11 @@ describe('Smart loan', () => {
         });
 
         it("should stake", async () => {
-           await testStake("vectorStakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('10', BigNumber.from("6")));
+           await testStake("vectorStakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('13', BigNumber.from("6")));
            await testStake("vectorStakeUSDC2", "vectorUSDC2Balance", VectorUSDCStaking2, parseUnits('11', BigNumber.from("6")));
            await testStake("vectorStakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('5'));
            await testStake("vectorStakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('6'));
+           await time.increase(time.duration.days(30));
         });
 
         it("should unstake", async () => {
@@ -225,6 +252,8 @@ describe('Smart loan', () => {
 
             await wrappedLoan[stakeMethod](amount);
 
+            await otherwrappedLoan[stakeMethod](amount);
+
             expect(await wrappedLoan[balanceMethod]()).to.be.equal(amount);
             expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(amount);
 
@@ -238,6 +267,13 @@ describe('Smart loan', () => {
 
             let initialStakedBalance = await stakingContract.balance(wrappedLoan.address);
 
+            let rewardTokens = await getRewardTokens(stakingContract);
+            // convert from address to symbol
+            rewardTokens = rewardTokens.map((token) => getSymbol(token));
+
+            console.log('!STAKING with other account.')
+            await otherwrappedLoan["vectorStakeUSDC1"](1);
+
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
 
@@ -245,6 +281,44 @@ describe('Smart loan', () => {
             expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(initialStakedBalance.sub(amount));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
+
+            for(const rewardToken of rewardTokens){
+                let ownedAssets = await wrappedLoan.getAllOwnedAssets();
+                if(isRewardTokenSupported(rewardToken)){
+                    if((await tokenContracts.get(rewardToken)!.balanceOf(wrappedLoan.address)) > 0){
+                        expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.true;
+                        continue;
+                    }
+                }
+                expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.false;
+            }
+        }
+
+        async function getRewardTokens(stakingContract: Contract) {
+            let rewarder = await new ethers.Contract(await stakingContract.rewarder(), IVectorRewarderArtifact.abi, provider);
+            let rewardTokens = [];
+
+            let index = 0;
+            while(true){
+                try {
+                    rewardTokens.push(await rewarder.rewardTokens(index));
+                } catch (error) {
+                    break;
+                }
+                index++;
+            }
+            return rewardTokens;
+        }
+
+        function isRewardTokenSupported(rewardToken: string) {
+            let supported = false;
+            for(const asset of supportedAssets) {
+                if(fromBytes32(asset.asset) === rewardToken) {
+                    supported = true;
+                    break;
+                }
+            }
+            return supported;
         }
 
         it("should fail to unstake more than was initially staked", async () => {
@@ -267,6 +341,14 @@ describe('Smart loan', () => {
 
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).not.to.be.reverted;
         });
+
+        function getSymbol(address: string) {
+            return getKeyByValue(TOKEN_ADDRESSES, address);
+        }
+
+        function getKeyByValue(object: any, value: any) {
+            return Object.keys(object).find(key => object[key].toLowerCase() === value.toLowerCase());
+        }
     });
 });
 

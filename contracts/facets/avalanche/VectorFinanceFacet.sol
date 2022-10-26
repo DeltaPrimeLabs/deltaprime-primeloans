@@ -9,6 +9,8 @@ import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
+//This path is updated during deployment
+import "../../lib/local/DeploymentConstants.sol";
 
 contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrInsolvent {
 
@@ -152,7 +154,35 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
         emit Unstaked(msg.sender, stakedTokenSymbol, receiptToken, newBalance - balance, block.timestamp);
 
+        _handleRewards(stakingContract);
+
         return newBalance - balance;
+    }
+
+    function _handleRewards(IVectorFinanceStaking stakingContract) internal {
+        IVectorRewarder rewarder = stakingContract.rewarder();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        uint256 index;
+
+        // We do not want to revert in case of unsupported rewardTokens in order not to block the unstaking/liquidation process
+        while(true) {
+            // No access to the length of rewardTokens[]. Need to iterate until indexOutOfRange
+            (bool success, bytes memory result) = address(rewarder).call(abi.encodeWithSignature("rewardTokens(uint256)", index));
+            if(!success) {
+                break;
+            }
+            address rewardToken = abi.decode(result, (address));
+            bytes32 rewardTokenSymbol = tokenManager.tokenAddressToSymbol(rewardToken);
+            if(rewardTokenSymbol == "") {
+                emit UnsupportedRewardToken(msg.sender, rewardToken, block.timestamp);
+                index += 1;
+                continue;
+            }
+            if(IERC20(rewardToken).balanceOf(address(this)) > 0) {
+                DiamondStorageLib.addOwnedAsset(rewardTokenSymbol, rewardToken);
+            }
+            index += 1;
+        }
     }
 
     // MODIFIERS
@@ -183,4 +213,12 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
         * @param timestamp of unstaking
     **/
     event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
+
+    /**
+        * @dev emitted when user collects rewards in tokens that are not supported
+        * @param user the address collecting rewards
+        * @param asset reward token that was collected
+        * @param timestamp of collecting rewards
+    **/
+    event UnsupportedRewardToken(address indexed user, address indexed asset, uint256 timestamp);
 }
