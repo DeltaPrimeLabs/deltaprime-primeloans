@@ -41,17 +41,6 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
