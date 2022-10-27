@@ -81,8 +81,7 @@ describe('Test liquidator', () => {
                 {name: 'USDC', airdropList: []}
             ];
 
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers)
-            );
+            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers));
 
             diamondAddress = await deployDiamond();
 
@@ -151,18 +150,12 @@ describe('Test liquidator', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    });
+                .wrapLite(loan)
+                .usingPriceFeed("redstone-avalanche-prod");
         });
 
 
-        it("should fund, borrow and withdraw, making loan LTV higher than 500%", async () => {
+        it("should fund, borrow and withdraw, making loan's health ratio lower than 1", async () => {
             await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));

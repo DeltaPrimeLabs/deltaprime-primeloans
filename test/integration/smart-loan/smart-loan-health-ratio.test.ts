@@ -91,7 +91,10 @@ describe('Smart loan', () => {
             );
 
             await deployAllFacets(diamondAddress);
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
         });
 
         it("should deploy a smart loan", async () => {
@@ -127,19 +130,19 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.000001);
         });
 
-        it("should check health ratio 4999", async () => {
+        it("should check health ratio above 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("474"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1.000334, 0.000001);
         });
 
-        it("should check LTV 5000", async () => {
+        it("should check health ratio equals to 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1, 0.00001);
         });
 
-        it("should check LTV 5010", async () => {
+        it("should check health ratio below 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(0.999667, 0.000001);

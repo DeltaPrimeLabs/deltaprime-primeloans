@@ -1,25 +1,23 @@
 import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
-import LOAN_VIEW_METHODS from '../../artifacts/contracts/facets/SmartLoanViewFacet.sol/SmartLoanViewFacet.json'
-import SOLVENCY_LOGIC from '../../artifacts/contracts/facets/SolvencyFacet.sol/SolvencyFacet.json'
-import LOAN_LIQUIDATION from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
+import LOAN_LIQUIDATION
+    from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, toSupply} from "../../test/_helpers";
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
-import {fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
-import redstone from "redstone-api";
 
 const args = require('yargs').argv;
 const https = require('https');
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
-const ethers = require('ethers');
+import {ethers} from 'hardhat'
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("redstone-evm-connector");
 const fs = require('fs');
-const {calculateBonus, fromWei, toRepay, formatUnits, getRepayAmounts} = require("../../test/_helpers");
+const {fromWei, formatUnits} = require("../../test/_helpers");
 const {parseUnits} = require("ethers/lib/utils");
 const path = require("path");
 
@@ -51,21 +49,13 @@ async function wrapLoanStatus(loanAddress) {
     return status;
 }
 
-function wrapLogicFacet(loanAddress) {
-    let loan = new ethers.Contract(loanAddress, LOAN_VIEW_METHODS.abi, wallet);
+async function wrapLoan(loanAddress) {
+    let loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, wallet);
 
     loan = WrapperBuilder
         .wrapLite(loan)
         .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
-    return loan
-}
 
-function getSolvencyLoan(loanAddress) {
-    let loan = new ethers.Contract(loanAddress, SOLVENCY_LOGIC.abi, wallet);
-
-    loan = WrapperBuilder
-        .wrapLite(loan)
-        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
     return loan
 }
 
@@ -103,79 +93,86 @@ async function getInsolventLoans() {
 }
 
 export async function liquidateLoan(loanAddress, tokenManagerAddress) {
-    let loan = wrapLogicFacet(loanAddress);
-    let solvencyLoan = getSolvencyLoan(loanAddress);
+    let loan = await wrapLoan(loanAddress);
     let liquidateFacet = wrapLiquidationFacet(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
+    let poolTokens = await tokenManager.getAllPoolAssets();
+    let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
     let maxBonus = (await liquidateFacet.getMaxLiquidationBonus()).toNumber() / 1000;
 
-    const bonus = calculateBonus(
-        'LIQUIDATE',
-        fromWei(await solvencyLoan.getDebt()),
-        fromWei(await solvencyLoan.getTotalValue()),
-        4.1,
-        maxBonus
-    );
+    // const bonus = calculateBonus(
+    //     'LIQUIDATE',
+    //     fromWei(await solvencyLoan.getDebt()),
+    //     fromWei(await solvencyLoan.getTotalValue()),
+    //     4.1,
+    //     maxBonus
+    // );
 
-    const neededToRepay = toRepay(
-        'LIQUIDATE',
-        fromWei(await solvencyLoan.getDebt()),
-        fromWei(await solvencyLoan.getTotalValue()),
-        4.1,
-        bonus
-    )
+    const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
 
-    const balances = {};
-    for (const asset of (await loan.getAllOwnedAssets())) {
-        let balance = await getTokenContract(addresses[fromBytes32(asset)]).balanceOf(loan.address);
-        let decimals = await getTokenContract(addresses[fromBytes32(asset)]).decimals();
-        balances[fromBytes32(asset)] = formatUnits(balance, decimals);
+    const weiDebts = (await loan.getDebts());
+
+    const debts = [];
+    for (let debt of weiDebts) {
+        let symbol = fromBytes32(debt.name);
+        debts.push(
+            {
+                name: symbol,
+                debt: formatUnits(debt.debt, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+            });
     }
 
-    const debts = {};
+    const balances = [];
 
-    for (const asset of (await tokenManager.getAllPoolAssets())){
-        let poolContract = await getPoolContract(tokenManager, asset);
-        let debt = await poolContract.getBorrowed(loan.address)
-        let decimals = await getTokenContract(addresses[fromBytes32(asset)]).decimals();
-        debts[fromBytes32(asset)] = formatUnits(debt, decimals);
+    const weiBalances = (await loan.getAllAssetsBalances());
+    for (let balance of weiBalances) {
+        let symbol = fromBytes32(balance.name);
+
+        balances.push(
+            {
+                name: symbol,
+                //@ts-ignore
+                maxLeverage: fromWei(await tokenManager.maxTokenLeverage(TOKEN_ADDRESSES[symbol])),
+                balance: formatUnits(balance.balance, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+            });
     }
 
-    let pricesArg = {}
-    for (const asset of await tokenManager.getAllPoolAssets()) {
-        pricesArg[fromBytes32(asset)] = (await redstone.getPrice(fromBytes32(asset), {provider: "redstone-avalanche-prod-node-3"})).value;
-    }
+    let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
 
-    const repayAmounts = getRepayAmounts(
+    let prices = (await loan.getAllAssetsPrices()).map(el => {
+        return {
+            symbol: fromBytes32(el.name),
+            value: formatUnits(el.price, 8)
+        }
+    });
+
+    let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
         'LIQUIDATE',
         debts,
-        neededToRepay,
-        pricesArg
+        balances,
+        prices,
+        1.04,
+        bonus,
+        loanIsBankrupt
     );
 
     let amountsToRepayInWei = [];
-    let assetsToRepay = [];
-    for (const [asset, amount] of Object.entries(repayAmounts) ) {
-        let decimals = await getTokenContract(addresses[asset]).decimals();
-        amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
-        assetsToRepay.push(toBytes32(asset));
-    }
 
-    let allowanceAmounts = toSupply(
-        balances,
-        repayAmounts
-    );
-
-    for (const [asset, amount] of Object.entries(allowanceAmounts)) {
-        let tokenContract = await getTokenContract(addresses[asset]);
+    for (const repayment of repayAmounts) {
+        let tokenContract = await getTokenContract(addresses[repayment.name]);
         let decimals = await tokenContract.decimals();
-        let allowance = parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(wallet).approve(loan.address, allowance);
+        amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
     }
 
+    for (const allowance of deliveredAmounts) {
+        let tokenContract = await getTokenContract(addresses[allowance.name]);
+        let decimals = await tokenContract.decimals();
+        let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
+        await tokenContract.connect(wallet).approve(loan.address, delivered);
+    }
     const bonusInWei = (bonus * 1000).toFixed(0);
 
-    let tx = await liquidateFacet.liquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
+    let tx = await liquidateFacet.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
     await provider.waitForTransaction(tx.hash);
 }
 
@@ -203,15 +200,6 @@ async function liquidateInsolventLoans() {
 
 function getTokenContract(address) {
     return new ethers.Contract(address, erc20ABI, wallet);
-}
-
-async function getDecimals(symbols) {
-
-   return Promise.all(
-        symbols.map(
-            symbol => getTokenContract(addresses[fromBytes32(symbol)]).decimals()
-        )
-    );
 }
 
 console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}. Minutes sync: ${minutesSync}`);

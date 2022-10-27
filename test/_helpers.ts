@@ -134,21 +134,19 @@ export const getLiquidationAmounts = function (
     loanIsBankrupt: boolean
 ) {
     return loanIsBankrupt ?
-        getHealingLiquidationAmounts(action, debts, assets)
+        getHealingLiquidationAmounts(action, debts)
         :
         getProfitableLiquidationAmounts(action, debts, assets, prices, finalHealthRatio, bonus);
 }
 
 export const getHealingLiquidationAmounts = function (
     action: string,
-    debts: Debt[],
-    assets: AssetBalanceLeverage[]
+    debts: Debt[]
 ) {
     let repayAmounts: any = [];
     let deliveredAmounts: any = [];
 
     debts.forEach(debt => {
-        let asset = assets.find(el => el.name == debt.name)!;
         repayAmounts.push(new Repayment(debt.name, 1.001 * debt.debt));
         deliveredAmounts.push(new Allowance(debt.name, 1.001 * debt.debt));
     });
@@ -244,7 +242,6 @@ export const getProfitableLiquidationAmounts = function (
         let i = 0;
         while (changeInDeliveredAmount != 0 && !converged && !useAllAmount) {
             deliveredAmount += changeInDeliveredAmount;
-
             debt.debt = initialDebt - deliveredAmount;
 
             let repaidInUsd = deliveredAmount * price + repayAmounts.reduce((x, y) =>
@@ -263,6 +260,7 @@ export const getProfitableLiquidationAmounts = function (
             updatedAssets.forEach(asset => asset.balance *= (1 - partToRepayToLiquidator));
 
             ratio = calculateHealthRatio(debts, updatedAssets, prices);
+
             // if ratio is higher than desired, we decrease the repayAmount
             sign = (ratio > finalHealthRatio) ? -1 : 1;
             changeInDeliveredAmount = sign * Math.abs(changeInDeliveredAmount) / 2;
@@ -347,8 +345,10 @@ export const deployPools = async function(
             tokenContract
         } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList, chain);
         for (const user of token.airdropList) {
-            await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
-            await poolContract.connect(user).deposit(toWei(depositAmount.toString()));
+            if (token.name == 'AVAX' || token.name == 'MCKUSD') {
+                await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
+                await poolContract.connect(user).deposit(toWei(depositAmount.toString()));
+            }
         }
         lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
         tokenContracts.set(token.name, tokenContract);

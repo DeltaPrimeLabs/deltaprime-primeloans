@@ -1,19 +1,18 @@
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, toBytes32, toSupply} from "../../test/_helpers";
-
+import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
+import {ethers} from 'hardhat'
+import redstone from "redstone-api";
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
-import {ethers} from 'hardhat'
-import redstone from "redstone-api";
-import POOL from "../../artifacts/contracts/Pool.sol/Pool.json";
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("../../../redstone-evm-connector/lib");
 const fs = require('fs');
-const {calculateBonus, fromWei, toRepay, formatUnits, getRepayAmounts} = require("../../test/_helpers");
+const {fromWei, formatUnits} = require("../../test/_helpers");
 const {parseUnits} = require("ethers/lib/utils");
 const path = require("path");
 
@@ -46,11 +45,6 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, wallet);
 }
 
-async function getPoolContract(tokenManager, asset) {
-    let poolAddress = await tokenManager.getPoolAddress(asset);
-    return new ethers.Contract(poolAddress, POOL.abi, wallet);
-}
-
 export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManagerAddress) {
     let loan = await wrapLoan(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
@@ -58,68 +52,81 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
     let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
     let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
-    const bonus = calculateBonus(
-        'LIQUIDATE',
-        fromWei(await loan.getDebt()),
-        fromWei(await loan.getTotalValue()),
-        4.1,
-        maxBonus
-    );
-
-    const neededToRepay = toRepay(
-        'LIQUIDATE',
-        fromWei(await loan.getDebt()),
-        fromWei(await loan.getTotalValue()),
-        4.1,
-        bonus
-    )
-
-    const balances = {};
-    for (const asset of (await loan.getAllOwnedAssets())) {
-        let balance = await getTokenContract(addresses[fromBytes32(asset)]).balanceOf(loan.address);
-        let decimals = await getTokenContract(addresses[fromBytes32(asset)]).decimals();
-        balances[fromBytes32(asset)] = formatUnits(balance, decimals);
-    }
-
-    const debts = {};
-
-    for (const asset of (await tokenManager.getAllPoolAssets())){
-        let poolContract = await getPoolContract(tokenManager, asset);
-        let debt = await poolContract.getBorrowed(loan.address)
-        let decimals = await getTokenContract(addresses[fromBytes32(asset)]).decimals();
-        debts[fromBytes32(asset)] = formatUnits(debt, decimals);
-    }
+    //TODO: calculate bonus
+    // const bonus = calculateBonus(
+    //     'LIQUIDATE',
+    //     fromWei(await loan.getDebt()),
+    //     fromWei(await loan.getTotalValue()),
+    //     4.1,
+    //     maxBonus
+    // );
 
     let pricesArg = {}
     for (const asset of await tokenManager.getAllPoolAssets()) {
         pricesArg[fromBytes32(asset)] = (await redstone.getPrice(fromBytes32(asset), {provider: "redstone-avalanche-prod-node-3"})).value;
     }
 
-    const repayAmounts = getRepayAmounts(
+    const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
+
+    const weiDebts = (await loan.getDebts());
+
+    const debts = [];
+    for (let debt of weiDebts) {
+        let symbol = fromBytes32(debt.name);
+        debts.push(
+            {
+                name: symbol,
+                debt: formatUnits(debt.debt, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+        });
+    }
+
+    const balances = [];
+
+    const weiBalances = (await loan.getAllAssetsBalances());
+    for (let balance of weiBalances) {
+        let symbol = fromBytes32(balance.name);
+
+        balances.push(
+            {
+                name: symbol,
+                //@ts-ignore
+                maxLeverage: fromWei(await tokenManager.maxTokenLeverage(TOKEN_ADDRESSES[symbol])),
+                balance: formatUnits(balance.balance, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+        });
+    }
+
+    let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
+
+    let prices = (await loan.getAllAssetsPrices()).map(el => {
+        return {
+            symbol: fromBytes32(el.name),
+            value: formatUnits(el.price, 8)
+        }
+    });
+
+    let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
         'LIQUIDATE',
         debts,
-        neededToRepay,
-        pricesArg
+        balances,
+        prices,
+        1.04,
+        bonus,
+        loanIsBankrupt
     );
 
     let amountsToRepayInWei = [];
-    let assetsToRepay = [];
-    for (const [asset, amount] of Object.entries(repayAmounts) ) {
-        let decimals = await getTokenContract(addresses[asset]).decimals();
-        amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
-        assetsToRepay.push(toBytes32(asset));
+
+    for (const repayment of repayAmounts) {
+        let tokenContract = await getTokenContract(addresses[repayment.name]);
+        let decimals = await tokenContract.decimals();
+        amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
     }
 
-    let allowanceAmounts = toSupply(
-        balances,
-        repayAmounts
-    );
-
-    for (const [asset, amount] of Object.entries(allowanceAmounts)) {
-        let tokenContract = await getTokenContract(addresses[asset]);
+    for (const allowance of deliveredAmounts) {
+        let tokenContract = await getTokenContract(addresses[allowance.name]);
         let decimals = await tokenContract.decimals();
-        let allowance = parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(wallet).approve(loan.address, allowance);
+        let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
+        await tokenContract.connect(wallet).approve(loan.address, delivered);
     }
 
     const bonusInWei = (bonus * 1000).toFixed(0);

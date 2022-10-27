@@ -234,9 +234,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
 
       amounts = uniswapV2Router.swapExactTokensForTokens(
         _surplus.amount,
-        // TODO: figure out the amount minOUT
-        (soldTokenAmountNeeded * _deficit.amount) / _surplus.amount,
-        getPath(_deficit.asset, _surplus.asset),
+        0,
+        getPath(_surplus.asset, _deficit.asset),
         address(this),
         block.timestamp
       );
