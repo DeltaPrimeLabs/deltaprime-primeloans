@@ -152,7 +152,7 @@ describe('Smart loan', () => {
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(0, 0.1);
 
@@ -171,7 +171,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 1000, 2);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
         it("should withdraw part of funds", async () => {
@@ -183,7 +183,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 900, 2);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
 
@@ -229,7 +229,7 @@ describe('Smart loan', () => {
             // big delta of 80 because of slippage
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 900, 80);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
         it("should revert with Avax price returned from oracle is zero", async () => {
@@ -280,7 +280,7 @@ describe('Smart loan', () => {
             // 900 is the balance of USD, so the change is current_value = previous_value: (2 * 900) - (1 * 900)
             expect(fromWei(await updatedLoan.getTotalValue())).to.closeTo(totalValueBeforePriceChange + 900, 3);
             expect(fromWei(await updatedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await updatedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await updatedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
 
@@ -303,7 +303,7 @@ describe('Smart loan', () => {
             expect(currentEthTokenBalance).to.be.equal(0);
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
     });
 });

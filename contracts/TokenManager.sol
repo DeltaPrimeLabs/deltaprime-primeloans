@@ -37,7 +37,6 @@ contract TokenManager {
     mapping(address => uint256) private tokenPositionInList;
     // used for defining different leverage ratios for tokens
     mapping(address => uint256) public maxTokenLeverage;
-    mapping(bytes32 => uint256) public maxStakedLeverage;
     address[] public supportedTokensList;
 
     address public adminTransferProposal;
@@ -192,16 +191,10 @@ contract TokenManager {
         emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
     }
 
-    function setMaxTokenLeverage(address token, uint256 maxLeverage) external onlyAdmin {
+    function setMaxTokenLeverage(address token, uint256 maxLeverage) public onlyAdmin {
         //LTV must be lower than 5
         require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
         maxTokenLeverage[token] = maxLeverage;
-    }
-
-    function setMaxStakedLeverage(bytes32 stakedPosition, uint256 maxLeverage) external onlyAdmin {
-        //LTV must be lower than 5
-        require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
-        maxStakedLeverage[stakedPosition] = maxLeverage;
     }
 
     modifier onlyAdmin {

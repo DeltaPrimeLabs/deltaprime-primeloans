@@ -112,13 +112,13 @@ describe('Smart loan', () => {
         });
 
         it("should check debt equal to 0", async () => {
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
             expect(await wrappedLoan.isSolvent()).to.be.true;
 
             await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("100"));
 
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
         it("should check debt greater than 0 and lesser than totalValue", async () => {
