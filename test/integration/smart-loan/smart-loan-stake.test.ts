@@ -153,7 +153,7 @@ describe('Smart loan', () => {
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("200")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
@@ -161,7 +161,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 0.0001);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
         it("should fail to stake AVAX as a non-owner", async () => {

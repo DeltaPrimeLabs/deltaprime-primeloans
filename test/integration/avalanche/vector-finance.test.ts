@@ -8,12 +8,11 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import  {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
     deployAllFacets, deployAndInitExchangeContract,
-    deployAndInitializeLendingPool, deployPools,
+    deployPools,
     fromWei,
     getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
     PoolAsset,
@@ -169,7 +168,7 @@ describe('Smart loan', () => {
         it("should fund a loan and get USDC and sAVAX", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("200")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
@@ -180,7 +179,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 10);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal( 1.157920892373162e+59);
         });
 
         it("should fail to stake as a non-owner", async () => {

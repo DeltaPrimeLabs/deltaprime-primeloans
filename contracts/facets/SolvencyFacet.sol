@@ -9,8 +9,6 @@ import "../TokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
-//TODO: remove
-import "hardhat/console.sol";
 
 
 //This path is updated during deployment
@@ -112,23 +110,15 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
         bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         uint256 weightedValueOfTokens;
 
         if (prices.length > 0) {
-            TokenManager tokenManager = DeploymentConstants.getTokenManager();
-
             for (uint256 i = 0; i < prices.length; i++) {
                 require(prices[i] != 0, "Asset price returned from oracle is zero");
 
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
-                address poolAddress = tokenManager.getPoolAddress(assets[i]);
-                uint256 borrowed;
-
-                if (poolAddress != address(0)) {
-                    Pool pool = Pool(tokenManager.getPoolAddress(assets[i]));
-                    borrowed = pool.getBorrowed(address(this));
-                }
 
                 weightedValueOfTokens = weightedValueOfTokens + (prices[i] * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
             }
@@ -150,7 +140,7 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
 
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
 
-                weightedValueOfStaked += price * 10 ** 10 * balance * tokenManager.maxStakedLeverage(bytes32(token)) / (10 ** token.decimals());
+                weightedValueOfStaked += price * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
             }
         }
 

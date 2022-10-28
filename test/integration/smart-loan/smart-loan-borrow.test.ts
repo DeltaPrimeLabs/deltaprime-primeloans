@@ -120,7 +120,7 @@ describe('Smart loan', () => {
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
             await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("1000"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("300"));
@@ -129,7 +129,7 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300, 0.5);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(250, 0.1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
         it("should fail to borrow funds as a non-owner", async () => {
