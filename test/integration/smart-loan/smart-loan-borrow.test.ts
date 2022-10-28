@@ -127,7 +127,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300, 0.5);
-            expect(fromWei(await wrappedLoan.getMaxDebt())).to.be.closeTo(250, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(250, 0.1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
         });
@@ -152,7 +152,7 @@ describe('Smart loan', () => {
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(600);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(300 + 300, 1);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(300, 0.5);
-            expect(fromWei(await wrappedLoan.getMaxDebt())).to.be.closeTo(500, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(500, 0.1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1.66666666666, 0.001);
         });
 
@@ -166,7 +166,7 @@ describe('Smart loan', () => {
             let maxDebt = 0.833333 * (600 + tokensPrices.get('AVAX')! * 1);
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(debt, 0.1);
-            expect(fromWei(await wrappedLoan.getMaxDebt())).to.be.closeTo(maxDebt, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(maxDebt, 0.1);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(maxDebt / debt, 0.1)
         });

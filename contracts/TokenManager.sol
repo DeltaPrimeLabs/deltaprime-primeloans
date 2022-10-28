@@ -37,6 +37,7 @@ contract TokenManager {
     mapping(address => uint256) private tokenPositionInList;
     // used for defining different leverage ratios for tokens
     mapping(address => uint256) public maxTokenLeverage;
+    mapping(bytes32 => uint256) public maxStakedLeverage;
     address[] public supportedTokensList;
 
     address public adminTransferProposal;
@@ -96,6 +97,7 @@ contract TokenManager {
     **/
     function getPoolAddress(bytes32 _asset) public view returns (address) {
         (, address assetAddress) = assetToPoolAddress.tryGet(_asset);
+        require(assetAddress != address(0), "Pool asset not supported.");
 
         return assetAddress;
     }
@@ -135,12 +137,11 @@ contract TokenManager {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
-        require(_maxLeverage <= 1e18, 'Leverage higher than maximum acceptable');
+        setMaxTokenLeverage(_tokenAddress, _maxLeverage);
 
         assetToTokenAddress.set(_asset, _tokenAddress);
         tokenAddressToSymbol[_tokenAddress] = _asset;
         tokenToStatus[_tokenAddress] = _ACTIVE;
-        maxTokenLeverage[_tokenAddress] = _maxLeverage;
 
         supportedTokensList.push(_tokenAddress);
         tokenPositionInList[_tokenAddress] = supportedTokensList.length - 1;
@@ -192,8 +193,15 @@ contract TokenManager {
     }
 
     function setMaxTokenLeverage(address token, uint256 maxLeverage) external onlyAdmin {
-        require(maxLeverage <= 1e18, 'Leverage higher than maximum acceptable');
+        //LTV must be lower than 5
+        require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
         maxTokenLeverage[token] = maxLeverage;
+    }
+
+    function setMaxStakedLeverage(bytes32 stakedPosition, uint256 maxLeverage) external onlyAdmin {
+        //LTV must be lower than 5
+        require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
+        maxStakedLeverage[stakedPosition] = maxLeverage;
     }
 
     modifier onlyAdmin {
