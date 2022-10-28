@@ -7,7 +7,7 @@ interface ISolvencyFacet {
 
     function getHealthRatio() external view returns (uint256);
 
-    function getMaxDebt() external view returns (uint256);
+    function getThresholdWeightedValue() external view returns (uint256);
 
     function getMaxBlockTimestampDelay() external view returns (uint256);
 
