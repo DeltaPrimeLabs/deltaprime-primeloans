@@ -37,6 +37,7 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -105,15 +106,6 @@ describe('Smart loan', () => {
             tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], lpABI, provider));
             tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], lpABI, provider));
 
-            let lpTokenTotalSupply = await tokenContracts.get('TJ_AVAX_USDC_LP')!.totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = await tokenContracts.get('TJ_AVAX_USDC_LP')!.getReserves();
-            let token0USDValue = fromWei(lpTokenToken0Reserve) * tokensPrices.get('AVAX')!;
-            let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * tokensPrices.get('USDC')!;
-            tjLPTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
-            let yyTotalSupply = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.totalSupply();
-            let yyTotalDeposits = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.totalDeposits();
-            yyTJLPTokenPrice = tjLPTokenPrice * fromWei(yyTotalDeposits) / fromWei(yyTotalSupply)
-
             tokensPrices = await getTokensPricesMap(
                 [],
                 getRedstonePrices,
@@ -176,11 +168,11 @@ describe('Smart loan', () => {
             tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices,
                 [{
                 symbol: 'TJ_AVAX_USDC_LP',
-                value: tjLPTokenPrice
+                value: (await redstone.getPrice('TJ_AVAX_USDC_LP', {provider: "redstone-avalanche-prod-1"})).value
             },
                 {
                     symbol: 'YY_TJ_AVAX_USDC_LP',
-                    value: yyTJLPTokenPrice
+                    value: (await redstone.getPrice('YY_TJ_AVAX_USDC_LP', {provider: "redstone-avalanche-prod-1"})).value
                 }]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
@@ -260,7 +252,9 @@ describe('Smart loan', () => {
             expect(endTJAVAXUSDCBalance).to.be.eq(0);
             expect(endStakedBalance).to.be.gt(0);
 
-            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            let totalValueDifference = initialTotalValue - fromWei(await wrappedLoan.getTotalValue());
+
+            await expect(totalValueDifference).to.be.closeTo(0, 0.3);
         });
 
         it("should fail to unstake TJ LP tokens from YY", async () => {
