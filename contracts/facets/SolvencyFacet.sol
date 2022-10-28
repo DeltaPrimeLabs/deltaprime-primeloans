@@ -102,17 +102,18 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
 
 
     /**
-     * Returns the current value of assets value in USD including all tokens as well as staking and LP positions
+     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
      * @dev This function uses the redstone-evm-connector
      **/
-    function getMaxDebt() public view virtual returns (uint256) {
+    function getThresholdWeightedValue() public view virtual returns (uint256) {
         bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
         uint256[] memory prices = getPricesFromMsg(assets);
         uint256 nativeTokenPrice = getPriceFromMsg(DeploymentConstants.getNativeTokenSymbol());
+
+        uint256 weightedValueOfTokens;
+
         if (prices.length > 0) {
             TokenManager tokenManager = DeploymentConstants.getTokenManager();
-
-            uint256 total;
 
             for (uint256 i = 0; i < prices.length; i++) {
                 require(prices[i] != 0, "Asset price returned from oracle is zero");
@@ -126,13 +127,31 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
                     borrowed = pool.getBorrowed(address(this));
                 }
 
-                total = total + (prices[i] * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
+                weightedValueOfTokens = weightedValueOfTokens + (prices[i] * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
             }
-
-            return total;
-        } else {
-            return 0;
         }
+
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+
+        uint256 weightedValueOfStaked;
+
+        for (uint256 i; i < positions.length; i++) {
+            //TODO: fetch multiple prices to reduce cost
+            uint256 price = getPriceFromMsg(positions[i].symbol);
+            require(price != 0, "Asset price returned from oracle is zero");
+
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
+
+            if (success) {
+                uint256 balance = abi.decode(result, (uint256));
+
+                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
+
+                weightedValueOfStaked += price * 10 ** 10 * balance * tokenManager.maxStakedLeverage(bytes32(token)) / (10 ** token.decimals());
+            }
+        }
+
+        return weightedValueOfTokens + weightedValueOfStaked;
     }
 
     function getStakedValue() public view virtual returns (uint256) {
@@ -168,18 +187,18 @@ contract SolvencyFacet is PriceAware, DiamondHelper {
     }
 
     /**
-     * Returns current Loan To Value (solvency ratio) associated with the loan, defined as debt / (total value - debt)
-     * The collateral is equal to total loan value takeaway debt.
+     * Returns current health ratio (solvency) associated with the loan, defined as threshold weighted value of divided
+     * by current debt
      * @dev This function uses the redstone-evm-connector
      **/
     function getHealthRatio() public view virtual returns (uint256) {
         uint256 debt = getDebt();
-        uint256 maxDebt = getMaxDebt();
+        uint256 thresholdWeightedValue = getThresholdWeightedValue();
 
         if (debt == 0) {
-            return 1e18;
+            return type(uint256).max;
         } else {
-            return maxDebt * 1e18 / debt;
+            return thresholdWeightedValue * 1e18 / debt;
         }
     }
 }
