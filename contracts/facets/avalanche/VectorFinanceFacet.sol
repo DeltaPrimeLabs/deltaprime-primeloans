@@ -32,7 +32,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
     function vectorStakeUSDC1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            id: "VECTOR.USDC.1",
+            vault: VectorUSDCStaking1,
             symbol: "USDC",
             balanceSelector: this.vectorUSDC1Balance.selector,
             unstakeSelector: this.vectorUnstakeUSDC1.selector
@@ -51,7 +51,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
     function vectorStakeUSDC2(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            id: "VECTOR.USDC.2",
+            vault: VectorUSDCStaking2,
             symbol: "USDC",
             balanceSelector: this.vectorUSDC2Balance.selector,
             unstakeSelector: this.vectorUnstakeUSDC2.selector
@@ -70,7 +70,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
     function vectorStakeWAVAX1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            id: "VECTOR.WAVAX.1",
+            vault: VectorWAVAXStaking1,
             symbol: "AVAX",
             balanceSelector: this.vectorWAVAX1Balance.selector,
             unstakeSelector: this.vectorUnstakeWAVAX1.selector
@@ -89,7 +89,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
     function vectorStakeSAVAX1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            id: "VECTOR.SAVAX.1",
+            vault: VectorSAVAXStaking1,
             symbol: "sAVAX",
             balanceSelector: this.vectorSAVAX1Balance.selector,
             unstakeSelector: this.vectorUnstakeSAVAX1.selector

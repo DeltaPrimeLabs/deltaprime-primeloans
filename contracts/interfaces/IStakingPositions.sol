@@ -8,7 +8,7 @@ pragma solidity 0.8.17;
  */
 interface IStakingPositions {
     struct StakedPosition {
-        bytes32 id;
+        address vault;
         bytes32 symbol;
         bytes4 balanceSelector;
         bytes4 unstakeSelector;

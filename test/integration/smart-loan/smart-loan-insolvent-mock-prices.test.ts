@@ -6,21 +6,15 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-    Asset,
-    calculateBonus,
+    Asset, calculateHealthRatio,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployAndInitializeLendingPool,
-    formatUnits,
-    fromBytes32,
-    fromWei,
+    deployAndInitializeLendingPool, formatUnits, fromBytes32, fromWei,
     getFixedGasSigners,
-    getRepayAmounts,
+    getLiquidationAmounts,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toRepay,
-    toSupply,
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
@@ -35,7 +29,7 @@ import {
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
-import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
@@ -76,7 +70,14 @@ const TEST_TABLE = [
         pricesDuringLiquidation: {
             AVAX: 8
         },
-        targetLtv: 4.1,
+        maxLeverage: {
+            AVAX: 0.8333333,
+            USDC: 0.8333333,
+            ETH: 0.8333333,
+            BTC: 0.8333333,
+            YYAV3SA1: 0.8333333
+        },
+        targetHealthRatio: 1.04,
         action: 'LIQUIDATE'
     },
     {
@@ -95,7 +96,14 @@ const TEST_TABLE = [
         pricesDuringLiquidation: {
             BTC: 10000
         },
-        targetLtv: 4.5,
+        maxLeverage: {
+            AVAX: 0.8333333,
+            USDC: 0.8333333,
+            ETH: 0.8333333,
+            BTC: 0.8333333,
+            YYAV3SA1: 0.8333333
+        },
+        targetHealthRatio: 1.035,
         action: 'LIQUIDATE'
     },
     {
@@ -115,11 +123,19 @@ const TEST_TABLE = [
             YAK: 18
         },
         pricesDuringLiquidation: {
-            ETH: 200
+            ETH: 600
         },
-        targetLtv: 4.4,
+        maxLeverage: {
+            AVAX: 0.8333333,
+            USDC: 0.8333333,
+            ETH: 0.8333333,
+            BTC: 0.8333333,
+            YYAV3SA1: 0.8333333
+        },
+        targetHealthRatio: 1.04,
         action: 'LIQUIDATE'
     },
+    //TODO: this is an edge scenario, because "collateral" is super close to 0
     {
         id: 4,
         fund: {
@@ -137,9 +153,16 @@ const TEST_TABLE = [
             USDC: 0.000001// changed from 1
             //Black swan event
         },
-        targetLtv: 4.5,
+        maxLeverage: {
+            AVAX: 0.8333333,
+            USDC: 0.8333333,
+            ETH: 0.8333333,
+            BTC: 0.8333333,
+            YYAV3SA1: 0.8333333
+        },
+        targetHealthRatio: 1.04,
         //needs more margin because of accumulation of interest when repaying the loan (affects debt and final LTV)
-        ltvPrecision: 0.15,
+        ratioPrecision: 0.01,
         action: 'LIQUIDATE'
     }
 ]
@@ -234,6 +257,7 @@ describe('Smart loan', () => {
                     value: INITIAL_PRICES.YYAV3SA1
                 },
             ];
+
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
@@ -332,7 +356,9 @@ describe('Smart loan', () => {
 
         TEST_TABLE.forEach(
             async testCase => {
-                it(`Testcase ${testCase.id}:\n
+                //TODO: re-fucking-move
+                if (testCase.id) {
+                    it(`Testcase ${testCase.id}:\n
         fund AVAX: ${testCase.fund.AVAX}, USDC: ${testCase.fund.USDC}, ETH: ${testCase.fund.ETH}, BTC: ${testCase.fund.BTC}\n
         borrow AVAX: ${testCase.borrow.AVAX}, USDC: ${testCase.borrow.USDC}, ETH: ${testCase.borrow.ETH}`,
                     async () => {
@@ -384,6 +410,7 @@ describe('Smart loan', () => {
 
                         if (testCase.stake) {
                             //YAK AVAX
+                            // @ts-ignore
                             await wrappedLoan.stakeAVAXYak(toWei(testCase.stake.YAK.toString()));
                         }
 
@@ -409,77 +436,73 @@ describe('Smart loan', () => {
                                     }
                                 });
 
-                        let maxBonus = 0.05;
+                        let maxBonus = 0.1;
 
-                        const bonus = calculateBonus(
-                            testCase.action,
-                            fromWei(await wrappedLoan.getDebt()),
-                            fromWei(await wrappedLoan.getTotalValue()),
-                            testCase.targetLtv,
-                            maxBonus
-                        );
 
-                        const neededToRepay = toRepay(
-                            testCase.action,
-                            fromWei(await wrappedLoan.getDebt()),
-                            fromWei(await wrappedLoan.getTotalValue()),
-                            testCase.targetLtv,
-                            bonus
-                        )
-                        const balances: any = {};
+                        //TODO: BONUS CALCULATION
+                        // const bonus = calculateBonus(
+                        //     testCase.action,
+                        //     fromWei(await wrappedLoan.getDebt()),
+                        //     fromWei(await wrappedLoan.getTotalValue()),
+                        //     testCase.targetLtv,
+                        //     maxBonus
+                        // );
 
-                        for (const asset of (await wrappedLoan.getAllOwnedAssets())) {
-                            let balance = await tokenContracts[fromBytes32(asset)].balanceOf(wrappedLoan.address);
-                            let decimals = await tokenContracts[fromBytes32(asset)].decimals();
-                            balances[fromBytes32(asset)] = formatUnits(balance, decimals);
+                        const bonus = Math.abs(fromWei(await wrappedLoan.getTotalValue()) - fromWei(await wrappedLoan.getDebt())) < 0.1 ? 0 : maxBonus;
+
+                        const weiDebts = (await wrappedLoan.getDebts());
+                        const debts: any[] = [];
+                        for (let debt of weiDebts) {
+                            let symbol = fromBytes32(debt.name);
+                            debts.push(
+                                {
+                                    name: symbol,
+                                    debt: formatUnits(debt.debt, await getTokenContract(symbol)!.decimals())
+                                }
+                            )
                         }
 
-                        const debts: any = {};
+                        const balances: any[] = [];
 
-                        for (const asset of (await tokenManager.getAllPoolAssets())) {
-                            if (poolContracts.hasOwnProperty(fromBytes32(asset))) {
-                                let debt = (await poolContracts[fromBytes32(asset)].getBorrowed(wrappedLoan.address));
-                                let decimals = await tokenContracts[fromBytes32(asset)].decimals();
-                                debts[fromBytes32(asset)] = formatUnits(debt, decimals);
-                            }
+                        const weiBalances = (await wrappedLoan.getAllAssetsBalances());
+                        for (let balance of weiBalances) {
+                            let symbol = fromBytes32(balance.name);
+                            balances.push(
+                                {
+                                    name: symbol,
+                                    //@ts-ignore
+                                    maxLeverage: testCase.maxLeverage[symbol],
+                                    balance: formatUnits(balance.balance, await getTokenContract(symbol)!.decimals())
+                                }
+                            )
                         }
-
-                        // From [{symbol: AVAX, value: 10}, {symbol: BTC, value: 2137}] to => {AVAX: 10, BTC: 2137}
-                        let newPricesArg = newPrices.reduce((acc, current: any) => Object.assign(acc, {[current.symbol]: current.value}), {})
-
-                        const repayAmounts = getRepayAmounts(
-                            testCase.action,
-                            debts,
-                            neededToRepay,
-                            newPricesArg
-                        );
 
                         let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
 
-                        let allowanceAmounts;
+                        let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+                            'LIQUIDATE',
+                            debts,
+                            balances,
+                            newPrices,
+                            testCase.targetHealthRatio,
+                            bonus,
+                            loanIsBankrupt
+                        );
 
-                        if (!loanIsBankrupt) {
-                            allowanceAmounts = toSupply(
-                                balances,
-                                repayAmounts
-                            );
-                        } else {
-                            allowanceAmounts = repayAmounts;
-                        }
-
-                        await action(wrappedLoan, testCase.action, allowanceAmounts, repayAmounts, bonus, testCase.stake);
+                        await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stake);
                         // @ts-ignore
-                        expect((await wrappedLoan.getLTV()).toNumber() / 1000).to.be.closeTo(testCase.targetLtv, testCase.ltvPrecision ?? 0.01);
+                        expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(testCase.targetHealthRatio, testCase.ratioPrecision ?? 0.005);
                     });
-            }
+
+            }}
         );
 
 
         async function action(
             wrappedLoan: Contract,
             performedAction: string,
-            allowanceAmounts: any,
-            repayAmounts: any,
+            allowanceAmounts: any[],
+            repayAmounts: any[],
             bonus: number,
             stake: any
         ) {
@@ -500,16 +523,17 @@ describe('Smart loan', () => {
 
             let amountsToRepayInWei = [];
             let assetsToRepay = [];
-            for (const [asset, amount] of Object.entries(repayAmounts)) {
-                let decimals = await tokenContracts[asset].decimals();
-                amountsToRepayInWei.push(parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals));
-                assetsToRepay.push(toBytes32(asset));
+
+            for (const repayment of repayAmounts) {
+                let decimals = await tokenContracts[repayment.name].decimals();
+                amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
+                assetsToRepay.push(toBytes32(repayment.name));
             }
 
-            for (const [asset, amount] of Object.entries(allowanceAmounts)) {
-                let decimals = await tokenContracts[asset].decimals();
-                let allowance = parseUnits((Number(amount).toFixed(decimals) ?? 0).toString(), decimals);
-                await tokenContracts[asset].connect(performer).approve(wrappedLoan.address, allowance);
+            for (const allowance of allowanceAmounts) {
+                let decimals = await tokenContracts[allowance.name].decimals();
+                let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
+                await tokenContracts[allowance.name].connect(performer).approve(wrappedLoan.address, delivered);
             }
 
             const bonusInWei = (bonus * 1000).toFixed(0);
@@ -521,6 +545,31 @@ describe('Smart loan', () => {
                 case 'HEAL':
                     await wrappedLoan.unsafeLiquidateLoan(assetsToRepay, amountsToRepayInWei, bonusInWei);
                     break;
+            }
+
+
+            //TODO remove
+            let balances: any[] = [];
+            for (let balance of await wrappedLoan.getAllAssetsBalances()) {
+                let token = fromBytes32(balance.name);
+                let amount = formatUnits(balance.balance,
+                    await getTokenContract(token)!.decimals());
+                balances.push({
+                    name: token,
+                    balance: amount,
+                    maxLeverage: 0.8333333
+                })
+            }
+
+            let debts: any[] = [];
+            for (let debt of await wrappedLoan.getDebts()) {
+                let token = fromBytes32(debt.name);
+                let amount = formatUnits(debt.debt,
+                    await getTokenContract(token)!.decimals());
+                debts.push({
+                    name: token,
+                    debt: amount
+                })
             }
 
             expect(await wrappedLoan.isSolvent()).to.be.true;

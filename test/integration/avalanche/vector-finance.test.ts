@@ -1,28 +1,32 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import redstone from 'redstone-api';
 
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
-import IVectorRewarderArtifact
-    from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     addMissingTokenContracts,
-    Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
-    deployAllFacets, deployAndInitExchangeContract,
-    deployAndInitializeLendingPool, deployPools,
+    Asset,
+    convertAssetsListToSupportedAssets,
+    convertTokenPricesMapToMockPrices,
+    deployAllFacets,
+    deployAndInitExchangeContract,
+    deployPools,
+    fromBytes32,
     fromWei,
-    getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
+    getFixedGasSigners,
+    getRedstonePrices,
+    getTokensPricesMap,
     PoolAsset,
+    PoolInitializationObject,
     recompileConstantsFile,
+    time,
     toBytes32,
-    toWei,
-    PoolInitializationObject, time, fromBytes32
+    toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "redstone-evm-connector";
@@ -36,14 +40,7 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import {boolean} from "hardhat/internal/core/params/argumentTypes";
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -56,11 +53,6 @@ const VectorUSDCStaking1 = '0x7550B2d6a1F039Dd6a3d54a857FEFCbF77213D80';
 const VectorUSDCStaking2 = '0xDA9E515Ce714c4309f7C4483F4802556AE5Df396';
 const VectorWAVAXStaking1 = '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69';
 const VectorSAVAXStaking1 = '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1';
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -189,7 +181,7 @@ describe('Smart loan', () => {
         it("should fund a loan and get USDC and sAVAX", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("200")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
@@ -207,7 +199,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 10);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal( 1.157920892373162e+59);
         });
 
         it("should fail to stake as a non-owner", async () => {
