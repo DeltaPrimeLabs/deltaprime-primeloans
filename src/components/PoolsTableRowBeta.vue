@@ -64,7 +64,7 @@
 import LoadedValue from './LoadedValue';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
-import {mapActions} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
 
 
@@ -85,8 +85,12 @@ export default {
     };
   },
 
+  computed: {
+    ...mapState('network', ['accountBalance'])
+  },
+
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw', 'depositUsdc', 'withdrawUsdc']),
+    ...mapActions('poolStore', ['deposit', 'withdraw']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -116,7 +120,7 @@ export default {
     openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
       modalInstance.apy = this.pool.apy;
-      modalInstance.available = this.pool.asset.balance;
+      modalInstance.available = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.$on('DEPOSIT', depositEvent => {

@@ -1,6 +1,6 @@
 <template>
   <div class="wallet">
-    <div class="balance">{{ balance | avax }}<img class="logo" src="src/assets/icons/avax-icon.svg"/>
+    <div class="balance">{{ accountBalance | avax }}<img class="logo" src="src/assets/icons/avax-icon.svg"/>
 </div>
     <div class="account">{{ account | tx(true) }}</div>
   </div>
@@ -16,7 +16,7 @@
       title: String
     },
     computed: {
-      ...mapState('network', ['account', 'balance'])
+      ...mapState('network', ['account', 'accountBalance'])
     },
     data() {
       return {

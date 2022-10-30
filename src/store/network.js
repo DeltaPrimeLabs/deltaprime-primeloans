@@ -8,7 +8,7 @@ export default {
   state: {
     provider: null,
     account: null,
-    balance: null,
+    accountBalance: null,
     avaxPrice: null
   },
   mutations: {
@@ -18,8 +18,8 @@ export default {
     setAccount(state, account) {
       state.account = account;
     },
-    setBalance(state, balance) {
-      state.balance = balance;
+    setAccountBalance(state, balance) {
+      state.accountBalance = balance;
     },
     setAvaxPrice(state, price) {
       state.avaxPrice = price;
@@ -59,7 +59,8 @@ export default {
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
 
-      commit('setBalance', balance);
+      console.log('account balance ', balance);
+      commit('setAccountBalance', balance);
     },
     async updateAvaxPrice({ commit }) {
       const avaxPrice = (await redstone.getPrice("AVAX", { provider: 'redstone-avalanche'})).value;

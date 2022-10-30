@@ -102,7 +102,7 @@
         depositValidators: [
           {
             validate: value => {
-              if (value > this.balance) {
+              if (value > this.accountBalance) {
                 return 'Deposit amount exceeds your account balance';
               }
             }
@@ -125,7 +125,7 @@
     computed: {
       ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolEvents', 'pool', 'depositInterest']),
       ...mapGetters('nft', ['depositLocked']),
-      ...mapState('network', ['balance']),
+      ...mapState('network', ['accountBalance']),
       chartPoints() {
         if (this.poolEvents == null || this.poolEvents.length === 0) {
           return [];

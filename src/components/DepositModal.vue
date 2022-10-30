@@ -10,10 +10,14 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ available - depositValue > 0 ? available - depositValue : 0 | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="assetSymbol" v-on:newValue="depositValueChange" :max="Number(available)"></CurrencyInput>
+      <CurrencyInput v-on:newValue="depositValueChange"
+                     :symbol="assetSymbol"
+                     :max="Number(available)"
+                     :validators="validators">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -82,8 +86,13 @@ export default {
   data() {
     return {
       depositValue: 0,
-      selectedDepositAsset: 'AVAX'
+      selectedDepositAsset: 'AVAX',
+      validators: [],
     };
+  },
+
+  mounted() {
+    this.setupValidators();
   },
 
   computed: {
@@ -105,13 +114,24 @@ export default {
       this.$emit('DEPOSIT', depositEvent);
     },
 
-
     depositValueChange(event) {
       this.depositValue = event.value;
     },
 
     assetToggleChange(asset) {
       this.selectedDepositAsset = asset;
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > this.available) {
+              return 'Exceeds account balance'
+            }
+          }
+        }
+      ]
     },
   }
 };

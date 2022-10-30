@@ -80,6 +80,7 @@ export default {
       async handler(loan) {
         if (loan) {
           this.balance = await this.farm.staked(this.loan.address);
+          this.$emit('balanceChange', this.balance);
         }
       },
       immediate: true
@@ -102,7 +103,7 @@ export default {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
       modalInstance.available = this.assetBalances[this.asset.symbol];
-      modalInstance.staked = this.balance;
+      modalInstance.staked = Number(this.balance);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.$on('STAKE', (stakeValue) => {
@@ -115,6 +116,7 @@ export default {
           this.closeModal();
           this.farm.staked(this.loan.address).then((balance) => {
             this.balance = balance;
+            this.$emit('balanceChange', this.balance);
           });
         });
       });
@@ -123,7 +125,7 @@ export default {
     openUnstakeModal() {
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.staked = this.balance;
+      modalInstance.staked = Number(this.balance);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
@@ -136,6 +138,7 @@ export default {
           this.closeModal();
           this.farm.staked(this.loan.address).then((balance) => {
             this.balance = balance;
+            this.$emit('balanceChange', this.balance);
           });
         });
       });

@@ -9,7 +9,7 @@
               <img :src="logoSrc(asset.symbol)">
             </div>
             <div class="asset__name">
-              {{asset.name}}
+              {{ asset.name }}
             </div>
           </div>
         </div>
@@ -27,7 +27,8 @@
         <div class="header__cell">
           <div class="header__cell__label">Available protocols:</div>
           <div class="protocols-list" v-if="availableFarms && availableFarms.length > 0">
-            <img v-for="protocol in availableFarms" class="protocol__icon" :src="`src/assets/logo/${protocolLogo(protocol)}`">
+            <img v-for="protocol in availableFarms" class="protocol__icon"
+                 :src="`src/assets/logo/${protocolLogo(protocol)}`">
           </div>
         </div>
 
@@ -52,7 +53,8 @@
             <StakingProtocolTableRow v-for="(farm, index) in availableFarms"
                                      v-bind:key="index"
                                      :farm="farm"
-                                     :asset="asset">
+                                     :asset="asset"
+                                     v-on:balanceChange="balanceChange">
             </StakingProtocolTableRow>
           </div>
         </div>
@@ -66,6 +68,7 @@
 import StakingProtocolTableRow from './StakingProtocolTableRow';
 import PoolEventsList from './PoolHistoryList';
 import config from '@/config';
+import {mapState} from 'vuex';
 
 
 export default {
@@ -94,6 +97,7 @@ export default {
   },
 
   computed: {
+    ...mapState('fundsStore', ['smartLoanContract']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -104,6 +108,14 @@ export default {
 
         return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
       }
+    },
+
+    getTotalStaked() {
+      let total = 0;
+      this.availableFarms.forEach(protocol => {
+        total += protocol.totalStaked;
+      });
+      return total;
     }
   },
 
@@ -125,12 +137,21 @@ export default {
     },
 
     setupMaxStakingApy() {
-      return 0;
+      this.availableFarms.forEach(async protocol => {
+        const apy = await protocol.apy();
+        if (apy > this.maxStakingApy) {
+          this.maxStakingApy = apy;
+        }
+      });
     },
 
     setupTotalStaked() {
-      this.availableFarms.forEach(protocol => {
-        this.totalStaked += protocol.balance;
+      const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
+      Promise.all(totalStakedPromises).then((allResults) => {
+        this.totalStaked = 0;
+        allResults.forEach(result => {
+          this.totalStaked += Number(result);
+        })
       });
     },
 
@@ -140,8 +161,21 @@ export default {
 
     protocolLogo(protocol) {
       return config.PROTOCOLS_CONFIG[protocol.protocol].logo;
+    },
+
+    balanceChange() {
+      this.setupTotalStaked();
+    },
+  },
+  watch: {
+    smartLoanContract: {
+      handler(smartLoanContract) {
+        if (this) {
+          this.setupTotalStaked();
+        }
+      },
     }
-  }
+  },
 };
 </script>
 

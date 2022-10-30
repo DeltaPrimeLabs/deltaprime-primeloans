@@ -5,6 +5,11 @@
         Add from wallet
       </div>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value">{{ 1 | smartRound }}<span class="top-info__currency">{{asset.name}}</span></div>
+      </div>
+
       <CurrencyInput v-if="isLP" :symbol="asset.primary" :symbol-secondary="asset.secondary" v-on:inputChange="inputChange"></CurrencyInput>
       <CurrencyInput v-else :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
 
@@ -53,6 +58,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
+import {mapState} from 'vuex';
 
 
 export default {
@@ -90,6 +96,7 @@ export default {
   },
 
   computed: {
+    ...mapState('network', ['account', 'accountBalance']),
     getModalHeight() {
       return this.asset.symbol === 'AVAX' ? '561px' : null;
     },

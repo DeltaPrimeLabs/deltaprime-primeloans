@@ -103,12 +103,16 @@ export default {
       const instance = new modal();
       instance.$mount();
       document.body.appendChild(instance.$el);
+      document.body.style.maxHeight = '100vh';
+      document.body.style.overflow = 'hidden';
       return instance;
     },
 
     closeModal() {
       const modalComponent = document.getElementById('modal');
       document.body.removeChild(modalComponent);
+      document.body.style.maxHeight = 'unset';
+      document.body.style.overflow = 'unset';
     },
 
     getAssetIcon(assetSymbol) {

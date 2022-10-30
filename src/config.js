@@ -51,6 +51,7 @@ export default {
                 staked: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakeMethod: 'stakeAVAXYak',
                 unstakeMethod: 'unstakeAVAXYak',
+                token: 'AVAX'
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -58,6 +59,7 @@ export default {
                 staked: async (address) => vectorFinanceBalance('0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69', address),
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
+                token: 'AVAX'
             }
         ],
         sAVAX: [
@@ -66,7 +68,8 @@ export default {
                 apy: () => vectorFinanceApy('SAVAX'),
                 staked: (address) => vectorFinanceBalance('0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1', address),
                 stakeMethod: 'vectorStakeSAVAX1',
-                unstakeMethod: 'vectorUnstakeSAVAX1'
+                unstakeMethod: 'vectorUnstakeSAVAX1',
+                token: 'SAVAX'
             },
             {
                 protocol: 'YIELD_YAK',
@@ -74,6 +77,7 @@ export default {
                 staked: async (address) => yieldYakBalance('0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557', address),
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
+                token: 'SAVAX'
             },
         ],
         USDC: [
@@ -84,6 +88,7 @@ export default {
                 staked: (address) => vectorFinanceBalance('0x7550B2d6a1F039Dd6a3d54a857FEFCbF77213D80', address, 6),
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
+                token: 'USDC'
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -92,6 +97,7 @@ export default {
                 staked: async (address) => vectorFinanceBalance('0xDA9E515Ce714c4309f7C4483F4802556AE5Df396', address, 6),
                 stakeMethod: 'vectorStakeUSDC2',
                 unstakeMethod: 'vectorUnstakeUSDC2',
+                token: 'USDC'
             },
         ],
         TJ_AVAX_USDC_LP: [
@@ -101,6 +107,7 @@ export default {
                 staked: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakeMethod: 'stakeTJAVAXUSDCYak',
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
+                token: 'TJ_AVAX_USDC_LP'
             }
         ],
     },
