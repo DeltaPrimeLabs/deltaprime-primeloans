@@ -187,11 +187,9 @@ export const getProfitableLiquidationAmounts = function (
         let useAllAmount = false;
         let i = 0;
 
-        while (repayChange != 0 && !converged && !useAllAmount) {
+        while (repayChange != 0 && !converged && !useAllAmount && i <12) {
             repayAmount += repayChange;
-
             debt.debt = initialDebt - repayAmount;
-
             asset.balance = initialBalance - repayAmount;
 
             let repaidInUsd = repayAmount * price + repayAmounts.reduce((x, y) => x + y.amount * prices.find((z: any) => y.name == z.symbol)!.value, 0);
@@ -255,7 +253,6 @@ export const getProfitableLiquidationAmounts = function (
             let assetsValue = updatedAssets.reduce((x, y) => x + y.balance * prices.find((z: any) => y.name == z.symbol)!.value, 0);
 
             let partToRepayToLiquidator = Math.min((deliveredInUsd + bonusAmount) / assetsValue, 1);
-
 
             updatedAssets.forEach(asset => asset.balance *= (1 - partToRepayToLiquidator));
 
@@ -475,6 +472,9 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
             'getBalance',
             'getSupportedTokensAddresses',
             'getAllOwnedAssets',
+            'getContractOwner',
+            'getProposedOwner',
+            'getStakedPositions',
         ]
     )
     await diamondCut.unpause();
@@ -713,5 +713,19 @@ export class AssetBalanceLeverage {
         this.name = name;
         this.balance = balance;
         this.maxLeverage = maxLeverage;
+    }
+}
+
+export class StakedPosition {
+    vault: string;
+    symbol: string;
+    balanceSelector: string;
+    unstakeSelector: string;
+
+    constructor(vault: string, symbol: string, balanceSelector: string, unstakeSelector: string) {
+        this.vault = vault;
+        this.symbol = symbol;
+        this.balanceSelector = balanceSelector;
+        this.unstakeSelector = unstakeSelector;
     }
 }

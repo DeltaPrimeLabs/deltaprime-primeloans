@@ -544,6 +544,7 @@ describe('Smart loan - real prices', () => {
 
         TEST_TABLE.forEach(
             async testCase => {
+                if (testCase.id) {
                     it(`Testcase ${testCase.id}:\n
         fund AVAX: ${testCase.fundInUsd.AVAX}, USDC: ${testCase.fundInUsd.USDC}, ETH: ${testCase.fundInUsd.ETH}, BTC: ${testCase.fundInUsd.BTC}, LINK: ${testCase.fundInUsd.LINK}\n
         borrow AVAX: ${testCase.borrowInUsd.AVAX}, USDC: ${testCase.borrowInUsd.USDC}, ETH: ${testCase.borrowInUsd.ETH}`,
@@ -566,6 +567,10 @@ describe('Smart loan - real prices', () => {
                                             timestamp: Date.now()
                                         }
                                     });
+
+                            for (let [symbol, leverage] of Object.entries(testCase.maxLeverage)) {
+                                await tokenManager.connect(owner).setMaxTokenLeverage(getTokenContract(symbol)!.address, toWei(leverage.toString()))
+                            }
 
                             //fund
                             for (const [symbol, value] of Object.entries(testCase.fundInUsd)) {
@@ -626,9 +631,11 @@ describe('Smart loan - real prices', () => {
                             }
 
                             if (testCase.stakeInUsd) {
-                                //YAK AVAX
-                                let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
-                                await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
+                                if (testCase.stakeInUsd.YAK) {
+                                    //YAK AVAX
+                                    let amountOfTokens = testCase.stakeInUsd.YAK / getPrice("AVAX")!;
+                                    await wrappedLoan.stakeAVAXYak(toWei(amountOfTokens.toString()));
+                                }
                             }
 
                             let maxBonus = 0.05;
@@ -671,7 +678,7 @@ describe('Smart loan - real prices', () => {
                             )
                         }
 
-                            let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
+                        let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
 
                         let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
                             'LIQUIDATE',
@@ -683,35 +690,35 @@ describe('Smart loan - real prices', () => {
                             loanIsBankrupt
                         );
 
-                            const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
+                        const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
 
-                            let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+                        let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
 
                         await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
 
-                            let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+                        let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
 
-                            if (loanIsBankrupt) {
-                                let funded = 0;
+                        if (loanIsBankrupt) {
+                            let funded = 0;
 
-                                if (testCase.fundInUsd) {
-                                    for (const [, value] of Object.entries(testCase.fundInUsd)) {
-                                        funded += value;
-                                    }
+                            if (testCase.fundInUsd) {
+                                for (const [, value] of Object.entries(testCase.fundInUsd)) {
+                                    funded += value;
                                 }
-
-                                let withdrawn = 0;
-
-                                if (testCase.withdrawInUsd) {
-                                    for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
-                                        withdrawn += value;
-                                    }
-                                }
-
-                                let badDebt = withdrawn - funded;
-
-                                expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
                             }
+
+                            let withdrawn = 0;
+
+                            if (testCase.withdrawInUsd) {
+                                for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
+                                    withdrawn += value;
+                                }
+                            }
+
+                            let badDebt = withdrawn - funded;
+
+                            expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
+                        }
 
                         // if (!loanIsBankrupt) {
                         //     expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
@@ -720,7 +727,7 @@ describe('Smart loan - real prices', () => {
                         // @ts-ignore
                         expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(testCase.targetHealthRatio, testCase.ratioPrecision ?? 0.001);
                 });
-            }
+            }}
         );
 
 

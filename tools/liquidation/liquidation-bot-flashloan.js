@@ -1,7 +1,7 @@
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
+import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
@@ -60,6 +60,16 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
     //     4.1,
     //     maxBonus
     // );
+
+    //TODO: optimize to unstake only as much as needed
+    for (let p of await loan.getStakedPositions()) {
+        let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), p[2], p[3]);
+
+        let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
+        let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
+
+        await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
+    }
 
     let pricesArg = {}
     for (const asset of await tokenManager.getAllPoolAssets()) {
