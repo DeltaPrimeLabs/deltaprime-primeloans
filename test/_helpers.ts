@@ -374,7 +374,7 @@ export const getTokensPricesMap = async function(tokenSymbols: Array<string>, pr
 }
 
 export const convertTokenPricesMapToMockPrices = function(tokensPrices: Map<string, number>) {
-    return Array.from(tokensPrices).map( ([token, price]) => ({symbol: token, value: price}));
+    return Array.from(tokensPrices).map( ([token, price]) => ({dataFeedId: token, value: price}));
 }
 
 export const convertAssetsListToSupportedAssets = function(assetsList: Array<string>, customTokensAddresses: any = [], chain = 'AVAX') {

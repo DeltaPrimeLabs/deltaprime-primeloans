@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
@@ -110,14 +110,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower1);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(0, 0.01)
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.01)
@@ -126,14 +124,12 @@ describe('Smart loan', () => {
 
         it("should create a smart loan using createAndFundLoan", async () => {
             const wrappedSmartLoansFactory = WrapperBuilder
-                .mockLite(smartLoansFactory.connect(borrower2))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(smartLoansFactory.connect(borrower2))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             await tokenContracts.get('AVAX')!.connect(borrower2).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
@@ -143,14 +139,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower2);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0)
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(1 * tokensPrices.get('AVAX')!, 0.05)
@@ -160,14 +154,12 @@ describe('Smart loan', () => {
 
         it("should not create a smart loan when wrong data is sent", async () => {
             const wrappedSmartLoansFactory = WrapperBuilder
-                .mockLite(smartLoansFactory.connect(borrower3))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(smartLoansFactory.connect(borrower3))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             await tokenContracts.get('MCKUSD')!.connect(borrower3).approve(smartLoansFactory.address, toWei("1"));
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(borrower3).balanceOf(borrower3.address))).to.be.gt(1);

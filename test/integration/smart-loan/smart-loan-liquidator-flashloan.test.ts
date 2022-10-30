@@ -179,9 +179,15 @@ describe('Test liquidator with a flashloan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-            wrappedLoan = WrapperBuilder
-                .wrapLite(loan)
-                .usingPriceFeed("redstone-avalanche-prod")
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 10,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                },
+                ["https://d33trozg86ya9x.cloudfront.net"]
+            );
         });
 
 
@@ -327,9 +333,15 @@ describe('Test liquidator with a flashloan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-            wrappedLoan = WrapperBuilder
-                .wrapLite(loan)
-                .usingPriceFeed("redstone-avalanche-prod")
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 10,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                },
+                ["https://d33trozg86ya9x.cloudfront.net"]
+            );
         });
 
 
@@ -512,9 +524,15 @@ describe('Test liquidator with a flashloan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-            wrappedLoan = WrapperBuilder
-                .wrapLite(loan)
-                .usingPriceFeed("redstone-avalanche-prod")
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 10,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                },
+                ["https://d33trozg86ya9x.cloudfront.net"]
+            );
         });
 
 
@@ -694,9 +712,15 @@ describe('Test liquidator with a flashloan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-            wrappedLoan = WrapperBuilder
-                .wrapLite(loan)
-                .usingPriceFeed("redstone-avalanche-prod")
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 10,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                },
+                ["https://d33trozg86ya9x.cloudfront.net"]
+            );
         });
 
 

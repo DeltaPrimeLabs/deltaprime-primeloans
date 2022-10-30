@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
@@ -139,14 +139,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should fund a loan", async () => {
@@ -189,14 +187,13 @@ describe('Smart loan', () => {
 
         it("should fail to swap from a non-owner account", async () => {
             let nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+
             await expect(nonOwnerWrappedLoan.swapPangolin(
                 toBytes32('AVAX'), toBytes32('ETH'), 0, 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
@@ -232,17 +229,15 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
         });
 
-        it("should revert with Avax price returned from oracle is zero", async () => {
+        it("should revert when Avax price returned from oracle is zero", async () => {
             let wrappedLoanWithoutPrices = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: [],
-                            timestamp: Date.now()
-                        }
-                    })
-            await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("Asset price returned from oracle is zero'");
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: [],
+                });
+            await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("Calldata overflow or underflow");
         });
 
         it("should provide assets balances and prices", async () => {
@@ -259,7 +254,7 @@ describe('Smart loan', () => {
 
             let UPDATED_MOCK_PRICES = MOCK_PRICES.map(
                 (token: any) => {
-                    if (token.symbol == 'MCKUSD') {
+                    if (token.dataFeedId == 'MCKUSD') {
                         token.value = 2 * tokensPrices.get('MCKUSD')!;
                     }
                     return token;
@@ -267,15 +262,12 @@ describe('Smart loan', () => {
             );
 
             let updatedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: UPDATED_MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    }
-                );
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: UPDATED_MOCK_PRICES,
+                });
 
             // 900 is the balance of USD, so the change is current_value = previous_value: (2 * 900) - (1 * 900)
             expect(fromWei(await updatedLoan.getTotalValue())).to.closeTo(totalValueBeforePriceChange + 900, 3);

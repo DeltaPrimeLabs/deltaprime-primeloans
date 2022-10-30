@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
     addMissingTokenContracts,
@@ -138,30 +138,23 @@ describe('Smart loan - upgrading', () => {
 
         it("should create a loan", async () => {
             const wrappedSmartLoansFactory = WrapperBuilder
-                .mockLite(smartLoansFactory.connect(borrower))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    });
-
+                // @ts-ignore
+                .wrap(smartLoansFactory.connect(borrower))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
             await wrappedSmartLoansFactory.createLoan();
 
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
-
-
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
 
@@ -207,14 +200,12 @@ describe('Smart loan - upgrading', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             await expect(wrappedLoan.getDebt()).to.be.revertedWith('ProtocolUpgrade: paused.');
 

@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
   using TransferHelper for address payable;

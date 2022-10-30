@@ -7,7 +7,7 @@ import {JsonRpcSigner} from "@ethersproject/providers";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
@@ -154,14 +154,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should fund a loan", async () => {
@@ -181,14 +179,12 @@ describe('Smart loan', () => {
 
         it("should fail to swap from a non-owner account", async () => {
             let nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
             await expect(nonOwnerWrappedLoan.swapUbeswap(
                 toBytes32('ETH'), toBytes32('mcUSD'), 0, 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });

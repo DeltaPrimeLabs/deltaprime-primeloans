@@ -20,7 +20,7 @@ import {
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     PangolinIntermediary,
     Pool,
@@ -429,27 +429,27 @@ describe('Smart loan - real prices', () => {
             //TODO: why do we mock prices? maybe we can use wrapLite?
             MOCK_PRICES = [
                 {
-                    symbol: 'AVAX',
+                    dataFeedId: 'AVAX',
                     value: AVAX_PRICE
                 },
                 {
-                    symbol: 'USDC',
+                    dataFeedId: 'USDC',
                     value: USD_PRICE
                 },
                 {
-                    symbol: 'LINK',
+                    dataFeedId: 'LINK',
                     value: LINK_PRICE
                 },
                 {
-                    symbol: 'ETH',
+                    dataFeedId: 'ETH',
                     value: ETH_PRICE
                 },
                 {
-                    symbol: 'BTC',
+                    dataFeedId: 'BTC',
                     value: BTC_PRICE
                 },
                 {
-                    symbol: 'YYAV3SA1',
+                    dataFeedId: 'YYAV3SA1',
                     value: YYAV3SA1_PRICE
                 }
             ];
@@ -558,15 +558,15 @@ describe('Smart loan - real prices', () => {
 
                             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-                            wrappedLoan = WrapperBuilder
-                                .mockLite(loan)
-                                .using(
-                                    () => {
-                                        return {
-                                            prices: MOCK_PRICES,
-                                            timestamp: Date.now()
-                                        }
-                                    });
+                            // @ts-ignore
+                            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                                {
+                                    dataServiceId: "redstone-avalanche-prod",
+                                    uniqueSignersCount: 10,
+                                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                                },
+                                ["https://d33trozg86ya9x.cloudfront.net"]
+                            );
 
                             for (let [symbol, leverage] of Object.entries(testCase.maxLeverage)) {
                                 await tokenManager.connect(owner).setMaxTokenLeverage(getTokenContract(symbol)!.address, toWei(leverage.toString()))
@@ -749,15 +749,15 @@ describe('Smart loan - real prices', () => {
 
             const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
 
-            wrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(performer))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan.connect(performer)).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 10,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                },
+                ["https://d33trozg86ya9x.cloudfront.net"]
+            );
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
 

@@ -18,7 +18,7 @@ import {
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     PangolinIntermediary,
     Pool,
@@ -237,23 +237,23 @@ describe('Smart loan', () => {
 
             INITIAL_MOCK_PRICES = [
                 {
-                    symbol: 'AVAX',
+                    dataFeedId: 'AVAX',
                     value: INITIAL_PRICES.AVAX
                 },
                 {
-                    symbol: 'USDC',
+                    dataFeedId: 'USDC',
                     value: INITIAL_PRICES.USDC
                 },
                 {
-                    symbol: 'ETH',
+                    dataFeedId: 'ETH',
                     value: INITIAL_PRICES.ETH
                 },
                 {
-                    symbol: 'BTC',
+                    dataFeedId: 'BTC',
                     value: INITIAL_PRICES.BTC
                 },
                 {
-                    symbol: 'YYAV3SA1',
+                    dataFeedId: 'YYAV3SA1',
                     value: INITIAL_PRICES.YYAV3SA1
                 },
             ];
@@ -372,14 +372,12 @@ describe('Smart loan', () => {
                         loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
                         wrappedLoan = WrapperBuilder
-                            .mockLite(loan)
-                            .using(
-                                () => {
-                                    return {
-                                        prices: INITIAL_MOCK_PRICES,
-                                        timestamp: Date.now()
-                                    }
-                                });
+                            // @ts-ignore
+                            .wrap(loan)
+                            .usingSimpleNumericMock({
+                                mockSignersCount: 10,
+                                dataPoints: INITIAL_MOCK_PRICES,
+                            });
                         //fund
                         for (const [symbol, value] of Object.entries(testCase.fund)) {
                             if (value > 0) {
@@ -417,24 +415,22 @@ describe('Smart loan', () => {
                         newPrices = INITIAL_MOCK_PRICES.map(
                             (asset: any) => {
                                 // @ts-ignore
-                                let newPrice = testCase.pricesDuringLiquidation[asset.symbol];
+                                let newPrice = testCase.pricesDuringLiquidation[asset.dataFeedId];
 
                                 return {
-                                    symbol: asset.symbol,
+                                    dataFeedId: asset.dataFeedId,
                                     value: newPrice ?? asset.value
                                 };
                             }
                         )
 
                         wrappedLoan = WrapperBuilder
-                            .mockLite(loan)
-                            .using(
-                                () => {
-                                    return {
-                                        prices: newPrices,
-                                        timestamp: Date.now()
-                                    }
-                                });
+                            // @ts-ignore
+                            .wrap(loan)
+                            .usingSimpleNumericMock({
+                                mockSignersCount: 10,
+                                dataPoints: newPrices,
+                            });
 
                         let maxBonus = 0.1;
 
@@ -511,15 +507,14 @@ describe('Smart loan', () => {
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
 
+            // @ts-ignore
             wrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(performer))
-                .using(
-                    () => {
-                        return {
-                            prices: newPrices,
-                            timestamp: Date.now()
-                        }
-                    });
+                // @ts-ignore
+                .wrap(loan.connect(performer))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: newPrices,
+                });
 
             let amountsToRepayInWei = [];
             let assetsToRepay = [];

@@ -25,7 +25,7 @@ import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {BigNumber, Contract} from "ethers";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import redstone from "redstone-api";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 const {deployContract} = waffle;
 chai.use(solidity);
@@ -98,11 +98,11 @@ describe('Yield Yak test stake AVAX', () => {
 
         MOCK_PRICES = [
             {
-                symbol: 'AVAX',
+                dataFeedId: 'AVAX',
                 value: AVAX_PRICE
             },
             {
-                symbol: 'YYAV3SA1',
+                dataFeedId: 'YYAV3SA1',
                 value: YYAV3SA1_PRICE
             },
         ];
@@ -113,14 +113,12 @@ describe('Yield Yak test stake AVAX', () => {
         loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);
 
         wrappedLoan = WrapperBuilder
-            .mockLite(loan)
-            .using(
-                () => {
-                    return {
-                        prices: MOCK_PRICES,
-                        timestamp: Date.now()
-                    }
-                })
+            // @ts-ignore
+            .wrap(loan)
+            .usingSimpleNumericMock({
+                mockSignersCount: 10,
+                dataPoints: MOCK_PRICES,
+            });
 
         avaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
         await avaxTokenContract.connect(user).deposit({value: toWei('1000')});
@@ -242,15 +240,15 @@ describe('Yield Yak test stake sAVAX', () => {
 
         MOCK_PRICES = [
             {
-                symbol: 'AVAX',
+                dataFeedId: 'AVAX',
                 value: AVAX_PRICE
             },
             {
-                symbol: 'sAVAX',
+                dataFeedId: 'sAVAX',
                 value: SAVAX_PRICE
             },
             {
-                symbol: 'SAV2',
+                dataFeedId: 'SAV2',
                 value: SAV2_PRICE
             },
         ];
@@ -261,14 +259,12 @@ describe('Yield Yak test stake sAVAX', () => {
         loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);
 
         wrappedLoan = WrapperBuilder
-            .mockLite(loan)
-            .using(
-                () => {
-                    return {
-                        prices: MOCK_PRICES,
-                        timestamp: Date.now()
-                    }
-                })
+            // @ts-ignore
+            .wrap(loan)
+            .usingSimpleNumericMock({
+                mockSignersCount: 10,
+                dataPoints: MOCK_PRICES,
+            });
 
         avaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
         sAvaxTokenContract = new ethers.Contract(TOKEN_ADDRESSES['sAVAX'], wavaxAbi, provider);

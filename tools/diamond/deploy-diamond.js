@@ -122,8 +122,7 @@ async function deployDiamond(hardhatConfig = undefined) {
     let receipt
     // call to init function
     let functionCall = diamondInit.interface.encodeFunctionData('init')
-    console.log('DiamondCut calldata:')
-    console.log(functionCall)
+
     tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall)
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()

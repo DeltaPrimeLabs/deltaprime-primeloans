@@ -23,7 +23,7 @@ import {
 } from "../../../typechain";
 import {ethers} from "hardhat";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -104,14 +104,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should check debt equal to 0", async () => {

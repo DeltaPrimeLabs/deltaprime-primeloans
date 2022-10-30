@@ -25,7 +25,7 @@ import {
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
     PangolinIntermediary,
@@ -131,24 +131,20 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should fund a loan", async () => {
@@ -312,14 +308,12 @@ describe('Smart loan', () => {
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("100")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
@@ -355,28 +349,26 @@ describe('Smart loan', () => {
             // Define "updated" (USDC x 1000) prices and build an updated wrapped loan
             MOCK_PRICES_UPDATED = [
                 {
-                    symbol: 'USDC',
+                    dataFeedId: 'USDC',
                     value: tokensPrices.get('USDC')! * 1000
                 },
                 {
-                    symbol: 'AVAX',
+                    dataFeedId: 'AVAX',
                     value: tokensPrices.get('AVAX')!
                 },
                 {
-                    symbol: 'YYAV3SA1',
+                    dataFeedId: 'YYAV3SA1',
                     value: tokensPrices.get('YYAV3SA1')!
                 }
             ]
 
             wrappedLoanUpdated = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES_UPDATED,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES_UPDATED,
+                });
 
             // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
             expect(await wrappedLoan.isSolvent()).to.be.true;
@@ -384,16 +376,13 @@ describe('Smart loan', () => {
             expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
-
             let wrappedLoanLiquidator = WrapperBuilder
-                .mockLite(loan.connect(liquidator))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(liquidator))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 

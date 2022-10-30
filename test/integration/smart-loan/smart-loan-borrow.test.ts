@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
@@ -106,15 +106,13 @@ describe('Smart loan', () => {
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
 
-            wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+            wrappedLoan =  WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES
+                });
         });
 
         it("should fail to borrow funds without a collateral in place", async () => {
@@ -144,14 +142,12 @@ describe('Smart loan', () => {
 
         it("should fail to borrow funds as a non-owner", async () => {
             let nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES
+                });
             await expect(nonOwnerWrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -182,14 +178,12 @@ describe('Smart loan', () => {
 
         it("should fail to repay funds as a non-owner", async () => {
             let nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES
+                });
             await expect(nonOwnerWrappedLoan.repay(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 

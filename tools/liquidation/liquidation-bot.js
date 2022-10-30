@@ -15,7 +15,7 @@ const minutesSync = args.minutesSync ? args.minutesSync : 0;
 import {ethers} from 'hardhat'
 import {BigNumber} from "ethers";
 const {getUrlForNetwork} = require("../scripts/helpers");
-const {WrapperBuilder} = require("redstone-evm-connector");
+const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const fs = require('fs');
 const {fromWei, formatUnits} = require("../../test/_helpers");
 const {parseUnits} = require("ethers/lib/utils");
@@ -52,9 +52,14 @@ async function wrapLoanStatus(loanAddress) {
 async function wrapLoan(loanAddress) {
     let loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, wallet);
 
-    loan = WrapperBuilder
-        .wrapLite(loan)
-        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
+    loan = WrapperBuilder.wrap(loan).usingDataService(
+        {
+            dataServiceId: "redstone-avalanche-prod",
+            uniqueSignersCount: 10,
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+        },
+        ["https://d33trozg86ya9x.cloudfront.net"]
+    );
 
     return loan
 }
@@ -62,9 +67,14 @@ async function wrapLoan(loanAddress) {
 function wrapLiquidationFacet(loanAddress) {
     let loan = new ethers.Contract(loanAddress, LOAN_LIQUIDATION.abi, wallet);
 
-    loan = WrapperBuilder
-        .wrapLite(loan)
-        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
+    loan = WrapperBuilder.wrap(loan).usingDataService(
+        {
+            dataServiceId: "redstone-avalanche-prod",
+            uniqueSignersCount: 10,
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+        },
+        ["https://d33trozg86ya9x.cloudfront.net"]
+    );
     return loan
 }
 

@@ -26,7 +26,7 @@ import {
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
     RedstoneConfigManager__factory,
@@ -177,24 +177,20 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should swap and addLiquidity on TJ", async () => {
@@ -398,24 +394,20 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             wrappedLoan = WrapperBuilder
-                .mockLite(loan)
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
 
             nonOwnerWrappedLoan = WrapperBuilder
-                .mockLite(loan.connect(depositor))
-                .using(
-                    () => {
-                        return {
-                            prices: MOCK_PRICES,
-                            timestamp: Date.now()
-                        }
-                    })
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
         });
 
         it("should swap and addLiquidity on TJ", async () => {

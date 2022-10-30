@@ -2,7 +2,7 @@
 // Last deployed from commit: f97d683e94fbb14f55819d6782c1f6a20998b10e;
 pragma solidity 0.8.17;
 
-import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
@@ -21,7 +21,7 @@ import "./facets/SmartLoanViewFacet.sol";
  * It's also responsible for keeping track of the loans, ensuring one loan per wallet rule, ownership transfers proposals/execution and
  * authorizes registered loans to borrow from lending pools.
  */
-contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
+contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
     using TransferHelper for address;
 
     modifier hasNoLoan() {
@@ -85,7 +85,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry {
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         token.approve(address(smartLoan), _amount);
 
-        ProxyConnector.proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
+        proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
 
         //Update registry and emit event
         updateRegistry(address(smartLoan), msg.sender);

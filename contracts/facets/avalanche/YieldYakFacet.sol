@@ -5,7 +5,6 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "redstone-evm-connector/lib/contracts/commons/ProxyConnector.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/facets/avalanche/IYieldYak.sol";
 
