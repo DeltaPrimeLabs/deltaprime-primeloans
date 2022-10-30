@@ -4,9 +4,8 @@ import LOAN_LIQUIDATION
     from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
+import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
-import POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 
 const args = require('yargs').argv;
 const https = require('https');
@@ -14,6 +13,7 @@ const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
 import {ethers} from 'hardhat'
+import {BigNumber} from "ethers";
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("redstone-evm-connector");
 const fs = require('fs');
@@ -72,11 +72,6 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, wallet);
 }
 
-async function getPoolContract(tokenManager, asset) {
-    let poolAddress = await tokenManager.getPoolAddress(asset);
-    return new ethers.Contract(poolAddress, POOL.abi, wallet);
-}
-
 async function getAllLoans() {
     return await factory.getAllLoans();
 }
@@ -97,7 +92,6 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let liquidateFacet = wrapLiquidationFacet(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
-    let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
     let maxBonus = (await liquidateFacet.getMaxLiquidationBonus()).toNumber() / 1000;
 
     // const bonus = calculateBonus(
@@ -107,6 +101,16 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     //     4.1,
     //     maxBonus
     // );
+
+    //TODO: optimize to unstake only as much as needed
+    for (let p of await loan.getStakedPositions()) {
+        let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), p[2], p[3]);
+
+        let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
+        let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
+
+        await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
+    }
 
     const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
 

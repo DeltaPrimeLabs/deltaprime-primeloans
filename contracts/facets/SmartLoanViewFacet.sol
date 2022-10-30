@@ -117,6 +117,18 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         return result;
     }
 
+    function getContractOwner() external view returns (address _owner) {
+        _owner = DiamondStorageLib.contractOwner();
+    }
+
+    function getProposedOwner() external view returns (address _proposed) {
+        _proposed = DiamondStorageLib.proposedOwner();
+    }
+
+    function getStakedPositions() external view returns (IStakingPositions.StakedPosition[] memory  _positions) {
+        _positions = DiamondStorageLib.stakedPositions();
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {

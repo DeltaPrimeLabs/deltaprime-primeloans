@@ -17,5 +17,11 @@ interface ISmartLoanViewFacet {
 
     function getPercentagePrecision() external view returns (uint256);
 
+    function getContractOwner() external view returns (address _owner);
+
+    function getProposedOwner() external view returns (address _proposed);
+
+    function getStakedPositions() external view returns (IStakingPositions.StakedPosition[] memory  _positions);
+
     function initialize(address owner) external;
 }
