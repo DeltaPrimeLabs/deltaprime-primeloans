@@ -85,11 +85,7 @@ module.exports = async ({
         redstoneConfigManager.address,
         diamondAddress,
         resultTup.address,
-        'lib',
-        5000,
-        4000,
-        100,
-        'AVAX'
+        'lib'
     );
 
     //TODO: verify code

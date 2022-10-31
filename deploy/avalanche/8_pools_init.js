@@ -1,3 +1,5 @@
+import {ZERO_ADDRESS} from "@openzeppelin/test-helpers/src/constants";
+
 const {ethers} = require("hardhat");
 
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
@@ -27,6 +29,7 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
         depositIndexTUP.address,
         borrowIndexTUP.address,
         tokenAddress,
+        ZERO_ADDRESS,
         { gasLimit: 8000000 }
     );
 
