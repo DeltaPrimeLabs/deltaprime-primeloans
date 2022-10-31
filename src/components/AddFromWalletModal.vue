@@ -30,11 +30,8 @@
             <div class="summary__label">
               Balance:
             </div>
-            <div v-if="asset.balance" class="summary__value">
-              {{ Number(asset.balance) + value | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
-            </div>
-            <div v-if="!asset.balance" class="summary__value">
-              {{ value | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+            <div class="summary__value">
+              {{ Number(assetBalance) + Number(value) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -74,6 +71,7 @@ export default {
 
   props: {
     asset: {},
+    assetBalance: {},
     ltv: {},
     totalCollateral: {},
     isLP: false

@@ -41,7 +41,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ Number(asset.balance) + value | smartRound }} {{ asset.symbol }}
+              {{ Number(assetBalance) + Number(value) | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -74,6 +74,7 @@ export default {
 
   props: {
     asset: {},
+    assetBalance: {},
     ltv: {},
     totalCollateral: {},
     loanAPY: {},

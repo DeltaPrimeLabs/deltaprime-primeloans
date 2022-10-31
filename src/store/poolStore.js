@@ -76,6 +76,7 @@ export default {
     },
 
     async setupPools({rootState, commit}) {
+      console.log('setup pools');
       const provider = rootState.network.provider;
       const poolsFromConfig = Object.keys(POOLS_CONFIG);
       const pools = {};
@@ -85,7 +86,8 @@ export default {
           poolContract.totalSupply(),
           poolContract.balanceOf(rootState.network.account),
           poolContract.getDepositRate(),
-          poolContract.getBorrowingRate()
+          poolContract.getBorrowingRate(),
+          poolContract.totalBorrowed()
         ]).then(poolDetails => {
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
@@ -94,6 +96,7 @@ export default {
             deposit: formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals),
             apy: fromWei(poolDetails[2]),
             borrowingAPY: fromWei(poolDetails[3]),
+            totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
             interest: 1.23456
           };
           pools[poolAsset] = pool;
@@ -101,6 +104,7 @@ export default {
       });
       setTimeout(() => {
         commit('setPools', pools);
+        console.log(pools);
       }, 1000);
     },
 

@@ -137,7 +137,7 @@ export default {
     ...mapState('pool', ['borrowingRate']),
     ...mapState('loan', ['debt', 'totalValue']),
     ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances']),
-    ...mapState('poolStore', ['avaxPool', 'usdcPool']),
+    ...mapState('poolStore', ['avaxPool', 'usdcPool', 'pools']),
 
     loanAPY() {
       return aprToApy(this.borrowingRate);
@@ -247,11 +247,14 @@ export default {
     },
 
     openBorrowModal() {
+      const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
+      modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = this.totalValue - this.debt;
-      modalInstance.poolTVL = 11245;
+      // TODO refresh pool.totalBorrowed
+      modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
       modalInstance.loanAPY = this.loanAPY;
       modalInstance.maxLTV = 4.5;
       modalInstance.$on('BORROW', value => {
@@ -280,6 +283,7 @@ export default {
     openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.asset;
+      modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = this.totalValue - this.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
