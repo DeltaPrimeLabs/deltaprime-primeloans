@@ -140,7 +140,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
         require(spender != address(0), "Spender cannot be a zero address");
         uint256 currentAllowance = _allowed[msg.sender][spender];
-        require(currentAllowance >= subtractedValue, "Current allowance is smaller than the subtractedValue");
+        require(currentAllowance >= subtractedValue, "Current allowance is too small");
 
         uint256 newAllowance = currentAllowance - subtractedValue;
         _allowed[msg.sender][spender] = newAllowance;
