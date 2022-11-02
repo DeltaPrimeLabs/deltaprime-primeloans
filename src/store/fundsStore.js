@@ -241,7 +241,14 @@ export default {
       const fundToken = new ethers.Contract(tokenAddresses[asset.symbol], erc20ABI, provider.getSigner());
 
       await fundToken.approve(state.smartLoanFactoryContract.address, amount);
-      const wrappedSmartLoanFactoryContract = WrapperBuilder.wrapLite(state.smartLoanFactoryContract).usingPriceFeed(config.dataProviderId);
+      const wrappedSmartLoanFactoryContract = WrapperBuilder.wrap(wrappedSmartLoanFactoryContract).usingDataService(
+          {
+            dataServiceId: "redstone-avalanche-prod",
+            uniqueSignersCount: 10,
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+          },
+          ["https://d33trozg86ya9x.cloudfront.net"]
+      );
 
       const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundToken.address, amount, {gasLimit: 50000000});
 
