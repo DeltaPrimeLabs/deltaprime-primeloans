@@ -21,7 +21,13 @@ module.exports = {
                 '@artifacts': path.resolve(`artifacts`),
                 vue: 'vue/dist/vue.js'
             },
-            fallback: {"stream": require.resolve("stream-browserify")}
+            fallback: {
+                "stream": require.resolve("stream-browserify"),
+                "https": require.resolve("https-browserify"),
+                "console": require.resolve("console-browserify"),
+                "zlib": require.resolve("browserify-zlib"),
+                "http": require.resolve("stream-http")
+            }
         },
 
         // Where webpack outputs the assets and bundles
