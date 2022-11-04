@@ -93,7 +93,9 @@ export default {
   },
   async mounted() {
     if (window.provider) {
+      console.log('funds store setup');
       await this.fundsStoreSetup();
+      console.log('pool store setup');
       await this.poolStoreSetup();
       await this.stakeStoreSetup();
     } else {

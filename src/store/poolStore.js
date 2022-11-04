@@ -72,6 +72,7 @@ export default {
   actions: {
 
     async poolStoreSetup({dispatch}) {
+      console.log('pool store setup');
       await dispatch('setupPools');
     },
 

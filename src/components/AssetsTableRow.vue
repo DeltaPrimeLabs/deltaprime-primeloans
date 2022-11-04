@@ -247,6 +247,7 @@ export default {
     },
 
     openBorrowModal() {
+      console.log(this.pools);
       const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;

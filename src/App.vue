@@ -64,7 +64,6 @@ export default {
     await this.initNetwork();
     // await this.initNfts();
     await this.initPool();
-    await this.fetchLoan();
     await this.updatePoolData();
     this.initGasPrices();
   },
@@ -74,7 +73,6 @@ export default {
   methods: {
     ...mapActions('network', ['initNetwork']),
     ...mapActions('pool', ['initPool', 'updatePoolData']),
-    ...mapActions('loan', ['fetchLoan']),
     ...mapActions('nft', ['initNfts']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});

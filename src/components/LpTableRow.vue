@@ -180,7 +180,7 @@ export default {
       modalInstance.asset = this.lpToken;
       modalInstance.ltv = this.ltv;
       modalInstance.isLP = true;
-      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.totalCollateral = 1000;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
               const fundRequest = {
@@ -200,7 +200,7 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.totalCollateral = 1000;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
