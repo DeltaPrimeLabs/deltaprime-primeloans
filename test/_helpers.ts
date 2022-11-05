@@ -400,7 +400,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, chain = 'AVAX') {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX') {
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
     console.log('Pausing')
     await diamondCut.pause();
@@ -425,17 +425,32 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         ],
         ''
     )
-    await deployFacet("SolvencyFacet", diamondAddress, [
-        'isSolvent',
-        'getDebt',
-        'getPrices',
-        'getTotalAssetsValue',
-        'getThresholdWeightedValue',
-        'getStakedValue',
-        'getTotalValue',
-        'getFullLoanStatus',
-        'getHealthRatio'
-    ])
+    if(mock) {
+        await deployFacet("SolvencyFacetMock", diamondAddress, [
+            'isSolvent',
+            'getDebt',
+            'getPrices',
+            'getTotalAssetsValue',
+            'getThresholdWeightedValue',
+            'getStakedValue',
+            'getTotalValue',
+            'getFullLoanStatus',
+            'getHealthRatio'
+        ])
+    } else {
+        await deployFacet("SolvencyFacetProd", diamondAddress, [
+            'isSolvent',
+            'getDebt',
+            'getPrices',
+            'getTotalAssetsValue',
+            'getThresholdWeightedValue',
+            'getStakedValue',
+            'getTotalValue',
+            'getFullLoanStatus',
+            'getHealthRatio'
+        ])
+    }
+
     if (chain == 'AVAX') {
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'])

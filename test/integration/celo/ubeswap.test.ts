@@ -143,7 +143,7 @@ describe('Smart loan', () => {
                 'lib'
             );
 
-            await deployAllFacets(diamondAddress, 'CELO')
+            await deployAllFacets(diamondAddress, true,'CELO')
         });
 
         it("should deploy a smart loan", async () => {

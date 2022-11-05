@@ -155,7 +155,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
 
     let prices = (await loan.getAllAssetsPrices()).map(el => {
         return {
-            symbol: fromBytes32(el.name),
+            dataFeedId: fromBytes32(el.name),
             value: formatUnits(el.price, 8)
         }
     });

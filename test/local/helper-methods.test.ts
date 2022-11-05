@@ -102,19 +102,19 @@ describe('Helper methods', () => {
 
         const MOCK_PRICES = [
             {
-                symbol: 'AVAX',
+                dataFeedId: 'AVAX',
                 value: 20
             },
             {
-                symbol: 'USDC',
+                dataFeedId: 'USDC',
                 value: 1
             },
             {
-                symbol: 'ETH',
+                dataFeedId: 'ETH',
                 value: 1000
             },
             {
-                symbol: 'BTC',
+                dataFeedId: 'BTC',
                 value: 20000
             }
         ];
@@ -122,8 +122,8 @@ describe('Helper methods', () => {
         TEST_TABLE.forEach(
             testCase => {
                 it(`liquidation test case number ${testCase.id}`, async function () {
-                    let totalValue = testCase.balances.reduce((x, y) => x + y.balance * MOCK_PRICES.find(price => price.symbol == y.name)!.value, 0)
-                    let debt = testCase.debts.reduce((x, y) => x + y.debt * MOCK_PRICES.find(price => price.symbol == y.name)!.value, 0)
+                    let totalValue = testCase.balances.reduce((x, y) => x + y.balance * MOCK_PRICES.find(price => price.dataFeedId == y.name)!.value, 0)
+                    let debt = testCase.debts.reduce((x, y) => x + y.debt * MOCK_PRICES.find(price => price.dataFeedId == y.name)!.value, 0)
 
                     let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
                         'LIQUIDATE',

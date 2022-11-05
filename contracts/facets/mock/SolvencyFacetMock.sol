@@ -4,18 +4,17 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "redstone-evm-connector/lib/contracts/message-based/PriceAware.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
-import "@redstone-finance/evm-connector/contracts/mocks/RedstoneConsumerNumericMock.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../TokenManager.sol";
-import "../Pool.sol";
-import "../DiamondHelper.sol";
-import "../interfaces/IStakingPositions.sol";
+import "../../oracle/RSOracleMock3Signers.sol";
+import "../../TokenManager.sol";
+import "../../Pool.sol";
+import "../../DiamondHelper.sol";
+import "../../interfaces/IStakingPositions.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
-contract SolvencyFacet is AvalancheDataServiceConsumerBase, DiamondHelper {
+contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
     /**
     * Checks if the loan is solvent.
     * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level

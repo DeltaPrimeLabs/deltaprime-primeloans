@@ -134,7 +134,7 @@ describe('Test liquidator', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -181,7 +181,7 @@ describe('Test liquidator', () => {
         it("replace facet", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -275,7 +275,7 @@ describe('Test liquidator', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -317,7 +317,7 @@ describe('Test liquidator', () => {
         it("replace facet", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;

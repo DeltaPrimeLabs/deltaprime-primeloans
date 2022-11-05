@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
@@ -155,7 +155,7 @@ describe('Test liquidator with a flashloan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -212,7 +212,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -309,7 +309,7 @@ describe('Test liquidator with a flashloan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -382,7 +382,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -500,7 +500,7 @@ describe('Test liquidator with a flashloan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -569,7 +569,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -688,7 +688,7 @@ describe('Test liquidator with a flashloan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
             diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
@@ -738,7 +738,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
