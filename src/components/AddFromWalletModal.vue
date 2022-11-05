@@ -7,11 +7,19 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ 1 | smartRound }}<span class="top-info__currency">{{asset.name}}</span></div>
+        <div class="top-info__value">
+          {{ getAvailableAssetAmount - Number(value) | smartRound }}
+          <span v-if="asset.symbol === 'AVAX'" class="top-info__currency">
+            {{selectedDepositAsset}}
+          </span>
+          <span v-if="asset.symbol !== 'AVAX'" class="top-info__currency">
+            {{asset.symbol}}
+          </span>
+        </div>
       </div>
 
       <CurrencyInput v-if="isLP" :symbol="asset.primary" :symbol-secondary="asset.secondary" v-on:inputChange="inputChange"></CurrencyInput>
-      <CurrencyInput v-else :symbol="asset.symbol" v-on:inputChange="inputChange"></CurrencyInput>
+      <CurrencyInput ref="currencyInput" v-else :symbol="asset.symbol" v-on:inputChange="inputChange" :validators="validators"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -25,7 +33,7 @@
             <div class="summary__value">
               {{ ltvAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="5" :value="1" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
@@ -74,14 +82,16 @@ export default {
     assetBalance: {},
     ltv: {},
     totalCollateral: {},
-    isLP: false
+    isLP: false,
+    walletAssetBalance: {},
+    walletNativeTokenBalance: {}
   },
 
   data() {
     return {
       value: 0,
       ltvAfterTransaction: 0,
-      validators: {},
+      validators: [],
       selectedDepositAsset: 'AVAX'
     };
   },
@@ -97,6 +107,15 @@ export default {
     ...mapState('network', ['account', 'accountBalance']),
     getModalHeight() {
       return this.asset.symbol === 'AVAX' ? '561px' : null;
+    },
+
+    getAvailableAssetAmount() {
+      console.log(this.selectedDepositAsset);
+      if (this.asset.symbol === 'AVAX') {
+        return this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
+      } else {
+        return this.walletAssetBalance;
+      }
     },
   },
 
@@ -124,10 +143,20 @@ export default {
     },
 
     setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > this.getAvailableAssetAmount) {
+              return 'Exceeds account balance';
+            }
+          }
+        }
+      ]
     },
 
     assetToggleChange(asset) {
       this.selectedDepositAsset = asset;
+      this.$refs.currencyInput.forceValidationCheck();
     },
   }
 };

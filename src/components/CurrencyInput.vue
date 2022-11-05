@@ -128,6 +128,11 @@ export default {
         }
       }
     },
+
+    async forceValidationCheck() {
+      await this.checkWarnings(this.value);
+    },
+
     async checkErrors(newValue) {
       this.error = '';
 

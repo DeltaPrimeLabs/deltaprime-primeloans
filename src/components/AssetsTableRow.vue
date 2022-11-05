@@ -109,10 +109,23 @@ import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
+import addresses from '../../common/addresses/avax/token_addresses.json';
+import {formatUnits, parseUnits} from '@/utils/calculate';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
+
+const ethers = require('ethers');
+
+const erc20ABI = [
+  'function decimals() public view returns (uint8)',
+  'function balanceOf(address _owner) public view returns (uint256 balance)',
+  'function totalSupply() public view returns (uint256 supply)',
+  'function totalDeposits() public view returns (uint256 deposits)',
+  'function approve(address _spender, uint256 _value) public returns (bool success)',
+  'function allowance(address owner, address spender) public view returns (uint256)'
+];
 
 
 export default {
@@ -135,6 +148,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances', 'fullLoanStatus']),
     ...mapState('poolStore', ['avaxPool', 'usdcPool', 'pools']),
+    ...mapState('network', ['provider', 'account', 'accountBalance']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -274,9 +288,11 @@ export default {
       });
     },
 
-    openAddFromWalletModal() {
+    async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.asset;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.walletNativeTokenBalance = this.accountBalance;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.ltv = this.ltv;
       modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
@@ -348,6 +364,13 @@ export default {
           this.closeModal();
         });
       });
+    },
+
+    async getWalletAssetBalance() {
+      const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
+      const walletAssetBalanceResponse = await tokenContract.balanceOf(this.account);
+      const walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[this.asset.symbol].decimals);
+      return Number(walletAssetBalance);
     },
   },
   watch: {
