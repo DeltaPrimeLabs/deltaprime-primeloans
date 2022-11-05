@@ -55,7 +55,7 @@ async function wrapLoan(loanAddress) {
     loan = WrapperBuilder.wrap(loan).usingDataService(
         {
             dataServiceId: "redstone-avalanche-prod",
-            uniqueSignersCount: 10,
+            uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
         },
         ["https://d33trozg86ya9x.cloudfront.net"]
@@ -70,7 +70,7 @@ function wrapLiquidationFacet(loanAddress) {
     loan = WrapperBuilder.wrap(loan).usingDataService(
         {
             dataServiceId: "redstone-avalanche-prod",
-            uniqueSignersCount: 10,
+            uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
         },
         ["https://d33trozg86ya9x.cloudfront.net"]
@@ -119,7 +119,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
         let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
         let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
 
-        await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
+        await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8000000});
     }
 
     const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;

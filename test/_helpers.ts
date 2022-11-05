@@ -176,7 +176,7 @@ export const getProfitableLiquidationAmounts = function (
         let initialDebt = debt.debt;
         let initialBalance = asset.balance;
 
-        let price = prices.find((y: any) => y.symbol == asset.name)!.value;
+        let price = prices.find((y: any) => y.dataFeedId == asset.name)!.value;
 
         let ratio = calculateHealthRatio(debts, assets, prices);
 
@@ -192,10 +192,10 @@ export const getProfitableLiquidationAmounts = function (
             debt.debt = initialDebt - repayAmount;
             asset.balance = initialBalance - repayAmount;
 
-            let repaidInUsd = repayAmount * price + repayAmounts.reduce((x, y) => x + y.amount * prices.find((z: any) => y.name == z.symbol)!.value, 0);
+            let repaidInUsd = repayAmount * price + repayAmounts.reduce((x, y) => x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
             let bonusAmount = bonus * repaidInUsd;
             let updatedAssets: AssetBalanceLeverage[]  = JSON.parse(JSON.stringify(assets));
-            let assetsValue = updatedAssets.reduce((x, y) =>  x + y.balance * prices.find((z: any) => y.name == z.symbol)!.value, 0);
+            let assetsValue = updatedAssets.reduce((x, y) =>  x + y.balance * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
             let partToRepayToLiquidator = bonusAmount / assetsValue;
 
 
@@ -232,7 +232,7 @@ export const getProfitableLiquidationAmounts = function (
 
         let changeInDeliveredAmount = initialDebt;
 
-        let price = prices.find((y: any) => y.symbol == asset.name)!.value;
+        let price = prices.find((y: any) => y.dataFeedId == asset.name)!.value;
         let useAllAmount = false;
         let ratio = calculateHealthRatio(debts, assets, prices);
         let sign = 1;
@@ -243,14 +243,14 @@ export const getProfitableLiquidationAmounts = function (
             debt.debt = initialDebt - deliveredAmount;
 
             let repaidInUsd = deliveredAmount * price + repayAmounts.reduce((x, y) =>
-             x + y.amount * prices.find((z: any) => y.name == z.symbol)!.value, 0);
+             x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
             let bonusAmount = bonus * repaidInUsd;
 
             let deliveredInUsd = deliveredAmount * price + deliveredAmounts.reduce((x: number, y: any) =>
-                x + y.amount * prices.find((z: any) => y.name == z.symbol)!.value, 0);
+                x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
 
             let updatedAssets: AssetBalanceLeverage[] = JSON.parse(JSON.stringify(assets));
-            let assetsValue = updatedAssets.reduce((x, y) => x + y.balance * prices.find((z: any) => y.name == z.symbol)!.value, 0);
+            let assetsValue = updatedAssets.reduce((x, y) => x + y.balance * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
 
             let partToRepayToLiquidator = Math.min((deliveredInUsd + bonusAmount) / assetsValue, 1);
 
@@ -293,7 +293,7 @@ export const calculateHealthRatio = function (
     let debt = 0;
     debts.forEach(
         asset => {
-            let price: number = prices.find(el => el.symbol == asset.name)!.value;
+            let price: number = prices.find(el => el.dataFeedId == asset.name)!.value;
 
             debt += asset.debt * price;
         }
@@ -302,7 +302,7 @@ export const calculateHealthRatio = function (
     let maxDebt = 0;
     assets.forEach(
         asset => {
-            let price: number = prices.find(el => el.symbol == asset.name)!.value;
+            let price: number = prices.find(el => el.dataFeedId == asset.name)!.value;
             maxDebt += asset.balance * asset.maxLeverage * price;
         }
     );
@@ -426,7 +426,9 @@ export const deployAllFacets = async function (diamondAddress: any, chain = 'AVA
         ''
     )
     await deployFacet("SolvencyFacet", diamondAddress, [
+        'isSolvent',
         'getDebt',
+        'getPrices',
         'getTotalAssetsValue',
         'getThresholdWeightedValue',
         'getStakedValue',

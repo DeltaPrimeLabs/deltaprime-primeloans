@@ -48,6 +48,21 @@ const erc20ABI = [
     'function transfer(address dst, uint wad) public returns (bool)'
 ]
 
+const DEFAULT_MAX_LEVERAGE = {
+    AVAX: 0.8333333,
+        USDC: 0.8333333,
+        USDT: 0.8333333,
+        XAVA: 0.8333333,
+        PNG: 0.8333333,
+        YAK: 0.8333333,
+        QI: 0.8333333,
+        sAVAX: 0.8333333,
+        ETH: 0.8333333,
+        BTC: 0.8333333,
+        LINK: 0.8333333,
+        YYAV3SA1: 0.8333333
+}
+
 const TEST_TABLE = [
     {
         id: 1,
@@ -63,14 +78,7 @@ const TEST_TABLE = [
             USDC: 0,
             ETH: 0
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -91,15 +99,8 @@ const TEST_TABLE = [
         swaps: [
             {from: 'AVAX', to: 'USDC', all: true, amountInUsd: null}
         ],
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
-        targetHealthRatio: 1.04,
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
     {
@@ -120,15 +121,8 @@ const TEST_TABLE = [
             {from: 'USDC', to: 'BTC', amountInUsd: null, all: true},
             {from: 'ETH', to: 'LINK', amountInUsd: null, all: true}
         ],
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
-        targetHealthRatio: 1.035,
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
     {
@@ -151,15 +145,8 @@ const TEST_TABLE = [
             {from: 'ETH', to: 'LINK', amountInUsd: 200, all: false},
             {from: 'ETH', to: 'AVAX', amountInUsd: 90, all: false}
         ],
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
-        targetHealthRatio: 1.04,
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
     {
@@ -179,15 +166,8 @@ const TEST_TABLE = [
         stakeInUsd: {
             YAK: 640
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
-        targetHealthRatio: 1.04,
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
     {
@@ -211,15 +191,8 @@ const TEST_TABLE = [
         stakeInUsd: {
             YAK: 690
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
-        targetHealthRatio: 1.04,
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
     {
@@ -239,14 +212,7 @@ const TEST_TABLE = [
         withdrawInUsd: {
             USDC: 50
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
@@ -271,14 +237,7 @@ const TEST_TABLE = [
             AVAX: 50,
             ETH: 50
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
@@ -301,19 +260,36 @@ const TEST_TABLE = [
         withdrawInUsd: {
             USDC: 50
         },
-        maxLeverage: {
-            AVAX: 0.8333333,
-            USDC: 0.8333333,
-            ETH: 0.8333333,
-            BTC: 0.8333333,
-            LINK: 0.8333333,
-            YYAV3SA1: 0.8333333
-        },
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
         action: 'CLOSE'
-    }
+    },
+    {
+        id: 10,
+        fundInUsd: {
+            AVAX: 10,
+            USDC: 10,
+            ETH: 10,
+            BTC: 10,
+            LINK: 10,
+            USDT: 10,
+            XAVA: 10,
+            PNG: 10,
+            YAK: 10,
+            QI: 10,
+            sAVAX: 10
+        },
+        borrowInUsd: {
+            AVAX: 550,
+            USDC: 0,
+            ETH: 0
+        },
+        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        targetHealthRatio: 1.03,
+        action: 'LIQUIDATE'
+    },
 ]
 
 describe('Smart loan - real prices', () => {
@@ -349,7 +325,13 @@ describe('Smart loan - real prices', () => {
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             LINK_PRICE: number,
-            USD_PRICE: number,
+            USDC_PRICE: number,
+            USDT_PRICE: number,
+            XAVA_PRICE: number,
+            SAVAX_PRICE: number,
+            PNG_PRICE: number,
+            YAK_PRICE: number,
+            QI_PRICE: number,
             ETH_PRICE: number,
             YYAV3SA1_PRICE: number,
             BTC_PRICE: number,
@@ -384,13 +366,26 @@ describe('Smart loan - real prices', () => {
                 poolContracts[token.name] = poolContract;
                 tokenContracts[token.name] = tokenContract;
             }
+            tokenContracts['USDT'] = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
+            tokenContracts['XAVA'] = new ethers.Contract(TOKEN_ADDRESSES['XAVA'], erc20ABI, provider);
+            tokenContracts['PNG'] = new ethers.Contract(TOKEN_ADDRESSES['PNG'], erc20ABI, provider);
+            tokenContracts['YAK'] = new ethers.Contract(TOKEN_ADDRESSES['YAK'], erc20ABI, provider);
+            tokenContracts['sAVAX'] = new ethers.Contract(TOKEN_ADDRESSES['sAVAX'], erc20ABI, provider);
+            tokenContracts['QI'] = new ethers.Contract(TOKEN_ADDRESSES['QI'], erc20ABI, provider);
             tokenContracts['BTC'] = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
             tokenContracts['LINK'] = new ethers.Contract(TOKEN_ADDRESSES['LINK'], erc20ABI, provider);
             tokenContracts['YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['YYAV3SA1'], erc20ABI, provider);
 
+
             supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                new Asset(toBytes32('USDT'), TOKEN_ADDRESSES['USDT']),
+                new Asset(toBytes32('XAVA'), TOKEN_ADDRESSES['XAVA']),
+                new Asset(toBytes32('PNG'), TOKEN_ADDRESSES['PNG']),
+                new Asset(toBytes32('YAK'), TOKEN_ADDRESSES['YAK']),
+                new Asset(toBytes32('QI'), TOKEN_ADDRESSES['QI']),
                 new Asset(toBytes32('LINK'), TOKEN_ADDRESSES['LINK']),
                 new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
                 new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
@@ -420,7 +415,13 @@ describe('Smart loan - real prices', () => {
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+            SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            USDC_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+            USDT_PRICE = (await redstone.getPrice('USDT', {provider: "redstone-avalanche-prod-1"})).value;
+            XAVA_PRICE = (await redstone.getPrice('XAVA', {provider: "redstone-avalanche-prod-1"})).value;
+            PNG_PRICE = (await redstone.getPrice('PNG', {provider: "redstone-avalanche-prod-1"})).value;
+            YAK_PRICE = (await redstone.getPrice('YAK', {provider: "redstone-avalanche-prod-1"})).value;
+            QI_PRICE = (await redstone.getPrice('QI', {provider: "redstone-avalanche-prod-1"})).value;
             LINK_PRICE = (await redstone.getPrice('LINK', {provider: "redstone-avalanche-prod-1"})).value;
             ETH_PRICE = (await redstone.getPrice('ETH', {provider: "redstone-avalanche-prod-1"})).value;
             BTC_PRICE = (await redstone.getPrice('BTC', {provider: "redstone-avalanche-prod-1"})).value;
@@ -433,8 +434,32 @@ describe('Smart loan - real prices', () => {
                     value: AVAX_PRICE
                 },
                 {
+                    dataFeedId: 'sAVAX',
+                    value: SAVAX_PRICE
+                },
+                {
                     dataFeedId: 'USDC',
-                    value: USD_PRICE
+                    value: USDC_PRICE
+                },
+                {
+                    dataFeedId: 'USDT',
+                    value: USDT_PRICE
+                },
+                {
+                    dataFeedId: 'XAVA',
+                    value: XAVA_PRICE
+                },
+                {
+                    dataFeedId: 'PNG',
+                    value: PNG_PRICE
+                },
+                {
+                    dataFeedId: 'YAK',
+                    value: YAK_PRICE
+                },
+                {
+                    dataFeedId: 'QI',
+                    value: QI_PRICE
                 },
                 {
                     dataFeedId: 'LINK',
@@ -455,9 +480,8 @@ describe('Smart loan - real prices', () => {
             ];
 
             //deposit other tokens
-            await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, USD_PRICE);
+            await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, USDC_PRICE);
             await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, ETH_PRICE);
-
             await topupUser(liquidator);
             for (let user of borrowers) {
                 await topupUser(user);
@@ -476,11 +500,14 @@ describe('Smart loan - real prices', () => {
             }
 
             async function topupUser(user: SignerWithAddress) {
-                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 1000 / AVAX_PRICE).toString())});
+                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((100 * 1000 / AVAX_PRICE).toString())});
 
                 const amountSwapped = toWei((1000 / AVAX_PRICE).toString());
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDC'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDT'].address, amountSwapped, 0);
 
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['ETH'].address, amountSwapped, 0);
@@ -490,6 +517,21 @@ describe('Smart loan - real prices', () => {
 
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['LINK'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['XAVA'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['PNG'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['YAK'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['QI'].address, amountSwapped, 0);
+
+                await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
+                await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['sAVAX'].address, amountSwapped, 0);
             }
         });
 
@@ -562,8 +604,8 @@ describe('Smart loan - real prices', () => {
                             wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
                                 {
                                     dataServiceId: "redstone-avalanche-prod",
-                                    uniqueSignersCount: 10,
-                                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                                    uniqueSignersCount: 3,
+                                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YYAV3SA1"],
                                 },
                                 ["https://d33trozg86ya9x.cloudfront.net"]
                             );
@@ -585,7 +627,6 @@ describe('Smart loan - real prices', () => {
                                         await tokenContracts['AVAX'].connect(borrower).transfer(exchange.address, requiredAvax);
 
                                         let amountOfToken = value / getPrice(symbol)!;
-
                                         await exchange.connect(borrower).swap(tokenContracts['AVAX'].address, tokenContracts[symbol].address, requiredAvax, parseUnits(amountOfToken.toFixed(tokenDecimals), tokenDecimals));
                                     }
 
@@ -607,10 +648,10 @@ describe('Smart loan - real prices', () => {
 
                             if (testCase.withdrawInUsd) {
                                 for (const [symbol, value] of Object.entries(testCase.withdrawInUsd)) {
-                                    if (value > 0) {
+                                    if (value! > 0) {
                                         let contract = getTokenContract(symbol)!;
                                         let decimals = await contract.decimals();
-                                        let amountOfTokens = value / getPrice(symbol)!;
+                                        let amountOfTokens = value! / getPrice(symbol)!;
 
                                         await wrappedLoan.withdraw(toBytes32(symbol), toWei(amountOfTokens.toFixed(decimals) ?? 0, decimals));
                                     }
@@ -641,93 +682,93 @@ describe('Smart loan - real prices', () => {
                             let maxBonus = 0.05;
 
 
-                        // const bonus = calculateBonus(
-                        //     testCase.action,
-                        //     fromWei(await wrappedLoan.getDebt()),
-                        //     fromWei(await wrappedLoan.getTotalValue()),
-                        //     testCase.targetLtv,
-                        //     maxBonus
-                        // );
+                            // const bonus = calculateBonus(
+                            //     testCase.action,
+                            //     fromWei(await wrappedLoan.getDebt()),
+                            //     fromWei(await wrappedLoan.getTotalValue()),
+                            //     testCase.targetLtv,
+                            //     maxBonus
+                            // );
 
-                        const bonus = maxBonus;
+                            const bonus = maxBonus;
 
-                        const weiDebts = (await wrappedLoan.getDebts());
-                        const debts: any[] = [];
-                        for (let debt of weiDebts) {
-                            let symbol = fromBytes32(debt.name);
-                            debts.push(
-                                {
-                                    name: symbol,
-                                    debt: formatUnits(debt.debt, await getTokenContract(symbol)!.decimals())
-                                }
-                            )
-                        }
-
-                        const balances: any[] = [];
-
-                        const weiBalances = (await wrappedLoan.getAllAssetsBalances());
-                        for (let balance of weiBalances) {
-                            let symbol = fromBytes32(balance.name);
-                            balances.push(
-                                {
-                                    name: symbol,
-                                    //@ts-ignore
-                                    maxLeverage: testCase.maxLeverage[symbol],
-                                    balance: formatUnits(balance.balance, await getTokenContract(symbol)!.decimals())
-                                }
-                            )
-                        }
-
-                        let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
-
-                        let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
-                            'LIQUIDATE',
-                            debts,
-                            balances,
-                            MOCK_PRICES,
-                            testCase.targetHealthRatio,
-                            bonus,
-                            loanIsBankrupt
-                        );
-
-                        const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
-
-                        let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
-
-                        await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
-
-                        let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
-
-                        if (loanIsBankrupt) {
-                            let funded = 0;
-
-                            if (testCase.fundInUsd) {
-                                for (const [, value] of Object.entries(testCase.fundInUsd)) {
-                                    funded += value;
-                                }
+                            const weiDebts = (await wrappedLoan.getDebts());
+                            const debts: any[] = [];
+                            for (let debt of weiDebts) {
+                                let symbol = fromBytes32(debt.name);
+                                debts.push(
+                                    {
+                                        name: symbol,
+                                        debt: formatUnits(debt.debt, await getTokenContract(symbol)!.decimals())
+                                    }
+                                )
                             }
 
-                            let withdrawn = 0;
+                            const balances: any[] = [];
 
-                            if (testCase.withdrawInUsd) {
-                                for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
-                                    withdrawn += value;
-                                }
+                            const weiBalances = (await wrappedLoan.getAllAssetsBalances());
+                            for (let balance of weiBalances) {
+                                let symbol = fromBytes32(balance.name);
+                                balances.push(
+                                    {
+                                        name: symbol,
+                                        //@ts-ignore
+                                        maxLeverage: testCase.maxLeverage[symbol],
+                                        balance: formatUnits(balance.balance, await getTokenContract(symbol)!.decimals())
+                                    }
+                                )
                             }
 
-                            let badDebt = withdrawn - funded;
+                            let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
 
-                            expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
-                        }
+                            let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+                                'LIQUIDATE',
+                                debts,
+                                balances,
+                                MOCK_PRICES,
+                                testCase.targetHealthRatio,
+                                bonus,
+                                loanIsBankrupt
+                            );
 
-                        // if (!loanIsBankrupt) {
-                        //     expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
-                        // }
+                            const performer = testCase.action === 'CLOSE' ? borrower : liquidator;
 
-                        // @ts-ignore
-                        expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(testCase.targetHealthRatio, testCase.ratioPrecision ?? 0.001);
-                });
-            }}
+                            let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+
+                            await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
+
+                            let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
+
+                            if (loanIsBankrupt) {
+                                let funded = 0;
+
+                                if (testCase.fundInUsd) {
+                                    for (const [, value] of Object.entries(testCase.fundInUsd)) {
+                                        funded += value;
+                                    }
+                                }
+
+                                let withdrawn = 0;
+
+                                if (testCase.withdrawInUsd) {
+                                    for (const [, value] of Object.entries(testCase.withdrawInUsd)) {
+                                        withdrawn += value!;
+                                    }
+                                }
+
+                                let badDebt = withdrawn - funded;
+
+                                expect(performerBalanceBefore - performerBalanceAfter).to.be.closeTo(badDebt, 0.05);
+                            }
+
+                            // if (!loanIsBankrupt) {
+                            //     expect(performerBalanceAfter - performerBalanceBefore).to.be.closeTo(bonus * neededToRepay, 0.05);
+                            // }
+
+                            // @ts-ignore
+                            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(testCase.targetHealthRatio, testCase.ratioPrecision ?? 0.01);
+                        });
+                }}
         );
 
 
@@ -753,8 +794,8 @@ describe('Smart loan - real prices', () => {
             wrappedLoan = WrapperBuilder.wrap(loan.connect(performer)).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
-                    uniqueSignersCount: 10,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    uniqueSignersCount: 3,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YYAV3SA1"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
@@ -796,9 +837,16 @@ describe('Smart loan - real prices', () => {
             }
         }
 
+
         function getTokenContract(symbol: string) {
             if (symbol == "AVAX") return tokenContracts['AVAX'];
+            if (symbol == "sAVAX") return tokenContracts['sAVAX'];
             if (symbol == "USDC") return tokenContracts['USDC'];
+            if (symbol == "USDT") return tokenContracts['USDT'];
+            if (symbol == "XAVA") return tokenContracts['XAVA'];
+            if (symbol == "PNG") return tokenContracts['PNG'];
+            if (symbol == "YAK") return tokenContracts['YAK'];
+            if (symbol == "QI") return tokenContracts['QI'];
             if (symbol == "ETH") return tokenContracts['ETH'];
             if (symbol == "LINK") return tokenContracts['LINK'];
             if (symbol == "BTC") return tokenContracts['BTC'];
@@ -807,7 +855,13 @@ describe('Smart loan - real prices', () => {
 
         function getPrice(symbol: string) {
             if (symbol == "AVAX") return AVAX_PRICE;
-            if (symbol == "USDC") return USD_PRICE;
+            if (symbol == "sAVAX") return SAVAX_PRICE;
+            if (symbol == "USDC") return USDC_PRICE;
+            if (symbol == "USDT") return USDT_PRICE;
+            if (symbol == "XAVA") return XAVA_PRICE;
+            if (symbol == "PNG") return PNG_PRICE;
+            if (symbol == "YAK") return YAK_PRICE;
+            if (symbol == "QI") return QI_PRICE;
             if (symbol == "ETH") return ETH_PRICE;
             if (symbol == "LINK") return LINK_PRICE;
             if (symbol == "BTC") return BTC_PRICE;
