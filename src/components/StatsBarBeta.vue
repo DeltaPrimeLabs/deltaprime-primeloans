@@ -19,7 +19,6 @@
 </template>
 
 <script>
-import Bar from './Bar';
 import StatsBarElementBeta from './StatsBarElementBeta';
 import BarGaugeBeta from './BarGaugeBeta';
 import ColoredValueBeta from './ColoredValueBeta';
@@ -34,9 +33,6 @@ export default {
     ltv: null,
     profit: null,
     profitPercentage: null,
-  },
-  comments: {
-    Bar
   },
   computed: {
     borrowingCapacity() {

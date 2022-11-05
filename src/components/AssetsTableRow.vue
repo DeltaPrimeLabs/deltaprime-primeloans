@@ -95,7 +95,6 @@
 <script>
 import SmallChartBeta from './SmallChartBeta';
 import ColoredValueBeta from './ColoredValueBeta';
-import PoolEventsList from './PoolHistoryList';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import Chart from './Chart';
 import SmallBlock from './SmallBlock';
@@ -118,7 +117,7 @@ const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
 
 export default {
   name: 'AssetsTableRow',
-  components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, PoolEventsList, ColoredValueBeta, SmallChartBeta},
+  components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
   props: {
     asset: {},
   },
@@ -134,14 +133,8 @@ export default {
     };
   },
   computed: {
-    ...mapState('pool', ['borrowingRate']),
-    ...mapState('loan', ['debt', 'totalValue']),
-    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances']),
+    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances', 'fullLoanStatus']),
     ...mapState('poolStore', ['avaxPool', 'usdcPool', 'pools']),
-
-    loanAPY() {
-      return aprToApy(this.borrowingRate);
-    },
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -253,10 +246,10 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       // TODO refresh pool.totalBorrowed
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = this.loanAPY;
+      modalInstance.loanAPY = pool.apy;
       modalInstance.maxLTV = 4.5;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
@@ -286,7 +279,7 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           if (this.smartLoanContract.address === NULL_ADDRESS) {

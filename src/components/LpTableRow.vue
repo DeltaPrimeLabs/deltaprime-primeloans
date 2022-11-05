@@ -68,7 +68,6 @@ import LoadedValue from './LoadedValue';
 import SmallBlock from './SmallBlock';
 import Chart from './Chart';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
-import PoolEventsList from './PoolHistoryList';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
 import AddFromWalletModal from "./AddFromWalletModal";
@@ -85,7 +84,6 @@ export default {
     SmallBlock,
     Chart,
     IconButtonMenuBeta,
-    PoolEventsList,
     ColoredValueBeta,
     SmallChartBeta
   },
@@ -106,8 +104,7 @@ export default {
   },
 
   computed: {
-    ...mapState('loan', ['debt', 'totalValue']),
-    ...mapState('fundsStore', ['ltv', 'lpBalances', 'smartLoanContract']),
+    ...mapState('fundsStore', ['ltv', 'lpBalances', 'smartLoanContract', 'fullLoanStatus']),
   },
 
   methods: {
@@ -180,7 +177,7 @@ export default {
       modalInstance.asset = this.lpToken;
       modalInstance.ltv = this.ltv;
       modalInstance.isLP = true;
-      modalInstance.totalCollateral = 1000;
+      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
               const fundRequest = {
@@ -200,7 +197,7 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
       modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = 1000;
+      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {

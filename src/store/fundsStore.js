@@ -326,7 +326,8 @@ export default {
     },
 
     async getFullLoanStatus({state, commit}) {
-      const fullLoanStatusResponse = await wrapContract(state.smartLoanContract).getFullLoanStatus();
+      const wrappedContract = await wrapContract(state.smartLoanContract);
+      const fullLoanStatusResponse = await wrappedContract.getFullLoanStatus();
       console.log('fullLoanStatusResponse');
       console.log(fullLoanStatusResponse);
       const fullLoanStatus = {

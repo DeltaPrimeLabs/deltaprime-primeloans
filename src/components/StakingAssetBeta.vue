@@ -66,14 +66,13 @@
 
 <script>
 import StakingProtocolTableRow from './StakingProtocolTableRow';
-import PoolEventsList from './PoolHistoryList';
 import config from '@/config';
 import {mapState} from 'vuex';
 
 
 export default {
   name: 'StakingAssetBeta',
-  components: {PoolEventsList, StakingProtocolTableRow},
+  components: {StakingProtocolTableRow},
   props: {
     assetSymbol: {
       required: true,

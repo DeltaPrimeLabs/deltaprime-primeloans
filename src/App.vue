@@ -63,8 +63,6 @@ export default {
     await this.metamaskChecks();
     await this.initNetwork();
     // await this.initNfts();
-    await this.initPool();
-    await this.updatePoolData();
     this.initGasPrices();
   },
   computed: {
@@ -72,7 +70,6 @@ export default {
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
-    ...mapActions('pool', ['initPool', 'updatePoolData']),
     ...mapActions('nft', ['initNfts']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});

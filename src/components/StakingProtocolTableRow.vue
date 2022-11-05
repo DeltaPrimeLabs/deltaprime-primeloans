@@ -76,10 +76,10 @@ export default {
     };
   },
   watch: {
-    loan: {
-      async handler(loan) {
-        if (loan) {
-          this.balance = await this.farm.staked(this.loan.address);
+    smartLoanContract: {
+      async handler(smartLoanContract) {
+        if (smartLoanContract) {
+          this.balance = await this.farm.staked(this.smartLoanContract.address);
           this.$emit('balanceChange', this.balance);
         }
       },
@@ -88,8 +88,7 @@ export default {
   },
   computed: {
     ...mapState('stakeStore', ['stakedAssets']),
-    ...mapState('loan', ['loan']),
-    ...mapState('fundsStore', ['assetBalances']),
+    ...mapState('fundsStore', ['assetBalances', 'smartLoanContract']),
     calculateDailyInterest() {
       return this.apy / 365 * this.balance;
     },
