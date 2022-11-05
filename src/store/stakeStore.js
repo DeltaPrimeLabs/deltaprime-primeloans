@@ -1,8 +1,9 @@
-import {awaitConfirmation} from '../utils/blockchain';
-import {toWei} from '@/utils/calculate';
+import {awaitConfirmation, wrapContract} from '../utils/blockchain';
 import config from '../config';
 import {parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
+import {mergeArrays} from "../utils/calculate";
+const fromBytes32 = require('ethers').utils.parseBytes32String;
 
 
 export default {
@@ -32,7 +33,20 @@ export default {
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const stakeTransaction = await smartLoanContract[stakeRequest.method]
+      console.log('123')
+      let assets = [
+          (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG)
+      ];
+
+      if (stakeRequest.symbol) assets.push([stakeRequest.symbol]);
+
+      console.log('2')
+
+      const loanAssets = mergeArrays(assets);
+      console.log('3')
+
+      const stakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[stakeRequest.method]
       (
         parseUnits(String(stakeRequest.amount),
           BigNumber.from(stakeRequest.decimals.toString())),
@@ -48,7 +62,13 @@ export default {
     async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      const unstakeTransaction = await smartLoanContract[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 1100000});
+      const loanAssets = mergeArrays([(
+          await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const unstakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 1100000});
+
       await awaitConfirmation(unstakeTransaction, provider, unstakeRequest.method);
 
       await dispatch('updateStakedBalances');

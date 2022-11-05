@@ -5,7 +5,7 @@
       <Checkbox :label="'Show only my assets'"></Checkbox>
     </div>
     <div class="funds">
-      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>
+<!--      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>-->
       <div class="funds-table" v-if="funds">
         <TableHeader :config="fundsTableHeaderConfig"></TableHeader>
         <div class="funds-table__body">
@@ -279,7 +279,7 @@ export default {
     },
 
     setupAssetsFilterOptions() {
-      this.assetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'QI'];
+      this.assetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'];
     }
   },
 };

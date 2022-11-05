@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">{{asset.name}}</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{asset.name}}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.name" v-on:newValue="stakeValueChange" :validators="validators"></CurrencyInput>

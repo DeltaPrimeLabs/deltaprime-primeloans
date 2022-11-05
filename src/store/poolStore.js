@@ -1,17 +1,10 @@
-import {awaitConfirmation, handleCall} from '../utils/blockchain';
+import {awaitConfirmation} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
-import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
-import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
-import {formatUnits, fromWei, parseUnits, round, toWei} from '@/utils/calculate';
+import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import config from '@/config';
 
 
-const toBytes32 = require('ethers').utils.formatBytes32String;
-
 const ethers = require('ethers');
-
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -21,22 +14,6 @@ const erc20ABI = [
   'function approve(address _spender, uint256 _value) public returns (bool success)',
   'function allowance(address owner, address spender) public view returns (uint256)'
 ];
-
-const wavaxAbi = [
-  'function deposit() public payable',
-  ...erc20ABI
-];
-
-const POOLS_CONFIG = {
-  AVAX: {
-    address: WAVAX_POOL_TUP.address,
-    tokenAddress: wavaxTokenAddress,
-  },
-  USDC: {
-    address: USDC_POOL_TUP.address,
-    tokenAddress: usdcTokenAddress
-  }
-};
 
 export default {
   namespaced: true,
@@ -79,10 +56,10 @@ export default {
     async setupPools({rootState, commit}) {
       console.log('setup pools');
       const provider = rootState.network.provider;
-      const poolsFromConfig = Object.keys(POOLS_CONFIG);
+      const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
       poolsFromConfig.forEach(poolAsset => {
-        const poolContract = new ethers.Contract(POOLS_CONFIG[poolAsset].address, POOL.abi, provider.getSigner());
+        const poolContract = new ethers.Contract(config.POOLS_CONFIG[poolAsset].address, POOL.abi, provider.getSigner());
         Promise.all([
           poolContract.totalSupply(),
           poolContract.balanceOf(rootState.network.account),
@@ -112,7 +89,7 @@ export default {
     async deposit({state, rootState, commit, dispatch}, {depositRequest}) {
       const provider = rootState.network.provider;
 
-      const tokenContract = new ethers.Contract(POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
+      const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {

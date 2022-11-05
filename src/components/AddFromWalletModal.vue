@@ -31,22 +31,22 @@
               Health Ratio:
             </div>
             <div class="summary__value">
-              {{ ltvAfterTransaction | percent }}
+              {{ healthAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="1" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
             </div>
             <div class="summary__value">
-              {{ Number(assetBalance) + Number(value) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+              {{ (assetBalance + value) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange"></Toggle>
+        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -64,6 +64,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import {mapState} from 'vuex';
+import {calculateHealth} from "../utils/calculate";
 
 
 export default {
@@ -79,9 +80,9 @@ export default {
 
   props: {
     asset: {},
-    assetBalance: {},
-    ltv: {},
-    totalCollateral: {},
+    thresholdWeightedValue: Number,
+    loan: Number,
+    assetBalance: Number,
     isLP: false,
     walletAssetBalance: {},
     walletNativeTokenBalance: {}
@@ -90,7 +91,7 @@ export default {
   data() {
     return {
       value: 0,
-      ltvAfterTransaction: 0,
+      healthAfterTransaction: 0,
       validators: [],
       selectedDepositAsset: 'AVAX'
     };
@@ -98,7 +99,7 @@ export default {
 
   mounted() {
     setTimeout(() => {
-      this.calculateLTVAfterTransaction();
+      this.calculateHealthAfterTransaction();
       this.setupValidators();
     });
   },
@@ -130,15 +131,14 @@ export default {
 
     inputChange(change) {
       this.value = change;
-      this.calculateLTVAfterTransaction();
+      this.calculateHealthAfterTransaction();
     },
 
-    calculateLTVAfterTransaction() {
+    calculateHealthAfterTransaction() {
       if (this.value) {
-        const loan = this.totalCollateral * this.ltv;
-        this.ltvAfterTransaction = loan / (this.totalCollateral + (this.value * this.asset.price));
+        this.healthAfterTransaction = calculateHealth(this.loan, this.thresholdWeightedValue + this.value * this.asset.price * this.asset.maxLeverage);
       } else {
-        this.ltvAfterTransaction = this.ltv !== null ? this.ltv : 0;
+        this.healthAfterTransaction = this.health !== null ? this.health : 0;
       }
     },
 

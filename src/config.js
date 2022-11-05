@@ -1,22 +1,32 @@
 import addresses from '../common/addresses/avax/token_addresses.json';
 import {vectorFinanceApy, vectorFinanceBalance, yieldYakApy, yieldYakBalance} from "./utils/calculate";
+import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
+import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
 
 export default {
-    DEFAULT_LTV: 2,
     MAX_COLLATERAL: 500,
-    MAX_ALLOWED_LTV: 4.5,
-    LIQUIDATION_LTV: 5,
+    MIN_ALLOWED_HEALTH: 0.2,
     COMPETITION_START_BLOCK: 14858534,
     chainId: 1337,
+    //update leverage after every change in contracts
     ASSETS_CONFIG: {
-      "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18},
-      "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true},
-      "BTC": {name: "Bitcoin", symbol: "BTC", decimals: 8, address: addresses.BTC},
-      "ETH": {name: "Ether", symbol: "ETH", decimals: 18, address: addresses.ETH},
-      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true},
-      "LINK": {name: "Link", symbol: "LINK", decimals: 18, address: addresses.LINK},
-      "QI": {name: "BENQI", symbol: "QI", decimals: 18, address: addresses.QI},
-      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX},
+      "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, maxLeverage: 0.83333333333},
+      "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, maxLeverage: 0.83333333333},
+      "BTC": {name: "Bitcoin", symbol: "BTC", decimals: 8, address: addresses.BTC, maxLeverage: 0.83333333333},
+      "ETH": {name: "Ether", symbol: "ETH", decimals: 18, address: addresses.ETH, maxLeverage: 0.83333333333},
+      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, maxLeverage: 0.83333333333},
+      "LINK": {name: "Link", symbol: "LINK", decimals: 18, address: addresses.LINK, maxLeverage: 0.83333333333},
+      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, maxLeverage: 0.83333333333}
+    },
+    POOLS_CONFIG: {
+        AVAX: {
+            address: WAVAX_POOL_TUP.address,
+            tokenAddress: addresses.AVAX
+        },
+        USDC: {
+            address: USDC_POOL_TUP.address,
+            tokenAddress: addresses.USDC
+        }
     },
     LP_ASSETS_CONFIG: {
         "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP},
@@ -51,6 +61,7 @@ export default {
                 staked: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakeMethod: 'stakeAVAXYak',
                 unstakeMethod: 'unstakeAVAXYak',
+                feedSymbol: 'YYAV3SA1',
                 token: 'AVAX'
             },
             {
@@ -69,6 +80,7 @@ export default {
                 staked: (address) => vectorFinanceBalance('0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1', address),
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
+                feedSymbol: 'SAV2',
                 token: 'SAVAX'
             },
             {
@@ -107,12 +119,14 @@ export default {
                 staked: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakeMethod: 'stakeTJAVAXUSDCYak',
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
+                feedSymbol: 'YY_TJ_AVAX_USDC_LP',
                 token: 'TJ_AVAX_USDC_LP'
             }
         ],
     },
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
+    MAX_POOL_UTILISATION: 0.95,
     dataProviderId: "redstone-avalanche-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/delta-prime"
 }

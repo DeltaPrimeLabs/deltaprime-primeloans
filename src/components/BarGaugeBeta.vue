@@ -2,7 +2,7 @@
   <div class="bar-gauge-beta-component">
     <div class="bar-gauge">
       <div class="bar" v-bind:class="{'slim': slim}">
-        <div class="bar__value" v-bind:class="{'bar__value--error': value >= max}" :style="{'width': barGaugeValueWidth + 'px'}"></div>
+        <div class="bar__value" v-bind:class="{'bar__value--error': value === 0}" :style="{'width': barGaugeValueWidth + 'px'}"></div>
       </div>
       <div v-if="!slim" class="range">
         <div>{{min | percent(0)}}</div>

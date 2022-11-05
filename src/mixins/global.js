@@ -125,20 +125,17 @@ export default {
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
-    maxAllowedLTV() {
-      return config.MAX_ALLOWED_LTV;
-    },
-    liquidationLTV() {
-      return config.LIQUIDATION_LTV;
+    minAllowedHealth() {
+      return config.MIN_ALLOWED_HEALTH;
     }
   },
   data() {
     return {
-      ltvValidators: [
+      healthValidators: [
         {
           validate: function (value) {
-            if (value > config.MAX_ALLOWED_LTV) {
-              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
+            if (value === 0) {
+              return `Health should be higher than 0%`;
             }
           }
         }

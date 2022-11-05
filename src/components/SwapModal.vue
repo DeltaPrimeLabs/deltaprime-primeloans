@@ -43,7 +43,6 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import config from '../config';
-import {maxAvaxToBeSold} from '../utils/calculate';
 
 export default {
   name: 'SwapModal',

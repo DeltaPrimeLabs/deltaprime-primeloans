@@ -1,11 +1,23 @@
 import Vue from "vue";
-import config from "@/config";
-import ApolloClient, {gql} from "apollo-boost";
-import {fromWei} from "./calculate";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 export function transactionUrl(tx) {
     return 'https://snowtrace.io/tx/' + tx;
 }
+
+export const wrapContract = async function wrapContract(contract, assets) {
+    //for more symbols in data feed it's more optimal to not specify asset list
+    let providedAssets = (assets && assets.length <= 5) ? assets : undefined;
+
+    return WrapperBuilder.wrap(contract).usingDataService(
+        {
+            dataServiceId: 'redstone-avalanche-prod',
+            uniqueSignersCount: 3,
+            // dataFeeds: providedAssets
+        },
+        ['https://d33trozg86ya9x.cloudfront.net']
+    );
+};
 
 export async function handleTransaction(fun, args, onSuccess, onFail) {
     try {

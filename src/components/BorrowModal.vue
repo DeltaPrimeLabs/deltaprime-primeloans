@@ -9,8 +9,8 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{ poolTVL }}<span class="top-info__currency">{{ asset.symbol }}</span></div>
+        <div class="top-info__label">Available in pool: </div>
+        <div class="top-info__value">{{ poolTVL }}<span class="top-info__currency"> {{ asset.symbol }}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.symbol"
@@ -24,18 +24,18 @@
             Values after transaction:
           </div>
           <div class="summary__values">
-            <div class="summary__label" v-bind:class="{'summary__label--error': ltvAfterTransaction > MAX_ALLOWED_LTV}">
+            <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction === 0}">
               Health Ratio:
             </div>
             <div class="summary__value">
-              <span class="summary__value--error" v-if="ltvAfterTransaction > MAX_ALLOWED_LTV">
-                > {{ MAX_ALLOWED_LTV | percent }}
+              <span class="summary__value--error" v-if="healthAfterTransaction === 0">
+                {{ 0 | percent }}
               </span>
-              <span v-if="ltvAfterTransaction <= MAX_ALLOWED_LTV">
-                {{ ltvAfterTransaction | percent }}
+              <span v-if="healthAfterTransaction > 0">
+                {{ healthAfterTransaction | percent }}
               </span>
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="5" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
@@ -61,6 +61,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
+import {calculateHealth} from "../utils/calculate";
 
 export default {
   name: 'BorrowModal',
@@ -74,27 +75,27 @@ export default {
 
   props: {
     asset: {},
-    assetBalance: {},
-    ltv: {},
-    totalCollateral: {},
-    loanAPY: {},
-    poolTVL: {},
-    maxLTV: {}
+    assetBalance: Number,
+    debt: Number,
+    thresholdWeightedValue: Number,
+    loanAPY: Number,
+    poolTVL: Number
   },
 
   data() {
     return {
       value: 0,
-      ltvAfterTransaction: 0,
+      healthAfterTransaction: 0,
       validators: [],
       currencyInputError: false,
-      MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
+      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
+      MAX_POOL_UTILISATION: config.MAX_POOL_UTILISATION,
     };
   },
 
   mounted() {
     setTimeout(() => {
-      this.calculateLTVAfterTransaction();
+      this.calculateHealthAfterTransaction();
       this.setupValidators();
     });
   },
@@ -106,34 +107,42 @@ export default {
 
     inputChange(change) {
       this.value = change;
-      this.calculateLTVAfterTransaction();
+      this.calculateHealthAfterTransaction();
     },
 
     currencyInputChange(changeEvent) {
       this.currencyInputError = changeEvent.error;
     },
 
-    calculateLTVAfterTransaction() {
-      //TODO: this code is duplicated
-      if (this.value) {
-        const loan = this.totalCollateral * this.ltv;
-        this.ltvAfterTransaction = (loan + (this.value * this.asset.price)) / this.totalCollateral;
-      } else {
-        this.ltvAfterTransaction = this.ltv;
-      }
+    calculateHealthAfterTransaction() {
+      console.log('value: ', this.value);
+      console.log('debt: ', this.debt);
+      console.log('thresholdWeightedValue: ', this.thresholdWeightedValue);
+      let value = this.value ? this.value : 0;
+        this.healthAfterTransaction = calculateHealth(this.debt + value * this.asset.price,
+            this.thresholdWeightedValue + value * this.asset.price * this.asset.maxLeverage);
+
+        console.log('this.healthAfterTransaction')
+        console.log(this.healthAfterTransaction)
     },
 
     setupValidators() {
-      // this.validators = [
-      //   {
-      //     validate: (value) => {
-      //       if (this.ltvAfterTransaction > config.MAX_ALLOWED_LTV) {
-      //         return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
-      //       }
-      //     }
-      //   }
-      // ];
-      this.validators = [];
+      this.validators = [
+        {
+          validate: (value) => {
+            if (this.healthAfterTransaction === 0) {
+              return `Health should be higher than 0%`;
+            }
+          },
+        },
+        {
+          validate: (value) => {
+            if (this.value > this.MAX_POOL_UTILISATION * this.poolTVL) {
+              return `Cannot borrow more than 95% of pool TVL`;
+            }
+          }
+        }
+      ];
     },
   }
 };

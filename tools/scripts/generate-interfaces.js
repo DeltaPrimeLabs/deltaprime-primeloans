@@ -265,7 +265,7 @@ function createFacetsInterfaces() {
     const facetsList = getFacetsList()
     // TODO: Automate obtaining the list
     const functionsToRemove = [
-        '_getLTV',
+        '_getHealth',
         'executeGetPricesFromMsg',
         'getExchangeIntermediaryContract',
     ]

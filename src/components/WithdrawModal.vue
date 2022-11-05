@@ -23,18 +23,18 @@
             Values after confirmation:
           </div>
           <div class="summary__values">
-            <div class="summary__label" v-bind:class="{'summary__label--error': ltvAfterTransaction > MAX_ALLOWED_LTV}">
+            <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction > MIN_ALLOWED_HEALTH}">
               Health Ratio:
             </div>
             <div class="summary__value">
-              <span class="summary__value--error" v-if="ltvAfterTransaction > MAX_ALLOWED_LTV">
-                > {{ MAX_ALLOWED_LTV | percent }}
+              <span class="summary__value--error" v-if="healthAfterTransaction > MIN_ALLOWED_HEALTH">
+                > {{ MIN_ALLOWED_HEALTH | percent }}
               </span>
-              <span v-if="ltvAfterTransaction <= MAX_ALLOWED_LTV">
-                {{ ltvAfterTransaction | percent }}
+              <span v-if="healthAfterTransaction <= MIN_ALLOWED_HEALTH">
+                {{ healthAfterTransaction | percent }}
               </span>
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="5" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
@@ -47,7 +47,7 @@
       </div>
 
       <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange"></Toggle>
+        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -65,6 +65,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
+import {calculateHealth} from "../utils/calculate";
 
 export default {
   name: 'WithdrawModal',
@@ -79,18 +80,17 @@ export default {
 
   props: {
     asset: {},
-    ltv: {},
-    totalCollateral: {},
+    health: {},
     isLp: false
   },
 
   data() {
     return {
       withdrawValue: 0,
-      ltvAfterTransaction: 0,
+      healthAfterTransaction: 0,
       validators: [],
       currencyInputError: false,
-      MAX_ALLOWED_LTV: config.MAX_ALLOWED_LTV,
+      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       selectedWithdrawAsset: 'AVAX'
     };
   },
@@ -98,7 +98,7 @@ export default {
   mounted() {
     setTimeout(() => {
       this.setupValidators();
-      this.updateLTVAfterTransaction();
+      this.updateHealthAfterTransaction();
     });
   },
 
@@ -130,15 +130,15 @@ export default {
     withdrawValueChange(event) {
       this.withdrawValue = event.value;
       this.currencyInputError = event.error;
-      this.updateLTVAfterTransaction();
+      this.calculateHealthAfterTransaction();
     },
 
-    calculateLTVAfterTransaction() {
+    calculateHealthAfterTransaction() {
       if (this.withdrawValue) {
-        const loan = this.totalCollateral * this.ltv;
-        return loan / (this.totalCollateral - (this.withdrawValue * this.asset.price));
+        this.healthAfterTransaction = calculateHealth(this.loan - this.repayValue,
+            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.maxLeverage);
       } else {
-        return this.ltv;
+        this.healthAfterTransaction = this.health;
       }
     },
 
@@ -146,16 +146,12 @@ export default {
       this.selectedWithdrawAsset = asset;
     },
 
-    updateLTVAfterTransaction() {
-      this.ltvAfterTransaction = this.calculateLTVAfterTransaction();
-    },
-
     setupValidators() {
       this.validators = [
         {
           validate: (value) => {
-            if (this.calculateLTVAfterTransaction() > config.MAX_ALLOWED_LTV) {
-              return `LTV should be lower than ${config.MAX_ALLOWED_LTV * 100}%`;
+            if (this.healthAfterTransaction === 0) {
+              return `Health should be higher than 0%`;
             }
           }
         },

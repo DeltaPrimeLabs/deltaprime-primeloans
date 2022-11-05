@@ -45,7 +45,7 @@
       </div>
 
       <div class="toggle-container" v-if="assetSymbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange"></Toggle>
+        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
       <div class="button-wrapper">

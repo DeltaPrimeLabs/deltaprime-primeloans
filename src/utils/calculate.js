@@ -13,12 +13,6 @@ const erc20ABI = [
   'function allowance(address owner, address spender) public view returns (uint256)'
 ];
 
-export function calculateCollateral(amount) {
-    if (amount) {
-        return config.DEFAULT_LTV * amount - amount;
-    }
-}
-
 export function acceptableSlippage(currentSlippage) {
   if (!currentSlippage) {
     currentSlippage = 0;
@@ -32,6 +26,14 @@ export function maxAvaxToBeSold(amount, currentSlippage) {
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
+}
+
+export function calculateHealth(debt, thresholdWeightedValue) {
+  return thresholdWeightedValue === 0 ? 0 : Math.max(1 - debt / thresholdWeightedValue, 0);
+}
+
+export function mergeArrays(arrays) {
+  return [...new Set(arrays.flat())];
 }
 
 export function parseLogs(logs) {

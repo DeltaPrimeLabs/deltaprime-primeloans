@@ -107,13 +107,14 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.$on('STAKE', (stakeValue) => {
         const stakeRequest = {
+          symbol: this.farm.feedSymbol,
           amount: stakeValue,
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}).then(() => {
           this.closeModal();
-          this.farm.staked(this.loan.address).then((balance) => {
+          this.farm.staked(this.smartLoanContract.address).then((balance) => {
             this.balance = balance;
             this.$emit('balanceChange', this.balance);
           });
@@ -135,7 +136,7 @@ export default {
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}).then(result => {
           this.closeModal();
-          this.farm.staked(this.loan.address).then((balance) => {
+          this.farm.staked(this.smartLoanContract.address).then((balance) => {
             this.balance = balance;
             this.$emit('balanceChange', this.balance);
           });

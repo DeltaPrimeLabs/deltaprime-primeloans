@@ -5,7 +5,7 @@
         :total-value="noSmartLoan ? 0 : fullLoanStatus.totalValue"
         :today-p-n-l="todayValue - yesterdayValue"
         :debt="noSmartLoan ? 0 : fullLoanStatus.debt"
-        :ltv="noSmartLoan ? 0 : ltv"
+        :health="noSmartLoan ? 0 : getHealth"
         :profit="noSmartLoan ? 0 : 785.12"
         :profit-percentage="noSmartLoan ? 0 : 0.2352">
       </StatsBarBeta>
@@ -40,7 +40,7 @@ import Tabs from './Tabs';
 import Tab from './Tab';
 import Assets from './Assets';
 import InfoBubble from "@/components/InfoBubble.vue";
-import {mapActions, mapState} from 'vuex';
+import {mapActions, mapGetters, mapState} from 'vuex';
 import Farm from './Farm';
 import config from '../config';
 import redstone from 'redstone-api';
@@ -50,7 +50,8 @@ export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble},
   computed: {
-    ...mapState('fundsStore', ['ltv', 'assetBalances', 'fullLoanStatus', 'noSmartLoan']),
+    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan']),
+    ...mapGetters('fundsStore', ['getHealth'])
   },
   watch: {
     assetBalances: {

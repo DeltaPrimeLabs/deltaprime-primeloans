@@ -1,14 +1,14 @@
 <template>
-  <div class="ltv-wrapper" :class="{ 'close-to-insolvent': closeToInsolvent, 'insolvent': insolvent }">
-    <div class="ltv-value">
-      <LoadedValue :value="ltv | percent"></LoadedValue>
+  <div class="health-wrapper" :class="{ 'close-to-insolvent': closeToInsolvent, 'insolvent': insolvent }">
+    <div class="health-value">
+      <LoadedValue :value="health | percent"></LoadedValue>
     </div>
     <div class="bar-wrapper">
-      <div class="ltv-info">{{info}}</div>
+      <div class="health-info">{{info}}</div>
       <div class="bar">
-        <div class="ltv-state" :style="{'width': width}">
+        <div class="health-state" :style="{'width': width}">
         </div>
-        <div class="range"><span>0%</span><span>500%</span></div>
+        <div class="range"><span>0%</span><span>100%</span></div>
       </div>
     </div>
   </div>
@@ -16,14 +16,14 @@
 
 <script>
 import LoadedValue from "@/components/LoadedValue.vue";
-import {mapState} from "vuex";
 
 export default {
-  name: 'LTVBar',
+  name: 'HealthBar',
   components: {
     LoadedValue
   },
   props: {
+    health: Number
   },
   data() {
     return {
@@ -31,10 +31,10 @@ export default {
   },
   computed: {
     closeToInsolvent() {
-      return this.liquidationLTV > this.ltv && this.ltv > this.maxAllowedLTV;
+      return 0 < this.health && this.health < this.minAllowedHealth;
     },
     insolvent() {
-      return this.ltv >= this.liquidationLTV;
+      return this.health === 0
     },
     info() {
       if (this.insolvent) {
@@ -46,10 +46,7 @@ export default {
       }
     },
     width() {
-      if (this.ltv === 0) {
-        return "0%"
-      }
-      return `${Math.max(this.ltv / 5 * 100, 7)}%`;
+      return `${this.health * 100}%`;
     }
   }
 }
@@ -58,7 +55,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.ltv-wrapper {
+.health-wrapper {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -67,35 +64,35 @@ export default {
     align-items: center;
   }
 
-  .ltv-value {
+  .health-value {
     font-size: 20px;
   }
 
-  .ltv-info {
+  .health-info {
     color: #7d7d7d;
     margin-top: 7px;
     margin-bottom: 9px;
   }
 
   &.close-to-insolvent {
-    .ltv-info, .ltv-value {
+    .health-info, .health-value {
       color: #FC6AB0;
     }
 
     .bar {
-      .ltv-state {
+      .health-state {
         background-image: linear-gradient(to left, #f590e6 54%, #ff61a4 91%);
       }
     }
   }
 
   &.insolvent {
-    .ltv-info, .ltv-value {
+    .health-info, .health-value {
       color: #F64254;
     }
 
     .bar {
-      .ltv-state {
+      .health-state {
         background-image: none;
         background-color: #f64254;
       }
@@ -129,7 +126,7 @@ export default {
       color: #7d7d7d
     }
 
-    .ltv-state {
+    .health-state {
       height: 17px;
       background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
       border-bottom-left-radius: 9.5px;

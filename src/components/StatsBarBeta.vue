@@ -1,19 +1,16 @@
 <template>
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
+      <stats-bar-element-beta :label="'Total value'" :value="totalValue | usd">
+      </stats-bar-element-beta>
+      <stats-bar-element-beta v-if="health != null" :label="'Health'" :value="health | percent">
+        <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+      </stats-bar-element-beta>
+
+      <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
       <stats-bar-element-beta :label="'Borrowed'" :value="debt | usd">
-        <div class="total-value-extra">
-          Max: <colored-value-beta :value="borrowingCapacity" :formatting="'usd'"></colored-value-beta>
-        </div>
       </stats-bar-element-beta>
-      <stats-bar-element-beta v-if="ltv != null" :label="'Health Ratio'" :value="ltv | percent">
-        <bar-gauge-beta :min="0" :max="5" :value="ltv"></bar-gauge-beta>
-      </stats-bar-element-beta>
-
-      <vue-loaders-ball-beat v-if="ltv == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
-
-      <stats-bar-element-beta :label="'Collateral'" :value="totalValue - debt | usd"></stats-bar-element-beta>
     </div>
   </div>
 </template>
@@ -30,14 +27,9 @@ export default {
   props: {
     totalValue: null,
     debt: null,
-    ltv: null,
-    profit: null,
-    profitPercentage: null,
+    health: null
   },
   computed: {
-    borrowingCapacity() {
-      return config.MAX_ALLOWED_LTV * (this.totalValue - this.debt);
-    },
   }
 };
 </script>
@@ -56,7 +48,7 @@ export default {
   justify-content: space-between;
   padding: 16px 210px 16px 210px;
 
-  .total-value-extra, .profit-extra {
+  .total-value-extra {
     font-size: $font-size-sm;
     margin-bottom: 19px;
   }

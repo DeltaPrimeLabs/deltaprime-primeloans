@@ -146,7 +146,8 @@ export default {
     };
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'ltv', 'avaxDebt', 'usdcDebt', 'assetBalances', 'fullLoanStatus']),
+    ...mapState('pool', ['borrowingRate']),
+    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'health', 'avaxDebt', 'usdcDebt', 'assetBalances', 'fullLoanStatus']),
     ...mapState('poolStore', ['avaxPool', 'usdcPool', 'pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
 
@@ -254,17 +255,15 @@ export default {
     },
 
     openBorrowModal() {
-      console.log(this.pools);
       const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
-      modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
       // TODO refresh pool.totalBorrowed
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = pool.apy;
-      modalInstance.maxLTV = 4.5;
+      modalInstance.loanAPY = this.loanAPY;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
@@ -290,12 +289,13 @@ export default {
 
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
+      console.log('openAddFromWalletModal')
       modalInstance.asset = this.asset;
+      modalInstance.assetBalance = this.assetBalances && this.assetBalances[this.asset.symbol] ? this.assetBalances[this.asset.symbol] : 0;
+      modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.walletNativeTokenBalance = this.accountBalance;
-      modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
-      modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           if (this.smartLoanContract.address === NULL_ADDRESS) {
@@ -325,7 +325,7 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = this.ltv;
+      modalInstance.health = this.fullLoanStatus.health;
       modalInstance.totalCollateral = this.totalValue - this.debt;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         if (withdrawEvent.withdrawAsset === 'AVAX') {
@@ -353,7 +353,7 @@ export default {
     openRepayModal() {
       const modalInstance = this.openModal(RepayModal);
       modalInstance.asset = this.asset;
-      modalInstance.ltv = this.ltv;
+      modalInstance.health = this.health;
       modalInstance.totalCollateral = 101;
       modalInstance.$on('REPAY', value => {
         const repayRequest = {

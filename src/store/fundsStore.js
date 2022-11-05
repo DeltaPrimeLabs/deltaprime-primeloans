@@ -1,14 +1,14 @@
-import {awaitConfirmation} from '../utils/blockchain';
+import {awaitConfirmation, wrapContract} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
 import TOKEN_MANANGER from '@contracts/TokenManager.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
-import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import {mergeArrays} from "../utils/calculate";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -36,26 +36,6 @@ const wavaxAbi = [
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-
-const wrapContract = async (smartLoanContract, newAsset) => {
-  console.log(smartLoanContract);
-  // const loanAssets = (await smartLoanContract.getAllOwnedAssets()).map(asset => fromBytes32(asset));
-  const loanAssets = ['AVAX', 'ETH', 'USDC', 'BTC', 'LINK'];
-
-  if (newAsset && !loanAssets.includes(newAsset)) {
-    loanAssets.push(newAsset);
-  }
-
-  return WrapperBuilder.wrap(smartLoanContract).usingDataService(
-    {
-      dataServiceId: 'redstone-avalanche-prod',
-      uniqueSignersCount: 3,
-      dataFeeds: loanAssets,
-    },
-    ['https://d33trozg86ya9x.cloudfront.net']
-  );
-};
-
 export default {
   namespaced: true,
   state: {
@@ -71,7 +51,10 @@ export default {
     lpBalances: null,
     avaxDebt: null,
     usdcDebt: null,
-    ltv: null,
+    debt: null,
+    totalValue: null,
+    thresholdWeightedValue: null,
+    health: null,
     fullLoanStatus: {},
     noSmartLoan: null,
   },
@@ -120,10 +103,6 @@ export default {
       state.usdcDebt = debt;
     },
 
-    setLTV(state, ltv) {
-      state.ltv = ltv;
-    },
-
     setFullLoanStatus(state, status) {
       state.fullLoanStatus = status;
     },
@@ -131,6 +110,14 @@ export default {
     setNoSmartLoan(state, noSmartLoan) {
       state.noSmartLoan = noSmartLoan;
     },
+  },
+
+  getters: {
+    getHealth(state) {
+      if (state.fullLoanStatus) {
+        return state.fullLoanStatus.thresholdWeightedValue != 0 ? Math.max(1 - state.fullLoanStatus.debt / state.fullLoanStatus.thresholdWeightedValue) : 0;
+      }
+    }
   },
 
   actions: {
@@ -146,6 +133,7 @@ export default {
       console.log('setupLpAssets');
       await dispatch('setupLpAssets');
       state.assetBalances = [];
+      console.log(state.smartLoanContract.address)
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         console.log('USER HAS SMART LOAN');
         state.assetBalances = null;
@@ -153,10 +141,10 @@ export default {
         await dispatch('getAllAssetsBalances');
         console.log('getDebts');
         await dispatch('getDebts');
-        // await dispatch('getLTV');
         console.log('getFullLoanStatus');
         await dispatch('getFullLoanStatus');
       } else {
+        console.log('setNoSmartLoan')
         commit('setNoSmartLoan', true);
       }
     },
@@ -166,7 +154,6 @@ export default {
       await dispatch('setupLpAssets');
       await dispatch('getAllAssetsBalances');
       await dispatch('getDebts');
-      // await dispatch('getLTV');
       await dispatch('getFullLoanStatus');
     },
 
@@ -233,30 +220,26 @@ export default {
       commit('setUsdcTokenContract', usdcTokenContract);
     },
 
-    async setupSmartLoanContract({state, rootState, commit, dispatch}) {
+    async setupSmartLoanContract({state, rootState, commit}) {
       const provider = rootState.network.provider;
       const smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
-      const wrappedSmartLoanContract = await wrapContract(smartLoanContract);
-
-      if (wrappedSmartLoanContract) {
-        commit('setSmartLoanContract', wrappedSmartLoanContract);
-      }
+      commit('setSmartLoanContract', smartLoanContract);
     },
 
-    async createLoan({state, rootState, commit, dispatch}) {
+    async createLoan({state, rootState}) {
       console.log('create loan');
       const provider = rootState.network.provider;
-      const transaction = await wrapContract(state.smartLoanFactoryContract).createLoan({gasLimit: 50000000});
+
+      const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
       const provider = rootState.network.provider;
-
       //TODO: make it more robust
       if (asset === 'AVAX') {
         asset = config.ASSETS_CONFIG['AVAX'];
@@ -285,10 +268,12 @@ export default {
     },
 
     async getAllAssetsBalances({state, commit}) {
+      console.log('getAllAssetsBalances');
       console.log(state.smartLoanContract.address);
       const balances = {};
       const lpBalances = {};
       const assetBalances = await state.smartLoanContract.getAllAssetsBalances();
+      console.log('assetBalances');
       console.log(assetBalances);
       assetBalances.forEach(
         asset => {
@@ -319,20 +304,20 @@ export default {
       });
     },
 
-    async getLTV({state, rootState, commit}) {
-      const ltvResponse = await state.smartLoanContract.getLTV();
-      const ltv = parseInt(ltvResponse) / 1000;
-      commit('setLTV', ltv);
-    },
-
     async getFullLoanStatus({state, commit}) {
-      const wrappedContract = await wrapContract(state.smartLoanContract);
-      const fullLoanStatusResponse = await wrappedContract.getFullLoanStatus();
+      const loanAssets = mergeArrays([
+          (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const fullLoanStatusResponse = await (await wrapContract(state.smartLoanContract, loanAssets)).getFullLoanStatus();
       console.log('fullLoanStatusResponse');
       console.log(fullLoanStatusResponse);
       const fullLoanStatus = {
         totalValue: fromWei(fullLoanStatusResponse[0]),
         debt: fromWei(fullLoanStatusResponse[1]),
+        thresholdWeightedValue: fromWei(fullLoanStatusResponse[2]),
+        health: fromWei(fullLoanStatusResponse[3]),
       };
       console.log('DONE getFullLoanStatus');
       commit('setFullLoanStatus', fullLoanStatus);
@@ -350,7 +335,13 @@ export default {
 
       await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
 
-      const transaction = await state.smartLoanContract.fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 50000000});
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG),
+          [fundRequest.asset]
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'fund');
       await dispatch('getAllAssetsBalances');
@@ -362,7 +353,13 @@ export default {
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
       const provider = rootState.network.provider;
 
-      const transaction = await wrapContract(state.smartLoanContract).depositNativeToken({
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG),
+          [config.nativeToken]
+      ]);
+
+      const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
         gasLimit: 50000000
       });
@@ -376,7 +373,13 @@ export default {
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
-      const transaction = await wrapContract(state.smartLoanContract).withdraw(toBytes32(withdrawRequest.asset),
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
         parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 50000000});
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
@@ -386,7 +389,13 @@ export default {
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
-      const transaction = await wrapContract(state.smartLoanContract).unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
 
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
@@ -402,7 +411,13 @@ export default {
 
       let minAmount = .9;
 
-      const transaction = await wrapContract(state.smartLoanContract)[config.DEX_CONFIG[lpRequest.dex].addLiquidityMethod](
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG),
+          [lpRequest.symbol]
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[lpRequest.dex].addLiquidityMethod](
         toBytes32(lpRequest.firstAsset),
         toBytes32(lpRequest.secondAsset),
         parseUnits(lpRequest.firstAmount.toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
@@ -423,7 +438,13 @@ export default {
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       const provider = rootState.network.provider;
 
-      const transaction = await wrapContract(state.smartLoanContract).borrow(toBytes32(borrowRequest.asset),
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        Object.keys(config.POOLS_CONFIG),
+        [borrowRequest.asset]
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(toBytes32(borrowRequest.asset),
         parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'borrow');
@@ -435,7 +456,12 @@ export default {
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
       const provider = rootState.network.provider;
 
-      const transaction = await wrapContract(state.smartLoanContract).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
 
       await awaitConfirmation(transaction, provider, 'repay');
       setTimeout(async () => {
@@ -445,7 +471,14 @@ export default {
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
       const provider = rootState.network.provider;
-      const transaction = await wrapContract(state.smartLoanContract).swapPangolin(
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+          Object.keys(config.POOLS_CONFIG),
+          [swapRequest.targetAsset]
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapPangolin(
         toBytes32(swapRequest.sourceAsset),
         toBytes32(swapRequest.targetAsset),
         parseUnits(String(swapRequest.sourceAmount), config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals),
@@ -458,7 +491,5 @@ export default {
         await dispatch('updateFunds');
       }, 1000);
     },
-
-
   }
 };

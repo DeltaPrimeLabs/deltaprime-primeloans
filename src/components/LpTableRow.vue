@@ -104,7 +104,7 @@ export default {
   },
 
   computed: {
-    ...mapState('fundsStore', ['ltv', 'lpBalances', 'smartLoanContract', 'fullLoanStatus']),
+    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus']),
   },
 
   methods: {
@@ -175,9 +175,9 @@ export default {
     openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.ltv = this.ltv;
+      modalInstance.loan = this.debt;
+      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = true;
-      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
               const fundRequest = {
@@ -196,8 +196,7 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.ltv = this.ltv;
-      modalInstance.totalCollateral = this.fullLoanStatus.totalValue - this.fullLoanStatus.debt;
+      modalInstance.health = this.health;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
@@ -218,6 +217,7 @@ export default {
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const lpRequest = {
+            symbol: this.lpToken.symbol,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
             firstAmount: provideLiquidityEvent.firstAmount,

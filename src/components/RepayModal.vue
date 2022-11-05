@@ -17,9 +17,9 @@
               Health Ratio:
             </div>
             <div class="summary__value">
-              {{ ltvAfterTransaction | percent }}
+              {{ healthAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="ltvAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="5" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Loan:
@@ -44,6 +44,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
+import {calculateHealth} from "../utils/calculate";
 
 export default {
   name: 'WithdrawModal',
@@ -57,23 +58,23 @@ export default {
 
   props: {
     asset: {},
-    ltv: {},
-    totalCollateral: {},
-
+    health: {},
+    initialLoan: {},
+    thresholdWeightedValue: {}
   },
 
   data() {
     return {
       repayValue: 0,
-      ltvAfterTransaction: 0,
+      healthAfterTransaction: 0,
       loan: 0,
     }
   },
 
   mounted() {
     setTimeout(() => {
-      this.loan = this.totalCollateral * this.ltv;
-      this.calculateLTVAfterTransaction();
+      this.loan = this.initialLoan;
+      this.calculateHealthAfterTransaction();
     })
   },
 
@@ -85,13 +86,15 @@ export default {
 
     repayValueChange(event) {
       this.repayValue = event.value;
+      this.calculateHealthAfterTransaction();
     },
 
-    calculateLTVAfterTransaction() {
+    calculateHealthAfterTransaction() {
       if (this.repayValue) {
-        this.ltvAfterTransaction = (this.loan - (this.repayValue * this.asset.price)) / this.totalCollateral;
+        this.healthAfterTransaction = calculateHealth(this.loan - this.repayValue,
+            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.maxLeverage);
       } else {
-        this.ltvAfterTransaction = this.ltv;
+        this.healthAfterTransaction = this.health;
       }
     },
   }

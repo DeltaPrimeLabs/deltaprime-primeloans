@@ -18,10 +18,12 @@
 <script>
 export default {
   name: 'Toggle',
+  props: {
+    options: Array
+  },
   data() {
     return {
-      selectedOption: 'AVAX',
-      options: ['AVAX', 'WAVAX'],
+      selectedOption: 'AVAX'
     }
   },
   mounted() {
