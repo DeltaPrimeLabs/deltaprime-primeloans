@@ -3,15 +3,7 @@ const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import {BigNumber} from "ethers";
-//TODO: store in one place
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function totalSupply() public view returns (uint256 supply)',
-  'function totalDeposits() public view returns (uint256 deposits)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-];
+import {erc20ABI} from "./blockchain";
 
 export function acceptableSlippage(currentSlippage) {
   if (!currentSlippage) {

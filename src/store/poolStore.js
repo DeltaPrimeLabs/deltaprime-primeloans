@@ -1,19 +1,10 @@
-import {awaitConfirmation} from '../utils/blockchain';
+import {awaitConfirmation, erc20ABI} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import config from '@/config';
 
 
 const ethers = require('ethers');
-
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function totalSupply() public view returns (uint256 supply)',
-  'function totalDeposits() public view returns (uint256 deposits)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-];
 
 export default {
   namespaced: true,

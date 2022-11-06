@@ -22,11 +22,11 @@
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ firstAsset.symbol }} balance:
+              {{ firstAsset.symbol }} balance: {{ firstBalance - firstAmount }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ secondAsset.symbol }} balance:
+              {{ secondAsset.symbol }} balance: {{ secondBalance - secondAmount }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -61,7 +61,9 @@ export default {
   },
 
   props: {
-    lpToken: {}
+    lpToken: {},
+    firstBalance: Number,
+    secondBalance: Number,
   },
 
   data() {

@@ -111,21 +111,13 @@ import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from '@/utils/calculate';
+import {erc20ABI} from "../utils/blockchain";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
 
 const ethers = require('ethers');
-
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function totalSupply() public view returns (uint256 supply)',
-  'function totalDeposits() public view returns (uint256 deposits)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-];
 
 
 export default {
@@ -289,7 +281,7 @@ export default {
 
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
-      console.log('openAddFromWalletModal')
+
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances && this.assetBalances[this.asset.symbol] ? this.assetBalances[this.asset.symbol] : 0;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
@@ -376,7 +368,7 @@ export default {
   watch: {
     smartLoanContract: {
       handler(smartLoanContract) {
-        if (this) {
+        if (smartLoanContract) {
           this.setupActionsConfiguration();
         }
       },

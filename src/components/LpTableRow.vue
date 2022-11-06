@@ -74,6 +74,7 @@ import AddFromWalletModal from "./AddFromWalletModal";
 import config from "../config";
 import {mapActions, mapState} from "vuex";
 import ProvideLiquidityModal from "./ProvideLiquidityModal";
+import RemoveLiquidityModal from "./RemoveLiquidityModal";
 import WithdrawModal from "./WithdrawModal";
 
 export default {
@@ -104,11 +105,11 @@ export default {
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus']),
+    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances']),
   },
 
   methods: {
-    ...mapActions('fundsStore', ['fund', 'provideLiquidity', 'withdraw']),
+    ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -166,7 +167,7 @@ export default {
           this.openWithdrawModal();
           break;
         case 'REMOVE_LIQUIDITY':
-          // this.openSwapModal();
+          this.openRemoveLiquidityModal();
           break;
       }
     },
@@ -214,6 +215,8 @@ export default {
     openProvideLiquidityModal() {
       const modalInstance = this.openModal(ProvideLiquidityModal);
       modalInstance.lpToken = this.lpToken;
+      modalInstance.firstBalance = this.assetBalances[this.lpToken.primary];
+      modalInstance.secondBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const lpRequest = {
@@ -228,6 +231,32 @@ export default {
             this.closeModal();
           });
         }
+      });
+    },
+
+    //TODO: duplicated code
+    openRemoveLiquidityModal() {
+      const modalInstance = this.openModal(RemoveLiquidityModal);
+      modalInstance.lpToken = this.lpToken;
+      console.log(this.lpToken.symbol)
+      modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
+      modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
+      modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
+      modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
+        const removeRequest = {
+          value: removeEvent.amount,
+          symbol: this.lpToken.symbol,
+          firstAsset: this.lpToken.primary,
+          secondAsset: this.lpToken.secondary,
+          minFirstAmount: removeEvent.minReceivedFirst,
+          minSecondAmount: removeEvent.minReceivedSecond,
+          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          dex: this.lpToken.dex
+        }
+
+        this.handleTransaction(this.removeLiquidity, {removeRequest: removeRequest}).then(() => {
+          this.closeModal();
+        });
       });
     },
   },

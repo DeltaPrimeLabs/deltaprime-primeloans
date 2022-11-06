@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 interface ISolvencyFacetProd {
     function getDebt() external view returns (uint256);
 
-    function getFullLoanStatus() external view returns (uint256[4] memory);
+    function getFullLoanStatus() external view returns (uint256[5] memory);
 
     function getHealthRatio() external view returns (uint256);
 

@@ -177,13 +177,15 @@ export default {
 
     async updateLpPriceData() {
       //TODO: we have to make sure somehow that it's called in a right moment ->when funds have prices already
-      Object.keys(this.lpTokens).forEach(
-          key => {
-            const lpToken = this.lpTokens[key];
-            lpToken.firstPrice = this.funds[lpToken.primary].price;
-            lpToken.secondPrice = this.funds[lpToken.secondary].price;
-          }
-      );
+      if (this.funds) {
+        Object.keys(this.lpTokens).forEach(
+            key => {
+              const lpToken = this.lpTokens[key];
+              lpToken.firstPrice = this.funds[lpToken.primary].price;
+              lpToken.secondPrice = this.funds[lpToken.secondary].price;
+            }
+        );
+      }
     },
 
     setupFundsTableHeaderConfig() {

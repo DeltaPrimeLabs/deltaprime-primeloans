@@ -1,4 +1,4 @@
-import {awaitConfirmation, wrapContract} from '../utils/blockchain';
+import {awaitConfirmation, erc20ABI, wrapContract} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
@@ -19,15 +19,6 @@ const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
 const tokenAddresses = TOKEN_ADDRESSES;
-
-const erc20ABI = [
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function totalSupply() public view returns (uint256 supply)',
-  'function totalDeposits() public view returns (uint256 deposits)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-];
 
 const wavaxAbi = [
   'function deposit() public payable',
@@ -428,6 +419,44 @@ export default {
       );
 
       await awaitConfirmation(transaction, provider, 'provide liquidity');
+
+      await dispatch('getAllAssetsBalances');
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 1000);
+    },
+
+    async removeLiquidity({state, rootState, commit, dispatch}, {removeRequest}) {
+      const provider = rootState.network.provider;
+
+      const firstDecimals = config.ASSETS_CONFIG[removeRequest.firstAsset].decimals;
+      const secondDecimals = config.ASSETS_CONFIG[removeRequest.secondAsset].decimals;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      console.log(removeRequest.minFirstAmount)
+      console.log(removeRequest.minSecondAmount)
+      console.log(1)
+      console.log((removeRequest.minFirstAmount).toFixed(firstDecimals))
+      console.log((removeRequest.minSecondAmount).toFixed(secondDecimals))
+      console.log(removeRequest.value)
+      console.log(removeRequest.value.toFixed(removeRequest.assetDecimals))
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[removeRequest.dex].removeLiquidityMethod](
+          toBytes32(removeRequest.firstAsset),
+          toBytes32(removeRequest.secondAsset),
+          parseUnits(removeRequest.value.toFixed(removeRequest.assetDecimals), BigNumber.from(removeRequest.assetDecimals.toString())),
+          parseUnits((removeRequest.minFirstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+          parseUnits((removeRequest.minSecondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+          {gasLimit: 50000000}
+      );
+
+      console.log(4)
+
+      await awaitConfirmation(transaction, provider, 'remove liquidity');
 
       await dispatch('getAllAssetsBalances');
       setTimeout(async () => {

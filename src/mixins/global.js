@@ -6,7 +6,6 @@ import EXCHANGE from '@artifacts/contracts/PangolinIntermediary.sol/PangolinInte
 import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
 import {handleCall, handleTransaction} from "../utils/blockchain";
 import Vue from 'vue';
-import Modal from '../components/Modal';
 
 export default {
   methods: {
