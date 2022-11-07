@@ -145,6 +145,11 @@ library DiamondStorageLib {
         EnumerableMap.set(sls.ownedAssets, _symbol, _address);
     }
 
+    function hasAsset(bytes32 _symbol) internal view returns (bool){
+        SmartLoanStorage storage sls = smartLoanStorage();
+        return sls.ownedAssets.contains(_symbol);
+    }
+
     function removeOwnedAsset(bytes32 _symbol) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         EnumerableMap.remove(sls.ownedAssets, _symbol);

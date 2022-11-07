@@ -49,7 +49,7 @@ const erc20ABI = [
 ]
 
 const DEFAULT_MAX_LEVERAGE = {
-    AVAX: 0.8333333,
+        AVAX: 0.8333333,
         USDC: 0.8333333,
         USDT: 0.8333333,
         XAVA: 0.8333333,
@@ -269,20 +269,20 @@ const TEST_TABLE = [
     {
         id: 10,
         fundInUsd: {
-            AVAX: 10,
-            USDC: 10,
-            ETH: 10,
-            BTC: 10,
-            LINK: 10,
-            USDT: 10,
-            XAVA: 10,
-            PNG: 10,
-            YAK: 10,
-            QI: 10,
-            sAVAX: 10
+            AVAX: 5,
+            USDC: 5,
+            ETH: 5,
+            BTC: 5,
+            LINK: 5,
+            USDT: 5,
+            XAVA: 5,
+            PNG: 5,
+            YAK: 5,
+            QI: 5,
+            sAVAX: 5
         },
         borrowInUsd: {
-            AVAX: 550,
+            AVAX: 600,
             USDC: 0,
             ETH: 0
         },
@@ -313,6 +313,7 @@ describe('Smart loan - real prices', () => {
             borrower7: SignerWithAddress,
             borrower8: SignerWithAddress,
             borrower9: SignerWithAddress,
+            borrower10: SignerWithAddress,
             depositor: SignerWithAddress,
             admin: SignerWithAddress,
             liquidator: SignerWithAddress,
@@ -338,9 +339,9 @@ describe('Smart loan - real prices', () => {
             diamondAddress: any;
 
         before("deploy provider, exchange and pool", async () => {
-            [owner, depositor, borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9, admin, liquidator] = await getFixedGasSigners(10000000);
+            [owner, depositor, borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9, borrower10, admin, liquidator] = await getFixedGasSigners(10000000);
 
-            borrowers = [borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9];
+            borrowers = [borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9, borrower10];
 
             diamondAddress = await deployDiamond();
 
@@ -551,12 +552,12 @@ describe('Smart loan - real prices', () => {
                 ethers.constants.AddressZero,
                 'lib'
             );
-            await deployAllFacets(diamondAddress);
+            await deployAllFacets(diamondAddress, false);
 
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
-            //this facet is used to override max data timestamp delay
-            await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getTotalAssetsValue', 'getHealthRatio', 'getPrices']);
+            // this facet is used to override max data timestamp delay
+            // await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getTotalAssetsValue', 'getHealthRatio', 'getPrices']);
             await diamondCut.unpause();
         });
 
@@ -800,6 +801,7 @@ describe('Smart loan - real prices', () => {
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
 
+            await wrappedLoan.isSolvent();
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
             let amountsToRepayInWei = [];

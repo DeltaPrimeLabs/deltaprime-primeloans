@@ -59,21 +59,20 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
      * @dev This function uses the redstone-evm-connector
      **/
     function getTotalAssetsValue() public view virtual returns (uint256) {
-        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
-        uint256 nativeTokenPrice = getOracleNumericValueFromTxMsg(DeploymentConstants.getNativeTokenSymbol());
-        if (prices.length > 0) {
+        AssetPrice[] memory assetsPrices = getAssesPrices();
+
+        if (assetsPrices.length > 0) {
             TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-            uint256 total = address(this).balance * nativeTokenPrice / 10 ** 8;
+            uint256 total = address(this).balance * assetsPrices[0].price / 10 ** 8;
 
-            for (uint256 i = 0; i < prices.length; i++) {
-                require(prices[i] != 0, "Asset price returned from oracle is zero");
+            for (uint256 i = 0; i < assetsPrices.length; i++) {
+                require(assetsPrices[i].price != 0, "Asset price returned from oracle is zero");
 
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
 
-                total = total + (prices[i] * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+                total = total + (assetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
 
             return total;
@@ -82,37 +81,84 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         }
     }
 
+    struct AssetPrice {
+        bytes32 asset;
+        uint256 price;
+    }
+
+    function getAssesPrices() internal view returns(AssetPrice[] memory) {
+        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
+        bytes32 nativeToken = DeploymentConstants.getNativeTokenSymbol();
+        bool hasNativeToken = DiamondStorageLib.hasAsset(nativeToken);
+
+        uint256 numberOfAssets;
+        if(hasNativeToken){
+            numberOfAssets = assets.length;
+        } else {
+            numberOfAssets = assets.length + 1;
+        }
+
+        AssetPrice[] memory result = new AssetPrice[](numberOfAssets);
+        bytes32[] memory assetsEnriched = new bytes32[](numberOfAssets);
+
+        uint256 lastUsedIndex = 0;
+        assetsEnriched[0] = nativeToken; // First asset = NativeToken
+        for(uint i=0; i<assets.length; i++){
+            if(assets[i] != nativeToken){
+                lastUsedIndex += 1;
+                assetsEnriched[lastUsedIndex] = assets[i];
+            }
+        }
+
+        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
+
+        for(uint256 i=0; i<numberOfAssets; i++){
+            result[i] = AssetPrice({
+                asset: assetsEnriched[i],
+                price: prices[i]
+            });
+        }
+
+        return result;
+    }
+
 
     /**
      * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
      * @dev This function uses the redstone-evm-connector
      **/
     function getThresholdWeightedValue() public view virtual returns (uint256) {
-        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
-        uint256 nativeTokenPrice = getOracleNumericValueFromTxMsg(DeploymentConstants.getNativeTokenSymbol());
+        AssetPrice[] memory assetsPrices = getAssesPrices();
+        bytes32 nativeToken = DeploymentConstants.getNativeTokenSymbol();
+
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         uint256 weightedValueOfTokens;
 
-        if (prices.length > 0) {
-            for (uint256 i = 0; i < prices.length; i++) {
-                require(prices[i] != 0, "Asset price returned from oracle is zero");
+        if (assetsPrices.length > 0) {
+            // TODO: double check the decimals
+            weightedValueOfTokens = assetsPrices[0].price * address(this).balance * tokenManager.maxTokenLeverage(tokenManager.getAssetAddress(nativeToken, true)) / (10 ** 26);
 
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
+            for (uint256 i = 0; i < assetsPrices.length; i++) {
+                require(assetsPrices[i].price != 0, "Asset price returned from oracle is zero");
 
-                weightedValueOfTokens = weightedValueOfTokens + (prices[i] * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsPrices[i].asset, true));
+                weightedValueOfTokens = weightedValueOfTokens + (assetsPrices[i].price * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
             }
         }
 
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
+        bytes32[] memory symbols = new bytes32[](positions.length);
+        for(uint256 i=0; i<positions.length; i++) {
+            symbols[i] = positions[i].symbol;
+        }
+        uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+
         uint256 weightedValueOfStaked;
 
         for (uint256 i; i < positions.length; i++) {
-            //TODO: fetch multiple prices to reduce cost
-            uint256 price = getOracleNumericValueFromTxMsg(positions[i].symbol);
-            require(price != 0, "Asset price returned from oracle is zero");
+            require(prices[i] != 0, "Asset price returned from oracle is zero");
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
@@ -121,7 +167,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
 
-                weightedValueOfStaked += price * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
+                weightedValueOfStaked += prices[i] * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
             }
         }
 

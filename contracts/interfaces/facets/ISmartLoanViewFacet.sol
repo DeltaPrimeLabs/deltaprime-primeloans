@@ -11,6 +11,8 @@ interface ISmartLoanViewFacet {
 
     function getAllOwnedAssets() external view returns (bytes32[] memory result);
 
+    function getTotalAssetsValue() external view returns (uint256);
+
     function getSupportedTokensAddresses() external view returns (address[] memory result);
 
     function getBalance(bytes32 _asset) external view returns (uint256);
