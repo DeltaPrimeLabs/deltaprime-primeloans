@@ -215,8 +215,8 @@ export default {
     openProvideLiquidityModal() {
       const modalInstance = this.openModal(ProvideLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.firstBalance = this.assetBalances[this.lpToken.primary];
-      modalInstance.secondBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
+      modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const lpRequest = {

@@ -5,8 +5,18 @@
         Provide Liquidity
       </div>
 
-      <CurrencyInput :symbol="firstAsset.symbol" v-on:inputChange="firstInputChange" :defaultValue="firstAmount"></CurrencyInput>
-      <CurrencyInput :symbol="secondAsset.symbol" v-on:inputChange="secondInputChange" :defaultValue="secondAmount"></CurrencyInput>
+      <CurrencyInput ref="firstInput"
+                     :symbol="firstAsset.symbol"
+                     v-on:inputChange="firstInputChange"
+                     :defaultValue="firstAmount"
+                     :validators="firstInputValidators">
+      </CurrencyInput>
+      <CurrencyInput ref="secondInput"
+                     :symbol="secondAsset.symbol"
+                     v-on:inputChange="secondInputChange"
+                     :defaultValue="secondAmount"
+                     :validators="secondInputValidators">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -22,11 +32,11 @@
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ firstAsset.symbol }} balance: {{ firstBalance - firstAmount }}
+              {{ firstAsset.symbol }} balance: {{ firstAssetBalance - firstAmount }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ secondAsset.symbol }} balance: {{ secondBalance - secondAmount }}
+              {{ secondAsset.symbol }} balance: {{ secondAssetBalance - secondAmount }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -62,15 +72,16 @@ export default {
 
   props: {
     lpToken: {},
-    firstBalance: Number,
-    secondBalance: Number,
+    firstAssetBalance: Number,
+    secondAssetBalance: Number,
   },
 
   data() {
     return {
       firstAmount: null,
       secondAmount: null,
-      validators: {}
+      firstInputValidators: [],
+      secondInputValidators: [],
     };
   },
 
@@ -98,14 +109,36 @@ export default {
     firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
+      this.$refs.secondInput.setValue(this.secondAmount);
     },
 
     secondInputChange(change) {
       this.secondAmount = change;
       this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
+      this.$refs.firstInput.setValue(this.firstAmount);
     },
 
     setupValidators() {
+      this.firstInputValidators = [
+        {
+          validate: (value) => {
+            if (value > this.firstAssetBalance) {
+              return `Exceeds ${this.firstAsset.symbol} balance`;
+            }
+          }
+        }
+      ];
+
+      this.secondInputValidators = [
+        {
+          validate: (value) => {
+            if (value > this.secondAssetBalance) {
+              return `Exceeds ${this.secondAsset.symbol} balance`;
+            }
+          }
+        }
+      ];
+
     },
   }
 };

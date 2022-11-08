@@ -157,8 +157,8 @@ export default {
     },
 
     setValue(value) {
-      this.internalValue = String(value);
       this.value = value;
+      this.internalValue = String(value);
     },
   }
 };
