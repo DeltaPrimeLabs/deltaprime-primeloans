@@ -19,7 +19,7 @@
             <div class="summary__value">
               {{ healthAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Loan:

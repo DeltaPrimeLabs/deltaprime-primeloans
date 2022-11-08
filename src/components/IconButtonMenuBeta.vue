@@ -1,7 +1,7 @@
 <template>
   <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip">
     <img id="icon-button" class="icon-button"
-         v-bind:class="{'icon-button--disabled': config.disabled}"
+         v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
          :src="config.iconSrc"
          v-on:click="iconButtonClick()">
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
@@ -29,6 +29,10 @@ export default {
     config: {
       type: Object,
       required: true,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
     }
   },
   mounted() {
@@ -43,7 +47,7 @@ export default {
   },
   methods: {
     iconButtonClick() {
-      if (!this.config.disabled) {
+      if (!this.config.disabled && !this.disabled) {
         if (this.config.menuOptions) {
           if (!this.menuOpen) {
             this.emitGlobalCloseOfAllMenus();

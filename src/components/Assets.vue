@@ -1,6 +1,6 @@
 <template>
   <div class="funds-beta-component">
-<!--    <button v-on:click="swapToWavax">wavax</button>-->
+    <button v-on:click="swapToWavax">wavax</button>
     <div class="only-my-assets-checkbox">
       <Checkbox :label="'Show only my assets'"></Checkbox>
     </div>

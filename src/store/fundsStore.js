@@ -310,6 +310,7 @@ export default {
         thresholdWeightedValue: fromWei(fullLoanStatusResponse[2]),
         health: fromWei(fullLoanStatusResponse[3]),
       };
+      console.log('HEALTH: ', fullLoanStatus.health);
       console.log('DONE getFullLoanStatus');
       commit('setFullLoanStatus', fullLoanStatus);
     },
@@ -466,6 +467,7 @@ export default {
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       const provider = rootState.network.provider;
+      console.log(borrowRequest);
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),

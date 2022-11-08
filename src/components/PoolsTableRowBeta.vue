@@ -9,7 +9,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value deposit">
-        <template v-if="pool.deposit">
+        <template>
           <div class="double-value__pieces">
             <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
           </div>
@@ -17,13 +17,15 @@
             <span v-if="pool.deposit">{{ pool.deposit * pool.asset.price | usd }}</span>
           </div>
         </template>
-        <template v-if="!pool.deposit">
+        <template v-if="pool.deposit === 0">
           <div class="no-value-dash"></div>
         </template>
       </div>
 
       <div class="table__cell apy">
-        {{ pool.apy | percent }}
+        <LoadedValue :check="() => pool.apy != null">
+          {{ pool.apy | percent }}
+        </LoadedValue>
       </div>
 
       <div class="table__cell table__cell--double-value interest">
@@ -50,6 +52,7 @@
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
+          :disabled="!pool.contract"
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick">

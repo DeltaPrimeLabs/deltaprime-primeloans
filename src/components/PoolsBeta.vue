@@ -16,12 +16,9 @@
                 <div></div>
                 <div class="header__cell actions">Actions</div>
               </div>
-              <div class="pools-table__body" v-if="funds && pools">
+              <div class="pools-table__body">
                 <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
-              </div>
-              <div class="loader-container" v-if="!funds || !poolsList">
-                <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
               </div>
             </div>
           </div>
@@ -49,6 +46,7 @@ export default {
     NameValueBadgeBeta
   },
   async mounted() {
+    this.initPools();
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
@@ -78,6 +76,7 @@ export default {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     setupPoolsList() {
       setTimeout(() => {
+        console.log('', this.pools);
         this.poolsList = Object.values(this.pools);
         this.setupTotalTVL();
       }, 100);
@@ -93,7 +92,20 @@ export default {
         totalTVL += pool.tvl * pool.asset.price;
       });
       this.totalTVL = totalTVL;
-    }
+    },
+
+    initPools() {
+      const pools = [];
+      Object.entries(config.POOLS_CONFIG).forEach(([symbol, pool]) => {
+        pools.push({
+          asset: {
+            symbol: symbol
+          }
+        });
+      });
+      this.poolsList = pools;
+
+    },
   },
   watch: {
     assets: {

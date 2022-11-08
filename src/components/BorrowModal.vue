@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available in pool: </div>
-        <div class="top-info__value">{{ poolTVL }}<span class="top-info__currency"> {{ asset.symbol }}</span></div>
+        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{ asset.symbol }}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.symbol"
@@ -35,7 +35,7 @@
                 {{ healthAfterTransaction | percent }}
               </span>
             </div>
-            <BarGaugeBeta :min="0" :max="5" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
