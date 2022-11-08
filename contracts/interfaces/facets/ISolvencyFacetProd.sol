@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-interface ISolvencyFacet {
+interface ISolvencyFacetProd {
     function getDebt() external view returns (uint256);
 
     function getFullLoanStatus() external returns (uint256[4] memory);

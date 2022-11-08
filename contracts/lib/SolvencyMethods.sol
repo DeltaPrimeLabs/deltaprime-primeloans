@@ -8,7 +8,7 @@ import "../DiamondHelper.sol";
 
 // TODO Rename to contract instead of lib
 contract SolvencyMethods is DiamondHelper, ProxyConnector {
-    // This function executes SolvencyFacetProd.calculateDebt()
+    // This function executes SolvencyFacetProd.getDebt()
     function _getDebt() internal virtual returns (uint256 debt) {
         debt = abi.decode(
             proxyDelegateCalldata(
@@ -16,6 +16,28 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
                 abi.encodeWithSelector(SolvencyFacetProd.getDebt.selector)
             ),
             (uint256)
+        );
+    }
+
+    // This function executes SolvencyFacetProd.getDebtWithPrices()
+    function _getDebtWithPrices(SolvencyFacetProd.AssetPrice[] memory assetsPricesDebt) internal virtual returns (uint256 debt) {
+        debt = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebtWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getDebtWithPrices.selector, assetsPricesDebt)
+            ),
+            (uint256)
+        );
+    }
+
+    // This function executes SolvencyFacetProd.isSolventWithPrices()
+    function _isSolventWithPrices(SolvencyFacetProd.AssetPrice[] memory assetsPrices, SolvencyFacetProd.AssetPrice[] memory assetsPricesDebt) internal virtual returns (bool solvent){
+        solvent = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolventWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.isSolventWithPrices.selector, assetsPrices, assetsPricesDebt)
+            ),
+            (bool)
         );
     }
 
@@ -52,6 +74,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
+    function _getHealthRatioWithPrices(SolvencyFacetProd.AssetPrice[] memory assetsPrices, SolvencyFacetProd.AssetPrice[] memory assetsPricesDebt) public virtual returns (uint256 health) {
+        health = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatioWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getHealthRatioWithPrices.selector, assetsPrices, assetsPricesDebt)
+            ),
+            (uint256)
+        );
+    }
+
     // This function executes SolvencyFacetProd.getHealthRatio()
     function _getHealthRatio() public virtual returns (uint256 health) {
         health = abi.decode(
@@ -71,6 +104,39 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
                 abi.encodeWithSelector(SolvencyFacetProd.getPrices.selector, symbols)
             ),
             (uint256[])
+        );
+    }
+
+    // This function executes SolvencyFacetProd.getAssetsPrices()
+    function _getAssetsPrices() internal view virtual returns (SolvencyFacetProd.AssetPrice[] memory assetsPrices) {
+        assetsPrices = abi.decode(
+            ProxyConnector.proxyCalldataView(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getAssetsPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getAssetsPrices.selector)
+            ),
+            (SolvencyFacetProd.AssetPrice[])
+        );
+    }
+
+    // This function executes SolvencyFacetProd.getAssetsPricesDebt()
+    function _getAssetsPricesDebt() internal view virtual returns (SolvencyFacetProd.AssetPrice[] memory assetsPrices) {
+        assetsPrices = abi.decode(
+            ProxyConnector.proxyCalldataView(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getAssetsPricesDebt.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getAssetsPricesDebt.selector)
+            ),
+            (SolvencyFacetProd.AssetPrice[])
+        );
+    }
+
+    // This function executes SolvencyFacetProd.getTotalAssetsValueWithPrices()
+    function _getTotalValueWithPrices(SolvencyFacetProd.AssetPrice[] memory assetsPrices) internal virtual returns (uint256 totalValue) {
+        totalValue = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getTotalValueWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getTotalValueWithPrices.selector, assetsPrices)
+            ),
+            (uint256)
         );
     }
 

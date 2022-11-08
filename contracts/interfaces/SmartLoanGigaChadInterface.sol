@@ -9,11 +9,11 @@ import "./facets/IOwnershipFacet.sol";
 import "./facets/ISmartLoanViewFacet.sol";
 import "./facets/ISmartLoanLiquidationFacet.sol";
 import "./facets/ISmartLoanWrappedNativeTokenFacet.sol";
-import "./facets/ISolvencyFacet.sol";
+import "./facets/ISolvencyFacetProd.sol";
 import "./facets/celo/IUbeswapDEXFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacet.sol";
 import "./facets/avalanche/IBeefyFinanceFacet.sol";
 
-interface SmartLoanGigaChadInterface is IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacet, IYieldYakFacet, IVectorFinanceFacet, IUbeswapDEXFacet, ITraderJoeDEXFacet {
+interface SmartLoanGigaChadInterface is IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IUbeswapDEXFacet, ITraderJoeDEXFacet {
 
 }

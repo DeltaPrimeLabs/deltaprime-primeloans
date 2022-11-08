@@ -13,7 +13,15 @@ import "../TokenManager.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
+import "./SolvencyFacetProd.sol";
+
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
+
+    // Used to resolve stack-too-deep error
+    struct InitialTotalAndDebt {
+        uint256 initialTotal;
+        uint256 initialDebt;
+    }
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
     uint256 private constant _MAX_HEALTH_AFTER_LIQUIDATION = 1.042e18;
@@ -110,25 +118,29 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        SolvencyFacetProd.AssetPrice[] memory assetsPrices = _getAssetsPrices();
+        SolvencyFacetProd.AssetPrice[] memory assetsPricesDebt = _getAssetsPricesDebt();
 
         uint256[] memory prices = SolvencyMethods.getPrices(config.assetsToRepay);
 
-        uint256 initialTotal = _getTotalValue();
-        uint256 initialDebt = _getDebt();
+        InitialTotalAndDebt memory initialTotalAndDebt = InitialTotalAndDebt({
+            initialTotal: _getTotalValueWithPrices(assetsPrices),
+            initialDebt: _getDebtWithPrices(assetsPricesDebt)
+        });
 
         require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-        require(!_isSolvent(), "Cannot sellout a solvent account");
-        require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
+        require(!_isSolventWithPrices(assetsPrices, assetsPricesDebt), "Cannot sellout a solvent account");
+        require(initialTotalAndDebt.initialDebt < initialTotalAndDebt.initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
-        bool healingLoan = config.allowUnprofitableLiquidation && initialDebt > initialTotal;
+        bool healingLoan = config.allowUnprofitableLiquidation && initialTotalAndDebt.initialDebt > initialTotalAndDebt.initialTotal;
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
 
         for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
+            // stack too deep -> DeploymentConstants.getTokenManager()
+            IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(config.assetsToRepay[i], true));
 
             uint256 balance = token.balanceOf(address(this));
             uint256 needed;
@@ -147,7 +159,8 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 suppliedInUSD += needed * prices[i] * 10 ** 10 / 10 ** token.decimals();
             }
 
-            Pool pool = Pool(tokenManager.getPoolAddress(config.assetsToRepay[i]));
+            // stack too deep -> DeploymentConstants.getTokenManager()
+            Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(config.assetsToRepay[i]));
 
             uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.amountsToRepay[i]);
 
@@ -174,7 +187,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18; // 1
-        uint256 assetsValue = _getTotalAssetsValue();
+        uint256 assetsValue = _getTotalValueWithPrices(assetsPrices);
 
         if (!healingLoan && assetsValue >= suppliedInUSD + bonus) {
             //in that scenario we calculate how big part of token to return
@@ -194,21 +207,21 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
         }
 
-        uint256 health = _getHealthRatio();
+        uint256 health = _getHealthRatioWithPrices(assetsPrices, assetsPricesDebt); // 2
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
             require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
         if (healingLoan) {
-            require(_getDebt() == 0, "Healing a loan must end up with 0 debt");
-            require(_getTotalValue() == 0, "Healing a loan must end up with 0 total value");
+            require(_getDebtWithPrices(assetsPricesDebt) == 0, "Healing a loan must end up with 0 debt");
+            require(_getTotalValueWithPrices(assetsPrices) == 0, "Healing a loan must end up with 0 total value");
         }
 
-        require(_isSolvent(), "This operation would not result in bringing the loan back to a solvent state");
+        require(_isSolventWithPrices(assetsPrices, assetsPricesDebt), "This operation would not result in bringing the loan back to a solvent state");
 
         //TODO: include final debt and tv
-        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, health, block.timestamp);
+        emit Liquidated(msg.sender, healingLoan, initialTotalAndDebt.initialTotal, initialTotalAndDebt.initialDebt, repaidInUSD, bonus, health, block.timestamp);
     }
 
     modifier onlyOwner() {
