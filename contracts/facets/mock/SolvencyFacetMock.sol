@@ -191,7 +191,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
             symbols[i] = positions[i].symbol;
         }
 
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+        uint256[] memory prices = getOracleNumericValuesWithDuplicatesFromTxMsg(symbols);
 
         uint256 weightedValueOfStaked;
 

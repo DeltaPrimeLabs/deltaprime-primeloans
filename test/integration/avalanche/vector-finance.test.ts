@@ -62,9 +62,7 @@ describe('Smart loan', () => {
     describe('A loan with Vector staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
-            otherloan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
-            otherwrappedLoan: any,
             nonOwnerWrappedLoan: any,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
@@ -72,14 +70,13 @@ describe('Smart loan', () => {
             supportedAssets: Array<Asset>,
             tokensPrices: Map<string, number>,
             owner: SignerWithAddress,
-            other: SignerWithAddress,
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
-            [owner, nonOwner, depositor, other] = await getFixedGasSigners(10000000);
+            [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'sAVAX', 'USDC', 'PTP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
@@ -141,23 +138,12 @@ describe('Smart loan', () => {
 
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(owner).createLoan();
-            await smartLoansFactory.connect(other).createLoan();
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
-            const otherloan_proxy_address = await smartLoansFactory.getLoanForOwner(other.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
-            otherloan = await ethers.getContractAt("SmartLoanGigaChadInterface", otherloan_proxy_address, other);
 
             wrappedLoan = WrapperBuilder
                 // @ts-ignore
                 .wrap(loan)
-                .usingSimpleNumericMock({
-                    mockSignersCount: 10,
-                    dataPoints: MOCK_PRICES,
-                });
-
-            otherwrappedLoan = WrapperBuilder
-                // @ts-ignore
-                .wrap(otherloan)
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -181,15 +167,8 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
 
-            await tokenContracts.get('AVAX')!.connect(other).deposit({value: toWei("200")});
-            await tokenContracts.get('AVAX')!.connect(other).approve(otherwrappedLoan.address, toWei("200"));
-            await otherwrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
-
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("10"), 0);
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("20"), 0);
-
-            await otherwrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), 0);
-            await otherwrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("50"), 0);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 10);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
@@ -203,7 +182,7 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.vectorStakeSAVAX1(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should fail to unstake AVAX as a non-owner", async () => {
+        it("should fail to unstake as a non-owner", async () => {
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC2(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
@@ -239,8 +218,6 @@ describe('Smart loan', () => {
 
             await wrappedLoan[stakeMethod](amount);
 
-            await otherwrappedLoan[stakeMethod](amount);
-
             expect(await wrappedLoan[balanceMethod]()).to.be.equal(amount);
             expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(amount);
 
@@ -257,9 +234,6 @@ describe('Smart loan', () => {
             let rewardTokens = await getRewardTokens(stakingContract);
             // convert from address to symbol
             rewardTokens = rewardTokens.map((token) => getSymbol(token));
-
-            console.log('!UNSTAKING with other account.')
-            await otherwrappedLoan["vectorStakeUSDC1"](1);
 
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
@@ -308,31 +282,31 @@ describe('Smart loan', () => {
             return supported;
         }
 
-        // it("should fail to unstake more than was initially staked", async () => {
-        //     await expect(wrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        //     await expect(wrappedLoan.vectorUnstakeUSDC2(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        //     await expect(wrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        //     await expect(wrappedLoan.vectorUnstakeSAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        // });
-        //
-        // it("should allow anyone to unstake if insolvent", async () => {
-        //     await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");;
-        //
-        //     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
-        //     await diamondCut.pause();
-        //     await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
-        //     await diamondCut.unpause();
-        //
-        //     await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1100"));
-        //
-        //     await diamondCut.pause();
-        //     await replaceFacet('SolvencyFacet', diamondAddress, ['isSolvent']);
-        //     await diamondCut.unpause();
-        //
-        //     expect(await wrappedLoan.isSolvent()).to.be.false;
-        //
-        //     await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).not.to.be.reverted;
-        // });
+        it("should fail to unstake more than was initially staked", async () => {
+            await expect(wrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+            await expect(wrappedLoan.vectorUnstakeUSDC2(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+            await expect(wrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+            await expect(wrappedLoan.vectorUnstakeSAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+        });
+
+        it("should allow anyone to unstake if insolvent", async () => {
+            await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");;
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1100"));
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).not.to.be.reverted;
+        });
 
         function getSymbol(address: string) {
             return getKeyByValue(TOKEN_ADDRESSES, address);

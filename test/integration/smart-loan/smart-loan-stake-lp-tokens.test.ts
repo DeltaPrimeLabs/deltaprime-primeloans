@@ -89,6 +89,7 @@ describe('Smart loan', () => {
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
             supportedAssets: Array<Asset>,
+            totalValueBeforeStaking: any,
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
@@ -236,6 +237,7 @@ describe('Smart loan', () => {
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
             let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            totalValueBeforeStaking = initialTotalValue;
 
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
             expect(initialStakedBalance).to.be.eq(0);
@@ -250,7 +252,7 @@ describe('Smart loan', () => {
 
             let totalValueDifference = initialTotalValue - fromWei(await wrappedLoan.getTotalValue());
 
-            await expect(totalValueDifference).to.be.closeTo(0, 1);
+            await expect(totalValueDifference).to.be.closeTo(0, 5);
         });
 
         it("should fail to unstake TJ LP tokens from YY", async () => {
@@ -273,7 +275,10 @@ describe('Smart loan', () => {
             expect(endTJAVAXUSDCBalance).to.be.gt(0);
             expect(endStakedBalance).to.be.eq(0);
 
-            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 1);
+            const currentTotalValue = fromWei(await wrappedLoan.getTotalValue());
+
+            await expect(initialTotalValue - currentTotalValue).to.be.closeTo(0, 5);
+            expect(currentTotalValue).to.be.closeTo(totalValueBeforeStaking, 5);
         });
     });
 
@@ -296,6 +301,7 @@ describe('Smart loan', () => {
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
             supportedAssets: Array<Asset>,
+            totalValueBeforeStaking: any,
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
@@ -453,6 +459,7 @@ describe('Smart loan', () => {
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
             let initialStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            totalValueBeforeStaking = initialTotalValue;
 
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
             expect(initialStakedBalance).to.be.eq(0);
@@ -491,7 +498,10 @@ describe('Smart loan', () => {
             const withdrawalFee = 0.001;    // 0.1 %
             const expectedDelta = initialTotalValue * withdrawalFee
 
-            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, expectedDelta);
+            const currentTotalValue = fromWei(await wrappedLoan.getTotalValue());
+
+            await expect(initialTotalValue - currentTotalValue).to.be.closeTo(0, expectedDelta);
+            expect(currentTotalValue).to.be.closeTo(totalValueBeforeStaking, 5)
         });
     });
 });
