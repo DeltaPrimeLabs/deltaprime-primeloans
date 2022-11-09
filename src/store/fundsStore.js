@@ -418,7 +418,8 @@ export default {
 
       const loanAssets = mergeArrays([(
           await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        Object.keys(config.POOLS_CONFIG)
+          Object.keys(config.POOLS_CONFIG),
+          [removeRequest.firstAsset, removeRequest.secondAsset]
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[removeRequest.dex].removeLiquidityMethod](

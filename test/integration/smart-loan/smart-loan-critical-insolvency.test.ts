@@ -22,7 +22,7 @@ import {
   toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {WrapperBuilder} from "redstone-evm-connector";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
   CompoundingIndex,
   ERC20Pool,
