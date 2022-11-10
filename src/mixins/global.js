@@ -109,9 +109,11 @@ export default {
 
     closeModal() {
       const modalComponent = document.getElementById('modal');
-      document.body.removeChild(modalComponent);
-      document.body.style.maxHeight = 'unset';
-      document.body.style.overflow = 'unset';
+      if (modalComponent) {
+        document.body.removeChild(modalComponent);
+        document.body.style.maxHeight = 'unset';
+        document.body.style.overflow = 'unset';
+      }
     },
 
     getAssetIcon(assetSymbol) {
@@ -129,30 +131,6 @@ export default {
     }
   },
   data() {
-    return {
-      healthValidators: [
-        {
-          validate: function (value) {
-            if (value === 0) {
-              return `Health should be higher than 0%`;
-            }
-          }
-        }
-      ],
-      positiveValidator: {
-        validate: function (value) {
-          if (value <= 0) {
-            return `Value must be higher than 0`;
-          }
-        }
-      },
-      wrongFormatValidator: {
-        validate: function (value) {
-          if (!value.toString().match(/^[0-9.,]+$/)) {
-            return `Incorrect formatting. Please use only alphanumeric values.`;
-          }
-        }
-      }
-    };
+    return {}
   }
 };

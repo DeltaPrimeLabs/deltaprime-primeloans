@@ -167,7 +167,7 @@ export default {
               {
                 key: 'BORROW',
                 name: 'Borrow',
-                disabled: !this.hasSmartLoanContract || !BORROWABLE_ASSETS.includes(this.asset.symbol),
+                disabled: this.borrowDisabled(),
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
               : null
@@ -244,6 +244,19 @@ export default {
           this.openSwapModal();
           break;
       }
+    },
+
+    borrowDisabled() {
+      if (!this.pools) {
+        return true;
+      }
+      if (!this.hasSmartLoanContract) {
+        return true;
+      }
+      if (!BORROWABLE_ASSETS.includes(this.asset.symbol)) {
+        return true;
+      }
+      return false;
     },
 
     openBorrowModal() {
@@ -372,7 +385,13 @@ export default {
           this.setupActionsConfiguration();
         }
       },
-    }
+    },
+    pools: {
+      handler(pools) {
+        this.setupActionsConfiguration();
+      },
+      immediate: true
+    },
   },
 };
 </script>

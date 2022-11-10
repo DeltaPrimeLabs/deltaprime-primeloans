@@ -62,7 +62,6 @@ export default {
 
     await this.metamaskChecks();
     await this.initNetwork();
-    // await this.initNfts();
     this.initGasPrices();
   },
   computed: {

@@ -15,8 +15,6 @@ import config from '../config';
 export default {
   name: 'Farm',
   components: {StakingAssetBeta},
-  data() {
-  },
   computed: {
     stakedAssets() {
       return Object.entries(config.FARMED_TOKENS_CONFIG);

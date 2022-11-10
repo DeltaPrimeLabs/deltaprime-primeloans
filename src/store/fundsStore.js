@@ -113,29 +113,18 @@ export default {
 
   actions: {
     async fundsStoreSetup({state, dispatch, commit}) {
-      console.log('setupContracts');
       await dispatch('setupContracts');
-      console.log('setupSmartLoanContract');
       await dispatch('setupSmartLoanContract');
-      console.log('setupSupportedAssets');
       await dispatch('setupSupportedAssets');
-      console.log('setupAssets');
       await dispatch('setupAssets');
-      console.log('setupLpAssets');
       await dispatch('setupLpAssets');
       state.assetBalances = [];
-      console.log(state.smartLoanContract.address)
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
-        console.log('USER HAS SMART LOAN');
         state.assetBalances = null;
-        console.log('await dispatch(\'getAllAssetsBalances\')');
         await dispatch('getAllAssetsBalances');
-        console.log('getDebts');
         await dispatch('getDebts');
-        console.log('getFullLoanStatus');
         await dispatch('getFullLoanStatus');
       } else {
-        console.log('setNoSmartLoan')
         commit('setNoSmartLoan', true);
       }
     },
@@ -221,7 +210,6 @@ export default {
     },
 
     async createLoan({state, rootState}) {
-      console.log('create loan');
       const provider = rootState.network.provider;
 
       const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 50000000});
@@ -255,17 +243,14 @@ export default {
       // TODO check on mainnet
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('network/updateBalance', {}, {root: true});
       }, 5000);
     },
 
     async getAllAssetsBalances({state, commit}) {
-      console.log('getAllAssetsBalances');
-      console.log(state.smartLoanContract.address);
       const balances = {};
       const lpBalances = {};
       const assetBalances = await state.smartLoanContract.getAllAssetsBalances();
-      console.log('assetBalances');
-      console.log(assetBalances);
       assetBalances.forEach(
         asset => {
           let symbol = fromBytes32(asset.name);
@@ -278,7 +263,6 @@ export default {
         }
       );
 
-      console.log('DONE get all assets balances');
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
     },
@@ -302,16 +286,12 @@ export default {
       ]);
 
       const fullLoanStatusResponse = await (await wrapContract(state.smartLoanContract, loanAssets)).getFullLoanStatus();
-      console.log('fullLoanStatusResponse');
-      console.log(fullLoanStatusResponse);
       const fullLoanStatus = {
         totalValue: fromWei(fullLoanStatusResponse[0]),
         debt: fromWei(fullLoanStatusResponse[1]),
         thresholdWeightedValue: fromWei(fullLoanStatusResponse[2]),
         health: fromWei(fullLoanStatusResponse[3]),
       };
-      console.log('HEALTH: ', fullLoanStatus.health);
-      console.log('DONE getFullLoanStatus');
       commit('setFullLoanStatus', fullLoanStatus);
     },
 
@@ -356,10 +336,13 @@ export default {
         gasLimit: 50000000
       });
 
+      console.log('firing transaction');
       await awaitConfirmation(transaction, provider, 'fund');
+      console.log('transaction success');
       await dispatch('getAllAssetsBalances');
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
     },
 
@@ -438,14 +421,6 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      console.log(removeRequest.minFirstAmount)
-      console.log(removeRequest.minSecondAmount)
-      console.log(1)
-      console.log((removeRequest.minFirstAmount).toFixed(firstDecimals))
-      console.log((removeRequest.minSecondAmount).toFixed(secondDecimals))
-      console.log(removeRequest.value)
-      console.log(removeRequest.value.toFixed(removeRequest.assetDecimals))
-
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[removeRequest.dex].removeLiquidityMethod](
           toBytes32(removeRequest.firstAsset),
           toBytes32(removeRequest.secondAsset),
@@ -455,7 +430,6 @@ export default {
           {gasLimit: 50000000}
       );
 
-      console.log(4)
 
       await awaitConfirmation(transaction, provider, 'remove liquidity');
 
@@ -467,7 +441,6 @@ export default {
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       const provider = rootState.network.provider;
-      console.log(borrowRequest);
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),

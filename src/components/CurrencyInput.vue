@@ -85,7 +85,7 @@ export default {
     };
   },
   created() {
-    this.defaultValidators.push(this.positiveValidator, this.wrongFormatValidator);
+    this.setupDefaultValidators();
   },
   watch: {
     value: function (newValue) {
@@ -159,6 +159,24 @@ export default {
     setValue(value) {
       this.value = value;
       this.internalValue = String(value);
+    },
+
+    setupDefaultValidators() {
+      const positiveValidator = {
+        validate: function (value) {
+          if (value <= 0) {
+            return `Value must be higher than 0`;
+          }
+        }
+      };
+      const wrongFormatValidator = {
+        validate: function (value) {
+          if (!value.toString().match(/^[0-9.,]+$/)) {
+            return `Incorrect formatting. Please use only alphanumeric values.`;
+          }
+        }
+      }
+      this.defaultValidators.push(positiveValidator, wrongFormatValidator);
     },
   }
 };

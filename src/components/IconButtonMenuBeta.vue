@@ -51,11 +51,14 @@ export default {
         if (this.config.menuOptions) {
           if (!this.menuOpen) {
             this.emitGlobalCloseOfAllMenus();
+            this.stopObserveOutsideClick();
           }
+          this.observeOutsideClick();
           this.menuOpen = !this.menuOpen;
         } else {
           this.$emit('iconButtonClick', this.config.iconButtonActionKey);
           this.emitGlobalCloseOfAllMenus();
+          this.stopObserveOutsideClick();
         }
       }
     },
@@ -70,6 +73,22 @@ export default {
     emitGlobalCloseOfAllMenus() {
       const event = new Event('icon-menu-open');
       document.dispatchEvent(event);
+    },
+
+    closeMenuOnClickOutside(event) {
+      if (!document.getElementById('icon-button-menu-component').contains(event.target) && event.target.id !== 'icon-button') {
+        if (this.menuOpen) {
+          this.menuOpen = false;
+        }
+      }
+    },
+
+    observeOutsideClick() {
+      document.addEventListener('click', this.closeMenuOnClickOutside);
+    },
+
+    stopObserveOutsideClick() {
+      document.removeEventListener('click', this.closeMenuOnClickOutside);
     },
   },
 };

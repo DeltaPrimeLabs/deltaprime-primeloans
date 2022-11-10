@@ -194,31 +194,31 @@ export default {
         cells: [
           {
             label: 'Asset',
-            sortable: true,
+            sortable: false,
             class: 'asset',
             id: 'ASSET'
           },
           {
             label: 'Balance',
-            sortable: true,
+            sortable: false,
             class: 'balance',
             id: 'BALANCE'
           },
           {
             label: 'Loan',
-            sortable: true,
+            sortable: false,
             class: 'loan',
             id: 'LOAN'
           },
           {
             label: 'Trend (24h)',
-            sortable: true,
+            sortable: false,
             class: 'trend',
             id: 'TREND'
           },
           {
             label: 'Price',
-            sortable: true,
+            sortable: false,
             class: 'price',
             id: 'PRICE'
           },
@@ -240,31 +240,31 @@ export default {
         cells: [
           {
             label: 'LP Token',
-            sortable: true,
+            sortable: false,
             class: 'token',
             id: 'TOKEN'
           },
           {
             label: 'Balance',
-            sortable: true,
+            sortable: false,
             class: 'balance',
             id: 'BALANCE'
           },
           {
             label: 'APR',
-            sortable: true,
+            sortable: false,
             class: 'apr',
             id: 'APR'
           },
           {
             label: 'Share',
-            sortable: true,
+            sortable: false,
             class: 'trend',
             id: 'TREND'
           },
           {
             label: 'Price',
-            sortable: true,
+            sortable: false,
             class: 'price',
             id: 'PRICE'
           },

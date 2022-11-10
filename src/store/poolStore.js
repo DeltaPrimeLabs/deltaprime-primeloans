@@ -40,12 +40,10 @@ export default {
   actions: {
 
     async poolStoreSetup({dispatch}) {
-      console.log('pool store setup');
       await dispatch('setupPools');
     },
 
     async setupPools({rootState, commit}) {
-      console.log('setup pools');
       const provider = rootState.network.provider;
       const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
@@ -73,7 +71,6 @@ export default {
       });
       setTimeout(() => {
         commit('setPools', pools);
-        console.log(pools);
       }, 1000);
     },
 
@@ -98,6 +95,7 @@ export default {
       await awaitConfirmation(depositTransaction, provider, 'deposit');
       setTimeout(() => {
         dispatch('setupPools');
+        dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
     },
 
@@ -119,6 +117,7 @@ export default {
 
       setTimeout(() => {
         dispatch('setupPools');
+        dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
     },
   }

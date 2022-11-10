@@ -238,7 +238,6 @@ export default {
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(RemoveLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      console.log(this.lpToken.symbol)
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);

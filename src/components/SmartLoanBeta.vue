@@ -3,11 +3,8 @@
     <div class="container">
       <StatsBarBeta
         :total-value="noSmartLoan ? 0 : fullLoanStatus.totalValue"
-        :today-p-n-l="todayValue - yesterdayValue"
         :debt="noSmartLoan ? 0 : fullLoanStatus.debt"
-        :health="noSmartLoan ? 0 : getHealth"
-        :profit="noSmartLoan ? 0 : 785.12"
-        :profit-percentage="noSmartLoan ? 0 : 0.2352">
+        :health="noSmartLoan ? 0 : getHealth">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoan" cacheKey="ACCOUNT-INIT">
         Add funds from your wallet to start investing. <br>
@@ -66,6 +63,21 @@ export default {
       yesterdayValue: 0,
     };
   },
+
+  async mounted() {
+    this.setupClosingModalsOnEsc();
+    if (window.provider) {
+      await this.fundsStoreSetup();
+      await this.poolStoreSetup();
+      await this.stakeStoreSetup();
+    } else {
+      setTimeout(async () => {
+        await this.fundsStoreSetup();
+        await this.poolStoreSetup();
+        await this.stakeStoreSetup();
+      }, 1000);
+    }
+  },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
@@ -91,22 +103,15 @@ export default {
         this.yesterdayValue = yesterdayValue;
       }
     },
+
+    setupClosingModalsOnEsc() {
+      document.addEventListener('keyup', (event) => {
+        if (event.key === 'Escape') {
+          this.closeModal();
+        }
+      });
+    },
   },
-  async mounted() {
-    if (window.provider) {
-      console.log('funds store setup');
-      await this.fundsStoreSetup();
-      console.log('pool store setup');
-      await this.poolStoreSetup();
-      await this.stakeStoreSetup();
-    } else {
-      setTimeout(async () => {
-        await this.fundsStoreSetup();
-        await this.poolStoreSetup();
-        await this.stakeStoreSetup();
-      }, 1000);
-    }
-  }
 };
 </script>
 

@@ -115,15 +115,10 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      console.log('value: ', this.value);
-      console.log('debt: ', this.debt);
-      console.log('thresholdWeightedValue: ', this.thresholdWeightedValue);
       let value = this.value ? this.value : 0;
         this.healthAfterTransaction = calculateHealth(this.debt + value * this.asset.price,
             this.thresholdWeightedValue + value * this.asset.price * this.asset.maxLeverage);
 
-        console.log('this.healthAfterTransaction')
-        console.log(this.healthAfterTransaction)
     },
 
     setupValidators() {

@@ -76,7 +76,6 @@ export default {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     setupPoolsList() {
       setTimeout(() => {
-        console.log('', this.pools);
         this.poolsList = Object.values(this.pools);
         this.setupTotalTVL();
       }, 100);

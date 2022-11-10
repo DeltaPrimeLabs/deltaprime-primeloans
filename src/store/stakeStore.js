@@ -33,7 +33,6 @@ export default {
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      console.log('123')
       let assets = [
           (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
           Object.keys(config.POOLS_CONFIG)
@@ -41,10 +40,7 @@ export default {
 
       if (stakeRequest.symbol) assets.push([stakeRequest.symbol]);
 
-      console.log('2')
-
       const loanAssets = mergeArrays(assets);
-      console.log('3')
 
       const stakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[stakeRequest.method]
       (

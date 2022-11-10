@@ -145,13 +145,15 @@ export default {
     },
 
     setupTotalStaked() {
-      const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
-      Promise.all(totalStakedPromises).then((allResults) => {
-        this.totalStaked = 0;
-        allResults.forEach(result => {
-          this.totalStaked += Number(result);
-        })
-      });
+      if (this.smartLoanContract) {
+        const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
+        Promise.all(totalStakedPromises).then((allResults) => {
+          this.totalStaked = 0;
+          allResults.forEach(result => {
+            this.totalStaked += Number(result);
+          })
+        });
+      }
     },
 
     setupAvailableProtocols() {
