@@ -47,6 +47,11 @@ export default {
       flex-direction: row;
       color: $steel-gray;
 
+      .summary__value__pair {
+        display: flex;
+        flex-direction: column;
+      }
+
       .currency {
         font-weight: 400;
       }
@@ -65,6 +70,11 @@ export default {
         height: 17px;
         background-color: $smoke-gray;
         margin: 0 10px;
+
+        &.divider--long {
+          height: 34px;
+          margin: 4px 20px 0 20px;
+        }
       }
 
       .summary__value {

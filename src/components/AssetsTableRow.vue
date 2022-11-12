@@ -5,11 +5,8 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="asset.symbol === 'AVAX' && avaxPool">Loan APY:
-            {{ avaxPool.borrowingAPY | percent }}
-          </div>
-          <div class="asset__loan" v-if="asset.symbol === 'USDC' && usdcPool">Loan APY:
-            {{ usdcPool.borrowingAPY | percent }}
+          <div class="asset__loan" v-if="pools && pools[asset.symbol]">Loan APY:
+            {{ pools[asset.symbol].borrowingAPY | percent }}
           </div>
         </div>
       </div>

@@ -10,7 +10,8 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{asset.name}}</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span
+          class="top-info__currency"> {{ asset.name }}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.name" v-on:newValue="stakeValueChange" :validators="validators"></CurrencyInput>
@@ -26,18 +27,33 @@
             Values after confirmation:
           </div>
           <div class="summary__values">
-            <div class="summary__label">
-              Staked:
+            <div class="summary__value_pair">
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{ Number(available) - Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
+              </div>
             </div>
-            <div class="summary__value">
-              {{ Number(staked) + Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value_pair">
+
+              <div class="summary__label">
+                Staked:
+              </div>
+              <div class="summary__value">
+                {{ Number(staked) + Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
+              </div>
             </div>
-            <div class="summary__divider"></div>
-            <div class="summary__label">
-              Daily interest ≈
-            </div>
-            <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value_pair">
+
+              <div class="summary__label">
+                Daily interest ≈
+              </div>
+              <div class="summary__value">
+                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -78,7 +94,7 @@ export default {
     return {
       stakeValue: 0,
       validators: [],
-    }
+    };
   },
 
   mounted() {

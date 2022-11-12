@@ -8,7 +8,7 @@
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
-          {{ getAvailableAssetAmount - Number(value) | smartRound }}
+          {{ getAvailableAssetAmount | smartRound }}
           <span v-if="asset.symbol === 'AVAX'" class="top-info__currency">
             {{selectedDepositAsset}}
           </span>
@@ -39,7 +39,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ (assetBalance + value) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+              {{ (Number(assetBalance) + Number(value)) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>

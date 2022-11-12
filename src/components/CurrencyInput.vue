@@ -4,7 +4,7 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input type="number" ref="input" v-model="internalValue" v-on:input="valueChange"
+        <input  ref="input" v-model="internalValue" v-on:input="valueChange"
                placeholder="0" min="0" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
@@ -148,10 +148,11 @@ export default {
     valueChange() {
       const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,8}$/);
       if (match) {
-        this.value = Number(this.internalValue);
+        this.value = Number(this.internalValue.replaceAll(',', '.'));
       } else {
         this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1);
         this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
+        this.$forceUpdate();
       }
       this.$emit('inputChange', this.value);
     },
