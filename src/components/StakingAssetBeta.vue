@@ -2,7 +2,8 @@
   <div v-if="asset" class="staking-asset-component">
     <div class="staking-asset">
       <div class="staking-asset__header"
-           v-bind:class="{'body-collapsed': bodyHasCollapsed, 'round-bottom': stakingHeaderRoundBottom}">
+           v-bind:class="{'body-collapsed': bodyHasCollapsed, 'round-bottom': stakingHeaderRoundBottom}"
+           v-on:click="toggleExpanded()">
         <div class="header__cell">
           <div class="asset">
             <div class="asset__icon">
@@ -33,7 +34,7 @@
         </div>
 
         <div class="header__cell">
-          <img class="chevron" v-bind:class="{'expanded': tableBodyExpanded}" v-on:click="toggleExpanded()"
+          <img class="chevron" v-bind:class="{'expanded': tableBodyExpanded}"
                src="src/assets/icons/chevron-down.svg">
         </div>
       </div>
@@ -197,6 +198,7 @@ export default {
     border: 2px solid $delta-light;
 
     .staking-asset__header {
+      cursor: pointer;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -265,7 +267,6 @@ export default {
         }
 
         .chevron {
-          cursor: pointer;
           transition: transform 300ms ease-in-out;
 
           &.expanded {

@@ -195,7 +195,7 @@ export default {
       commit('setLpAssets', lpTokens);
     },
 
-    async setupContracts({rootState, commit, dispatch}) {
+    async setupContracts({rootState, commit}) {
       const provider = rootState.network.provider;
 
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());

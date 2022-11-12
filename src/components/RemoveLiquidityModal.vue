@@ -125,7 +125,7 @@ export default {
 
     async calculateReceivedAmounts(lpRemoved) {
       //TODO: hardcoded slippage
-      const slippage = 0.005; // 0.1% slippage
+      const slippage = 0.005; // 0.5% slippage
 
       const firstToken = new ethers.Contract(this.firstAsset.address, erc20ABI, provider.getSigner());
       const secondToken = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());

@@ -100,14 +100,13 @@ import config from '../config';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import {mapActions, mapState} from 'vuex';
-import {aprToApy} from '../utils/calculate';
 import BorrowModal from './BorrowModal';
 import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from '@/utils/calculate';
+import {formatUnits} from '@/utils/calculate';
 import {erc20ABI} from "../utils/blockchain";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -245,14 +244,16 @@ export default {
 
     borrowDisabled() {
       if (!this.pools) {
+        console.log(this.pools)
+        console.log(0)
         return true;
       }
       if (!this.hasSmartLoanContract) {
+        console.log(1)
+
         return true;
       }
-      if (!BORROWABLE_ASSETS.includes(this.asset.symbol)) {
-        return true;
-      }
+      console.log(2)
       return false;
     },
 

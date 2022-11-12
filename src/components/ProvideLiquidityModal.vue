@@ -25,18 +25,18 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              LP token balance:
+              LP balance:
             </div>
             <div v-if="true" class="summary__value">
-              {{ }}
+              {{ formatTokenBalance(lpTokenBalance + addedLiquidity, 10) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ firstAsset.symbol }} balance: {{ firstAssetBalance - firstAmount }}
+              {{ firstAsset.symbol }} balance: {{ formatTokenBalance(firstAssetBalance - firstAmount) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              {{ secondAsset.symbol }} balance: {{ secondAssetBalance - secondAmount }}
+              {{ secondAsset.symbol }} balance: {{ formatTokenBalance(secondAssetBalance - secondAmount) }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -57,6 +57,9 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from "../config";
+import {erc20ABI} from "../utils/blockchain";
+import {fromWei} from "../utils/calculate";
+const ethers = require('ethers');
 
 
 export default {
@@ -72,6 +75,7 @@ export default {
 
   props: {
     lpToken: {},
+    lpTokenBalance: Number,
     firstAssetBalance: Number,
     secondAssetBalance: Number,
   },
@@ -82,6 +86,7 @@ export default {
       secondAmount: null,
       firstInputValidators: [],
       secondInputValidators: [],
+      addedLiquidity: 0
     };
   },
 
@@ -106,16 +111,31 @@ export default {
           { firstAsset: this.firstAsset, secondAsset: this.secondAsset, firstAmount: this.firstAmount, secondAmount: this.secondAmount });
     },
 
-    firstInputChange(change) {
+    async firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
       this.$refs.secondInput.setValue(this.secondAmount);
+      await this.calculateLpBalance();
     },
 
-    secondInputChange(change) {
+    async secondInputChange(change) {
       this.secondAmount = change;
       this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
       this.$refs.firstInput.setValue(this.firstAmount);
+      await this.calculateLpBalance();
+    },
+
+    async calculateLpBalance() {
+      const lpToken = new ethers.Contract(this.lpToken.address, erc20ABI, provider.getSigner());
+      const firstToken = new ethers.Contract(this.firstAsset.address, erc20ABI, provider.getSigner());
+      const secondToken = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());
+
+      const totalSupply = fromWei(await lpToken.totalSupply());
+      const firstTokenBalance = fromWei(await firstToken.balanceOf(this.lpToken.address));
+      const secondTokenBalance = fromWei(await secondToken.balanceOf(this.lpToken.address));
+
+      this.addedLiquidity = Math.min(this.firstAmount * totalSupply / firstTokenBalance,
+          this.secondAmount * totalSupply / secondTokenBalance);
     },
 
     setupValidators() {

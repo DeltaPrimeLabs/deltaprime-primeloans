@@ -77,6 +77,8 @@ import ProvideLiquidityModal from "./ProvideLiquidityModal";
 import RemoveLiquidityModal from "./RemoveLiquidityModal";
 import WithdrawModal from "./WithdrawModal";
 
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 export default {
   name: 'LpTableRow',
   components: {
@@ -106,6 +108,10 @@ export default {
 
   computed: {
     ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances']),
+
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    }
   },
 
   methods: {
@@ -122,21 +128,24 @@ export default {
             },
             {
               key: 'PROVIDE_LIQUIDITY',
-              name: 'Provide liquidity'
+              name: 'Add liquidity',
+              disabled: !this.hasSmartLoanContract,
+              disabledInfo: 'To provide liquidity, you need to add some funds from you wallet first'
             },
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw / Remove',
+          disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw',
+              name: 'Withdraw'
             },
             {
               key: 'REMOVE_LIQUIDITY',
-              name: 'Remove liquidity',
+              name: 'Remove liquidity'
             }
           ]
         },
@@ -215,6 +224,7 @@ export default {
     openProvideLiquidityModal() {
       const modalInstance = this.openModal(ProvideLiquidityModal);
       modalInstance.lpToken = this.lpToken;
+      modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
@@ -257,7 +267,7 @@ export default {
           this.closeModal();
         });
       });
-    },
+    }
   },
 };
 </script>
