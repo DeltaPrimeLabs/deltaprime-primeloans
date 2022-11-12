@@ -115,7 +115,7 @@ describe('Smart loan', () => {
             expect(await loan.owner()).to.equal(owner1.address);
             expect(await loan.proposedOwner()).to.equal(owner2.address);
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("Calldata overflow or underflow");
+            await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload()");
             await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
 
             expect(await smartLoansFactory.ownersToLoans(owner1.address)).to.equal(loan.address);
@@ -132,7 +132,7 @@ describe('Smart loan', () => {
 
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("Calldata overflow or underflow");
+            await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload()");
 
             expect(await smartLoansFactory.ownersToLoans(owner2.address)).to.equal(loan.address);
             expect(await smartLoansFactory.loansToOwners(loan.address)).to.equal(owner2.address);

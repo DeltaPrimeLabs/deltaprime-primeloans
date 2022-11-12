@@ -139,6 +139,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
     function unstakeToken(bytes32 stakedTokenSymbol, address stakedToken, address receiptToken, uint256 amount, uint256 minAmount, bytes4 balanceSelector) internal
     onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
 
+        require(amount > 0, "Cannot unstake 0 tokens");
+
         IVectorFinanceStaking stakingContract = IVectorFinanceStaking(receiptToken);
         uint256 initialStakedBalance = stakingContract.balance(address(this));
 
@@ -155,6 +157,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
         if (stakingContract.balance(address(this)) == 0) {
             DiamondStorageLib.removeStakedPosition(balanceSelector);
         }
+        DiamondStorageLib.addOwnedAsset(stakedTokenSymbol, stakedToken);
 
         emit Unstaked(msg.sender, stakedTokenSymbol, receiptToken, newBalance - balance, block.timestamp);
 

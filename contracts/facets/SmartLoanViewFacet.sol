@@ -104,7 +104,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * It could be used as a helper method for UI
      * @dev This function uses the redstone-evm-connector
      **/
-    function getAllAssetsPrices() public view returns (AssetNamePrice[] memory) {
+    function getAllAssetsPrices() public returns (AssetNamePrice[] memory) {
         bytes32[] memory assets = DeploymentConstants.getTokenManager().getAllTokenAssets();
         uint256[] memory prices = SolvencyMethods.getPrices(assets);
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);

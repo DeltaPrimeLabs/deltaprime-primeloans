@@ -237,7 +237,7 @@ describe('Smart loan', () => {
                     mockSignersCount: 10,
                     dataPoints: [],
                 });
-            await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("Calldata overflow or underflow");
+            await expect(wrappedLoanWithoutPrices.getTotalValue()).to.be.revertedWith("CalldataOverOrUnderFlow()");
         });
 
         it("should provide assets balances and prices", async () => {

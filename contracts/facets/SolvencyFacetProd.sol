@@ -20,6 +20,13 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         uint256 price;
     }
 
+    struct CachedPrices {
+        AssetPrice[] ownedAssetsPrices;
+        AssetPrice[] debtAssetsPrices;
+        AssetPrice[] stakedPositionsPrices;
+        AssetPrice[] assetsToRepayPrices;
+    }
+
     /**
     * Checks if the loan is solvent.
     * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level
@@ -29,14 +36,151 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return getHealthRatio() >= 1e18;
     }
 
-
     /**
         * Checks if the loan is solvent.
         * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level
         * @dev This function uses the redstone-evm-connector
         **/
-    function isSolventWithPrices(AssetPrice[] memory assetsPrices, AssetPrice[] memory assetsPricesDebt) public view returns (bool) {
-        return getHealthRatioWithPrices(assetsPrices, assetsPricesDebt) >= 1e18;
+    function isSolventWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view returns (bool) {
+        return getHealthRatioWithPrices(ownedAssetsPrices, debtAssetsPrices, stakedPositionsPrices) >= 1e18;
+    }
+
+    function getStakedPositionsPrices() public view returns(AssetPrice[] memory result) {
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+
+        bytes32[] memory symbols = new bytes32[](positions.length);
+        for(uint256 i=0; i<positions.length; i++) {
+            symbols[i] = positions[i].symbol;
+        }
+
+        uint256[] memory stakedPositionsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(symbols);
+        result = new AssetPrice[](stakedPositionsPrices.length);
+
+        for(uint i; i<stakedPositionsPrices.length; i++){
+            result[i] = AssetPrice({
+            asset: symbols[i],
+            price: stakedPositionsPrices[i]
+            });
+        }
+    }
+
+    function getDebtAssets() public view returns(bytes32[] memory result) {
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        result = tokenManager.getAllPoolAssets();
+    }
+
+    function getDebtAssetsPrices() public view returns(AssetPrice[] memory result) {
+        bytes32[] memory debtAssets = getDebtAssets();
+
+        uint256[] memory debtAssetsPrices = getOracleNumericValuesFromTxMsg(debtAssets);
+        result = new AssetPrice[](debtAssetsPrices.length);
+
+        for(uint i; i<debtAssetsPrices.length; i++){
+            result[i] = AssetPrice({
+            asset: debtAssets[i],
+            price: debtAssetsPrices[i]
+            });
+        }
+    }
+
+    function getOwnedAssetsPrices() public view returns(AssetPrice[] memory result) {
+        bytes32[] memory assetsEnriched = getOwnedAssetsEnriched();
+        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
+
+        result = new AssetPrice[](assetsEnriched.length);
+
+        for(uint i; i<assetsEnriched.length; i++){
+            result[i] = AssetPrice({
+            asset: assetsEnriched[i],
+            price: prices[i]
+            });
+        }
+    }
+
+    function getStakedAssets() internal view returns (bytes32[] memory result) {
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+        result = new bytes32[](positions.length);
+        for(uint i; i<positions.length; i++) {
+            result[i] = positions[i].symbol;
+        }
+    }
+
+    function getAllPricesForLiquidation(bytes32[] calldata assetsToRepay) public view returns (CachedPrices memory result) {
+        bytes32[] memory ownedAssetsEnriched = getOwnedAssetsEnriched();
+        bytes32[] memory debtAssets = getDebtAssets();
+        bytes32[] memory stakedAssets = getStakedAssets();
+
+        bytes32[] memory allAssetsSymbols = new bytes32[](ownedAssetsEnriched.length + debtAssets.length + stakedAssets.length + assetsToRepay.length);
+        uint256 offset;
+
+        for(uint i; i<ownedAssetsEnriched.length; i++){
+            allAssetsSymbols[i] = ownedAssetsEnriched[i];
+        }
+        offset += ownedAssetsEnriched.length;
+
+        for(uint i; i<debtAssets.length; i++){
+            allAssetsSymbols[i+offset] = debtAssets[i];
+        }
+        offset += debtAssets.length;
+
+        for(uint i; i<stakedAssets.length; i++){
+            allAssetsSymbols[i+offset] = stakedAssets[i];
+        }
+        offset += stakedAssets.length;
+
+        for(uint i; i<assetsToRepay.length; i++){
+            allAssetsSymbols[i+offset] = assetsToRepay[i];
+        }
+
+        uint256[] memory allAssetsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(allAssetsSymbols);
+
+        offset = 0;
+
+        // Populate ownedAssetsPrices struct
+        AssetPrice[] memory ownedAssetsPrices = new AssetPrice[](ownedAssetsEnriched.length);
+        for(uint i=0; i<ownedAssetsEnriched.length; i++){
+            ownedAssetsPrices[i] = AssetPrice({
+            asset: allAssetsSymbols[i+offset],
+            price: allAssetsPrices[i+offset]
+            });
+        }
+        offset += ownedAssetsEnriched.length;
+
+        // Populate debtAssetsPrices struct
+        AssetPrice[] memory debtAssetsPrices = new AssetPrice[](debtAssets.length);
+        for(uint i=0; i<debtAssets.length; i++){
+            debtAssetsPrices[i] = AssetPrice({
+            asset: allAssetsSymbols[i+offset],
+            price: allAssetsPrices[i+offset]
+            });
+        }
+        offset += debtAssetsPrices.length;
+
+        // Populate stakedPositionsPrices struct
+        AssetPrice[] memory stakedPositionsPrices = new AssetPrice[](stakedAssets.length);
+        for(uint i=0; i<stakedAssets.length; i++){
+            stakedPositionsPrices[i] = AssetPrice({
+            asset: allAssetsSymbols[i+offset],
+            price: allAssetsPrices[i+offset]
+            });
+        }
+        offset += stakedAssets.length;
+
+        // Populate assetsToRepayPrices struct
+        AssetPrice[] memory assetsToRepayPrices = new AssetPrice[](assetsToRepay.length);
+        for(uint i=0; i<assetsToRepay.length; i++){
+            assetsToRepayPrices[i] = AssetPrice({
+            asset: allAssetsSymbols[i+offset],
+            price: allAssetsPrices[i+offset]
+            });
+        }
+
+        result = CachedPrices({
+        ownedAssetsPrices: ownedAssetsPrices,
+        debtAssetsPrices: debtAssetsPrices,
+        stakedPositionsPrices: stakedPositionsPrices,
+        assetsToRepayPrices: assetsToRepayPrices
+        });
     }
 
     function getPrices(bytes32[] memory symbols) external view returns (uint256[] memory) {
@@ -47,20 +191,78 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return getOracleNumericValueFromTxMsg(symbol);
     }
 
-    function getDebtWithPrices(AssetPrice[] memory assetsPrices) public view virtual returns (uint256) {
-        return getDebtBase(assetsPrices);
+    function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
+        bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        uint256 weightedValueOfTokens;
+
+        if (ownedAssetsPrices.length > 0) {
+            // TODO: double check the decimals
+            weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.maxTokenLeverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+
+            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
+            }
+        }
+        return weightedValueOfTokens;
     }
 
-    function getDebtBase(AssetPrice[] memory assetsPrices) internal view returns (uint256){
+    function _getTWVStakedPositions(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
-        uint256 debt = 0;
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
-        for (uint256 i = 0; i < assetsPrices.length; i++) {
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsPrices[i].asset, true));
+        uint256 weightedValueOfStaked;
 
-            Pool pool = Pool(tokenManager.getPoolAddress(assetsPrices[i].asset));
+        for (uint256 i; i < positions.length; i++) {
+            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
+
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
+
+            if (success) {
+                uint256 balance = abi.decode(result, (uint256));
+
+                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
+
+                weightedValueOfStaked += stakedPositionsPrices[i].price * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
+            }
+        }
+        return weightedValueOfStaked;
+    }
+
+    function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices);
+    }
+
+    /**
+     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function getThresholdWeightedValue() public view virtual returns (uint256) {
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsPrices();
+        AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
+        return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
+    }
+
+    /**
+     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function getThresholdWeightedValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
+        return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
+    }
+
+    function getDebtBase(AssetPrice[] memory debtAssetsPrices) internal view returns (uint256){
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        uint256 debt;
+
+        for (uint256 i; i < debtAssetsPrices.length; i++) {
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(debtAssetsPrices[i].asset, true));
+
+            Pool pool = Pool(tokenManager.getPoolAddress(debtAssetsPrices[i].asset));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + pool.getBorrowed(address(this)) * assetsPrices[i].price * 10 ** 10
+            debt = debt + pool.getBorrowed(address(this)) * debtAssetsPrices[i].price * 10 ** 10
             / 10 ** token.decimals();
         }
 
@@ -72,29 +274,26 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
    * @dev This function uses the redstone-evm-connector
    **/
     function getDebt() public view virtual returns (uint256) {
-        AssetPrice[] memory assetsPrices = getAssetsPricesDebt();
-        return getDebtBase(assetsPrices);
+        AssetPrice[] memory debtAssetsPrices = getDebtAssetsPrices();
+        return getDebtBase(debtAssetsPrices);
     }
 
-    function getTotalAssetsValueWithPrices(AssetPrice[] memory assetsPrices) public view virtual returns (uint256) {
-        return _getTotalAssetsValueBase(assetsPrices);
+    function getDebtWithPrices(AssetPrice[] memory debtAssetsPrices) public view virtual returns (uint256) {
+        return getDebtBase(debtAssetsPrices);
     }
 
-    function _getTotalAssetsValueBase(AssetPrice[] memory assetsPrices) public view returns (uint256) {
-        if (assetsPrices.length > 0) {
+    function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public view returns (uint256) {
+        if (ownedAssetsPrices.length > 0) {
             TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-            uint256 total = address(this).balance * assetsPrices[0].price / 10 ** 8;
+            uint256 total = address(this).balance * ownedAssetsPrices[0].price / 10 ** 8;
 
-            for (uint256 i = 0; i < assetsPrices.length; i++) {
-                require(assetsPrices[i].price != 0, "Asset price returned from oracle is zero");
-
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsPrices[i].asset, true));
+            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
 
-                total = total + (assetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+                total = total + (ownedAssetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
-
             return total;
         } else {
             return 0;
@@ -106,160 +305,71 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
      * @dev This function uses the redstone-evm-connector
      **/
     function getTotalAssetsValue() public view virtual returns (uint256) {
-        AssetPrice[] memory assetsPrices = getAssetsPrices();
-        return _getTotalAssetsValueBase(assetsPrices);
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsPrices();
+        return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 
-
-
-    function getAssetsPricesDebt() public view returns(AssetPrice[] memory) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32[] memory assets = tokenManager.getAllPoolAssets();
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
-
-        AssetPrice[] memory result = new AssetPrice[](prices.length);
-
-        for(uint256 i=0; i<assets.length; i++){
-            result[i] = AssetPrice({
-            asset: assets[i],
-            price: prices[i]
-            });
-        }
-
-        return result;
+    function getTotalAssetsValueWithPrices(AssetPrice[] memory ownedAssetsPrices) public view virtual returns (uint256) {
+        return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 
-    function getAssetsPrices() public view returns(AssetPrice[] memory) {
-        bytes32[] memory assets = DeploymentConstants.getAllOwnedAssets();
-        bytes32 nativeToken = DeploymentConstants.getNativeTokenSymbol();
-        bool hasNativeToken = DiamondStorageLib.hasAsset(nativeToken);
+    // Returns list of owned assets that always included NativeToken at index 0
+    function getOwnedAssetsEnriched() public view returns(bytes32[] memory){
+        bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
+        bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
-        uint256 numberOfAssets;
-        if(hasNativeToken){
-            numberOfAssets = assets.length;
-        } else {
-            numberOfAssets = assets.length + 1;
-        }
-
-        AssetPrice[] memory result = new AssetPrice[](numberOfAssets);
+        uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssets.length : ownedAssets.length + 1;
         bytes32[] memory assetsEnriched = new bytes32[](numberOfAssets);
 
-        uint256 lastUsedIndex = 0;
-        assetsEnriched[0] = nativeToken; // First asset = NativeToken
-        for(uint i=0; i<assets.length; i++){
-            if(assets[i] != nativeToken){
+        uint256 lastUsedIndex;
+        assetsEnriched[0] = nativeTokenSymbol; // First asset = NativeToken
+
+        for(uint i=0; i< ownedAssets.length; i++){
+            if(ownedAssets[i] != nativeTokenSymbol){
                 lastUsedIndex += 1;
-                assetsEnriched[lastUsedIndex] = assets[i];
+                assetsEnriched[lastUsedIndex] = ownedAssets[i];
             }
         }
-
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
-
-        for(uint256 i=0; i<numberOfAssets; i++){
-            result[i] = AssetPrice({
-                asset: assetsEnriched[i],
-                price: prices[i]
-            });
-        }
-
-        return result;
+        return assetsEnriched;
     }
 
-    function _getThresholdWeightedValueBase(AssetPrice[] memory assetsPrices) public view virtual returns (uint256) {
-        bytes32 nativeToken = DeploymentConstants.getNativeTokenSymbol();
-
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
-
-        uint256 weightedValueOfTokens;
-
-        if (assetsPrices.length > 0) {
-            // TODO: double check the decimals
-            weightedValueOfTokens = assetsPrices[0].price * address(this).balance * tokenManager.maxTokenLeverage(tokenManager.getAssetAddress(nativeToken, true)) / (10 ** 26);
-
-            for (uint256 i = 0; i < assetsPrices.length; i++) {
-                require(assetsPrices[i].price != 0, "Asset price returned from oracle is zero");
-
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (assetsPrices[i].price * 10 ** 10 * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e18));
-            }
-        }
-
-        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
-
-        bytes32[] memory symbols = new bytes32[](positions.length);
-        for(uint256 i=0; i<positions.length; i++) {
-            symbols[i] = positions[i].symbol;
-        }
-
-        uint256[] memory prices = getOracleNumericValuesWithDuplicatesFromTxMsg(symbols);
-
-        uint256 weightedValueOfStaked;
-
-        for (uint256 i; i < positions.length; i++) {
-            require(prices[i] != 0, "Asset price returned from oracle is zero");
-
-            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
-
-            if (success) {
-                uint256 balance = abi.decode(result, (uint256));
-
-                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
-
-                weightedValueOfStaked += prices[i] * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
-            }
-        }
-
-        return weightedValueOfTokens + weightedValueOfStaked;
-    }
-
-    /**
-     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
-     * @dev This function uses the redstone-evm-connector
-     **/
-    function getThresholdWeightedValueWithPrices(AssetPrice[] memory assetsPrices) public view virtual returns (uint256) {
-        return _getThresholdWeightedValueBase(assetsPrices);
-    }
-
-
-    /**
-     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
-     * @dev This function uses the redstone-evm-connector
-     **/
-    function getThresholdWeightedValue() public view virtual returns (uint256) {
-        AssetPrice[] memory assetsPrices = getAssetsPrices();
-        return _getThresholdWeightedValueBase(assetsPrices);
-    }
-
-    function getStakedValue() public view virtual returns (uint256) {
+    function _getStakedValueBase(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
         uint256 usdValue;
 
         for (uint256 i; i < positions.length; i++) {
-            //TODO: fetch multiple prices to reduce cost
-            uint256 price = getOracleNumericValueFromTxMsg(positions[i].symbol);
-            require(price != 0, "Asset price returned from oracle is zero");
+            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
 
-                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(positions[i].symbol, true));
+                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
 
-                usdValue += price * 10 ** 10 * balance / (10 ** token.decimals());
+                usdValue += stakedPositionsPrices[i].price * 10 ** 10 * balance / (10 ** token.decimals());
             }
         }
 
         return usdValue;
     }
 
+    function getStakedValueWithPrices(AssetPrice[] memory stakedPositionsPrices) public view returns (uint256) {
+        return _getStakedValueBase(stakedPositionsPrices);
+    }
+
+    function getStakedValue() public view virtual returns (uint256) {
+        AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
+        return _getStakedValueBase(stakedPositionsPrices);
+    }
+
     function getTotalValue() public view virtual returns (uint256) {
         return getTotalAssetsValue() + getStakedValue();
     }
 
-    function getTotalValueWithPrices(AssetPrice[] memory assetsPrices) public view virtual returns (uint256) {
-        return getTotalAssetsValueWithPrices(assetsPrices) + getStakedValue();
+    function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
+        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices);
     }
 
     function getFullLoanStatus() public view returns (uint256[4] memory) {
@@ -287,9 +397,9 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
      * by current debt
      * @dev This function uses the redstone-evm-connector
      **/
-    function getHealthRatioWithPrices(AssetPrice[] memory assetsPrices, AssetPrice[] memory assetsPricesDebt) public view virtual returns (uint256) {
-        uint256 debt = getDebtWithPrices(assetsPricesDebt);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(assetsPrices);
+    function getHealthRatioWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
+        uint256 debt = getDebtWithPrices(debtAssetsPrices);
+        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(ownedAssetsPrices, stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
