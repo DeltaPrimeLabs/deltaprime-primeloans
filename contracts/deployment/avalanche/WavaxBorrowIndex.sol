@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 648f5794d589d10ef8ef138b16697fb525ee9b24;
+// Last deployed from commit: 08460e894b7cf6e54fc2c081e4604cbebe32c32d;
 pragma solidity 0.8.17;
 
 import "../../LinearIndex.sol";

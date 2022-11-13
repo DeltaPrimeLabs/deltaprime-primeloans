@@ -7,7 +7,7 @@ import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
 import "../SmartLoansFactory.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 
 contract OwnershipFacet {
     function proposeOwnershipTransfer(address _newOwner) external {

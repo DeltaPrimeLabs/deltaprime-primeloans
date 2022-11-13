@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import "./interfaces/IDiamondBeacon.sol";
 
 //This path is updated during deployment
-import "./lib/local/DeploymentConstants.sol";
+import "./lib/avalanche/DeploymentConstants.sol";
 
 /**
  * DiamondHelper

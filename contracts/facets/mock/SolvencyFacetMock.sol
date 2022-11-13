@@ -12,7 +12,7 @@ import "../../DiamondHelper.sol";
 import "../../interfaces/IStakingPositions.sol";
 
 //This path is updated during deployment
-import "../../lib/local/DeploymentConstants.sol";
+import "../../lib/avalanche/DeploymentConstants.sol";
 
 contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
     struct AssetPrice {

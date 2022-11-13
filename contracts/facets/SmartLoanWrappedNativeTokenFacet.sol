@@ -6,7 +6,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 
 contract SmartLoanWrappedNativeTokenFacet {
     using TransferHelper for address payable;

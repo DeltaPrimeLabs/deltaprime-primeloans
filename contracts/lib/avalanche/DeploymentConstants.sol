@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: f63ef97516096bbd3db42914b6554a461f90ef40;
 pragma solidity 0.8.17;
 
 import "../../TokenManager.sol";
@@ -21,13 +21,13 @@ library DeploymentConstants {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x7dBcB7b5019cfD15225E5aDc454B864CA1b7f2d1;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x9FDb3940D8A91E89b4399Fbb0D038DC296A43C42;
 
-    address private constant _TOKEN_MANAGER_ADDRESS = 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B;
+    address private constant _TOKEN_MANAGER_ADDRESS = 0x9CD7eCfF2F5A95C1D6ee2ceB3e53909EbE9d57BB;
 
-    address private constant _REDSTONE_CONFIG_MANAGER_ADDRESS = 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B;
+    address private constant _REDSTONE_CONFIG_MANAGER_ADDRESS = 0x127587D8a188493Cc032A0eC2bd1D559E3A8E275;
 
     //implementation-specific
 
