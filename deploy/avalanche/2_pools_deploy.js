@@ -47,7 +47,8 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   let poolAddress = receipt.events[0].args[1];
 
   await verifyContract(hre, {
-    address: poolAddress
+    address: poolAddress,
+    contract: `contracts/deployment/avalanche/${contract}.sol:${contract}`
   });
 
   console.log(`${contract} pool deployed at address: ${poolAddress} by a factory`);

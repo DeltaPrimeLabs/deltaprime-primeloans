@@ -42,7 +42,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: resultImpl.address
+        address: resultImpl.address,
+        contract: `contracts/integrations/avalanche/PangolinIntermediary.sol:PangolinIntermediary`,
     })
 
     console.log(`PangolinIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);

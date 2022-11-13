@@ -35,7 +35,8 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 
     await verifyContract(hre, {
         address: resultIndex.address,
-        constructorArguments: []
+        constructorArguments: [],
+        contract: `contracts/deployment/${name}.sol:${name}`
     })
 
     console.log(`Deployed linear index at address: ${resultIndex.address}`);

@@ -58,7 +58,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: resultTup.address
+        address: resultTup.address,
+        contract: `contracts/proxies/tup/SmartLoansFactoryTUP.sol:SmartLoansFactoryTUP`
     })
 
     console.log(`SmartLoansFactory implementation deployed at address: ${resultTup.address}`);
