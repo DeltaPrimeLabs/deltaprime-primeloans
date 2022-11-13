@@ -40,10 +40,10 @@ module.exports = async ({
         args: [],
     });
 
-    await verifyContract(hre, {
-        address: resultImpl.address,
-        contract: `contracts/integrations/avalanche/TraderJoeIntermediary.sol:TraderJoeIntermediary`,
-    })
+    // await verifyContract(hre, {
+    //     address: resultImpl.address,
+    //     contract: `contracts/integrations/avalanche/TraderJoeIntermediary.sol:TraderJoeIntermediary`,
+    // })
 
     console.log(`TraderJoeIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
 
@@ -60,15 +60,15 @@ module.exports = async ({
         args: [exchange.address, admin, calldata],
     });
 
-    await verifyContract(hre, {
-        address: resultTup.address,
-        contract: "contracts/proxies/tup/avalanche/TraderJoeIntermediaryTUP.sol:TraderJoeIntermediaryTUP",
-        constructorArguments: [
-            exchange.address,
-            admin,
-            calldata
-        ]
-    });
+    // await verifyContract(hre, {
+    //     address: resultTup.address,
+    //     contract: "contracts/proxies/tup/avalanche/TraderJoeIntermediaryTUP.sol:TraderJoeIntermediaryTUP",
+    //     constructorArguments: [
+    //         exchange.address,
+    //         admin,
+    //         calldata
+    //     ]
+    // });
 
     console.log(`TraderJoeIntermediaryTUP deployed at address: ${resultTup.address} by a factory`);
 

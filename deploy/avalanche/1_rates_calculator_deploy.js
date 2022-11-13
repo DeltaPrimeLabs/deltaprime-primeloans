@@ -17,10 +17,10 @@ module.exports = async ({
     gasLimit: 8000000,
     args: []
   });
-
-  await verifyContract(hre, {
-    address: result.address
-  });
+  //
+  // await verifyContract(hre, {
+  //   address: result.address
+  // });
 
 
   console.log(`Deployed VariableUtilisationRatesCalculator at address: ${result.address}`);

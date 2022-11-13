@@ -57,10 +57,10 @@ module.exports = async ({
         args: [smartLoansFactory.address, admin, calldata],
     });
 
-    await verifyContract(hre, {
-        address: resultTup.address,
-        contract: `contracts/proxies/tup/SmartLoansFactoryTUP.sol:SmartLoansFactoryTUP`
-    })
+    // await verifyContract(hre, {
+    //     address: resultTup.address,
+    //     contract: `contracts/proxies/tup/SmartLoansFactoryTUP.sol:SmartLoansFactoryTUP`
+    // })
 
     console.log(`SmartLoansFactory implementation deployed at address: ${resultTup.address}`);
 
