@@ -123,7 +123,7 @@ async function deployDiamond(hardhatConfig = undefined) {
     // call to init function
     let functionCall = diamondInit.interface.encodeFunctionData('init')
 
-    tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall)
+    tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall, {gasLimit: 8000000})
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()
     if (!receipt.status) {
@@ -142,11 +142,14 @@ async function deployDiamond(hardhatConfig = undefined) {
 
 async function deployContract(name, args = [], libraries = undefined, hardhatConfig = undefined) {
     if (!hardhatConfig) {
+        console.log('deploying with ethers')
         const factory = await ethers.getContractFactory(name, { libraries: libraries });
         const contract = await factory.deploy(...args)
         await contract.deployed();
         return contract;
     } else {
+        console.log('deploying with hardhatConfig')
+
         await hardhatConfig.deploy(name, {
             from: hardhatConfig.deployer,
             gasLimit: 8000000,
