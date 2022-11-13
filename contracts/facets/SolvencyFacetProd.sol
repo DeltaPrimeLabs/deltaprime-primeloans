@@ -20,6 +20,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         uint256 price;
     }
 
+    // Struct used in the liquidation process to obtain necessary prices only once
     struct CachedPrices {
         AssetPrice[] ownedAssetsPrices;
         AssetPrice[] debtAssetsPrices;
@@ -28,23 +29,30 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-    * Checks if the loan is solvent.
-    * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level
-    * @dev This function uses the redstone-evm-connector
+      * Checks if the loan is solvent.
+      * It means that the Health Ratio is greater than 1e18.
+      * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
         return getHealthRatio() >= 1e18;
     }
 
     /**
-        * Checks if the loan is solvent.
-        * It means that the ratio between borrowing power and current devt (defined as total value minus debt) is above safe level
-        * @dev This function uses the redstone-evm-connector
-        **/
+      * Checks if the loan is solvent.
+      * It means that the Health Ratio is greater than 1e18.
+      * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
+      * @param ownedAssetsPrices An array of Asset/Price structs used to calculate weighted value of owned assets
+      * @param debtAssetsPrices An array of Asset/Price structs used to calculate value of the debt
+      * @param stakedPositionsPrices An array of Asset/Price structs used to calculate value of the staked positions
+    **/
     function isSolventWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view returns (bool) {
         return getHealthRatioWithPrices(ownedAssetsPrices, debtAssetsPrices, stakedPositionsPrices) >= 1e18;
     }
 
+    /**
+      * Returns an array of Asset/Price structs of staked positions.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getStakedPositionsPrices() public view returns(AssetPrice[] memory result) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
@@ -58,17 +66,24 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
         for(uint i; i<stakedPositionsPrices.length; i++){
             result[i] = AssetPrice({
-            asset: symbols[i],
-            price: stakedPositionsPrices[i]
+                asset: symbols[i],
+                price: stakedPositionsPrices[i]
             });
         }
     }
 
+    /**
+      * Returns an array of bytes32[] symbols of debt (borrowable) assets.
+    **/
     function getDebtAssets() public view returns(bytes32[] memory result) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         result = tokenManager.getAllPoolAssets();
     }
 
+    /**
+      * Returns an array of Asset/Price structs of debt (borrowable) assets.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getDebtAssetsPrices() public view returns(AssetPrice[] memory result) {
         bytes32[] memory debtAssets = getDebtAssets();
 
@@ -77,12 +92,16 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
         for(uint i; i<debtAssetsPrices.length; i++){
             result[i] = AssetPrice({
-            asset: debtAssets[i],
-            price: debtAssetsPrices[i]
+                asset: debtAssets[i],
+                price: debtAssetsPrices[i]
             });
         }
     }
 
+    /**
+      * Returns an array of Asset/Price structs of enriched (always containing AVAX at index 0) owned assets.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getOwnedAssetsPrices() public view returns(AssetPrice[] memory result) {
         bytes32[] memory assetsEnriched = getOwnedAssetsEnriched();
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
@@ -91,12 +110,15 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
         for(uint i; i<assetsEnriched.length; i++){
             result[i] = AssetPrice({
-            asset: assetsEnriched[i],
-            price: prices[i]
+                asset: assetsEnriched[i],
+                price: prices[i]
             });
         }
     }
 
+    /**
+      * Returns an array of bytes32[] symbols of staked positions.
+    **/
     function getStakedAssets() internal view returns (bytes32[] memory result) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         result = new bytes32[](positions.length);
@@ -105,6 +127,11 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         }
     }
 
+    /**
+      * Returns CachedPrices struct consisting of Asset/Price arrays for ownedAssets, debtAssets, stakedPositions and assetsToRepay.
+      * Used during the liquidation process in order to obtain all necessary prices from calldata only once.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getAllPricesForLiquidation(bytes32[] calldata assetsToRepay) public view returns (CachedPrices memory result) {
         bytes32[] memory ownedAssetsEnriched = getOwnedAssetsEnriched();
         bytes32[] memory debtAssets = getDebtAssets();
@@ -113,21 +140,25 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         bytes32[] memory allAssetsSymbols = new bytes32[](ownedAssetsEnriched.length + debtAssets.length + stakedAssets.length + assetsToRepay.length);
         uint256 offset;
 
+        // Populate allAssetsSymbols with owned assets symbols
         for(uint i; i<ownedAssetsEnriched.length; i++){
             allAssetsSymbols[i] = ownedAssetsEnriched[i];
         }
         offset += ownedAssetsEnriched.length;
 
+        // Populate allAssetsSymbols with debt assets symbols
         for(uint i; i<debtAssets.length; i++){
             allAssetsSymbols[i+offset] = debtAssets[i];
         }
         offset += debtAssets.length;
 
+        // Populate allAssetsSymbols with staked assets symbols
         for(uint i; i<stakedAssets.length; i++){
             allAssetsSymbols[i+offset] = stakedAssets[i];
         }
         offset += stakedAssets.length;
 
+        // Populate allAssetsSymbols with assets to repay symbols
         for(uint i; i<assetsToRepay.length; i++){
             allAssetsSymbols[i+offset] = assetsToRepay[i];
         }
@@ -183,14 +214,25 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         });
     }
 
+    /**
+      * Helper method exposing the redstone-evm-connector getOracleNumericValuesFromTxMsg() method.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getPrices(bytes32[] memory symbols) external view returns (uint256[] memory) {
         return getOracleNumericValuesFromTxMsg(symbols);
     }
 
+    /**
+      * Helper method exposing the redstone-evm-connector getOracleNumericValueFromTxMsg() method.
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getPrice(bytes32 symbol) external view returns (uint256) {
         return getOracleNumericValueFromTxMsg(symbol);
     }
 
+    /**
+      * Returns TotalWeightedValue of OwnedAssets in USD based on the supplied array of Asset/Price struct, tokenBalance and maxTokenLeverage
+    **/
     function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -209,6 +251,9 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return weightedValueOfTokens;
     }
 
+    /**
+      * Returns TotalWeightedValue of StakedPositions in USD based on the supplied array of Asset/Price struct, positionBalance and maxTokenLeverage
+    **/
     function _getTWVStakedPositions(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
@@ -236,9 +281,9 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
-     * @dev This function uses the redstone-evm-connector
-     **/
+      * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
+      * @dev This function uses the redstone-evm-connector
+    **/
     function getThresholdWeightedValue() public view virtual returns (uint256) {
         AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsPrices();
         AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
@@ -246,13 +291,18 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-     * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
-     * @dev This function uses the redstone-evm-connector
-     **/
+      * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
+      * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
+    **/
     function getThresholdWeightedValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
 
+
+    /**
+     * Returns the current debt from all lending pools
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function getDebtBase(AssetPrice[] memory debtAssetsPrices) internal view returns (uint256){
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         uint256 debt;
@@ -270,18 +320,27 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-   * Returns the current debt from all lending pools
-   * @dev This function uses the redstone-evm-connector
-   **/
+     * Returns the current debt from all lending pools
+     * @dev This function uses the redstone-evm-connector
+    **/
     function getDebt() public view virtual returns (uint256) {
         AssetPrice[] memory debtAssetsPrices = getDebtAssetsPrices();
         return getDebtBase(debtAssetsPrices);
     }
 
+    /**
+     * Returns the current debt from all lending pools
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function getDebtWithPrices(AssetPrice[] memory debtAssetsPrices) public view virtual returns (uint256) {
         return getDebtBase(debtAssetsPrices);
     }
 
+
+    /**
+     * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public view returns (uint256) {
         if (ownedAssetsPrices.length > 0) {
             TokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -309,11 +368,17 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 
+    /**
+     * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function getTotalAssetsValueWithPrices(AssetPrice[] memory ownedAssetsPrices) public view virtual returns (uint256) {
         return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 
-    // Returns list of owned assets that always included NativeToken at index 0
+    /**
+      * Returns list of owned assets that always included NativeToken at index 0
+    **/
     function getOwnedAssetsEnriched() public view returns(bytes32[] memory){
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
@@ -333,6 +398,10 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return assetsEnriched;
     }
 
+    /**
+     * Returns the current value of staked positions in USD.
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function _getStakedValueBase(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
@@ -355,19 +424,35 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         return usdValue;
     }
 
+    /**
+     * Returns the current value of staked positions in USD.
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
     function getStakedValueWithPrices(AssetPrice[] memory stakedPositionsPrices) public view returns (uint256) {
         return _getStakedValueBase(stakedPositionsPrices);
     }
 
+    /**
+     * Returns the current value of staked positions in USD.
+     * @dev This function uses the redstone-evm-connector
+    **/
     function getStakedValue() public view virtual returns (uint256) {
         AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
         return _getStakedValueBase(stakedPositionsPrices);
     }
 
+    /**
+     * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
+     * @dev This function uses the redstone-evm-connector
+    **/
     function getTotalValue() public view virtual returns (uint256) {
         return getTotalAssetsValue() + getStakedValue();
     }
 
+    /**
+     * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
+     * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
+    **/
     function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices);
     }
@@ -395,7 +480,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     /**
      * Returns current health ratio (solvency) associated with the loan, defined as threshold weighted value of divided
      * by current debt
-     * @dev This function uses the redstone-evm-connector
+     * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
      **/
     function getHealthRatioWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         uint256 debt = getDebtWithPrices(debtAssetsPrices);

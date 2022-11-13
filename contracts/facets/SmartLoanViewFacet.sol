@@ -110,8 +110,8 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         AssetNamePrice[] memory result = new AssetNamePrice[](assets.length);
         for (uint i = 0; i < assets.length; i++) {
             result[i] = AssetNamePrice({
-            name : assets[i],
-            price : prices[i]
+                name : assets[i],
+                price : prices[i]
             });
         }
         return result;
