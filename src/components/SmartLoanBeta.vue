@@ -2,11 +2,11 @@
   <div class="smart-loan-beta-component">
     <div class="container">
       <StatsBarBeta
-        :total-value="noSmartLoan ? 0 : fullLoanStatus.totalValue"
-        :debt="noSmartLoan ? 0 : fullLoanStatus.debt"
-        :health="noSmartLoan ? 0 : getHealth">
+        :total-value="noSmartLoanInternal ? 0 : totalValue"
+        :debt="noSmartLoanInternal ? 0 : debt"
+        :health="noSmartLoanInternal ? 0 : health">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoan" cacheKey="ACCOUNT-INIT">
+      <InfoBubble v-if="noSmartLoanInternal" cacheKey="ACCOUNT-INIT">
         Add funds from your wallet to start investing. <br>
         The first transaction creates your Prime Account.
       </InfoBubble>
@@ -54,13 +54,33 @@ export default {
     assetBalances: {
       handler(balances) {
         this.assetBalancesChange(balances);
+        this.updateLoanStatus(this.fullLoanStatus);
+        this.$forceUpdate();
       },
-    }
+    },
+    fullLoanStatus: {
+      handler(fullLoanStatus) {
+        this.updateLoanStatus(fullLoanStatus);
+      },
+      immediate: true
+    },
+    noSmartLoan: {
+      handler(noSmartLoan) {
+        this.noSmartLoanInternal = noSmartLoan;
+        this.updateLoanStatus(this.fullLoanStatus);
+        this.$forceUpdate();
+      },
+      immediate: true
+    },
   },
   data() {
     return {
       todayValue: 0,
       yesterdayValue: 0,
+      debt: 0,
+      totalValue: 0,
+      health: 0,
+      noSmartLoanInternal: null,
     };
   },
 
@@ -110,6 +130,16 @@ export default {
           this.closeModal();
         }
       });
+    },
+
+    updateLoanStatus(fullLoanStatus) {
+      if (fullLoanStatus) {
+        this.noSmartLoanInternal = false;
+        this.totalValue = fullLoanStatus.totalValue;
+        this.debt = fullLoanStatus.debt;
+        this.health = this.getHealth;
+      }
+      this.$forceUpdate();
     },
   },
 };
