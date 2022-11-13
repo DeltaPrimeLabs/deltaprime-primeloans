@@ -41,7 +41,8 @@ module.exports = async ({
     });
 
     await verifyContract(hre, {
-        address: resultImpl.address
+        address: resultImpl.address,
+        contract: `contracts/integrations/avalanche/TraderJoeIntermediary.sol:TraderJoeIntermediary`,
     })
 
     console.log(`TraderJoeIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
