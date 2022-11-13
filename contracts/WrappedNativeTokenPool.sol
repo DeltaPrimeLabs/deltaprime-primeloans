@@ -20,6 +20,7 @@ contract WrappedNativeTokenPool is Pool {
      * Wraps and deposits amount attached to the transaction
      **/
     function depositNativeToken() public payable virtual {
+        require(canDeposit[msg.sender], "User not permitted to create a loan");
         IWrappedNativeToken(tokenAddress).deposit{value : msg.value}();
 
         _accumulateDepositInterest(msg.sender);

@@ -28,6 +28,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     mapping(address => uint256) internal _deposited;
 
     mapping(address => uint256) public borrowed;
+    mapping(address => bool) public canDeposit;
 
     IRatesCalculator public ratesCalculator;
     IBorrowersRegistry public borrowersRegistry;
@@ -57,7 +58,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _updateRates();
     }
 
+    /* ========== TEST-DEPLOYMENT ========== */
+
     /* ========== SETTERS ========== */
+    function setAccess(address user, bool allowDeposit) external onlyOwner {
+        canDeposit[user] = allowDeposit;
+    }
 
     /**
      * Sets the new Pool Rewarder.
@@ -128,26 +134,26 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         return _allowed[owner][spender];
     }
 
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
-        require(spender != address(0), "Spender cannot be a zero address");
-        uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
-        _allowed[msg.sender][spender] = newAllowance;
-
-        emit Approval(msg.sender, spender, newAllowance);
-        return true;
-    }
-
-    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
-        require(spender != address(0), "Spender cannot be a zero address");
-        uint256 currentAllowance = _allowed[msg.sender][spender];
-        require(currentAllowance >= subtractedValue, "Current allowance is too small");
-
-        uint256 newAllowance = currentAllowance - subtractedValue;
-        _allowed[msg.sender][spender] = newAllowance;
-
-        emit Approval(msg.sender, spender, newAllowance);
-        return true;
-    }
+//    function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
+//        require(spender != address(0), "Spender cannot be a zero address");
+//        uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
+//        _allowed[msg.sender][spender] = newAllowance;
+//
+//        emit Approval(msg.sender, spender, newAllowance);
+//        return true;
+//    }
+//
+//    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
+//        require(spender != address(0), "Spender cannot be a zero address");
+//        uint256 currentAllowance = _allowed[msg.sender][spender];
+//        require(currentAllowance >= subtractedValue, "Current allowance is too small");
+//
+//        uint256 newAllowance = currentAllowance - subtractedValue;
+//        _allowed[msg.sender][spender] = newAllowance;
+//
+//        emit Approval(msg.sender, spender, newAllowance);
+//        return true;
+//    }
 
     function approve(address spender, uint256 amount) external override returns (bool) {
         require(spender != address(0), "Spender cannot be a zero address");
@@ -184,6 +190,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * It updates user deposited balance, total deposited and rates
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
+        require(canDeposit[msg.sender], "User not permitted to create a loan");
+
         require(_amount>0, "Deposit amount must be > 0");
         _accumulateDepositInterest(msg.sender);
 

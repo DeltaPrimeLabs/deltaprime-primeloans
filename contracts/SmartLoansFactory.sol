@@ -35,7 +35,14 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     mapping(address => address) public ownersToLoans;
     mapping(address => address) public loansToOwners;
 
+    mapping(address => bool) public canCreateLoan;
+
     address[] loans;
+
+    /* ========== SETTERS ========== */
+    function setAccess(address user, bool allowCreate) external onlyOwner {
+        canCreateLoan[user] = allowCreate;
+    }
 
     function _hasLoan(address user) internal view returns (bool) {
         return ownersToLoans[user] != address(0);
@@ -59,6 +66,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     }
 
     function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+        require(canCreateLoan[msg.sender], "User not permitted to create a loan");
+
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
@@ -75,6 +84,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     }
 
     function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+        require(canCreateLoan[msg.sender], "User not permitted to create a loan");
+
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
             abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
         );
