@@ -7,7 +7,7 @@ export default {
     MAX_COLLATERAL: 500,
     MIN_ALLOWED_HEALTH: 0.2,
     COMPETITION_START_BLOCK: 14858534,
-    chainId: 1337,
+    chainId: 43114,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, maxLeverage: 0.83333333333},

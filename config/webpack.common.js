@@ -17,7 +17,7 @@ module.exports = {
             alias: {
                 '@': path.resolve('src'),
                 '@config': path.resolve('config'),
-                '@contracts': path.resolve(`deployments/localhost`),
+                '@contracts': path.resolve(`deployments/mainnet_test`),
                 '@artifacts': path.resolve(`artifacts`),
                 vue: 'vue/dist/vue.js'
             },
