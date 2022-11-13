@@ -219,7 +219,7 @@ export default {
     async createLoan({state, rootState}) {
       const provider = rootState.network.provider;
 
-      const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 50000000});
+      const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
@@ -243,7 +243,7 @@ export default {
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 50000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'createAndFundLoan');
       await dispatch('setupSmartLoanContract');
@@ -320,7 +320,7 @@ export default {
         [fundRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 50000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'fund');
       await dispatch('getAllAssetsBalances');
@@ -340,7 +340,7 @@ export default {
 
       const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
-        gasLimit: 50000000
+        gasLimit: 8000000
       });
 
       console.log('firing transaction');
@@ -362,7 +362,7 @@ export default {
       ]);
 
       const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
-        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 50000000});
+        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 8000000});
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -406,7 +406,7 @@ export default {
         parseUnits(lpRequest.secondAmount.toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
         parseUnits((minAmount * lpRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
         parseUnits((minAmount * lpRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 50000000}
+        {gasLimit: 8000000}
       );
 
       await awaitConfirmation(transaction, provider, 'provide liquidity');
@@ -435,7 +435,7 @@ export default {
         parseUnits(removeRequest.value.toFixed(removeRequest.assetDecimals), BigNumber.from(removeRequest.assetDecimals.toString())),
         parseUnits((removeRequest.minFirstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
         parseUnits((removeRequest.minSecondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 50000000}
+        {gasLimit: 8000000}
       );
 
 
@@ -457,7 +457,7 @@ export default {
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(toBytes32(borrowRequest.asset),
-        parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals), {gasLimit: 50000000});
+        parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals), {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'borrow');
       setTimeout(async () => {
@@ -473,7 +473,7 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 50000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'repay');
       setTimeout(async () => {
@@ -495,7 +495,7 @@ export default {
         toBytes32(swapRequest.targetAsset),
         parseUnits(String(swapRequest.sourceAmount), config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals),
         parseUnits(String(0), config.ASSETS_CONFIG[swapRequest.targetAsset].decimals),
-        {gasLimit: 50000000}
+        {gasLimit: 8000000}
       );
 
       await awaitConfirmation(transaction, provider, 'swap');

@@ -431,7 +431,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'acceptOwnership',
             'owner',
             'proposedOwner'
-        ]
+        ],
+        hardhatConfig
     )
     await deployFacet(
         "AssetsOperationsFacet",
@@ -442,7 +443,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'fund',
             'withdraw',
         ],
-        ''
+        hardhatConfig
     )
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
@@ -463,8 +464,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getStakedValue',
             'getTotalValue',
             'getFullLoanStatus',
-            'getHealthRatio'
-        ])
+            'getHealthRatio',
+            'getMaxBlockTimestampDelay'
+        ],
+        hardhatConfig)
     } else {
         await deployFacet("SolvencyFacetProd", diamondAddress, [
             'canRepayDebtFully',
@@ -485,15 +488,16 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getTotalValue',
             'getFullLoanStatus',
             'getHealthRatio'
-        ])
+        ],
+        hardhatConfig)
     }
 
     if (chain == 'AVAX') {
-        await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'])
-        await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'])
-        await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'])
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak'])
-        await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'])
+        await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
+        await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
+        await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
+        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak'], hardhatConfig)
+        await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1',
                 'vectorUnstakeUSDC1',
@@ -507,11 +511,12 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'vectorStakeSAVAX1',
                 'vectorUnstakeSAVAX1',
                 'vectorSAVAX1Balance'
-            ])
+            ],
+            hardhatConfig)
 
     }
     if (chain == 'CELO') {
-        await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'])
+        await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
     }
     await deployFacet(
         "SmartLoanLiquidationFacet",
@@ -520,7 +525,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'liquidateLoan',
             'unsafeLiquidateLoan',
             'getMaxLiquidationBonus'
-        ]
+        ],
+        hardhatConfig
     )
     await deployFacet(
         "SmartLoanViewFacet",
@@ -537,7 +543,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getContractOwner',
             'getProposedOwner',
             'getStakedPositions',
-        ]
+        ],
+        hardhatConfig
     )
     await diamondCut.unpause();
     console.log('Unpaused')
