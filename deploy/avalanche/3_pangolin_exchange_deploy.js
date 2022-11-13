@@ -41,10 +41,10 @@ module.exports = async ({
         args: [],
     });
 
-    await verifyContract(hre, {
-        address: resultImpl.address,
-        contract: `contracts/integrations/avalanche/PangolinIntermediary.sol:PangolinIntermediary`,
-    })
+    // await verifyContract(hre, {
+    //     address: resultImpl.address,
+    //     contract: `contracts/integrations/avalanche/PangolinIntermediary.sol:PangolinIntermediary`,
+    // })
 
     console.log(`PangolinIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
 
@@ -61,15 +61,15 @@ module.exports = async ({
         args: [exchange.address, admin, calldata],
     });
 
-    await verifyContract(hre, {
-        address: resultTup.address,
-        contract: "contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
-        constructorArguments: [
-            exchange.address,
-            admin,
-            calldata
-        ]
-    });
+    // await verifyContract(hre, {
+    //     address: resultTup.address,
+    //     contract: "contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
+    //     constructorArguments: [
+    //         exchange.address,
+    //         admin,
+    //         calldata
+    //     ]
+    // });
 
     console.log(`PangolinIntermediaryTUP deployed at address: ${resultTup.address} by a factory`);
 

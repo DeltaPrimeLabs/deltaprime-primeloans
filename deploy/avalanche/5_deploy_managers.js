@@ -59,9 +59,9 @@ module.exports = async ({
             ],
     });
 
-    await verifyContract(hre, {
-        address: tokenManager.address
-    });
+    // await verifyContract(hre, {
+    //     address: tokenManager.address
+    // });
 
     console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
 
@@ -75,9 +75,9 @@ module.exports = async ({
         ]
     });
 
-    await verifyContract(hre, {
-        address: redstoneConfigManager.address
-    });
+    // await verifyContract(hre, {
+    //     address: redstoneConfigManager.address
+    // });
 
     console.log(`Deployed redstoneConfigManager at address: ${redstoneConfigManager.address}`);
 
