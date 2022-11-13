@@ -457,8 +457,8 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
         return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices);
     }
 
-    function getFullLoanStatus() public view returns (uint256[4] memory) {
-        return [getTotalValue(), getDebt(), getHealthRatio(), isSolvent() ? uint256(1) : uint256(0)];
+    function getFullLoanStatus() public view returns (uint256[5] memory) {
+        return [getTotalValue(), getDebt(), getThresholdWeightedValue(), getHealthRatio(), isSolvent() ? uint256(1) : uint256(0)];
     }
 
     /**
