@@ -90,7 +90,10 @@ module.exports = async ({
     );
 
     //TODO: verify code
-    await deployAllFacets(diamondAddress, false,'AVAX')
+    await deployAllFacets(diamondAddress, false,'AVAX', {
+        deployer: deployer,
+        deploy: deploy
+    })
 
 
     //TODO: verify contracts
