@@ -40,7 +40,7 @@ async function replaceFacet(facetName, diamondAddress, onlySpecificFunctions = [
 async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions = [], hardhatConfig = undefined) {
     const cut = []
     let facet
-    facet = await deployContract(facetName, [], hardhatConfig);
+    facet = await deployContract(facetName, [], undefined, hardhatConfig);
 
     console.log(`${facetName} deployed: ${facet.address}`);
 

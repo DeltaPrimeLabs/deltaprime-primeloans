@@ -396,7 +396,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX') {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX', hardhatConfig = undefined) {
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
     console.log('Pausing')
     await diamondCut.pause();
