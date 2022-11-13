@@ -129,7 +129,7 @@ export default {
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Add liquidity',
-              disabled: !this.hasSmartLoanContract,
+              // disabled: !this.hasSmartLoanContract,
               disabledInfo: 'To provide liquidity, you need to add some funds from you wallet first'
             },
           ]
@@ -137,7 +137,7 @@ export default {
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw / Remove',
-          disabled: !this.hasSmartLoanContract,
+          // disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',

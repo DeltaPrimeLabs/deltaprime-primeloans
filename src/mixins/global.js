@@ -1,8 +1,8 @@
 import {mapState} from 'vuex';
 import config from "@/config";
 import {Contract} from "ethers";
-import EXCHANGETUP from '@contracts/PangolinIntermediaryTUP.json';
-import EXCHANGE from '@artifacts/contracts/PangolinIntermediary.sol/PangolinIntermediary.json'
+import EXCHANGETUP from '@artifacts/contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol/PangolinIntermediaryTUP.json';
+import EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json'
 import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
 import {handleCall, handleTransaction} from "../utils/blockchain";
 import Vue from 'vue';
