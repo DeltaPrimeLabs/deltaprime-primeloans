@@ -141,7 +141,7 @@ export default {
                 stakeMethod: 'stakeTJAVAXUSDCYak',
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
                 feedSymbol: 'YY_TJ_AVAX_USDC_LP',
-                token: 'TJ_AVAX_USDC_LP'
+                token: 'TJ_AVAX_USDC_LP',
             }
         ],
         TJ_AVAX_ETH_LP: [

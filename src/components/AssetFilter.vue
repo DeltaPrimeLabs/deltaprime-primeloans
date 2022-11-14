@@ -33,7 +33,21 @@ export default {
     },
 
     selectOption(option) {
-      this.filterValue[option].active = !this.filterValue[option].active;
+      const allSelected = Object.values(this.filterValue).map(option => option.active).every(o => o);
+      if (allSelected) {
+        Object.keys(this.filterValue).forEach(asset => {
+          this.filterValue[asset].active = false;
+        });
+        this.filterValue[option].active = true;
+      } else {
+        this.filterValue[option].active = !this.filterValue[option].active;
+        const noneSelected = Object.values(this.filterValue).map(option => option.active).every(o => !o);
+        if (noneSelected) {
+          Object.keys(this.filterValue).forEach(asset => {
+            this.filterValue[asset].active = true;
+          });
+        }
+      }
       this.$forceUpdate();
       const selectedAssets = Object.values(this.filterValue).filter(option => option.active).map(option => option.asset);
       this.$emit('FILTER', selectedAssets);

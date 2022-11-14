@@ -5,6 +5,16 @@
         Withdraw
       </div>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value">
+          {{ asset.balance | smartRound }}
+          <span class="top-info__currency">
+            {{asset.symbol}}
+          </span>
+        </div>
+      </div>
+
       <CurrencyInput v-if="isLP"
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"

@@ -64,6 +64,14 @@ export default {
     await this.initNetwork();
     this.initGasPrices();
   },
+
+  mounted() {
+    document.addEventListener('keyup', (event) => {
+      if (event.key === 'Escape') {
+        this.closeModal();
+      }
+    });
+  },
   computed: {
     ...mapState('network', ['account', 'provider'])
   },

@@ -6,8 +6,12 @@
            v-on:click="toggleExpanded()">
         <div class="header__cell">
           <div class="asset">
-            <div class="asset__icon">
-              <img :src="logoSrc(asset.symbol)">
+            <div class="asset__icon" v-bind:class="{'asset__icon--double': asset.primary && asset.secondary}">
+              <img v-if="!(asset.primary && asset.secondary)" :src="logoSrc(asset.symbol)">
+              <DoubleAssetIcon v-if="asset.primary && asset.secondary"
+                               :primary="asset.primary"
+                               :secondary="asset.secondary">
+              </DoubleAssetIcon>
             </div>
             <div class="asset__name">
               {{ asset.name }}
@@ -69,11 +73,12 @@
 import StakingProtocolTableRow from './StakingProtocolTableRow';
 import config from '@/config';
 import {mapState} from 'vuex';
+import DoubleAssetIcon from './DoubleAssetIcon';
 
 
 export default {
   name: 'StakingAssetBeta',
-  components: {StakingProtocolTableRow},
+  components: {DoubleAssetIcon, StakingProtocolTableRow},
   props: {
     assetSymbol: {
       required: true,
@@ -242,6 +247,10 @@ export default {
           .asset__icon {
             width: 22px;
             height: 22px;
+
+            &.asset__icon--double {
+              margin-right: 20px;
+            }
           }
 
           .asset__name {

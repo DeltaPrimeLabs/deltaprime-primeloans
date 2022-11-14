@@ -89,7 +89,6 @@ export default {
   },
 
   async mounted() {
-    this.setupClosingModalsOnEsc();
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
@@ -126,14 +125,6 @@ export default {
         this.todayValue = todayValue;
         this.yesterdayValue = yesterdayValue;
       }
-    },
-
-    setupClosingModalsOnEsc() {
-      document.addEventListener('keyup', (event) => {
-        if (event.key === 'Escape') {
-          this.closeModal();
-        }
-      });
     },
 
     updateLoanStatus(fullLoanStatus) {
