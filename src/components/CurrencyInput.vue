@@ -130,7 +130,7 @@ export default {
     },
 
     async forceValidationCheck() {
-      await this.checkWarnings(this.value);
+      return this.checkErrors(this.value);
     },
 
     async checkErrors(newValue) {
@@ -144,6 +144,7 @@ export default {
           this.error = validatorResult;
         }
       }
+      return this.error;
     },
     valueChange() {
       const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,8}$/);

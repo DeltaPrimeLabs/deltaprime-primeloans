@@ -19,7 +19,7 @@
       </div>
 
       <CurrencyInput v-if="isLP" :symbol="asset.primary" :symbol-secondary="asset.secondary" v-on:inputChange="inputChange"></CurrencyInput>
-      <CurrencyInput ref="currencyInput" v-else :symbol="asset.symbol" v-on:inputChange="inputChange" :validators="validators"></CurrencyInput>
+      <CurrencyInput ref="currencyInput" v-else :symbol="asset.symbol" v-on:newValue="inputChange" :validators="validators"></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -33,7 +33,7 @@
             <div class="summary__value">
               {{ healthAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
@@ -50,7 +50,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Add funds'" v-on:click="submit()"></Button>
+        <Button :label="'Add funds'" v-on:click="submit()" :disabled="validationError"></Button>
       </div>
     </Modal>
   </div>
@@ -93,7 +93,8 @@ export default {
       value: 0,
       healthAfterTransaction: 0,
       validators: [],
-      selectedDepositAsset: 'AVAX'
+      selectedDepositAsset: 'AVAX',
+      validationError: false,
     };
   },
 
@@ -128,9 +129,10 @@ export default {
       }
     },
 
-    inputChange(change) {
-      this.value = change;
+    inputChange(changeEvent) {
+      this.value = changeEvent.value;
       this.calculateHealthAfterTransaction();
+      this.validationError = changeEvent.error
     },
 
     calculateHealthAfterTransaction() {
@@ -153,9 +155,10 @@ export default {
       ]
     },
 
-    assetToggleChange(asset) {
+    async assetToggleChange(asset) {
       this.selectedDepositAsset = asset;
-      this.$refs.currencyInput.forceValidationCheck();
+      const error = await this.$refs.currencyInput.forceValidationCheck(this.value);
+      this.validationError = error !== '';
     },
   }
 };
