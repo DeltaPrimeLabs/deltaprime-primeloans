@@ -112,37 +112,52 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             await expect(rewarder.withdrawFor(1, owner.address)).to.be.revertedWith("Unauthorized: onlyPool");
         });
 
-        it("[360 days] should deposit (depositor1) to pool and check rewards after some time", async () => {
+        it("[360 days] should deposit (depositor1) to pool + depositor2 via transfer and check rewards after some time", async () => {
             expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
             // Deposit to pool DEPOSITOR1 -> +10.0
             await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
+            expect(await pool.balanceOf(depositor1.address)).to.equal(toWei("10.0"));
+            expect(await pool.balanceOf(depositor2.address)).to.equal(0);
 
             // check rewards
             expect(await pool.connect(depositor1).checkRewards()).to.be.equal(0);
+            expect(await pool.connect(depositor2).checkRewards()).to.be.equal(0);
 
             // FastForward 180 days ahead (+180 days in total)
             await time.increase(time.duration.days(180));
             // check rewards
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(50, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.equal(0);
 
             // FastForward 90 days ahead (+270 days in total)
             await time.increase(time.duration.days(90));
             // check rewards
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(75, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.equal(0);
 
+            // Transfer deposited funds from borrower1 to borrower2
+            await pool.connect(depositor1).transfer(depositor2.address, toWei("5"));
             // FastForward 90 days ahead (360 days in total)
             await time.increase(time.duration.days(90));
             // check rewards
-            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(100, 1e-4);
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(87.5, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.closeTo(12.5, 1e-4);
 
             // claim rewards
-            let initialWavaxBalance = fromWei(await rewardToken.balanceOf(depositor1.address));
+            let initialRewardTokenBalance = fromWei(await rewardToken.balanceOf(depositor1.address));
+            let initialRewardTokenBalance2 = fromWei(await rewardToken.balanceOf(depositor2.address));
             await pool.connect(depositor1).getRewards();
-            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialWavaxBalance).to.be.closeTo(100, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor1.address)) - initialRewardTokenBalance).to.be.closeTo(87.5, 1e-4);
+            expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialRewardTokenBalance2).to.be.closeTo(0, 1e-4);
 
-            await pool.connect(depositor1).withdraw(toWei("10.0"));
+            await pool.connect(depositor1).withdraw(toWei("5.0"));
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(412.5, 1e-4);
+
+            await pool.connect(depositor2).getRewards();
+            expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialRewardTokenBalance2).to.be.closeTo(12.5, 1e-4);
             expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(400, 1e-4);
+            await pool.connect(depositor2).withdraw(toWei("5.0"));
         });
 
         it("should successfully set a new duration target and add rewards", async () => {

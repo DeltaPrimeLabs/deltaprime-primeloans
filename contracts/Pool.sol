@@ -119,6 +119,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _accumulateDepositInterest(recipient);
         _deposited[recipient] += amount;
 
+        // Handle rewards
+        poolRewarder.withdrawFor(amount, msg.sender);
+        poolRewarder.stakeFor(amount, recipient);
+
         emit Transfer(msg.sender, recipient, amount);
 
         return true;
