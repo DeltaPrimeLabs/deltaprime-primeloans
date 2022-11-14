@@ -23,6 +23,7 @@ import "./facets/SmartLoanViewFacet.sol";
  */
 contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConnector {
     using TransferHelper for address;
+    using TransferHelper for address payable;
 
     modifier hasNoLoan() {
         require(!_hasLoan(msg.sender), "Only one loan per owner is allowed");
@@ -83,7 +84,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         //Fund account with own funds and credit
         IERC20Metadata token = IERC20Metadata(_assetAddress);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
-        token.approve(address(smartLoan), _amount);
+        address(token).safeApprove(address(smartLoan), _amount);
 
         proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
 
