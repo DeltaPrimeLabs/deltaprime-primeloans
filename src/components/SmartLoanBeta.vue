@@ -4,19 +4,20 @@
       <StatsBarBeta
         :total-value="noSmartLoanInternal ? 0 : totalValue"
         :debt="noSmartLoanInternal ? 0 : debt"
-        :health="noSmartLoanInternal ? 0 : health">
+        :health="noSmartLoanInternal ? 0 : health"
+        :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoanInternal" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
+      <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
         To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button.<br>
         This operation creates your Prime Account!
       </InfoBubble>
-      <InfoBubble v-if="!noSmartLoanInternal" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
+      <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
          provide liquidity and farm them on the Farms page.
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
-          <Tabs>
+          <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex">
             <Tab :title="'Assets'"
                  :img-active="'src/assets/icons/assets_on.svg'"
                  :img-not-active="'src/assets/icons/assets_off.svg'">
@@ -46,6 +47,12 @@ import Farm from './Farm';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
+
+const ASSETS_PATH = 'assets';
+const FARMS_PATH = 'farms';
+
+const ASSETS_PATH_NAME = 'Prime Account Assets';
+const FARMS_PATH_NAME = 'Prime Account Farms';
 
 export default {
   name: 'SmartLoanBeta',
@@ -85,10 +92,12 @@ export default {
       totalValue: 0,
       health: 0,
       noSmartLoanInternal: null,
+      selectedTabIndex: 0,
     };
   },
 
   async mounted() {
+    this.setupSelectedTab();
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
@@ -129,12 +138,33 @@ export default {
 
     updateLoanStatus(fullLoanStatus) {
       if (fullLoanStatus) {
-        this.noSmartLoanInternal = false;
         this.totalValue = fullLoanStatus.totalValue;
         this.debt = fullLoanStatus.debt;
         this.health = this.getHealth;
       }
       this.$forceUpdate();
+    },
+
+    setupSelectedTab() {
+      const url = document.location.href;
+      const lastUrlPart = url.split('/').reverse()[0];
+      if (lastUrlPart !== ASSETS_PATH && lastUrlPart !== FARMS_PATH) {
+        this.$router.push({name: ASSETS_PATH_NAME});
+      } else {
+        if (lastUrlPart === ASSETS_PATH) {
+          this.selectedTabIndex = 0;
+        } else if (lastUrlPart === FARMS_PATH) {
+          this.selectedTabIndex = 1;
+        }
+      }
+    },
+
+    tabChange(tabIndex) {
+      if (tabIndex === 0) {
+        this.$router.push({name: ASSETS_PATH_NAME});
+      } else if (tabIndex === 1) {
+        this.$router.push({name: FARMS_PATH_NAME});
+      }
     },
   },
 };

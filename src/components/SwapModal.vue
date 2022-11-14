@@ -8,12 +8,12 @@
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
                           v-on:valueChange="sourceInputChange"
-                          :validators="sourceValidators">
+                          :validators="sourceValidators"
+                          :max="Number(assetBalances[sourceAsset])">
       </CurrencyComboInput>
       <div class="asset-info">
         Available:
-        <span v-if="sourceAssetBalance" class="asset-info__value">{{ sourceAssetBalance }}</span>
-        <span v-if="!sourceAssetBalance" class="asset-info__value">0</span>
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound }}</span>
       </div>
 
       <div class="reverse-swap-button">
@@ -29,8 +29,60 @@
         class="asset-info__value">1 {{ targetAsset }} = {{ conversionRate | smartRound }} {{ sourceAsset }}</span>
       </div>
 
+      <div class="transaction-summary-wrapper">
+        <TransactionResultSummaryBeta>
+          <div class="summary__title">
+            Values after transaction:
+          </div>
+          <div class="summary__values">
+            <div class="summary__value__pair">
+              <div class="summary__label"
+                   v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
+                Health Ratio:
+              </div>
+              <div class="summary__value">
+                <span class="summary__value--error"
+                      v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
+                  {{ healthAfterTransaction | percent }}
+                </span>
+                <span v-else>
+                  {{ healthAfterTransaction | percent }}
+                </span>
+                <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"
+                              :display-inline="true"></BarGaugeBeta>
+              </div>
+            </div>
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ sourceAsset }} balance:
+              </div>
+              <div class="summary__value">
+                {{
+                  formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) > 0 ? formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) : 0
+                }}
+              </div>
+            </div>
+
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ targetAsset }} balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}
+              </div>
+            </div>
+          </div>
+        </TransactionResultSummaryBeta>
+      </div>
+
       <div class="button-wrapper">
-        <Button :label="'Swap'" v-on:click="submit()" :disabled="sourceInputError || targetInputError"></Button>
+        <Button :label="'Swap'"
+                v-on:click="submit()"
+                :disabled="sourceInputError || targetInputError"
+                :waiting="transactionOngoing">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -42,7 +94,9 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
+import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
+import {calculateHealth} from '../utils/calculate';
 
 export default {
   name: 'SwapModal',
@@ -52,6 +106,7 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
+    BarGaugeBeta
   },
 
   props: {},
@@ -63,13 +118,20 @@ export default {
       sourceAsset: null,
       targetAsset: null,
       sourceAssetBalance: 0,
+      targetAssetBalance: null,
       conversionRate: null,
-      sourceAssetAmount: null,
-      targetAssetAmount: null,
+      sourceAssetAmount: 0,
+      targetAssetAmount: 0,
       sourceValidators: [],
       targetValidators: [],
       sourceInputError: false,
       targetInputError: false,
+      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
+      healthAfterTransaction: 0,
+      assetBalances: [],
+      transactionOngoing: false,
+      debt: 0,
+      thresholdWeightedValue: 0,
     };
   },
 
@@ -81,6 +143,7 @@ export default {
       this.setupTargetAsset();
       this.setupConversionRate();
       this.setupValidators();
+      this.calculateHealthAfterTransaction();
     });
   },
 
@@ -88,6 +151,7 @@ export default {
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
@@ -123,23 +187,24 @@ export default {
       }
     },
 
-    sourceInputChange(change) {
-      if (change.asset === this.targetAsset) {
+    sourceInputChange(changeEvent) {
+      if (changeEvent.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
-        this.sourceAsset = change.asset;
-        const targetAssetAmount = change.value / this.conversionRate;
+        this.sourceAsset = changeEvent.asset;
+        const targetAssetAmount = changeEvent.value / this.conversionRate;
         if (!Number.isNaN(targetAssetAmount)) {
           const value = Math.ceil(targetAssetAmount * 1000000) / 1000000;
-          this.sourceAssetAmount = change.value;
+          this.sourceAssetAmount = changeEvent.value;
           this.targetAssetAmount = value;
           this.$refs.targetInput.setCurrencyInputValue(value);
 
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
+          this.calculateHealthAfterTransaction();
         }
       }
-      this.sourceInputError = change.error;
+      this.sourceInputError = changeEvent.error;
     },
 
     targetInputChange(change) {
@@ -156,6 +221,7 @@ export default {
 
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
+          this.calculateHealthAfterTransaction();
         }
       }
       this.targetInputError = change.error;
@@ -168,7 +234,8 @@ export default {
     },
 
     calculateSourceAssetBalance() {
-      this.sourceAssetBalance = config.ASSETS_CONFIG[this.sourceAsset].balance;
+      const sourceAssetBalance = this.assetBalances[this.sourceAsset];
+      this.sourceAssetBalance = sourceAssetBalance;
     },
 
     reverseSwap() {
@@ -181,21 +248,39 @@ export default {
 
       this.calculateSourceAssetBalance();
       this.setupConversionRate();
+
+      this.calculateHealthAfterTransaction();
     },
 
     setupValidators() {
       this.sourceValidators = [
         {
           validate: (value) => {
-            const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
-            sourceAsset.balance;
-            if (value > sourceAsset.balance) {
+            if (value > this.assetBalances[this.sourceAsset]) {
               return 'Amount exceeds balance';
             }
           }
         },
+        {
+          validate: (value) => {
+            this.calculateHealthAfterTransaction(value);
+            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+              return 'The health is below allowed limit';
+            }
+          }
+        },
       ];
-    }
+    },
+
+    calculateHealthAfterTransaction(sourceAssetAmount = this.sourceAssetAmount, targetAssetAmount = this.targetAssetAmount) {
+      const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
+      const targetAsset = config.ASSETS_CONFIG[this.targetAsset];
+      const weightedSourceAssetValue = sourceAssetAmount * sourceAsset.price * sourceAsset.maxLeverage;
+      const weightedTargetAssetValue = targetAssetAmount * targetAsset.price * targetAsset.maxLeverage;
+
+      this.healthAfterTransaction = calculateHealth(this.debt, this.thresholdWeightedValue - weightedSourceAssetValue + weightedTargetAssetValue);
+      return this.healthAfterTransaction;
+    },
   }
 };
 </script>
@@ -237,6 +322,10 @@ export default {
       margin: -6px 0 14px 0;
     }
   }
+}
+
+.bar-gauge-tall-wrapper {
+  padding-top: 5px;
 }
 
 </style>

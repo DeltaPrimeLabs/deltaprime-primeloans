@@ -65,6 +65,10 @@ export function aprToApy(apr) {
   return Math.pow(1 + (apr / compoundingPeriods), compoundingPeriods) - 1;
 }
 
+export function removePaddedTrailingZeros(numberString) {
+  return numberString.replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+}
+
 export async function yieldYakApy(farmAddress) {
   const apysUrl = 'https://staging-api.yieldyak.com/apys';
   return (await (await fetch(apysUrl)).json())[farmAddress].apy / 100;

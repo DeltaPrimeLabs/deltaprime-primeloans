@@ -23,8 +23,7 @@
       </div>
 
       <div class="table__cell apy">
-        <LoadedValue :check="() => pool.apy != null">
-          {{ pool.apy | percent }}
+        <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy)">
         </LoadedValue>
       </div>
 
@@ -206,6 +205,7 @@ export default {
       &.apy {
         align-items: center;
         justify-content: flex-end;
+        font-weight: 500;
       }
 
       &.interest {

@@ -10,10 +10,24 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Staked:</div>
-        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency">{{ asset.name }}</span></div>
+        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency"> {{ asset.name }}</span></div>
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:newValue="unstakeValueChange" :validators="validators"></CurrencyInput>
+      <CurrencyInput v-if="isLP"
+                     :symbol="asset.primary"
+                     :symbol-secondary="asset.secondary"
+                     v-on:newValue="unstakeValueChange"
+                     :validators="validators"
+                     :max="staked">
+      </CurrencyInput>
+      <CurrencyInput ref="currencyInput"
+                     v-else
+                     :symbol="asset.symbol"
+                     v-on:newValue="unstakeValueChange"
+                     :validators="validators"
+                     :max="staked">
+      </CurrencyInput>
+
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -44,7 +58,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Unstake'" v-on:click="submit()"></Button>
+        <Button :label="'Unstake'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="currencyInputError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -70,13 +88,16 @@ export default {
     available: {},
     staked: {},
     asset: {},
+    isLp: false,
     protocol: null,
   },
 
   data() {
     return {
       unstakeValue: 0,
-      validators: []
+      validators: [],
+      transactionOngoing: false,
+      currencyInputError: false,
     }
   },
 
@@ -97,11 +118,13 @@ export default {
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('UNSTAKE', this.unstakeValue);
     },
 
     unstakeValueChange(event) {
       this.unstakeValue = event.value;
+      this.currencyInputError = event.error;
     },
 
     setupValidators() {

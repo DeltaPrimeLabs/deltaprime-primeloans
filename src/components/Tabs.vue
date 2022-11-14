@@ -53,6 +53,7 @@ export default {
   watch: {
     selectedIndex: function(value) {
       this.selectTab(value)
+      this.$emit('tabChange', value);
     },
     openTabIndex: function(value) {
       this.selectedIndex = value;

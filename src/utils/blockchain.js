@@ -37,13 +37,14 @@ export async function handleTransaction(fun, args, onSuccess, onFail) {
 
         if (onSuccess) onSuccess();
     } catch (error) {
-        if (onFail) onFail();
+        if (onFail) onFail(error);
     }
 }
 export async function awaitConfirmation(tx, provider, actionName) {
     const transaction = await provider.waitForTransaction(tx.hash);
 
     if (transaction.status === 0) {
+        console.log(transaction)
         Vue.$toast.error(`Failed to ${actionName}. Check Metamask for more info.`)
     } else Vue.$toast.success('Transaction success! Waiting for confirmations...');
 
@@ -84,4 +85,15 @@ export async function handleCall(fun, args, onSuccess, onFail) {
 
 export function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
+}
+
+export function isPausedError(e) {
+    if (e && e.data && e.data.message) {
+        return e.data.message.includes("ProtocolUpgrade: paused");
+    }
+}
+
+export function isOracleError(e) {
+    const ORACLE_ERROR = "0x2b13aef500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003";
+    return e.data && e.data.data && e.data.data.includes(ORACLE_ERROR);
 }

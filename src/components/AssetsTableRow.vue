@@ -25,15 +25,11 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        <template v-if="asset.symbol === 'AVAX' && avaxDebt">
-          <div class="double-value__pieces">{{ avaxDebt | smartRound }}</div>
-          <div class="double-value__usd">{{ avaxDebt * asset.price | usd }}</div>
+        <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
+          <div class="double-value__pieces">{{ debtsPerAsset[asset.symbol].debt | smartRound }}</div>
+          <div class="double-value__usd">{{ debtsPerAsset[asset.symbol].debt * asset.price | usd }}</div>
         </template>
-        <template v-if="asset.symbol === 'USDC' && usdcDebt">
-          <div class="double-value__pieces">{{ usdcDebt | smartRound }}</div>
-          <div class="double-value__usd">{{ usdcDebt * asset.price | usd }}</div>
-        </template>
-        <template v-if="(asset.symbol !== 'AVAX' && asset.symbol !== 'USDC') || !avaxDebt && !usdcDebt">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -133,9 +129,8 @@ export default {
     };
   },
   computed: {
-    ...mapState('pool', ['borrowingRate']),
-    ...mapState('fundsStore', ['smartLoanContract', 'avaxDebt', 'health', 'avaxDebt', 'usdcDebt', 'assetBalances', 'fullLoanStatus']),
-    ...mapState('poolStore', ['avaxPool', 'usdcPool', 'pools']),
+    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset']),
+    ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
 
     loanValue() {
@@ -148,11 +143,12 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken']),
+    ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Add / Borrow',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Add / Borrow' : 'Add',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -170,17 +166,19 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: 'Withdraw / Repay',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
               name: 'Withdraw',
             },
-            {
+            BORROWABLE_ASSETS.includes(this.asset.symbol) ?
+              {
               key: 'REPAY',
               name: 'Repay',
             }
+            : null
           ]
         },
         {
@@ -263,7 +261,7 @@ export default {
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
-          amount: value
+          amount: value.toFixed(config.DECIMALS_PRECISION)
         };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}).then(() => {
           this.closeModal();
@@ -275,8 +273,16 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.assetBalances = this.assetBalances;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
-      modalInstance.$on('SWAP', swapRequest => {
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.$on('SWAP', swapData => {
+        const swapRequest = {
+          ...swapData,
+          sourceAmount: swapData.sourceAmount.toFixed(config.DECIMALS_PRECISION)
+        };
         this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
           this.closeModal();
         });
@@ -295,18 +301,19 @@ export default {
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
+          const value = addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION);
           if (this.smartLoanContract.address === NULL_ADDRESS) {
-            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: addFromWalletEvent.value}).then(() => {
+            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}).then(() => {
               this.closeModal();
             });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
-              this.handleTransaction(this.fundNativeToken, {value: addFromWalletEvent.value}).then(() => {
+              this.handleTransaction(this.fundNativeToken, {value: value}).then(() => {
                 this.closeModal();
               });
             } else {
               const fundRequest = {
-                value: String(addFromWalletEvent.value),
+                value: value,
                 asset: this.asset.symbol,
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
@@ -322,13 +329,17 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
+      modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.totalCollateral = this.totalValue - this.debt;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+
       modalInstance.$on('WITHDRAW', withdrawEvent => {
+        const value = withdrawEvent.value.toFixed(config.DECIMALS_PRECISION);
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
-            value: withdrawEvent.value,
+            value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}).then(() => {
@@ -337,7 +348,7 @@ export default {
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
-            value: withdrawEvent.value,
+            value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
@@ -350,12 +361,14 @@ export default {
     openRepayModal() {
       const modalInstance = this.openModal(RepayModal);
       modalInstance.asset = this.asset;
-      modalInstance.health = this.health;
-      modalInstance.totalCollateral = 101;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
       modalInstance.$on('REPAY', value => {
         const repayRequest = {
           asset: this.asset.symbol,
-          amount: value
+          amount: value.toFixed(config.DECIMALS_PRECISION)
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}).then(() => {
           this.closeModal();
@@ -365,9 +378,7 @@ export default {
 
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
-      const walletAssetBalanceResponse = await tokenContract.balanceOf(this.account);
-      const walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[this.asset.symbol].decimals);
-      return Number(walletAssetBalance);
+      return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
     },
   },
   watch: {

@@ -4,33 +4,50 @@
       <div class="modal__title">
         Add from wallet
       </div>
-      <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your funds.<br/>
-      It might take a while and requires more gas, but you need to do it only once.<br/>
-      When it's done, you can explore the power of undercollateralized loans.</div>
-      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset === 'AVAX'">You need to confirm 3 transactions in Metamask:<br/>
+      <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your
+        funds.<br/>
+        It might take a while and requires more gas, but you need to do it only once.<br/>
+        When it's done, you can explore the power of undercollateralized loans.
+      </div>
+      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset === 'AVAX'">You need to confirm 3
+        transactions in Metamask:<br/>
         1. Convert AVAX<br/>
         2. Approve WAVAX<br/>
         3. Deploy the account<br/>
       </div>
-      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset !== 'AVAX'">You need to confirm 2 transactions in Metamask:<br/>
-        1. Approve {{asset.symbol}}<br/>
+      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset !== 'AVAX'">You need to confirm 2
+        transactions in Metamask:<br/>
+        1. Approve {{ asset.name }}<br/>
         2. Deploy account<br/>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
           {{ getAvailableAssetAmount | smartRound }}
-          <span v-if="asset.symbol === 'AVAX'" class="top-info__currency">
-            {{selectedDepositAsset}}
+          <span v-if="asset.name === 'AVAX'" class="top-info__currency">
+            {{ selectedDepositAsset }}
           </span>
-          <span v-if="asset.symbol !== 'AVAX'" class="top-info__currency">
-            {{asset.symbol}}
+          <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
+            {{ asset.name }}
           </span>
         </div>
       </div>
 
-      <CurrencyInput v-if="isLP" :symbol="asset.primary" :symbol-secondary="asset.secondary" v-on:inputChange="inputChange"></CurrencyInput>
-      <CurrencyInput ref="currencyInput" v-else :symbol="asset.symbol" v-on:newValue="inputChange" :validators="validators"></CurrencyInput>
+      <CurrencyInput ref="lpCurrencyInput"
+                     v-if="isLP"
+                     :symbol="asset.primary"
+                     :symbol-secondary="asset.secondary"
+                     v-on:newValue="inputChange"
+                     :validators="validators"
+                     :max="getAvailableAssetAmount">
+      </CurrencyInput>
+      <CurrencyInput ref="currencyInput"
+                     v-if="!isLP"
+                     :symbol="asset.symbol"
+                     v-on:newValue="inputChange"
+                     :validators="validators"
+                     :max="getAvailableAssetAmount">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -44,13 +61,15 @@
             <div class="summary__value">
               {{ healthAfterTransaction | percent }}
             </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0" :slim="true"></BarGaugeBeta>
+            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0"
+                          :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Balance:
             </div>
             <div class="summary__value">
-              {{ (Number(assetBalance) + Number(value)) | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+              {{ (Number(assetBalance) + Number(value)) | smartRound }}
+              {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -61,7 +80,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Add funds'" v-on:click="submit()" :disabled="validationError"></Button>
+        <Button :label="'Add funds'"
+                v-on:click="submit()"
+                :disabled="validationError"
+                :waiting="transactionOngoing">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -75,12 +98,14 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import {mapState} from 'vuex';
-import {calculateHealth} from "../utils/calculate";
+import {calculateHealth} from '../utils/calculate';
+import LoadedValue from './LoadedValue';
 
 
 export default {
   name: 'AddFromWalletModal',
   components: {
+    LoadedValue,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -96,8 +121,11 @@ export default {
     assetBalance: Number,
     isLP: false,
     walletAssetBalance: {},
-    walletNativeTokenBalance: {},
-    noSmartLoan: false
+    walletNativeTokenBalance: {
+      default: null,
+    },
+    noSmartLoan: false,
+    transactionOngoing: false
   },
 
   data() {
@@ -107,6 +135,7 @@ export default {
       validators: [],
       selectedDepositAsset: 'AVAX',
       validationError: false,
+      availableAssetAmount: 0,
     };
   },
 
@@ -115,6 +144,9 @@ export default {
       this.calculateHealthAfterTransaction();
       this.setupValidators();
     });
+    setTimeout(() => {
+      this.setupAvailableAssetAmount();
+    }, 1);
   },
 
   computed: {
@@ -124,16 +156,18 @@ export default {
     },
 
     getAvailableAssetAmount() {
+      this.$forceUpdate();
       if (this.asset.symbol === 'AVAX') {
         return this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
       } else {
-        return this.walletAssetBalance;
+        return Number(this.walletAssetBalance);
       }
     },
   },
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       if (this.asset.symbol === 'AVAX') {
         this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.selectedDepositAsset});
       } else {
@@ -143,13 +177,13 @@ export default {
 
     inputChange(changeEvent) {
       this.value = changeEvent.value;
+      this.validationError = changeEvent.error;
       this.calculateHealthAfterTransaction();
-      this.validationError = changeEvent.error
     },
 
     calculateHealthAfterTransaction() {
       if (this.value) {
-        this.healthAfterTransaction = calculateHealth(this.loan, this.thresholdWeightedValue + this.value * this.asset.price * this.asset.debtCoverage);
+        this.healthAfterTransaction = calculateHealth(this.loan, this.thresholdWeightedValue + this.value * this.asset.price * this.asset.maxLeverage);
       } else {
         this.healthAfterTransaction = this.health !== null ? this.health : 0;
       }
@@ -164,13 +198,23 @@ export default {
             }
           }
         }
-      ]
+      ];
     },
 
     async assetToggleChange(asset) {
       this.selectedDepositAsset = asset;
       const error = await this.$refs.currencyInput.forceValidationCheck(this.value);
       this.validationError = error !== '';
+    },
+
+    setupAvailableAssetAmount() {
+      if (this.asset.symbol === 'AVAX') {
+        const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
+        this.availableAssetAmount = Number(balance);
+      } else {
+        this.availableAssetAmount = Number(this.walletAssetBalance);
+      }
+      this.$forceUpdate();
     },
   }
 };

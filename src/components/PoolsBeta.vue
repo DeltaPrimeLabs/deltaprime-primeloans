@@ -4,7 +4,7 @@
       <div class="main-content">
         <Block :bordered="true">
           <div class="title">Lend tokens</div>
-          <NameValueBadgeBeta :name="'Your deposits'">{{ totalTVL | usd }}</NameValueBadgeBeta>
+          <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
               <div class="pools-table__header">
@@ -63,6 +63,7 @@ export default {
     return {
       funds: config.ASSETS_CONFIG,
       totalTVL: 0,
+      totalDeposit: 0,
       poolsList: null,
     };
   },
@@ -78,6 +79,7 @@ export default {
       setTimeout(() => {
         this.poolsList = Object.values(this.pools);
         this.setupTotalTVL();
+        this.setupTotalDeposit();
       }, 100);
     },
 
@@ -91,6 +93,15 @@ export default {
         totalTVL += pool.tvl * pool.asset.price;
       });
       this.totalTVL = totalTVL;
+    },
+
+    setupTotalDeposit() {
+      let totalDeposit = 0;
+      this.poolsList.forEach(pool => {
+        totalDeposit += pool.deposit * pool.asset.price;
+      });
+      this.totalDeposit = totalDeposit;
+      this.$forceUpdate();
     },
 
     initPools() {

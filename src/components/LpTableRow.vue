@@ -5,17 +5,20 @@
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
-          <div class="asset__loan">
-            on {{ lpToken.dex }}
+          <div class="asset__dex">
+            by {{ lpToken.dex }}
           </div>
         </div>
+      </div>
+
+      <div class="table__cell">
       </div>
 
       <div class="table__cell table__cell--double-value balance">
         <template v-if="lpBalances">
           <div class="double-value__pieces">
             <LoadedValue :check="() => lpBalances[lpToken.symbol] != null"
-                         :value="formatTokenBalance(lpBalances[lpToken.symbol], 10)"></LoadedValue>
+                         :value="formatTokenBalance(lpBalances[lpToken.symbol], 10, true)"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="lpBalances[lpToken.symbol]">{{ lpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
@@ -27,14 +30,11 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ lpToken.apr | percent }}
+        {{ tvl | usd }}
       </div>
 
       <div class="table__cell">
-      </div>
-
-      <div class="table__cell price">
-        {{ lpToken.price | usd }}
+        {{ lpToken.apr | percent }}
       </div>
 
       <div></div>
@@ -76,6 +76,11 @@ import {mapActions, mapState} from "vuex";
 import ProvideLiquidityModal from "./ProvideLiquidityModal";
 import RemoveLiquidityModal from "./RemoveLiquidityModal";
 import WithdrawModal from "./WithdrawModal";
+const ethers = require('ethers');
+import {erc20ABI} from "../utils/blockchain";
+import {fromWei} from "../utils/calculate";
+import addresses from '../../common/addresses/avax/token_addresses.json';
+import {formatUnits, parseUnits} from "ethers/lib/utils";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -94,7 +99,7 @@ export default {
     lpToken: null
   },
 
-  mounted() {
+  async mounted() {
     this.setupActionsConfiguration();
   },
 
@@ -103,11 +108,14 @@ export default {
       actionsConfig: null,
       showChart: false,
       rowExpanded: false,
+      poolBalance: 0,
+      tvl: 0
     };
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances']),
+    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets']),
+    ...mapState('network', ['provider', 'account']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -119,6 +127,20 @@ export default {
       handler(smartLoanContract) {
         if (smartLoanContract) {
           this.setupActionsConfiguration();
+        }
+      },
+    },
+    provider: {
+      async handler(provider) {
+        if (provider){
+          await this.setupPoolBalance();
+        }
+      }
+    },
+    assets: {
+      handler(assets) {
+        if (assets) {
+          this.setupTvl();
         }
       },
     },
@@ -192,16 +214,18 @@ export default {
     },
 
     //TODO: duplicated code
-    openAddFromWalletModal() {
+    async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
+      modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = true;
+      modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
               const fundRequest = {
-                value: String(addFromWalletEvent.value),
+                value: addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION),
                 asset: this.lpToken.symbol,
                 assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
               };
@@ -216,11 +240,12 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
+      modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
       modalInstance.health = this.health;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
-          value: String(withdrawEvent.value),
+          value: withdrawEvent.value.toFixed(config.DECIMALS_PRECISION),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
         }
@@ -239,15 +264,15 @@ export default {
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
-          const lpRequest = {
+          const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: provideLiquidityEvent.firstAmount,
-            secondAmount: provideLiquidityEvent.secondAmount,
+            firstAmount: provideLiquidityEvent.firstAmount.toFixed(config.DECIMALS_PRECISION),
+            secondAmount: provideLiquidityEvent.secondAmount.toFixed(config.DECIMALS_PRECISION),
             dex: this.lpToken.dex
         };
-          this.handleTransaction(this.provideLiquidity, {lpRequest: lpRequest}).then(() => {
+          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}).then(() => {
             this.closeModal();
           });
         }
@@ -262,22 +287,47 @@ export default {
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
-        const removeRequest = {
+        const removeLiquidityRequest = {
           value: removeEvent.amount,
           symbol: this.lpToken.symbol,
           firstAsset: this.lpToken.primary,
           secondAsset: this.lpToken.secondary,
-          minFirstAmount: removeEvent.minReceivedFirst,
-          minSecondAmount: removeEvent.minReceivedSecond,
+          minFirstAmount: removeEvent.minReceivedFirst.toFixed(config.DECIMALS_PRECISION),
+          minSecondAmount: removeEvent.minReceivedSecond.toFixed(config.DECIMALS_PRECISION),
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
         }
 
-        this.handleTransaction(this.removeLiquidity, {removeRequest: removeRequest}).then(() => {
+        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}).then(() => {
           this.closeModal();
         });
       });
-    }
+    },
+
+    async setupPoolBalance() {
+      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+      this.poolBalance = fromWei(await lpTokenContract.totalSupply());
+    },
+
+    async setupTvl() {
+      const firstTokenContract = new ethers.Contract(addresses[this.lpToken.primary], erc20ABI, this.provider);
+      const secondTokenContract = new ethers.Contract(addresses[this.lpToken.secondary], erc20ABI, this.provider);
+
+      let priceFirst = this.assets[this.lpToken.primary].price;
+      let priceSecond = this.assets[this.lpToken.secondary].price;
+
+      if (priceFirst && priceSecond) {
+        let valueOfFirst = formatUnits(await firstTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].decimals) * config.ASSETS_CONFIG[this.lpToken.primary].price;
+        let valueOfSecond = formatUnits(await secondTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].secondary) * config.ASSETS_CONFIG[this.lpToken.secondary].price;
+
+        this.tvl = valueOfFirst + valueOfSecond;
+      }
+    },
+
+    async getWalletLpTokenBalance() {
+      const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, true);
+    },
   },
 };
 </script>
@@ -323,7 +373,7 @@ export default {
           font-weight: 500;
         }
 
-        .asset__loan {
+        .asset__dex {
           font-size: $font-size-xxs;
           color: $medium-gray;
         }

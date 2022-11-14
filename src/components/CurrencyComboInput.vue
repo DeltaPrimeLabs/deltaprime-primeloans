@@ -5,7 +5,9 @@
                      class="currency-input"
                      :embedded="true"
                      :validators="validators"
-                     v-on:inputChange="currencyInputChange">
+                     v-on:inputChange="currencyInputChange"
+                     :max="max"
+                     :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
@@ -46,7 +48,8 @@ export default {
   },
   props: {
     assetOptions: {},
-    validators: {}
+    validators: {},
+    max: {},
   },
   computed: {
     getDisplayedAssetOptions() {
@@ -116,9 +119,6 @@ export default {
       }
     },
 
-    test() {
-    },
-
     setSelectedAsset(asset, disableEmitValue) {
       this.selectedAsset = this.displayedOptions.find(option => option.symbol === asset);
       if (!disableEmitValue) {
@@ -133,8 +133,9 @@ export default {
       }
     },
 
-    emitValue() {
-      this.$emit('valueChange', {asset: this.selectedAsset.symbol, value: this.assetAmount});
+    async emitValue() {
+      const error = await this.$refs.currencyInput.forceValidationCheck();
+      this.$emit('valueChange', {asset: this.selectedAsset.symbol, value: this.assetAmount, error: error});
     },
 
     setCurrencyInputValue(value) {

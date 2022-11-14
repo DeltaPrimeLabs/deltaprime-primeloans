@@ -8,9 +8,9 @@
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
-          {{ asset.balance | smartRound }}
+          {{ assetBalance | smartRound }}
           <span class="top-info__currency">
-            {{asset.symbol}}
+            {{ asset.name }}
           </span>
         </div>
       </div>
@@ -19,13 +19,15 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="withdrawValueChange"
-                     :max="Number(asset.balance)"
-                     :validators="validators"></CurrencyInput>
+                     :max="maxWithdraw"
+                     :validators="validators">
+      </CurrencyInput>
       <CurrencyInput v-else
                      :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
-                     :max="Number(asset.balance)"
-                     :validators="validators"></CurrencyInput>
+                     :max="maxWithdraw"
+                     :validators="validators">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -33,14 +35,15 @@
             Values after confirmation:
           </div>
           <div class="summary__values">
-            <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction > MIN_ALLOWED_HEALTH}">
+            <div class="summary__label"
+                 v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
               Health Ratio:
             </div>
             <div class="summary__value">
-              <span class="summary__value--error" v-if="healthAfterTransaction > MIN_ALLOWED_HEALTH">
-                > {{ MIN_ALLOWED_HEALTH | percent }}
+              <span class="summary__value--error" v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
+                {{ healthAfterTransaction | percent }}
               </span>
-              <span v-if="healthAfterTransaction <= MIN_ALLOWED_HEALTH">
+              <span v-if="healthAfterTransaction >= MIN_ALLOWED_HEALTH">
                 {{ healthAfterTransaction | percent }}
               </span>
             </div>
@@ -50,18 +53,25 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ asset.balance - withdrawValue | smartRound }} {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol  }}
+              {{
+                (Number(assetBalance) - Number(withdrawValue)) > 0 ? (Number(assetBalance) - Number(withdrawValue)) : 0 | smartRound
+              }}
+              {{ isLP ? asset.primary + '-' + asset.secondary : asset.name }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
+      <div class="toggle-container" v-if="asset.name === 'AVAX'">
         <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Withdraw'" v-on:click="submit()" :disabled="currencyInputError"></Button>
+        <Button :label="'Withdraw'"
+                v-on:click="submit()"
+                :disabled="currencyInputError"
+                :waiting="transactionOngoing">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -75,7 +85,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth} from "../utils/calculate";
+import {calculateHealth} from '../utils/calculate';
 
 export default {
   name: 'WithdrawModal',
@@ -91,7 +101,7 @@ export default {
   props: {
     asset: {},
     health: {},
-    isLp: false
+    assetBalance: {},
   },
 
   data() {
@@ -101,14 +111,20 @@ export default {
       validators: [],
       currencyInputError: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
-      selectedWithdrawAsset: 'AVAX'
+      selectedWithdrawAsset: 'AVAX',
+      isLP: false,
+      transactionOngoing: false,
+      debt: 0,
+      thresholdWeightedValue: 0,
+      maxWithdraw: 0,
     };
   },
 
   mounted() {
     setTimeout(() => {
       this.setupValidators();
-      this.updateHealthAfterTransaction();
+      this.calculateHealthAfterTransaction();
+      this.calculateMaxWithdraw();
     });
   },
 
@@ -120,6 +136,7 @@ export default {
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       let withdrawEvent = {};
       if (this.asset.symbol === 'AVAX') {
         withdrawEvent = {
@@ -144,12 +161,10 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      if (this.withdrawValue) {
-        this.healthAfterTransaction = calculateHealth(this.loan - this.repayValue,
-            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.debtCoverage);
-      } else {
-        this.healthAfterTransaction = this.health;
-      }
+      let withdrawValue = this.withdrawValue ? this.withdrawValue : 0;
+      this.healthAfterTransaction = calculateHealth(this.debt + withdrawValue * this.asset.price,
+        this.thresholdWeightedValue + withdrawValue * this.asset.price * this.asset.maxLeverage);
+      this.$forceUpdate();
     },
 
     assetToggleChange(asset) {
@@ -160,19 +175,27 @@ export default {
       this.validators = [
         {
           validate: (value) => {
-            if (this.healthAfterTransaction === 0) {
+            if (this.healthAfterTransaction <= 0) {
               return `Health should be higher than 0%`;
             }
           }
         },
         {
           validate: (value) => {
-            if (this.asset.balance - value < 0) {
+            if (this.assetBalance - value < 0) {
               return `Withdraw amount exceeds balance`;
             }
           }
         }
       ];
+    },
+
+    calculateMaxWithdraw() {
+      const MIN_HEALTH = 0.0182;
+      const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
+      const denominator = this.asset.price - (this.asset.price * this.asset.maxLeverage) + (MIN_HEALTH * this.asset.price * this.asset.maxLeverage);
+      const maxWithdrawLimitedByHealth = numerator / denominator;
+      this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
     },
   }
 };

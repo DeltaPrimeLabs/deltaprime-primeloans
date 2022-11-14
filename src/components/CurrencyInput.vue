@@ -8,7 +8,7 @@
                placeholder="0" min="0" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
-        <div v-if="max" class="max-wrapper" @click.stop="value = max">
+        <div v-if="max" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
         </div>
         <div v-if="!embedded" class="logo-wrapper">
@@ -52,7 +52,7 @@ export default {
   name: 'CurrencyInput',
   props: {
     price: {type: Number},
-    max: {type: Number, default: null},
+    max: {default: null},
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
     flexDirection: {type: String, default: 'column'},
@@ -70,6 +70,7 @@ export default {
     denominationButtons: false,
     slippage: {type: Number, default: 0},
     embedded: false,
+    delayErrorCheckAfterValuePropagation: {type: Boolean, default: false}
   },
   computed: {},
   data() {
@@ -103,10 +104,17 @@ export default {
   },
   methods: {
     async updateValue(value) {
-      // this.internalValue = this.value;
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
-      await this.checkErrors(value);
+
+      if (this.delayErrorCheckAfterValuePropagation) {
+        setTimeout(async () => {
+          await this.checkErrors(value);
+        });
+      } else {
+        await this.checkErrors(value);
+      }
+
       this.ongoingErrorCheck = false;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
 
@@ -165,20 +173,31 @@ export default {
 
     setupDefaultValidators() {
       const positiveValidator = {
-        validate: function (value) {
-          if (value <= 0) {
+        validate: (value) => {
+          if (this.internalValue <= 0) {
             return `Value must be higher than 0`;
           }
         }
       };
       const wrongFormatValidator = {
-        validate: function (value) {
-          if (!value.toString().match(/^[0-9.,]+$/)) {
+        validate: (value) => {
+          if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting. Please use only alphanumeric values.`;
           }
         }
       }
       this.defaultValidators.push(positiveValidator, wrongFormatValidator);
+    },
+
+    setMax() {
+      this.setValue(this.max);
+      this.checkErrors(this.value);
+      this.$emit('inputChange', this.value);
+    },
+
+    setValueOfMax(maxValue) {
+      this.max = maxValue;
+      this.$forceUpdate();
     },
   }
 };

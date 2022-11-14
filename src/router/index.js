@@ -20,7 +20,17 @@ export default new Router({
     {
       path: '/prime-account',
       name: 'Prime Account',
-      component: PrimeAccount
+      component: PrimeAccount,
+      children: [
+        {
+          name: 'Prime Account Assets',
+          path: 'assets'
+        },
+        {
+          name: 'Prime Account Farms',
+          path: 'farms'
+        },
+      ]
     },
     {
       path: '/nft',
@@ -39,7 +49,7 @@ export default new Router({
     },
     {
       path: '*',
-      redirect: { name: 'Prime Account' }
+      redirect: { name: 'Prime Account Assets' }
     },
   ]
 })

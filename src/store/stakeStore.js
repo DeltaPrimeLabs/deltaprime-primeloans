@@ -49,7 +49,7 @@ export default {
         {gasLimit: 8000000}
       );
 
-      await awaitConfirmation(stakeTransaction, provider, stakeRequest.method);
+      await awaitConfirmation(stakeTransaction, provider, 'stake');
 
       await dispatch('updateStakedBalances');
       await dispatch('network/updateBalance', {}, {root: true});
@@ -63,9 +63,15 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const unstakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});
+      const unstakeTransaction = unstakeRequest.minAmount ?
+         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
+             parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())),
+             parseUnits(String(unstakeRequest.minAmount), BigNumber.from(unstakeRequest.decimals.toString())),
+             {gasLimit: 8000000})
+          :
+         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});;
 
-      await awaitConfirmation(unstakeTransaction, provider, unstakeRequest.method);
+      await awaitConfirmation(unstakeTransaction, provider, 'unstake');
 
       await dispatch('updateStakedBalances');
       await dispatch('network/updateBalance', {}, {root: true});

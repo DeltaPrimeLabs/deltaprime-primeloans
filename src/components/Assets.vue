@@ -19,13 +19,20 @@
       </div>
     </div>
     <div class="lp-tokens">
-      <div class="filter-container">
-        <div class="filter__label">Filter by:</div>
-        <AssetFilter :asset-options="assetsFilterOptions" v-on:filterChange="filterLpTokens"></AssetFilter>
+      <div class="filters">
+        <div class="filter-container">
+          <div class="filter__label">Filter by assets:</div>
+          <AssetFilter :asset-options="lpAssetsFilterOptions" v-on:filterChange="selectLpTokens"></AssetFilter>
+        </div>
+        <div class="filter-container">
+          <div class="filter__label">Filter by DEX:</div>
+
+          <DexFilter :dex-options="lpDexFilterOptions" v-on:filterChange="selectDexes"></DexFilter>
+        </div>
       </div>
       <div class="lp-table" v-if="lpTokens && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
-        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"></LpTableRow>
+        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{lpToken}}</LpTableRow>
 <!--        <div class="paginator-container">-->
 <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
 <!--        </div>-->
@@ -38,25 +45,23 @@
 import NameValueBadgeBeta from './NameValueBadgeBeta';
 import config from '../config';
 import AssetsTableRow from './AssetsTableRow';
-import BorrowModal from './BorrowModal';
-import {mapState, mapActions} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
-import {fromWei, formatUnits} from '../utils/calculate';
-import SwapModal from './SwapModal';
-import {fetchCollateralFromPayments} from '../utils/graph';
+import {formatUnits} from '../utils/calculate';
 import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import LpTableRow from './LpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
-
+import DexFilter from "./DexFilter";
 
 export default {
   name: 'Assets',
   components: {
+    DexFilter,
     Checkbox,
     Paginator,
     LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta},
@@ -64,14 +69,22 @@ export default {
     return {
       funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
-      filteredLpTokens: [],
+      selectedLpTokens: [] = [],
+      selectedDexes: [] = [],
       fundsTableHeaderConfig: null,
       lpTableHeaderConfig: null,
-      assetsFilterOptions: null,
+      lpAssetsFilterOptions: null,
+      lpDexFilterOptions: null,
     }
   },
   computed: {
     ...mapState('fundsStore', ['assets', 'fullLoanStatus', 'lpAssets', 'assetBalances', 'smartLoanContract', 'noSmartLoan']),
+    filteredLpTokens() {
+      return Object.values(this.lpTokens).filter(token =>
+          (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
+          && this.selectedDexes.includes(token.dex)
+      );
+    },
   },
   watch: {
     assets: {
@@ -91,9 +104,11 @@ export default {
     this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
     this.setupLpTableHeaderConfig();
-    this.setupAssetsFilterOptions();
+    this.setupLpLpAssetsFilterOptions();
+    this.setupLpDexFilterOptions();
     this.updateLpPriceData();
-    this.filteredLpTokens = JSON.parse(JSON.stringify(this.lpTokens));
+    this.selectedLpTokens = this.lpAssetsFilterOptions;
+    this.selectedDexes = this.lpDexFilterOptions;
   },
   methods: {
     ...mapActions('fundsStore',
@@ -105,15 +120,10 @@ export default {
         'createAndFundLoan',
         'setupSmartLoanContract',
         'getAllAssetsBalances',
-        'getDebts',
         'setAvailableAssetsValue',
         'updateFunds'
       ]),
     ...mapActions('poolStore', ['deposit']),
-
-    wavaxSwap() {
-      this.swapToWavax();
-    },
 
     updateFund(symbol, key, value) {
       Vue.set(this.funds[symbol], key, value);
@@ -247,10 +257,19 @@ export default {
             id: 'TOKEN'
           },
           {
+            label: ''
+          },
+          {
             label: 'Balance',
             sortable: false,
             class: 'balance',
             id: 'BALANCE'
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl'
           },
           {
             label: 'APR',
@@ -259,19 +278,7 @@ export default {
             id: 'APR'
           },
           {
-            label: 'Share',
-            sortable: false,
-            class: 'trend',
-            id: 'TREND'
-          },
-          {
-            label: 'Price',
-            sortable: false,
-            class: 'price',
-            id: 'PRICE'
-          },
-          {
-            label: '',
+            label: ''
           },
           {
             label: 'Actions',
@@ -282,12 +289,20 @@ export default {
       }
     },
 
-    setupAssetsFilterOptions() {
-      this.assetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'];
+    setupLpLpAssetsFilterOptions() {
+      this.lpAssetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'];
     },
 
-    filterLpTokens(selectedTokens) {
-      this.filteredLpTokens = Object.values(this.lpTokens).filter(token => selectedTokens.includes(token.primary) || selectedTokens.includes(token.secondary));
+    setupLpDexFilterOptions() {
+      this.lpDexFilterOptions = ['Pangolin', 'TraderJoe'];
+    },
+
+    selectLpTokens(selectedTokens) {
+      this.selectedLpTokens = selectedTokens;
+    },
+
+    selectDexes(selectedDexes) {
+      this.selectedDexes = selectedDexes;
     },
   },
 };
@@ -333,20 +348,6 @@ export default {
     display: flex;
     flex-direction: column;
     margin-top: 68px;
-
-    .filter-container {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      margin-bottom: 10px;
-
-      .filter__label {
-        font-size: $font-size-xsm;
-        color: $medium-gray;
-        font-weight: 600;
-        margin-right: 12px;
-      }
-    }
 
     .lp-table {
 

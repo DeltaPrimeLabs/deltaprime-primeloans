@@ -16,7 +16,9 @@
       <CurrencyInput :symbol="asset.symbol"
                      :validators="validators"
                      v-on:inputChange="inputChange"
-                     v-on:newValue="currencyInputChange"></CurrencyInput>
+                     v-on:newValue="currencyInputChange"
+                     :max="maxBorrow">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -48,7 +50,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError"></Button>
+        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError" :waiting="transactionOngoing"></Button>
       </div>
     </Modal>
   </div>
@@ -88,8 +90,10 @@ export default {
       healthAfterTransaction: 0,
       validators: [],
       currencyInputError: false,
+      transactionOngoing: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       MAX_POOL_UTILISATION: config.MAX_POOL_UTILISATION,
+      maxBorrow: 0,
     };
   },
 
@@ -97,11 +101,13 @@ export default {
     setTimeout(() => {
       this.calculateHealthAfterTransaction();
       this.setupValidators();
+      this.calculateMaxBorrow();
     });
   },
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('BORROW', this.value);
     },
 
@@ -118,7 +124,6 @@ export default {
       let value = this.value ? this.value : 0;
         this.healthAfterTransaction = calculateHealth(this.debt + value * this.asset.price,
             this.thresholdWeightedValue + value * this.asset.price * this.asset.debtCoverage);
-
     },
 
     setupValidators() {
@@ -138,6 +143,13 @@ export default {
           }
         }
       ];
+    },
+
+    calculateMaxBorrow() {
+      const MIN_HEALTH = 0.0182;
+      const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
+      const denominator = this.asset.price - (this.asset.price * this.asset.maxLeverage) + (MIN_HEALTH * this.asset.price * this.asset.maxLeverage);
+      this.maxBorrow = numerator / denominator;
     },
   }
 };

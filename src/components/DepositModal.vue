@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> AVAX</span></div>
       </div>
 
       <CurrencyInput v-on:newValue="depositValueChange"
@@ -53,7 +53,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Deposit'" v-on:click="submit()"></Button>
+        <Button :label="'Deposit'" v-on:click="submit()" :waiting="transactionOngoing"></Button>
       </div>
     </Modal>
   </div>
@@ -79,7 +79,7 @@ export default {
   props: {
     apy: null,
     available: null,
-    deposit: null,
+    deposit: 0,
     assetSymbol: null,
   },
 
@@ -88,6 +88,7 @@ export default {
       depositValue: 0,
       selectedDepositAsset: 'AVAX',
       validators: [],
+      transactionOngoing: false,
     };
   },
 
@@ -97,7 +98,7 @@ export default {
 
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (this.deposit + this.depositValue);
+      return this.apy / 365 * (Number(this.deposit) + this.depositValue);
     },
 
     getModalHeight() {
@@ -107,6 +108,7 @@ export default {
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       const depositEvent = {
         value: this.depositValue,
         depositNativeToken: this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX',

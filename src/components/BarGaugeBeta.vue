@@ -1,8 +1,8 @@
 <template>
-  <div class="bar-gauge-beta-component">
+  <div class="bar-gauge-beta-component" v-bind:class="{'bar-gauge-beta-component--inline': displayInline}">
     <div class="bar-gauge">
-      <div class="bar" v-bind:class="{'slim': slim}">
-        <div class="bar__value" v-bind:class="{'bar__value--error': value === 0}" :style="{'width': barGaugeValueWidth + 'px'}"></div>
+      <div class="bar" v-bind:class="{'bar--slim': slim, 'bar--zero': value === 0}">
+        <div v-if="value > 0" class="bar__value" :style="{'width': barGaugeValueWidth + 'px'}"></div>
       </div>
       <div v-if="!slim" class="range">
         <div>{{min | percent(0)}}</div>
@@ -34,6 +34,10 @@ export default {
     slim: {
       type: Boolean,
       default: false,
+    },
+    displayInline: {
+      type: Boolean,
+      default: false,
     }
   },
   computed: {
@@ -62,6 +66,10 @@ export default {
   align-items: center;
   justify-content: center;
 
+  &.bar-gauge-beta-component--inline {
+    display: inline-flex;
+  }
+
   .bar-gauge {
     display: flex;
     flex-direction: column;
@@ -76,7 +84,7 @@ export default {
       box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
       background-color: rgba(191, 188, 255, 0.2);
 
-      &.slim {
+      &.bar--slim {
         width: 53px;
         height: 11px;
 
@@ -84,6 +92,11 @@ export default {
           height: 11px;
           min-width: 11px;
         }
+      }
+
+      &.bar--zero {
+        box-shadow: inset 0 1px 3px 0 rgba(246, 66, 84, 0.3);
+        background-color: rgba(255, 105, 105, 0.2);
       }
 
       .bar__value {

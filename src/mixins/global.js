@@ -1,11 +1,12 @@
 import {mapState} from 'vuex';
 import config from "@/config";
-import {Contract} from "ethers";
+import ethers, {Contract} from "ethers";
 import EXCHANGETUP from '@artifacts/contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol/PangolinIntermediaryTUP.json';
 import EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json'
 import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
-import {handleCall, handleTransaction} from "../utils/blockchain";
+import {erc20ABI, handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
 import Vue from 'vue';
+import addresses from '../../common/addresses/avax/token_addresses.json';
 
 export default {
   methods: {
@@ -29,18 +30,36 @@ export default {
       return parseInt(hex, 16);
     },
 
-    formatTokenBalance(value, precision = 5) {
+    formatTokenBalance(value, precision = 5, toFixed = false) {
       const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
       const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
-      return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
+      if (value !== null) {
+        if (!toFixed) {
+          return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
+        } else {
+          return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1')
+        }
+      } else {
+        return '';
+      }
+    },
+
+    formatPercent(value) {
+      return `${Math.round(value * 10000) / 100}%`
     },
 
     async handleTransaction(fun, args, onSuccess, onFail) {
+      if (!onFail) onFail = async (e) => await this.handleError(e);
       await handleTransaction(fun, args, onSuccess, onFail);
     },
     async handleCall(fun, args, onSuccess, onFail) {
+      if (!onFail) onFail = async (e) => await this.handleError(e);
       return await handleCall(fun, args, onSuccess, onFail);
+    },
+    async handleError(e) {
+      if (isPausedError(e)) this.$store.commit('fundsStore/setProtocolPaused', true)
+      if (isOracleError(e)) this.$store.commit('fundsStore/setOracleError', true)
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
       if (amount > 0) {
@@ -119,6 +138,17 @@ export default {
     getAssetIcon(assetSymbol) {
       const asset = config.ASSETS_CONFIG[assetSymbol];
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
+    },
+
+    async getWalletTokenBalance(account, assetSymbol, tokenContract, isLP) {
+      const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
+      let walletAssetBalance;
+      if (!isLP) {
+        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
+      } else {
+        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
+      }
+      return Number(walletAssetBalance);
     },
   },
   computed: {

@@ -5,7 +5,11 @@
         Repay
       </div>
 
-      <CurrencyInput :symbol="asset.symbol" v-on:newValue="repayValueChange" :max="Number(asset.balance)"></CurrencyInput>
+      <CurrencyInput :symbol="asset.symbol"
+                     v-on:newValue="repayValueChange"
+                     :max="assetDebt"
+                     :validators="validators">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -25,14 +29,18 @@
               Loan:
             </div>
             <div class="summary__value">
-              {{ loan - repayValue | smartRound }} {{ asset.symbol }}
+              {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Repay'" v-on:click="submit()"></Button>
+        <Button :label="'Repay'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="currencyInputError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -59,15 +67,19 @@ export default {
   props: {
     asset: {},
     health: {},
+    debt: 0,
     initialLoan: {},
-    thresholdWeightedValue: {}
+    thresholdWeightedValue: {},
+    assetDebt: {},
   },
 
   data() {
     return {
       repayValue: 0,
       healthAfterTransaction: 0,
-      loan: 0,
+      transactionOngoing: false,
+      validators: [],
+      currencyInputError: false,
     }
   },
 
@@ -75,28 +87,40 @@ export default {
     setTimeout(() => {
       this.loan = this.initialLoan;
       this.calculateHealthAfterTransaction();
+      this.setupValidators();
     })
   },
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('REPAY', this.repayValue);
     },
 
 
     repayValueChange(event) {
-      this.repayValue = event.value;
+      this.repayValue = Number(event.value);
+      this.currencyInputError = event.error;
       this.calculateHealthAfterTransaction();
     },
 
     calculateHealthAfterTransaction() {
-      if (this.repayValue) {
-        this.healthAfterTransaction = calculateHealth(this.loan - this.repayValue,
-            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.debtCoverage);
-      } else {
-        this.healthAfterTransaction = this.health;
-      }
+      this.healthAfterTransaction = calculateHealth(this.debt - Number(this.repayValue) * this.asset.price,
+        this.thresholdWeightedValue - Number(this.repayValue) * this.asset.price * this.asset.maxLeverage);
     },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > this.debt) {
+              return `Repay value exceeds debt`;
+            }
+          }
+        }
+      ];
+    },
+
   }
 };
 </script>

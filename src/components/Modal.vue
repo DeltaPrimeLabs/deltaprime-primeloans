@@ -47,7 +47,7 @@ export default {
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      height: 100%;
       -webkit-backdrop-filter: blur(25px);
       backdrop-filter: blur(25px);
 

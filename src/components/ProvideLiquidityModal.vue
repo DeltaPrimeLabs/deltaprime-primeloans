@@ -9,13 +9,15 @@
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
-                     :validators="firstInputValidators">
+                     :validators="firstInputValidators"
+                     :max="Number(firstAssetBalance)">
       </CurrencyInput>
       <CurrencyInput ref="secondInput"
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
-                     :validators="secondInputValidators">
+                     :validators="secondInputValidators"
+                     :max="Number(secondAssetBalance)">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -24,26 +26,43 @@
             Values after transaction:
           </div>
           <div class="summary__values">
-            <div class="summary__label">
-              LP balance:
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                LP balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(lpTokenBalance) + Number(addedLiquidity), 10, true) }}
+              </div>
             </div>
-            <div v-if="true" class="summary__value">
-              {{ formatTokenBalance(lpTokenBalance + addedLiquidity, 10) }}
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ firstAsset.symbol }} balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(firstAssetBalance) - Number(firstAmount)) }}
+              </div>
             </div>
-            <div class="summary__divider"></div>
-            <div class="summary__label">
-              {{ firstAsset.symbol }} balance: {{ formatTokenBalance(firstAssetBalance - firstAmount) }}
-            </div>
-            <div class="summary__divider"></div>
-            <div class="summary__label">
-              {{ secondAsset.symbol }} balance: {{ formatTokenBalance(secondAssetBalance - secondAmount) }}
+
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ secondAsset.symbol }} balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(secondAssetBalance) - Number(secondAmount)) }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Provide liquidity'" v-on:click="submit()"></Button>
+        <Button :label="'Provide liquidity'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="firstInputError || secondInputError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -86,7 +105,10 @@ export default {
       secondAmount: null,
       firstInputValidators: [],
       secondInputValidators: [],
-      addedLiquidity: 0
+      addedLiquidity: 0,
+      transactionOngoing: false,
+      firstInputError: false,
+      secondInputError: false,
     };
   },
 
@@ -107,6 +129,7 @@ export default {
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('PROVIDE_LIQUIDITY',
           { firstAsset: this.firstAsset, secondAsset: this.secondAsset, firstAmount: this.firstAmount, secondAmount: this.secondAmount });
     },
@@ -114,14 +137,18 @@ export default {
     async firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
-      this.$refs.secondInput.setValue(this.secondAmount);
+      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(15): 0);
+      this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
     },
 
     async secondInputChange(change) {
       this.secondAmount = change;
       this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
-      this.$refs.firstInput.setValue(this.firstAmount);
+      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(15) : 0);
+      this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
     },
 

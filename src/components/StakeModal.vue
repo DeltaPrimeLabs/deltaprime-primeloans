@@ -1,6 +1,6 @@
 <template>
   <div id="modal" class="stake-modal-component modal-component">
-    <Modal>
+    <Modal v-if="asset">
       <div class="modal__title">
         Stake
       </div>
@@ -10,11 +10,25 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span
-          class="top-info__currency"> {{ asset.name }}</span></div>
+        <div class="top-info__value">{{ available | smartRound }}
+          <span class="top-info__currency"> {{ asset.symbol }}</span>
+        </div>
       </div>
 
-      <CurrencyInput :symbol="asset.name" v-on:newValue="stakeValueChange" :validators="validators"></CurrencyInput>
+      <CurrencyInput v-if="isLP"
+                     :symbol="asset.primary"
+                     :symbol-secondary="asset.secondary"
+                     v-on:newValue="stakeValueChange"
+                     :validators="validators"
+                     :max="Number(available)">
+      </CurrencyInput>
+      <CurrencyInput ref="currencyInput"
+                     v-else
+                     :symbol="asset.symbol"
+                     v-on:newValue="stakeValueChange"
+                     :validators="validators"
+                     :max="Number(available)">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -26,33 +40,37 @@
             </div>
             Values after confirmation:
           </div>
-          <div class="summary__values">
-            <div class="summary__value_pair">
+          <div class="summary__values" v-if="asset">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 Balance:
               </div>
               <div class="summary__value">
-                {{ Number(available) - Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
+                {{ (Number(available) - Number(stakeValue)) > 0 ? Number(available) - Number(stakeValue) : 0 | smartRound }}
+                <span class="currency">
+                  {{asset.symbol}}
+                </span>
               </div>
             </div>
             <div class="summary__divider divider--long"></div>
-            <div class="summary__value_pair">
+            <div class="summary__value__pair">
 
               <div class="summary__label">
                 Staked:
               </div>
               <div class="summary__value">
-                {{ Number(staked) + Number(stakeValue) | smartRound }} <span class="currency">{{ asset.name }}</span>
+                {{ Number(staked) + Number(stakeValue) | smartRound }}
+                <span class="currency">{{ asset.symbol }}</span>
               </div>
             </div>
             <div class="summary__divider divider--long"></div>
-            <div class="summary__value_pair">
+            <div class="summary__value__pair">
 
               <div class="summary__label">
                 Daily interest ≈
               </div>
               <div class="summary__value">
-                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
+                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.symbol }}</span>
               </div>
             </div>
           </div>
@@ -60,7 +78,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Stake'" v-on:click="submit()"></Button>
+        <Button :label="'Stake'"
+                v-on:click="submit()"
+                :disabled="currencyInputError"
+                :waiting="transactionOngoing">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -87,6 +109,7 @@ export default {
     available: {},
     staked: {},
     asset: {},
+    isLp: false,
     protocol: null
   },
 
@@ -94,6 +117,8 @@ export default {
     return {
       stakeValue: 0,
       validators: [],
+      transactionOngoing: false,
+      currencyInputError: false,
     };
   },
 
@@ -102,18 +127,20 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (this.staked + this.stakeValue);
+      return this.apy / 365 * (Number(this.staked) + Number(this.stakeValue));
     }
   },
 
   methods: {
     submit() {
+      this.transactionOngoing = true;
       this.$emit('STAKE', this.stakeValue);
     },
 
 
     stakeValueChange(event) {
       this.stakeValue = event.value;
+      this.currencyInputError = event.error;
     },
 
     setupValidators() {

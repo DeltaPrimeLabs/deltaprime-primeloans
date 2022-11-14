@@ -100,10 +100,10 @@ describe('Smart loan', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            tokenContracts['PNG_AVAX_USDC_LP'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], lpABI, provider);
+            tokenContracts['PNG_WAVAX_USDC_LP'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_WAVAX_USDC_LP'], lpABI, provider);
 
-            let lpTokenTotalSupply = await tokenContracts['PNG_AVAX_USDC_LP'].totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_AVAX_USDC_LP'].getReserves());
+            let lpTokenTotalSupply = await tokenContracts['PNG_WAVAX_USDC_LP'].totalSupply();
+            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_WAVAX_USDC_LP'].getReserves());
 
             let token0USDValue = fromWei(lpTokenToken0Reserve) * AVAX_PRICE;
             let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * USD_PRICE;
@@ -114,7 +114,7 @@ describe('Smart loan', () => {
             let supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
-                new Asset(toBytes32('PNG_AVAX_USDC_LP'), TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'])
+                new Asset(toBytes32('PNG_WAVAX_USDC_LP'), TOKEN_ADDRESSES['PNG_WAVAX_USDC_LP'])
             ]
 
             let tokenManager = await deployContract(
@@ -170,7 +170,7 @@ describe('Smart loan', () => {
                     value: AVAX_PRICE
                 },
                 {
-                    dataFeedId: 'PNG_AVAX_USDC_LP',
+                    dataFeedId: 'PNG_WAVAX_USDC_LP',
                     value: lpTokenPrice
                 },
             ]
