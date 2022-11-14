@@ -6,9 +6,13 @@
         :debt="noSmartLoanInternal ? 0 : debt"
         :health="noSmartLoanInternal ? 0 : health">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoanInternal" cacheKey="ACCOUNT-INIT">
-        Add funds from your wallet to start investing. <br>
-        The first transaction creates your Prime Account.
+      <InfoBubble v-if="noSmartLoanInternal" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
+        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button.<br>
+        This operation creates your Prime Account!
+      </InfoBubble>
+      <InfoBubble v-if="!noSmartLoanInternal" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
+        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button.<br>
+        This operation creates your Prime Account!
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">

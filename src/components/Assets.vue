@@ -1,9 +1,9 @@
 <template>
   <div class="funds-beta-component">
 <!--    <button v-on:click="swapToWavax">wavax</button>-->
-    <div class="only-my-assets-checkbox">
-      <Checkbox :label="'Show only my assets'"></Checkbox>
-    </div>
+<!--    <div class="only-my-assets-checkbox">-->
+<!--      <Checkbox :label="'Show only my assets'"></Checkbox>-->
+<!--    </div>-->
     <div class="funds">
 <!--      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>-->
       <div class="funds-table" v-if="funds">
@@ -205,7 +205,7 @@ export default {
             id: 'BALANCE'
           },
           {
-            label: 'Loan',
+            label: 'Borrowed',
             sortable: false,
             class: 'loan',
             id: 'LOAN'
@@ -311,7 +311,6 @@ export default {
       display: flex;
       flex-direction: column;
       width: 100%;
-      margin-top: 65px;
     }
 
     .funds-table__body {

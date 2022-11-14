@@ -1,8 +1,8 @@
 <template>
   <div class="navbar">
     <div class="links-wrapper" :class="{'mobile': isMobile}">
-      <router-link to="/pool-beta" style="width: 180px"><span title="Pool">Pools</span></router-link>
-      <router-link to="/prime-account" style="width: 238px"><span title="Prime Account">Prime Account</span></router-link>
+<!--      <router-link to="/pool-beta" style="width: 180px"><span title="Pool">Pools</span></router-link>-->
+<!--      <router-link to="/prime-account" style="width: 238px"><span title="Prime Account">Prime Account</span></router-link>-->
     </div>
   </div>
 </template>

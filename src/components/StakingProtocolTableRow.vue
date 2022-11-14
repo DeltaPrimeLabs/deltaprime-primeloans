@@ -38,8 +38,8 @@
 
       <div class="table__cell">
         <div class="actions">
-          <img class="action" src="src/assets/icons/plus.svg" v-on:click="openStakeModal()">
-          <img class="action" src="src/assets/icons/minus.svg" v-on:click="openUnstakeModal()">
+          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/plus.svg" v-on:click="openStakeModal()">
+          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/minus.svg" v-on:click="openUnstakeModal()">
         </div>
       </div>
 
@@ -53,6 +53,7 @@ import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
 
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'StakingProtocolTableRow',
@@ -94,11 +95,16 @@ export default {
     },
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
+    },
+    disabled() {
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS;
     }
   },
   methods: {
     ...mapActions('stakeStore', ['stake', 'unstake']),
     openStakeModal() {
+      if (this.disabled) {return;}
+
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
       modalInstance.available = this.assetBalances[this.asset.symbol];
@@ -123,6 +129,8 @@ export default {
     },
 
     openUnstakeModal() {
+      if (this.disabled) {return;}
+
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
       modalInstance.staked = Number(this.balance);
@@ -245,6 +253,11 @@ export default {
 
           &:not(:last-child) {
             margin-right: 12px;
+          }
+
+          &.disabled {
+            opacity: 0.5;
+            cursor: default;
           }
         }
       }

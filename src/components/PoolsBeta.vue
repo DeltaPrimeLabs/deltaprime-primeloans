@@ -3,8 +3,8 @@
     <div class="container">
       <div class="main-content">
         <Block :bordered="true">
-          <div class="title">Deposits</div>
-          <NameValueBadgeBeta :name="'All deposits'">{{ totalTVL | usd }}</NameValueBadgeBeta>
+          <div class="title">Lend tokens</div>
+          <NameValueBadgeBeta :name="'Your deposits'">{{ totalTVL | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
               <div class="pools-table__header">
