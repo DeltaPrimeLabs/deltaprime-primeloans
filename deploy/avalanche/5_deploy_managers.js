@@ -16,11 +16,11 @@ const supportedAssets = [
     asset('LINK'),
     asset('QI'),
     asset('sAVAX'),
-    asset('PNG_AVAX_USDC_LP'),
-    asset('TJ_AVAX_USDC_LP'),
+    asset('PNG_WAVAX_USDC_LP'),
+    asset('TJ_WAVAX_USDC_LP'),
     asset('YYAV3SA1'),
     asset('SAV2'),
-    asset('YY_TJ_AVAX_USDC_LP'),
+    asset('YY_TJ_USDC_WAVAX_LP'),
 ]
 
 function asset(symbol) {
