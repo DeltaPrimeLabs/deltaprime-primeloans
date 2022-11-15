@@ -462,6 +462,7 @@ export default {
       await awaitConfirmation(transaction, provider, 'borrow');
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('poolStore/setupPools');
       }, 1000);
     },
 
@@ -478,6 +479,7 @@ export default {
       await awaitConfirmation(transaction, provider, 'repay');
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('poolStore/setupPools');
       }, 1000);
     },
 

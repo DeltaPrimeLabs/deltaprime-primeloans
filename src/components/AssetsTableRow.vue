@@ -258,7 +258,6 @@ export default {
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
-      // TODO refresh pool.totalBorrowed
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
       modalInstance.loanAPY = this.loanAPY;
       modalInstance.$on('BORROW', value => {
