@@ -4,8 +4,6 @@ import TRUSTED_SIGNERS from '../../common/redstone-trusted-signers.json';
 const {ethers} = require("hardhat");
 import addresses from "../../common/addresses/avax/token_addresses.json";
 import {Asset, toBytes32} from "../../test/_helpers";
-import verifyContract from "../../tools/scripts/verify-contract";
-import hre from "hardhat";
 
 const supportedAssets = [
     asset('AVAX'),
@@ -14,13 +12,25 @@ const supportedAssets = [
     asset('ETH'),
     asset('USDT'),
     asset('LINK'),
-    asset('QI'),
     asset('sAVAX'),
-    asset('PNG_WAVAX_USDC_LP'),
-    asset('TJ_WAVAX_USDC_LP'),
-    asset('YYAV3SA1'),
-    asset('SAV2'),
-    asset('YY_TJ_USDC_WAVAX_LP'),
+    asset('QI', 0),
+    asset('PNG', 0),
+    asset('PTP', 0),
+    asset('PNG_AVAX_USDC_LP'),
+    asset('PNG_AVAX_USDT_LP'),
+    asset('PNG_AVAX_ETH_LP'),
+    asset('TJ_AVAX_USDC_LP'),
+    asset('TJ_AVAX_USDT_LP'),
+    asset('TJ_AVAX_ETH_LP'),
+    asset('TJ_AVAX_BTC_LP'),
+    asset('TJ_AVAX_sAVAX_LP'),
+    asset('YY_AAVE_AVAX'),
+    asset('YY_PTP_sAVAX'),
+    asset('YY_PNG_AVAX_USDC_LP'),
+    asset('YY_PNG_AVAX_ETH_LP'),
+    asset('YY_TJ_AVAX_sAVAX_LP'),
+    asset('YY_TJ_AVAX_USDC_LP'),
+    asset('YY_TJ_AVAX_ETH_LP'),
 ]
 
 function asset(symbol) {

@@ -60,7 +60,7 @@ export default {
                 staked: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakeMethod: 'stakeAVAXYak',
                 unstakeMethod: 'unstakeAVAXYak',
-                feedSymbol: 'YYAV3SA1',
+                feedSymbol: 'YY_AAVE_AVAX',
                 token: 'AVAX'
             },
             {

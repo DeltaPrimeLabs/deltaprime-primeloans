@@ -9,8 +9,6 @@ interface ISolvencyFacetProd {
 
     function getThresholdWeightedValue() external view returns (uint256);
 
-    function getMaxBlockTimestampDelay() external view returns (uint256);
-
     function getMaxDataTimestampDelay() external view returns (uint256);
 
     function getTotalValue() external view returns (uint256);

@@ -19,8 +19,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
     address private constant VectorMainStaking = 0x8B3d9F0017FA369cD8C164D0Cc078bf4cA588aE5;
 
     address private constant USDCAddress = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
-    address private constant VectorUSDCStaking1 = 0x7550B2d6a1F039Dd6a3d54a857FEFCbF77213D80;
-    address private constant VectorUSDCStaking2 = 0xDA9E515Ce714c4309f7C4483F4802556AE5Df396;
+    address private constant VectorUSDCStaking1 = 0x994F0e36ceB953105D05897537BF55d201245156;
 
     address private constant WAVAXAddress = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
     address private constant VectorWAVAXStaking1 = 0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69;
@@ -46,25 +45,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
         IVectorFinanceStaking stakingContract = IVectorFinanceStaking(VectorUSDCStaking1);
-        _stakedBalance = stakingContract.balance(address(this));
-    }
-
-    function vectorStakeUSDC2(uint256 amount) public {
-        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            vault: VectorUSDCStaking2,
-            symbol: "USDC",
-            balanceSelector: this.vectorUSDC2Balance.selector,
-            unstakeSelector: this.vectorUnstakeUSDC2.selector
-        });
-        stakeToken("USDC", USDCAddress, VectorUSDCStaking2, amount, position);
-    }
-
-    function vectorUnstakeUSDC2(uint256 amount, uint256 minAmount) public {
-        unstakeToken("USDC", USDCAddress, VectorUSDCStaking2, amount, minAmount, this.vectorUnstakeUSDC2.selector);
-    }
-
-    function vectorUSDC2Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(VectorUSDCStaking2);
         _stakedBalance = stakingContract.balance(address(this));
     }
 

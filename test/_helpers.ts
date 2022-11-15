@@ -464,8 +464,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getStakedValue',
             'getTotalValue',
             'getFullLoanStatus',
-            'getHealthRatio',
-            'getMaxBlockTimestampDelay'
+            'getHealthRatio'
         ],
         hardhatConfig)
     } else {
@@ -496,15 +495,30 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
-        await deployFacet("YieldYakFacet", diamondAddress, ['stakeAVAXYak', 'stakeSAVAXYak' ,'unstakeAVAXYak', 'unstakeSAVAXYak', 'stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak'], hardhatConfig)
+        await deployFacet("YieldYakFacet", diamondAddress, [
+            'stakeAVAXYak',
+            'unstakeAVAXYak',
+            'stakeSAVAXYak',
+            'unstakeSAVAXYak',
+            'stakeTJAVAXUSDCYak',
+            'unstakeTJAVAXUSDCYak',
+            'stakePNGAVAXUSDCYak',
+            'unstakePNGAVAXUSDCYak',
+            'stakePNGAVAXETHYak',
+            'unstakePNGAVAXETHYak',
+            'stakeTJAVAXUSDCYak',
+            'unstakeTJAVAXUSDCYak',
+            'stakeTJAVAXETHYak',
+            'unstakeTJAVAXETHYak',
+            'stakeTJAVAXSAVAXYak',
+            'unstakeTJAVAXSAVAXYak'
+
+        ], hardhatConfig)
         await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1',
                 'vectorUnstakeUSDC1',
                 'vectorUSDC1Balance',
-                'vectorStakeUSDC2',
-                'vectorUnstakeUSDC2',
-                'vectorUSDC2Balance',
                 'vectorStakeWAVAX1',
                 'vectorUnstakeWAVAX1',
                 'vectorWAVAX1Balance',
