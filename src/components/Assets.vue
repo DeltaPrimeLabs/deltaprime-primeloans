@@ -21,11 +21,11 @@
     <div class="lp-tokens">
       <div class="filter-container">
         <div class="filter__label">Filter by:</div>
-        <AssetFilter :asset-options="assetsFilterOptions"></AssetFilter>
+        <AssetFilter :asset-options="assetsFilterOptions" v-on:filterChange="filterLpTokens"></AssetFilter>
       </div>
-      <div class="lp-table" v-if="lpTokens">
+      <div class="lp-table" v-if="lpTokens && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
-        <LpTableRow v-for="(lpToken, index) in lpTokens" v-bind:key="index" :lp-token="lpToken"></LpTableRow>
+        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"></LpTableRow>
 <!--        <div class="paginator-container">-->
 <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
 <!--        </div>-->
@@ -64,6 +64,7 @@ export default {
     return {
       funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
+      filteredLpTokens: [],
       fundsTableHeaderConfig: null,
       lpTableHeaderConfig: null,
       assetsFilterOptions: null,
@@ -92,6 +93,7 @@ export default {
     this.setupLpTableHeaderConfig();
     this.setupAssetsFilterOptions();
     this.updateLpPriceData();
+    this.filteredLpTokens = JSON.parse(JSON.stringify(this.lpTokens));
   },
   methods: {
     ...mapActions('fundsStore',
@@ -282,7 +284,11 @@ export default {
 
     setupAssetsFilterOptions() {
       this.assetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'];
-    }
+    },
+
+    filterLpTokens(selectedTokens) {
+      this.filteredLpTokens = Object.values(this.lpTokens).filter(token => selectedTokens.includes(token.primary) || selectedTokens.includes(token.secondary));
+    },
   },
 };
 </script>

@@ -50,7 +50,7 @@ export default {
       }
       this.$forceUpdate();
       const selectedAssets = Object.values(this.filterValue).filter(option => option.active).map(option => option.asset);
-      this.$emit('FILTER', selectedAssets);
+      this.$emit('filterChange', selectedAssets);
     }
   },
 
