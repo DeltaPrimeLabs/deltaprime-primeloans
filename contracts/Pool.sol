@@ -218,9 +218,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function withdraw(uint256 _amount) external nonReentrant {
         require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
+        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
 
         _accumulateDepositInterest(msg.sender);
 
+        // verified in "require" above
+        unchecked {
+            _deposited[address(this)] -= _amount;
+        }
         _burn(msg.sender, _amount);
 
         _transferFromPool(msg.sender, _amount);
@@ -353,12 +358,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     function _burn(address account, uint256 amount) internal {
         require(_deposited[account] >= amount, "ERC20: burn amount exceeds user balance");
-        require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
 
         // verified in "require" above
         unchecked {
             _deposited[account] -= amount;
-            _deposited[address(this)] -= amount;
         }
 
         emit Transfer(account, address(0), amount);
