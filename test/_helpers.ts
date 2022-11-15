@@ -439,8 +439,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getStakedValue',
             'getTotalValue',
             'getFullLoanStatus',
-            'getHealthRatio',
-            'getMaxBlockTimestampDelay'
+            'getHealthRatio'
         ])
     } else {
         await deployFacet("SolvencyFacetProd", diamondAddress, [
