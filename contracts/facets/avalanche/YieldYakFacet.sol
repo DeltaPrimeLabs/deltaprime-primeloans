@@ -24,13 +24,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     address private constant YY_SAVAX_VECTOR = 0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557; //  @dev: RedStone token name: SAV2
 
     // Staking Vaults LPs
-    address private constant YY_TJ_AVAX_USDC_LP = 0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC;
+    address private constant YY_TJ_USDC_WAVAX_LP = 0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC;
 
     // Tokens
     address private constant SAVAX_TOKEN = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
     address private constant AVAX_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
     // LPs
-    address private constant TJ_AVAX_USDC_LP = 0xf4003F4efBE8691B60249E6afbD307aBE7758adb;
+    address private constant TJ_WAVAX_USDC_LP = 0xf4003F4efBE8691B60249E6afbD307aBE7758adb;
 
     // ----- STAKE -----
 
@@ -73,10 +73,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
   **/
     function stakeTJAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         _stakeTokenYY(IYieldYak.YYStakingDetails({
-            tokenAddress: TJ_AVAX_USDC_LP,
-            vaultAddress: YY_TJ_AVAX_USDC_LP,
-            tokenSymbol: "TJ_AVAX_USDC_LP",
-            vaultTokenSymbol: "YY_TJ_AVAX_USDC_LP",
+            tokenAddress: TJ_WAVAX_USDC_LP,
+            vaultAddress: YY_TJ_USDC_WAVAX_LP,
+            tokenSymbol: "TJ_WAVAX_USDC_LP",
+            vaultTokenSymbol: "YY_TJ_USDC_WAVAX_LP",
             amount: amount
         }));
     }
@@ -117,10 +117,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
-            tokenAddress: TJ_AVAX_USDC_LP,
-            vaultAddress: YY_TJ_AVAX_USDC_LP,
-            tokenSymbol: "TJ_AVAX_USDC_LP",
-            vaultTokenSymbol: "YY_TJ_AVAX_USDC_LP",
+            tokenAddress: TJ_WAVAX_USDC_LP,
+            vaultAddress: YY_TJ_USDC_WAVAX_LP,
+            tokenSymbol: "TJ_WAVAX_USDC_LP",
+            vaultTokenSymbol: "YY_TJ_USDC_WAVAX_LP",
             amount: amount
         }));
     }

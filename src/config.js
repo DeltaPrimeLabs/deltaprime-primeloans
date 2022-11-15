@@ -29,8 +29,8 @@ export default {
         }
     },
     LP_ASSETS_CONFIG: {
-        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP},
-        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP},
+        "PNG_WAVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_WAVAX_USDC_LP', decimals: 18, address: addresses.PNG_WAVAX_USDC_LP},
+        "TJ_WAVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_WAVAX_USDC_LP', decimals: 18, address: addresses.TJ_WAVAX_USDC_LP},
     },
     DEX_CONFIG: {
         'Pangolin': {
@@ -111,15 +111,15 @@ export default {
                 token: 'USDC'
             },
         ],
-        TJ_AVAX_USDC_LP: [
+        TJ_WAVAX_USDC_LP: [
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC'),
                 staked: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakeMethod: 'stakeTJAVAXUSDCYak',
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
-                feedSymbol: 'YY_TJ_AVAX_USDC_LP',
-                token: 'TJ_AVAX_USDC_LP'
+                feedSymbol: 'YY_TJ_USDC_WAVAX_LP',
+                token: 'TJ_WAVAX_USDC_LP'
             }
         ],
     },

@@ -18,7 +18,7 @@ const pangolinSupportedAssets = [
     asset('USDT'),
     asset('LINK'),
     asset('QI'),
-    asset('PNG_AVAX_USDC_LP')
+    asset('PNG_WAVAX_USDC_LP')
 ]
 
 function asset(symbol) {
