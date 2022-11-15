@@ -138,6 +138,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
     **/
     function unstakeToken(bytes32 stakedTokenSymbol, address stakedToken, address receiptToken, uint256 amount, uint256 minAmount, bytes4 balanceSelector) internal
     onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        require(amount > 0, "Cannot unstake 0 tokens");
 
         require(amount > 0, "Cannot unstake 0 tokens");
 

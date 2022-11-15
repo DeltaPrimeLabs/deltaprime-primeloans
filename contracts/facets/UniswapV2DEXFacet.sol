@@ -154,6 +154,8 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             );
             DiamondStorageLib.removeOwnedAsset(lpToken);
         }
+        DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
+        DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
