@@ -10,9 +10,9 @@
         To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button.<br>
         This operation creates your Prime Account!
       </InfoBubble>
-      <InfoBubble v-if="!noSmartLoanInternal" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
-        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button.<br>
-        This operation creates your Prime Account!
+      <InfoBubble v-if="!noSmartLoanInternal" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
+        Your Prime Account is ready! Now you can borrow,<br>
+         provide liquidity and farm them on the Farms page.
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
