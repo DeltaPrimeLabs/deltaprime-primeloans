@@ -132,7 +132,6 @@ function createFacetsInterfaces() {
         'isSignerAuthorized',
         'getExchangeIntermediary',
         'getMaxDataTimestampDelay',
-        'getMaxBlockTimestampDelay',
         'getERC20TokenInstance',
     ]
     const payableFunctions = [

@@ -80,7 +80,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'YYAV3SA1'];
+            let assetsList = ['AVAX', 'USDC', 'YY_AAVE_AVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -177,7 +177,7 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should stake", async () => {
+        it("should stake AVAX", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 0.0001);
 
             let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
@@ -195,7 +195,7 @@ describe('Smart loan', () => {
             let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, toWei(stakedAvaxAmount.toString()));
 
             expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(150 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YYAV3SA1')!, 1);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(150 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 1);
         });
 
         it("should unstake part of staked AVAX", async () => {
@@ -239,7 +239,7 @@ describe('Smart loan', () => {
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'YYAV3SA1'];
+            let assetsList = ['AVAX', 'USDC', 'YY_AAVE_AVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -339,7 +339,9 @@ describe('Smart loan', () => {
                 toWei(requiredAvaxAmount.toString()),
                 parseUnits(usdAmount.toString(), await tokenContracts.get('USDC')!.decimals()),
             );
+        });
 
+        it("should stake in YieldYak", async () => {
             await wrappedLoan.stakeAVAXYak(
                 toWei("305")
             );
@@ -357,8 +359,8 @@ describe('Smart loan', () => {
                     value: tokensPrices.get('AVAX')!
                 },
                 {
-                    dataFeedId: 'YYAV3SA1',
-                    value: tokensPrices.get('YYAV3SA1')!
+                    dataFeedId: 'YY_AAVE_AVAX',
+                    value: tokensPrices.get('YY_AAVE_AVAX')!
                 }
             ]
 

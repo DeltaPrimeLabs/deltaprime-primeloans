@@ -60,7 +60,7 @@ const DEFAULT_MAX_LEVERAGE = {
         ETH: 0.8333333,
         BTC: 0.8333333,
         LINK: 0.8333333,
-        YYAV3SA1: 0.8333333
+        YY_AAVE_AVAX: 0.8333333
 }
 
 const TEST_TABLE = [
@@ -334,7 +334,7 @@ describe('Smart loan - real prices', () => {
             YAK_PRICE: number,
             QI_PRICE: number,
             ETH_PRICE: number,
-            YYAV3SA1_PRICE: number,
+            YY_AAVE_AVAX_PRICE: number,
             BTC_PRICE: number,
             diamondAddress: any;
 
@@ -375,7 +375,7 @@ describe('Smart loan - real prices', () => {
             tokenContracts['QI'] = new ethers.Contract(TOKEN_ADDRESSES['QI'], erc20ABI, provider);
             tokenContracts['BTC'] = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
             tokenContracts['LINK'] = new ethers.Contract(TOKEN_ADDRESSES['LINK'], erc20ABI, provider);
-            tokenContracts['YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['YYAV3SA1'], erc20ABI, provider);
+            tokenContracts['YY_AAVE_AVAX'] = new ethers.Contract(TOKEN_ADDRESSES['YY_AAVE_AVAX'], erc20ABI, provider);
 
 
             supportedAssets = [
@@ -390,7 +390,7 @@ describe('Smart loan - real prices', () => {
                 new Asset(toBytes32('LINK'), TOKEN_ADDRESSES['LINK']),
                 new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
                 new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
-                new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
+                new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
             ];
 
             tokenManager = await deployContract(
@@ -426,7 +426,7 @@ describe('Smart loan - real prices', () => {
             LINK_PRICE = (await redstone.getPrice('LINK', {provider: "redstone-avalanche-prod-1"})).value;
             ETH_PRICE = (await redstone.getPrice('ETH', {provider: "redstone-avalanche-prod-1"})).value;
             BTC_PRICE = (await redstone.getPrice('BTC', {provider: "redstone-avalanche-prod-1"})).value;
-            YYAV3SA1_PRICE = (await redstone.getPrice('YYAV3SA1', {provider: "redstone-avalanche-prod-1"})).value;
+            YY_AAVE_AVAX_PRICE = (await redstone.getPrice('YY_AAVE_AVAX', {provider: "redstone-avalanche-prod-1"})).value;
 
             //TODO: why do we mock prices? maybe we can use wrapLite?
             MOCK_PRICES = [
@@ -475,8 +475,8 @@ describe('Smart loan - real prices', () => {
                     value: BTC_PRICE
                 },
                 {
-                    dataFeedId: 'YYAV3SA1',
-                    value: YYAV3SA1_PRICE
+                    dataFeedId: 'YY_AAVE_AVAX',
+                    value: YY_AAVE_AVAX_PRICE
                 }
             ];
 
@@ -606,7 +606,7 @@ describe('Smart loan - real prices', () => {
                                 {
                                     dataServiceId: "redstone-avalanche-prod",
                                     uniqueSignersCount: 3,
-                                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YYAV3SA1"],
+                                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YY_AAVE_AVAX"],
                                 },
                                 ["https://d33trozg86ya9x.cloudfront.net"]
                             );
@@ -789,14 +789,14 @@ describe('Smart loan - real prices', () => {
             await replaceFacet('MockSolvencyFacet', diamondAddress, ['isSolvent', 'getDebt', 'getTotalValue', 'getTotalAssetsValue', 'getHealthRatio', 'getPrices']);
             await diamondCut.unpause();
 
-            const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
+            const initialStakedYakTokensBalance = await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address);
 
             // @ts-ignore
             wrappedLoan = WrapperBuilder.wrap(loan.connect(performer)).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YYAV3SA1"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "LINK", "XAVA", "PNG", "YAK", "QI", "sAVAX", "YY_AAVE_AVAX"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
@@ -835,7 +835,7 @@ describe('Smart loan - real prices', () => {
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
             if (stake) {
-                expect(await tokenContracts['YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
+                expect(await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
             }
         }
 
@@ -852,7 +852,7 @@ describe('Smart loan - real prices', () => {
             if (symbol == "ETH") return tokenContracts['ETH'];
             if (symbol == "LINK") return tokenContracts['LINK'];
             if (symbol == "BTC") return tokenContracts['BTC'];
-            if (symbol == "YYAV3SA1") return tokenContracts['YYAV3SA1'];
+            if (symbol == "YY_AAVE_AVAX") return tokenContracts['YY_AAVE_AVAX'];
         }
 
         function getPrice(symbol: string) {
@@ -867,7 +867,7 @@ describe('Smart loan - real prices', () => {
             if (symbol == "ETH") return ETH_PRICE;
             if (symbol == "LINK") return LINK_PRICE;
             if (symbol == "BTC") return BTC_PRICE;
-            if (symbol == "YYAV3SA1") return YYAV3SA1_PRICE;
+            if (symbol == "YY_AAVE_AVAX") return YY_AAVE_AVAX_PRICE;
         }
 
         async function liquidatingAccountBalanceInUsd(testCase: any, account: string) {
@@ -877,7 +877,7 @@ describe('Smart loan - real prices', () => {
             }
 
             if (testCase.stakeInUsd) {
-                balanceInUsd += formatUnits(await tokenContracts['YYAV3SA1'].balanceOf(account), await tokenContracts['YYAV3SA1'].decimals()) * getPrice('YYAV3SA1')!
+                balanceInUsd += formatUnits(await tokenContracts['YY_AAVE_AVAX'].balanceOf(account), await tokenContracts['YY_AAVE_AVAX'].decimals()) * getPrice('YY_AAVE_AVAX')!
             }
 
             return balanceInUsd;

@@ -50,7 +50,7 @@ const INITIAL_PRICES = {
     USDC: 1,
     ETH: 1000,
     BTC: 20000,
-    YYAV3SA1: 15.2,
+    YY_AAVE_AVAX: 15.2,
 }
 
 const TEST_TABLE = [
@@ -75,7 +75,7 @@ const TEST_TABLE = [
             USDC: 0.8333333,
             ETH: 0.8333333,
             BTC: 0.8333333,
-            YYAV3SA1: 0.8333333
+            YY_AAVE_AVAX: 0.8333333
         },
         targetHealthRatio: 1.04,
         action: 'LIQUIDATE'
@@ -101,7 +101,7 @@ const TEST_TABLE = [
             USDC: 0.8333333,
             ETH: 0.8333333,
             BTC: 0.8333333,
-            YYAV3SA1: 0.8333333
+            YY_AAVE_AVAX: 0.8333333
         },
         targetHealthRatio: 1.035,
         action: 'LIQUIDATE'
@@ -130,7 +130,7 @@ const TEST_TABLE = [
             USDC: 0.8333333,
             ETH: 0.8333333,
             BTC: 0.8333333,
-            YYAV3SA1: 0.8333333
+            YY_AAVE_AVAX: 0.8333333
         },
         targetHealthRatio: 1.04,
         action: 'LIQUIDATE'
@@ -158,7 +158,7 @@ const TEST_TABLE = [
             USDC: 0.8333333,
             ETH: 0.8333333,
             BTC: 0.8333333,
-            YYAV3SA1: 0.8333333
+            YY_AAVE_AVAX: 0.8333333
         },
         targetHealthRatio: 1.04,
         //needs more margin because of accumulation of interest when repaying the loan (affects debt and final LTV)
@@ -225,14 +225,14 @@ describe('Smart loan', () => {
                 tokenContracts[token.name] = tokenContract;
             }
             tokenContracts['BTC'] = new ethers.Contract(TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
-            tokenContracts['YYAV3SA1'] = new ethers.Contract(TOKEN_ADDRESSES['YYAV3SA1'], erc20ABI, provider);
+            tokenContracts['YY_AAVE_AVAX'] = new ethers.Contract(TOKEN_ADDRESSES['YY_AAVE_AVAX'], erc20ABI, provider);
 
             supportedAssets = [
                 new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
                 new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
                 new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
-                new Asset(toBytes32('YYAV3SA1'), TOKEN_ADDRESSES['YYAV3SA1']),
+                new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
             ];
 
             INITIAL_MOCK_PRICES = [
@@ -253,8 +253,8 @@ describe('Smart loan', () => {
                     value: INITIAL_PRICES.BTC
                 },
                 {
-                    dataFeedId: 'YYAV3SA1',
-                    value: INITIAL_PRICES.YYAV3SA1
+                    dataFeedId: 'YY_AAVE_AVAX',
+                    value: INITIAL_PRICES.YY_AAVE_AVAX
                 },
             ];
 
@@ -503,7 +503,7 @@ describe('Smart loan', () => {
             stake: any
         ) {
             const performer = performedAction === 'CLOSE' ? borrower : liquidator;
-            const initialStakedYakTokensBalance = await tokenContracts['YYAV3SA1'].balanceOf(performer.address);
+            const initialStakedYakTokensBalance = await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address);
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
 
@@ -569,7 +569,7 @@ describe('Smart loan', () => {
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
             if (stake) {
-                expect(await tokenContracts['YYAV3SA1'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
+                expect(await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
             }
         }
 
@@ -578,7 +578,7 @@ describe('Smart loan', () => {
             if (symbol == "USDC") return tokenContracts['USDC'];
             if (symbol == "ETH") return tokenContracts['ETH'];
             if (symbol == "BTC") return tokenContracts['BTC'];
-            if (symbol == "YYAV3SA1") return tokenContracts['YYAV3SA1'];
+            if (symbol == "YY_AAVE_AVAX") return tokenContracts['YY_AAVE_AVAX'];
         }
 
         function getPrice(symbol: string) {
@@ -586,7 +586,7 @@ describe('Smart loan', () => {
             if (symbol == "USDC") return INITIAL_PRICES.USDC;
             if (symbol == "ETH") return INITIAL_PRICES.ETH;
             if (symbol == "BTC") return INITIAL_PRICES.BTC;
-            if (symbol == "YYAV3SA1") return INITIAL_PRICES.YYAV3SA1;
+            if (symbol == "YY_AAVE_AVAX") return INITIAL_PRICES.YY_AAVE_AVAX;
         }
     });
 });
