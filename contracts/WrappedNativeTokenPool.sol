@@ -40,6 +40,11 @@ contract WrappedNativeTokenPool is Pool {
 
         _accumulateDepositInterest(msg.sender);
 
+        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
+        // verified in "require" above
+        unchecked {
+            _deposited[address(this)] -= _amount;
+        }
         _burn(msg.sender, _amount);
 
         IWrappedNativeToken(tokenAddress).withdraw(_amount);

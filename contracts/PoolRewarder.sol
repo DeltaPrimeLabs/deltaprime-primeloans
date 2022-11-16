@@ -84,12 +84,17 @@ contract PoolRewarder is IPoolRewarder {
         emit Staked(_stakeFor, _amount, block.timestamp);
     }
 
-    function withdrawFor(uint _amount, address _unstakeFor) external updateReward(_unstakeFor) onlyPool {
+    function withdrawFor(uint _amount, address _unstakeFor) external updateReward(_unstakeFor) onlyPool returns (uint256){
         require(_amount > 0, "amount = 0");
-        balanceOf[_unstakeFor] -= _amount;
-        totalSupply -= _amount;
-//        stakingToken.transfer(msg.sender, _amount);
-        emit Unstaked(_unstakeFor, _amount, block.timestamp);
+        if(balanceOf[_unstakeFor] > 0) {
+            uint256 amountToUnstake = _amount > balanceOf[_unstakeFor] ? balanceOf[_unstakeFor] : _amount;
+            balanceOf[_unstakeFor] -= amountToUnstake;
+            totalSupply -= amountToUnstake;
+            //        stakingToken.transfer(msg.sender, _amount);
+            emit Unstaked(_unstakeFor, amountToUnstake, block.timestamp);
+            return amountToUnstake;
+        }
+        return 0;
     }
 
     function earned(address _account) public view returns (uint) {

@@ -120,8 +120,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[recipient] += amount;
 
         // Handle rewards
-        poolRewarder.withdrawFor(amount, msg.sender);
-        poolRewarder.stakeFor(amount, recipient);
+        if(address(poolRewarder) != address(0) && amount != 0){
+            uint256 unstaked = poolRewarder.withdrawFor(amount, msg.sender);
+            if(unstaked > 0) {
+                poolRewarder.stakeFor(unstaked, recipient);
+            }
+        }
 
         emit Transfer(msg.sender, recipient, amount);
 
@@ -218,10 +222,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function withdraw(uint256 _amount) external nonReentrant {
         require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
-        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
 
         _accumulateDepositInterest(msg.sender);
 
+        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
         // verified in "require" above
         unchecked {
             _deposited[address(this)] -= _amount;

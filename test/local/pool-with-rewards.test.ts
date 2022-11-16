@@ -385,4 +385,95 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(325, 1e-4);
         });
     });
+
+    describe('Depositing and withdrawing (multiple depositors)', () => {
+        let pool: Pool,
+            rewarder: PoolRewarder,
+            owner: SignerWithAddress,
+            depositor: SignerWithAddress,
+            depositor1: SignerWithAddress,
+            depositor2: SignerWithAddress,
+            depositor3: SignerWithAddress,
+            poolToken: Contract,
+            rewardToken: Contract,
+            VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+
+        before("Deploy Pool & PoolRewarder contracts", async () => {
+            [owner, depositor, depositor1, depositor2, depositor3] = await getFixedGasSigners(10000000);
+            // Deploy Pool
+            pool = (await deployContract(owner, PoolArtifact)) as Pool;
+
+            // Deploy tokens
+            poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
+            rewardToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address]])) as MockToken;
+
+            // Deploy and initialize rewarder
+            rewarder = (await deployContract(owner, PoolRewarderArtifact, [rewardToken.address, pool.address])) as PoolRewarder;
+
+            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+            const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+            await depositIndex.initialize(pool.address);
+            const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+            await borrowingIndex.initialize(pool.address);
+
+            await pool.initialize(
+                VariableUtilisationRatesCalculator.address,
+                borrowersRegistry.address,
+                depositIndex.address,
+                borrowingIndex.address,
+                poolToken.address,
+                rewarder.address
+            );
+        });
+
+        it("should top-up rewarder contract", async () => {
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(0);
+            await rewardToken.connect(depositor).transfer(rewarder.address, toWei("500"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+        });
+
+        it("should successfully set the duration target", async () => {
+            await rewarder.setRewardsDuration(time.duration.days(360));
+        });
+
+        it("should set up rewards rewarder contract", async () => {
+            expect(await rewarder.rewardRate()).to.be.equal(0);
+            await rewarder.notifyRewardAmount(toWei("100"));
+            expect(await rewarder.rewardRate()).to.be.equal(toWei("100").div(time.duration.days(360)));
+        });
+
+        it("[360 days] should deposit (depositor1) to pool, borrow, transfer more than initial deposit (because of accumulated interest)", async () => {
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("500"));
+            // Deposit to pool DEPOSITOR1 -> +10.0
+            await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
+            await pool.connect(depositor1).deposit(toWei("10.0"));
+            await pool.connect(depositor1).borrow(toWei("7.0"));
+            
+            expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(toWei("10.0"));
+            expect(await rewarder.balanceOf(depositor2.address)).to.be.equal(0);
+
+            // check rewards
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(0, 1e-4);
+
+            // FastForward 180 days ahead (+180 days in total)
+            await time.increase(time.duration.days(180));
+            // check rewards
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(50, 1e-4);
+            
+            await pool.connect(depositor1).transfer(depositor2.address, toWei("10.1"));
+            expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(0);
+            expect(await rewarder.balanceOf(depositor2.address)).to.be.equal(toWei("10.0"));
+
+            // FastForward 90 days ahead (+270 days in total)
+            await time.increase(time.duration.days(90));
+            // check rewards
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(50, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.closeTo(25, 1e-4);
+
+            await pool.connect(depositor1).transfer(depositor2.address, toWei("0.1"));
+            expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(0);
+            expect(await rewarder.balanceOf(depositor2.address)).to.be.equal(toWei("10.0"));
+        });
+    });
 });
