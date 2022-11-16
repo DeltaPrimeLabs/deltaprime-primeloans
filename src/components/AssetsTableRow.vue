@@ -292,6 +292,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.walletNativeTokenBalance = this.accountBalance;
+      modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           if (this.smartLoanContract.address === NULL_ADDRESS) {

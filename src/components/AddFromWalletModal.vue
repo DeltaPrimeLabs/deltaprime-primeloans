@@ -4,15 +4,15 @@
       <div class="modal__title">
         Add from wallet
       </div>
-      <div class="modal-top-info">This transaction will deploy your Prime Account and load your funds.<br/>
+      <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your funds.<br/>
       It might take a while and requires more gas, but you need to do it only once.<br/>
       When it's done, you can explore the power of undercollateralized loans.</div>
-      <div class="modal-top-info" v-if="asset.symbol === 'AVAX'">You need to confirm 3 transactions in Metamask:<br/>
+      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset === 'AVAX'">You need to confirm 3 transactions in Metamask:<br/>
         1. Convert AVAX<br/>
         2. Approve WAVAX<br/>
         3. Deploy the account<br/>
       </div>
-      <div class="modal-top-info" v-else>You need to confirm 2 transactions in Metamask:<br/>
+      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset !== 'AVAX'">You need to confirm 2 transactions in Metamask:<br/>
         1. Approve {{asset.symbol}}<br/>
         2. Deploy account<br/>
       </div>
@@ -96,7 +96,8 @@ export default {
     assetBalance: Number,
     isLP: false,
     walletAssetBalance: {},
-    walletNativeTokenBalance: {}
+    walletNativeTokenBalance: {},
+    noSmartLoan: false
   },
 
   data() {
