@@ -66,7 +66,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _poolRewarder the address of PoolRewarder
     **/
     function setPoolRewarder(IPoolRewarder _poolRewarder) external onlyOwner {
-        require(AddressUpgradeable.isContract(address(_poolRewarder)) || address(_poolRewarder) == address(0), "Must be a contract");
+        if(!AddressUpgradeable.isContract(address(_poolRewarder)) && address(_poolRewarder) != address(0)) revert NotAContract(address(poolRewarder));
         poolRewarder = _poolRewarder;
 
         emit PoolRewarderChanged(address(_poolRewarder), block.timestamp);
@@ -80,7 +80,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
         // setting address(0) ratesCalculator_ freezes the pool
-        require(AddressUpgradeable.isContract(address(ratesCalculator_)) || address(ratesCalculator_) == address(0), "Must be a contract");
+        if(!AddressUpgradeable.isContract(address(ratesCalculator_)) && address(ratesCalculator_) != address(0)) revert NotAContract(address(ratesCalculator_));
         ratesCalculator = ratesCalculator_;
         if (address(ratesCalculator_) != address(0)) {
             _updateRates();
@@ -96,7 +96,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev borrowersRegistry the address of borrowers registry
      **/
     function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
-        require(AddressUpgradeable.isContract(address(borrowersRegistry_)), "Must be a contract");
+        if(!AddressUpgradeable.isContract(address(borrowersRegistry_))) revert NotAContract(address(borrowersRegistry_));
 
         borrowersRegistry = borrowersRegistry_;
         emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
@@ -104,12 +104,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(address recipient, uint256 amount) external override returns (bool) {
-        require(recipient != address(0), "ERC20: cannot transfer to the zero address");
-        require(recipient != address(this), "ERC20: cannot transfer to the pool address");
+        if(recipient == address(0)) revert TransferToZeroAddress();
+
+        if(recipient == address(this)) revert TransferToPoolAddress();
 
         _accumulateDepositInterest(msg.sender);
 
-        require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+        if(_deposited[msg.sender] < amount) revert TransferAmountExceedsBalance(amount, _deposited[msg.sender]);
 
         // (this is verified in "require" above)
         unchecked {
@@ -137,7 +138,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
-        require(spender != address(0), "Spender cannot be a zero address");
+        if(spender == address(0)) revert SpenderZeroAddress();
         uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
         _allowed[msg.sender][spender] = newAllowance;
 
@@ -146,7 +147,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
-        require(spender != address(0), "Spender cannot be a zero address");
+        if(spender == address(0)) revert SpenderZeroAddress();
         uint256 currentAllowance = _allowed[msg.sender][spender];
         require(currentAllowance >= subtractedValue, "Current allowance is too small");
 
@@ -158,7 +159,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function approve(address spender, uint256 amount) external override returns (bool) {
-        require(spender != address(0), "Spender cannot be a zero address");
+        if(spender == address(0)) revert SpenderZeroAddress();
         _allowed[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -167,13 +168,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        require(_allowed[sender][msg.sender] >= amount, "Not enough tokens allowed");
-        require(recipient != address(0), "ERC20: cannot transfer to the zero address");
-        require(recipient != address(this), "ERC20: cannot transfer to the pool address");
+        if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
+
+        if(recipient == address(0)) revert TransferToZeroAddress();
+
+        if(recipient == address(this)) revert TransferToPoolAddress();
 
         _accumulateDepositInterest(sender);
 
-        require(_deposited[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        if(_deposited[sender] < amount) revert TransferAmountExceedsBalance(amount, _deposited[sender]);
+
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -221,7 +225,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
+        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);
 
@@ -250,7 +254,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
     function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool");
+        if (_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateBorrowingInterest(msg.sender);
 
@@ -475,4 +479,32 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     * @param timestamp of the pool rewarder change
     **/
     event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
+
+    /* ========== ERRORS ========== */
+
+    // Not enough funds in the pool.
+    error InsufficientPoolFunds();
+
+    // Address (`target`) must be a contract
+    // @param target target address that must be a contract
+    error NotAContract(address target);
+
+    //  ERC20: Spender cannot be a zero address
+    error SpenderZeroAddress();
+
+    //  ERC20: cannot transfer to the zero address
+    error TransferToZeroAddress();
+
+    //  ERC20: cannot transfer to the pool address
+    error TransferToPoolAddress();
+
+    //  ERC20: transfer amount (`amount`) exceeds balance (`balance`)
+    /// @param amount transfer amount
+    /// @param balance available balance
+    error TransferAmountExceedsBalance(uint256 amount, uint256 balance);
+
+    //  ERC20: requested transfer amount (`requested`) exceeds current allowance (`allowance`)
+    /// @param requested requested transfer amount
+    /// @param allowance current allowance
+    error InsufficientAllowance(uint256 requested, uint256 allowance);
 }

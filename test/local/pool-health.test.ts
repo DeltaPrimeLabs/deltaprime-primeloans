@@ -12,7 +12,7 @@ import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import PoolRewarderArtifact from '../../artifacts/contracts/PoolRewarder.sol/PoolRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {
     DestructableContract,
     LinearIndex,
@@ -129,15 +129,18 @@ describe('Safety tests of pool', () => {
         });
 
         it("should not allow setting a non-contract ratesCalculator", async () => {
-            await expect(pool.setRatesCalculator(nonContractAddress)).to.be.revertedWith("Must be a contract");
+            await expect(pool.setRatesCalculator(nonContractAddress)).
+            to.be.revertedWith(customError("NotAContract", ethers.utils.getAddress(nonContractAddress)));
         });
 
         it("should not allow setting a non-contract borrowersRegistry", async () => {
-            await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("Must be a contract");
+            await expect(pool.setBorrowersRegistry(nonContractAddress)).
+            to.be.revertedWith(customError("NotAContract", ethers.utils.getAddress(nonContractAddress)));
         });
 
         it("should not allow setting a non-contract poolRewarder", async () => {
-            await expect(pool.setBorrowersRegistry(nonContractAddress)).to.be.revertedWith("Must be a contract");
+            await expect(pool.setBorrowersRegistry(nonContractAddress)).
+            to.be.revertedWith(customError("NotAContract", ethers.utils.getAddress(nonContractAddress)));
         });
     });
 
