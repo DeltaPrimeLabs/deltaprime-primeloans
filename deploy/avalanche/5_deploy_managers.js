@@ -75,23 +75,6 @@ module.exports = async ({
 
     console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
 
-    //TODO: check before the production deploy
-    let redstoneConfigManager = await deploy('RedstoneConfigManager', {
-        from: deployer,
-        gasLimit: 8000000,
-        args:
-        [
-            TRUSTED_SIGNERS.signers
-        ]
-    });
-
-    // await verifyContract(hre, {
-    //     address: redstoneConfigManager.address
-    // });
-
-    console.log(`Deployed redstoneConfigManager at address: ${redstoneConfigManager.address}`);
-
-
 };
 
 module.exports.tags = ['avalanche'];

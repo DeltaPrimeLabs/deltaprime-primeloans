@@ -28,7 +28,7 @@ async function replaceFacet(facetName, diamondAddress, onlySpecificFunctions = [
     let tx
     let receipt
 
-    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, [])
+    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, [], {gasLimit: 8000000})
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()
     if (!receipt.status) {
@@ -64,7 +64,7 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
     let tx
     let receipt
 
-    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, [])
+    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, [], {gasLimit: 8000000})
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()
     if (!receipt.status) {
