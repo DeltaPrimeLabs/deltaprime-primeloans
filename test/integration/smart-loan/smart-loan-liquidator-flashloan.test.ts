@@ -183,7 +183,7 @@ describe('Test liquidator with a flashloan', () => {
             wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
-                    uniqueSignersCount: 10,
+                    uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
@@ -337,7 +337,7 @@ describe('Test liquidator with a flashloan', () => {
             wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
-                    uniqueSignersCount: 10,
+                    uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
@@ -528,7 +528,7 @@ describe('Test liquidator with a flashloan', () => {
             wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
-                    uniqueSignersCount: 10,
+                    uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
@@ -716,7 +716,7 @@ describe('Test liquidator with a flashloan', () => {
             wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
-                    uniqueSignersCount: 10,
+                    uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]

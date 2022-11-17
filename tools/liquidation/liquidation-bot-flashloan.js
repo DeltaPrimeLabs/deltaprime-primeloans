@@ -15,6 +15,8 @@ const fs = require('fs');
 const {fromWei, formatUnits} = require("../../test/_helpers");
 const {parseUnits} = require("ethers/lib/utils");
 const path = require("path");
+const protocol = require("redstone-protocol");
+const sdk = require("redstone-sdk");
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -34,9 +36,14 @@ let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);
 async function wrapLoan(loanAddress) {
     let loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, wallet);
 
-    loan = WrapperBuilder
-        .wrapLite(loan)
-        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
+    loan = WrapperBuilder.wrap(loan).usingDataService(
+        {
+            dataServiceId: "redstone-avalanche-prod",
+            uniqueSignersCount: 3,
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+        },
+        ["https://d33trozg86ya9x.cloudfront.net"]
+    );
 
     return loan
 }
@@ -109,7 +116,7 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
 
     let prices = (await loan.getAllAssetsPrices()).map(el => {
         return {
-            symbol: fromBytes32(el.name),
+            dataFeedId: fromBytes32(el.name),
             value: formatUnits(el.price, 8)
         }
     });
@@ -143,16 +150,43 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
 
     let flashLoan = new ethers.Contract(flashLoanAddress, LIQUIDATION_FLASHLOAN.abi, wallet);
 
-    flashLoan = WrapperBuilder
-        .wrapLite(flashLoan)
-        .usingPriceFeed("redstone-avalanche-prod"); // redstone-avalanche
+    flashLoan = WrapperBuilder.wrap(flashLoan).usingDataService(
+        {
+            dataServiceId: "redstone-avalanche-prod",
+            uniqueSignersCount: 3,
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+        },
+        ["https://d33trozg86ya9x.cloudfront.net"]
+    );
+
+    const parseDataPackagesResponse = (
+        dataPackagesResponse
+    ) => {
+        const signedDataPackages = [];
+        for (const dpForDataFeed of Object.values(dataPackagesResponse)) {
+            signedDataPackages.push(...dpForDataFeed);
+        }
+        return signedDataPackages;
+    };
+
+    const signedDataPackagesResponse = await sdk.requestDataPackages({
+        dataServiceId: "redstone-avalanche-prod",
+        uniqueSignersCount: 3,
+        dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+    }, ["https://d33trozg86ya9x.cloudfront.net"]);
+
+    const signedDataPackages = parseDataPackagesResponse(signedDataPackagesResponse);
+    const unsignedMetadata = "manual-payload";
+    const redstonePayload = protocol.RedstonePayload.prepare(
+        signedDataPackages, unsignedMetadata);
+
 
     const flashLoanTx = await flashLoan.executeFlashloan(
     {
         assets: poolTokenAddresses,
         amounts: amountsToRepayInWei,
         interestRateModes: new Array(poolTokenAddresses.length).fill(0), 
-        params: '0x' + await loan.getPriceData(),
+        params: '0x' + redstonePayload,
         bonus: bonusInWei,
         liquidator: wallet.address,
         loanAddress: loanAddress,
