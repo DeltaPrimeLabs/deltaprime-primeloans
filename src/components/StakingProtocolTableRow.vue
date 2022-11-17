@@ -165,7 +165,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 20% repeat(5, 1fr);
+    grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
     height: 60px;
     border-style: solid;
     border-width: 2px 0 0 0;

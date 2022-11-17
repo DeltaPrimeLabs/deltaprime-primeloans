@@ -22,14 +22,17 @@
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">
-          {{ getAvailableAssetAmount | smartRound }}
-          <span v-if="asset.name === 'AVAX'" class="top-info__currency">
-            {{ selectedDepositAsset }}
-          </span>
-          <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
-            {{ asset.name }}
-          </span>
+        <div class="top-info__value" v-bind:class="{'available-balance--loading': !getAvailableAssetAmount && getAvailableAssetAmount !== 0}">
+          <LoadedValue :check="() => getAvailableAssetAmount != null || Number.isNaN(getAvailableAssetAmount)"
+                       :value="formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
+          <div v-if="getAvailableAssetAmount != null">
+            <span v-if="asset.name === 'AVAX'" class="top-info__currency">
+              {{ selectedDepositAsset }}
+            </span>
+            <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
+              {{ asset.symbol }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -82,7 +85,7 @@
       <div class="button-wrapper">
         <Button :label="'Add funds'"
                 v-on:click="submit()"
-                :disabled="validationError"
+                :disabled="validationError || (!getAvailableAssetAmount && getAvailableAssetAmount !== 0)"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -157,10 +160,15 @@ export default {
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
+      console.log('this.walletAssetBalance', this.walletAssetBalance);
       if (this.asset.symbol === 'AVAX') {
-        return this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
+        if (this.selectedDepositAsset === 'AVAX') {
+          return this.walletNativeTokenBalance;
+        } else {
+          return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
+        }
       } else {
-        return Number(this.walletAssetBalance);
+        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
       }
     },
   },
@@ -212,8 +220,13 @@ export default {
         const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
         this.availableAssetAmount = Number(balance);
       } else {
-        this.availableAssetAmount = Number(this.walletAssetBalance);
+        this.availableAssetAmount = this.walletAssetBalance ? Number(this.walletAssetBalance) : null;
       }
+      this.$forceUpdate();
+    },
+
+    setWalletNativeTokenBalance(balance) {
+      this.walletNativeTokenBalance = balance;
       this.$forceUpdate();
     },
   }
@@ -225,4 +238,15 @@ export default {
 @import "~@/styles/modal";
 
 
+</style>
+
+<style lang="scss">
+.available-balance--loading {
+  .loaded-value-component {
+    height: 20px;
+    display: flex;
+    flex-direction: row;
+    margin: -10px 0 -10px -10px;
+  }
+}
 </style>

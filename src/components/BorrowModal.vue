@@ -123,7 +123,7 @@ export default {
     calculateHealthAfterTransaction() {
       let value = this.value ? this.value : 0;
         this.healthAfterTransaction = calculateHealth(this.debt + value * this.asset.price,
-            this.thresholdWeightedValue + value * this.asset.price * this.asset.debtCoverage);
+            this.thresholdWeightedValue + value * this.asset.price * this.asset.maxLeverage);
     },
 
     setupValidators() {

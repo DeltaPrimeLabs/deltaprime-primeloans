@@ -33,6 +33,8 @@
   }
 
   .top-info__value {
+    display: flex;
+    flex-direction: row;
     font-weight: 600;
   }
 
@@ -44,6 +46,7 @@
   }
 
   .top-info__currency {
+    margin-left: 3px;
     font-weight: 400;
   }
 }

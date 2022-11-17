@@ -9,9 +9,9 @@ interface IYieldYakFacet {
 
     function stakePNGAVAXETHYak(uint256 amount) external;
 
-    function stakeTJAVAXETHYak(uint256 amount) external;
-
     function stakeTJAVAXUSDCYak(uint256 amount) external;
+
+    function stakeTJAVAXETHYak(uint256 amount) external;
 
     function stakeTJAVAXSAVAXYak(uint256 amount) external;
 
@@ -23,9 +23,9 @@ interface IYieldYakFacet {
 
     function unstakePNGAVAXETHYak(uint256 amount) external;
 
-    function unstakeTJAVAXETHYak(uint256 amount) external;
-
     function unstakeTJAVAXUSDCYak(uint256 amount) external;
+
+    function unstakeTJAVAXETHYak(uint256 amount) external;
 
     function unstakeTJAVAXSAVAXYak(uint256 amount) external;
 }

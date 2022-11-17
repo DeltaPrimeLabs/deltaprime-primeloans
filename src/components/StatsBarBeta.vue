@@ -1,8 +1,11 @@
 <template>
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
-      <stats-bar-element-beta :label="'Total value'" :value="totalValue ? totalValue : 0 | usd">
+      <stats-bar-element-beta
+        :label="'Total value'"
+        :value="totalValue ? totalValue : 0 | usd" :info-tooltip="'total value'">
       </stats-bar-element-beta>
+      <div class="stats-bar__divider"></div>
       <div class="health-loader-container" v-if="noSmartLoan === null">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
@@ -11,6 +14,8 @@
       </stats-bar-element-beta>
 
       <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
+
+      <div class="stats-bar__divider"></div>
 
       <stats-bar-element-beta :label="'Borrowed'" :value="debt ? debt : 0 | usd">
       </stats-bar-element-beta>
@@ -41,28 +46,49 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.stats-bar {
-  border-radius: 25px;
-  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.3);
-  font-weight: 500;
+.stats-bar-beta-component {
   display: flex;
   flex-direction: row;
-  align-items: start;
-  justify-content: space-between;
-  padding: 16px 210px 16px 210px;
+  align-items: center;
+  justify-content: center;
 
-  .total-value-extra {
-    font-size: $font-size-sm;
-    margin-bottom: 19px;
-  }
-
-  .health-loader-container {
+  .stats-bar {
+    width: 880px;
+    height: 100px;
+    border-radius: 50px;
+    box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    height: 92px;
+    align-items: start;
+    justify-content: space-between;
+    padding: 22px 0 24px 0;
+
+    .total-value-extra {
+      font-size: $font-size-sm;
+      margin-bottom: 19px;
+    }
+
+    .health-loader-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      height: 92px;
+      width: 292px;
+      margin-top: -10px;
+    }
+
+    .stats-bar__divider {
+      box-sizing: border-box;
+      height: 60px;
+      width: 2px;
+      border-style: solid;
+      border-width: 0 0 0 2px;
+      border-image-source: linear-gradient(to bottom, #dfe0ff 41%, #ffe1c2 58%, #ffd3e0 77%);
+      border-image-slice: 1;
+    }
   }
 }
 </style>

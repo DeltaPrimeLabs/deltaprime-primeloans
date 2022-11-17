@@ -4,7 +4,7 @@
       <div class="bar" v-bind:class="{'bar--slim': slim, 'bar--zero': value === 0}">
         <div v-if="value > 0" class="bar__value" :style="{'width': barGaugeValueWidth + 'px'}"></div>
       </div>
-      <div v-if="!slim" class="range">
+      <div v-if="!slim && min && max" class="range">
         <div>{{min | percent(0)}}</div>
         <div>{{max | percent(0)}}</div>
       </div>

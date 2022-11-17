@@ -1,9 +1,9 @@
 <template>
   <div class="funds-beta-component">
-<!--    <button v-on:click="swapToWavax">wavax</button>-->
-<!--    <div class="only-my-assets-checkbox">-->
-<!--      <Checkbox :label="'Show only my assets'"></Checkbox>-->
-<!--    </div>-->
+    <!--    <button v-on:click="swapToWavax">wavax</button>-->
+    <!--    <div class="only-my-assets-checkbox">-->
+    <!--      <Checkbox :label="'Show only my assets'"></Checkbox>-->
+    <!--    </div>-->
     <div class="funds">
       <!--      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>-->
       <div class="funds-table" v-if="funds">
@@ -19,23 +19,17 @@
       </div>
     </div>
     <div class="lp-tokens">
-      <div class="filters">
-        <div class="filter-container">
-          <div class="filter__label">Filter by assets:</div>
-          <AssetFilter :asset-options="lpAssetsFilterOptions" v-on:filterChange="selectLpTokens"></AssetFilter>
-        </div>
-        <div class="filter-container">
-          <div class="filter__label">Filter by DEX:</div>
-
-          <DexFilter :dex-options="lpDexFilterOptions" v-on:filterChange="selectDexes"></DexFilter>
-        </div>
+      <div class="filters" v-if="assetFilterGroups">
+        <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
+                     v-on:filterChange="setLpFilter"></AssetFilter>
       </div>
       <div class="lp-table" v-if="lpTokens && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
-        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{lpToken}}</LpTableRow>
-<!--        <div class="paginator-container">-->
-<!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-<!--        </div>-->
+        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{ lpToken }}
+        </LpTableRow>
+        <!--        <div class="paginator-container">-->
+        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
+        <!--        </div>-->
       </div>
     </div>
   </div>
@@ -56,7 +50,7 @@ import DoubleAssetIcon from './DoubleAssetIcon';
 import LpTableRow from './LpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
-import DexFilter from "./DexFilter";
+import DexFilter from './DexFilter';
 
 export default {
   name: 'Assets',
@@ -64,7 +58,8 @@ export default {
     DexFilter,
     Checkbox,
     Paginator,
-    LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta},
+    LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta
+  },
   data() {
     return {
       funds: null,
@@ -75,14 +70,15 @@ export default {
       lpTableHeaderConfig: null,
       lpAssetsFilterOptions: null,
       lpDexFilterOptions: null,
-    }
+      assetFilterGroups: null,
+    };
   },
   computed: {
     ...mapState('fundsStore', ['assets', 'fullLoanStatus', 'lpAssets', 'assetBalances', 'smartLoanContract', 'noSmartLoan']),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
-          (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
-          && this.selectedDexes.includes(token.dex)
+        (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
+        && this.selectedDexes.includes(token.dex)
       );
     },
   },
@@ -104,11 +100,8 @@ export default {
     this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
     this.setupLpTableHeaderConfig();
-    this.setupLpLpAssetsFilterOptions();
-    this.setupLpDexFilterOptions();
+    this.setupAssetFilterGroups();
     this.updateLpPriceData();
-    this.selectedLpTokens = this.lpAssetsFilterOptions;
-    this.selectedDexes = this.lpDexFilterOptions;
   },
   methods: {
     ...mapActions('fundsStore',
@@ -183,7 +176,7 @@ export default {
               }
             }
           );
-        })
+        });
       }
     },
 
@@ -191,18 +184,18 @@ export default {
       //TODO: we have to make sure somehow that it's called in a right moment ->when funds have prices already
       if (this.funds) {
         Object.keys(this.lpTokens).forEach(
-            key => {
-              const lpToken = this.lpTokens[key];
-              lpToken.firstPrice = this.funds[lpToken.primary].price;
-              lpToken.secondPrice = this.funds[lpToken.secondary].price;
-            }
+          key => {
+            const lpToken = this.lpTokens[key];
+            lpToken.firstPrice = this.funds[lpToken.primary].price;
+            lpToken.secondPrice = this.funds[lpToken.secondary].price;
+          }
         );
       }
     },
 
     setupFundsTableHeaderConfig() {
       this.fundsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 76px 102px',
+        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px',
         cells: [
           {
             label: 'Asset',
@@ -221,6 +214,13 @@ export default {
             sortable: false,
             class: 'loan',
             id: 'LOAN'
+          },
+          {
+            label: 'Impact',
+            sortable: false,
+            class: 'impact',
+            id: 'IMPACT',
+            tooltip: 'impact tooltip'
           },
           {
             label: 'Trend (24h)',
@@ -243,21 +243,18 @@ export default {
             id: 'ACTIONS'
           },
         ]
-      }
+      };
     },
 
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% repeat(2, 1fr) 20% 1fr 76px 102px',
+        gridTemplateColumns: '20% 1fr 20% 1fr 76px 102px',
         cells: [
           {
             label: 'LP Token',
             sortable: false,
             class: 'token',
             id: 'TOKEN'
-          },
-          {
-            label: ''
           },
           {
             label: 'Balance',
@@ -286,23 +283,34 @@ export default {
             id: 'ACTIONS'
           },
         ]
-      }
+      };
     },
 
-    setupLpLpAssetsFilterOptions() {
-      this.lpAssetsFilterOptions = ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'];
+    setupAssetFilterGroups() {
+      this.assetFilterGroups = [
+        {
+          label: 'Filter by assets',
+          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'],
+          key: 'asset'
+        },
+        {
+          label: 'Filter by DEX',
+          options: ['Pangolin', 'TraderJoe'],
+          key: 'dex',
+        }
+      ];
+
+      this.selectedLpTokens = this.assetFilterGroups[0].options;
+      this.selectedDexes = this.assetFilterGroups[1].options;
+      setTimeout(() => {
+        this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
+        this.$refs.assetFilter.setupFilterValue();
+      });
     },
 
-    setupLpDexFilterOptions() {
-      this.lpDexFilterOptions = ['Pangolin', 'TraderJoe'];
-    },
-
-    selectLpTokens(selectedTokens) {
-      this.selectedLpTokens = selectedTokens;
-    },
-
-    selectDexes(selectedDexes) {
-      this.selectedDexes = selectedDexes;
+    setLpFilter(filter) {
+      this.selectedLpTokens = filter.asset;
+      this.selectedDexes = filter.dex;
     },
   },
 };

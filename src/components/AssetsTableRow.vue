@@ -5,7 +5,8 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="pools && pools[asset.symbol]">Borrow&nbsp;APY:&nbsp;{{ pools[asset.symbol].borrowingAPY | percent }}
+          <div class="asset__loan" v-if="pools && pools[asset.symbol]">
+            Borrow&nbsp;APY:&nbsp;{{ pools[asset.symbol].borrowingAPY | percent }}
           </div>
         </div>
       </div>
@@ -13,7 +14,8 @@
       <div class="table__cell table__cell--double-value balance">
         <template v-if="assetBalances && assetBalances[asset.symbol]">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => assetBalances[asset.symbol] != null" :value="formatTokenBalance(assetBalances[asset.symbol])"></LoadedValue>
+            <LoadedValue :check="() => assetBalances[asset.symbol] != null"
+                         :value="formatTokenBalance(assetBalances[asset.symbol])"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
@@ -34,8 +36,13 @@
         </template>
       </div>
 
+      <div class="table__cell impact">
+        <span v-if="asset.maxLeverage > 0">5x</span>
+        <span v-else>0x</span>
+      </div>
+
       <div class="table__cell trend">
-        <div class="trend__chart-change">
+        <div class="trend__chart-change" v-on:click="toggleChart()">
           <SmallChartBeta :data-points="asset.prices"
                           :is-stable-coin="asset.isStableCoin"
                           :line-width="2"
@@ -46,11 +53,6 @@
           <ColoredValueBeta v-if="asset.todayPriceChange" :value="asset.todayPriceChange" :formatting="'percent'"
                             :percentage-rounding-precision="2" :show-sign="true"></ColoredValueBeta>
         </div>
-        <IconButtonMenuBeta
-          class="chart__icon-button"
-          :config="{iconSrc: 'src/assets/icons/enlarge.svg', tooltip: 'Show chart'}"
-          v-on:iconButtonClick="toggleChart()">
-        </IconButtonMenuBeta>
       </div>
 
       <div class="table__cell price">
@@ -102,7 +104,7 @@ import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits} from '@/utils/calculate';
-import {erc20ABI} from "../utils/blockchain";
+import {erc20ABI} from '../utils/blockchain';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -175,10 +177,10 @@ export default {
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
-              key: 'REPAY',
-              name: 'Repay',
-            }
-            : null
+                key: 'REPAY',
+                name: 'Repay',
+              }
+              : null
           ]
         },
         {
@@ -291,13 +293,17 @@ export default {
 
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
+      this.updateBalance().then(() => {
+        console.log('updated balance', this.accountBalance);
+        modalInstance.setWalletNativeTokenBalance(this.accountBalance);
+        this.$forceUpdate();
+      });
 
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances && this.assetBalances[this.asset.symbol] ? this.assetBalances[this.asset.symbol] : 0;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
-      modalInstance.walletNativeTokenBalance = this.accountBalance;
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
@@ -407,12 +413,12 @@ export default {
   transition: all 200ms;
 
   &.expanded {
-    height: 387px;
+    height: 433px;
   }
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 102px;
+    grid-template-columns: repeat(6, 1fr) 76px 102px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -454,16 +460,23 @@ export default {
         align-items: flex-end;
       }
 
+      &.impact {
+        font-weight: 500;
+        align-items: center;
+        justify-content: center;
+      }
+
       &.trend {
         justify-content: center;
         align-items: center;
-        margin-left: 49px;
+        margin-left: 9px;
 
         .trend__chart-change {
           display: flex;
           flex-direction: column;
           font-size: $font-size-xxs;
           align-items: center;
+          cursor: pointer;
         }
 
         .chart__icon-button {

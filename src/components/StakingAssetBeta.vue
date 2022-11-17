@@ -4,7 +4,7 @@
       <div class="staking-asset__header"
            v-bind:class="{'body-collapsed': bodyHasCollapsed, 'round-bottom': stakingHeaderRoundBottom}"
            v-on:click="toggleExpanded()">
-        <div class="header__cell">
+        <div class="header__cell cell__asset">
           <div class="asset">
             <div class="asset__icon" v-bind:class="{'asset__icon--double': asset.primary && asset.secondary}">
               <img v-if="!(asset.primary && asset.secondary)" :src="logoSrc(asset.symbol)">
@@ -24,22 +24,23 @@
           </div>
         </div>
 
-        <div class="header__cell">
-          <div class="header__cell__label">Available:</div>
-          <div class="header__cell__value">{{ formatTokenBalance(balance, 10) }}</div>
-        </div>
-
-        <div class="header__cell">
+        <div class="header__cell cell__staked">
           <div class="header__cell__label">Staked:</div>
           <div class="header__cell__value">{{ totalStaked | smartRound }}</div>
         </div>
 
-        <div class="header__cell">
+        <div class="header__cell cell__max-apy">
           <div class="header__cell__label">Max APY:</div>
           <div class="header__cell__value">{{ maxStakingApy | percent }}</div>
         </div>
 
-        <div class="header__cell">
+        <div class="header__cell cell__available">
+          <div class="header__cell__label">Available:</div>
+          <div class="header__cell__value">{{ formatTokenBalance(balance, 10, true) }}</div>
+        </div>
+
+
+        <div class="header__cell cell__protocols">
           <div class="header__cell__label">Protocols:</div>
           <div class="protocols-list" v-if="availableFarms && availableFarms.length > 0">
             <img v-for="protocol in availableFarms" class="protocol__icon"
@@ -217,10 +218,8 @@ export default {
 
     .staking-asset__header {
       cursor: pointer;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
       height: 60px;
       padding: 0 24px;
       background-color: $delta-off-white;
@@ -241,6 +240,12 @@ export default {
       .header__cell {
         display: flex;
         flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+
+        &.cell__asset {
+          justify-content: flex-start;
+        }
 
         .header__cell__label {
           color: $dark-gray;
@@ -321,7 +326,7 @@ export default {
 
         .table__header {
           display: grid;
-          grid-template-columns: 20% repeat(5, 1fr);
+          grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {

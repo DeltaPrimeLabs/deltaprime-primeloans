@@ -3,7 +3,7 @@
     <div class="filters">
       <div class="filter-container">
         <div class="filter__label">Filter by assets:</div>
-        <AssetFilter :asset-options="assetsFilterOptions" v-on:filterChange="selectAssets"></AssetFilter>
+        <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups" v-on:filterChange="setFilter"></AssetFilter>
       </div>
     </div>
     <StakingAssetBeta v-for="asset in filteredStakedAssets"
@@ -26,35 +26,49 @@ export default {
     filteredStakedAssets() {
       return Object.entries(config.FARMED_TOKENS_CONFIG).filter(farm =>
           this.selectedAssets.includes(farm[0])
-              || (config.LP_ASSETS_CONFIG[farm[0]] != null &&
-                (this.selectedAssets.includes(config.LP_ASSETS_CONFIG[farm[0]].primary)
-                || this.selectedAssets.includes(config.LP_ASSETS_CONFIG[farm[0]].secondary)
-                )
-              )
+          || (config.LP_ASSETS_CONFIG[farm[0]] != null &&
+            (this.selectedAssets.includes(config.LP_ASSETS_CONFIG[farm[0]].primary)
+              || this.selectedAssets.includes(config.LP_ASSETS_CONFIG[farm[0]].secondary)
+            )
+          )
       );
     },
+  },
+  mounted() {
+    this.setupAssetFilterGroups();
   },
   data() {
     return {
       selectedAssets: [] = [],
-      assetsFilterOptions: [] = []
-    }
+      assetsFilterOptions: [] = [],
+      assetFilterGroups: null,
+    };
   },
   methods: {
-    setupAssetsFilterOptions() {
-      this.assetsFilterOptions = ['AVAX', 'USDC', 'ETH', 'sAVAX'];
+    setFilter(filter) {
+      this.selectedAssets = filter.asset;
     },
-    selectAssets(selectedTokens) {
-      this.selectedAssets = selectedTokens;
+    setupAssetFilterGroups() {
+      this.assetFilterGroups = [
+        {
+          label: 'Filter by assets',
+          options: ['AVAX', 'USDC', 'ETH', 'sAVAX'],
+          key: 'asset'
+        },
+      ];
+
+      this.selectedLpTokens = this.assetFilterGroups[0].options;
+      setTimeout(() => {
+        this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
+        this.$refs.assetFilter.setupFilterValue();
+        this.selectedAssets = this.assetFilterGroups[0].options;
+      });
     },
-  },
-  mounted() {
-    this.setupAssetsFilterOptions();
-    this.selectedAssets = this.assetsFilterOptions;
   },
 
-  watch: {
-  }
+
+
+  watch: {}
 };
 </script>
 

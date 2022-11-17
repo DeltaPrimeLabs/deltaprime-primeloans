@@ -36,20 +36,33 @@ export default {
     },
 
     selectOption(option) {
-      if (this.filterValue[option].active) {
+      const allSelected = Object.values(this.filterValue).map(option => option.active).every(o => o);
+      if (allSelected) {
         Object.keys(this.filterValue).forEach(dex => {
           this.filterValue[dex].active = false;
         });
         this.filterValue[option].active = true;
       } else {
-        this.filterValue[option].active = true;
+        this.filterValue[option].active = !this.filterValue[option].active;
+        const noneSelected = Object.values(this.filterValue).map(option => option.active).every(o => !o);
+        if (noneSelected) {
+          this.resetFilter();
+        }
       }
-
 
       this.$forceUpdate();
       const selectedDexs = Object.values(this.filterValue).filter(option => option.active).map(option => option.dex);
       this.$emit('filterChange', selectedDexs);
-    }
+    },
+
+    resetFilter() {
+      Object.keys(this.filterValue).forEach(dex => {
+        this.filterValue[dex].active = true;
+      });
+      this.$forceUpdate();
+      const selectedDexs = Object.values(this.filterValue).filter(option => option.active).map(option => option.dex);
+      this.$emit('filterChange', selectedDexs);
+    },
   },
 
   watch: {
@@ -83,6 +96,10 @@ export default {
       margin-right: 8px;
       transition: all 200ms ease-in-out;
       cursor: pointer;
+
+      &:last-child {
+        margin-right: 0;
+      }
 
       &:hover {
         filter: grayscale(0.3);

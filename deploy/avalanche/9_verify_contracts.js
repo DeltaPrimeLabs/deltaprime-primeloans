@@ -81,7 +81,7 @@ module.exports = async ({
         asset('PNG_AVAX_ETH_LP')
     ]
 
-    const calldata = web3Abi.encodeFunctionCall(
+    let calldata = web3Abi.encodeFunctionCall(
         PangolinIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
         [pangolinRouter, pangolinSupportedAssets.map(asset => asset.assetAddress)]
     )

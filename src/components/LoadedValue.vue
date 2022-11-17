@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <span v-if="(!check || check()) && value">{{value}}<slot></slot></span>
+  <div class="loaded-value-component">
+    <div v-if="(!check || check()) && value">{{value}}<slot></slot></div>
     <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
   </div>
 </template>

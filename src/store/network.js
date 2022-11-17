@@ -56,10 +56,8 @@ export default {
       }
     },
     async updateBalance({ state, commit }) {
-      console.log('update balance');
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
-      console.log(balance);
 
       commit('setAccountBalance', balance);
     },
