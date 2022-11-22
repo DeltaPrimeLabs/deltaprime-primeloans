@@ -214,6 +214,21 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         });
     }
 
+    // Check whether there is enough debt-denominated tokens to fully repaid what was previously borrowed
+    function canRepayDebtFully() external view returns(bool) {
+        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32[] memory poolAssets = tokenManager.getAllPoolAssets();
+
+        for(uint i; i< poolAssets.length; i++) {
+            Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(poolAssets[i]));
+            IERC20 token = IERC20(pool.tokenAddress());
+            if(token.balanceOf(address(this)) < pool.getBorrowed(address(this))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
       * Helper method exposing the redstone-evm-connector getOracleNumericValuesFromTxMsg() method.
       * @dev This function uses the redstone-evm-connector

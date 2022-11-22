@@ -446,6 +446,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     )
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
+            'canRepayDebtFully',
             'isSolvent',
             'isSolventWithPrices',
             'getOwnedAssetsPrices',
@@ -466,6 +467,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ])
     } else {
         await deployFacet("SolvencyFacetProd", diamondAddress, [
+            'canRepayDebtFully',
             'isSolvent',
             'isSolventWithPrices',
             'getOwnedAssetsPrices',

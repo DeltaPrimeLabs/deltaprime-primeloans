@@ -267,6 +267,17 @@ describe('Smart loan', () => {
             //shouldn't change balance of loan
             expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.equal(5);
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
+            expect(await wrappedLoan.isSolvent()).to.be.true;
+
+            await expect(wrappedLoan.unwrapAndWithdraw(toWei("5.5"))).to.be.revertedWith("Insufficient assets to fully repay the debt")
+
+            await wrappedLoan.repay(toBytes32("AVAX"), 1);
+            await wrappedLoan.unwrapAndWithdraw(toWei("4.5"))
+            expect(await wrappedLoan.isSolvent()).to.be.true;
+            expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
+            expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.equal(1.5);
         });
     });
 });

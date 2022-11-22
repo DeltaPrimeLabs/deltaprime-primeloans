@@ -52,6 +52,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes SolvencyFacetProd.canRepayDebtFully()
+    function _canRepayDebtFully() internal virtual returns (bool solvent){
+        solvent = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.canRepayDebtFully.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.canRepayDebtFully.selector)
+            ),
+            (bool)
+        );
+    }
+
     // This function executes SolvencyFacetProd.getTotalValue()
     function _getTotalValue() internal virtual returns (uint256 totalValue) {
         totalValue = abi.decode(
@@ -189,5 +200,10 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         _;
 
         require(_isSolvent(), "The action may cause an account to become insolvent");
+    }
+
+    modifier canRepayDebtFully() {
+        _;
+        require(_canRepayDebtFully(), "Insufficient assets to fully repay the debt");
     }
 }

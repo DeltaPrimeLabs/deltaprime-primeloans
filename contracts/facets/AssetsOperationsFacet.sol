@@ -43,7 +43,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _withdrawnAsset asset to be withdrawn
     * @param _amount to be withdrawn
     **/
-    function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant remainsSolvent {
+    function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
         IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset, true);
         require(getBalance(_withdrawnAsset) >= _amount, "There is not enough funds to withdraw");
 
