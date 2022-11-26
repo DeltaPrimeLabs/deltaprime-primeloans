@@ -79,6 +79,22 @@ contract SmartLoanDiamondBeacon {
         }
     }
 
+    function proposeBeaconOwnershipTransfer(address _newOwner) external {
+        DiamondStorageLib.enforceIsContractOwner();
+        require(_newOwner != msg.sender, "Can't propose oneself as a contract owner");
+        DiamondStorageLib.setProposedOwner(_newOwner);
+
+        emit OwnershipProposalCreated(msg.sender, _newOwner);
+    }
+
+    function acceptBeaconOwnership() external {
+        require(DiamondStorageLib.proposedOwner() == msg.sender, "Only a proposed user can accept ownership");
+        DiamondStorageLib.setContractOwner(msg.sender);
+        DiamondStorageLib.setProposedOwner(address(0));
+
+        emit OwnershipProposalAccepted(msg.sender);
+    }
+
     modifier notPausedOrUpgrading() {
         // diamondCut(); unpause()
         if(msg.sig != 0x1f931c1c && msg.sig != 0x3f4ba83a) {
@@ -87,4 +103,17 @@ contract SmartLoanDiamondBeacon {
         }
         _;
     }
+
+    /**
+     * @dev emitted after creating a ownership transfer proposal by the owner
+     * @param owner address of the current owner
+     * @param proposed address of the proposed owner
+     **/
+    event OwnershipProposalCreated(address indexed owner, address indexed proposed);
+
+    /**
+     * @dev emitted after accepting a ownership transfer proposal by the new owner
+     * @param newOwner address of the new owner
+     **/
+    event OwnershipProposalAccepted(address indexed newOwner);
 }

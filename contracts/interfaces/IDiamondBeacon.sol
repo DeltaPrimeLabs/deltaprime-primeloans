@@ -18,4 +18,8 @@ interface IDiamondBeacon {
     function implementation(bytes4) external view returns (address);
 
     function getStatus() external view returns (bool);
+
+    function proposeBeaconOwnershipTransfer(address _newOwner) external;
+
+    function acceptBeaconOwnership() external;
 }
