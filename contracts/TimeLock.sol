@@ -1,147 +1,112 @@
-// SPDX-License-Identifier: MIT
-// Last deployed from commit: f97d683e94fbb14f55819d6782c1f6a20998b10e;
-pragma solidity 0.8.17;
+// SPDX-License-Identifier: BSD-3-Clause
+pragma solidity ^0.8.10;
 
-contract TimeLock {
-    error NotOwnerError();
-    error AlreadyQueuedError(bytes32 txId);
-    error TimestampNotInRangeError(uint blockTimestamp, uint timestamp);
-    error NotQueuedError(bytes32 txId);
-    error TimestampNotPassedError(uint blockTimestmap, uint timestamp);
-    error TimestampExpiredError(uint blockTimestamp, uint expiresAt);
-    error TxFailedError();
+import "./lib/SafeMath.sol";
 
-    event Queue(
-        bytes32 indexed txId,
-        address indexed target,
-        uint value,
-        string func,
-        bytes data,
-        uint timestamp
-    );
-    event Execute(
-        bytes32 indexed txId,
-        address indexed target,
-        uint value,
-        string func,
-        bytes data,
-        uint timestamp
-    );
-    event Cancel(bytes32 indexed txId);
+contract Timelock {
+    using SafeMath for uint;
 
-    uint public constant MIN_DELAY = 10; // seconds
-    uint public constant MAX_DELAY = 1000; // seconds
-    uint public constant GRACE_PERIOD = 1000; // seconds
+    event NewAdmin(address indexed newAdmin);
+    event NewPendingAdmin(address indexed newPendingAdmin);
+    event NewDelay(uint indexed newDelay);
+    event CancelTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
+    event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature,  bytes data, uint eta);
+    event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
 
-    address public owner;
-    // tx id => queued
-    mapping(bytes32 => bool) public queued;
+    uint public constant GRACE_PERIOD = 14 days;
+    uint public constant MINIMUM_DELAY = 2 days;
+    uint public constant MAXIMUM_DELAY = 30 days;
 
-    constructor() {
-        owner = msg.sender;
+    address public admin;
+    address public pendingAdmin;
+    uint public delay;
+
+    mapping (bytes32 => bool) public queuedTransactions;
+
+
+    constructor(address admin_, uint delay_) public {
+        require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
+        require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
+
+        admin = admin_;
+        delay = delay_;
     }
 
-    modifier onlyOwner() {
-        if (msg.sender != owner) {
-            revert NotOwnerError();
-        }
-        _;
+    fallback() external payable { }
+
+    function setDelay(uint delay_) public {
+        require(msg.sender == address(this), "Timelock::setDelay: Call must come from Timelock.");
+        require(delay_ >= MINIMUM_DELAY, "Timelock::setDelay: Delay must exceed minimum delay.");
+        require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
+        delay = delay_;
+
+        emit NewDelay(delay);
     }
 
-    receive() external payable {}
+    function acceptAdmin() public {
+        require(msg.sender == pendingAdmin, "Timelock::acceptAdmin: Call must come from pendingAdmin.");
+        admin = msg.sender;
+        pendingAdmin = address(0);
 
-    function getTxId(
-        address _target,
-        uint _value,
-        string calldata _func,
-        bytes calldata _data,
-        uint _timestamp
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encode(_target, _value, _func, _data, _timestamp));
+        emit NewAdmin(admin);
     }
 
-    /**
-     * @param _target Address of contract or account to call
-     * @param _value Amount of ETH to send
-     * @param _func Function signature, for example "foo(address,uint256)"
-     * @param _data ABI encoded data send.
-     * @param _timestamp Timestamp after which the transaction can be executed.
-     */
-    function queue(
-        address _target,
-        uint _value,
-        string calldata _func,
-        bytes calldata _data,
-        uint _timestamp
-    ) external onlyOwner returns (bytes32 txId) {
-        txId = getTxId(_target, _value, _func, _data, _timestamp);
-        if (queued[txId]) {
-            revert AlreadyQueuedError(txId);
-        }
-        // ---|------------|---------------|-------
-        //  block    block + min     block + max
-        if (
-            _timestamp < block.timestamp + MIN_DELAY ||
-            _timestamp > block.timestamp + MAX_DELAY
-        ) {
-            revert TimestampNotInRangeError(block.timestamp, _timestamp);
-        }
+    function setPendingAdmin(address pendingAdmin_) public {
+        require(msg.sender == address(this), "Timelock::setPendingAdmin: Call must come from Timelock.");
+        pendingAdmin = pendingAdmin_;
 
-        queued[txId] = true;
-
-        emit Queue(txId, _target, _value, _func, _data, _timestamp);
+        emit NewPendingAdmin(pendingAdmin);
     }
 
-    function execute(
-        address _target,
-        uint _value,
-        string calldata _func,
-        bytes calldata _data,
-        uint _timestamp
-    ) external payable onlyOwner returns (bytes memory) {
-        bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
-        if (!queued[txId]) {
-            revert NotQueuedError(txId);
-        }
-        // ----|-------------------|-------
-        //  timestamp    timestamp + grace period
-        if (block.timestamp < _timestamp) {
-            revert TimestampNotPassedError(block.timestamp, _timestamp);
-        }
-        if (block.timestamp > _timestamp + GRACE_PERIOD) {
-            revert TimestampExpiredError(block.timestamp, _timestamp + GRACE_PERIOD);
-        }
+    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public returns (bytes32) {
+        require(msg.sender == admin, "Timelock::queueTransaction: Call must come from admin.");
+        require(eta >= getBlockTimestamp().add(delay), "Timelock::queueTransaction: Estimated execution block must satisfy delay.");
 
-        queued[txId] = false;
+        bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
+        queuedTransactions[txHash] = true;
 
-        // prepare data
-        bytes memory data;
-        if (bytes(_func).length > 0) {
-            // data = func selector + _data
-            data = abi.encodePacked(bytes4(keccak256(bytes(_func))), _data);
+        emit QueueTransaction(txHash, target, value, signature, data, eta);
+        return txHash;
+    }
+
+    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public {
+        require(msg.sender == admin, "Timelock::cancelTransaction: Call must come from admin.");
+
+        bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
+        queuedTransactions[txHash] = false;
+
+        emit CancelTransaction(txHash, target, value, signature, data, eta);
+    }
+
+    function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public payable returns (bytes memory) {
+        require(msg.sender == admin, "Timelock::executeTransaction: Call must come from admin.");
+
+        bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
+        require(queuedTransactions[txHash], "Timelock::executeTransaction: Transaction hasn't been queued.");
+        require(getBlockTimestamp() >= eta, "Timelock::executeTransaction: Transaction hasn't surpassed time lock.");
+        require(getBlockTimestamp() <= eta.add(GRACE_PERIOD), "Timelock::executeTransaction: Transaction is stale.");
+
+        queuedTransactions[txHash] = false;
+
+        bytes memory callData;
+
+        if (bytes(signature).length == 0) {
+            callData = data;
         } else {
-            // call fallback with data
-            data = _data;
+            callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
 
-        // call target
-        (bool ok, bytes memory res) = _target.call{value: _value}(data);
-        if (!ok) {
-            revert TxFailedError();
-        }
+        // solium-disable-next-line security/no-call-value
+        (bool success, bytes memory returnData) = target.call{value: value}(callData);
+        require(success, "Timelock::executeTransaction: Transaction execution reverted.");
 
-        emit Execute(txId, _target, _value, _func, _data, _timestamp);
+        emit ExecuteTransaction(txHash, target, value, signature, data, eta);
 
-        return res;
+        return returnData;
     }
 
-    function cancel(bytes32 _txId) external onlyOwner {
-        if (!queued[_txId]) {
-            revert NotQueuedError(_txId);
-        }
-
-        queued[_txId] = false;
-
-        emit Cancel(_txId);
+    function getBlockTimestamp() internal view returns (uint) {
+        // solium-disable-next-line security/no-block-members
+        return block.timestamp;
     }
 }
