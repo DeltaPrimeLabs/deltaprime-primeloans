@@ -20,6 +20,11 @@ contract WrappedNativeTokenPool is Pool {
      * Wraps and deposits amount attached to the transaction
      **/
     function depositNativeToken() public payable virtual {
+        if(msg.value == 0) revert ZeroDepositAmount();
+        if(totalSupplyCap != 0){
+            if(_deposited[address(this)] + msg.value > totalSupplyCap) revert TotalSupplyCapBreached();
+        }
+
         IWrappedNativeToken(tokenAddress).deposit{value : msg.value}();
 
         _accumulateDepositInterest(msg.sender);
@@ -36,11 +41,11 @@ contract WrappedNativeTokenPool is Pool {
      * @dev _amount the amount to be withdrawn
      **/
     function withdrawNativeToken(uint256 _amount) external nonReentrant {
-        require(IERC20(tokenAddress).balanceOf(address(this)) >= _amount, "Not enough funds in the pool to withdraw");
+        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);
 
-        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
+        if(_amount > _deposited[address(this)]) revert BurnAmountExceedsBalance();
         // verified in "require" above
         unchecked {
             _deposited[address(this)] -= _amount;

@@ -691,7 +691,8 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         depositIndex.address,
         borrowingIndex.address,
         tokenContract!.address,
-        rewarder
+        rewarder,
+        0
     );
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }

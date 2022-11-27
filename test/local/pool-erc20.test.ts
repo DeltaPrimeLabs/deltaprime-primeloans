@@ -56,7 +56,8 @@ describe("Pool ERC20 token functions", () => {
             depositIndex.address,
             borrowingIndex.address,
             mockToken.address,
-            ZERO
+            ZERO,
+            0
         );
     });
 
@@ -117,7 +118,6 @@ describe("Pool ERC20 token functions", () => {
     describe("approve", () => {
         it("should revert upon setting an allowance for a zero address", async () => {
             await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).
-            // to.be.revertedWith("Spender cannot be a zero address");
             to.be.revertedWith(customError("SpenderZeroAddress"));
         });
 
@@ -172,7 +172,6 @@ describe("Pool ERC20 token functions", () => {
     describe("increaseAllowance", () => {
         it("should revert upon increasing an allowance for a zero address", async () => {
             await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-            // to.be.revertedWith("Spender cannot be a zero address");
             to.be.revertedWith(customError("SpenderZeroAddress"));
         });
 
@@ -186,7 +185,6 @@ describe("Pool ERC20 token functions", () => {
     describe("decreaseAllowance", () => {
         it("should revert upon decreasing an allowance for a zero address", async () => {
             await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-            // to.be.revertedWith("Spender cannot be a zero address");
             to.be.revertedWith(customError("SpenderZeroAddress"));
         });
 

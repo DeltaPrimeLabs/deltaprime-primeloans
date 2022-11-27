@@ -51,7 +51,8 @@ describe('Pool with variable utilisation interest rates', () => {
             depositIndex.address,
             borrowingIndex.address,
             mockToken.address,
-            ZERO
+            ZERO,
+            0
         );
     });
 
@@ -224,6 +225,55 @@ describe('Pool with variable utilisation interest rates', () => {
             await time.increase(time.duration.years(1));
             //(10.5448593322 + 3.00083) * 1.05
             expect(fromWei(await sut.balanceOf(depositor.address))).to.be.closeTo(14.2229737988, 0.000001);
+        });
+
+    });
+
+    describe("totalSupplyCap", () => {
+        it("should fail to set totalSupplyCap as a non-owner", async () => {
+            await expect(sut.connect(depositor).setTotalSupplyCap(toWei("1"))).
+            to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("should deposit without totalSupplyCap", async () => {
+            await mockToken.connect(depositor).approve(sut.address, toWei("1.0"));
+            await sut.connect(depositor).deposit(toWei("1.0"));
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("1.0"));
+            expect(await sut.balanceOf(sut.address)).to.be.equal(toWei("1.0"))
+        });
+
+        it("should set totalSupplyCap as a the owner", async () => {
+            expect(await sut.totalSupplyCap()).to.be.equal(0);
+            expect(await sut.connect(owner).setTotalSupplyCap(toWei("10")));
+            expect(await sut.totalSupplyCap()).to.be.equal(toWei("10"));
+        });
+
+        it("should deposit with totalSupplyCap", async () => {
+            await mockToken.connect(depositor).approve(sut.address, toWei("8.9"));
+            await sut.connect(depositor).deposit(toWei("8.9"));
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("9.9"));
+            expect(await sut.balanceOf(sut.address)).to.be.equal(toWei("9.9"))
+        });
+
+        it("should fail to deposit more than totalSupplyCap", async () => {
+            await mockToken.connect(depositor).approve(sut.address, toWei("0.2"));
+            await expect(sut.connect(depositor).deposit(toWei("0.2"))).to.be.revertedWith("totalSupplyCap breached");
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("9.9"));
+            expect(await sut.balanceOf(sut.address)).to.be.equal(toWei("9.9"))
+        });
+
+        it("should deposit adding exactly up to the totalSupplyCap limit", async () => {
+            await mockToken.connect(depositor).approve(sut.address, toWei("0.1"));
+            await sut.connect(depositor).deposit(toWei("0.1"));
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("10.0"));
+            expect(await sut.balanceOf(sut.address)).to.be.equal(toWei("10.0"))
+        });
+
+        it("should fail to deposit more than totalSupplyCap as a different depositor", async () => {
+            await mockToken.connect(depositor2).approve(sut.address, toWei("0.2"));
+            await expect(sut.connect(depositor2).deposit(toWei("0.2"))).to.be.revertedWith("totalSupplyCap breached");
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("10.0"));
+            expect(await sut.balanceOf(sut.address)).to.be.equal(toWei("10.0"))
         });
 
     });

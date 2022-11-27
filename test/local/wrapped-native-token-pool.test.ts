@@ -10,7 +10,7 @@ import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/Linea
 import WrappedNativeTokenPoolArtifact
     from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {customError, fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import WETH9Artifact from "../../artifacts/contracts/lib/WETH9.sol/WETH9.json";
 import {LinearIndex, OpenBorrowersRegistry, WETH9, WrappedNativeTokenPool} from "../../typechain";
@@ -52,7 +52,8 @@ describe('Wrapped native token pool', () => {
             depositIndex.address,
             borrowingIndex.address,
             wavax.address,
-            ZERO
+            ZERO,
+            0
         );
 
         await wavax.connect(depositor).deposit({value: toWei("10")});
@@ -87,6 +88,24 @@ describe('Wrapped native token pool', () => {
         expect(fromWei(await wavax.balanceOf(sut.address))).to.equal(1);
         expect(fromWei(await sut.totalSupply())).to.be.closeTo(1, 0.001);
         expect(fromWei(await sut.balanceOf(depositor.address))).to.closeTo(1, 0.001);
+    });
+
+    it("should set totalSupplyCap as a the owner", async () => {
+        expect(await sut.totalSupplyCap()).to.be.equal(0);
+        expect(await sut.connect(owner).setTotalSupplyCap(toWei("10")));
+        expect(await sut.totalSupplyCap()).to.be.equal(toWei("10"));
+    });
+
+    it("should fail to deposit too much  in native token", async () => {
+        await sut.connect(depositor).depositNativeToken({value: toWei("1.0")});
+
+        expect(fromWei(await sut.balanceOf(depositor.address))).to.closeTo(2, 0.000001);
+        expect(fromWei(await wavax.balanceOf(sut.address))).to.equal(2);
+        expect(fromWei(await sut.totalSupply())).to.be.closeTo(2, 0.000001);
+
+        expect(fromWei(await sut.balanceOf(depositor.address))).to.be.closeTo(2, 0.000001);
+
+        await expect(sut.connect(depositor).depositNativeToken({value: toWei("8.0")})).to.be.revertedWith(customError("TotalSupplyCapBreached"));
     });
 });
 

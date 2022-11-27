@@ -11,7 +11,7 @@ import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/Mock
 import OpenBorrowersRegistryArtifact
     from "../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator} from "../../typechain";
 
 chai.use(solidity);
@@ -45,14 +45,15 @@ describe("Pool ERC20 token functions", () => {
             depositIndex.address,
             borrowingIndex.address,
             mockToken.address,
-            ZERO
+            ZERO,
+            0
         );
     });
 
     describe("transfer", () => {
 
         it("should fail to deposit 0 tokens", async () => {
-            await expect(sut.connect(user1).deposit(0)).to.be.revertedWith("Deposit amount must be > 0");
+            await expect(sut.connect(user1).deposit(0)).to.be.revertedWith(customError("ZeroDepositAmount"));
         });
 
         it("should deposit and withdraw", async () => {

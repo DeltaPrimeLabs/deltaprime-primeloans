@@ -23,6 +23,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     using TransferHelper for address payable;
 
     uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95e18;
+    uint256 public totalSupplyCap;
 
     mapping(address => mapping(address => uint256)) private _allowed;
     mapping(address => uint256) internal _deposited;
@@ -38,7 +39,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     address payable public tokenAddress;
 
-    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_) public initializer {
+    function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
             && AddressUpgradeable.isContract(address(borrowersRegistry_))
             && AddressUpgradeable.isContract(address(depositIndex_))
@@ -51,6 +52,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         borrowIndex = borrowIndex_;
         poolRewarder = poolRewarder_;
         tokenAddress = tokenAddress_;
+        totalSupplyCap = _totalSupplyCap;
 
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -58,6 +60,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /* ========== SETTERS ========== */
+
+    /**
+     * Sets new totalSupplyCap limiting how much in total can be deposited to the Pool.
+     * Only the owner of the Contract can execute this function.
+     * @dev _newTotalSupplyCap new deposit cap
+    **/
+    function setTotalSupplyCap(uint256 _newTotalSupplyCap) external onlyOwner {
+        totalSupplyCap = _newTotalSupplyCap;
+    }
 
     /**
      * Sets the new Pool Rewarder.
@@ -196,7 +207,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * It updates user deposited balance, total deposited and rates
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
-        require(_amount>0, "Deposit amount must be > 0");
+        if(_amount == 0) revert ZeroDepositAmount();
+        if(totalSupplyCap != 0){
+            if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
+        }
+
         _accumulateDepositInterest(msg.sender);
 
         _transferToPool(msg.sender, _amount);
@@ -229,7 +244,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _accumulateDepositInterest(msg.sender);
 
-        require(_deposited[address(this)] >= _amount, "ERC20: burn amount exceeds current pool indexed balance");
+        if(_amount > _deposited[address(this)]) revert BurnAmountExceedsBalance();
         // verified in "require" above
         unchecked {
             _deposited[address(this)] -= _amount;
@@ -276,7 +291,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function repay(uint256 amount) external nonReentrant {
         _accumulateBorrowingInterest(msg.sender);
 
-        require(borrowed[msg.sender] >= amount, "Trying to repay more than was borrowed");
+        if(amount > borrowed[msg.sender]) revert RepayingMoreThanWasBorrowed();
         _transferToPool(msg.sender, amount);
 
         borrowed[msg.sender] -= amount;
@@ -414,7 +429,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         require(borrowersRegistry.canBorrow(msg.sender), "Only authorized accounts may borrow");
         require(totalSupply() != 0, "Cannot borrow from an empty pool");
         _;
-        require((totalBorrowed() * 1e18) / totalSupply() <= MAX_POOL_UTILISATION_FOR_BORROWING, "The pool utilisation cannot be greater than 95%");
+        if((totalBorrowed() * 1e18) / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert MaxPoolUtilisationBreached();
     }
 
     /* ========== EVENTS ========== */
@@ -507,4 +522,19 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     /// @param requested requested transfer amount
     /// @param allowance current allowance
     error InsufficientAllowance(uint256 requested, uint256 allowance);
+
+    //  This deposit operation would result in a breach of the totalSupplyCap
+    error TotalSupplyCapBreached();
+
+    // The deposit amount must be > 0
+    error ZeroDepositAmount();
+
+    // ERC20: burn amount exceeds current pool indexed balance
+    error BurnAmountExceedsBalance();
+
+    // Trying to repay more than was borrowed
+    error RepayingMoreThanWasBorrowed();
+
+    // MAX_POOL_UTILISATION_FOR_BORROWING was breached
+    error MaxPoolUtilisationBreached();
 }

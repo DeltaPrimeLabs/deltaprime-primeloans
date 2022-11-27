@@ -12,7 +12,7 @@ import OpenBorrowersRegistryArtifact
 import MockBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/MockBorrowersRegistry.sol/MockBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator, MockBorrowersRegistry} from "../../typechain";
 import {Contract} from "ethers";
 
@@ -48,7 +48,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
@@ -106,7 +107,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
@@ -171,7 +173,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
@@ -186,7 +189,7 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should not be able to borrow above threshold", async () => {
-            await expect(sut.connect(borrower).borrow(toWei("0.01"))).to.be.revertedWith("The pool utilisation cannot be greater than 95%");
+            await expect(sut.connect(borrower).borrow(toWei("0.01"))).to.be.revertedWith(customError("MaxPoolUtilisationBreached"));
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
             expect(borrowed).to.be.closeTo(0.95, 0.000001);
@@ -223,7 +226,8 @@ describe('Pool with variable utilisation interest rates', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ethers.constants.AddressZero
+                ethers.constants.AddressZero,
+                0
             );
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
