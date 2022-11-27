@@ -188,6 +188,16 @@ describe('Smart loan - upgrading', () => {
             await diamondCut.unpause();
         });
 
+        it("should return list of facets", async () => {
+            const diamondLoupe = await ethers.getContractAt('IDiamondLoupe', diamondAddress, owner);
+            let facetAddresses = await diamondLoupe.facetAddresses();
+            expect(facetAddresses.length).to.be.gt(0);
+            expect((await diamondLoupe.facets()).length).to.be.gt(0);
+            let facetSelectors = await diamondLoupe.facetFunctionSelectors(facetAddresses[0]);
+            expect(facetSelectors.length).to.be.gt(0);
+            expect(await diamondLoupe.facetAddress(facetSelectors[0])).not.to.be.equal(ethers.constants.AddressZero);
+        });
+
 
         it("should upgrade", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
