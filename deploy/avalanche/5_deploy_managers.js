@@ -59,7 +59,7 @@ module.exports = async ({
         pool("USDC", usdcPoolTUP.address)
     ];
 
-    let tokenManager = await deploy('TokenManager', {
+    await deploy('TokenManager', {
         from: deployer,
         gasLimit: 8000000,
         args:
@@ -69,11 +69,21 @@ module.exports = async ({
             ],
     });
 
+    let tokenManager = await ethers.getContract("TokenManager");
+
+    console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
+
+    let tokenManagerTUP = await deploy('TokenManagerTUP', {
+        from: deployer,
+        gasLimit: 8000000,
+        args: [tokenManager.address, admin, calldata],
+    });
+
     // await verifyContract(hre, {
     //     address: tokenManager.address
     // });
 
-    console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
+    console.log(`Deployed TokenManagerTUP at address: ${tokenManagerTUP.address}`);
 
 };
 
