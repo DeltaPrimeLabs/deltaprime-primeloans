@@ -464,15 +464,26 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             // check rewards
             expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(50, 1e-4);
             
-            await pool.connect(depositor1).transfer(depositor2.address, toWei("10.1"));
+            await pool.connect(depositor1).transfer(depositor2.address, toWei("5"));
+            expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(toWei("5"));
+            expect(await rewarder.balanceOf(depositor2.address)).to.be.equal(toWei("5.0"));
+
+            // FastForward 45 days ahead (+225 days in total)
+            await time.increase(time.duration.days(45));
+            // check rewards
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(56.25, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.closeTo(6.25, 1e-4);
+
+            await pool.connect(depositor1).approve(depositor1.address, toWei("5.1"));
+            await pool.connect(depositor1).transferFrom(depositor1.address, depositor2.address, toWei("5.1"));
             expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(0);
             expect(await rewarder.balanceOf(depositor2.address)).to.be.equal(toWei("10.0"));
 
-            // FastForward 90 days ahead (+270 days in total)
-            await time.increase(time.duration.days(90));
+            // FastForward 45 days ahead (+270 days in total)
+            await time.increase(time.duration.days(45));
             // check rewards
-            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(50, 1e-4);
-            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.closeTo(25, 1e-4);
+            expect(fromWei(await pool.connect(depositor1).checkRewards())).to.be.closeTo(56.25, 1e-4);
+            expect(fromWei(await pool.connect(depositor2).checkRewards())).to.be.closeTo(18.75, 1e-4);
 
             await pool.connect(depositor1).transfer(depositor2.address, toWei("0.1"));
             expect(await rewarder.balanceOf(depositor1.address)).to.be.equal(0);
