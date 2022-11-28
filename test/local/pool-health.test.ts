@@ -65,7 +65,8 @@ describe('Safety tests of pool', () => {
                     depositIndex.address,
                     borrowingIndex.address,
                     mockToken.address,
-                    rewarder.address
+                    rewarder.address,
+                    0
                 )).to.be.revertedWith("Wrong init arguments");
         });
 
@@ -77,7 +78,8 @@ describe('Safety tests of pool', () => {
                     depositIndex.address,
                     borrowingIndex.address,
                     mockToken.address,
-                    rewarder.address
+                    rewarder.address,
+                    0
                 )).to.be.revertedWith("Wrong init arguments");
         });
 
@@ -89,7 +91,8 @@ describe('Safety tests of pool', () => {
                     nonContractAddress,
                     borrowingIndex.address,
                     mockToken.address,
-                    rewarder.address
+                    rewarder.address,
+                    0
                 )).to.be.revertedWith("Wrong init arguments");
         });
 
@@ -101,7 +104,8 @@ describe('Safety tests of pool', () => {
                     depositIndex.address,
                     nonContractAddress,
                     mockToken.address,
-                    rewarder.address
+                    rewarder.address,
+                    0
                 )).to.be.revertedWith("Wrong init arguments");
         });
 
@@ -113,7 +117,8 @@ describe('Safety tests of pool', () => {
                     depositIndex.address,
                     borrowingIndex.address,
                     mockToken.address,
-                    nonContractAddress
+                    nonContractAddress,
+                    0
                 )).to.be.revertedWith("Wrong init arguments");
         });
 
@@ -124,7 +129,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                rewarder.address
+                rewarder.address,
+                0
             );
         });
 
@@ -173,7 +179,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
@@ -248,7 +255,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
@@ -373,7 +381,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
@@ -465,7 +474,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
@@ -626,7 +636,8 @@ describe('Safety tests of pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 

@@ -58,7 +58,8 @@ describe('Pool with multiple users interactions', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
@@ -265,7 +266,8 @@ describe('Pool with multiple users interactions', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
 
         });
@@ -406,7 +408,8 @@ describe('Pool with multiple users interactions', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockToken.address,
-                ZERO
+                ZERO,
+                0
             );
 
         });

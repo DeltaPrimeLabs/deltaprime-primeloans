@@ -78,7 +78,8 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 poolToken.address,
-                rewarder.address
+                rewarder.address,
+                0
             );
         });
 
@@ -262,7 +263,8 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 poolToken.address,
-                rewarder.address
+                rewarder.address,
+                0
             );
         });
 
@@ -423,7 +425,8 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 poolToken.address,
-                rewarder.address
+                rewarder.address,
+                0
             );
         });
 

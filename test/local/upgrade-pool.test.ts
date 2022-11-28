@@ -72,7 +72,8 @@ describe('Upgradeable pool', () => {
                 depositIndex.address,
                 borrowingIndex.address,
                 mockUsdToken.address,
-                ZERO
+                ZERO,
+                0
             );
         });
 
