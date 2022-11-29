@@ -198,6 +198,75 @@ describe('Smart loan - upgrading', () => {
             expect(await diamondLoupe.facetAddress(facetSelectors[0])).not.to.be.equal(ethers.constants.AddressZero);
         });
 
+        it("should test paused methods exemptions", async () => {
+            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            const diamondBeaconOwner = await ethers.getContractAt("SmartLoanDiamondBeacon", diamondAddress, owner);
+            const diamondBeaconNonOwner = await ethers.getContractAt("SmartLoanDiamondBeacon", diamondAddress, depositor);
+
+            wrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+
+            // Should access non-exempted function while not paused
+            await wrappedLoan.isSolvent();
+
+            // PAUSE
+            await diamondCut.pause();
+
+            // Should fail to access non-exempted function while paused
+            await expect(wrappedLoan.isSolvent()).to.be.revertedWith("ProtocolUpgrade: paused.");
+
+            // Fail setting function's exemption as a non owner
+            // 0x5ce23950 -> isSolvent()
+            await expect(diamondBeaconNonOwner.setPausedMethodExemptions([0x5ce23950], [true])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+
+            // Set function's exemption as an owner
+            // 0x5ce23950 -> isSolvent()
+            await diamondBeaconOwner.setPausedMethodExemptions([0x5ce23950], [true]);
+
+            // Should access exempted function while paused
+            await wrappedLoan.isSolvent();
+
+            // UNPAUSE
+            await diamondCut.unpause();
+
+            // Check the canBeExecutedWhenPaused() function
+            expect(await diamondBeaconOwner.canBeExecutedWhenPaused("0x5ce23950")).to.be.true;
+            expect(await diamondBeaconOwner.canBeExecutedWhenPaused("0xffffffff")).to.be.false;
+
+            // Should access exempted function while not paused
+            await wrappedLoan.isSolvent();
+
+            // Fail setting function's "false" value exemption as a non owner
+            // 0x5ce23950 -> isSolvent()
+            await expect(diamondBeaconNonOwner.setPausedMethodExemptions([0x5ce23950], [false])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+
+            // Set function's "false" value exemption as the owner
+            // 0x5ce23950 -> isSolvent()
+            await diamondBeaconOwner.setPausedMethodExemptions([0x5ce23950], [false]);
+
+            // Check the canBeExecutedWhenPaused() function
+            expect(await diamondBeaconOwner.canBeExecutedWhenPaused("0x5ce23950")).to.be.false;
+            expect(await diamondBeaconOwner.canBeExecutedWhenPaused("0xffffffff")).to.be.false;
+
+            // Should access no-longer-exempted function while not paused
+            await wrappedLoan.isSolvent();
+
+            // Should fail to disallow using unpause() function while paused
+            // 0x3f4ba83a -> unpause()
+            await expect(diamondBeaconOwner.setPausedMethodExemptions([0x3f4ba83a], [false])).to.be.revertedWith("The unpause() method must be available during the paused state.");
+
+            // Should not revert on allowing using unpause() function while paused
+            // 0x3f4ba83a -> unpause()
+            await diamondBeaconOwner.setPausedMethodExemptions([0x3f4ba83a], [true]);
+        });
 
         it("should upgrade", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);

@@ -41,6 +41,8 @@ library DiamondStorageLib {
         // Used to query if a contract implements an interface.
         // Used to implement ERC-165.
         mapping(bytes4 => bool) supportedInterfaces;
+        // Used to select methods that can be executed even when Diamond is paused
+        mapping(bytes4 => bool) canBeExecutedWhenPaused;
 
         bool _initialized;
         bool _active;
@@ -100,6 +102,11 @@ library DiamondStorageLib {
     function setProposedOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         sls.proposedOwner = _newOwner;
+    }
+
+    function getPausedMethodExemption(bytes4 _methodSig) internal view returns (bool) {
+        DiamondStorage storage ds = diamondStorage();
+        return ds.canBeExecutedWhenPaused[_methodSig];
     }
 
     function proposedOwner() internal view returns (address proposedOwner_) {

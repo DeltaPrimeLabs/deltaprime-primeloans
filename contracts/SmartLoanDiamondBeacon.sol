@@ -30,10 +30,29 @@ contract SmartLoanDiamondBeacon {
         functionSelectors : functionSelectors
         });
         DiamondStorageLib.diamondCut(cut, address(0), "");
+
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        // diamondCut(); unpause()
+        ds.canBeExecutedWhenPaused[0x1f931c1c] = true;
+        ds.canBeExecutedWhenPaused[0x3f4ba83a] = true;
     }
 
     function implementation() public view returns (address) {
         return address(this);
+    }
+
+    function canBeExecutedWhenPaused(bytes4 methodSig) external view returns (bool) {
+        return DiamondStorageLib.getPausedMethodExemption(methodSig);
+    }
+
+    function setPausedMethodExemptions(bytes4[] memory methodSigs, bool[] memory values) public {
+        DiamondStorageLib.enforceIsContractOwner();
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+
+        for(uint i; i<methodSigs.length; i++){
+            require(!(methodSigs[i] == 0x3f4ba83a && values[i] == false), "The unpause() method must be available during the paused state.");
+            ds.canBeExecutedWhenPaused[methodSigs[i]] = values[i];
+        }
     }
 
     function getStatus() public view returns(bool) {
@@ -41,7 +60,7 @@ contract SmartLoanDiamondBeacon {
         return ds._active;
     }
 
-    function implementation(bytes4 funcSignature) public view notPausedOrUpgrading returns (address) {
+    function implementation(bytes4 funcSignature) public view notPausedOrUpgrading(funcSignature) returns (address) {
         DiamondStorageLib.DiamondStorage storage ds;
         bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
         // get diamond storage
@@ -95,11 +114,12 @@ contract SmartLoanDiamondBeacon {
         emit OwnershipProposalAccepted(msg.sender);
     }
 
-    modifier notPausedOrUpgrading() {
-        // diamondCut(); unpause()
-        if(msg.sig != 0x1f931c1c && msg.sig != 0x3f4ba83a) {
-            DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
-            require(ds._active, "ProtocolUpgrade: paused.");
+    modifier notPausedOrUpgrading(bytes4 funcSignature) {
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        if(!ds._active){
+            if(!ds.canBeExecutedWhenPaused[funcSignature]){
+                revert("ProtocolUpgrade: paused.");
+            }
         }
         _;
     }
