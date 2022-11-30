@@ -27,7 +27,6 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager
@@ -82,7 +81,6 @@ describe('Smart loan - upgrading', () => {
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
             diamondAddress = await deployDiamond();
 
@@ -110,7 +108,6 @@ describe('Smart loan - upgrading', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -128,7 +125,6 @@ describe('Smart loan - upgrading', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

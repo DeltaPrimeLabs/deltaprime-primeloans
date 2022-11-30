@@ -1,4 +1,4 @@
-export default function updateConstants(chain, exchanges, tokenManager, redstoneConfigManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
+export default function updateConstants(chain, exchanges, tokenManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
     var fs = require('fs')
     const replace = require('replace-in-file');
 
@@ -34,15 +34,6 @@ export default function updateConstants(chain, exchanges, tokenManager, redstone
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
-    //Redstone Config Manager
-
-    lineWithFunctionDeclaration = fileArray.findIndex(
-        line => line.includes('_REDSTONE_CONFIG_MANAGER_ADDRESS')
-    );
-
-    newLine = `    address private constant _REDSTONE_CONFIG_MANAGER_ADDRESS = ${redstoneConfigManager};`;
-
-    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
     //SmartLoansFactory address
 

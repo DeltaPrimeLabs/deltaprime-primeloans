@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 
 import "../../TokenManager.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../RedstoneConfigManager.sol";
 
 /**
  * DeploymentConstants
@@ -26,8 +25,6 @@ library DeploymentConstants {
     address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x9385556B571ab92bf6dC9a0DbD75429Dd4d56F91;
 
     address private constant _TOKEN_MANAGER_ADDRESS = 0xa6e99A4ED7498b3cdDCBB61a6A607a4925Faa1B7;
-
-    address private constant _REDSTONE_CONFIG_MANAGER_ADDRESS = 0x40918Ba7f132E0aCba2CE4de4c4baF9BD2D7D849;
 
     //implementation-specific
 
@@ -57,10 +54,6 @@ library DeploymentConstants {
 
     function getTokenManager() internal pure returns (TokenManager) {
         return TokenManager(_TOKEN_MANAGER_ADDRESS);
-    }
-
-    function getRedstoneConfigManager() internal pure returns (RedstoneConfigManager) {
-        return RedstoneConfigManager(_REDSTONE_CONFIG_MANAGER_ADDRESS);
     }
 
     /**

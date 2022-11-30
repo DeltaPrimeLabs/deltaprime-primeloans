@@ -6,8 +6,7 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
-    deployAllFacets,
-    deployAndInitializeLendingPool, deployPools, fromWei,
+    deployAllFacets, deployPools, fromWei,
     getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
     PoolAsset, PoolInitializationObject,
     recompileConstantsFile,
@@ -16,7 +15,6 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager,
@@ -56,8 +54,6 @@ describe('Smart loan', () => {
                 {name: 'MCKUSD', airdropList: [owner, depositor]}
             ];
 
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-
             let diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
@@ -83,7 +79,6 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib',

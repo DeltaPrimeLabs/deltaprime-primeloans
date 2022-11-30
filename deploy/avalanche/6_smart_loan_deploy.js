@@ -67,7 +67,6 @@ module.exports = async ({
     const pangolinIntermediary = await ethers.getContract("PangolinIntermediaryTUP");
     const traderJoeIntermediary = await ethers.getContract("TraderJoeIntermediaryTUP");
     const tokenManager = await ethers.getContract("TokenManager");
-    const redstoneConfigManager = await ethers.getContract("RedstoneConfigManager");
 
     await recompileConstantsFile(
         'avalanche',
@@ -83,7 +82,6 @@ module.exports = async ({
             }
         ],
         tokenManager.address,
-        redstoneConfigManager.address,
         diamondAddress,
         resultTup.address,
         'lib'

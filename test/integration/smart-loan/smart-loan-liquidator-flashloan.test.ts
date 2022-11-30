@@ -26,7 +26,6 @@ import {syncTime} from "../../_syncTime"
 import {
     LiquidationFlashloan,
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoansFactory,
     TokenManager
 } from "../../../typechain";
@@ -77,7 +76,6 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             diamondCut: Contract,
@@ -100,8 +98,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: []}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers));
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
@@ -130,7 +126,6 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -150,7 +145,6 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -231,7 +225,6 @@ describe('Test liquidator with a flashloan', () => {
             loan: Contract,
             diamondCut: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -253,9 +246,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: []}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers)
-            );
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
@@ -284,7 +274,6 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -304,7 +293,6 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -401,7 +389,6 @@ describe('Test liquidator with a flashloan', () => {
             loan: Contract,
             diamondCut: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
@@ -427,9 +414,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers)
-            );
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
@@ -477,7 +461,6 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -495,7 +478,6 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -589,7 +571,6 @@ describe('Test liquidator with a flashloan', () => {
             loan: Contract,
             diamondCut: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
@@ -615,9 +596,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers)
-            );
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
@@ -665,7 +643,6 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -683,7 +660,6 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

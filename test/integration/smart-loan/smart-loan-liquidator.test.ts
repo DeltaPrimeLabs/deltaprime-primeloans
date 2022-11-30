@@ -25,7 +25,6 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoansFactory,
     TokenManager,
 } from "../../../typechain";
@@ -34,7 +33,6 @@ import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
-import TRUSTED_SIGNERS from '../../../common/redstone-trusted-signers.json';
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -59,7 +57,6 @@ describe('Test liquidator', () => {
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -80,8 +77,6 @@ describe('Test liquidator', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: []}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers));
 
             diamondAddress = await deployDiamond();
 
@@ -111,7 +106,6 @@ describe('Test liquidator', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -129,7 +123,6 @@ describe('Test liquidator', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -200,7 +193,6 @@ describe('Test liquidator', () => {
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             wrappedLoan: any,
-            redstoneConfigManager: any,
             tokenManager: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -221,8 +213,6 @@ describe('Test liquidator', () => {
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: []}
             ];
-
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(TRUSTED_SIGNERS.signers));
 
             diamondAddress = await deployDiamond();
 
@@ -252,7 +242,6 @@ describe('Test liquidator', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -270,7 +259,6 @@ describe('Test liquidator', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
