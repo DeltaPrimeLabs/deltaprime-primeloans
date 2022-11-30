@@ -129,12 +129,12 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    // This function executes SolvencyFacetProd.getOwnedAssetsPrices()
-    function _getOwnedAssetsPrices() internal virtual returns (SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices) {
+    // This function executes SolvencyFacetProd.getOwnedAssetWithNativePrices()
+    function _getOwnedAssetWithNativePrices() internal virtual returns (SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices) {
         ownedAssetsPrices = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getOwnedAssetsPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getOwnedAssetsPrices.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getOwnedAssetWithNativePrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getOwnedAssetWithNativePrices.selector)
             ),
             (SolvencyFacetProd.AssetPrice[])
         );

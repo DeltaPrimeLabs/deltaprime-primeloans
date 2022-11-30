@@ -102,8 +102,8 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
       * Returns an array of Asset/Price structs of enriched (always containing AVAX at index 0) owned assets.
       * @dev This function uses the redstone-evm-connector
     **/
-    function getOwnedAssetsPrices() public view returns(AssetPrice[] memory result) {
-        bytes32[] memory assetsEnriched = getOwnedAssetsEnriched();
+    function getOwnedAssetWithNativePrices() public view returns(AssetPrice[] memory result) {
+        bytes32[] memory assetsEnriched = getOwnedAssetsWithNative();
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
 
         result = new AssetPrice[](assetsEnriched.length);
@@ -133,7 +133,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
       * @dev This function uses the redstone-evm-connector
     **/
     function getAllPricesForLiquidation(bytes32[] calldata assetsToRepay) public view returns (CachedPrices memory result) {
-        bytes32[] memory ownedAssetsEnriched = getOwnedAssetsEnriched();
+        bytes32[] memory ownedAssetsEnriched = getOwnedAssetsWithNative();
         bytes32[] memory debtAssets = getDebtAssets();
         bytes32[] memory stakedAssets = getStakedAssets();
 
@@ -298,7 +298,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
       * @dev This function uses the redstone-evm-connector
     **/
     function getThresholdWeightedValue() public view virtual returns (uint256) {
-        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsPrices();
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetWithNativePrices();
         AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
@@ -377,7 +377,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
      * @dev This function uses the redstone-evm-connector
      **/
     function getTotalAssetsValue() public view virtual returns (uint256) {
-        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsPrices();
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetWithNativePrices();
         return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 
@@ -392,7 +392,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
     /**
       * Returns list of owned assets that always included NativeToken at index 0
     **/
-    function getOwnedAssetsEnriched() public view returns(bytes32[] memory){
+    function getOwnedAssetsWithNative() public view returns(bytes32[] memory){
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
