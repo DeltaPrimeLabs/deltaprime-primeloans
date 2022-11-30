@@ -131,7 +131,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
       * Used during the liquidation process in order to obtain all necessary prices from calldata only once.
       * @dev This function uses the redstone-evm-connector
     **/
-    function getAllPricesForLiquidation(bytes32[] calldata assetsToRepay) public view returns (CachedPrices memory result) {
+    function getAllPricesForLiquidation(bytes32[] memory assetsToRepay) public view returns (CachedPrices memory result) {
         bytes32[] memory ownedAssetsEnriched = getOwnedAssetsWithNative();
         bytes32[] memory debtAssets = getDebtAssets();
         bytes32[] memory stakedAssets = getStakedAssets();
@@ -480,8 +480,9 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
      * @dev This function uses the redstone-evm-connector
      **/
     function getHealthRatio() public view virtual returns (uint256) {
-        uint256 debt = getDebt();
-        uint256 thresholdWeightedValue = getThresholdWeightedValue();
+        CachedPrices memory cachedPrices = getAllPricesForLiquidation(new bytes32[](0));
+        uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
+        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
