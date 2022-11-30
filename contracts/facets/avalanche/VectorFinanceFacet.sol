@@ -4,7 +4,6 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
-import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
@@ -12,7 +11,7 @@ import "../../OnlyOwnerOrInsolvent.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrInsolvent {
+contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // CONSTANTS
 

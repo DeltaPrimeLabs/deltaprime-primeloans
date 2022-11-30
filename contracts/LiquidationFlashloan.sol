@@ -3,12 +3,11 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./aave_v3/flashloan/base/FlashLoanReceiverBase.sol";
 import "./facets/SmartLoanLiquidationFacet.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-contract LiquidationFlashloan is FlashLoanReceiverBase, OwnableUpgradeable {
+contract LiquidationFlashloan is FlashLoanReceiverBase {
   using TransferHelper for address payable;
   using TransferHelper for address;
 

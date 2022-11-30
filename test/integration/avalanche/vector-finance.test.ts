@@ -48,8 +48,7 @@ const {deployContract, provider} = waffle;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const VectorUSDCStaking1 = '0x7550B2d6a1F039Dd6a3d54a857FEFCbF77213D80';
-const VectorUSDCStaking2 = '0xDA9E515Ce714c4309f7C4483F4802556AE5Df396';
+const VectorUSDCStaking1 = '0x994F0e36ceB953105D05897537BF55d201245156';
 const VectorWAVAXStaking1 = '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69';
 const VectorSAVAXStaking1 = '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1';
 
@@ -173,21 +172,18 @@ describe('Smart loan', () => {
 
         it("should fail to stake as a non-owner", async () => {
             await expect(nonOwnerWrappedLoan.vectorStakeUSDC1(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.vectorStakeUSDC2(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorStakeWAVAX1(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorStakeSAVAX1(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake as a non-owner", async () => {
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC2(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.vectorUnstakeSAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should stake", async () => {
            await testStake("vectorStakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('13', BigNumber.from("6")));
-           await testStake("vectorStakeUSDC2", "vectorUSDC2Balance", VectorUSDCStaking2, parseUnits('11', BigNumber.from("6")));
            await testStake("vectorStakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('5'));
            await testStake("vectorStakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('6'));
            await time.increase(time.duration.days(30));
@@ -195,7 +191,6 @@ describe('Smart loan', () => {
 
         it("should unstake", async () => {
             await testUnstake("vectorUnstakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('2', BigNumber.from("6")));
-            await testUnstake("vectorUnstakeUSDC2", "vectorUSDC2Balance", VectorUSDCStaking2, parseUnits('2', BigNumber.from("6")));
             await testUnstake("vectorUnstakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('1'));
             await testUnstake("vectorUnstakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('1'));
         });
@@ -280,7 +275,6 @@ describe('Smart loan', () => {
 
         it("should fail to unstake more than was initially staked", async () => {
             await expect(wrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-            await expect(wrappedLoan.vectorUnstakeUSDC2(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
             await expect(wrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
             await expect(wrappedLoan.vectorUnstakeSAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
         });

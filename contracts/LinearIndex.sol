@@ -103,6 +103,10 @@ contract LinearIndex is IIndex, OwnableUpgradeable {
         return rate * period * 1e9 / SECONDS_IN_YEAR + 1e27;
     }
 
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
+
+    function renounceOwnership() public virtual override {}
+
     /* ========== EVENTS ========== */
 
     /**
