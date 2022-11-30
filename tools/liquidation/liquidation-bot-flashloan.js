@@ -107,7 +107,7 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
             {
                 name: symbol,
                 //@ts-ignore
-                maxLeverage: fromWei(await tokenManager.maxTokenLeverage(TOKEN_ADDRESSES[symbol])),
+                maxLeverage: fromWei(await tokenManager.debtCoverage(TOKEN_ADDRESSES[symbol])),
                 balance: formatUnits(balance.balance, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
         });
     }

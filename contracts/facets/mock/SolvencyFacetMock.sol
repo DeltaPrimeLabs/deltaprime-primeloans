@@ -246,26 +246,26 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
     }
 
     /**
-      * Returns TotalWeightedValue of OwnedAssets in USD based on the supplied array of Asset/Price struct, tokenBalance and maxTokenLeverage
+      * Returns TotalWeightedValue of OwnedAssets in USD based on the supplied array of Asset/Price struct, tokenBalance and debtCoverage
     **/
     function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.maxTokenLeverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
 
         if (ownedAssetsPrices.length > 0) {
 
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.maxTokenLeverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
         }
         return weightedValueOfTokens;
     }
 
     /**
-      * Returns TotalWeightedValue of StakedPositions in USD based on the supplied array of Asset/Price struct, positionBalance and maxTokenLeverage
+      * Returns TotalWeightedValue of StakedPositions in USD based on the supplied array of Asset/Price struct, positionBalance and debtCoverage
     **/
     function _getTWVStakedPositions(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -283,7 +283,7 @@ contract SolvencyFacetMock is RSOracleMock3Signers, DiamondHelper {
 
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
 
-                weightedValueOfStaked += stakedPositionsPrices[i].price * 10 ** 10 * balance * tokenManager.maxTokenLeverage(positions[i].vault) / (10 ** token.decimals());
+                weightedValueOfStaked += stakedPositionsPrices[i].price * 10 ** 10 * balance * tokenManager.debtCoverage(positions[i].vault) / (10 ** token.decimals());
             }
         }
         return weightedValueOfStaked;

@@ -1,12 +1,12 @@
 import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
-import {TokenManager} from "../../typechain";
+import {TokenManager} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TokenManagerArtifact from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
-import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei} from "../_helpers";
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei} from "../../_helpers";
 import {Contract} from "ethers";
-const addresses = require("../../common/addresses/avax/token_addresses.json");
+const addresses = require("../../../common/addresses/avax/token_addresses.json");
 
 const {deployContract} = waffle;
 chai.use(solidity);
@@ -151,20 +151,20 @@ describe('Token Manager tests', () => {
     });
 
     it("should change token leverage", async () => {
-        expect(fromWei(await tokenManager.connect(admin).maxTokenLeverage(addresses.AVAX))).to.be.equal(0.8333333333333333);
-        await tokenManager.connect(admin).setMaxTokenLeverage(addresses.AVAX, toWei("0.5"));
-        expect(fromWei(await tokenManager.connect(admin).maxTokenLeverage(addresses.AVAX))).to.be.equal(0.5);
+        expect(fromWei(await tokenManager.connect(admin).debtCoverage(addresses.AVAX))).to.be.equal(0.8333333333333333);
+        await tokenManager.connect(admin).setDebtCoverage(addresses.AVAX, toWei("0.5"));
+        expect(fromWei(await tokenManager.connect(admin).debtCoverage(addresses.AVAX))).to.be.equal(0.5);
     });
 
     it("should not accept leverage higher than x5", async () => {
-        await expect(tokenManager.connect(admin).setMaxTokenLeverage(addresses.AVAX, toWei("0.8333333333333334"))).to.be.revertedWith("Leverage higher than maximum acceptable");
+        await expect(tokenManager.connect(admin).setDebtCoverage(addresses.AVAX, toWei("0.8333333333333334"))).to.be.revertedWith("Leverage higher than maximum acceptable");
     });
 
     it("should not accept leverage lower than 0", async () => {
-        await expect(tokenManager.connect(admin).setMaxTokenLeverage(addresses.AVAX, toWei("-0.1"))).to.be.reverted;
+        await expect(tokenManager.connect(admin).setDebtCoverage(addresses.AVAX, toWei("-0.1"))).to.be.reverted;
     });
 
     it("should not accept leverage change by a non-admin", async () => {
-        await expect(tokenManager.connect(nonAdmin).setMaxTokenLeverage(addresses.AVAX, toWei("0.6"))).to.be.revertedWith("Admin only");
+        await expect(tokenManager.connect(nonAdmin).setDebtCoverage(addresses.AVAX, toWei("0.6"))).to.be.revertedWith("Admin only");
     });
 });

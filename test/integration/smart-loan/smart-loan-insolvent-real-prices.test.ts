@@ -612,7 +612,7 @@ describe('Smart loan - real prices', () => {
                             );
 
                             for (let [symbol, leverage] of Object.entries(testCase.maxLeverage)) {
-                                await tokenManager.connect(owner).setMaxTokenLeverage(getTokenContract(symbol)!.address, toWei(leverage.toString()))
+                                await tokenManager.connect(owner).setDebtCoverage(getTokenContract(symbol)!.address, toWei(leverage.toString()))
                             }
 
                             //fund

@@ -36,7 +36,7 @@ contract TokenManager {
     mapping(address => bytes32) public tokenAddressToSymbol;
     mapping(address => uint256) private tokenPositionInList;
     // used for defining different leverage ratios for tokens
-    mapping(address => uint256) public maxTokenLeverage;
+    mapping(address => uint256) public debtCoverage;
     address[] public supportedTokensList;
 
     address public adminTransferProposal;
@@ -136,7 +136,7 @@ contract TokenManager {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
-        setMaxTokenLeverage(_tokenAddress, _maxLeverage);
+        setDebtCoverage(_tokenAddress, _maxLeverage);
 
         assetToTokenAddress.set(_asset, _tokenAddress);
         tokenAddressToSymbol[_tokenAddress] = _asset;
@@ -174,7 +174,7 @@ contract TokenManager {
         EnumerableMap.remove(assetToTokenAddress, _tokenAsset);
         tokenAddressToSymbol[tokenAddress] = 0;
         tokenToStatus[tokenAddress] = _NOT_SUPPORTED;
-        maxTokenLeverage[tokenAddress] = 0;
+        debtCoverage[tokenAddress] = 0;
         _removeTokenFromList(tokenAddress);
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
     }
@@ -191,10 +191,10 @@ contract TokenManager {
         emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
     }
 
-    function setMaxTokenLeverage(address token, uint256 maxLeverage) public onlyAdmin {
+    function setDebtCoverage(address token, uint256 maxLeverage) public onlyAdmin {
         //LTV must be lower than 5
         require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
-        maxTokenLeverage[token] = maxLeverage;
+        debtCoverage[token] = maxLeverage;
     }
 
     modifier onlyAdmin {
