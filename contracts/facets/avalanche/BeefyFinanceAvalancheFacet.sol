@@ -165,7 +165,9 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, SolvencyMethods {
         vaultContract.withdraw(stakingDetails.amount);
 
         // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.lpTokenSymbol, stakingDetails.lpTokenAddress);
+        if(vaultContract.balanceOf(address(this)) > 0){
+            DiamondStorageLib.addOwnedAsset(stakingDetails.lpTokenSymbol, stakingDetails.lpTokenAddress);
+        }
         if(vaultContract.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
         }

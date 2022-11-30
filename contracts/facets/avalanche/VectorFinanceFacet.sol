@@ -120,8 +120,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwner
     onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        require(amount > 0, "Cannot unstake 0 tokens");
-
         IVectorFinanceStaking stakingContract = IVectorFinanceStaking(receiptToken);
         uint256 initialStakedBalance = stakingContract.balance(address(this));
 

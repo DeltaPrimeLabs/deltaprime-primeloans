@@ -313,7 +313,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
 
     /**
-     * Returns the current debt from all lending pools
+     * Returns the current debt denominated in USD
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getDebtBase(AssetPrice[] memory debtAssetsPrices) internal view returns (uint256){
@@ -333,7 +333,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-     * Returns the current debt from all lending pools
+     * Returns the current debt denominated in USD
      * @dev This function uses the redstone-evm-connector
     **/
     function getDebt() public view virtual returns (uint256) {
@@ -342,7 +342,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
     }
 
     /**
-     * Returns the current debt from all lending pools
+     * Returns the current debt denominated in USD
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getDebtWithPrices(AssetPrice[] memory debtAssetsPrices) public view virtual returns (uint256) {
