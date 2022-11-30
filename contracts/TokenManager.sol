@@ -136,6 +136,7 @@ contract TokenManager {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
+        require(tokenAddressToSymbol[_tokenAddress] == 0, "Asset address is already in use");
         setDebtCoverage(_tokenAddress, _maxLeverage);
 
         assetToTokenAddress.set(_asset, _tokenAddress);

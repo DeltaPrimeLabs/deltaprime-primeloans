@@ -150,6 +150,13 @@ describe('Token Manager tests', () => {
         expect(fromBytes32(await tokenManager.connect(admin).tokenAddressToSymbol(addresses.BTC))).to.be.equal("BTC");
     });
 
+    it("should fail to add new asset with an already-existing address", async () => {
+        let newAssets = [
+            new Asset(toBytes32("AVAX1"), addresses.AVAX)
+        ];
+        await expect(tokenManager.connect(admin).addTokenAssets(newAssets)).to.be.revertedWith("Asset address is already in use");
+    });
+
     it("should change token leverage", async () => {
         expect(fromWei(await tokenManager.connect(admin).debtCoverage(addresses.AVAX))).to.be.equal(0.8333333333333333);
         await tokenManager.connect(admin).setDebtCoverage(addresses.AVAX, toWei("0.5"));
