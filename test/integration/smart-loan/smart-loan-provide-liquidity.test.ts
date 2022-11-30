@@ -23,7 +23,6 @@ import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager,
@@ -81,8 +80,6 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
             diamondAddress = await deployDiamond();
 
@@ -152,7 +149,6 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

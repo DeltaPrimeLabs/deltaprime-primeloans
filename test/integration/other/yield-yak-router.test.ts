@@ -3,7 +3,6 @@ import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager
@@ -62,7 +61,7 @@ describe('Yield Yak test stake AVAX', () => {
     before(async () => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
+
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
@@ -86,7 +85,6 @@ describe('Yield Yak test stake AVAX', () => {
             "DeploymentConstants",
             [],
             tokenManager.address,
-            redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -180,7 +178,7 @@ describe('Yield Yak test stake sAVAX', () => {
     before(async () => {
         [user, owner] = await getFixedGasSigners(10000000);
         yakStakingContract = await new ethers.Contract(yakStakingSAVAXTokenAddress, erc20ABI, provider);
-        let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
+
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
@@ -205,7 +203,6 @@ describe('Yield Yak test stake sAVAX', () => {
             "DeploymentConstants",
             [],
             tokenManager.address,
-            redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -225,7 +222,6 @@ describe('Yield Yak test stake sAVAX', () => {
                 }
             ],
             tokenManager.address,
-            redstoneConfigManager.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'

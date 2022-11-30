@@ -22,7 +22,6 @@ import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     PangolinIntermediary,
     Pool,
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager,
@@ -192,7 +191,6 @@ describe('Smart loan', () => {
             supportedAssets: Array<Asset>,
             INITIAL_MOCK_PRICES: any,
             newPrices: [],
-            redstoneConfigManager: any,
             tokenManager: any,
             diamondAddress: any;
 
@@ -205,7 +203,6 @@ describe('Smart loan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
             let lendingPools = [];
             for (const token of [
                 {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
@@ -272,7 +269,6 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -327,7 +323,6 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -347,7 +342,6 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

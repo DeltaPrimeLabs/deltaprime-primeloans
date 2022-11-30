@@ -4,26 +4,23 @@ import {solidity} from "ethereum-waffle";
 
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import SmartLoanGigaChadInterfaceArtifact from '../../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
+import SmartLoanGigaChadInterfaceArtifact
+    from '../../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {
-    addMissingTokenContracts,
-    Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
+    Asset,
+    convertAssetsListToSupportedAssets,
     deployAllFacets,
-    deployAndInitializeLendingPool, deployPools,
-    getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
-    PoolAsset, PoolInitializationObject,
+    deployPools,
+    getFixedGasSigners,
+    PoolAsset,
+    PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {
-    RedstoneConfigManager__factory,
-    SmartLoansFactory,
-    TokenManager,
-} from "../../../typechain";
+import {SmartLoansFactory, TokenManager,} from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {Contract} from "ethers";
 
@@ -61,7 +58,6 @@ describe('Smart loan', () => {
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner1).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
 
             diamondAddress = await deployDiamond();
 
@@ -85,7 +81,6 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

@@ -29,12 +29,11 @@ import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
     PangolinIntermediary,
-    RedstoneConfigManager__factory,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager,
 } from "../../../typechain";
-import {BigNumber, Contract} from "ethers";
+import {Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
@@ -85,8 +84,6 @@ describe('Smart loan', () => {
                 {name: 'AVAX', airdropList: [depositor]},
             ];
 
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
@@ -114,7 +111,6 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -244,8 +240,6 @@ describe('Smart loan', () => {
                 {name: 'AVAX', airdropList: [depositor]},
             ];
 
-            let redstoneConfigManager = await (new RedstoneConfigManager__factory(owner).deploy(["0xFE71e9691B9524BC932C23d0EeD5c9CE41161884"]));
-
             let diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
@@ -273,7 +267,6 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -291,7 +284,6 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
-                redstoneConfigManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

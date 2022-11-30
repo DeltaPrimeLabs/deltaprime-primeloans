@@ -14,7 +14,13 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
 
     function wrapNativeToken(uint256 amount) onlyOwner public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
-        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value : amount}();
+        IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+        wrapped.deposit{value : amount}();
+
+        if (wrapped.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), address(wrapped));
+        }
+
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
 
@@ -29,6 +35,10 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
         require(wrapped.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 
         wrapped.withdraw(_amount);
+
+        if (wrapped.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(DeploymentConstants.getNativeTokenSymbol());
+        }
 
         payable(msg.sender).safeTransferETH(_amount);
 
