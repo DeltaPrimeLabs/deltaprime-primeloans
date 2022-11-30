@@ -216,11 +216,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
         if(_amount == 0) revert ZeroDepositAmount();
+
+        _accumulateDepositInterest(msg.sender);
+
         if(totalSupplyCap != 0){
             if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
         }
-
-        _accumulateDepositInterest(msg.sender);
 
         _transferToPool(msg.sender, _amount);
 

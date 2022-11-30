@@ -21,13 +21,14 @@ contract WrappedNativeTokenPool is Pool {
      **/
     function depositNativeToken() public payable virtual {
         if(msg.value == 0) revert ZeroDepositAmount();
+
+        _accumulateDepositInterest(msg.sender);
+
         if(totalSupplyCap != 0){
             if(_deposited[address(this)] + msg.value > totalSupplyCap) revert TotalSupplyCapBreached();
         }
 
         IWrappedNativeToken(tokenAddress).deposit{value : msg.value}();
-
-        _accumulateDepositInterest(msg.sender);
 
         _mint(msg.sender, msg.value);
         _deposited[address(this)] += msg.value;

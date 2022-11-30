@@ -396,19 +396,20 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
+        // If account already owns the native token the use ownedAssets.length; Otherwise add one element to account for additional native token.
         uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssets.length : ownedAssets.length + 1;
-        bytes32[] memory assetsEnriched = new bytes32[](numberOfAssets);
+        bytes32[] memory assetsWithNative = new bytes32[](numberOfAssets);
 
         uint256 lastUsedIndex;
-        assetsEnriched[0] = nativeTokenSymbol; // First asset = NativeToken
+        assetsWithNative[0] = nativeTokenSymbol; // First asset = NativeToken
 
         for(uint i=0; i< ownedAssets.length; i++){
             if(ownedAssets[i] != nativeTokenSymbol){
                 lastUsedIndex += 1;
-                assetsEnriched[lastUsedIndex] = ownedAssets[i];
+                assetsWithNative[lastUsedIndex] = ownedAssets[i];
             }
         }
-        return assetsEnriched;
+        return assetsWithNative;
     }
 
     /**
