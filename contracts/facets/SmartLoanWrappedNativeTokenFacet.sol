@@ -17,7 +17,7 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
         wrapped.deposit{value : amount}();
 
-        if (wrapped.balanceOf(address(this)) == 0) {
+        if (wrapped.balanceOf(address(this)) != 0) {
             DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), address(wrapped));
         }
 
@@ -25,7 +25,12 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
     }
 
     function depositNativeToken() public payable virtual {
-        IWrappedNativeToken(DeploymentConstants.getNativeToken()).deposit{value : msg.value}();
+        IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+        wrapped.deposit{value : msg.value}();
+
+        if (wrapped.balanceOf(address(this)) != 0) {
+            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), address(wrapped));
+        }
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }

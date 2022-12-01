@@ -198,7 +198,10 @@ describe('Smart loan', () => {
 
         it("should add native AVAX to SmartLoan using the destructable contract", async () => {
             expect(await provider.getBalance(wrappedLoan.address)).to.be.equal(0);
+            expect(await loanOwnsAsset("AVAX")).to.be.false;
+
             await destructable.connect(depositor).destruct(wrappedLoan.address);
+            expect(await loanOwnsAsset("AVAX")).to.be.false;
             expect(await provider.getBalance(wrappedLoan.address)).to.be.equal(toWei("21.37"));
         });
 
@@ -215,14 +218,20 @@ describe('Smart loan', () => {
 
         it("should wrapNativeToken and then withdraw extra supplied AVAX afterwards", async () => {
             let initialWAVAXBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(await loanOwnsAsset("AVAX")).to.be.false;
             await wrappedLoan.wrapNativeToken(toWei("21.37"));
+            expect(await loanOwnsAsset("AVAX")).to.be.true;
+
             expect(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address)).to.be.equal(initialWAVAXBalance + toWei("21.37"));
             await wrappedLoan.withdraw(toBytes32("AVAX"), toWei("21.37"));
             expect(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address)).to.be.equal(initialWAVAXBalance);
         });
 
         it("should deposit native token", async () => {
+            expect(await loanOwnsAsset("AVAX")).to.be.false;
             await wrappedLoan.depositNativeToken({value: toWei("10")});
+            expect(await loanOwnsAsset("AVAX")).to.be.true;
 
             expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(0);
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.equal(10);
@@ -275,6 +284,26 @@ describe('Smart loan', () => {
             expect(fromWei(await provider.getBalance(wrappedLoan.address))).to.be.equal(10);
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.equal(1.5);
         });
+
+        it("should withdraw native token fully and remove AVAX from owned assets", async () => {
+            expect(await loanOwnsAsset("AVAX")).to.be.true;
+
+            // Repaying 110% to fully repay the debt (debt increases in-between the balance check and repay tx execution)
+            await wrappedLoan.repay(toBytes32("AVAX"), (await poolContracts.get("AVAX")!.getBorrowed(wrappedLoan.address)).mul(11).div(10));
+
+            await wrappedLoan.unwrapAndWithdraw(await tokenContracts.get("AVAX")!.balanceOf(wrappedLoan.address));
+            expect(await loanOwnsAsset("AVAX")).to.be.false;
+        });
+
+        async function loanOwnsAsset(asset: string) {
+          let ownedAssets =  await wrappedLoan.getAllOwnedAssets();
+          for(const ownedAsset of ownedAssets){
+              if(fromBytes32(ownedAsset) == asset){
+                  return true;
+              }
+          }
+          return false;
+        }
     });
 });
 
