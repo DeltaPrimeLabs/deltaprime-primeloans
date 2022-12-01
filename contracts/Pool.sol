@@ -160,7 +160,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
         if(spender == address(0)) revert SpenderZeroAddress();
         uint256 currentAllowance = _allowed[msg.sender][spender];
-        require(currentAllowance >= subtractedValue, "Current allowance is too small");
+        if(currentAllowance < subtractedValue) revert InsufficientAllowance(subtractedValue, currentAllowance);
 
         uint256 newAllowance = currentAllowance - subtractedValue;
         _allowed[msg.sender][spender] = newAllowance;
@@ -372,8 +372,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
         uint256 surplus = balance + totalBorrowed() - totalSupply();
 
-        require(amount <= balance, "Trying to recover more than pool balance");
-        require(amount <= surplus, "Trying to recover more than current surplus");
+        if(amount > balance) revert InsufficientPoolFunds();
+        if(surplus < amount) revert InsufficientSurplus();
 
         _transferFromPool(account, amount);
     }
@@ -381,7 +381,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     /* ========== INTERNAL FUNCTIONS ========== */
 
     function _mint(address to, uint256 amount) internal {
-        require(to != address(0), "ERC20: cannot mint to the zero address");
+        if(to == address(0)) revert MintToAddressZero();
 
         _deposited[to] += amount;
 
@@ -389,7 +389,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function _burn(address account, uint256 amount) internal {
-        require(_deposited[account] >= amount, "ERC20: burn amount exceeds user balance");
+        if(amount > _deposited[account]) revert BurnAmountExceedsBalance();
 
         // verified in "require" above
         unchecked {
@@ -402,7 +402,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function _updateRates() internal {
         uint256 _totalBorrowed = totalBorrowed();
         uint256 _totalSupply = totalSupply();
-        require(address(ratesCalculator) != address(0), "Pool is frozen");
+        if(address(ratesCalculator) == address(0)) revert PoolFrozen();
         depositIndex.setRate(ratesCalculator.calculateDepositRate(_totalBorrowed, _totalSupply));
         borrowIndex.setRate(ratesCalculator.calculateBorrowingRate(_totalBorrowed, _totalSupply));
     }
@@ -434,9 +434,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     /* ========== MODIFIERS ========== */
 
     modifier canBorrow() {
-        require(address(borrowersRegistry) != address(0), "Borrowers registry not configured");
-        require(borrowersRegistry.canBorrow(msg.sender), "Only authorized accounts may borrow");
-        require(totalSupply() != 0, "Cannot borrow from an empty pool");
+        if(address(borrowersRegistry) == address(0)) revert BorrowersRegistryNotConfigured();
+        if(!borrowersRegistry.canBorrow(msg.sender)) revert NotAuthorizedToBorrow();
+        if(totalSupply() == 0) revert InsufficientPoolFunds();
         _;
         if((totalBorrowed() * 1e18) / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert MaxPoolUtilisationBreached();
     }
@@ -506,8 +506,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /* ========== ERRORS ========== */
 
+    // Only authorized accounts may borrow
+    error NotAuthorizedToBorrow();
+
+    // Borrowers registry is not configured
+    error BorrowersRegistryNotConfigured();
+
+    // Pool is frozen
+    error PoolFrozen();
+
     // Not enough funds in the pool.
     error InsufficientPoolFunds();
+
+    // Insufficient pool surplus to cover the requested recover amount
+    error InsufficientSurplus();
 
     // Address (`target`) must be a contract
     // @param target target address that must be a contract
@@ -537,6 +549,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // The deposit amount must be > 0
     error ZeroDepositAmount();
+
+    // ERC20: cannot mint to the zero address
+    error MintToAddressZero();
 
     // ERC20: burn amount exceeds current pool indexed balance
     error BurnAmountExceedsBalance();

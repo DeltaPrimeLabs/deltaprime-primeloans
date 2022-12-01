@@ -196,7 +196,7 @@ describe("Pool ERC20 token functions", () => {
         });
 
         it("should revert upon decreasing an allowance for below the current allowance level", async () => {
-            await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith("Current allowance is too small");
+            await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith(customError("InsufficientAllowance", toWei("100"), 0));
         });
 
     });

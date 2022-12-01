@@ -554,7 +554,7 @@ describe('Safety tests of pool', () => {
 
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
             expect(fromWei(receiverBalanceAfterRecover)).to.be.closeTo(fromWei(receiverBalanceBeforeRecover.add(maxAvailableSurplus)), 0.00001);
-            await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more than pool balance");
+            await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith(customError("InsufficientPoolFunds"));
 
             expect(fromWei(await pool.totalSupply())).to.be.closeTo(fromWei(totalSupply), 0.00001);
             expect(fromWei(await pool.getDepositRate())).to.equal(fromWei(depositRate));
@@ -670,13 +670,13 @@ describe('Safety tests of pool', () => {
 
         it("should revert basic actions for a freeze calculator ", async () => {
             await mockToken.connect(depositor).approve(pool.address, toWei("1.0"));
-            await expect(pool.connect(depositor).deposit(toWei("1.0"))).to.be.revertedWith("Pool is frozen");
+            await expect(pool.connect(depositor).deposit(toWei("1.0"))).to.be.revertedWith(customError("PoolFrozen"));
 
-            await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith("Pool is frozen");
-            await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith("Pool is frozen");
+            await expect(pool.connect(depositor).withdraw(toWei("0.2"))).to.be.revertedWith(customError("PoolFrozen"));
+            await expect(pool.connect(borrower).borrow(toWei("0.2"))).to.be.revertedWith(customError("PoolFrozen"));
 
             await mockToken.connect(borrower).approve(pool.address, toWei("0.5"));
-            await expect(pool.connect(borrower).repay(toWei("0.5"))).to.be.revertedWith("Pool is frozen");
+            await expect(pool.connect(borrower).repay(toWei("0.5"))).to.be.revertedWith(customError("PoolFrozen"));
 
             expect(fromWei(await pool.totalSupply())).to.be.closeTo(1, 0.000001);
             expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0.5, 0.000001);

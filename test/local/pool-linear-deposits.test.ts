@@ -10,7 +10,7 @@ import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/Linea
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool} from "../../typechain";
 import {Contract} from "ethers";
@@ -235,9 +235,9 @@ describe('Pool with variable utilisation interest rates', () => {
             await sut.connect(depositor2).deposit(toWei("0.5"));
 
             await expect(sut.connect(depositor3).withdraw(toWei("0.5")))
-                .to.be.revertedWith("ERC20: burn amount exceeds user balance");
+                .to.be.revertedWith(customError("BurnAmountExceedsBalance"));
             await expect(sut.connect(depositor3).withdraw(toWei("0.000000001")))
-                .to.be.revertedWith("ERC20: burn amount exceeds user balance");
+                .to.be.revertedWith(customError("BurnAmountExceedsBalance"));
         });
 
         it("should not allow to withdraw more than already on deposit", async () => {
@@ -248,7 +248,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await sut.connect(depositor3).deposit(toWei("1.0"));
 
             await expect(sut.connect(depositor2).withdraw(toWei("1.0001")))
-                .to.be.revertedWith("ERC20: burn amount exceeds user balance");
+                .to.be.revertedWith(customError("BurnAmountExceedsBalance"));
         });
 
         it("should not allow to withdraw more than already on deposit after accumulating interest", async () => {
@@ -261,7 +261,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
             expect(fromWei(await sut.connect(depositor2).balanceOf(depositor2.address))).to.be.closeTo(1.05, 0.00001);
             await expect(sut.connect(depositor2).withdraw(toWei("1.0513")))
-                .to.be.revertedWith("ERC20: burn amount exceeds user balance");
+                .to.be.revertedWith(customError("BurnAmountExceedsBalance"));
         });
 
         it("should allow to withdraw all deposit", async () => {

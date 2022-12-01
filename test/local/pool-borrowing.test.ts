@@ -235,18 +235,18 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should not allow non registered account to borrow", async () => {
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith('Only authorized accounts may borrow');
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
         });
 
         it("should allow registered account to borrow", async () => {
             expect(await mockToken.connect(registered).balanceOf(registered.address)).to.equal("0");
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith('Only authorized accounts may borrow');
-            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith('Only authorized accounts may borrow');
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith('Only authorized accounts may borrow');
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
 
             await borrowersRegistry.connect(owner).updateRegistry(registered.address, borrower.address);
 
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith('Only authorized accounts may borrow');
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
             await expect(sut.connect(registered).borrow(toWei("1.0"))).not.to.be.reverted;
 
             expect(fromWei(await mockToken.connect(registered).balanceOf(registered.address))).to.equal(1);

@@ -10,7 +10,7 @@ import {
     addMissingTokenContracts,
     Asset,
     convertAssetsListToSupportedAssets,
-    convertTokenPricesMapToMockPrices,
+    convertTokenPricesMapToMockPrices, customError,
     deployAllFacets,
     deployPools,
     fromWei,
@@ -133,8 +133,8 @@ describe('Smart loan', () => {
         });
 
         it("should fail to borrow funds from the pool as a non-registered account", async () => {
-            await expect(poolContracts.get('MCKUSD')!.connect(depositor).borrow(toWei("300"))).to.be.revertedWith("Only authorized accounts may borrow");
-            await expect(poolContracts.get('MCKUSD')!.connect(borrower).borrow(toWei("300"))).to.be.revertedWith("Only authorized accounts may borrow");
+            await expect(poolContracts.get('MCKUSD')!.connect(depositor).borrow(toWei("300"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(poolContracts.get('MCKUSD')!.connect(borrower).borrow(toWei("300"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
         });
 
         it("should fail to borrow funds as a non-owner", async () => {

@@ -34,6 +34,10 @@ contract WrappedNativeTokenPool is Pool {
         _deposited[address(this)] += msg.value;
         _updateRates();
 
+        if (address(poolRewarder) != address(0)) {
+            poolRewarder.stakeFor(msg.value, msg.sender);
+        }
+
         emit Deposit(msg.sender, msg.value, block.timestamp);
     }
 
@@ -57,6 +61,10 @@ contract WrappedNativeTokenPool is Pool {
         payable(msg.sender).safeTransferETH(_amount);
 
         _updateRates();
+
+        if (address(poolRewarder) != address(0)) {
+            poolRewarder.withdrawFor(_amount, msg.sender);
+        }
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
     }
