@@ -16,7 +16,6 @@ const pangolinSupportedAssets = [
     asset('ETH'),
     asset('sAVAX'),
     asset('USDT'),
-    asset('LINK'),
     asset('PNG'),
     asset('PTP'),
     asset('QI'),

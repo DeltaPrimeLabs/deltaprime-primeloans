@@ -96,6 +96,13 @@ describe('Pool with variable utilisation interest rates - totalSupplyCap test', 
             expect(fromWei(await sut.balanceOf(sut.address))).to.be.closeTo(9.9, 1e-5);
         });
 
+        it("should enable deposit after setting totalSupplyCap to 0", async () => {
+            await sut.connect(owner).setTotalSupplyCap(0);
+            await mockToken.connect(depositor2).approve(sut.address, toWei("1"));
+            await sut.connect(depositor2).deposit(toWei("1"));
+            expect(await mockToken.balanceOf(sut.address)).to.equal(toWei("10.9"));
+            expect(fromWei(await sut.balanceOf(sut.address))).to.be.closeTo(10.9, 0.00001)
+        });
     });
 });
 

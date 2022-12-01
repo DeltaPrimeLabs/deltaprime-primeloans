@@ -170,7 +170,7 @@ describe('Yield Yak test stake sAVAX', () => {
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         SAVAX_PRICE: number,
-        SAV2_PRICE: any,
+        YY_AAVE_AVAX_PRICE: any,
         yakStakingContract: Contract,
         sAvaxTokenContract: Contract,
         avaxTokenContract: Contract;
@@ -182,7 +182,7 @@ describe('Yield Yak test stake sAVAX', () => {
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
-            new Asset(toBytes32('SAV2'), TOKEN_ADDRESSES['SAV2']),
+            new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
         ]
         let tokenManager = await deployContract(
             owner,
@@ -232,7 +232,7 @@ describe('Yield Yak test stake sAVAX', () => {
         // TODO: Include sAVAX and $YYVSAVAXV2 prices once available in redstone
         AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
         SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
-        SAV2_PRICE = (await redstone.getPrice('SAV2', {provider: "redstone-avalanche-prod-1"})).value;
+        YY_AAVE_AVAX_PRICE = (await redstone.getPrice('YY_AAVE_AVAX', {provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
@@ -244,8 +244,8 @@ describe('Yield Yak test stake sAVAX', () => {
                 value: SAVAX_PRICE
             },
             {
-                dataFeedId: 'SAV2',
-                value: SAV2_PRICE
+                dataFeedId: 'YY_AAVE_AVAX',
+                value: YY_AAVE_AVAX_PRICE
             },
         ];
 

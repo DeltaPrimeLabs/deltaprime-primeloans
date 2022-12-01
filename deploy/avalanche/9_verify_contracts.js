@@ -74,7 +74,6 @@ module.exports = async ({
         asset('ETH'),
         asset('sAVAX'),
         asset('USDT'),
-        asset('LINK'),
         asset('QI'),
         asset('PNG_AVAX_USDC_LP'),
     ]
@@ -104,7 +103,7 @@ module.exports = async ({
     const traderJoeSupportedAssets = [
         asset('AVAX'),
         asset('USDC'),
-        {asset:'BTC', assetAddress: '0x50b7545627a5162f82a992c33b87adc75187b218'},
+        asset('BTC'),
         asset('ETH'),
         asset('USDT'),
         asset('sAVAX'),

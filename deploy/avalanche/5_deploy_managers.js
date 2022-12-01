@@ -11,7 +11,6 @@ const supportedAssets = [
     asset('BTC'),
     asset('ETH'),
     asset('USDT'),
-    asset('LINK'),
     asset('sAVAX'),
     asset('QI', 0),
     asset('PNG', 0),

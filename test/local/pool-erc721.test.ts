@@ -69,7 +69,8 @@ describe('Pool with ERC721 Alpha access', () => {
             depositIndex.address,
             borrowingIndex.address,
             mockUsdToken.address,
-            ZERO
+            ZERO,
+            0
         );
     });
 

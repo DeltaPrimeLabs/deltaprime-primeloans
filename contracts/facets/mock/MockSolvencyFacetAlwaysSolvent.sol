@@ -8,4 +8,8 @@ contract MockSolvencyFacetAlwaysSolvent {
     function isSolvent() public pure returns (bool) {
         return true;
     }
+
+    function canRepayDebtFully() external view returns (bool) {
+        return true;
+    }
 }

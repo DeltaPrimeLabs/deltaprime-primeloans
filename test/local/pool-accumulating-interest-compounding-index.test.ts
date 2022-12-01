@@ -162,7 +162,8 @@ describe('Pool testing suite with accumulating interest', () => {
             depositIndex.address,
             borrowingIndex.address,
             mockToken.address,
-            ZERO
+            ZERO,
+            0
         );
     });
 

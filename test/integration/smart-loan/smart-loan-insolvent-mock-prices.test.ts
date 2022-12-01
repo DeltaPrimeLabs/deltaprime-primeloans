@@ -6,7 +6,7 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-    Asset, calculateHealthRatio,
+    Asset,
     deployAllFacets,
     deployAndInitExchangeContract,
     deployAndInitializeLendingPool, formatUnits, fromBytes32, fromWei,
@@ -20,7 +20,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
-    PangolinIntermediary,
+    TraderJoeIntermediary,
     Pool,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
@@ -34,7 +34,7 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -172,7 +172,7 @@ describe('Smart loan', () => {
     });
 
     describe('An insolvent loan - mock prices', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             owner: SignerWithAddress,
@@ -274,7 +274,7 @@ describe('Smart loan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
             //deposit other tokens
             await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);
             await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, INITIAL_PRICES.ETH);
@@ -298,9 +298,9 @@ describe('Smart loan', () => {
             }
 
             async function topupUser(user: SignerWithAddress) {
-                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 10000 / INITIAL_PRICES.AVAX).toString())});
+                await tokenContracts['AVAX'].connect(user).deposit({value: toWei((10 * 1000 / INITIAL_PRICES.AVAX).toString())});
 
-                const amountSwapped = toWei((10000 / INITIAL_PRICES.AVAX).toString());
+                const amountSwapped = toWei((1000 / INITIAL_PRICES.AVAX).toString());
                 await tokenContracts['AVAX'].connect(user).transfer(exchange.address, amountSwapped);
                 await exchange.connect(user).swap(tokenContracts['AVAX'].address, tokenContracts['USDC'].address, amountSwapped, 0);
 
@@ -337,7 +337,7 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
