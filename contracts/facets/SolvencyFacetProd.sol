@@ -124,6 +124,29 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         }
     }
 
+    function copyToArray(bytes32[] memory target, bytes32[] memory source, uint256 offset, uint256 numberOfItems) pure internal {
+        require(numberOfItems <= source.length, "numberOfItems > target array length");
+        require(offset + numberOfItems <= target.length, "offset + numberOfItems > target array length");
+
+        for(uint i; i<numberOfItems; i++){
+            target[i + offset] = source[i];
+        }
+    }
+
+    function copyToAssetPriceArray(AssetPrice[] memory target, bytes32[] memory sourceAssets, uint256[] memory sourcePrices, uint256 offset, uint256 numberOfItems) pure internal {
+        require(numberOfItems <= sourceAssets.length, "numberOfItems > sourceAssets array length");
+        require(numberOfItems <= sourcePrices.length, "numberOfItems > sourcePrices array length");
+        require(offset + numberOfItems <= sourceAssets.length, "offset + numberOfItems > sourceAssets array length");
+        require(offset + numberOfItems <= sourcePrices.length, "offset + numberOfItems > sourcePrices array length");
+
+        for(uint i; i<numberOfItems; i++){
+            target[i] = AssetPrice({
+                asset: sourceAssets[i+offset],
+                price: sourcePrices[i+offset]
+            });
+        }
+    }
+
     /**
       * Returns CachedPrices struct consisting of Asset/Price arrays for ownedAssets, debtAssets, stakedPositions and assetsToRepay.
       * Used during the liquidation process in order to obtain all necessary prices from calldata only once.
@@ -138,27 +161,19 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
         uint256 offset;
 
         // Populate allAssetsSymbols with owned assets symbols
-        for(uint i; i<ownedAssetsEnriched.length; i++){
-            allAssetsSymbols[i] = ownedAssetsEnriched[i];
-        }
+        copyToArray(allAssetsSymbols, ownedAssetsEnriched, offset, ownedAssetsEnriched.length);
         offset += ownedAssetsEnriched.length;
 
         // Populate allAssetsSymbols with debt assets symbols
-        for(uint i; i<debtAssets.length; i++){
-            allAssetsSymbols[i+offset] = debtAssets[i];
-        }
+        copyToArray(allAssetsSymbols, debtAssets, offset, debtAssets.length);
         offset += debtAssets.length;
 
         // Populate allAssetsSymbols with staked assets symbols
-        for(uint i; i<stakedAssets.length; i++){
-            allAssetsSymbols[i+offset] = stakedAssets[i];
-        }
+        copyToArray(allAssetsSymbols, stakedAssets, offset, stakedAssets.length);
         offset += stakedAssets.length;
 
         // Populate allAssetsSymbols with assets to repay symbols
-        for(uint i; i<assetsToRepay.length; i++){
-            allAssetsSymbols[i+offset] = assetsToRepay[i];
-        }
+        copyToArray(allAssetsSymbols, assetsToRepay, offset, assetsToRepay.length);
 
         uint256[] memory allAssetsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(allAssetsSymbols);
 
@@ -166,35 +181,21 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
         // Populate ownedAssetsPrices struct
         AssetPrice[] memory ownedAssetsPrices = new AssetPrice[](ownedAssetsEnriched.length);
-        for(uint i=0; i<ownedAssetsEnriched.length; i++){
-            ownedAssetsPrices[i] = AssetPrice({
-            asset: allAssetsSymbols[i+offset],
-            price: allAssetsPrices[i+offset]
-            });
-        }
+        copyToAssetPriceArray(ownedAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, ownedAssetsEnriched.length);
         offset += ownedAssetsEnriched.length;
 
         // Populate debtAssetsPrices struct
         AssetPrice[] memory debtAssetsPrices = new AssetPrice[](debtAssets.length);
-        for(uint i=0; i<debtAssets.length; i++){
-            debtAssetsPrices[i] = AssetPrice({
-            asset: allAssetsSymbols[i+offset],
-            price: allAssetsPrices[i+offset]
-            });
-        }
+        copyToAssetPriceArray(debtAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, debtAssets.length);
         offset += debtAssetsPrices.length;
 
         // Populate stakedPositionsPrices struct
         AssetPrice[] memory stakedPositionsPrices = new AssetPrice[](stakedAssets.length);
-        for(uint i=0; i<stakedAssets.length; i++){
-            stakedPositionsPrices[i] = AssetPrice({
-            asset: allAssetsSymbols[i+offset],
-            price: allAssetsPrices[i+offset]
-            });
-        }
+        copyToAssetPriceArray(stakedPositionsPrices, allAssetsSymbols, allAssetsPrices, offset, stakedAssets.length);
         offset += stakedAssets.length;
 
         // Populate assetsToRepayPrices struct
+        // Stack too deep :F
         AssetPrice[] memory assetsToRepayPrices = new AssetPrice[](assetsToRepay.length);
         for(uint i=0; i<assetsToRepay.length; i++){
             assetsToRepayPrices[i] = AssetPrice({
