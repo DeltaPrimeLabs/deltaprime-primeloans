@@ -121,7 +121,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
-        bool healingLoan = config.allowUnprofitableLiquidation && initialDebt > initialTotal;
+        bool healingLoan = initialDebt > initialTotal;
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
@@ -196,13 +196,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         uint256 health = _getHealthRatioWithPrices(cachedPrices);
 
-        if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
-            require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
-        }
-
         if (healingLoan) {
             require(_getDebtWithPrices(cachedPrices.debtAssetsPrices) == 0, "Healing a loan must end up with 0 debt");
             require(_getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices) == 0, "Healing a loan must end up with 0 total value");
+        } else {
+            require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
         require(_isSolventWithPrices(cachedPrices), "This operation would not result in bringing the loan back to a solvent state");
