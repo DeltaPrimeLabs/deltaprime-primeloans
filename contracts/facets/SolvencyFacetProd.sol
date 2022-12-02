@@ -40,12 +40,10 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
       * Checks if the loan is solvent.
       * It means that the Health Ratio is greater than 1e18.
       * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
-      * @param ownedAssetsPrices An array of Asset/Price structs used to calculate weighted value of owned assets
-      * @param debtAssetsPrices An array of Asset/Price structs used to calculate value of the debt
-      * @param stakedPositionsPrices An array of Asset/Price structs used to calculate value of the staked positions
+      * @param cachedPrices Struct containing arrays of Asset/Price structs used to calculate value of owned assets, debt and staked positions
     **/
-    function isSolventWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view returns (bool) {
-        return getHealthRatioWithPrices(ownedAssetsPrices, debtAssetsPrices, stakedPositionsPrices) >= 1e18;
+    function isSolventWithPrices(CachedPrices memory cachedPrices) public view returns (bool) {
+        return getHealthRatioWithPrices(cachedPrices) >= 1e18;
     }
 
     /**
@@ -496,9 +494,9 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
      * by current debt
      * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
      **/
-    function getHealthRatioWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory debtAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
-        uint256 debt = getDebtWithPrices(debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(ownedAssetsPrices, stakedPositionsPrices);
+    function getHealthRatioWithPrices(CachedPrices memory cachedPrices) public view virtual returns (uint256) {
+        uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
+        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;

@@ -117,7 +117,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 initialDebt = _getDebtWithPrices(cachedPrices.debtAssetsPrices); 
 
         require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
-        require(!_isSolventWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.debtAssetsPrices, cachedPrices.stakedPositionsPrices), "Cannot sellout a solvent account");
+        require(!_isSolventWithPrices(cachedPrices), "Cannot sellout a solvent account");
         require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
@@ -194,7 +194,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
         }
 
-        uint256 health = _getHealthRatioWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.debtAssetsPrices, cachedPrices.stakedPositionsPrices); // 2
+        uint256 health = _getHealthRatioWithPrices(cachedPrices);
 
         if (msg.sender != DiamondStorageLib.smartLoanStorage().contractOwner && !healingLoan) {
             require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
@@ -205,7 +205,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             require(_getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices) == 0, "Healing a loan must end up with 0 total value");
         }
 
-        require(_isSolventWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.debtAssetsPrices, cachedPrices.stakedPositionsPrices), "This operation would not result in bringing the loan back to a solvent state");
+        require(_isSolventWithPrices(cachedPrices), "This operation would not result in bringing the loan back to a solvent state");
 
         //TODO: include final debt and tv
         emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, health, block.timestamp);

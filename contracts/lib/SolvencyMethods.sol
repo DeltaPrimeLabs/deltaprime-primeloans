@@ -31,11 +31,11 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.isSolventWithPrices()
-    function _isSolventWithPrices(SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices, SolvencyFacetProd.AssetPrice[] memory debtAssetsPrices, SolvencyFacetProd.AssetPrice[] memory stakedPositionsPrices) internal virtual returns (bool solvent){
+    function _isSolventWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) internal virtual returns (bool solvent){
         solvent = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolventWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.isSolventWithPrices.selector, ownedAssetsPrices, debtAssetsPrices, stakedPositionsPrices)
+                abi.encodeWithSelector(SolvencyFacetProd.isSolventWithPrices.selector, cachedPrices)
             ),
             (bool)
         );
@@ -86,11 +86,11 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
-    function _getHealthRatioWithPrices(SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices, SolvencyFacetProd.AssetPrice[] memory debtAssetsPrices, SolvencyFacetProd.AssetPrice[] memory stakedPositionsPrices) public virtual returns (uint256 health) {
+    function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
         health = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatioWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getHealthRatioWithPrices.selector, ownedAssetsPrices, debtAssetsPrices, stakedPositionsPrices)
+                abi.encodeWithSelector(SolvencyFacetProd.getHealthRatioWithPrices.selector, cachedPrices)
             ),
             (uint256)
         );
