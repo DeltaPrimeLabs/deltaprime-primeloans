@@ -102,15 +102,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
             (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
-            bytes32 lpToken = stringToBytes32(string.concat(
-                    bytes32ToString(getProtocolID()),
-                        '_',
-                        bytes32ToString(token0),
-                        '_',
-                        bytes32ToString(token1),
-                        '_LP'
-                )
-            );
+            bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
             DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
         }
 
@@ -144,20 +136,25 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
             (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
-            bytes32 lpToken = stringToBytes32(string.concat(
-                    bytes32ToString(getProtocolID()),
-                    '_',
-                    bytes32ToString(token0),
-                    '_',
-                    bytes32ToString(token1)
-                )
-            );
+            bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
             DiamondStorageLib.removeOwnedAsset(lpToken);
         }
         DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
         DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
+    }
+
+    function calculateLpTokenSymbol(bytes32 token0, bytes32 token1) internal pure returns (bytes32 name) {
+        name = stringToBytes32(string.concat(
+                bytes32ToString(getProtocolID()),
+                '_',
+                bytes32ToString(token0),
+                '_',
+                bytes32ToString(token1),
+                '_LP'
+            )
+        );
     }
 
     /**

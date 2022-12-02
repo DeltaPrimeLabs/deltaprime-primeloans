@@ -10,7 +10,7 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 import {
     Asset,
     deployAllFacets,
-    deployAndInitializeLendingPool, formatUnits,
+    deployAndInitializeLendingPool, formatUnits, fromBytes32,
     fromWei,
     getFixedGasSigners,
     PoolAsset,
@@ -214,6 +214,7 @@ describe('Smart loan', () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
 
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.false;
             await wrappedLoan.addLiquidityPangolin(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
@@ -222,6 +223,7 @@ describe('Smart loan', () => {
                 toWei("160"),
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.true;
 
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
 
@@ -232,6 +234,7 @@ describe('Smart loan', () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             expect(await lpToken.balanceOf(wrappedLoan.address)).not.to.be.equal(0);
 
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.true;
             await wrappedLoan.removeLiquidityPangolin(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
@@ -239,11 +242,22 @@ describe('Smart loan', () => {
                 toWei("160"),
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             );
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.false;
 
 
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
+
+        async function loanOwnsAsset(asset: string) {
+            let ownedAssets =  await wrappedLoan.getAllOwnedAssets();
+            for(const ownedAsset of ownedAssets){
+                if(fromBytes32(ownedAsset) == asset){
+                    return true;
+                }
+            }
+            return false;
+        }
     });
 });
 
