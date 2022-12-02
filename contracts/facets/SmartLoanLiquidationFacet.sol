@@ -203,7 +203,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
         }
 
-        require(_isSolventWithPrices(cachedPrices), "This operation would not result in bringing the loan back to a solvent state");
+        require(health >= 1e18, "This operation would not result in bringing the loan back to a solvent state");
 
         //TODO: include final debt and tv
         emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, health, block.timestamp);
