@@ -140,10 +140,8 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             }
 
             if (supplyAmount > 0) {
-                require(supplyAmount <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
-                require(supplyAmount <= token.balanceOf(msg.sender), "Msg.sender supplied token balance is insufficient");
-
                 address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
+                // supplyAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
                 suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
             }
 
@@ -154,6 +152,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             address(token).safeApprove(address(pool), 0);
             address(token).safeApprove(address(pool), repayAmount);
 
+            // repayAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
             repaidInUSD += repayAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
@@ -166,19 +165,19 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         bytes32[] memory assetsOwned = DeploymentConstants.getAllOwnedAssets();
-        uint256 bonus;
+        uint256 bonusInUSD;
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
 
-        bonus = repaidInUSD * config.liquidationBonusPercent / DeploymentConstants.getPercentagePrecision();
+        bonusInUSD = repaidInUSD * config.liquidationBonusPercent / DeploymentConstants.getPercentagePrecision();
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18; // 1
         uint256 assetsValue = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
-        if (!healingLoan && assetsValue >= suppliedInUSD + bonus) {
+        if (!healingLoan && assetsValue >= suppliedInUSD + bonusInUSD) {
             //in that scenario we calculate how big part of token to return
-            partToReturn = (suppliedInUSD + bonus) * 10 ** 18 / assetsValue;
+            partToReturn = (suppliedInUSD + bonusInUSD) * 10 ** 18 / assetsValue;
         }
 
         // Native token transfer
@@ -206,7 +205,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(health >= 1e18, "This operation would not result in bringing the loan back to a solvent state");
 
         //TODO: include final debt and tv
-        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonus, health, block.timestamp);
+        emit Liquidated(msg.sender, healingLoan, initialTotal, initialDebt, repaidInUSD, bonusInUSD, health, block.timestamp);
     }
 
     modifier onlyOwner() {
@@ -220,12 +219,12 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param healing was the liquidation covering the bad debt (unprofitable liquidation)
      * @param initialTotal total value of assets before the liquidation
      * @param initialDebt sum of all debts before the liquidation
-     * @param repayAmount requested amount (AVAX) of liquidation
-     * @param bonus an amount of bonus (AVAX) received by the liquidator
+     * @param repayAmount requested amount (USD) of liquidation
+     * @param bonusInUSD an amount of bonus (USD) received by the liquidator
      * @param health a new health ratio after the liquidation operation
      * @param timestamp a time of the liquidation
      **/
-    event Liquidated(address indexed liquidator, bool indexed healing, uint256 initialTotal, uint256 initialDebt, uint256 repayAmount, uint256 bonus, uint256 health, uint256 timestamp);
+    event Liquidated(address indexed liquidator, bool indexed healing, uint256 initialTotal, uint256 initialDebt, uint256 repayAmount, uint256 bonusInUSD, uint256 health, uint256 timestamp);
 
     /**
      * @dev emitted when funds are repaid to the pool during a liquidation
