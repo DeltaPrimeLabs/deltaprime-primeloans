@@ -35,7 +35,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     struct LiquidationConfig {
         bytes32[] assetsToRepay;
         uint256[] amountsToRepay;
-        uint256 liquidationBonus;
+        uint256 liquidationBonusPercent;
         bool allowUnprofitableLiquidation;
     }
 
@@ -65,14 +65,14 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
     * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
     * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
-    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to getMaxLiquidationBonus()
+    * @param _liquidationBonusPercent per mille bonus for liquidator. Must be lower than or equal to getMaxliquidationBonus()
     **/
-    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
                 assetsToRepay : assetsToRepay,
                 amountsToRepay : amountsToRepay,
-                liquidationBonus : _liquidationBonus,
+                liquidationBonusPercent : _liquidationBonusPercent,
                 allowUnprofitableLiquidation : true
             })
         );
@@ -87,14 +87,14 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
     * @param assetsToRepay bytes32[] names of tokens provided by liquidator for repayment
     * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
-    * @param _liquidationBonus per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
+    * @param _liquidationBonusPercent per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
-    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonus) external payable nonReentrant {
+    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable nonReentrant {
         liquidate(
             LiquidationConfig({
                 assetsToRepay : assetsToRepay,
                 amountsToRepay : amountsToRepay,
-                liquidationBonus : _liquidationBonus,
+                liquidationBonusPercent : _liquidationBonusPercent,
                 allowUnprofitableLiquidation : false
             })
         );
@@ -116,7 +116,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
         uint256 initialDebt = _getDebtWithPrices(cachedPrices.debtAssetsPrices); 
 
-        require(config.liquidationBonus <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
+        require(config.liquidationBonusPercent <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
         require(!_isSolventWithPrices(cachedPrices), "Cannot sellout a solvent account");
         require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
@@ -131,20 +131,20 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
 
             uint256 balance = token.balanceOf(address(this));
-            uint256 needed;
+            uint256 supplyAmount;
 
             if (healingLoan) {
-                needed = config.amountsToRepay[i];
+                supplyAmount = config.amountsToRepay[i];
             } else if (config.amountsToRepay[i] > balance) {
-                needed = config.amountsToRepay[i] - balance;
+                supplyAmount = config.amountsToRepay[i] - balance;
             }
 
-            if (needed > 0) {
-                require(needed <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
-                require(needed <= token.balanceOf(msg.sender), "Msg.sender supplied token balance is insufficient");
+            if (supplyAmount > 0) {
+                require(supplyAmount <= token.allowance(msg.sender, address(this)), "Not enough allowance for the token");
+                require(supplyAmount <= token.balanceOf(msg.sender), "Msg.sender supplied token balance is insufficient");
 
-                address(token).safeTransferFrom(msg.sender, address(this), needed);
-                suppliedInUSD += needed * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
+                address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
+                suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
             }
 
             Pool pool = Pool(tokenManager.getPoolAddress(config.assetsToRepay[i]));
@@ -170,7 +170,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         //after healing bankrupt loan (debt > total value), no tokens are returned to liquidator
 
-        bonus = repaidInUSD * config.liquidationBonus / DeploymentConstants.getPercentagePrecision();
+        bonus = repaidInUSD * config.liquidationBonusPercent / DeploymentConstants.getPercentagePrecision();
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18; // 1
