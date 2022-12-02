@@ -133,9 +133,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             uint256 balance = token.balanceOf(address(this));
             uint256 supplyAmount;
 
-            if (healingLoan) {
-                supplyAmount = config.amountsToRepay[i];
-            } else if (config.amountsToRepay[i] > balance) {
+            if (balance < config.amountsToRepay[i]) {
                 supplyAmount = config.amountsToRepay[i] - balance;
             }
 

@@ -34,7 +34,7 @@ import {
     TokenManager,
 } from "../../../typechain";
 import {Contract} from "ethers";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
@@ -231,6 +231,7 @@ describe('Smart loan', () => {
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
             supportedAssets: Array<Asset>,
+            diamondAddress: string,
             tokensPrices: Map<string, number>;
 
         before("deploy provider, exchange and pool", async () => {
@@ -240,7 +241,7 @@ describe('Smart loan', () => {
                 {name: 'AVAX', airdropList: [depositor]},
             ];
 
-            let diamondAddress = await deployDiamond();
+            diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
@@ -366,7 +367,14 @@ describe('Smart loan', () => {
 
             // Withdraw funds using the updated prices and make sure the "standard" wrappedLoan is Insolvent as a consequence
             expect(await wrappedLoan.isSolvent()).to.be.true;
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['canRepayDebtFully']);
+            await diamondCut.unpause();
+
             await wrappedLoanUpdated.withdraw(toBytes32("AVAX"), toWei("60"));
+
             expect(await wrappedLoanUpdated.isSolvent()).to.be.true;
             expect(await wrappedLoan.isSolvent()).to.be.false;
 

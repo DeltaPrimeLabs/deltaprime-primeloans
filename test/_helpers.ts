@@ -130,21 +130,23 @@ export const getLiquidationAmounts = function (
     loanIsBankrupt: boolean
 ) {
     return loanIsBankrupt ?
-        getHealingLiquidationAmounts(action, debts)
+        getHealingLiquidationAmounts(action, debts, assets)
         :
         getProfitableLiquidationAmounts(action, debts, assets, prices, finalHealthRatio, bonus);
 }
 
 export const getHealingLiquidationAmounts = function (
     action: string,
-    debts: Debt[]
+    debts: Debt[],
+    assets: AssetBalanceLeverage[]
 ) {
     let repayAmounts: any = [];
     let deliveredAmounts: any = [];
 
     debts.forEach(debt => {
+        const asset = assets.find(a => a.name == debt.name)!;
         repayAmounts.push(new Repayment(debt.name, 1.001 * debt.debt));
-        deliveredAmounts.push(new Allowance(debt.name, 1.001 * debt.debt));
+        deliveredAmounts.push(new Allowance(debt.name, 1.005 * (debt.debt - asset.balance)));
     });
 
     return {repayAmounts, deliveredAmounts}

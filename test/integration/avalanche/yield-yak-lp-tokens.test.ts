@@ -58,19 +58,15 @@ const lpABI = [
     'function balance() public view returns (uint256 balance)',
 ]
 
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
+
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-const yakStakingLPTJAVAXUSDCTokenAddress = "0xdef94a13ff31fb6363f1e03bf18fe0f59db83bbc";
 const beefyTJWavaxUsdcLPAddress = "0x7E5bC7088aB3Da3e7fa1Aa7ceF1dC73F5B00681c";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
-/*
+
     describe('A loan with staking TJ LP tokens on YY', () => {
         let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
@@ -279,7 +275,7 @@ describe('Smart loan', () => {
             expect(currentTotalValue).to.be.closeTo(totalValueBeforeStaking, 5);
         });
     });
-*/
+
     describe('A loan with staking TJ LP tokens on BeefyFinance', () => {
         let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
