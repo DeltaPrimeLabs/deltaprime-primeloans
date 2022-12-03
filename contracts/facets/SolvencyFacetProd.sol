@@ -99,7 +99,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
       * Returns an array of Asset/Price structs of enriched (always containing AVAX at index 0) owned assets.
       * @dev This function uses the redstone-evm-connector
     **/
-    function getOwnedAssetWithNativePrices() public view returns(AssetPrice[] memory result) {
+    function getOwnedAssetsWithNativePrices() public view returns(AssetPrice[] memory result) {
         bytes32[] memory assetsEnriched = getOwnedAssetsWithNative();
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
 
@@ -296,7 +296,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
       * @dev This function uses the redstone-evm-connector
     **/
     function getThresholdWeightedValue() public view virtual returns (uint256) {
-        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetWithNativePrices();
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
         AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
@@ -375,7 +375,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
      * @dev This function uses the redstone-evm-connector
      **/
     function getTotalAssetsValue() public view virtual returns (uint256) {
-        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetWithNativePrices();
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
         return _getTotalAssetsValueBase(ownedAssetsPrices);
     }
 

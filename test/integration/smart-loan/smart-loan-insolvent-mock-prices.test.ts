@@ -69,7 +69,7 @@ const TEST_TABLE = [
         pricesDuringLiquidation: {
             AVAX: 8
         },
-        maxLeverage: {
+        debtCoverage: {
             AVAX: 0.8333333,
             USDC: 0.8333333,
             ETH: 0.8333333,
@@ -95,7 +95,7 @@ const TEST_TABLE = [
         pricesDuringLiquidation: {
             BTC: 10000
         },
-        maxLeverage: {
+        debtCoverage: {
             AVAX: 0.8333333,
             USDC: 0.8333333,
             ETH: 0.8333333,
@@ -124,7 +124,7 @@ const TEST_TABLE = [
         pricesDuringLiquidation: {
             ETH: 600
         },
-        maxLeverage: {
+        debtCoverage: {
             AVAX: 0.8333333,
             USDC: 0.8333333,
             ETH: 0.8333333,
@@ -152,7 +152,7 @@ const TEST_TABLE = [
             USDC: 0.000001// changed from 1
             //Black swan event
         },
-        maxLeverage: {
+        debtCoverage: {
             AVAX: 0.8333333,
             USDC: 0.8333333,
             ETH: 0.8333333,
@@ -461,7 +461,7 @@ describe('Smart loan', () => {
                                 {
                                     name: symbol,
                                     //@ts-ignore
-                                    maxLeverage: testCase.maxLeverage[symbol],
+                                    debtCoverage: testCase.debtCoverage[symbol],
                                     balance: formatUnits(balance.balance, await getTokenContract(symbol)!.decimals())
                                 }
                             )
@@ -546,7 +546,7 @@ describe('Smart loan', () => {
                 balances.push({
                     name: token,
                     balance: amount,
-                    maxLeverage: 0.8333333
+                    debtCoverage: 0.8333333
                 })
             }
 

@@ -324,7 +324,7 @@ export const calculateHealthRatio = function (
     assets.forEach(
         asset => {
             let price: number = prices.find(el => el.dataFeedId == asset.name)!.value;
-            maxDebt += asset.balance * asset.maxLeverage * price;
+            maxDebt += asset.balance * asset.debtCoverage * price;
         }
     );
 
@@ -452,7 +452,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'canRepayDebtFully',
             'isSolvent',
             'isSolventWithPrices',
-            'getOwnedAssetWithNativePrices',
+            'getOwnedAssetsWithNativePrices',
             'getTotalValueWithPrices',
             'getHealthRatioWithPrices',
             'getDebtAssetsPrices',
@@ -474,7 +474,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'canRepayDebtFully',
             'isSolvent',
             'isSolventWithPrices',
-            'getOwnedAssetWithNativePrices',
+            'getOwnedAssetsWithNativePrices',
             'getTotalValueWithPrices',
             'getHealthRatioWithPrices',
             'getDebtAssetsPrices',
@@ -711,12 +711,12 @@ export async function recompileConstantsFile(chain: string, contractName: string
 export class Asset {
     asset: string;
     assetAddress: string;
-    maxLeverage: BigNumber;
+    debtCoverage: BigNumber;
 
-    constructor(asset: string, assetAddress: string, maxLeverage: number = 0.8333333333333333) {
+    constructor(asset: string, assetAddress: string, debtCoverage: number = 0.8333333333333333) {
         this.asset = asset;
         this.assetAddress = assetAddress;
-        this.maxLeverage = toWei(maxLeverage.toString());
+        this.debtCoverage = toWei(debtCoverage.toString());
     }
 }
 
@@ -793,12 +793,12 @@ export class PoolAsset {
 export class AssetBalanceLeverage {
     name: string;
     balance: number;
-    maxLeverage: number
+    debtCoverage: number
 
-    constructor(name: string, balance: number, maxLeverage: number = 0.8333333333333333) {
+    constructor(name: string, balance: number, debtCoverage: number = 0.8333333333333333) {
         this.name = name;
         this.balance = balance;
-        this.maxLeverage = maxLeverage;
+        this.debtCoverage = debtCoverage;
     }
 }
 

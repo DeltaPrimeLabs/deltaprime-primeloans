@@ -140,10 +140,15 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) >= stakingDetails.amount, "Not enough LP token available");
 
         IERC20Metadata(stakingDetails.lpTokenAddress).approve(stakingDetails.vaultAddress, stakingDetails.amount);
-        IBeefyFinance(stakingDetails.vaultAddress).deposit(stakingDetails.amount);
+
+        IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
+
+        vaultContract.deposit(stakingDetails.amount);
 
         // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
+        if(vaultContract.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
+        }
         if(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.lpTokenSymbol);
         }

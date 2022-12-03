@@ -47,7 +47,6 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    embedCommitHash('RedstoneConfigManager');
     embedCommitHash('TokenManager');
 
     const wavaxPoolTUP = await ethers.getContract("WavaxPoolTUP");

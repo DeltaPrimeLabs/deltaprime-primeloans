@@ -73,7 +73,7 @@ const TEST_TABLE = [
             USDC: 0,
             ETH: 0
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -93,7 +93,7 @@ const TEST_TABLE = [
         swaps: [
             {from: 'AVAX', to: 'USDC', all: true, amountInUsd: null}
         ],
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -114,7 +114,7 @@ const TEST_TABLE = [
             {from: 'USDC', to: 'BTC', amountInUsd: null, all: true},
             {from: 'ETH', to: 'sAVAX', amountInUsd: null, all: true}
         ],
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -137,7 +137,7 @@ const TEST_TABLE = [
             {from: 'ETH', to: 'sAVAX', amountInUsd: 200, all: false},
             {from: 'ETH', to: 'AVAX', amountInUsd: 90, all: false}
         ],
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -157,7 +157,7 @@ const TEST_TABLE = [
         stakeInUsd: {
             YAK: 640
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -182,7 +182,7 @@ const TEST_TABLE = [
         stakeInUsd: {
             YAK: 690
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -203,7 +203,7 @@ const TEST_TABLE = [
         withdrawInUsd: {
             USDC: 50
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
@@ -228,7 +228,7 @@ const TEST_TABLE = [
             AVAX: 50,
             ETH: 50
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
@@ -250,7 +250,7 @@ const TEST_TABLE = [
         withdrawInUsd: {
             USDC: 50
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         //Solidity uint256 max
         targetHealthRatio: 1.157920892373162e+59,
         ratioPrecision: 0,
@@ -271,7 +271,7 @@ const TEST_TABLE = [
             USDC: 0,
             ETH: 0
         },
-        maxLeverage: DEFAULT_MAX_LEVERAGE,
+        debtCoverage: DEFAULT_MAX_LEVERAGE,
         targetHealthRatio: 1.03,
         action: 'LIQUIDATE'
     },
@@ -559,7 +559,7 @@ describe('Smart loan - real prices', () => {
                                 ["https://d33trozg86ya9x.cloudfront.net"]
                             );
 
-                            for (let [symbol, leverage] of Object.entries(testCase.maxLeverage)) {
+                            for (let [symbol, leverage] of Object.entries(testCase.debtCoverage)) {
                                 await tokenManager.connect(owner).setDebtCoverage(getTokenContract(symbol)!.address, toWei(leverage.toString()))
                             }
 
@@ -667,7 +667,7 @@ describe('Smart loan - real prices', () => {
                                     {
                                         name: symbol,
                                         //@ts-ignore
-                                        maxLeverage: testCase.maxLeverage[symbol],
+                                        debtCoverage: testCase.debtCoverage[symbol],
                                         balance: formatUnits(balance.balance, await getTokenContract(symbol)!.decimals())
                                     }
                                 )

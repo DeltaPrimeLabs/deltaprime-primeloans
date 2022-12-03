@@ -12,7 +12,7 @@ contract TokenManager {
     struct Asset {
         bytes32 asset;
         address assetAddress;
-        uint256 maxLeverage;
+        uint256 debtCoverage;
     }
 
     /**
@@ -116,7 +116,7 @@ contract TokenManager {
 
     function addTokenAssets(Asset[] memory tokenAssets) public onlyAdmin {
         for (uint256 i = 0; i < tokenAssets.length; i++) {
-            _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress, tokenAssets[i].maxLeverage);
+            _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress, tokenAssets[i].debtCoverage);
         }
     }
 
@@ -132,12 +132,12 @@ contract TokenManager {
         emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
     }
 
-    function _addTokenAsset(bytes32 _asset, address _tokenAddress, uint256 _maxLeverage) internal {
+    function _addTokenAsset(bytes32 _asset, address _tokenAddress, uint256 _debtCoverage) internal {
         require(_asset != "", "Cannot set an empty string asset.");
         require(_tokenAddress != address(0), "Cannot set an empty address.");
         require(!assetToTokenAddress.contains(_asset), "Asset's token already exists");
         require(tokenAddressToSymbol[_tokenAddress] == 0, "Asset address is already in use");
-        setDebtCoverage(_tokenAddress, _maxLeverage);
+        setDebtCoverage(_tokenAddress, _debtCoverage);
 
         assetToTokenAddress.set(_asset, _tokenAddress);
         tokenAddressToSymbol[_tokenAddress] = _asset;
@@ -192,10 +192,10 @@ contract TokenManager {
         emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
     }
 
-    function setDebtCoverage(address token, uint256 maxLeverage) public onlyAdmin {
+    function setDebtCoverage(address token, uint256 coverage) public onlyAdmin {
         //LTV must be lower than 5
-        require(maxLeverage <= 0.833333333333333333e18, 'Leverage higher than maximum acceptable');
-        debtCoverage[token] = maxLeverage;
+        require(coverage <= 0.833333333333333333e18, 'Debt coverage higher than maximum acceptable');
+        debtCoverage[token] = coverage;
     }
 
     modifier onlyAdmin {

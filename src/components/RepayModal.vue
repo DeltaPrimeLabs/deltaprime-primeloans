@@ -92,7 +92,7 @@ export default {
     calculateHealthAfterTransaction() {
       if (this.repayValue) {
         this.healthAfterTransaction = calculateHealth(this.loan - this.repayValue,
-            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.maxLeverage);
+            this.thresholdWeightedValue - this.repayValue * this.asset.price * this.asset.debtCoverage);
       } else {
         this.healthAfterTransaction = this.health;
       }

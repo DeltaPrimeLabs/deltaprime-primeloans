@@ -118,10 +118,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         require(config.liquidationBonusPercent <= getMaxLiquidationBonus(), "Defined liquidation bonus higher than max. value");
         require(!_isSolventWithPrices(cachedPrices), "Cannot sellout a solvent account");
-        require(initialDebt < initialTotal || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
 
         //healing means bringing a bankrupt loan to a state when debt is smaller than total value again
         bool healingLoan = initialDebt > initialTotal;
+        require(!healingLoan || config.allowUnprofitableLiquidation, "Trying to liquidate bankrupt loan");
+
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
