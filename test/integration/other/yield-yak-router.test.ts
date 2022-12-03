@@ -69,11 +69,10 @@ describe('Yield Yak test stake AVAX', () => {
         let tokenManager = await deployContract(
             owner,
             TokenManagerArtifact,
-            [
-                supportedAssets,
-                []
-            ]
+            []
         ) as TokenManager;
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         let diamondAddress = await deployDiamond();
 
@@ -187,11 +186,10 @@ describe('Yield Yak test stake sAVAX', () => {
         let tokenManager = await deployContract(
             owner,
             TokenManagerArtifact,
-            [
-                supportedAssets,
-                []
-            ]
+            []
         ) as TokenManager;
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         let diamondAddress = await deployDiamond();
 

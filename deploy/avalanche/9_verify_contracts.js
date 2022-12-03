@@ -70,12 +70,15 @@ module.exports = async ({
     const pangolinSupportedAssets = [
         asset('AVAX'),
         asset('USDC'),
-        {asset:'BTC', assetAddress: '0x50b7545627a5162f82a992c33b87adc75187b218'},
         asset('ETH'),
         asset('sAVAX'),
         asset('USDT'),
+        asset('PNG'),
+        asset('PTP'),
         asset('QI'),
         asset('PNG_AVAX_USDC_LP'),
+        asset('PNG_AVAX_USDT_LP'),
+        asset('PNG_AVAX_ETH_LP')
     ]
 
     const calldata = web3Abi.encodeFunctionCall(
@@ -107,10 +110,16 @@ module.exports = async ({
         asset('ETH'),
         asset('USDT'),
         asset('sAVAX'),
+        asset('PTP'),
+        asset('QI'),
         asset('TJ_AVAX_USDC_LP'),
+        asset('TJ_AVAX_USDT_LP'),
+        asset('TJ_AVAX_ETH_LP'),
+        asset('TJ_AVAX_BTC_LP'),
+        asset('TJ_AVAX_sAVAX_LP'),
     ]
 
-    const calldata = web3Abi.encodeFunctionCall(
+    calldata = web3Abi.encodeFunctionCall(
         TraderJoeIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
         [traderJoeRouter, traderJoeSupportedAssets.map(asset => asset.assetAddress)]
     )

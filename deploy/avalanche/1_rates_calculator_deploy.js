@@ -1,7 +1,4 @@
-import verifyContract from "../../tools/scripts/verify-contract";
-
 const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
-import hre from 'hardhat'
 
 module.exports = async ({
   getNamedAccounts,
@@ -17,11 +14,6 @@ module.exports = async ({
     gasLimit: 8000000,
     args: []
   });
-  //
-  // await verifyContract(hre, {
-  //   address: result.address
-  // });
-
 
   console.log(`Deployed VariableUtilisationRatesCalculator at address: ${result.address}`);
 };

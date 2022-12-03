@@ -29,15 +29,11 @@ module.exports = async ({
 };
 
 async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
-  let resultFactory = await deploy(poolFactory, {
+  await deploy(poolFactory, {
     from: deployer,
     gasLimit: 8000000,
     args: []
   });
-
-  // await verifyContract(hre, {
-  //   address: resultFactory.address
-  // });
 
   const factory = await ethers.getContract(poolFactory);
 
@@ -45,11 +41,6 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   const tx = await factory.deployPool();
   const receipt = await tx.wait();
   let poolAddress = receipt.events[0].args[1];
-  //
-  // await verifyContract(hre, {
-  //   address: poolAddress,
-  //   contract: `contracts/deployment/avalanche/${contract}.sol:${contract}`
-  // });
 
   console.log(`${contract} pool deployed at address: ${poolAddress} by a factory`);
 
@@ -60,16 +51,6 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
     gasLimit: 8000000,
     args: [poolAddress, admin, []],
   });
-  //
-  // await verifyContract(hre, {
-  //   address: result.address,
-  //   contract: `contracts/proxies/${tup}.sol:${tup}`,
-  //   constructorArguments: [
-  //     poolAddress,
-  //     admin,
-  //     []
-  //   ]
-  // });
 
   console.log(`${tup} deployed at address: ${result.address}`);
 }

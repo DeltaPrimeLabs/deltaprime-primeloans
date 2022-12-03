@@ -75,14 +75,13 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            let tokenManager = await deployContract(
+            let tokenManager = (await deployContract(
                 admin,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
-            ) as TokenManager;
+                []
+            )).connect(admin) as TokenManager;
+
+            await tokenManager.initialize(supportedAssets, lendingPools);
 
             await recompileConstantsFile(
                 'local',

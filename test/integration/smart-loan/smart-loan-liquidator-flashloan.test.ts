@@ -113,11 +113,10 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             diamondAddress = await deployDiamond();
 
@@ -261,11 +260,10 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             diamondAddress = await deployDiamond();
 
@@ -446,11 +444,10 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             diamondAddress = await deployDiamond();
 
@@ -618,11 +615,10 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             diamondAddress = await deployDiamond();
 

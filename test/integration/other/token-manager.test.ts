@@ -25,10 +25,11 @@ describe('Token Manager tests', () => {
             owner,
             TokenManagerArtifact,
             [
-                [],
                 []
             ]
         ) as TokenManager;
+
+        await tokenManager.connect(owner).initialize([], []);
     })
 
     it("should check that owner is the admin", async () => {

@@ -258,11 +258,10 @@ describe('Smart loan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             await recompileConstantsFile(
                 'local',

@@ -70,11 +70,10 @@ describe('Smart loan', () => {
             let tokenManager = await deployContract(
                 owner1,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner1).initialize(supportedAssets, lendingPools);
 
             await recompileConstantsFile(
                 'local',

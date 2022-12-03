@@ -33,12 +33,6 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
         args: [],
     });
 
-    // await verifyContract(hre, {
-    //     address: resultIndex.address,
-    //     constructorArguments: [],
-    //     contract: `contracts/deployment/${name}.sol:${name}`
-    // })
-
     console.log(`Deployed linear index at address: ${resultIndex.address}`);
 
     let result = await deploy(`${name}TUP`, {
@@ -46,16 +40,6 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
         gasLimit: 8000000,
         args: [resultIndex.address, admin, []],
     });
-
-    // await verifyContract(hre, {
-    //     address: result.address,
-    //     contract: `contracts/proxies/${name}TUP.sol:${name}TUP`,
-    //     constructorArguments: [
-    //         resultIndex.address,
-    //         admin,
-    //         []
-    //     ]
-    // });
 
     console.log(`${name}TUP deployed at address: ${result.address}`);
 

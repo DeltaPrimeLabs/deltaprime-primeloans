@@ -123,11 +123,10 @@ describe('Smart loan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
@@ -342,11 +341,10 @@ describe('Smart loan', () => {
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
-                [
-                    supportedAssets,
-                    lendingPools
-                ]
+                []
             ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 

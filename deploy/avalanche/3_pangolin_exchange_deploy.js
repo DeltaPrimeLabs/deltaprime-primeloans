@@ -12,7 +12,6 @@ const pangolinRouter = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 const pangolinSupportedAssets = [
     asset('AVAX'),
     asset('USDC'),
-    asset('BTC'),
     asset('ETH'),
     asset('sAVAX'),
     asset('USDT'),
@@ -44,11 +43,6 @@ module.exports = async ({
         args: [],
     });
 
-    // await verifyContract(hre, {
-    //     address: resultImpl.address,
-    //     contract: `contracts/integrations/avalanche/PangolinIntermediary.sol:PangolinIntermediary`,
-    // })
-
     console.log(`PangolinIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
 
     const exchange = await ethers.getContract("PangolinIntermediary");
@@ -63,16 +57,6 @@ module.exports = async ({
         gasLimit: 8000000,
         args: [exchange.address, admin, calldata],
     });
-
-    // await verifyContract(hre, {
-    //     address: resultTup.address,
-    //     contract: "contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol:PangolinIntermediaryTUP",
-    //     constructorArguments: [
-    //         exchange.address,
-    //         admin,
-    //         calldata
-    //     ]
-    // });
 
     console.log(`PangolinIntermediaryTUP deployed at address: ${resultTup.address} by a factory`);
 

@@ -1,9 +1,11 @@
 import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
-import TRUSTED_SIGNERS from '../../common/redstone-trusted-signers.json';
 
 const {ethers} = require("hardhat");
 import addresses from "../../common/addresses/avax/token_addresses.json";
 import {Asset, toBytes32} from "../../test/_helpers";
+import web3Abi from "web3-eth-abi";
+import TokenManagerArtifact
+    from "../../artifacts/contracts/TokenManager.sol/TokenManager.json";
 
 const supportedAssets = [
     asset('AVAX'),
@@ -45,7 +47,7 @@ module.exports = async ({
                             deployments
                         }) => {
     const {deploy} = deployments;
-    const {deployer} = await getNamedAccounts();
+    const {deployer, admin} = await getNamedAccounts();
 
     embedCommitHash('TokenManager');
 
@@ -60,26 +62,23 @@ module.exports = async ({
     await deploy('TokenManager', {
         from: deployer,
         gasLimit: 8000000,
-        args:
-            [
-                supportedAssets,
-                lendingPools
-            ],
+        args: [],
     });
 
     let tokenManager = await ethers.getContract("TokenManager");
 
     console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
 
+    const calldata = web3Abi.encodeFunctionCall(
+        TokenManagerArtifact.abi.find(method => method.name === 'initialize'),
+        [supportedAssets, lendingPools]
+    )
+
     let tokenManagerTUP = await deploy('TokenManagerTUP', {
         from: deployer,
         gasLimit: 8000000,
         args: [tokenManager.address, admin, calldata],
     });
-
-    // await verifyContract(hre, {
-    //     address: tokenManager.address
-    // });
 
     console.log(`Deployed TokenManagerTUP at address: ${tokenManagerTUP.address}`);
 

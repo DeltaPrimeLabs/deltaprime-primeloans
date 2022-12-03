@@ -30,6 +30,7 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
         borrowIndexTUP.address,
         tokenAddress,
         ZERO_ADDRESS,
+        0,
         { gasLimit: 8000000 }
     );
 
