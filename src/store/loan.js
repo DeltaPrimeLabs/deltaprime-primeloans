@@ -309,7 +309,7 @@ export default {
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(minAvaxAmount.toString()),
-        {gasLimit: 600000}
+        {gasLimit: 1200000}
       );
 
       await awaitConfirmation(tx, provider, 'redeem');
