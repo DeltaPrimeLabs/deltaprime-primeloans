@@ -25,7 +25,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {
     LiquidationFlashloan,
-    PangolinIntermediary,
+    TraderJoeIntermediary,
     SmartLoansFactory,
     TokenManager
 } from "../../../typechain";
@@ -43,7 +43,7 @@ const { deployDiamond, replaceFacet } = require('../../../tools/diamond/deploy-d
 chai.use(solidity);
 
 const { deployContract, provider } = waffle;
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
 
@@ -72,7 +72,7 @@ describe('Test liquidator with a flashloan', () => {
 
 
     describe('A loan with debt and repayment', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             wrappedLoan: any,
@@ -131,7 +131,7 @@ describe('Test liquidator with a flashloan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -140,7 +140,7 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -160,7 +160,7 @@ describe('Test liquidator with a flashloan', () => {
 
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
-                pangolinRouterAddress,
+                traderJoeRouterAddress,
                 wavaxTokenAddress
             ) as LiquidationFlashloan;
         });
@@ -178,7 +178,7 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
@@ -194,7 +194,7 @@ describe('Test liquidator with a flashloan', () => {
 
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("600"));
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("700"),
@@ -220,7 +220,7 @@ describe('Test liquidator with a flashloan', () => {
     });
 
     describe('A loan with multiple swaps and debt in one token', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             diamondCut: Contract,
@@ -279,7 +279,7 @@ describe('Test liquidator with a flashloan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -288,7 +288,7 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -308,7 +308,7 @@ describe('Test liquidator with a flashloan', () => {
 
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
-                pangolinRouterAddress,
+                traderJoeRouterAddress,
                 wavaxTokenAddress
             ) as LiquidationFlashloan;
         });
@@ -326,7 +326,7 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
@@ -344,21 +344,21 @@ describe('Test liquidator with a flashloan', () => {
 
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("850"));
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei("200"),
                 parseUnits((0.9 * 200 * AVAX_PRICE).toFixed(6), BigNumber.from("6")) //todo: .97
             );
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('ETH'),
                 toWei("500"),
                 parseUnits((0.9 * 500 * AVAX_PRICE / ETH_PRICE).toFixed(18), BigNumber.from("18")) //todo: .97
             );
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('BTC'),
                 toWei("300"),
@@ -384,7 +384,7 @@ describe('Test liquidator with a flashloan', () => {
     });
 
     describe('A loan with debt and swaps in multiple tokens', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             diamondCut: Contract,
@@ -392,7 +392,6 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager: any,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
-            LINK_PRICE: number,
             ETH_PRICE: number,
             BTC_PRICE: number,
             poolContracts: Map<string, Contract> = new Map(),
@@ -409,17 +408,16 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC', 'LINK'];
+            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-            LINK_PRICE = (await redstone.getPrice('LINK')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
             BTC_PRICE = (await redstone.getPrice('BTC')).value;
             const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
@@ -473,7 +471,7 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -493,7 +491,7 @@ describe('Test liquidator with a flashloan', () => {
 
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
-                pangolinRouterAddress,
+                traderJoeRouterAddress,
                 wavaxTokenAddress
             ) as LiquidationFlashloan;
         });
@@ -511,7 +509,7 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
@@ -526,21 +524,14 @@ describe('Test liquidator with a flashloan', () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("400"));
             await wrappedLoan.borrow(toBytes32("USDC"), parseUnits("3000", BigNumber.from("6")));
 
-            await wrappedLoan.swapPangolin(
-                toBytes32('AVAX'),
-                toBytes32('LINK'),
-                toWei("250"),
-                toWei((0.95 * 250 * AVAX_PRICE / LINK_PRICE).toString())
-            );
-
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('AVAX'),
                 toBytes32('ETH'),
                 toWei("200"),
                 toWei((0.95 * 200 * AVAX_PRICE / ETH_PRICE).toString())
             );
 
-            await wrappedLoan.swapPangolin(
+            await wrappedLoan.swapTraderJoe(
                 toBytes32('USDC'),
                 toBytes32('BTC'),
                 parseUnits("2800", BigNumber.from("6")),
@@ -566,7 +557,7 @@ describe('Test liquidator with a flashloan', () => {
 
 
     describe('A loan with debt and swaps in multiple tokens', () => {
-        let exchange: PangolinIntermediary,
+        let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             diamondCut: Contract,
@@ -574,7 +565,6 @@ describe('Test liquidator with a flashloan', () => {
             tokenManager: any,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
-            LINK_PRICE: number,
             ETH_PRICE: number,
             BTC_PRICE: number,
             poolContracts: Map<string, Contract> = new Map(),
@@ -591,17 +581,15 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC', 'LINK'];
+            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
-
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-            LINK_PRICE = (await redstone.getPrice('LINK')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
             BTC_PRICE = (await redstone.getPrice('BTC')).value;
             const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
@@ -655,7 +643,7 @@ describe('Test liquidator with a flashloan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -675,7 +663,7 @@ describe('Test liquidator with a flashloan', () => {
 
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
-                pangolinRouterAddress,
+                traderJoeRouterAddress,
                 wavaxTokenAddress
             ) as LiquidationFlashloan;
         });
@@ -693,7 +681,7 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
                 },
                 ["https://d33trozg86ya9x.cloudfront.net"]
             );
