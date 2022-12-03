@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 22ab8387eb1aec41a2a9de43f8f9deaf475a71f7;
 pragma solidity 0.8.17;
 
 import "./lib/Bytes32EnumerableMap.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract TokenManager {
+contract TokenManager is OwnableUpgradeable {
     /**
      * For adding supported assets
      **/
@@ -28,7 +29,6 @@ contract TokenManager {
     uint256 private constant _INACTIVE = 1;
     uint256 private constant _ACTIVE = 2;
 
-    address public admin;
     // Stores an asset's bytes32 symbol representation to pool's address mapping
     EnumerableMap.Bytes32ToAddressMap private assetToPoolAddress;
     // Stores an asset's bytes32 symbol representation to asset's address mapping
@@ -39,31 +39,13 @@ contract TokenManager {
     mapping(address => uint256) public debtCoverage;
     address[] public supportedTokensList;
 
-    address public adminTransferProposal;
-
     mapping(address => uint256) public tokenToStatus;
 
-    constructor(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) {
-        admin = msg.sender;
-        emit AdminChanged(address(0), msg.sender, block.timestamp);
+    function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
+        __Ownable_init();
+
         addTokenAssets(tokenAssets);
         addPoolAssets(poolAssets);
-    }
-
-    // Set to address(0) to reset proposal
-    function proposeAdminTransfer(address _newOwner) onlyAdmin public {
-        require(_newOwner != msg.sender, "Can't propose oneself as a contract owner");
-        adminTransferProposal = _newOwner;
-        emit AdminProposed(msg.sender, _newOwner, block.timestamp);
-    }
-
-    function executeAdminTransfer() public {
-        require(adminTransferProposal != address(0), "There is no active admin transfer proposal");
-        require(adminTransferProposal == msg.sender, "Only the proposed new admin can execute admin transfer proposal");
-        address oldAdmin = admin;
-        admin = adminTransferProposal;
-        adminTransferProposal = address(0);
-        emit AdminChanged(oldAdmin, msg.sender, block.timestamp);
     }
 
     function getAllPoolAssets() public view returns (bytes32[] memory result) {
@@ -101,7 +83,7 @@ contract TokenManager {
         return assetAddress;
     }
 
-    function addPoolAssets(poolAsset[] memory poolAssets) public onlyAdmin {
+    function addPoolAssets(poolAsset[] memory poolAssets) public onlyOwner {
         for (uint256 i = 0; i < poolAssets.length; i++) {
             _addPoolAsset(poolAssets[i].asset, poolAssets[i].poolAddress);
         }
@@ -114,19 +96,19 @@ contract TokenManager {
         emit PoolAssetAdded(msg.sender, _asset, _poolAddress, block.timestamp);
     }
 
-    function addTokenAssets(Asset[] memory tokenAssets) public onlyAdmin {
+    function addTokenAssets(Asset[] memory tokenAssets) public onlyOwner {
         for (uint256 i = 0; i < tokenAssets.length; i++) {
             _addTokenAsset(tokenAssets[i].asset, tokenAssets[i].assetAddress, tokenAssets[i].debtCoverage);
         }
     }
 
-    function activateToken(address token) public onlyAdmin {
+    function activateToken(address token) public onlyOwner {
         require(tokenToStatus[token] == _INACTIVE, "Must be inactive");
         tokenToStatus[token] = _ACTIVE;
         emit TokenAssetActivated(msg.sender, token, block.timestamp);
     }
 
-    function deactivateToken(address token) public onlyAdmin {
+    function deactivateToken(address token) public onlyOwner {
         require(tokenToStatus[token] == _ACTIVE, "Must be active");
         tokenToStatus[token] = _INACTIVE;
         emit TokenAssetDeactivated(msg.sender, token, block.timestamp);
@@ -164,7 +146,7 @@ contract TokenManager {
         tokenPositionInList[tokenToRemove] = 0;
     }
 
-    function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyAdmin {
+    function removeTokenAssets(bytes32[] memory _tokenAssets) public onlyOwner {
         for (uint256 i = 0; i < _tokenAssets.length; i++) {
             _removeTokenAsset(_tokenAssets[i]);
         }
@@ -180,7 +162,7 @@ contract TokenManager {
         emit TokenAssetRemoved(msg.sender, _tokenAsset, block.timestamp);
     }
 
-    function removePoolAssets(bytes32[] memory _poolAssets) public onlyAdmin {
+    function removePoolAssets(bytes32[] memory _poolAssets) public onlyOwner {
         for (uint256 i = 0; i < _poolAssets.length; i++) {
             _removePoolAsset(_poolAssets[i]);
         }
@@ -192,32 +174,16 @@ contract TokenManager {
         emit PoolAssetRemoved(msg.sender, _poolAsset, poolAddress, block.timestamp);
     }
 
-    function setDebtCoverage(address token, uint256 coverage) public onlyAdmin {
+    function setDebtCoverage(address token, uint256 coverage) public onlyOwner {
         //LTV must be lower than 5
         require(coverage <= 0.833333333333333333e18, 'Debt coverage higher than maximum acceptable');
         debtCoverage[token] = coverage;
     }
 
-    modifier onlyAdmin {
-        require(msg.sender == admin, "Admin only");
-        _;
-    }
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
 
-    /**
-     * @dev emitted after proposing a new admin
-     * @param oldAdmin current admin
-     * @param newAdmin new admin proposed
-     * @param timestamp time of proposal
-     **/
-    event AdminProposed(address indexed oldAdmin, address newAdmin, uint256 timestamp);
+    function renounceOwnership() public virtual override {}
 
-    /**
-     * @dev emitted after changing an admin
-     * @param oldAdmin previous admin
-     * @param newAdmin new admin being set
-     * @param timestamp time of changing an admin
-     **/
-    event AdminChanged(address indexed oldAdmin, address newAdmin, uint256 timestamp);
 
     /**
      * @dev emitted after adding a token asset
