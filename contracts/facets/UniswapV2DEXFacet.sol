@@ -83,7 +83,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * Adds liquidity
     **/
     function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal remainsSolvent {
-        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
+        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
         require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
@@ -123,7 +123,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
-        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
+        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 

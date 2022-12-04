@@ -100,7 +100,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         DiamondStorageLib.addStakedPosition(position);
 
-        IERC20Metadata token = getERC20TokenInstance(stakedTokenSymbol, true);
+        IERC20Metadata token = getERC20TokenInstance(stakedTokenSymbol, false);
 
         if (token.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakedTokenSymbol);
