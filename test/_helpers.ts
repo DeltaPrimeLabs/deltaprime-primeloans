@@ -432,7 +432,9 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'proposeOwnershipTransfer',
             'acceptOwnership',
             'owner',
-            'proposedOwner'
+            'proposedOwner',
+            'pauseAdmin',
+            'proposedPauseAdmin'
         ],
         hardhatConfig
     )

@@ -49,10 +49,14 @@ library DiamondStorageLib {
     }
 
     struct SmartLoanStorage {
+        // PauseAdmin has the power to pause/unpause the contract without the timelock delay in case of a critical bug/exploit
+        address pauseAdmin;
         // Owner of the contract
         address contractOwner;
         // Proposed owner of the contract
         address proposedOwner;
+        // Proposed pauseAdmin of the contract
+        address proposedPauseAdmin;
         // Is contract initialized?
         bool _initialized;
         // TODO: mock staking tokens until redstone oracle supports them
@@ -88,6 +92,8 @@ library DiamondStorageLib {
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
+    event PauseAdminOwnershipTransferred(address indexed previousPauseAdmin, address indexed newPauseAdmin);
+
     function setContractOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         address previousOwner = sls.contractOwner;
@@ -95,13 +101,29 @@ library DiamondStorageLib {
         emit OwnershipTransferred(previousOwner, _newOwner);
     }
 
+    function setContractPauseAdmin(address _newPauseAdmin) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        address previousPauseAdmin = sls.pauseAdmin;
+        sls.pauseAdmin = _newPauseAdmin;
+        emit PauseAdminOwnershipTransferred(previousPauseAdmin, _newPauseAdmin);
+    }
+
     function contractOwner() internal view returns (address contractOwner_) {
         contractOwner_ = smartLoanStorage().contractOwner;
+    }
+
+    function pauseAdmin() internal view returns (address pauseAdmin) {
+        pauseAdmin = smartLoanStorage().pauseAdmin;
     }
 
     function setProposedOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         sls.proposedOwner = _newOwner;
+    }
+
+    function setProposedPauseAdmin(address _newPauseAdmin) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        sls.proposedPauseAdmin = _newPauseAdmin;
     }
 
     function getPausedMethodExemption(bytes4 _methodSig) internal view returns (bool) {
@@ -111,6 +133,10 @@ library DiamondStorageLib {
 
     function proposedOwner() internal view returns (address proposedOwner_) {
         proposedOwner_ = smartLoanStorage().proposedOwner;
+    }
+
+    function proposedPauseAdmin() internal view returns (address proposedPauseAdmin) {
+        proposedPauseAdmin = smartLoanStorage().proposedPauseAdmin;
     }
 
     function stakedPositions() internal view returns (IStakingPositions.StakedPosition[] storage _positions) {
@@ -164,6 +190,10 @@ library DiamondStorageLib {
 
     function enforceIsContractOwner() internal view {
         require(msg.sender == smartLoanStorage().contractOwner, "DiamondStorageLib: Must be contract owner");
+    }
+
+    function enforceIsPauseAdmin() internal view {
+        require(msg.sender == smartLoanStorage().pauseAdmin, "DiamondStorageLib: Must be contract pauseAdmin");
     }
 
     event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);

@@ -30,7 +30,7 @@ contract DiamondCutFacet is IDiamondCut {
     }
 
     function unpause() external override {
-        DiamondStorageLib.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsPauseAdmin();
 
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         require(!ds._active, "ProtocolUpgrade: already unpaused.");
@@ -38,7 +38,7 @@ contract DiamondCutFacet is IDiamondCut {
     }
 
     function pause() external override {
-        DiamondStorageLib.enforceIsContractOwner();
+        DiamondStorageLib.enforceIsPauseAdmin();
 
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         require(ds._active, "ProtocolUpgrade: already paused.");

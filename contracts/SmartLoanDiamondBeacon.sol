@@ -17,6 +17,7 @@ import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 contract SmartLoanDiamondBeacon {
     constructor(address _contractOwner, address _diamondCutFacet) payable {
         DiamondStorageLib.setContractOwner(_contractOwner);
+        DiamondStorageLib.setContractPauseAdmin(_contractOwner);
 
         // Add the diamondCut external function from the diamondCutFacet
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
@@ -106,12 +107,28 @@ contract SmartLoanDiamondBeacon {
         emit OwnershipProposalCreated(msg.sender, _newOwner);
     }
 
+    function proposeBeaconPauseAdminOwnershipTransfer(address _newPauseAdmin) external {
+        DiamondStorageLib.enforceIsPauseAdmin();
+        require(_newPauseAdmin != msg.sender, "Can't propose oneself as a contract pauseAdmin");
+        DiamondStorageLib.setProposedPauseAdmin(_newPauseAdmin);
+
+        emit PauseAdminOwnershipProposalCreated(msg.sender, _newPauseAdmin);
+    }
+
     function acceptBeaconOwnership() external {
         require(DiamondStorageLib.proposedOwner() == msg.sender, "Only a proposed user can accept ownership");
         DiamondStorageLib.setContractOwner(msg.sender);
         DiamondStorageLib.setProposedOwner(address(0));
 
         emit OwnershipProposalAccepted(msg.sender);
+    }
+
+    function acceptBeaconPauseAdminOwnership() external {
+        require(DiamondStorageLib.proposedPauseAdmin() == msg.sender, "Only a proposed user can accept ownership");
+        DiamondStorageLib.setContractPauseAdmin(msg.sender);
+        DiamondStorageLib.setProposedPauseAdmin(address(0));
+
+        emit PauseAdminOwnershipProposalAccepted(msg.sender);
     }
 
     modifier notPausedOrUpgrading(bytes4 funcSignature) {
@@ -123,6 +140,19 @@ contract SmartLoanDiamondBeacon {
         }
         _;
     }
+
+    /**
+     * @dev emitted after creating a pauseAdmin transfer proposal by the pauseAdmin
+     * @param pauseAdmin address of the current pauseAdmin
+     * @param proposed address of the proposed pauseAdmin
+     **/
+    event PauseAdminOwnershipProposalCreated(address indexed pauseAdmin, address indexed proposed);
+
+    /**
+     * @dev emitted after accepting a pauseAdmin transfer proposal by the new pauseAdmin
+     * @param newPauseAdmin address of the new pauseAdmin
+     **/
+    event PauseAdminOwnershipProposalAccepted(address indexed newPauseAdmin);
 
     /**
      * @dev emitted after creating a ownership transfer proposal by the owner

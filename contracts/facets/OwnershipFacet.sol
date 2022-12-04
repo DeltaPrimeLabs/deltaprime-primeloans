@@ -37,6 +37,14 @@ contract OwnershipFacet {
         proposedOwner_ = DiamondStorageLib.proposedOwner();
     }
 
+    function pauseAdmin() external view returns (address pauseAdmin) {
+        pauseAdmin = DiamondStorageLib.pauseAdmin();
+    }
+
+    function proposedPauseAdmin() external view returns (address proposedPauseAdmin) {
+        proposedPauseAdmin = DiamondStorageLib.proposedPauseAdmin();
+    }
+
     /**
      * @dev emitted after creating a ownership transfer proposal by the owner
      * @param owner address of the current owner
