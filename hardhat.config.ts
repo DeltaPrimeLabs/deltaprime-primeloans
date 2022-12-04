@@ -53,11 +53,11 @@ export default {
       chainId: 43113,
       accounts: [getKey('fuji', 'deployer'), getKey('fuji', 'admin')]
     },
-    mainnet: {
+    avalanche: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       gasPrice: 100000000000,
       chainId: 43114,
-      accounts: [getKey('mainnet', 'deployer'), getKey('mainnet', 'admin')]
+      accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     mainnet_test: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
