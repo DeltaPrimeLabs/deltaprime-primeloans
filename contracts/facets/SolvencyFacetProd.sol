@@ -281,7 +281,7 @@ contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
 
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
 
-                weightedValueOfStaked += stakedPositionsPrices[i].price * 10 ** 10 * balance * tokenManager.debtCoverage(positions[i].vault) / (10 ** token.decimals());
+                weightedValueOfStaked += stakedPositionsPrices[i].price * balance * tokenManager.debtCoverage(positions[i].vault) / (10 ** token.decimals() * 10**8);
             }
         }
         return weightedValueOfStaked;

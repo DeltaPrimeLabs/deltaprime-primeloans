@@ -150,10 +150,10 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("200")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("200"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 0.0001);
-            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(167.5, 0.01);
         });
 
         it("should fail to stake AVAX as a non-owner", async () => {
@@ -173,7 +173,10 @@ describe('Smart loan', () => {
         });
 
         it("should stake AVAX", async () => {
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 0.0001);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
+
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
@@ -190,11 +193,17 @@ describe('Smart loan', () => {
             let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, toWei(stakedAvaxAmount.toString()));
 
             expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(150 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 1);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(151 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 1);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.5);
         });
 
         it("should unstake part of staked AVAX", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
             let initialAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
             let amountAvaxToReceive = toWei("10");
             let initialStakedTokensBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
@@ -207,6 +216,9 @@ describe('Smart loan', () => {
             expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakStakingContract.balanceOf(wrappedLoan.address));
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.4);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
         });
 
         it("should fail to unstake more than was initially staked", async () => {
@@ -333,9 +345,17 @@ describe('Smart loan', () => {
         });
 
         it("should stake in YieldYak", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await wrappedLoan.stakeAVAXYak(
                 toWei("305")
             );
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 3);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
         it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {

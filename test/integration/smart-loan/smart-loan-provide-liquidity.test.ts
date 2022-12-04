@@ -49,10 +49,6 @@ const lpABI = [
     'function getReserves() public view returns (uint112, uint112, uint32)',
 ]
 
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
@@ -200,6 +196,7 @@ describe('Smart loan', () => {
             await tokenContracts['AVAX'].connect(owner).deposit({value: toWei("500")});
             await tokenContracts['AVAX'].connect(owner).approve(wrappedLoan.address, toWei("500"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("500"));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
 
             await wrappedLoan.swapPangolin(
                 toBytes32('AVAX'),
@@ -211,6 +208,9 @@ describe('Smart loan', () => {
 
         it("should provide liquidity", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
 
             expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.false;
@@ -227,10 +227,16 @@ describe('Smart loan', () => {
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
 
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
         });
 
         it("should remove liquidity", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
             expect(await lpToken.balanceOf(wrappedLoan.address)).not.to.be.equal(0);
 
             expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.true;
@@ -246,6 +252,8 @@ describe('Smart loan', () => {
 
             await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
         });
 
         async function loanOwnsAsset(asset: string) {

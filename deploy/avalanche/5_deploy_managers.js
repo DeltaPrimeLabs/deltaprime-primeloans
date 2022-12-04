@@ -2,7 +2,7 @@ import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 
 const {ethers} = require("hardhat");
 import addresses from "../../common/addresses/avax/token_addresses.json";
-import {Asset, toBytes32} from "../../test/_helpers";
+import {Asset, toBytes32, toWei} from "../../test/_helpers";
 import web3Abi from "web3-eth-abi";
 import TokenManagerArtifact
     from "../../artifacts/contracts/TokenManager.sol/TokenManager.json";
@@ -33,6 +33,10 @@ const supportedAssets = [
     asset('YY_TJ_AVAX_USDC_LP'),
     asset('YY_TJ_AVAX_ETH_LP'),
 ]
+
+const VectorUSDCStaking1 = '0x994F0e36ceB953105D05897537BF55d201245156';
+const VectorWAVAXStaking1 = '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69';
+const VectorSAVAXStaking1 = '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1';
 
 function asset(symbol) {
     return new Asset(toBytes32(symbol), addresses[symbol], 0.8333333333333333)
@@ -79,6 +83,11 @@ module.exports = async ({
         gasLimit: 8000000,
         args: [tokenManager.address, admin, calldata],
     });
+
+    //debt coverage for positions like Vector Finance
+    await tokenManagerTUP.setDebtCoverage(VectorUSDCStaking1, toWei("0.8333333333333333"));
+    await tokenManagerTUP.setDebtCoverage(VectorWAVAXStaking1, toWei("0.8333333333333333"));
+    await tokenManagerTUP.setDebtCoverage(VectorSAVAXStaking1, toWei("0.8333333333333333"));
 
     console.log(`Deployed TokenManagerTUP at address: ${tokenManagerTUP.address}`);
 

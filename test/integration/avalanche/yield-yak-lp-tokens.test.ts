@@ -199,6 +199,9 @@ describe('Smart loan', () => {
                 0
             );
 
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
             await wrappedLoan.addLiquidityTraderJoe(
                 toBytes32('AVAX'),
@@ -209,6 +212,9 @@ describe('Smart loan', () => {
                 parseUnits((tokensPrices.get('AVAX')! * 160).toFixed(6), BigNumber.from("6"))
             );
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
         });
 
 
@@ -229,7 +235,10 @@ describe('Smart loan', () => {
         it("should stake TJ LP tokens on YY", async () => {
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
             let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
-            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
             totalValueBeforeStaking = initialTotalValue;
 
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
@@ -246,6 +255,8 @@ describe('Smart loan', () => {
             let totalValueDifference = initialTotalValue - fromWei(await wrappedLoan.getTotalValue());
 
             await expect(totalValueDifference).to.be.closeTo(0, 5);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
         });
 
         it("should fail to unstake TJ LP tokens from YY", async () => {
@@ -253,9 +264,12 @@ describe('Smart loan', () => {
         });
 
         it("should unstake TJ LP tokens from YY", async () => {
-            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             expect(initialTJAVAXUSDCBalance).to.be.eq(0);
             expect(initialStakedBalance).to.be.gt(0);
@@ -272,6 +286,9 @@ describe('Smart loan', () => {
 
             await expect(initialTotalValue - currentTotalValue).to.be.closeTo(0, 5);
             expect(currentTotalValue).to.be.closeTo(totalValueBeforeStaking, 5);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 2);
         });
     });
 
@@ -417,6 +434,9 @@ describe('Smart loan', () => {
                 0
             );
 
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
             await wrappedLoan.addLiquidityTraderJoe(
                 toBytes32('AVAX'),
@@ -427,6 +447,9 @@ describe('Smart loan', () => {
                 parseUnits((tokensPrices.get('AVAX')! * 160).toFixed(6), BigNumber.from("6"))
             );
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
 
@@ -447,7 +470,10 @@ describe('Smart loan', () => {
         it("should stake TJ LP tokens on YY", async () => {
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
             let initialStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
-            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
             totalValueBeforeStaking = initialTotalValue;
 
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
@@ -461,7 +487,9 @@ describe('Smart loan', () => {
             expect(endTJAVAXUSDCBalance).to.be.eq(0);
             expect(endStakedBalance).to.be.gt(0);
 
-            await expect(initialTotalValue - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            await expect(fromWei(initialTotalValue) - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 0.01);
         });
 
         it("should fail to unstake TJ LP tokens from YY", async () => {
@@ -470,6 +498,8 @@ describe('Smart loan', () => {
 
         it("should unstake TJ LP tokens from YY", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
             let initialStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
@@ -491,7 +521,10 @@ describe('Smart loan', () => {
             const currentTotalValue = fromWei(await wrappedLoan.getTotalValue());
 
             await expect(initialTotalValue - currentTotalValue).to.be.closeTo(0, expectedDelta);
-            expect(currentTotalValue).to.be.closeTo(totalValueBeforeStaking, 5)
+            expect(currentTotalValue).to.be.closeTo(fromWei(totalValueBeforeStaking), 5);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
         });
     });
 });
