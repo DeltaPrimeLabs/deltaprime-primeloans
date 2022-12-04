@@ -214,7 +214,7 @@ describe('Smart loan', () => {
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 5);
         });
 
 
