@@ -66,16 +66,6 @@ module.exports = async ({
         args: [exchange.address, admin, calldata],
     });
 
-    // await verifyContract(hre, {
-    //     address: resultTup.address,
-    //     contract: "contracts/proxies/tup/avalanche/TraderJoeIntermediaryTUP.sol:TraderJoeIntermediaryTUP",
-    //     constructorArguments: [
-    //         exchange.address,
-    //         admin,
-    //         calldata
-    //     ]
-    // });
-
     console.log(`TraderJoeIntermediaryTUP deployed at address: ${resultTup.address} by a factory`);
 
 };

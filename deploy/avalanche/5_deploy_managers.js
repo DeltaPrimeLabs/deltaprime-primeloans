@@ -78,11 +78,13 @@ module.exports = async ({
         [supportedAssets, lendingPools]
     )
 
-    let tokenManagerTUP = await deploy('TokenManagerTUP', {
+    let deployedTokenManagerTUP = await deploy('TokenManagerTUP', {
         from: deployer,
         gasLimit: 8000000,
         args: [tokenManager.address, admin, calldata],
     });
+
+    const tokenManagerTUP = await ethers.getContractAt("TokenManager", deployedTokenManagerTUP.address);
 
     //debt coverage for positions like Vector Finance
     await tokenManagerTUP.setDebtCoverage(VectorUSDCStaking1, toWei("0.8333333333333333"));
