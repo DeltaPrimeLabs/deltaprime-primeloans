@@ -63,7 +63,7 @@ export default {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       gasPrice: 100000000000,
       chainId: 43114,
-      accounts: [getKey('mainnet', 'deployer'), getKey('mainnet', 'admin')]
+      accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     fantom: {
       url: 'https://rpc.ftm.tools/',
