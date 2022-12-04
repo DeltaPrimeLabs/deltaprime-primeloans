@@ -31,7 +31,7 @@ chai.use(solidity);
 const {provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const yakStakingAVAXTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
-const yakStakingSAVAXTokenAddress = "0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557";
+const yakStakingSAVAXTokenAddress = "0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977";
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
@@ -169,7 +169,7 @@ describe('Yield Yak test stake sAVAX', () => {
         MOCK_PRICES: any,
         AVAX_PRICE: number,
         SAVAX_PRICE: number,
-        YY_AAVE_AVAX_PRICE: any,
+        YY_PTP_sAVAX_PRICE: any,
         yakStakingContract: Contract,
         sAvaxTokenContract: Contract,
         avaxTokenContract: Contract;
@@ -181,7 +181,7 @@ describe('Yield Yak test stake sAVAX', () => {
         let supportedAssets = [
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
-            new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
+            new Asset(toBytes32('YY_PTP_sAVAX'), TOKEN_ADDRESSES['YY_PTP_sAVAX']),
         ]
         let tokenManager = await deployContract(
             owner,
@@ -230,7 +230,7 @@ describe('Yield Yak test stake sAVAX', () => {
         // TODO: Include sAVAX and $YYVSAVAXV2 prices once available in redstone
         AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
         SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
-        YY_AAVE_AVAX_PRICE = (await redstone.getPrice('YY_AAVE_AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+        YY_PTP_sAVAX_PRICE = (await redstone.getPrice('YY_PTP_sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
 
         MOCK_PRICES = [
             {
@@ -242,8 +242,8 @@ describe('Yield Yak test stake sAVAX', () => {
                 value: SAVAX_PRICE
             },
             {
-                dataFeedId: 'YY_AAVE_AVAX',
-                value: YY_AAVE_AVAX_PRICE
+                dataFeedId: 'YY_PTP_sAVAX',
+                value: YY_PTP_sAVAX_PRICE
             },
         ];
 
@@ -292,7 +292,7 @@ describe('Yield Yak test stake sAVAX', () => {
         let afterStakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
         let sAvaxBalanceDifference = initialSAvaxBalance.sub(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
 
-        expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
+        expect(fromWei(afterStakingStakedBalance)).to.be.closeTo(fromWei(expectedAfterStakingStakedBalance), 1e-3);
         expect(fromWei(sAvaxBalanceDifference)).to.be.closeTo(10, 1);
     });
 
