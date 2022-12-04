@@ -11,7 +11,7 @@ import "../Pool.sol";
 import "../TokenManager.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 
 import "./SolvencyFacetProd.sol";
 

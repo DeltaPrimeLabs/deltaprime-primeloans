@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 43879c9dc673fbc3c0974b8106a295ba5c5e6774;
+// Last deployed from commit: 49fd65d9a6ea5ddcd283ac4913262e342cf1ad80;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";

@@ -9,7 +9,7 @@ import "../lib/SolvencyMethods.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 import "../interfaces/IAssetsExchange.sol";
 
 contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {

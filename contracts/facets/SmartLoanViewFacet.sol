@@ -10,7 +10,7 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 
 contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
