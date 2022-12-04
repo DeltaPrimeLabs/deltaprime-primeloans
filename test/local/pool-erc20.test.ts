@@ -428,15 +428,15 @@ describe("Pool ERC20 token functions", () => {
 
             expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
 
-            await sut.connect(user3).borrow(toWei("0.87"));
+            await sut.connect(user3).borrow(toWei("0.79"));
 
             await time.increase(time.duration.years(1));
 
             balanceOfUser1 = await balanceOf(user1);
             balanceOfUser2 = await balanceOf(user2);
 
-            expect(balanceOfUser1).to.be.closeTo(1.5669990919600687, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(1.5584059207571268, 0.000001);
+            expect(balanceOfUser1).to.be.closeTo(1.431414476831443, 0.000001);
+            expect(balanceOfUser2).to.be.closeTo(1.4235648577996878, 0.000001);
 
             sumOfBalances = balanceOfUser1 + balanceOfUser2;
 
@@ -450,8 +450,8 @@ describe("Pool ERC20 token functions", () => {
             balanceOfUser1 = await balanceOf(user1);
             balanceOfUser2 = await balanceOf(user2);
 
-            expect(balanceOfUser1).to.be.closeTo(2.1197749450231336, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(2.1081504338521153, 0.000001);
+            expect(balanceOfUser1).to.be.closeTo(1.7664547096829222, 0.000001);
+            expect(balanceOfUser2).to.be.closeTo(1.756767774898559, 0.000001);
 
             sumOfBalances = balanceOfUser1 + balanceOfUser2;
 

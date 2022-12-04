@@ -182,17 +182,17 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should be able to borrow at threshold", async () => {
-            await sut.connect(borrower).borrow(toWei("0.95"));
+            await sut.connect(borrower).borrow(toWei("0.90"));
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.95, 0.000001);
+            expect(borrowed).to.be.closeTo(0.90, 0.000001);
         });
 
         it("should not be able to borrow above threshold", async () => {
             await expect(sut.connect(borrower).borrow(toWei("0.01"))).to.be.revertedWith(customError("MaxPoolUtilisationBreached"));
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.95, 0.000001);
+            expect(borrowed).to.be.closeTo(0.90, 0.000001);
         });
     });
 

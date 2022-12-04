@@ -485,33 +485,32 @@ describe('Safety tests of pool', () => {
 
             expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("1.2", "ether"));
 
-            await pool.connect(user2).borrow(toWei("1.09"));
-            expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("0.11", "ether"));
+            await pool.connect(user2).borrow(toWei("1.05")); // `1.09 -> 1.05; ~0.9083% -> 0,875%
+            expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("0.15", "ether"));
 
             await time.increase(time.duration.years(4));
 
             let poolUtilisation = await ratesCalculator.getPoolUtilisation(await pool.totalBorrowed(), await pool.totalSupply());
-            expect(fromWei(poolUtilisation)).to.be.closeTo(0.9657432926924214, 0.000001);
+            expect(fromWei(poolUtilisation)).to.be.closeTo(0.944367700699183, 0.000001);
 
             let poolBalance = fromWei(await mockToken.balanceOf(pool.address));
             let depositUser1 = fromWei(await pool.balanceOf(user1.address));
             let borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
-            expect(depositUser1).to.be.closeTo(3.21104798895, 0.000001);
-            expect(borrowedUser2).to.be.closeTo(3.10105, 0.000001);
+            expect(depositUser1).to.be.closeTo(2.6962485156114324, 0.000001);
+            expect(borrowedUser2).to.be.closeTo(2.54625, 0.000001);
 
-            await mockToken.connect(user2).approve(pool.address, toWei("3"));
-            await pool.connect(user2).repay(toWei("3"));
+            await mockToken.connect(user2).approve(pool.address, toWei("2.4"));
+            await pool.connect(user2).repay(toWei("2.4"));
 
-            await pool.connect(user1).withdraw(toWei("3"));
+            await pool.connect(user1).withdraw(toWei("2.5"));
 
-            await pool.connect(user2).borrow(toWei("0.085"));
-
-            await pool.connect(user1).withdraw(toWei("0.024999999999"));
+            await pool.connect(user2).borrow(toWei("0.03"));
+            await pool.connect(user1).withdraw(toWei("0.01999999999"));
 
             depositUser1 = fromWei(await pool.balanceOf(user1.address));
 
-            expect(depositUser1).to.be.closeTo(0.1860480232517269, 0.000001);
+            expect(depositUser1).to.be.closeTo(0.176248530461824, 0.000001);
 
             expect(depositUser1).to.be.below(borrowedUser2 + poolBalance);
 
@@ -541,9 +540,9 @@ describe('Safety tests of pool', () => {
             const maxAvailableSurplus = (poolBalance.lt(currentSurplus)) ? poolBalance : currentSurplus;
 
             expect(fromWei(maxAvailableSurplus)).to.be.closeTo(1e-12, 0.000001);
-            expect(fromWei(poolBalance)).to.equal(1e-12);
-            expect(fromWei(totalSupply)).to.be.closeTo(0.32558756002605527, 0.00001);
-            expect(fromWei(totalBorrowed)).to.be.closeTo(0.32558756445076487, 0.00001);
+            expect(fromWei(poolBalance)).to.equal(1e-11);
+            expect(fromWei(totalSupply)).to.be.closeTo(0.30843482107089154, 0.00001);
+            expect(fromWei(totalBorrowed)).to.be.closeTo(0.30843754672823875, 0.00001);
 
             let receiverBalanceBeforeRecover = await mockToken.balanceOf(user3.address);
 
@@ -568,7 +567,7 @@ describe('Safety tests of pool', () => {
             expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
 
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0, 0.00001);
-            expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.46512509017621334, 0.00001);
+            expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.44062106178176436, 0.00001);
         });
 
         it("repay rest of loan and check pool condition", async () => {
@@ -576,7 +575,7 @@ describe('Safety tests of pool', () => {
             await mockToken.connect(user2).approve(pool.address, borrowed);
             await pool.connect(user2).repay(borrowed);
 
-            expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.4651250946009193, 0.00001);
+            expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.4406210701649623, 0.00001);
             expect(fromWei(await pool.getDepositRate())).to.closeTo(0, 0.00001);
             expect(fromWei(await pool.getBorrowingRate())).to.closeTo(0.03, 0.00001);
         });
@@ -586,7 +585,7 @@ describe('Safety tests of pool', () => {
             expect(fromWei(await pool.totalSupply())).to.be.closeTo(0, 0.00001);
             expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0, 0.00001);
             //there are some residual funds due to deposit rate offset
-            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.000005297845417813, 0.000001);
+            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(0.000003996599664476, 0.000001);
         });
 
         it("recover surplus and check pool condition", async () => {

@@ -22,7 +22,7 @@ import "./interfaces/IPoolRewarder.sol";
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     using TransferHelper for address payable;
 
-    uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95e18;
+    uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.90e18;
     uint256 public totalSupplyCap;
 
     mapping(address => mapping(address => uint256)) private _allowed;
