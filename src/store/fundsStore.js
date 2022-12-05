@@ -3,6 +3,7 @@ import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterfa
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
 import TOKEN_MANANGER from '@contracts/TokenManager.json';
+import TOKEN_MANANGER_TUP from '@contracts/TokenManagerTUP.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
@@ -163,7 +164,7 @@ export default {
 
 
     async setupSupportedAssets({commit}) {
-      const tokenManager = new ethers.Contract(TOKEN_MANANGER.address, TOKEN_MANANGER.abi, provider.getSigner());
+      const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
 
       const supported = whiteListedTokenAddresses.map(address => Object.keys(tokenAddresses).find(symbol => tokenAddresses[symbol].toLowerCase() === address.toLowerCase()));
