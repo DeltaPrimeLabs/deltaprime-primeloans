@@ -89,7 +89,7 @@ describe('Test deployed contracts on Avalanche', () => {
             await sendUsdc(10, [ USER_1, USER_2, USER_3]);
 
         });
-/*
+
         it('Pools', async () => {
             //administrative functions
             await poolAdministrativeFunctionsTests(wavaxPool, MAINNET_DEPLOYER, USER_1);
@@ -153,7 +153,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await expect(smartLoansFactory.connect(USER_2).changeOwnership(randomContractAddress)).to.be.revertedWith('Only a SmartLoan can change it\'s owner');
         });
-*/
+
         it('SmartLoansDiamondBeacon', async () => {
             expect(await smartLoansDiamondBeacon.owner()).to.equal(MAINNET_DEPLOYER._address);
 
