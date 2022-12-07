@@ -17,7 +17,7 @@ import {JsonRpcSigner} from "@ethersproject/providers";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
-const erc20ABI = [
+export const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
     'function transfer(address _to, uint256 _value) public returns (bool success)',
@@ -25,10 +25,12 @@ const erc20ABI = [
     'function allowance(address owner, address spender) public view returns (uint256)'
 ]
 
-const wavaxAbi = [
+export const wavaxAbi = [
     'function deposit() public payable',
     ...erc20ABI
 ]
+
+export const ZERO = ethers.constants.AddressZero;
 
 interface PoolInitializationObject {
     name: string,
