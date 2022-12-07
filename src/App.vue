@@ -10,6 +10,9 @@
   <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner" :closable="true">
     Gas prices are high at the moment. Be careful with your transactions.
   </Banner>
+  <Banner :closable="false">
+    Beta incoming! Please repay and empty your Prime Account.
+  </Banner>
   <div class="top-bar">
     <router-link to="/">
       <img src="src/assets/icons/deltaprime.svg" class="logo">
