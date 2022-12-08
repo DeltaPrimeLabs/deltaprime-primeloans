@@ -5,9 +5,10 @@ import {solidity} from "ethereum-waffle";
 
 import PangolinIntermediaryArtifact
     from '../../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PangolinIntermediary} from '../../../typechain';
-import {formatUnits, fromWei, getFixedGasSigners, syncTime, toWei} from "../../_helpers";
+import {PangolinIntermediary, TokenManager} from '../../../typechain';
+import {Asset, formatUnits, fromWei, getFixedGasSigners, syncTime, toBytes32, toWei} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import redstone from "redstone-api";
@@ -54,10 +55,24 @@ describe('PangolinIntermediary', () => {
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
 
+            let tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(
+                [
+                    new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                    new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                ],
+                []
+            );
+
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
+            await sut.initialize(pangolinRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
@@ -151,16 +166,30 @@ describe('PangolinIntermediary', () => {
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
 
+            let tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(
+                [
+                    new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                    new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                    new Asset(toBytes32('PNG_AVAX_USDC_LP'), TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'])
+                ],
+                []
+            );
+
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            await sut.initialize(pangolinRouterAddress, [
+            await sut.initialize(pangolinRouterAddress, tokenManager.address, [
                 TOKEN_ADDRESSES['AVAX'],
-                TOKEN_ADDRESSES['USDC'],
-                TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'],
+                TOKEN_ADDRESSES['USDC']
             ]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
@@ -172,6 +201,11 @@ describe('PangolinIntermediary', () => {
             lpToken = new ethers.Contract(lpTokenAddress, ERC20Abi, provider);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});
+        });
+
+        it('should fail to swap LP token', async () => {
+            await wavaxToken.connect(owner).transfer(sut.address, toWei("1"));
+            await expect(sut.connect(owner).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], toWei("1"), 1)).to.be.revertedWith('Trying to buy unsupported token');
         });
 
         it('should swap tokens', async () => {
@@ -186,6 +220,7 @@ describe('PangolinIntermediary', () => {
 
 
         it('provide liquidity', async () => {
+            expect(await lpToken.balanceOf(owner.address)).to.be.equal(0);
             await wavaxToken.connect(owner).transfer(sut.address, toWei("3"));
             await usdToken.connect(owner).transfer(sut.address, parseUnits((AVAX_PRICE * 3).toFixed(6), BigNumber.from("6")));
 
@@ -197,11 +232,13 @@ describe('PangolinIntermediary', () => {
                 toWei("2.5"),
                 parseUnits((AVAX_PRICE * 2.5).toFixed(6), BigNumber.from("6"))
             );
+            expect(await lpToken.balanceOf(owner.address)).to.be.gt(0);
         });
 
 
         it('remove liquidity', async () => {
             const lpBalanceBeforeRemove = await lpToken.balanceOf(owner.address);
+            expect(lpBalanceBeforeRemove).to.be.gt(0);
 
             await lpToken.connect(owner).transfer(sut.address, lpBalanceBeforeRemove);
 
@@ -212,11 +249,13 @@ describe('PangolinIntermediary', () => {
                 toWei("2"),
                 parseUnits((AVAX_PRICE * 2).toFixed(6), BigNumber.from("6"))
             );
+            expect(await lpToken.balanceOf(owner.address)).to.be.equal(0);
         });
     });
 
     describe('Whitelist and delist tokens', () => {
-        let sut: PangolinIntermediary;
+        let sut: PangolinIntermediary,
+        tokenManager: TokenManager;
 
         const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
         const token2Address = '0x6a7e213F8ad56bEA9d85cC8a59c1f940fD5d176B';
@@ -228,10 +267,24 @@ describe('PangolinIntermediary', () => {
 
             [owner] = await getFixedGasSigners(10000000);
 
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(
+                [
+                    new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                    new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                ],
+                []
+            );
+
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            await sut.initialize(pangolinRouterAddress, [TOKEN_ADDRESSES['AVAX'], token1Address]);
+            await sut.initialize(pangolinRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], token1Address]);
         });
 
         it("should add asset at a contract deploy", async () => {
@@ -353,7 +406,7 @@ describe('PangolinIntermediary', () => {
             [, owner2] = await getFixedGasSigners(10000000);
 
             sut2 = await deployContract(owner2, PangolinIntermediaryArtifact) as PangolinIntermediary;
-            await sut2.initialize(pangolinRouterAddress, []);
+            await sut2.initialize(pangolinRouterAddress, tokenManager.address,[]);
             expect(await sut2.getAllWhitelistedTokens()).to.be.empty;
         });
     });

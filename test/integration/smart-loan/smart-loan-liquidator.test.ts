@@ -12,7 +12,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, fromWei,
+    deployPools, fromBytes32, fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
@@ -110,7 +110,7 @@ describe('Test liquidator', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             await recompileConstantsFile(
                 'local',
@@ -245,7 +245,7 @@ describe('Test liquidator', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             await recompileConstantsFile(
                 'local',

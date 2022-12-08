@@ -129,7 +129,7 @@ describe('Smart loan', () => {
 
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
-            await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
+            await exchange.initialize(pangolinRouterAddress, tokenManager.address, supportedAssets.map(asset => asset.assetAddress));
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);

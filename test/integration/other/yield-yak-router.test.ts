@@ -13,7 +13,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
-    deployAllFacets,
+    deployAllFacets, fromBytes32,
     fromWei,
     getFixedGasSigners,
     recompileConstantsFile,
@@ -208,7 +208,7 @@ describe('Yield Yak test stake sAVAX', () => {
 
         let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
         exchange = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
-        await exchange.initialize(pangolinRouterAddress, supportedAssets.map(asset => asset.assetAddress));
+        await exchange.initialize(pangolinRouterAddress, tokenManager.address, supportedAssets.map(asset => asset.assetAddress));
 
         await recompileConstantsFile(
             'local',

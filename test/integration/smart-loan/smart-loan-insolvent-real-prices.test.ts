@@ -385,7 +385,7 @@ describe('Smart loan - real prices', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;

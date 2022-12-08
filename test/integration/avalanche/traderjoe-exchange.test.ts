@@ -5,16 +5,17 @@ import {solidity} from "ethereum-waffle";
 
 import TraderJoeIntermediaryArtifact
     from '../../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json';
+import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {TraderJoeIntermediary} from '../../../typechain';
+import {TokenManager, TraderJoeIntermediary} from '../../../typechain';
 import {
-    addMissingTokenContracts,
+    addMissingTokenContracts, Asset,
     formatUnits,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
-    syncTime,
+    syncTime, toBytes32,
     toWei
 } from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
@@ -62,6 +63,20 @@ describe('TraderJoeIntermediary', () => {
 
         before('Deploy the UniswapV2Intermediary contract', async () => {
             [, owner] = await getFixedGasSigners(10000000);
+            let tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(
+                [
+                    new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                    new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                ],
+                []
+            );
+
             let assetsList = ['AVAX', 'USDC'];
 
             tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
@@ -70,7 +85,7 @@ describe('TraderJoeIntermediary', () => {
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
 
-            await sut.initialize(traderjoeRouterAddress, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
+            await sut.initialize(traderjoeRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
 
             wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
             usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
@@ -149,7 +164,8 @@ describe('TraderJoeIntermediary', () => {
     });
 
     describe('Whitelist and delist tokens', () => {
-        let sut: TraderJoeIntermediary;
+        let sut: TraderJoeIntermediary,
+        tokenManager: TokenManager;
 
         const token1Address = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
         const token2Address = '0x6a7e213F8ad56bEA9d85cC8a59c1f940fD5d176B';
@@ -161,10 +177,24 @@ describe('TraderJoeIntermediary', () => {
 
             [owner] = await getFixedGasSigners(10000000);
 
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(
+                [
+                    new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
+                    new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
+                ],
+                []
+            );
+
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as TraderJoeIntermediary;
 
-            await sut.initialize(traderjoeRouterAddress, [TOKEN_ADDRESSES['AVAX'], token1Address]);
+            await sut.initialize(traderjoeRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], token1Address]);
         });
 
         it("should add asset at a contract deploy", async () => {
@@ -286,7 +316,7 @@ describe('TraderJoeIntermediary', () => {
             [, owner2] = await getFixedGasSigners(10000000);
 
             sut2 = await deployContract(owner2, TraderJoeIntermediaryArtifact) as TraderJoeIntermediary;
-            await sut2.initialize(traderjoeRouterAddress, []);
+            await sut2.initialize(traderjoeRouterAddress, tokenManager.address, []);
             expect(await sut2.getAllWhitelistedTokens()).to.be.empty;
         });
     });

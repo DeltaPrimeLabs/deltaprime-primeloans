@@ -1,5 +1,5 @@
-import LOAN_FACTORYTUP from '../../deployments/mainnet/SmartLoansFactoryTUP.json'
-import LOAN_FACTORY from '../../deployments/mainnet/SmartLoansFactory.json'
+import LOAN_FACTORYTUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json'
+import LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json'
 import LOAN_LIQUIDATION
     from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';

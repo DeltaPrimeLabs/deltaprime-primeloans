@@ -16,7 +16,7 @@ import {
     deployPools,
     extractAssetNameBalances,
     extractAssetNamePrices,
-    formatUnits,
+    formatUnits, fromBytes32,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -106,7 +106,7 @@ describe('Smart loan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             await recompileConstantsFile(
                 'local',

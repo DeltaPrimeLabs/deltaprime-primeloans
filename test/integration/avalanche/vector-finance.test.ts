@@ -114,7 +114,7 @@ describe('Smart loan', () => {
                 'lib'
             );
 
-            let exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary");
+            let exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary");
 
             await recompileConstantsFile(
                 'local',

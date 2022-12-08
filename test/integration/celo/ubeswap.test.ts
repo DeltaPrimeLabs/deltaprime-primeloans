@@ -16,7 +16,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    extractAssetNameBalances,
+    extractAssetNameBalances, fromBytes32,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -120,7 +120,7 @@ describe('Smart loan', () => {
                 'CELO'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, ubeswapRouterAddress, supportedAssets, "UbeswapIntermediary") as UbeswapIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, ubeswapRouterAddress, tokenManager.address, supportedAssets, "UbeswapIntermediary") as UbeswapIntermediary;
 
             await recompileConstantsFile(
                 'local',

@@ -12,7 +12,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, fromWei,
+    deployPools, fromBytes32, fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
@@ -93,6 +93,7 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
+
             let assetsList = ['AVAX', 'USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
@@ -130,7 +131,7 @@ describe('Test liquidator with a flashloan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -277,7 +278,7 @@ describe('Test liquidator with a flashloan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -413,7 +414,12 @@ describe('Test liquidator with a flashloan', () => {
             ];
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
@@ -440,12 +446,6 @@ describe('Test liquidator with a flashloan', () => {
 
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
-
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
@@ -584,7 +584,12 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
@@ -611,12 +616,6 @@ describe('Test liquidator with a flashloan', () => {
 
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
-
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 

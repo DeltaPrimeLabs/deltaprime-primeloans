@@ -22,7 +22,7 @@ import {
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toWei,
+    toWei, fromBytes32,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -105,7 +105,7 @@ describe('Smart loan', () => {
                 'lib'
             );
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             await recompileConstantsFile(
                 'local',

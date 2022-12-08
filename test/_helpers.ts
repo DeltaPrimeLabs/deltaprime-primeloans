@@ -610,12 +610,13 @@ export const addMissingTokenContracts = function (tokensContract: Map<string, Co
 export const deployAndInitExchangeContract = async function (
     owner: SignerWithAddress | JsonRpcSigner,
     routerAddress: string,
+    tokenManagerAddress: string,
     supportedAssets: Array<Asset>,
     name: string
 ) {
     let exchangeFactory = await ethers.getContractFactory(name);
     const exchange = (await exchangeFactory.deploy()).connect(owner);
-    await exchange.initialize(routerAddress, supportedAssets.map(asset => asset.assetAddress));
+    await exchange.initialize(routerAddress, tokenManagerAddress, supportedAssets.map(asset => asset.assetAddress));
     return exchange
 };
 

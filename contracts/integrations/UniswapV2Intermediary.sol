@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../TokenList.sol";
+import "../TokenManager.sol";
 
 /**
  * @title UniswapV2Intermediary
@@ -23,8 +24,10 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     /* ========= STATE VARIABLES ========= */
     IUniswapV2Router01 router;
     IUniswapV2Factory factory;
+    TokenManager tokenManager;
 
-    function initialize(address _router, address[] memory _whitelistedTokens) external initializer {
+    function initialize(address _router, address _tokenManager, address[] memory _whitelistedTokens) external initializer {
+        tokenManager = TokenManager(_tokenManager);
         router = IUniswapV2Router01(_router);
         factory = IUniswapV2Factory(router.factory());
 
@@ -74,7 +77,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
         require(isTokenWhitelisted[tokenA], 'Trying to LP unsupported token');
         require(isTokenWhitelisted[tokenB], 'Trying to LP unsupported token');
-        require(isTokenWhitelisted[lpTokenAddress], 'Trying to add unsupported LP token');
+        require(tokenManager.isTokenAssetActive(lpTokenAddress), 'Trying to add unsupported LP token');
 
         uint liquidity;
         (amountA, amountB, liquidity) =
@@ -102,7 +105,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         require(isTokenWhitelisted[tokenA], 'Trying to remove LP of unsupported token');
         require(isTokenWhitelisted[tokenB], 'Trying to remove LP of unsupported token');
         //TODO: handle paused LP tokens
-        require(isTokenWhitelisted[lpTokenAddress], 'Trying to remove unsupported LP token');
+        require(tokenManager.isTokenAssetActive(lpTokenAddress), 'Trying to remove unsupported LP token');
 
         (amountA, amountB) =
          router.removeLiquidity(tokenA, tokenB, liquidity, amountA, amountB, address(this), block.timestamp);

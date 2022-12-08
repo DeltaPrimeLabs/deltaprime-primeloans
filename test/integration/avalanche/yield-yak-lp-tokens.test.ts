@@ -14,7 +14,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    formatUnits,
+    formatUnits, fromBytes32,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -128,7 +128,7 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
@@ -363,7 +363,7 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
