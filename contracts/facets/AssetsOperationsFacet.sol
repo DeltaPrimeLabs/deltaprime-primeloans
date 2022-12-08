@@ -62,6 +62,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _amount of funds to borrow
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        ds._lastBorrowTimestamp = block.timestamp;
+
         TokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool pool = Pool(tokenManager.getPoolAddress(_asset));
         pool.borrow(_amount);

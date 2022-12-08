@@ -62,12 +62,7 @@ contract SmartLoanDiamondBeacon {
     }
 
     function implementation(bytes4 funcSignature) public view notPausedOrUpgrading(funcSignature) returns (address) {
-        DiamondStorageLib.DiamondStorage storage ds;
-        bytes32 position = DiamondStorageLib.DIAMOND_STORAGE_POSITION;
-        // get diamond storage
-        assembly {
-            ds.slot := position
-        }
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         // get facet from function selector
         address facet = ds.selectorToFacetAndPosition[funcSignature].facetAddress;
         require(facet != address(0), "Diamond: Function does not exist");

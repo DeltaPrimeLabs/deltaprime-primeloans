@@ -17,7 +17,7 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
       * @param _exactSold exact amount of asset to be sold
       * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapPangolin(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public onlyOwner returns (uint256[] memory) {
+    function swapPangolin(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) public noBorrowInTheSameBlock onlyOwner returns (uint256[] memory) {
         return swapAssets(_soldAsset, _boughtAsset, _exactSold, _minimumBought);
     }
 

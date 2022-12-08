@@ -46,6 +46,8 @@ library DiamondStorageLib {
 
         bool _initialized;
         bool _active;
+
+        uint256 _lastBorrowTimestamp;
     }
 
     struct SmartLoanStorage {

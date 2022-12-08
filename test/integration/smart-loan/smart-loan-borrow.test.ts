@@ -4,6 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import DoubleMethodTxArtifact from '../../../artifacts/contracts/mock/DoubleBorrowExecInSingleTx.sol/DoubleBorrowExecInSingleTx.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -28,6 +29,7 @@ import {
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     TokenManager,
+    DoubleBorrowExecInSingleTx
 } from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {Contract} from "ethers";
@@ -46,6 +48,8 @@ describe('Smart loan', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
+            doubleMethodTxContract: Contract,
+            wrappedDoubleMethodTxContract: any,
             admin: SignerWithAddress,
             borrower: SignerWithAddress,
             depositor: SignerWithAddress,
@@ -66,6 +70,7 @@ describe('Smart loan', () => {
 
             let diamondAddress = await deployDiamond();
 
+            doubleMethodTxContract = await deployContract(admin, DoubleMethodTxArtifact) as DoubleBorrowExecInSingleTx;
             smartLoansFactory = await deployContract(admin, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -93,6 +98,21 @@ describe('Smart loan', () => {
                 'lib'
             );
             await deployAllFacets(diamondAddress)
+        });
+
+        it("should deploy a smart loan for doubleMethodTx contract and top it up with 1 AVAX", async () => {
+            await doubleMethodTxContract.createLoan(smartLoansFactory.address);
+
+            wrappedDoubleMethodTxContract =  WrapperBuilder
+                // @ts-ignore
+                .wrap(doubleMethodTxContract)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES
+                });
+
+            tokenContracts.get('AVAX')!.connect(admin).deposit({value: toWei("1")});
+            tokenContracts.get('AVAX')!.connect(admin).transfer(doubleMethodTxContract.address, toWei("1"));
         });
 
 
@@ -145,6 +165,11 @@ describe('Smart loan', () => {
                     dataPoints: MOCK_PRICES
                 });
             await expect(nonOwnerWrappedLoan.borrow(toBytes32("MCKUSD"), toWei("300"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should fail to borrow funds and execute another method in a single tx", async () => {
+            let loanAddress = await smartLoansFactory.getLoanForOwner(doubleMethodTxContract.address);
+            await expect(wrappedDoubleMethodTxContract.execute(loanAddress)).to.be.revertedWith("Borrowing must happen in a standalone transaction");
         });
 
 
