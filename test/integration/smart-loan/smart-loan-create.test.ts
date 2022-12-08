@@ -119,13 +119,7 @@ describe('Smart loan', () => {
 
 
         it("should create a smart loan using createAndFundLoan", async () => {
-            const wrappedSmartLoansFactory = WrapperBuilder
-                // @ts-ignore
-                .wrap(smartLoansFactory.connect(borrower2))
-                .usingSimpleNumericMock({
-                    mockSignersCount: 10,
-                    dataPoints: MOCK_PRICES,
-                });
+            const wrappedSmartLoansFactory = smartLoansFactory.connect(borrower2)
 
             await tokenContracts.get('AVAX')!.connect(borrower2).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
@@ -149,13 +143,7 @@ describe('Smart loan', () => {
         });
 
         it("should not create a smart loan when wrong data is sent", async () => {
-            const wrappedSmartLoansFactory = WrapperBuilder
-                // @ts-ignore
-                .wrap(smartLoansFactory.connect(borrower3))
-                .usingSimpleNumericMock({
-                    mockSignersCount: 10,
-                    dataPoints: MOCK_PRICES,
-                });
+            const wrappedSmartLoansFactory = smartLoansFactory.connect(borrower3)
 
             await tokenContracts.get('MCKUSD')!.connect(borrower3).approve(smartLoansFactory.address, toWei("1"));
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(borrower3).balanceOf(borrower3.address))).to.be.gt(1);

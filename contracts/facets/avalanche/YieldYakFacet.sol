@@ -13,7 +13,7 @@ import "../../interfaces/IWrappedNativeToken.sol";
 
 // TODO: Check STATUS (tokenManager) of Vault tokens before allowing to stake
 //This path is updated during deployment
-import "../../lib/avalanche/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
 contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;

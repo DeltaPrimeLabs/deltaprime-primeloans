@@ -86,7 +86,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         address(token).safeApprove(address(smartLoan), _amount);
 
-        proxyCalldata(address(smartLoan), abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount), false);
+        (bool success, bytes memory result) = address(smartLoan).call(abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount));
+        ProxyConnector._prepareReturnValue(success, result);
 
         //Update registry and emit event
         updateRegistry(address(smartLoan), msg.sender);

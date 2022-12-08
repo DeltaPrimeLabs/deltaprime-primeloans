@@ -9,7 +9,7 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
 //This path is updated during deployment
-import "../../lib/avalanche/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
 contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
