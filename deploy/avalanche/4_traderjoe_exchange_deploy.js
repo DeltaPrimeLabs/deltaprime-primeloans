@@ -1,34 +1,12 @@
+import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_assets";
+import TraderJoeIntermediaryArtifact
+    from "../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json";
+
 const web3Abi  = require('web3-eth-abi');
-const addresses = require("../../common/addresses/avax/token_addresses.json");
 const {ethers} = require("hardhat");
 const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
-const hre = require("hardhat");
-import verifyContract from "../../tools/scripts/verify-contract";
-const toBytes32 = require("ethers").utils.formatBytes32String;
-import TraderJoeIntermediaryArtifact from "../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json";
 
 const traderJoeRouter = "0x60aE616a2155Ee3d9A68541Ba4544862310933d4";
-
-//TODO: update list of tokens:
-const traderJoeSupportedAssets = [
-    asset('AVAX'),
-    asset('USDC'),
-    asset('BTC'),
-    asset('ETH'),
-    asset('USDT'),
-    asset('sAVAX'),
-    asset('PTP'),
-    asset('QI'),
-    asset('TJ_AVAX_USDC_LP'),
-    asset('TJ_AVAX_USDT_LP'),
-    asset('TJ_AVAX_ETH_LP'),
-    asset('TJ_AVAX_BTC_LP'),
-    asset('TJ_AVAX_sAVAX_LP'),
-]
-
-function asset(symbol) {
-    return { asset: toBytes32(symbol), assetAddress: addresses[symbol] }
-}
 
 module.exports = async ({
     getNamedAccounts,
@@ -46,18 +24,13 @@ module.exports = async ({
         args: [],
     });
 
-    // await verifyContract(hre, {
-    //     address: resultImpl.address,
-    //     contract: `contracts/integrations/avalanche/TraderJoeIntermediary.sol:TraderJoeIntermediary`,
-    // })
-
     console.log(`TraderJoeIntermediary implementation deployed at address: ${resultImpl.address} by a factory`);
 
     const exchange = await ethers.getContract("TraderJoeIntermediary");
 
     const calldata = web3Abi.encodeFunctionCall(
         TraderJoeIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
-        [traderJoeRouter, traderJoeSupportedAssets.map(asset => asset.assetAddress)]
+        [traderJoeRouter, traderJoeAssets.map(asset => asset.assetAddress)]
     )
 
     let resultTup = await deploy('TraderJoeIntermediaryTUP', {

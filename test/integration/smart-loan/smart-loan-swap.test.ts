@@ -71,7 +71,7 @@ describe('Smart loan', () => {
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC'];
+            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC', 'sAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
                 {name: 'MCKUSD', airdropList: [owner, depositor]}
@@ -198,13 +198,13 @@ describe('Smart loan', () => {
             const expectedEthAmount = 1;
 
             const slippageTolerance = 0.03;
-            const requiredAvaxAmount = tokensPrices.get('ETH')! * expectedEthAmount * (1 + slippageTolerance) / tokensPrices.get('AVAX')!;
+            const requiredAvaxAmount = tokensPrices.get('sAVAX')! * expectedEthAmount * (1 + slippageTolerance) / tokensPrices.get('AVAX')!;
 
             expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100, 0.1);
 
             await wrappedLoan.swapPangolin(
                 toBytes32('AVAX'),
-                toBytes32('ETH'),
+                toBytes32('sAVAX'),
                 toWei(requiredAvaxAmount.toString()),
                 toWei(expectedEthAmount.toString())
             )
@@ -214,8 +214,8 @@ describe('Smart loan', () => {
             expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100 - requiredAvaxAmount, 0.1);
             expect(fromWei(assetsNameBalance["AVAX"])).to.be.closeTo(100 - requiredAvaxAmount, 0.05);
 
-            expect(fromWei(await tokenContracts.get('ETH')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(1, 0.05);
-            expect(fromWei(assetsNameBalance["ETH"])).to.be.closeTo(1, 0.05);
+            expect(fromWei(await tokenContracts.get('sAVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(1, 0.05);
+            expect(fromWei(assetsNameBalance["sAVAX"])).to.be.closeTo(1, 0.05);
 
             // total value should stay similar to before swap
             // big delta of 80 because of slippage
@@ -272,20 +272,20 @@ describe('Smart loan', () => {
 
 
         it("should swap back", async () => {
-            const initialEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["ETH"];
+            const initialEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["sAVAX"];
 
             const slippageTolerance = 0.1;
 
-            const avaxAmount = tokensPrices.get('ETH')! * fromWei(initialEthTokenBalance) * (1 - slippageTolerance) / tokensPrices.get('AVAX')!;
+            const avaxAmount = tokensPrices.get('sAVAX')! * fromWei(initialEthTokenBalance) * (1 - slippageTolerance) / tokensPrices.get('AVAX')!;
 
             await wrappedLoan.swapPangolin(
-                toBytes32('ETH'),
+                toBytes32('sAVAX'),
                 toBytes32('AVAX'),
                 initialEthTokenBalance,
                 toWei(avaxAmount.toString())
             );
 
-            const currentEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["ETH"];
+            const currentEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["sAVAX"];
 
             expect(currentEthTokenBalance).to.be.equal(0);
 

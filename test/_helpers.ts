@@ -14,6 +14,7 @@ import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import redstone from "redstone-api";
 import {JsonRpcSigner} from "@ethersproject/providers";
+import addresses from "../common/addresses/avax/token_addresses.json";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
@@ -31,6 +32,11 @@ export const wavaxAbi = [
 ]
 
 export const ZERO = ethers.constants.AddressZero;
+
+export function asset(symbol: string, debtCoverage: number = 0.833333333333333333) {
+    //@ts-ignore
+    return new Asset(toBytes32(symbol), addresses[symbol], debtCoverage);
+}
 
 interface PoolInitializationObject {
     name: string,

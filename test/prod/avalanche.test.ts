@@ -1,29 +1,36 @@
 import {ethers, network, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import {Contract} from "ethers";
+import {BigNumber, Contract} from "ethers";
+import Web3 from 'web3';
+
+const web3 = new Web3();
 import {
     Pool,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     VariableUtilisationRatesCalculator,
     IUniswapV2Router01,
-    WrappedNativeTokenPool, SmartLoanDiamondBeacon, OwnershipFacet, DiamondCutFacet
+    WrappedNativeTokenPool, SmartLoanDiamondBeacon, OwnershipFacet, DiamondCutFacet, TokenManager, IERC20
 } from "../../typechain";
 import SMART_LOAN_DIAMOND_BEACON from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import OWNERSHIP_FACET from '../../deployments/avalanche/OwnershipFacet.json';
 import DIAMOND_CUT_FACET from '../../deployments/avalanche/DiamondCutFacet.json';
 import SMART_LOAN_FACTORY_TUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json';
+import SMART_LOAN_GIGACHAD_INTERFACE from '../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import WAVAX_POOL_TUP from '../../deployments/avalanche/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '../../deployments/avalanche/UsdcPoolTUP.json';
 import WAVAX_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import USDC_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import WRAPPED_POOL from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import RATES_CALCULATOR from '../../deployments/avalanche/VariableUtilisationRatesCalculator.json';
+import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
+import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import {
+    Asset,
     erc20ABI,
-    formatUnits,
+    formatUnits, fromBytes32,
     fromWei,
     getFixedGasSigners,
     syncTime,
@@ -32,11 +39,16 @@ import {
     wavaxAbi,
     ZERO
 } from "../_helpers";
+import {pangolinAssets} from "../../common/addresses/avax/pangolin_supported_assets";
+import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_assets";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {JsonRpcSigner} from "@ethersproject/providers";
 import VariableUtilisationRatesCalculatorArtifact
     from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
 import {parseUnits} from "ethers/lib/utils";
+import web3Abi from "web3-eth-abi";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
+import {supportedAssetsAvax} from '../../common/addresses/avax/avalanche_supported_assets';
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
@@ -50,6 +62,8 @@ const {deployContract, provider} = waffle;
 const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
 const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
 
+//TODO: create a report
+
 describe('Test deployed contracts on Avalanche', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
@@ -61,18 +75,26 @@ describe('Test deployed contracts on Avalanche', () => {
             smartLoansDiamondBeacon: SmartLoanDiamondBeacon & OwnershipFacet & DiamondCutFacet,
             loan1: SmartLoanGigaChadInterface,
             loan2: SmartLoanGigaChadInterface,
+            loan3: SmartLoanGigaChadInterface,
+            loan4: SmartLoanGigaChadInterface,
             wavaxPool: Pool,
             usdcPool: Pool,
+            tokenManager: TokenManager,
             MAINNET_DEPLOYER: JsonRpcSigner,
             USER_1: SignerWithAddress,
             USER_2: SignerWithAddress,
-            USER_3: SignerWithAddress;
+            USER_3: SignerWithAddress,
+            USER_4: SignerWithAddress,
+            USER_5: SignerWithAddress,
+            USER_6: SignerWithAddress,
+            USER_7: SignerWithAddress;
 
             before("setup deployed protocol contracts", async () => {
             smartLoansDiamondBeacon = new ethers.Contract(SMART_LOAN_DIAMOND_BEACON.address, [...SMART_LOAN_DIAMOND_BEACON.abi, ...OWNERSHIP_FACET.abi, ...DIAMOND_CUT_FACET.abi], provider.getSigner()) as SmartLoanDiamondBeacon & OwnershipFacet & DiamondCutFacet;
             smartLoansFactory = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner()) as SmartLoansFactory;
             wavaxPool = new ethers.Contract(WAVAX_POOL_TUP.address, WAVAX_POOL.abi, provider.getSigner()) as Pool;
             usdcPool = new ethers.Contract(USDC_POOL_TUP.address, USDC_POOL.abi, provider.getSigner()) as Pool;
+            tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner()) as TokenManager;
         });
 
         before("setup wallets", async () => {
@@ -83,10 +105,10 @@ describe('Test deployed contracts on Avalanche', () => {
 
             MAINNET_DEPLOYER = await ethers.provider.getSigner('0xbAc44698844f13cF0AF423b19040659b688ef036');
 
-            [, USER_1, USER_2, USER_3] = await getFixedGasSigners(10000000);
+            [, USER_1, USER_2, USER_3, USER_4, USER_5, USER_6, USER_7] = await getFixedGasSigners(10000000);
 
-            await sendWavax(10, [USER_1, USER_2, USER_3]);
-            await sendUsdc(10, [ USER_1, USER_2, USER_3]);
+            await sendWavax(100, [USER_1, USER_2, USER_3, USER_4, USER_5]);
+            await sendUsdc(100, [ USER_1, USER_2, USER_3, USER_4, USER_5]);
 
         });
 
@@ -104,7 +126,9 @@ describe('Test deployed contracts on Avalanche', () => {
             await erc20PoolActionsTests(usdcPool, usdcTokenContract, USER_1, USER_2);
         });
 
+
         it('SmartLoansFactory', async () => {
+            /*
             //administrative functions
 
             //initialize
@@ -118,6 +142,8 @@ describe('Test deployed contracts on Avalanche', () => {
 
             let loansAfterCreate = await smartLoansFactory.getAllLoans();
             let newLoan = await smartLoansFactory.getLoanForOwner(USER_1.address);
+
+            loan1 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
 
             expect(loansAfterCreate.length).to.be.equal(loansBeforeCreate.length + 1);
             expect(newLoan).be.equal(loansAfterCreate[loansAfterCreate.length - 1]);
@@ -145,6 +171,8 @@ describe('Test deployed contracts on Avalanche', () => {
             loansAfterCreate = await smartLoansFactory.getAllLoans();
             newLoan = await smartLoansFactory.getLoanForOwner(USER_2.address);
 
+            loan2 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
+
             expect(loansAfterCreate.length).to.be.equal(loansBeforeCreate.length + 1);
             expect(newLoan).be.equal(loansAfterCreate[loansAfterCreate.length - 1]);
             expect(await smartLoansFactory.getOwnerOfLoan(newLoan)).be.equal(USER_2.address);
@@ -152,8 +180,10 @@ describe('Test deployed contracts on Avalanche', () => {
             await expect(smartLoansFactory.connect(USER_1).changeOwnership(randomContractAddress)).to.be.revertedWith('Only a SmartLoan can change it\'s owner');
 
             await expect(smartLoansFactory.connect(USER_2).changeOwnership(randomContractAddress)).to.be.revertedWith('Only a SmartLoan can change it\'s owner');
-        });
 
+             */
+        });
+/*
         it('SmartLoansDiamondBeacon', async () => {
             expect(await smartLoansDiamondBeacon.owner()).to.equal(MAINNET_DEPLOYER._address);
 
@@ -169,6 +199,7 @@ describe('Test deployed contracts on Avalanche', () => {
             await expect(smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).acceptBeaconOwnership()).to.be.revertedWith('Only a proposed user can accept ownership');
             await expect(smartLoansDiamondBeacon.connect(USER_1).acceptBeaconOwnership()).to.be.revertedWith('Only a proposed user can accept ownership');
 
+            //USER_2 becomes an owner, MAINNET_DEPLOYER stays pause admin
             await smartLoansDiamondBeacon.connect(USER_2).acceptBeaconOwnership();
 
             expect(await smartLoansDiamondBeacon.owner()).to.equal(USER_2.address);
@@ -182,12 +213,288 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await expect(smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).pause()).to.be.revertedWith('ProtocolUpgrade: paused.');
 
+            await expect(loan1.connect(USER_1).getPercentagePrecision()).to.be.revertedWith('ProtocolUpgrade: paused.');
+
+            //unpause
             await expect(smartLoansDiamondBeacon.connect(USER_1).unpause()).to.be.revertedWith('Must be contract pauseAdmin');
             await expect(smartLoansDiamondBeacon.connect(USER_2).unpause()).to.be.revertedWith('Must be contract pauseAdmin');
 
+            await smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).unpause();
+
+            await loan1.connect(USER_1).getPercentagePrecision();
+
+            //proposeBeaconPauseAdminOwnershipTransfer (USER_3)
+            expect(await smartLoansDiamondBeacon.pauseAdmin()).to.equal(MAINNET_DEPLOYER._address);
+
+            await expect(smartLoansDiamondBeacon.connect(USER_1).proposeBeaconPauseAdminOwnershipTransfer(USER_3.address)).to.be.revertedWith('Must be contract pauseAdmin');
+            await expect(smartLoansDiamondBeacon.connect(USER_2).proposeBeaconPauseAdminOwnershipTransfer(USER_3.address)).to.be.revertedWith('Must be contract pauseAdmin');
+
+            await smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).proposeBeaconPauseAdminOwnershipTransfer(USER_3.address);
+
+            expect(await smartLoansDiamondBeacon.proposedPauseAdmin()).to.equal(USER_3.address);
+
+            await expect(smartLoansDiamondBeacon.connect(USER_3).pause()).to.be.revertedWith('Must be contract pauseAdmin');
+
+            await expect(smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).acceptBeaconOwnership()).to.be.revertedWith('Only a proposed user can accept ownership');
+            await expect(smartLoansDiamondBeacon.connect(USER_2).acceptBeaconOwnership()).to.be.revertedWith('Only a proposed user can accept ownership');
+
+            //USER_2 stays an owner, USER_3 becomes a pause admin
+            await smartLoansDiamondBeacon.connect(USER_3).acceptBeaconPauseAdminOwnership();
+
+            expect(await smartLoansDiamondBeacon.pauseAdmin()).to.equal(USER_3.address);
+
+            await expect(smartLoansDiamondBeacon.connect(MAINNET_DEPLOYER).pause()).to.be.revertedWith('Must be contract pauseAdmin');
+
+            await smartLoansDiamondBeacon.connect(USER_3).pause();
+            await smartLoansDiamondBeacon.connect(USER_3).unpause();
+
+            //setPausedMethodExemptions (available for owner, not for admin)
+
+            const methodId = web3.utils.keccak256('getPercentagePrecision()').substr(0, 10);
+
+            await expect(smartLoansDiamondBeacon.connect(USER_3).setPausedMethodExemptions([methodId], [true])).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+            await smartLoansDiamondBeacon.connect(USER_3).pause();
+            await expect(loan1.connect(USER_1).getPercentagePrecision()).to.be.revertedWith('ProtocolUpgrade: paused.');
+
+            await smartLoansDiamondBeacon.connect(USER_2).setPausedMethodExemptions([methodId], [true]);
+
+            await loan1.connect(USER_1).getPercentagePrecision();
+
+            await smartLoansDiamondBeacon.connect(USER_3).unpause();
+        });
+
+         */
+
+    it('SmartLoan', async () => {
+        //Ownership
+/*
+        //proposeOwnershipTransfer
+        expect(await loan1.owner()).to.equal(USER_1.address);
+        expect(await loan1.proposedOwner()).to.equal(ZERO);
+
+        await expect(loan1.connect(USER_2).proposeOwnershipTransfer(USER_3.address)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        await loan1.connect(USER_1).proposeOwnershipTransfer(USER_3.address);
+
+        expect(await loan1.owner()).to.equal(USER_1.address);
+        expect(await loan1.proposedOwner()).to.equal(USER_3.address);
+
+        await expect(loan1.connect(USER_3).proposeOwnershipTransfer(USER_2.address)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        //acceptOwnership
+        await expect(loan1.connect(USER_2).acceptOwnership()).to.be.revertedWith('Only a proposed user can accept ownership');
+
+        await loan1.connect(USER_3).acceptOwnership();
+
+        expect(await loan1.owner()).to.equal(USER_3.address);
+        expect(await loan1.proposedOwner()).to.equal(ZERO);
+
+        //go back to LOAN_1 -> USER_1
+        await loan1.connect(USER_3).proposeOwnershipTransfer(USER_1.address);
+        await loan1.connect(USER_1).acceptOwnership();
+
+
+        const usdcDecimals = await usdcTokenContract.decimals();
+
+        let wrappedLoan1User1 = wrapContract(loan1, USER_1);
+        let wrappedLoan1User2 = wrapContract(loan1, USER_2);
+
+        //AssetsOperations
+
+        //fund
+        let fundedAmount = 1;
+        let amountInWei = parseUnits(fundedAmount.toString(), usdcDecimals);
+
+        let loanBalanceBeforeFund = formatUnits(await usdcTokenContract.connect(USER_1).balanceOf(loan1.address), usdcDecimals);
+
+        await usdcTokenContract.connect(USER_1).approve(loan1.address, amountInWei);
+        await usdcTokenContract.connect(USER_2).approve(loan1.address, amountInWei);
+
+
+        expect(fromWei(await wrappedLoan1User1.getTotalValue())).to.be.equal(0);
+
+        await loan1.connect(USER_1).fund(toBytes32('USDC'), amountInWei);
+        let loanBalanceAfterFirstFund = formatUnits(await usdcTokenContract.connect(USER_1).balanceOf(loan1.address), usdcDecimals);
+        expect(loanBalanceAfterFirstFund - loanBalanceBeforeFund).to.be.equal(fundedAmount);
+
+        await loan1.connect(USER_2).fund(toBytes32('USDC'), amountInWei);
+        let loanBalanceAfterSecondFund = formatUnits(await usdcTokenContract.connect(USER_1).balanceOf(loan1.address), usdcDecimals);
+        expect(loanBalanceAfterSecondFund - loanBalanceAfterFirstFund).to.be.equal(fundedAmount);
+
+        //withdraw
+        let withdrawAmount = .5;
+        amountInWei = parseUnits(withdrawAmount.toString(), usdcDecimals);
+
+        //should revert without price feed
+        await expect(loan1.connect(USER_1).withdraw(toBytes32('USDC'), amountInWei)).to.be.revertedWith('CalldataMustHaveValidPayload()');
+
+        await wrappedLoan1User1.withdraw(toBytes32('USDC'), amountInWei);
+
+
+        let loanBalanceAfterWithdraw = formatUnits(await usdcTokenContract.connect(USER_1).balanceOf(loan1.address), usdcDecimals);
+
+        expect(loanBalanceAfterSecondFund - loanBalanceAfterWithdraw).to.be.equal(withdrawAmount);
+
+        await expect(wrappedLoan1User2.withdraw(toBytes32('USDC'), amountInWei)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        //borrow (too much)
+        let borrowAmount = 20 * fundedAmount;
+        amountInWei = parseUnits(borrowAmount.toString(), usdcDecimals);
+
+        await expect(wrappedLoan1User1.borrow(toBytes32('USDC'), amountInWei)).to.be.revertedWith('The action may cause an account to become insolvent');
+
+        //borrow
+        borrowAmount = 2 * fundedAmount;
+        amountInWei = parseUnits(borrowAmount.toString(), usdcDecimals);
+
+        await expect(wrappedLoan1User2.borrow(toBytes32('USDC'), amountInWei)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        let loanBalanceBeforeBorrow = formatUnits(await usdcTokenContract.balanceOf(loan1.address), usdcDecimals);
+        let poolBalanceBeforeBorrow = formatUnits(await usdcTokenContract.balanceOf(usdcPool.address), usdcDecimals);
+
+        await wrappedLoan1User1.borrow(toBytes32('USDC'), amountInWei);
+
+        let loanBalanceAfterBorrow = formatUnits(await usdcTokenContract.balanceOf(loan1.address), usdcDecimals);
+        let poolBalanceAfterBorrow = formatUnits(await usdcTokenContract.balanceOf(usdcPool.address), usdcDecimals);
+
+        expect(loanBalanceAfterBorrow - loanBalanceBeforeBorrow).to.be.equal(borrowAmount);
+        expect(poolBalanceBeforeBorrow - poolBalanceAfterBorrow).to.be.equal(borrowAmount);
+
+        //repay
+        let repayAmount = borrowAmount / 2;
+        amountInWei = parseUnits(repayAmount.toString(), usdcDecimals);
+
+        await expect(wrappedLoan1User2.repay(toBytes32('USDC'), amountInWei)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        let loanBalanceBeforeRepay = formatUnits(await usdcTokenContract.balanceOf(loan1.address), usdcDecimals);
+        let poolBalanceBeforeRepay = formatUnits(await usdcTokenContract.balanceOf(usdcPool.address), usdcDecimals);
+
+        await wrappedLoan1User1.repay(toBytes32('USDC'), amountInWei);
+
+        let loanBalanceAfterRepay = formatUnits(await usdcTokenContract.balanceOf(loan1.address), usdcDecimals);
+        let poolBalanceAfterRepay = formatUnits(await usdcTokenContract.balanceOf(usdcPool.address), usdcDecimals);
+
+        expect(loanBalanceBeforeRepay - loanBalanceAfterRepay).to.be.equal(repayAmount);
+        expect(poolBalanceAfterRepay - poolBalanceBeforeRepay).to.be.equal(repayAmount);
+
+        //getBalance
+        expect(await loan1.getBalance(toBytes32('USDC'))).to.be.equal(await usdcTokenContract.balanceOf(loan1.address));
+
+        //wrapped native token functions
+
+        let sentAmount = 1;
+        amountInWei = toWei(sentAmount.toString());
+
+        await USER_2.sendTransaction({
+            to: loan1.address,
+            value: amountInWei
+        });
+
+        expect(fromWei(await provider.getBalance(loan1.address))).to.be.equal(sentAmount);
+
+        //wrap native token
+        let wrappedAmount = sentAmount / 2;
+        amountInWei = toWei(wrappedAmount.toString());
+
+        await expect(loan1.connect(USER_2).wrapNativeToken(amountInWei)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        await loan1.connect(USER_1).wrapNativeToken(amountInWei);
+
+        expect(fromWei(await provider.getBalance(loan1.address))).to.be.equal(sentAmount - wrappedAmount);
+        expect(fromWei(await wavaxTokenContract.balanceOf(loan1.address))).to.be.equal(wrappedAmount);
+
+        //deposit native token
+        let depositedAmount = 1;
+        amountInWei = toWei(depositedAmount.toString());
+
+        let balanceBeforeFirstDeposit = fromWei(await wavaxTokenContract.balanceOf(loan1.address));
+        await loan1.connect(USER_1).depositNativeToken({ value: amountInWei });
+        let balanceAfterFirstDeposit = fromWei(await wavaxTokenContract.balanceOf(loan1.address));
+        await loan1.connect(USER_2).depositNativeToken({ value: amountInWei });
+        let balanceAfterSecondDeposit = fromWei(await wavaxTokenContract.balanceOf(loan1.address));
+
+        expect(balanceAfterFirstDeposit - balanceBeforeFirstDeposit).to.be.equal(depositedAmount);
+        expect(balanceAfterSecondDeposit -balanceAfterFirstDeposit ).to.be.equal(depositedAmount);
+
+        //unwrapAndWithdraw
+        let withdrawnAmount = 0.5;
+        amountInWei = toWei(withdrawnAmount.toString());
+
+        let loanBalanceBeforeWithdraw = fromWei(await provider.getBalance(loan1.address));
+        let userBalanceBeforeWithdraw = fromWei(await provider.getBalance(USER_1.address));
+
+        await expect(loan1.connect(USER_2).unwrapAndWithdraw(amountInWei)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        await loan1.connect(USER_1).unwrapAndWithdraw(amountInWei);
+
+        loanBalanceAfterWithdraw = fromWei(await provider.getBalance(loan1.address));
+        let userBalanceAfterWithdraw = fromWei(await provider.getBalance(USER_1.address));
+
+        expect(loanBalanceBeforeWithdraw - loanBalanceAfterWithdraw).to.be.equal(depositedAmount);
+        expect(userBalanceAfterWithdraw - userBalanceBeforeWithdraw ).to.be.equal(depositedAmount);
+
+*/
+        //test DEXes
+
+        await smartLoansFactory.connect(USER_3).createLoan();
+
+        let newLoan = await smartLoansFactory.getLoanForOwner(USER_3.address);
+        loan3 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
+/*
+        //Pangolin
+        console.log('Pangolin')
+        await testDex(
+            'swapPangolin',
+            'addLiquidityPangolin',
+            'removeLiquidityPangolin',
+            loan3,
+            pangolinAssets,
+            USER_3,
+            USER_5
+        );
+
+        await smartLoansFactory.connect(USER_4).createLoan();
+        newLoan = await smartLoansFactory.getLoanForOwner(USER_4.address);
+        loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
+
+        //TraderJoe
+        console.log('TraderJoe')
+        await testDex(
+            'swapTraderJoe',
+            'addLiquidityTraderJoe',
+            'removeLiquidityTraderJoe',
+            loan4,
+            traderJoeAssets,
+            USER_4,
+            USER_5
+        );
+
+ */
+
+        await smartLoansFactory.connect(USER_6).createLoan();
+        newLoan = await smartLoansFactory.getLoanForOwner(USER_6.address);
+        loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
+
+        // await testYieldYak(loan4, USER_6, USER_7, tokenManager);
+        await testVector(loan4, USER_6, USER_7);
 
         });
+
+        it('TokenManager', async () => {
+            //ownership
+            //TODO: prepare
+
+            //asset list
+            let allAssets = await tokenManager.getAllTokenAssets();
+
+            for (let asset of allAssets) {
+                let address = await tokenManager.getAssetAddress(asset, true);
+                console.log(`${fromBytes32(asset)} address: ${address} debtCoverage: ${await tokenManager.debtCoverage(address)}`)
+            }
+        });
     });
+    // ================================= HELPER FUNCTIONS ===================================================
 
     async function poolAdministrativeFunctionsTests(pool: Contract, admin: any, badActor: any) {
         //initialize
@@ -240,7 +547,7 @@ describe('Test deployed contracts on Avalanche', () => {
         let initialUserBalance = formatUnits(await pool.balanceOf(USER_1.address), decimals);
         let initialTokenBalanceOfPool = formatUnits(await tokenContract.balanceOf(pool.address), decimals);
 
-        let depositAmount = 1;
+        let depositAmount = 100;
         let amountInWei = parseUnits(depositAmount.toString(), decimals);
         await tokenContract.connect(USER_1).approve(pool.address, amountInWei);
 
@@ -326,8 +633,8 @@ describe('Test deployed contracts on Avalanche', () => {
             expect(poolBalanceBeforeNativeWithdraw - poolBalanceAfterNativeWithdraw).to.be.closeTo(withdrawAmount, 0.0001);
             expect(userBalanceBeforeNativeWithdraw - userBalanceAfterNativeWithdraw).to.be.closeTo(withdrawAmount, 0.0001);
             expect(tokenBalanceOfPoolBeforeNativeWithdraw - tokenBalanceOfPoolAfterNativeWithdraw).to.be.closeTo(withdrawAmount, 0.0001);
-            expect(nativeBalanceOfPoolBeforeNativeWithdraw - nativeBalanceOfPoolAfterNativeWithdraw).to.be.closeTo(0, 0.0001);
-            expect(nativeBalanceOfUserAfterNativeWithdraw - nativeBalanceOfUserBeforeNativeWithdraw).to.be.closeTo(withdrawAmount, 0.001);
+            expect(nativeBalanceOfPoolBeforeNativeWithdraw - nativeBalanceOfPoolAfterNativeWithdraw).to.be.closeTo(0, 0.001);
+            expect(nativeBalanceOfUserAfterNativeWithdraw - nativeBalanceOfUserBeforeNativeWithdraw).to.be.closeTo(withdrawAmount, 0.02);
         } else {
             let depositAmount = 1;
             let amountInWei = parseUnits(depositAmount.toString(), decimals);
@@ -429,6 +736,448 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await router.connect(user).swapExactTokensForTokens(amountInWei, 0, [wavaxTokenContract.address, usdcTokenContract.address], user.address, 1880333856);
         }
+    }
+
+    async function testDex(
+        swapMethod: string,
+        provideLiquidityMethod: string,
+        removeLiquidityMethod: string,
+        loan1: SmartLoanGigaChadInterface,
+        assets: Asset[],
+        USER_1: any,
+        USER_2: any
+    ) {
+        await testSwap(swapMethod, loan1, assets, USER_1, USER_2);
+        await testLP(swapMethod, provideLiquidityMethod, removeLiquidityMethod, loan1, assets, USER_1, USER_2);
+    }
+
+    async function testSwap(
+        swapMethod: string,
+        loan1: SmartLoanGigaChadInterface,
+        assets: Asset[],
+        USER_1: any,
+        USER_2: any
+    ) {
+        //TODO: FUCKING REMOVE WHEN CONTRACTS ARE REDEPLOYED
+        assets = assets.filter(a => a.asset != toBytes32('sAVAX'));
+        assets = assets.filter(a => !fromBytes32(a.asset).includes('_LP'));
+
+        let wavaxDecimals = await wavaxTokenContract.decimals();
+        //add token1 (AVAX)
+        let wrappedLoan1User1 = wrapContract(loan1, USER_1);
+        let wrappedLoan1User2 = wrapContract(loan1, USER_2);
+
+        let depositedAmount = 20;
+        let amountInWei = parseUnits(depositedAmount.toString(), wavaxDecimals);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+
+        expect((await loan1.getAllOwnedAssets()).length).to.equal(1);
+        expect((await loan1.getAllOwnedAssets())[0]).to.equal(toBytes32('AVAX'));
+
+        //non-owner trying to swap
+        await expect(wrappedLoan1User2[swapMethod](
+            assets[0].asset,
+            assets[1].asset,
+            wrappedLoan1User1.getBalance(assets[0].asset),
+            0
+        )).to.be.revertedWith('DiamondStorageLib: Must be contract owner')
+
+
+        for (let i = 0; i < assets.length - 1; i++) {
+            let TWVbefore = fromWei(await wrappedLoan1User2.getThresholdWeightedValue());
+            //swap all token (i) to token (i+1)
+            await wrappedLoan1User1[swapMethod](
+                assets[i].asset,
+                assets[i+1].asset,
+                await wrappedLoan1User1.getBalance(assets[i].asset),
+                0
+            );
+
+            let TWVafter = fromWei(await wrappedLoan1User2.getThresholdWeightedValue());
+
+            expect((await loan1.getAllOwnedAssets()).length).to.equal(1);
+            expect((await loan1.getAllOwnedAssets())[0]).to.equal(assets[i+1].asset);
+
+            function twvInfo() {
+                return `Change of TWV ${fromBytes32(assets[i].asset)} to ${fromBytes32(assets[i+1].asset)}: ${(Math.abs(TWVafter - TWVbefore)/TWVbefore * 100).toFixed(2)}%`;
+            }
+
+            if (assets[i+1].debtCoverage > assets[i].debtCoverage) {
+                expect(TWVafter).to.be.gt(TWVbefore);
+                console.log(twvInfo())
+            } else if (assets[i+1].debtCoverage < assets[i].debtCoverage) {
+                //that might fail if debt coverages are close and the trade slippage decreases TWVafter
+                expect(TWVafter).to.be.lt(TWVbefore);
+                console.log(twvInfo())
+            } else {
+                console.log(twvInfo())
+            }
+            console.log('TWV: ', TWVafter);
+        }
+
+        //swap back to AVAX
+        await wrappedLoan1User1[swapMethod](
+            assets[assets.length - 1].asset,
+            assets[0].asset,
+            await wrappedLoan1User1.getBalance(assets[assets.length - 1].asset),
+            0
+        );
+    }
+
+    async function testLP(
+        swapMethod: string,
+        provideLiquidityMethod: string,
+        removeLiquidityMethod: string,
+        loan1: SmartLoanGigaChadInterface,
+        assets: Asset[],
+        USER_1: any,
+        USER_2: any
+    ) {
+        let depositedAmount = 20;
+        let amountInWei = parseUnits(depositedAmount.toString(), 18);
+        await loan1.depositNativeToken({ value: amountInWei});
+
+        assets = assets.filter(a => !fromBytes32(a.asset).includes('sAVAX'));
+        let lpAssets = assets.filter(a => fromBytes32(a.asset).includes('_LP'));
+
+        let wrappedLoan1User1 = wrapContract(loan1, USER_1);
+        let wrappedLoan1User2 = wrapContract(loan1, USER_2);
+
+        //initial check if the loan contains only AVAX
+        expect((await loan1.getAllOwnedAssets()).length).to.equal(1);
+        expect((await loan1.getAllOwnedAssets())[0]).to.equal(assets[0].asset);
+
+
+        for (let lp of lpAssets) {
+            let [, firstAsset, secondAsset,] = fromBytes32(lp.asset).split('_');
+            //get first asset
+            let avaxBalance = await loan1.getBalance(assets[0].asset);
+
+            if (toBytes32(firstAsset) != assets[0].asset) {
+                await wrappedLoan1User1[swapMethod](assets[0].asset, toBytes32(firstAsset), avaxBalance.div(2).sub(1), 0);
+            }
+
+            if (toBytes32(secondAsset) != assets[0].asset) {
+                await wrappedLoan1User1[swapMethod](assets[0].asset, toBytes32(secondAsset), avaxBalance.div(2).sub(1), 0);
+            }
+
+            let firstBalance = await loan1.getBalance(toBytes32(firstAsset));
+            let secondBalance = await loan1.getBalance(toBytes32(secondAsset));
+
+            //add LP position
+            expect(await loan1.getBalance(lp.asset)).to.be.equal(0);
+
+            let TWV1 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+
+            await expect(wrappedLoan1User2[provideLiquidityMethod](toBytes32(firstAsset), toBytes32(secondAsset), firstBalance, secondBalance, 1, 1)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+            await wrappedLoan1User1[provideLiquidityMethod](toBytes32(firstAsset), toBytes32(secondAsset), firstBalance, secondBalance, 1, 1);
+
+            let TWV2 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+
+            console.log(twvInfo('providing', TWV1, TWV2))
+            expect(await loan1.getBalance(lp.asset)).to.be.gt(0);
+            let ownedAssetsAfterProvide = await loan1.getAllOwnedAssets();
+
+            expect(ownedAssetsAfterProvide[ownedAssetsAfterProvide.length - 1]).to.be.equal(lp.asset);
+
+
+            //remove LP position
+            await expect(wrappedLoan1User2[removeLiquidityMethod](toBytes32(firstAsset), toBytes32(secondAsset), await loan1.getBalance(lp.asset), 1, 1)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+            await wrappedLoan1User1[removeLiquidityMethod](toBytes32(firstAsset), toBytes32(secondAsset), await loan1.getBalance(lp.asset), 1, 1);
+
+            let ownedAssetsAfterRemove = await loan1.getAllOwnedAssets();
+
+            expect(ownedAssetsAfterRemove.includes(lp.asset)).to.be.false;
+
+            let TWV3 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+
+            console.log(twvInfo('removing', TWV2, TWV3))
+
+
+            function twvInfo(action: string, TWVbefore: number, TWVafter: number) {
+                return `Change of TWV ${fromBytes32(lp.asset)} after ${action} liquidity: ${(Math.abs(TWVafter - TWVbefore)/TWVbefore * 100).toFixed(2)}%,  newTWV: ${TWVafter}`;
+            }
+        }
+    }
+
+    async function testYieldYak(
+        loan1: SmartLoanGigaChadInterface,
+        USER_1: any,
+        USER_2: any,
+        tokenManager: TokenManager
+    ) {
+        let wrappedLoan1User1 = wrapContract(loan1, USER_1);
+
+
+        //AVAX
+        let avaxAmount = 20;
+        let amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await loan1.depositNativeToken({ value: amountInWei});
+
+        let vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_AAVE_AVAX'), true);
+
+        await testVault('stakeAVAXYak', 'unstakeAVAXYak', 'AVAX', amountInWei,'YY_AAVE_AVAX', vaultAddress, null, loan1, USER_1, USER_2, false);
+
+        /*
+
+        //sAVAX
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_USDC_LP'), true);
+
+        await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX'),'YY_PTP_sAVAX', loan1, null, USER_1, USER_2, false);
+        */
+        //YY_PNG_AVAX_USDC_LP
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('USDC'), amountInWei.div(2), 0);
+        await wrappedLoan1User1.addLiquidityPangolin(
+            toBytes32('AVAX'),
+            toBytes32('USDC'),
+            await loan1.getBalance(toBytes32('AVAX')),
+            await loan1.getBalance(toBytes32('USDC')),
+            1,
+            1
+        );
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_USDC_LP'), true);
+
+        await testVault('stakePNGAVAXUSDCYak', 'unstakePNGAVAXUSDCYak', 'PNG_AVAX_USDC_LP', await loan1.getBalance(toBytes32('PNG_AVAX_USDC_LP')),'YY_PNG_AVAX_USDC_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+
+        //YY_PNG_AVAX_ETH_LP
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('ETH'), amountInWei.div(2), 0);
+        await wrappedLoan1User1.addLiquidityPangolin(
+            toBytes32('AVAX'),
+            toBytes32('ETH'),
+            await loan1.getBalance(toBytes32('AVAX')),
+            await loan1.getBalance(toBytes32('ETH')),
+            1,
+            1
+        );
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_ETH_LP'), true);
+
+        await testVault('stakePNGAVAXETHYak', 'unstakePNGAVAXETHYak', 'PNG_AVAX_ETH_LP', await loan1.getBalance(toBytes32('PNG_AVAX_ETH_LP')),'YY_PNG_AVAX_ETH_LP', vaultAddress, null,  loan1, USER_1, USER_2, false);
+
+        //YY_TJ_AVAX_USDC_LP
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('USDC'), amountInWei.div(2), 0);
+        await wrappedLoan1User1.addLiquidityTraderJoe(
+            toBytes32('AVAX'),
+            toBytes32('USDC'),
+            await loan1.getBalance(toBytes32('AVAX')),
+            await loan1.getBalance(toBytes32('USDC')),
+            1,
+            1
+        );
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_TJ_AVAX_USDC_LP'), true);
+
+        await testVault('stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak', 'TJ_AVAX_USDC_LP', await loan1.getBalance(toBytes32('TJ_AVAX_USDC_LP')),'YY_TJ_AVAX_USDC_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+
+        //YY_TJ_AVAX_ETH_LP
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('ETH'), amountInWei.div(2), 0);
+        await wrappedLoan1User1.addLiquidityTraderJoe(
+            toBytes32('AVAX'),
+            toBytes32('ETH'),
+            await loan1.getBalance(toBytes32('AVAX')),
+            await loan1.getBalance(toBytes32('ETH')),
+            1,
+            1
+        );
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_TJ_AVAX_ETH_LP'), true);
+
+        await testVault('stakeTJAVAXETHYak', 'unstakeTJAVAXETHYak', 'TJ_AVAX_ETH_LP', await loan1.getBalance(toBytes32('TJ_AVAX_ETH_LP')),'YY_TJ_AVAX_ETH_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+
+        /*
+        //YY_TJ_AVAX_sAVAX_LP
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei.div(2), 0);
+        await wrappedLoan1User1.addLiquidityPangolin(
+            toBytes32('AVAX'),
+            toBytes32('sAVAX'),
+            await loan1.getBalance(toBytes32('AVAX')),
+            await loan1.getBalance(toBytes32('sAVAX')),
+            1,
+            1
+        );
+
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32(YY_TJ_AVAX_sAVAX_LP), true);
+
+        await testVault('stakeTJAVAXSAVAXYak', 'unstakeTJAVAXSAVAXYak', 'TJ_AVAX_sAVAX_LP', await loan1.getBalance(toBytes32('TJ_AVAX_sAVAX_LP')),'YY_TJ_AVAX_sAVAX_LP', null, vaultAddress, loan1, USER_1, USER_2, false);
+        */
+    }
+
+    async function testVector(
+        loan1: SmartLoanGigaChadInterface,
+        USER_1: any,
+        USER_2: any
+    ) {
+        //AVAX
+        let avaxAmount = 20;
+        let amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await loan1.depositNativeToken({ value: amountInWei});
+
+        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'YY_AAVE_AVAX', '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69', 'balance', loan1, USER_1, USER_2, true);
+
+        //sAVAX
+        /*
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
+        await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX'),'YY_PTP_sAVAX', '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1', 'balance', loan1, USER_1, USER_2, tokenManager, true);
+        */
+    }
+
+    async function testVault(
+        stakeMethod: string,
+        unstakeMethod: string,
+        stakedTokenSymbol: string,
+        amountStaked: BigNumber,
+        vaultTokenSymbol: string,
+        vaultAddress: string,
+        balanceMethod: string | null,
+        loan1: SmartLoanGigaChadInterface,
+        USER_1: any,
+        USER_2: any,
+        isStakedPosition: boolean
+    ) {
+        let wrappedLoan1User1 = wrapContract(loan1, USER_1);
+        let wrappedLoan1User2 = wrapContract(loan1, USER_2);
+
+        let vault = new ethers.Contract(vaultAddress, isStakedPosition ? [`function ${balanceMethod}(address _owner) public view returns (uint256 balance)`] : erc20ABI, provider.getSigner()) as Contract;
+
+        //stake
+
+        console.log(0)
+        isStakedPosition ?
+            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.false
+            :
+            expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
+
+        expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
+
+        let TWV1 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+
+        let tokenBalance1;
+        if (!isStakedPosition) {
+            tokenBalance1 = await loan1.getBalance(toBytes32(stakedTokenSymbol));
+        }
+
+        await expect(wrappedLoan1User2[stakeMethod](amountStaked)).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        await wrappedLoan1User1[stakeMethod](amountStaked);
+
+        if (!isStakedPosition) expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.gt(0);
+        console.log(1)
+
+        isStakedPosition ?
+            expect(await vault[balanceMethod!](loan1.address)).to.be.gt(0)
+            :
+            expect(await vault.balanceOf(loan1.address)).to.be.gt(0);
+
+        isStakedPosition ?
+            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.true
+            :
+            expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.true;
+
+        let TWV2 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+        console.log(2)
+
+        let tokenBalance2;
+        if (!isStakedPosition) {
+            tokenBalance2 = await loan1.getBalance(toBytes32(stakedTokenSymbol));
+            expect(tokenBalance2).to.be.lt(tokenBalance1);
+        }
+
+        console.log(twvInfo('stake', TWV1, TWV2))
+
+        //unstake
+        isStakedPosition ?
+            await expect(wrappedLoan1User2[unstakeMethod](await vault[balanceMethod!](loan1.address), 0)).to.be.revertedWith('DiamondStorageLib: Must be contract owner')
+            :
+            await expect(wrappedLoan1User2[unstakeMethod](await loan1.getBalance(toBytes32(vaultTokenSymbol)))).to.be.revertedWith('DiamondStorageLib: Must be contract owner');
+
+        console.log(fromWei(await vault[balanceMethod!](loan1.address)))
+
+        isStakedPosition ?
+            await wrappedLoan1User1[unstakeMethod](await vault[balanceMethod!](loan1.address), 0)
+            :
+            await wrappedLoan1User1[unstakeMethod](await loan1.getBalance(toBytes32(vaultTokenSymbol)));
+
+        console.log(fromWei(await vault[balanceMethod!](loan1.address)))
+
+
+        console.log(await loan1.getStakedPositions())
+        isStakedPosition ?
+            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.false
+            :
+            expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
+
+        expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
+
+        let TWV3 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
+
+        let tokenBalance3;
+        if (!isStakedPosition) {
+            tokenBalance3 = await loan1.getBalance(toBytes32(stakedTokenSymbol));
+            expect(tokenBalance3).to.be.gt(tokenBalance2);
+        }
+
+        isStakedPosition ?
+            expect(await vault[balanceMethod!](loan1.address)).to.be.equal(0)
+            :
+            expect(await vault.balanceOf(loan1.address)).to.be.equal(0);
+
+        console.log(twvInfo('unstake', TWV2, TWV3))
+
+        function twvInfo(action: string, TWVbefore: number, TWVafter: number) {
+            return `Change of TWV ${vaultTokenSymbol} after ${action}: ${(Math.abs(TWVafter - TWVbefore)/TWVbefore * 100).toFixed(2)}%,  newTWV: ${TWVafter}`;
+        }
+    }
+
+
+        // async function cleanLoan(loan: SmartLoanGigaChadInterface, USER_1: SignerWithAddress) {
+    //     let wrappedLoan = wrapContract(loan, USER_1);
+    //
+    //     await wrappedLoan.repay(toBytes32('AVAX'), (await wrappedLoan.getBalance(toBytes32('AVAX'))).mul(1000).div(999));
+    //     await wrappedLoan.repay(toBytes32('USDC'), (await wrappedLoan.getBalance(toBytes32('USDC'))).mul(1000).div(999));
+    //
+    //     for (let asset of await wrappedLoan.getAllOwnedAssets()) {
+    //         await wrappedLoan.withdraw(asset, await wrappedLoan.getBalance(asset))
+    //     }
+    //
+    //     expect(await wrappedLoan.getTotalValue()).to.be.equal(0);
+    //     expect(await wrappedLoan.getDebt()).to.be.equal(0);
+    //     expect((await wrappedLoan.getOwnedAssets()).length).to.be.equal(0);
+    // }
+
+    function wrapContract(contract: any, performer: SignerWithAddress) {
+        return WrapperBuilder.wrap(contract.connect(performer)).usingDataService(
+            {
+                dataServiceId: "redstone-avalanche-prod",
+                uniqueSignersCount: 3,
+                dataFeeds: supportedAssetsAvax.map(a => fromBytes32(a.asset)),
+            },
+            ["https://d33trozg86ya9x.cloudfront.net"]
+        );
     }
 });
 
