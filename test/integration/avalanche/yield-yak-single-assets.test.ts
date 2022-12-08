@@ -410,6 +410,10 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(liquidator).approve(wrappedLoan.address, allowance);
             await tokenContracts.get('AVAX')!.connect(liquidator).deposit({value: allowance});
 
+            let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, owner);
+            await liquidatorsList.whitelistLiquidators([liquidator.address]);
+            expect(await liquidatorsList.isLiquidatorWhitelisted(liquidator.address)).to.be.true;
+
             await wrappedLoanLiquidator.liquidateLoan([toBytes32("AVAX")], [toWei("150")], 50);
             let currentStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
 

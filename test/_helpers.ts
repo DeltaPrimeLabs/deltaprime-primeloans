@@ -550,7 +550,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         [
             'liquidateLoan',
             'unsafeLiquidateLoan',
-            'getMaxLiquidationBonus'
+            'getMaxLiquidationBonus',
+            'whitelistLiquidators',
+            'delistLiquidators',
+            'isLiquidatorWhitelisted'
         ],
         hardhatConfig
     )

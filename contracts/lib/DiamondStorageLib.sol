@@ -16,6 +16,7 @@ library DiamondStorageLib {
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
+    bytes32 constant LIQUIDATION_STORAGE_POSITION = keccak256("diamond.standard.liquidation.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
     bytes32 constant REENTRANCY_GUARD_STORAGE_POSITION = keccak256("diamond.standard.reentrancy.guard.storage");
 
@@ -67,6 +68,11 @@ library DiamondStorageLib {
         IStakingPositions.StakedPosition[] currentStakedPositions;
     }
 
+    struct LiquidationStorage {
+        // Mapping controlling addresses that can execute the liquidation methods
+        mapping(address=>bool) canLiquidate;
+    }
+
     struct ReentrancyGuardStorage {
         uint256 _status;
     }
@@ -82,6 +88,13 @@ library DiamondStorageLib {
         bytes32 position = DIAMOND_STORAGE_POSITION;
         assembly {
             ds.slot := position
+        }
+    }
+
+    function liquidationStorage() internal pure returns (LiquidationStorage storage ls) {
+        bytes32 position = LIQUIDATION_STORAGE_POSITION;
+        assembly {
+            ls.slot := position
         }
     }
 

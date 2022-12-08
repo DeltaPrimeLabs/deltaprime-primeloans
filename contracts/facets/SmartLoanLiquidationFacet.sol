@@ -14,6 +14,7 @@ import "../TokenManager.sol";
 import "../lib/local/DeploymentConstants.sol";
 
 import "./SolvencyFacetProd.sol";
+import "../SmartLoanDiamondBeacon.sol";
 
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
@@ -57,6 +58,26 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
+    function whitelistLiquidators(address[] memory _liquidators) external onlyOwner {
+        DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
+
+        for(uint i; i<_liquidators.length; i++){
+            ls.canLiquidate[_liquidators[i]] = true;
+        }
+    }
+
+    function delistLiquidators(address[] memory _liquidators) external onlyOwner {
+        DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
+        for(uint i; i>_liquidators.length; i++){
+            ls.canLiquidate[_liquidators[i]] = false;
+        }
+    }
+
+    function isLiquidatorWhitelisted(address _liquidator) public view returns(bool){
+        DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
+        return ls.canLiquidate[_liquidator];
+    }
+
     /**
     * This function can be accessed by any user when Prime Account is insolvent or bankrupt and repay part of the loan
     * with his approved tokens.
@@ -67,7 +88,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonusPercent per mille bonus for liquidator. Must be lower than or equal to getMaxliquidationBonus()
     **/
-    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable nonReentrant {
+    function unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable onlyWhitelistedLiquidators nonReentrant {
         liquidate(
             LiquidationConfig({
                 assetsToRepay : assetsToRepay,
@@ -89,7 +110,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param amountsToRepay utin256[] amounts of tokens provided by liquidator for repayment
     * @param _liquidationBonusPercent per mille bonus for liquidator. Must be lower than or equal to  getMaxLiquidationBonus()
     **/
-    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable nonReentrant {
+    function liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) external payable onlyWhitelistedLiquidators nonReentrant {
         liquidate(
             LiquidationConfig({
                 assetsToRepay : assetsToRepay,
@@ -209,6 +230,12 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
         _;
     }
 

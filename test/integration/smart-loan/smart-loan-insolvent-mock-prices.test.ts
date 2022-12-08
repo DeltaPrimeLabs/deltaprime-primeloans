@@ -509,6 +509,15 @@ describe('Smart loan', () => {
                     dataPoints: newPrices,
                 });
 
+            let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, owner);
+            if(!(await liquidatorsList.isLiquidatorWhitelisted(performer.address))){
+                await expect(wrappedLoan.liquidateLoan([], [], 0)).to.be.revertedWith("Only whitelisted liquidators can execute this method");
+                await expect(wrappedLoan.unsafeLiquidateLoan([], [], 0)).to.be.revertedWith("Only whitelisted liquidators can execute this method");
+
+                await liquidatorsList.whitelistLiquidators([performer.address]);
+                expect(await liquidatorsList.isLiquidatorWhitelisted(performer.address)).to.be.true;
+            }
+
             let amountsToRepayInWei = [];
             let assetsToRepay = [];
 

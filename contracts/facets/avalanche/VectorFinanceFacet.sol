@@ -132,7 +132,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 newBalance = token.balanceOf(address(this));
 
-        console.log('balance of: ', stakingContract.balance(address(this)));
         if (stakingContract.balance(address(this)) == 0) {
             DiamondStorageLib.removeStakedPosition(balanceSelector);
         }

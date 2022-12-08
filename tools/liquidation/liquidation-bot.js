@@ -14,6 +14,7 @@ const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
 import {ethers} from 'hardhat'
 import {BigNumber} from "ethers";
+import {expect} from "chai";
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const fs = require('fs');
@@ -185,6 +186,10 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
         await tokenContract.connect(wallet).approve(loan.address, delivered);
     }
     const bonusInWei = (bonus * 1000).toFixed(0);
+
+    let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, owner);
+    await liquidatorsList.whitelistLiquidators([liquidator.address]);
+    expect(await liquidatorsList.isLiquidatorWhitelisted(liquidator.address)).to.be.true;
 
     let tx = await liquidateFacet.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
     await provider.waitForTransaction(tx.hash);
