@@ -39,7 +39,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("USDC", USDCAddress, VectorUSDCStaking1, amount, minAmount, this.vectorUnstakeUSDC1.selector);
+        unstakeToken("USDC", USDCAddress, VectorUSDCStaking1, amount, minAmount, this.vectorUSDC1Balance.selector);
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
@@ -58,7 +58,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUnstakeWAVAX1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("AVAX", WAVAXAddress, VectorWAVAXStaking1, amount, minAmount, this.vectorUnstakeWAVAX1.selector);
+        unstakeToken("AVAX", WAVAXAddress, VectorWAVAXStaking1, amount, minAmount, this.vectorWAVAX1Balance.selector);
     }
 
     function vectorWAVAX1Balance() public view returns(uint256 _stakedBalance) {
@@ -77,7 +77,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUnstakeSAVAX1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("sAVAX", SAVAXAddress, VectorSAVAXStaking1, amount, minAmount, this.vectorUnstakeSAVAX1.selector);
+        unstakeToken("sAVAX", SAVAXAddress, VectorSAVAXStaking1, amount, minAmount, this.vectorSAVAX1Balance.selector);
     }
 
     function vectorSAVAX1Balance() public view returns(uint256 _stakedBalance) {
@@ -132,6 +132,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 newBalance = token.balanceOf(address(this));
 
+        console.log('balance of: ', stakingContract.balance(address(this)));
         if (stakingContract.balance(address(this)) == 0) {
             DiamondStorageLib.removeStakedPosition(balanceSelector);
         }
