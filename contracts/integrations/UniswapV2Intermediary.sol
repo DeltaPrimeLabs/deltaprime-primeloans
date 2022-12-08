@@ -55,7 +55,11 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
 
         amounts = router.swapExactTokensForTokens(_exactSold, _minimumBought, getPath(_soldToken, _boughtToken), msg.sender, block.timestamp);
 
-        _soldToken.safeTransfer(msg.sender, IERC20Metadata(_soldToken).balanceOf(address(this)));
+        uint256 residualBalance = IERC20Metadata(_soldToken).balanceOf(address(this));
+
+        if (residualBalance > 0) {
+            _soldToken.safeTransfer(msg.sender, residualBalance);
+        }
 
         return amounts;
     }
