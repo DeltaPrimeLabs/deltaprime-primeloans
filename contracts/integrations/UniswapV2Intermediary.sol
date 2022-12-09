@@ -88,8 +88,12 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
            router.addLiquidity(tokenA, tokenB, amountA, amountB, amountAMin, amountBMin, address(this), block.timestamp);
 
         lpTokenAddress.safeTransfer(msg.sender, IERC20Metadata(lpTokenAddress).balanceOf(address(this)));
-        tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
-        tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
+        if (IERC20Metadata(tokenA).balanceOf(address(this)) > 0) {
+            tokenA.safeTransfer(msg.sender, IERC20Metadata(tokenA).balanceOf(address(this)));
+        }
+        if ( IERC20Metadata(tokenB).balanceOf(address(this)) > 0) {
+            tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
+        }
 
         return (lpTokenAddress, amountA, amountB, liquidity);
     }
