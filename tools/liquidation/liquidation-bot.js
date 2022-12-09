@@ -59,7 +59,11 @@ async function wrapLoan(loanAddress) {
             uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
         },
-        ["https://d33trozg86ya9x.cloudfront.net"]
+        [
+            "https://cache-service-direct-1.a.redstone.finance",
+            "https://cache-service-direct-2.a.redstone.finance",
+            "https://cache-service-streamr-1.a.redstone.finance",
+        ]
     );
 
     return loan
@@ -73,8 +77,13 @@ function wrapLiquidationFacet(loanAddress) {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+            disablePayloadsDryRun: true
         },
-        ["https://d33trozg86ya9x.cloudfront.net"]
+        [
+            "https://cache-service-direct-1.a.redstone.finance",
+            "https://cache-service-direct-2.a.redstone.finance",
+            "https://cache-service-streamr-1.a.redstone.finance",
+        ]
     );
     return loan
 }

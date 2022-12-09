@@ -62,12 +62,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const redstoneCacheLayerUrls = [
-    "https://cache-service-direct-1.a.redstone.finance",
-    "https://cache-service-direct-2.a.redstone.finance",
-    "https://cache-service-streamr-1.a.redstone.finance",
-];
-
 const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
 const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
 
@@ -79,7 +73,7 @@ describe('Test deployed contracts on Avalanche', () => {
     });
 
 
-    describe(`Funding a loan`, () => {
+    describe(`Run tests`, () => {
         let smartLoansFactory: SmartLoansFactory,
             smartLoansDiamondBeacon: SmartLoanDiamondBeacon & OwnershipFacet & DiamondCutFacet,
             loan1: SmartLoanGigaChadInterface,
@@ -167,7 +161,7 @@ describe('Test deployed contracts on Avalanche', () => {
             //provided wrong token address
             await expect(smartLoansFactory.connect(USER_2).createAndFundLoan(
                 toBytes32('USDC'), wavaxTokenContract.address, parseUnits('1', await usdcTokenContract.decimals()))
-            ).to.be.revertedWith('reverted with an unrecognized custom error');
+            ).to.be.reverted;
 
             loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
@@ -1246,7 +1240,7 @@ describe('Test deployed contracts on Avalanche', () => {
                 // @ts-ignore
                 disablePayloadsDryRun: true
             },
-            redstoneCacheLayerUrls
+            CACHE_LAYER_URLS.urls
         );
     }
 });

@@ -292,6 +292,7 @@ describe('Smart loan', () => {
         });
     });
 
+    /*
     describe('A loan with staking TJ LP tokens on BeefyFinance', () => {
         let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
@@ -527,5 +528,6 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
         });
     });
+     */
 });
 

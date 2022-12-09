@@ -24,7 +24,11 @@ export const wrapContract = async function wrapContract(contract, assets) {
             uniqueSignersCount: 3,
             // dataFeeds: providedAssets
         },
-        ['https://d33trozg86ya9x.cloudfront.net']
+        [
+            "https://cache-service-direct-1.a.redstone.finance",
+            "https://cache-service-direct-2.a.redstone.finance",
+            "https://cache-service-streamr-1.a.redstone.finance",
+        ]
     );
 };
 

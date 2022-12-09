@@ -43,7 +43,11 @@ async function wrapLoan(loanAddress) {
             uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
         },
-        ["https://d33trozg86ya9x.cloudfront.net"]
+        [
+            "https://cache-service-direct-1.a.redstone.finance",
+            "https://cache-service-direct-2.a.redstone.finance",
+            "https://cache-service-streamr-1.a.redstone.finance",
+        ]
     );
 
     return loan
@@ -157,7 +161,11 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             uniqueSignersCount: 3,
             dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
         },
-        ["https://d33trozg86ya9x.cloudfront.net"]
+        [
+            "https://cache-service-direct-1.a.redstone.finance",
+            "https://cache-service-direct-2.a.redstone.finance",
+            "https://cache-service-streamr-1.a.redstone.finance",
+        ]
     );
 
     const parseDataPackagesResponse = (
@@ -174,7 +182,12 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
         dataServiceId: "redstone-avalanche-prod",
         uniqueSignersCount: 3,
         dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
-    }, ["https://d33trozg86ya9x.cloudfront.net"]);
+    },  [
+        "https://cache-service-direct-1.a.redstone.finance",
+        "https://cache-service-direct-2.a.redstone.finance",
+        "https://cache-service-streamr-1.a.redstone.finance",
+    ]
+    );
 
     const signedDataPackages = parseDataPackagesResponse(signedDataPackagesResponse);
     const unsignedMetadata = "manual-payload";

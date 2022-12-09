@@ -218,7 +218,7 @@ describe('Smart loan', () => {
             expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(amount);
 
             expect(await wrappedLoan.getTotalValue()).to.be.closeTo(initialTotalValue, 5);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0000001);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00001);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 0.00001);
         }
 
