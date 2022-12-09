@@ -33,7 +33,7 @@ export const wavaxAbi = [
 
 export const ZERO = ethers.constants.AddressZero;
 
-export function asset(symbol: string, debtCoverage: number = 0.833333333333333333) {
+export function asset(symbol: string, debtCoverage: string = '0.83333333333333333') {
     //@ts-ignore
     return new Asset(toBytes32(symbol), addresses[symbol], debtCoverage);
 }
@@ -731,10 +731,10 @@ export class Asset {
     assetAddress: string;
     debtCoverage: BigNumber;
 
-    constructor(asset: string, assetAddress: string, debtCoverage: number = 0.8333333333333333) {
+    constructor(asset: string, assetAddress: string, debtCoverage: string = '0.8333333333333333') {
         this.asset = asset;
         this.assetAddress = assetAddress;
-        this.debtCoverage = toWei(debtCoverage.toString());
+        this.debtCoverage = toWei(debtCoverage);
     }
 }
 

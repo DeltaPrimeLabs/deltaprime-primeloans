@@ -28,9 +28,11 @@ module.exports = async ({
 
     const exchange = await ethers.getContract("TraderJoeIntermediary");
 
+    const tokenManagerTUP = await ethers.getContract("TokenManagerTUP");
+
     const calldata = web3Abi.encodeFunctionCall(
         TraderJoeIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
-        [traderJoeRouter, traderJoeAssets.map(asset => asset.assetAddress)]
+        [traderJoeRouter, tokenManagerTUP.address, traderJoeAssets.map(asset => asset.assetAddress)]
     )
 
     let resultTup = await deploy('TraderJoeIntermediaryTUP', {

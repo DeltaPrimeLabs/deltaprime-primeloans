@@ -28,9 +28,11 @@ module.exports = async ({
 
     const exchange = await ethers.getContract("PangolinIntermediary");
 
+    const tokenManagerTUP = await ethers.getContract("TokenManagerTUP");
+
     const calldata = web3Abi.encodeFunctionCall(
         PangolinIntermediaryArtifact.abi.find(method => method.name === 'initialize'),
-        [pangolinRouter, pangolinAssets.map(asset => asset.assetAddress)]
+        [pangolinRouter, tokenManagerTUP.address, pangolinAssets.map(asset => asset.assetAddress)]
     )
 
     let resultTup = await deploy('PangolinIntermediaryTUP', {
