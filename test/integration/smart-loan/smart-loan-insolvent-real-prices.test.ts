@@ -38,6 +38,12 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 
+const redstoneCacheLayerUrls = [
+    "https://cache-service-direct-1.a.redstone.finance",
+    "https://cache-service-direct-2.a.redstone.finance",
+    "https://cache-service-streamr-1.a.redstone.finance",
+];
+
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function symbol() public view returns (string)',
@@ -48,15 +54,15 @@ const erc20ABI = [
 ]
 
 const DEFAULT_MAX_LEVERAGE = {
-        AVAX: 0.8333333,
-        USDC: 0.8333333,
-        USDT: 0.8333333,
-        PNG: 0,
-        QI: 0,
-        sAVAX: 0.8333333,
-        ETH: 0.8333333,
-        BTC: 0.8333333,
-        YY_AAVE_AVAX: 0.8333333
+    AVAX: 0.8333333,
+    USDC: 0.8333333,
+    USDT: 0.8333333,
+    PNG: 0,
+    QI: 0,
+    sAVAX: 0.8333333,
+    ETH: 0.8333333,
+    BTC: 0.8333333,
+    YY_AAVE_AVAX: 0.8333333
 }
 
 const TEST_TABLE = [
@@ -332,7 +338,11 @@ describe('Smart loan - real prices', () => {
             let lendingPools = [];
             for (const token of [
                 {'name': 'USDC', 'airdropList': [], 'autoPoolDeposit': false},
-                {'name': 'AVAX', 'airdropList': [depositor, borrower1, borrower2, borrower3, borrower4], 'autoPoolDeposit': true},
+                {
+                    'name': 'AVAX',
+                    'airdropList': [depositor, borrower1, borrower2, borrower3, borrower4],
+                    'autoPoolDeposit': true
+                },
                 {'name': 'ETH', 'airdropList': [], 'autoPoolDeposit': false},
             ]) {
                 let {
@@ -554,8 +564,10 @@ describe('Smart loan - real prices', () => {
                                     dataServiceId: "redstone-avalanche-prod",
                                     uniqueSignersCount: 3,
                                     dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX"],
+                                    // @ts-ignore
+                                    disablePayloadsDryRun: true
                                 },
-                                ["https://d33trozg86ya9x.cloudfront.net"]
+                                redstoneCacheLayerUrls
                             );
 
                             for (let [symbol, leverage] of Object.entries(testCase.debtCoverage)) {
@@ -721,7 +733,8 @@ describe('Smart loan - real prices', () => {
                             // @ts-ignore
                             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(testCase.targetHealthRatio, testCase.ratioPrecision ?? 0.01);
                         });
-                }}
+                }
+            }
         );
 
 
@@ -749,15 +762,17 @@ describe('Smart loan - real prices', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
 
             await wrappedLoan.isSolvent();
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
             let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, owner);
-            if(!(await liquidatorsList.isLiquidatorWhitelisted(performer.address))){
+            if (!(await liquidatorsList.isLiquidatorWhitelisted(performer.address))) {
                 await expect(wrappedLoan.liquidateLoan([], [], 0)).to.be.revertedWith("Only whitelisted liquidators can execute this method");
                 await expect(wrappedLoan.unsafeLiquidateLoan([], [], 0)).to.be.revertedWith("Only whitelisted liquidators can execute this method");
 

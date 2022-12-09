@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../oracle/RSOracleProd3Signers.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
 import "../TokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";
@@ -13,7 +13,7 @@ import "../interfaces/IStakingPositions.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SolvencyFacetProd is RSOracleProd3Signers, DiamondHelper {
+contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     struct AssetPrice {
         bytes32 asset;
         uint256 price;

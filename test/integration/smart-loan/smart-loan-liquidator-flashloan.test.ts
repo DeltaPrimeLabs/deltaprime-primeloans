@@ -38,11 +38,17 @@ import path from "path";
 import TRUSTED_SIGNERS from '../../../common/redstone-trusted-signers.json';
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 
-const { deployDiamond, replaceFacet } = require('../../../tools/diamond/deploy-diamond');
+const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
 chai.use(solidity);
 
-const { deployContract, provider } = waffle;
+const redstoneCacheLayerUrls = [
+    "https://cache-service-direct-1.a.redstone.finance",
+    "https://cache-service-direct-2.a.redstone.finance",
+    "https://cache-service-streamr-1.a.redstone.finance",
+];
+
+const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
@@ -179,14 +185,16 @@ describe('Test liquidator with a flashloan', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
 
         it("should fund, borrow and withdraw, making the loan's health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({ value: toWei("100") });
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
@@ -326,14 +334,16 @@ describe('Test liquidator with a flashloan', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
 
         it("should fund, borrow and withdraw, making loan health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({ value: toWei("150") });
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("150")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("150"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("150"));
 
@@ -436,7 +446,7 @@ describe('Test liquidator with a flashloan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
 
-            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'],  amountSwapped, usdcDeposited);
+            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
             await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
             await poolContracts.get("USDC")!.connect(depositor).deposit(usdcDeposited);
 
@@ -507,14 +517,16 @@ describe('Test liquidator with a flashloan', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
 
         it("should fund, borrow and withdraw, making loan's health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({ value: toWei("100") });
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
@@ -606,7 +618,7 @@ describe('Test liquidator with a flashloan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
 
-            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'],  amountSwapped, usdcDeposited);
+            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
             await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
             await poolContracts.get("USDC")!.connect(depositor).deposit(usdcDeposited);
 
@@ -677,14 +689,16 @@ describe('Test liquidator with a flashloan', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
 
         it("should fund, borrow and withdraw, making loan's health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({ value: toWei("100") });
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 

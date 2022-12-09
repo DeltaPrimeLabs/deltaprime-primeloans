@@ -62,6 +62,12 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
+const redstoneCacheLayerUrls = [
+    "https://cache-service-direct-1.a.redstone.finance",
+    "https://cache-service-direct-2.a.redstone.finance",
+    "https://cache-service-streamr-1.a.redstone.finance",
+];
+
 const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
 const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
 
@@ -1240,8 +1246,10 @@ describe('Test deployed contracts on Avalanche', () => {
                 dataServiceId: "redstone-avalanche-prod",
                 uniqueSignersCount: 3,
                 dataFeeds: supportedAssetsAvax.map(a => fromBytes32(a.asset)),
+                // @ts-ignore
+                disablePayloadsDryRun: true
             },
-            ["https://d33trozg86ya9x.cloudfront.net"]
+            redstoneCacheLayerUrls
         );
     }
 });

@@ -41,6 +41,11 @@ chai.use(solidity);
 const {deployContract} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
+const redstoneCacheLayerUrls = [
+    "https://cache-service-direct-1.a.redstone.finance",
+    "https://cache-service-direct-2.a.redstone.finance",
+    "https://cache-service-streamr-1.a.redstone.finance",
+];
 
 const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
@@ -147,8 +152,10 @@ describe('Test liquidator', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
@@ -282,8 +289,10 @@ describe('Test liquidator', () => {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
                     dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
                 },
-                ["https://d33trozg86ya9x.cloudfront.net"]
+                redstoneCacheLayerUrls
             );
         });
 
