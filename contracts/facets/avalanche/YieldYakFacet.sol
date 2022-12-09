@@ -152,6 +152,9 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     // ----- UNSTAKE -----
 
+
+    //TODO: make common method for unstaking single assets
+
     /**
         * Unstakes AVAX from Yield Yak protocol
         * @dev This function uses the redstone-evm-connector
@@ -171,6 +174,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         emit Unstaked(msg.sender, "AVAX", YY_AAVE_AVAX, amount, block.timestamp);
 
+        if(IERC20(AVAX_TOKEN).balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
+        }
+
         IWrappedNativeToken(AVAX_TOKEN).deposit{value: amount}();
     }
 
@@ -189,6 +196,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         if(yakStakingContract.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset("YY_PTP_sAVAX");
+        }
+
+        if(IERC20(SAVAX_TOKEN).balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset("sAVAX", SAVAX_TOKEN);
         }
 
         emit Unstaked(msg.sender, "sAVAX", YY_PTP_sAVAX, amount, block.timestamp);

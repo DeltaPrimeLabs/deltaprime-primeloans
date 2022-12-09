@@ -52,6 +52,7 @@ import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {supportedAssetsAvax} from '../../common/addresses/avax/avalanche_supported_assets';
 import addresses from "../../common/addresses/avax/token_addresses.json";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
@@ -479,9 +480,11 @@ describe('Test deployed contracts on Avalanche', () => {
         newLoan = await smartLoansFactory.getLoanForOwner(USER_6.address);
         loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
 
+        console.log('Test Yield Yak vaults');
         await testYieldYak(loan4, USER_6, USER_7, tokenManager);
-        await testVector(loan4, USER_6, USER_7);
 
+        console.log('Test Vector vaults');
+        await testVector(loan4, USER_6, USER_7);
         });
 
         it('TokenManager', async () => {
@@ -523,7 +526,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
             // add token assets
             let xavaAddress = '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4';
-            let asset = new Asset(toBytes32('XAVA'), xavaAddress, 0.5);
+            let asset = new Asset(toBytes32('XAVA'), xavaAddress, '0.5');
             await expect(tokenManager.connect(USER_1).addTokenAssets([asset])).to.be.revertedWith('Ownable: caller is not the owner');
 
             let assetsBeforeAdd = await tokenManager.getAllTokenAssets();
@@ -550,7 +553,7 @@ describe('Test deployed contracts on Avalanche', () => {
             expect(assetsAfterRemove.includes(toBytes32('USDC'))).to.be.false;
 
             // deactivate tokens
-            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
+            expect(await tokenManager.isTokenAssetActive(TOKEN_ADDRESSES['BTC'])).to.be.true;
 
             expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
 
@@ -558,7 +561,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await tokenManager.connect(MAINNET_DEPLOYER).deactivateToken(TOKEN_ADDRESSES['BTC']);
 
-            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.false;
+            expect(await tokenManager.isTokenAssetActive(TOKEN_ADDRESSES['BTC'])).to.be.false;
             await expect(tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.revertedWith('Asset inactive');
 
 
@@ -567,8 +570,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await tokenManager.connect(MAINNET_DEPLOYER).activateToken(TOKEN_ADDRESSES['BTC']);
 
-            //TODO: uncomment
-            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
+            expect(await tokenManager.isTokenAssetActive(TOKEN_ADDRESSES['BTC'])).to.be.true;
             expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
 
 
@@ -835,6 +837,7 @@ describe('Test deployed contracts on Avalanche', () => {
         USER_2: any
     ) {
         await testSwap(swapMethod, loan1, assets, USER_1, USER_2);
+
         await testLP(swapMethod, provideLiquidityMethod, removeLiquidityMethod, loan1, assets, USER_1, USER_2);
     }
 
@@ -845,8 +848,6 @@ describe('Test deployed contracts on Avalanche', () => {
         USER_1: any,
         USER_2: any
     ) {
-        //TODO: FUCKING REMOVE WHEN CONTRACTS ARE REDEPLOYED
-        assets = assets.filter(a => a.asset != toBytes32('sAVAX'));
         assets = assets.filter(a => !fromBytes32(a.asset).includes('_LP'));
 
         let wavaxDecimals = await wavaxTokenContract.decimals();
@@ -924,7 +925,6 @@ describe('Test deployed contracts on Avalanche', () => {
         let amountInWei = parseUnits(depositedAmount.toString(), 18);
         await loan1.depositNativeToken({ value: amountInWei});
 
-        assets = assets.filter(a => !fromBytes32(a.asset).includes('sAVAX'));
         let lpAssets = assets.filter(a => fromBytes32(a.asset).includes('_LP'));
 
         let wrappedLoan1User1 = wrapContract(loan1, USER_1);
@@ -996,7 +996,6 @@ describe('Test deployed contracts on Avalanche', () => {
     ) {
         let wrappedLoan1User1 = wrapContract(loan1, USER_1);
 
-
         //AVAX
         let avaxAmount = 20;
         let amountInWei = parseUnits(avaxAmount.toString(), 18);
@@ -1013,7 +1012,7 @@ describe('Test deployed contracts on Avalanche', () => {
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
 
-        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_USDC_LP'), true);
+        vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PTP_sAVAX'), true);
 
         await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')), 'YY_PTP_sAVAX', vaultAddress, null, loan1, USER_1, USER_2, false);
 
@@ -1094,7 +1093,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei.div(2), 0);
-        await wrappedLoan1User1.addLiquidityPangolin(
+        await wrappedLoan1User1.addLiquidityTraderJoe(
             toBytes32('AVAX'),
             toBytes32('sAVAX'),
             await loan1.getBalance(toBytes32('AVAX')),
@@ -1120,7 +1119,7 @@ describe('Test deployed contracts on Avalanche', () => {
         let amountInWei = parseUnits(avaxAmount.toString(), 18);
         await loan1.depositNativeToken({ value: amountInWei});
 
-        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'YY_AAVE_AVAX', '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'vectorStakeWAVAX1', '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69', 'balance', loan1, USER_1, USER_2, true);
 
         //sAVAX
 
@@ -1128,8 +1127,15 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
-        await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'YY_PTP_sAVAX', '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeSAVAX1', 'vectorUnstakeSAVAX1', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'vectorStakeSAVAX1', '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1', 'balance', loan1, USER_1, USER_2, true);
 
+        //USDC
+
+        avaxAmount = 20;
+        amountInWei = parseUnits(avaxAmount.toString(), 18);
+        await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
+        await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('USDC'), amountInWei, 0);
+        await testVault('vectorStakeUSDC1', 'vectorUnstakeUSDC1', 'USDC', await loan1.getBalance(toBytes32('USDC')),'vectorStakeUSDC1', '0x994F0e36ceB953105D05897537BF55d201245156', 'balance', loan1, USER_1, USER_2, true);
     }
 
     async function testVault(
@@ -1157,7 +1163,7 @@ describe('Test deployed contracts on Avalanche', () => {
             :
             expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
 
-        expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
+        if (!isStakedPosition) expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
 
         let TWV1 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
 
@@ -1173,9 +1179,9 @@ describe('Test deployed contracts on Avalanche', () => {
         if (!isStakedPosition) expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.gt(0);
 
         isStakedPosition ?
-            expect(await vault[balanceMethod!](loan1.address)).to.be.gt(0)
+            expect(fromWei(await vault[balanceMethod!](loan1.address))).to.be.gt(0)
             :
-            expect(await vault.balanceOf(loan1.address)).to.be.gt(0);
+            expect(fromWei(await vault.balanceOf(loan1.address))).to.be.gt(0);
 
         isStakedPosition ?
             expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.true
@@ -1209,7 +1215,7 @@ describe('Test deployed contracts on Avalanche', () => {
             :
             expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
 
-        expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
+        if (!isStakedPosition) expect(await loan1.getBalance(toBytes32(vaultTokenSymbol))).to.be.equal(0);
 
         let TWV3 = fromWei(await wrappedLoan1User1.getThresholdWeightedValue());
 

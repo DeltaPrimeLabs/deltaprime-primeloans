@@ -1710,10 +1710,10 @@
   dependencies:
     "@randlabs/communication-bridge" "1.0.1"
 
-"@redstone-finance/evm-connector@0.0.13":
-  version "0.0.13"
-  resolved "https://registry.yarnpkg.com/@redstone-finance/evm-connector/-/evm-connector-0.0.13.tgz#a6b253c0ae7510d3762040d9b7318489b4e72547"
-  integrity sha512-bRN+/SQt+jQ6ofVS5+pevh93VcIBBPxd/VVrcOfLSRvotiznVjoWPJa8gSOlOLdXRZsBrxztqLDvbbdSE/zA/A==
+"@redstone-finance/evm-connector@0.0.15":
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/@redstone-finance/evm-connector/-/evm-connector-0.0.15.tgz#98b942fb9293b453d419bb17dcd4276ad8330c10"
+  integrity sha512-ouzfuxixeUxtlhk75L9U6nQn2dALK33JwZHS9wJjBd47TFfNxbTjV3TCXQ6b72QrUzg6x6UkpU2nSY6yv4FBpA==
   dependencies:
     "@openzeppelin/contracts" "^4.7.3"
     axios "^1.1.3"
