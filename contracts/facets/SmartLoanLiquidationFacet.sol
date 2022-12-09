@@ -63,13 +63,15 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         for(uint i; i<_liquidators.length; i++){
             ls.canLiquidate[_liquidators[i]] = true;
+            emit LiquidatorWhitelisted(_liquidators[i], msg.sender, block.timestamp);
         }
     }
 
     function delistLiquidators(address[] memory _liquidators) external onlyOwner {
         DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
-        for(uint i; i>_liquidators.length; i++){
+        for(uint i; i<_liquidators.length; i++){
             ls.canLiquidate[_liquidators[i]] = false;
+            emit LiquidatorDelisted(_liquidators[i], msg.sender, block.timestamp);
         }
     }
 
@@ -269,5 +271,21 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param timestamp of the transfer
      **/
     event LiquidationTransfer(address indexed liquidator, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    /**
+     * @dev emitted when a new liquidator gets whitelisted
+     * @param liquidator the address being whitelisted
+     * @param performer the address initiating whitelisting
+     * @param timestamp of the whitelisting
+     **/
+    event LiquidatorWhitelisted(address indexed liquidator, address performer, uint256 timestamp);
+
+    /**
+     * @dev emitted when a liquidator gets delisted
+     * @param liquidator the address being delisted
+     * @param performer the address initiating delisting
+     * @param timestamp of the delisting
+     **/
+    event LiquidatorDelisted(address indexed liquidator, address performer, uint256 timestamp);
 }
 
