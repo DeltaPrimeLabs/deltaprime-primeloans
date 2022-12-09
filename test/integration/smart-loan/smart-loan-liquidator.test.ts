@@ -180,7 +180,7 @@ describe('Test liquidator', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -310,7 +310,7 @@ describe('Test liquidator', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });

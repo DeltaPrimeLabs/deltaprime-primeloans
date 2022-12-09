@@ -213,7 +213,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -376,7 +376,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -546,7 +546,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -704,7 +704,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });

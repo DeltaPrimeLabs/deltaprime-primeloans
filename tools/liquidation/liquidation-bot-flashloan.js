@@ -5,6 +5,7 @@ import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../t
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import {expect} from "chai";
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
@@ -52,7 +53,7 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, wallet);
 }
 
-export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManagerAddress) {
+export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
     let loan = await wrapLoan(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
@@ -179,6 +180,10 @@ export async function liquidateLoan(loanAddress,  flashLoanAddress, tokenManager
     const unsignedMetadata = "manual-payload";
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
+
+    let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, diamondOwner);
+    await liquidatorsList.whitelistLiquidators([flashLoanAddress]);
+    expect(await liquidatorsList.isLiquidatorWhitelisted(flashLoanAddress)).to.be.true;
 
 
     const flashLoanTx = await flashLoan.executeFlashloan(

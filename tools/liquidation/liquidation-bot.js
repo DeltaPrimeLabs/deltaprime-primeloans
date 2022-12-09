@@ -98,7 +98,7 @@ async function getInsolventLoans() {
     return insolventLoans
 }
 
-export async function liquidateLoan(loanAddress, tokenManagerAddress) {
+export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
     let loan = await wrapLoan(loanAddress);
     let liquidateFacet = wrapLiquidationFacet(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
@@ -187,9 +187,9 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     }
     const bonusInWei = (bonus * 1000).toFixed(0);
 
-    let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, owner);
-    await liquidatorsList.whitelistLiquidators([liquidator.address]);
-    expect(await liquidatorsList.isLiquidatorWhitelisted(liquidator.address)).to.be.true;
+    let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, diamondOwner);
+    await liquidatorsList.whitelistLiquidators([wallet.address]);
+    expect(await liquidatorsList.isLiquidatorWhitelisted(wallet.address)).to.be.true;
 
     let tx = await liquidateFacet.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
     await provider.waitForTransaction(tx.hash);
