@@ -491,102 +491,99 @@ describe('Test deployed contracts on Avalanche', () => {
         });
 
         it('TokenManager', async () => {
-            // //asset list
-            // let allAssets = await tokenManager.getAllTokenAssets();
-            //
-            // for (let asset of allAssets) {
-            //     let address = await tokenManager.getAssetAddress(asset, true);
-            //     console.log(`${fromBytes32(asset)} address: ${address} debtCoverage: ${await tokenManager.debtCoverage(address)}`)
-            // }
-            //
-            // //ownership
-            // await expect(tokenManager.connect(MAINNET_DEPLOYER).initialize([],[])).to.be.revertedWith('Initializable: contract is already initialized');
-            //
-            //
-            // //add pool assets
-            // let poolAssets = await tokenManager.getAllPoolAssets();
-            //
-            // await expect(tokenManager.connect(USER_1).addPoolAssets([pool('sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE')])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).addPoolAssets([pool('sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE')]);
-            //
-            // let poolAssetsAfterAdd = await tokenManager.getAllPoolAssets();
-            //
-            // expect(poolAssetsAfterAdd.length).to.be.equal(poolAssets.length + 1);
-            // expect(poolAssetsAfterAdd.includes(toBytes32('sAVAX'))).to.be.true;
-            //
-            // //remove pool assets
-            //
-            // await expect(tokenManager.connect(USER_1).removePoolAssets([toBytes32('USDC')])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).removePoolAssets([toBytes32('USDC')]);
-            //
-            // let poolAssetsAfterRemove = await tokenManager.getAllPoolAssets();
-            //
-            // expect(poolAssetsAfterRemove.length).to.be.equal(poolAssetsAfterAdd.length - 1);
-            // expect(poolAssetsAfterRemove.includes(toBytes32('USDC'))).to.be.false;
-            //
-            //
-            // // add token assets
-            // let xavaAddress = '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4';
-            // let asset = new Asset(toBytes32('XAVA'), xavaAddress, 0.5);
-            // await expect(tokenManager.connect(USER_1).addTokenAssets([asset])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // let assetsBeforeAdd = await tokenManager.getAllTokenAssets();
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).addTokenAssets([asset]);
-            //
-            // let assetsAfterAdd = await tokenManager.getAllTokenAssets();
-            //
-            // expect(assetsAfterAdd.length).to.be.equal(assetsBeforeAdd.length + 1);
-            // expect(assetsAfterAdd[assetsAfterAdd.length - 1]).to.be.equal(toBytes32('XAVA'));
-            // expect(await tokenManager.getAssetAddress(toBytes32('XAVA'), false)).to.be.equal(xavaAddress);
-            // expect(await tokenManager.getAssetAddress(toBytes32('XAVA'), true)).to.be.equal(xavaAddress);
-            // expect(fromWei(await tokenManager.debtCoverage(xavaAddress))).to.be.equal(0.5);
-            //
-            // // remove token assets
-            //
-            // await expect(tokenManager.connect(USER_1).removeTokenAssets([toBytes32('USDC')])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).removeTokenAssets([toBytes32('USDC')]);
-            //
-            // let assetsAfterRemove = await tokenManager.getAllTokenAssets();
-            //
-            // expect(assetsAfterRemove.length).to.be.equal(assetsAfterAdd.length - 1);
-            // expect(assetsAfterRemove.includes(toBytes32('USDC'))).to.be.false;
-            //
-            // // deactivate tokens
-            // //TODO: uncomment
-            // // expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
-            //
-            // expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
-            //
-            // await expect(tokenManager.connect(USER_1).deactivateToken(TOKEN_ADDRESSES['BTC'])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).deactivateToken(TOKEN_ADDRESSES['BTC']);
-            //
-            // //TODO: uncomment
-            // // expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.false;
-            // await expect(tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.revertedWith('Asset inactive');
-            //
-            //
-            // // activate tokens
-            // //TODO: uncomment
-            // await expect(tokenManager.connect(USER_1).activateToken(TOKEN_ADDRESSES['BTC'])).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).activateToken(TOKEN_ADDRESSES['BTC']);
-            //
-            // //TODO: uncomment
-            // // expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
-            // expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
-            //
-            //
-            // // debt coverage
-            // await expect(tokenManager.connect(USER_1).setDebtCoverage(TOKEN_ADDRESSES['ETH'], toWei('0.4'))).to.be.revertedWith('Ownable: caller is not the owner');
-            //
-            // await tokenManager.connect(MAINNET_DEPLOYER).setDebtCoverage(TOKEN_ADDRESSES['ETH'], toWei('0.4'));
-            //
-            // expect(fromWei(await tokenManager.debtCoverage(TOKEN_ADDRESSES['ETH']))).to.be.equal(0.4);
+            //asset list
+            let allAssets = await tokenManager.getAllTokenAssets();
+
+            for (let asset of allAssets) {
+                let address = await tokenManager.getAssetAddress(asset, true);
+                console.log(`${fromBytes32(asset)} address: ${address} debtCoverage: ${await tokenManager.debtCoverage(address)}`)
+            }
+
+            //ownership
+            await expect(tokenManager.connect(MAINNET_DEPLOYER).initialize([],[])).to.be.revertedWith('Initializable: contract is already initialized');
+
+
+            //add pool assets
+            let poolAssets = await tokenManager.getAllPoolAssets();
+
+            await expect(tokenManager.connect(USER_1).addPoolAssets([pool('sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE')])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).addPoolAssets([pool('sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE')]);
+
+            let poolAssetsAfterAdd = await tokenManager.getAllPoolAssets();
+
+            expect(poolAssetsAfterAdd.length).to.be.equal(poolAssets.length + 1);
+            expect(poolAssetsAfterAdd.includes(toBytes32('sAVAX'))).to.be.true;
+
+            //remove pool assets
+
+            await expect(tokenManager.connect(USER_1).removePoolAssets([toBytes32('USDC')])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).removePoolAssets([toBytes32('USDC')]);
+
+            let poolAssetsAfterRemove = await tokenManager.getAllPoolAssets();
+
+            expect(poolAssetsAfterRemove.length).to.be.equal(poolAssetsAfterAdd.length - 1);
+            expect(poolAssetsAfterRemove.includes(toBytes32('USDC'))).to.be.false;
+
+
+            // add token assets
+            let xavaAddress = '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4';
+            let asset = new Asset(toBytes32('XAVA'), xavaAddress, 0.5);
+            await expect(tokenManager.connect(USER_1).addTokenAssets([asset])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            let assetsBeforeAdd = await tokenManager.getAllTokenAssets();
+
+            await tokenManager.connect(MAINNET_DEPLOYER).addTokenAssets([asset]);
+
+            let assetsAfterAdd = await tokenManager.getAllTokenAssets();
+
+            expect(assetsAfterAdd.length).to.be.equal(assetsBeforeAdd.length + 1);
+            expect(assetsAfterAdd[assetsAfterAdd.length - 1]).to.be.equal(toBytes32('XAVA'));
+            expect(await tokenManager.getAssetAddress(toBytes32('XAVA'), false)).to.be.equal(xavaAddress);
+            expect(await tokenManager.getAssetAddress(toBytes32('XAVA'), true)).to.be.equal(xavaAddress);
+            expect(fromWei(await tokenManager.debtCoverage(xavaAddress))).to.be.equal(0.5);
+
+            // remove token assets
+
+            await expect(tokenManager.connect(USER_1).removeTokenAssets([toBytes32('USDC')])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).removeTokenAssets([toBytes32('USDC')]);
+
+            let assetsAfterRemove = await tokenManager.getAllTokenAssets();
+
+            expect(assetsAfterRemove.length).to.be.equal(assetsAfterAdd.length - 1);
+            expect(assetsAfterRemove.includes(toBytes32('USDC'))).to.be.false;
+
+            // deactivate tokens
+            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
+
+            expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
+
+            await expect(tokenManager.connect(USER_1).deactivateToken(TOKEN_ADDRESSES['BTC'])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).deactivateToken(TOKEN_ADDRESSES['BTC']);
+
+            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.false;
+            await expect(tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.revertedWith('Asset inactive');
+
+
+            // activate tokens
+            await expect(tokenManager.connect(USER_1).activateToken(TOKEN_ADDRESSES['BTC'])).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).activateToken(TOKEN_ADDRESSES['BTC']);
+
+            //TODO: uncomment
+            expect(await tokenManager.isTokenAssetActive(toBytes32('BTC'))).to.be.true;
+            expect(await tokenManager.getAssetAddress(toBytes32('BTC'), false)).to.be.equal(TOKEN_ADDRESSES['BTC']);
+
+
+            // debt coverage
+            await expect(tokenManager.connect(USER_1).setDebtCoverage(TOKEN_ADDRESSES['ETH'], toWei('0.4'))).to.be.revertedWith('Ownable: caller is not the owner');
+
+            await tokenManager.connect(MAINNET_DEPLOYER).setDebtCoverage(TOKEN_ADDRESSES['ETH'], toWei('0.4'));
+
+            expect(fromWei(await tokenManager.debtCoverage(TOKEN_ADDRESSES['ETH']))).to.be.equal(0.4);
 
         });
     });
