@@ -38,6 +38,10 @@ export function asset(symbol: string, debtCoverage: number = 0.83333333333333333
     return new Asset(toBytes32(symbol), addresses[symbol], debtCoverage);
 }
 
+export function pool(symbol: string, address: string) {
+    return new PoolAsset(toBytes32(symbol), address);
+}
+
 interface PoolInitializationObject {
     name: string,
     airdropList: Array<SignerWithAddress>
