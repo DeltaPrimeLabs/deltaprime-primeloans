@@ -5,25 +5,32 @@ pragma solidity 0.8.17;
 import "./SmartLoansFactory.sol";
 
 contract SmartLoansFactoryRestrictedAccess is SmartLoansFactory {
-    mapping(address=>bool) canCreateLoan;
+    bytes32 internal constant ACCESS_NFT_SLOT = bytes32(uint256(keccak256('WHITELIST_SLOT_1670605213')) - 1);
+
+    function getWhitelistingMapping() internal view returns(mapping(address=>bool) storage result){
+        bytes32 slot = ACCESS_NFT_SLOT;
+        assembly{
+            result.slot := sload(slot)
+        }
+    }
     
     function whitelistBorrowers(address[] memory _borrowers) external onlyOwner {
 
         for(uint i; i<_borrowers.length; i++){
-            canCreateLoan[_borrowers[i]] = true;
+            getWhitelistingMapping()[_borrowers[i]] = true;
             emit BorrowerWhitelisted(_borrowers[i], msg.sender, block.timestamp);
         }
     }
 
     function delistBorrowers(address[] memory _borrowers) external onlyOwner {
         for(uint i; i<_borrowers.length; i++){
-            canCreateLoan[_borrowers[i]] = false;
+            getWhitelistingMapping()[_borrowers[i]] = false;
             emit BorrowerDelisted(_borrowers[i], msg.sender, block.timestamp);
         }
     }
 
     function isBorrowerWhitelisted(address _borrower) public view returns(bool){
-        return canCreateLoan[_borrower];
+        return getWhitelistingMapping()[_borrower];
     }
 
     function createLoan() public virtual override hasNoLoan canCreatePrimeAccount(msg.sender) returns (SmartLoanDiamondBeacon) {
