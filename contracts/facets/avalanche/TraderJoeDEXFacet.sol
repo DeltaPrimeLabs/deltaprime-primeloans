@@ -33,6 +33,6 @@ contract TraderJoeDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x83cD0AAef0c35C5A19a4081625BBcf1Cc5E1C3ed;
+        return 0x4eEcb72b47a32786e08581D6226e95d9AE3bB1Af;
     }
 }
