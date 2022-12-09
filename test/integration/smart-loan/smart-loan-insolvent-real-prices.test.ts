@@ -30,6 +30,7 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -37,12 +38,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-
-const redstoneCacheLayerUrls = [
-    "https://cache-service-direct-1.a.redstone.finance",
-    "https://cache-service-direct-2.a.redstone.finance",
-    "https://cache-service-streamr-1.a.redstone.finance",
-];
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -567,7 +562,7 @@ describe('Smart loan - real prices', () => {
                                     // @ts-ignore
                                     disablePayloadsDryRun: true
                                 },
-                                redstoneCacheLayerUrls
+                                 CACHE_LAYER_URLS.urls
                             );
 
                             for (let [symbol, leverage] of Object.entries(testCase.debtCoverage)) {
@@ -765,7 +760,7 @@ describe('Smart loan - real prices', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
 
             await wrappedLoan.isSolvent();

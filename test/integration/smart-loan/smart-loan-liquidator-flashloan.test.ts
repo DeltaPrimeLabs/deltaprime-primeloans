@@ -35,18 +35,12 @@ import redstone from "redstone-api";
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
-import TRUSTED_SIGNERS from '../../../common/redstone-trusted-signers.json';
+import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
 chai.use(solidity);
-
-const redstoneCacheLayerUrls = [
-    "https://cache-service-direct-1.a.redstone.finance",
-    "https://cache-service-direct-2.a.redstone.finance",
-    "https://cache-service-streamr-1.a.redstone.finance",
-];
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
@@ -188,7 +182,7 @@ describe('Test liquidator with a flashloan', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                CACHE_LAYER_URLS.urls
             );
         });
 
@@ -337,7 +331,7 @@ describe('Test liquidator with a flashloan', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
         });
 
@@ -520,7 +514,7 @@ describe('Test liquidator with a flashloan', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
         });
 
@@ -692,7 +686,7 @@ describe('Test liquidator with a flashloan', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
         });
 

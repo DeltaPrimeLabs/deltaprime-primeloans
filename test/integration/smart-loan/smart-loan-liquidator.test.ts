@@ -12,7 +12,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, fromBytes32, fromWei,
+    deployPools, fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
@@ -33,6 +33,7 @@ import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
 import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
+import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -40,12 +41,6 @@ chai.use(solidity);
 
 const {deployContract} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-
-const redstoneCacheLayerUrls = [
-    "https://cache-service-direct-1.a.redstone.finance",
-    "https://cache-service-direct-2.a.redstone.finance",
-    "https://cache-service-streamr-1.a.redstone.finance",
-];
 
 const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
@@ -155,7 +150,7 @@ describe('Test liquidator', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
         });
 
@@ -292,7 +287,7 @@ describe('Test liquidator', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                redstoneCacheLayerUrls
+                 CACHE_LAYER_URLS.urls
             );
         });
 
