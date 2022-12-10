@@ -71,11 +71,6 @@ export default {
         flex-direction: row;
         align-items: center;
         margin-left: 5px;
-
-        .info__icon {
-          width: 16px;
-          height: 16px;
-        }
       }
     }
 

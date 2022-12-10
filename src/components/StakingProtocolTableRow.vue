@@ -5,15 +5,22 @@
         <div class="farm">
           <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
           <div class="protocol__details">
-            <div class="asset-name">{{ asset.name }}</div>
+            <div class="asset-name">
+              {{ asset.name }}
+              <img v-if="farm.info"
+                   class="info__icon"
+                   src="src/assets/icons/info.svg"
+                   v-tooltip="{content: farm.info, classes: 'info-tooltip'}">
+            </div>
             <div class="by-farm">by {{ protocol.name }}</div>
+
           </div>
         </div>
       </div>
 
       <div class="table__cell">
         <div class="double-value staked-balance">
-          <div class="double-value__pieces">{{ balance | smartRound }}</div>
+          <div class="double-value__pieces">{{ isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance) }}</div>
           <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
         </div>
       </div>
@@ -98,6 +105,9 @@ export default {
     },
     disabled() {
       return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS;
+    },
+    isLP() {
+      return this.asset.secondary !== null;
     }
   },
   methods: {
@@ -111,7 +121,7 @@ export default {
       modalInstance.staked = Number(this.balance);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
-      modalInstance.isLP = this.asset.secondary !== null;
+      modalInstance.isLP = this.isLP;
       modalInstance.$on('STAKE', (stakeValue) => {
         const stakeRequest = {
           symbol: this.farm.feedSymbol,
@@ -137,7 +147,7 @@ export default {
       modalInstance.staked = Number(this.balance);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
-      modalInstance.isLP = this.asset.secondary !== null;
+      modalInstance.isLP = this.isLP;
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
         const unstakeRequest = {
           amount: unstakeValue.toFixed(config.DECIMALS_PRECISION),
@@ -204,6 +214,10 @@ export default {
           .asset__name {
             font-size: $font-size-xsm;
             font-weight: 500;
+          }
+
+          .info__icon {
+            transform: translateY(-2px);
           }
 
           .by-farm {
