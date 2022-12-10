@@ -16,7 +16,7 @@
       The protocol is paused because of an upgrade.
     </Banner>
     <Banner v-if="oracleError">
-      Oracle error.
+      The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
     <div class="top-bar">
       <router-link to="/">

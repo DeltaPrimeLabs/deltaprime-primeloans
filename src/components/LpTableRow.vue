@@ -141,6 +141,7 @@ export default {
           this.setupTvl();
         }
       },
+      immediate: true
     },
   },
 

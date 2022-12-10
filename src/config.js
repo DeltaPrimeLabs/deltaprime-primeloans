@@ -79,7 +79,8 @@ export default {
                 stakeMethod: 'stakeAVAXYak',
                 unstakeMethod: 'unstakeAVAXYak',
                 feedSymbol: 'YY_AAVE_AVAX',
-                token: 'AVAX'
+                token: 'AVAX',
+                info: 'This strategy compounds AVAX in AAVE'
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -88,7 +89,8 @@ export default {
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
                 minAmount: 0.8,
-                token: 'AVAX'
+                token: 'AVAX',
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply'
             }
         ],
         sAVAX: [
@@ -107,7 +109,8 @@ export default {
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
                 minAmount: 0.8,
-                token: 'SAVAX'
+                token: 'SAVAX',
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply'
             }
         ],
         USDC: [
