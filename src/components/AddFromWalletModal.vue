@@ -24,13 +24,13 @@
         <div class="top-info__label">Available:</div>
         <div class="top-info__value" v-bind:class="{'available-balance--loading': !getAvailableAssetAmount && getAvailableAssetAmount !== 0}">
           <LoadedValue :check="() => getAvailableAssetAmount != null || Number.isNaN(getAvailableAssetAmount)"
-                       :value="formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
+                       :value="isLP ? formatTokenBalance(getAvailableAssetAmount, 10, true) : formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
           <div v-if="getAvailableAssetAmount != null">
             <span v-if="asset.name === 'AVAX'" class="top-info__currency">
               {{ selectedDepositAsset }}
             </span>
             <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
-              {{ asset.symbol }}
+              {{ isLP ? asset.name : asset.symbol }}
             </span>
           </div>
         </div>

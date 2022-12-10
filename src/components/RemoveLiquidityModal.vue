@@ -2,7 +2,15 @@
   <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Remove Liquidity
+        Unwind LP token
+      </div>
+
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, 10, true)}}</div>
+        <span class="top-info__currency">
+          {{lpToken.name}}
+        </span>
       </div>
 
       <CurrencyInput :symbol="lpToken.primary"
@@ -49,7 +57,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Remove liquidity'"
+        <Button :label="'Unwind LP token'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
                 :disabled="currencyInputError">

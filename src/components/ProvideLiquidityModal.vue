@@ -2,9 +2,16 @@
   <div id="modal" v-if="lpToken" class="provide-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Provide Liquidity
+        Create LP token
       </div>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{firstAssetBalance}}</div>
+        <span class="top-info__currency">
+          {{firstAsset.symbol}}
+        </span>
+      </div>
       <CurrencyInput ref="firstInput"
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
@@ -12,6 +19,13 @@
                      :validators="firstInputValidators"
                      :max="Number(firstAssetBalance)">
       </CurrencyInput>
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{secondAssetBalance}}</div>
+        <span class="top-info__currency">
+          {{secondAsset.symbol}}
+        </span>
+      </div>
       <CurrencyInput ref="secondInput"
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
@@ -58,7 +72,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Provide liquidity'"
+        <Button :label="'Create LP token'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError">

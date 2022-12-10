@@ -173,7 +173,7 @@ export default {
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw',
+              name: 'Withdraw to wallet',
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
