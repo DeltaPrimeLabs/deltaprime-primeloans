@@ -147,7 +147,7 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Add / Provide',
+          tooltip: 'Add / Create',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -155,24 +155,24 @@ export default {
             },
             {
               key: 'PROVIDE_LIQUIDITY',
-              name: 'Add liquidity',
+              name: 'Create LP token',
               disabled: !this.hasSmartLoanContract,
-              disabledInfo: 'To provide liquidity, you need to add some funds from you wallet first'
+              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             },
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: 'Withdraw / Remove',
+          tooltip: 'Withdraw / Unwind',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw'
+              name: 'Withdraw to wallet'
             },
             {
               key: 'REMOVE_LIQUIDITY',
-              name: 'Remove liquidity'
+              name: 'Unwind LP token'
             }
           ]
         },
