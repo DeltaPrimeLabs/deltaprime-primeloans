@@ -1,5 +1,6 @@
 import Vue from "vue";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
+import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 
 export const erc20ABI = [
     'function decimals() public view returns (uint8)',
@@ -22,13 +23,10 @@ export const wrapContract = async function wrapContract(contract, assets) {
         {
             dataServiceId: 'redstone-avalanche-prod',
             uniqueSignersCount: 3,
-            // dataFeeds: providedAssets
+            dataFeeds: providedAssets,
+            disablePayloadsDryRun: true
         },
-        [
-            "https://cache-service-direct-1.a.redstone.finance",
-            "https://cache-service-direct-2.a.redstone.finance",
-            "https://cache-service-streamr-1.a.redstone.finance",
-        ]
+        CACHE_LAYER_URLS.urls
     );
 };
 

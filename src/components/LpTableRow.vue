@@ -37,8 +37,6 @@
         {{ lpToken.apr | percent }}
       </div>
 
-      <div></div>
-
       <div class="table__cell actions">
         <IconButtonMenuBeta
           class="actions__icon-button"
