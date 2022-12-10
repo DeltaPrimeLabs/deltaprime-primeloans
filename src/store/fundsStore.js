@@ -11,7 +11,6 @@ import redstone from 'redstone-api';
 import {BigNumber, Contract} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
-import INTERMEDIARY from '@artifacts/contracts/integrations/UniswapV2Intermediary.sol/UniswapV2Intermediary.json';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -555,35 +554,17 @@ export default {
         [swapRequest.targetAsset]
       ]);
 
-      let amount = parseUnits(String(swapRequest.sourceAmount), config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
-      //  TODO: optimize and use YakSwap
-      let estimatedReceivedTokens = toWei("0");
-      let chosenDex;
+      let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(String(swapRequest.sourceAmount), sourceDecimals);
 
-      for (let dex in config.DEX_CONFIG) {
-        const intermediaryContract = new Contract(config.DEX_CONFIG[dex].intermediaryAddress, INTERMEDIARY.abi, provider.getSigner());
+      let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
+      let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
 
-        const whitelistedTokens = await intermediaryContract.getAllWhitelistedTokens();
-        const whiteListedTokensUppercase = whitelistedTokens.map(address => address.toUpperCase());
-        const isSourceAssetWhiteListed = whiteListedTokensUppercase.includes(tokenAddresses[swapRequest.sourceAsset].toUpperCase());
-        const isTargetAssetWhiteListed = whiteListedTokensUppercase.includes(tokenAddresses[swapRequest.targetAsset].toUpperCase());console.log(isTargetAssetWhiteListed);
-        const areWhitelisted = isSourceAssetWhiteListed && isTargetAssetWhiteListed;
-
-        if (areWhitelisted) {
-          let receivedAmount = await intermediaryContract.getMaximumTokensReceived(amount, tokenAddresses[swapRequest.sourceAsset], tokenAddresses[swapRequest.targetAsset]);
-
-          if (receivedAmount.gt(estimatedReceivedTokens)) {
-            estimatedReceivedTokens = receivedAmount;
-            chosenDex = dex;
-          }
-        }
-      }
-
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[chosenDex].swapMethod](
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[swapRequest.chosenDex].swapMethod](
         toBytes32(swapRequest.sourceAsset),
         toBytes32(swapRequest.targetAsset),
-        amount,
-        parseUnits(String(0), config.ASSETS_CONFIG[swapRequest.targetAsset].decimals),
+        sourceAmount,
+        targetAmount,
         {gasLimit: 8000000}
       );
 

@@ -22,6 +22,7 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
+                          :info="slippageInfo"
                           v-on:valueChange="targetInputChange">
       </CurrencyComboInput>
       <div class="asset-info">
@@ -96,8 +97,12 @@ import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth} from '../utils/calculate';
+import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
+import {BigNumber, Contract} from "ethers";
+import INTERMEDIARY from '@artifacts/contracts/integrations/UniswapV2Intermediary.sol/UniswapV2Intermediary.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 
+const MIN_ACCEPTABLE_SLIPPAGE = 0.03;
 export default {
   name: 'SwapModal',
   components: {
@@ -132,6 +137,8 @@ export default {
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
+      chosenDex: config.DEX_CONFIG[0],
+      estimatedReceivedTokens: 0
     };
   },
 
@@ -147,7 +154,18 @@ export default {
     });
   },
 
-  computed: {},
+  computed: {
+    slippage() {
+      return Math.max(0, (this.targetAssetAmount - this.estimatedReceivedTokens) / this.targetAssetAmount);
+    },
+    slippageInfo() {
+      return () =>
+          `Current slippage ${(this.slippage * 100).toFixed(2)}%, maximum ${((this.slippage + MIN_ACCEPTABLE_SLIPPAGE) * 100).toFixed(2)}%`;
+    },
+    minTargetAssetAmount() {
+      return this.targetAssetAmount * (1 - (this.slippage + MIN_ACCEPTABLE_SLIPPAGE));
+    }
+  },
 
   methods: {
     submit() {
@@ -156,8 +174,38 @@ export default {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
         sourceAmount: this.sourceAssetAmount,
-        targetAmount: this.targetAssetAmount,
+        targetAmount: this.minTargetAssetAmount,
+        chosenDex: this.chosenDex
       });
+    },
+
+    async chooseBestTrade() {
+      if (!this.sourceAssetAmount) return;
+
+      let estimatedReceivedTokens = 0;
+      let chosenDex = 'Pangolin';
+
+      for (let dex in config.DEX_CONFIG) {
+        const intermediaryContract = new Contract(config.DEX_CONFIG[dex].intermediaryAddress, INTERMEDIARY.abi, provider.getSigner());
+
+        const whitelistedTokens = await intermediaryContract.getAllWhitelistedTokens();
+        const whiteListedTokensUppercase = whitelistedTokens.map(address => address.toUpperCase());
+        const isSourceAssetWhiteListed = whiteListedTokensUppercase.includes(TOKEN_ADDRESSES[this.sourceAsset].toUpperCase());
+        const isTargetAssetWhiteListed = whiteListedTokensUppercase.includes(TOKEN_ADDRESSES[this.targetAsset].toUpperCase());
+        const areWhitelisted = isSourceAssetWhiteListed && isTargetAssetWhiteListed;
+
+        if (areWhitelisted) {
+          let receivedAmount = await intermediaryContract.getMaximumTokensReceived(parseUnits(this.sourceAssetAmount.toString(), BigNumber.from(config.ASSETS_CONFIG[this.sourceAsset].decimals)), TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset]);
+
+          if (receivedAmount.gt(estimatedReceivedTokens)) {
+            estimatedReceivedTokens = receivedAmount;
+            chosenDex = dex;
+          }
+        }
+      }
+
+      this.chosenDex = chosenDex;
+      this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(config.ASSETS_CONFIG[this.targetAsset].decimals)));
     },
 
     setupSourceAssetOptions() {
@@ -187,7 +235,7 @@ export default {
       }
     },
 
-    sourceInputChange(changeEvent) {
+    async sourceInputChange(changeEvent) {
       if (changeEvent.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
@@ -202,12 +250,13 @@ export default {
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
           this.calculateHealthAfterTransaction();
+          await this.chooseBestTrade();
         }
       }
       this.sourceInputError = changeEvent.error;
     },
 
-    targetInputChange(change) {
+    async targetInputChange(change) {
       if (change.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
@@ -222,6 +271,7 @@ export default {
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
           this.calculateHealthAfterTransaction();
+          await this.chooseBestTrade();
         }
       }
       this.targetInputError = change.error;
