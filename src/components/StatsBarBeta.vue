@@ -9,7 +9,7 @@
       <div class="health-loader-container" v-if="noSmartLoan === null">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
-      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent">
+      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent" :info-tooltip="'Health ratio'">
         <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
       </stats-bar-element-beta>
 
