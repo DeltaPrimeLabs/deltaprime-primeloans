@@ -5,7 +5,8 @@
         <div class="filter__option"
              v-for="option in group.options"
              v-on:click="selectOption(group, option)"
-             v-bind:class="{'active': filterValue[group.key][option].active}">
+             v-bind:class="{'active': filterValue[group.key][option].active}"
+             v-tooltip="{content: option, classes: 'info-tooltip'}">
           <img v-if="group.key === 'asset'" class="option__icon" :src="logoSrc(option)">
           <img v-if="group.key === 'dex'" class="option__icon" :src="`src/assets/logo/${dexesConfig[option].logo}`">
         </div>
