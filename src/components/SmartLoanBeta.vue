@@ -13,7 +13,7 @@
       </InfoBubble>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
-         provide liquidity and farm them on the Farms page.
+         provide liquidity and farm on the Farms page.
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">

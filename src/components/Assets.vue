@@ -152,8 +152,8 @@ export default {
       if (funds) {
         Object.keys(funds).forEach((symbol, index) => {
           redstone.getHistoricalPrice(symbol, {
-            startDate: Date.now() - 3600 * 1000 * 24 * 7,
-            interval: 3600 * 1000,
+            startDate: Date.now() - 3600 * 1000 * 24,
+            interval: 600 * 1000,
             endDate: Date.now(),
             provider: 'redstone-avalanche'
           }).then(
