@@ -11,9 +11,6 @@
         </div>
       </div>
 
-      <div class="table__cell">
-      </div>
-
       <div class="table__cell table__cell--double-value balance">
         <template v-if="lpBalances">
           <div class="double-value__pieces">
@@ -30,7 +27,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ tvl | usd }}
+        {{ lpToken.tvl | usd }}
       </div>
 
       <div class="table__cell">
@@ -319,6 +316,7 @@ export default {
         let valueOfSecond = formatUnits(await secondTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].secondary) * config.ASSETS_CONFIG[this.lpToken.secondary].price;
 
         this.tvl = valueOfFirst + valueOfSecond;
+        this.lpToken.tvl = valueOfFirst + valueOfSecond;
       }
     },
 
