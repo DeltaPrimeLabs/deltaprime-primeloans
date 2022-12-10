@@ -1,5 +1,6 @@
 import {awaitConfirmation, erc20ABI, isOracleError, isPausedError, wrapContract} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
+import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
 import TOKEN_MANANGER from '@contracts/TokenManager.json';
@@ -126,14 +127,13 @@ export default {
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
       state.assetBalances = [];
+
+      const diamond = new ethers.Contract(DIAMOND_BEACON.address, DIAMOND_BEACON.abi, provider.getSigner());
+      let isActive = await diamond.getStatus();
+      await commit('setProtocolPaused', !isActive);
+
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
-        try {
-          await state.smartLoanContract.getMaxLiquidationBonus();
-          await commit('setProtocolPaused', false);
-        } catch (e) {
-          if (isPausedError(e)) await commit('setProtocolPaused', true);
-        }
         await dispatch('getAllAssetsBalances');
         await dispatch('getDebtsPerAsset');
         try {
