@@ -438,7 +438,7 @@ describe('Test deployed contracts on Avalanche', () => {
         let userBalanceAfterWithdraw = fromWei(await provider.getBalance(USER_1.address));
 
         expect(loanBalanceBeforeWithdraw - loanBalanceAfterWithdraw).to.be.equal(withdrawnAmount);
-        expect(userBalanceAfterWithdraw - userBalanceBeforeWithdraw).to.be.closeTo(withdrawnAmount, 0.0001);
+        expect(userBalanceAfterWithdraw - userBalanceBeforeWithdraw).to.be.closeTo(withdrawnAmount, 0.09);
 
         //test DEXes
 
