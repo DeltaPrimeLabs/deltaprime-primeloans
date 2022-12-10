@@ -29,7 +29,7 @@
 
       <div class="table__cell table__cell--double-value interest">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.interest != null" :value="formatTokenBalance(pool.interest)"></LoadedValue>
+          <LoadedValue :check="() => pool.interest != null" :value="formatTokenBalance(pool.interest, 8)"></LoadedValue>
         </div>
         <div class="double-value__usd">
           <span v-if="pool.interest">{{ pool.interest * pool.asset.price | usd }}</span>

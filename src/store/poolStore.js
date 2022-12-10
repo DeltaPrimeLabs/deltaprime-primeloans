@@ -56,15 +56,19 @@ export default {
           poolContract.getBorrowingRate(),
           poolContract.totalBorrowed()
         ]).then(poolDetails => {
+
+          const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
+          const apy = fromWei(poolDetails[2]);
+
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
             contract: poolContract,
             tvl: formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals),
-            deposit: formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals),
-            apy: fromWei(poolDetails[2]),
+            deposit: deposit,
+            apy: apy,
             borrowingAPY: fromWei(poolDetails[3]),
             totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
-            interest: 1.23456
+            interest: deposit * apy / 365
           };
           pools[poolAsset] = pool;
         });
