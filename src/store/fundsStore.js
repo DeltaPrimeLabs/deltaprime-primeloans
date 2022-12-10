@@ -449,7 +449,7 @@ export default {
 
       console.log(transaction);
 
-      await awaitConfirmation(transaction, provider, 'provide liquidity');
+      await awaitConfirmation(transaction, provider, 'create LP token');
 
       await dispatch('getAllAssetsBalances');
       setTimeout(async () => {
@@ -476,6 +476,10 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      console.log('remove')
+      console.log(removePaddedTrailingZeros(removeLiquidityRequest.value))
+      console.log(removeLiquidityRequest.minFirstAmount)
+      console.log(removeLiquidityRequest.minSecondAmount)
       const transaction = await wrappedContract[config.DEX_CONFIG[removeLiquidityRequest.dex].removeLiquidityMethod](
         toBytes32(removeLiquidityRequest.firstAsset),
         toBytes32(removeLiquidityRequest.secondAsset),
@@ -486,7 +490,7 @@ export default {
       );
 
 
-      await awaitConfirmation(transaction, provider, 'remove liquidity');
+      await awaitConfirmation(transaction, provider, 'unwind LP token');
 
       await dispatch('getAllAssetsBalances');
       setTimeout(async () => {

@@ -8,7 +8,7 @@
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
-          {{ assetBalance | smartRound }}
+          {{ isLP ? formatTokenBalance(assetBalance, 10, true) : formatTokenBalance(assetBalance) }}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
