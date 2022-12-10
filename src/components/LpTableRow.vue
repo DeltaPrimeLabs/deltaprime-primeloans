@@ -31,6 +31,9 @@
       </div>
 
       <div class="table__cell">
+      </div>
+
+      <div class="table__cell">
         {{ lpToken.apr | percent }}
       </div>
 

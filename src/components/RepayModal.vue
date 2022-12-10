@@ -5,6 +5,14 @@
         Repay
       </div>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{assetDebt | smartRound}}</div>
+        <span class="top-info__currency">
+          {{asset.symbol}}
+        </span>
+      </div>
+
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
                      :max="assetDebt"
@@ -67,7 +75,6 @@ export default {
   props: {
     asset: {},
     health: {},
-    debt: 0,
     initialLoan: {},
     thresholdWeightedValue: {},
     assetDebt: {},
@@ -105,15 +112,15 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      this.healthAfterTransaction = calculateHealth(this.debt - Number(this.repayValue) * this.asset.price,
-        this.thresholdWeightedValue - Number(this.repayValue) * this.asset.price * this.asset.maxLeverage);
+      this.healthAfterTransaction = Math.min(1, calculateHealth(this.assetDebt - Number(this.repayValue) * this.asset.price,
+        this.thresholdWeightedValue - Number(this.repayValue) * this.asset.price * this.asset.maxLeverage));
     },
 
     setupValidators() {
       this.validators = [
         {
           validate: (value) => {
-            if (value > this.debt) {
+            if (value > this.assetDebt) {
               return `Repay value exceeds debt`;
             }
           }
