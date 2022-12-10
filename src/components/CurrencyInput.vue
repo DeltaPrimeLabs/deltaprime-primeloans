@@ -8,7 +8,7 @@
                placeholder="0" min="0" maxlength="15" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
-        <div v-if="max" class="max-wrapper" v-on:click="setMax()">
+        <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
         </div>
         <div v-if="!embedded" class="logo-wrapper">
