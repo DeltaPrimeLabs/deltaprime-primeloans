@@ -5,6 +5,8 @@
                      class="currency-input"
                      :embedded="true"
                      :validators="validators"
+                     :warnings="warnings"
+                     :info="info"
                      v-on:inputChange="currencyInputChange"
                      :max="max"
                      :delay-error-check-after-value-propagation="true">
@@ -48,8 +50,15 @@ export default {
   },
   props: {
     assetOptions: {},
-    validators: {},
     max: {},
+    validators: {
+      type: Array, default: () => []
+    },
+    warnings: {
+      type: Array, default: () => []
+    },
+    //TODO: make an array like in validators
+    info: {type: Function, default: null},
   },
   computed: {
     getDisplayedAssetOptions() {

@@ -5,17 +5,6 @@ import IVectorFinanceStakingArtifact
 import {BigNumber} from "ethers";
 import {erc20ABI} from "./blockchain";
 
-export function acceptableSlippage(currentSlippage) {
-  if (!currentSlippage) {
-    currentSlippage = 0;
-  }
-  return currentSlippage + config.SLIPPAGE_TOLERANCE;
-}
-
-export function maxAvaxToBeSold(amount, currentSlippage) {
-  return (1 + (currentSlippage ? currentSlippage : 0)) * amount;
-}
-
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
