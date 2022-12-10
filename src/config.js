@@ -15,10 +15,10 @@ export default {
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, maxLeverage: 0.83333333333},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, maxLeverage: 0.83333333333},
-      "BTC": {name: "Bitcoin", symbol: "BTC", decimals: 8, address: addresses.BTC, maxLeverage: 0.83333333333},
-      "ETH": {name: "Ether", symbol: "ETH", decimals: 18, address: addresses.ETH, maxLeverage: 0.83333333333},
+      "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, maxLeverage: 0.83333333333},
+      "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, maxLeverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, maxLeverage: 0.83333333333},
-      "LINK": {name: "Link", symbol: "LINK", decimals: 18, address: addresses.LINK, maxLeverage: 0.83333333333},
+      "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, maxLeverage: 0.83333333333},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, maxLeverage: 0.83333333333},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, maxLeverage: 0},
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, maxLeverage: 0},
