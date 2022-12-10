@@ -11,7 +11,7 @@
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">{{ available | smartRound }}
-          <span class="top-info__currency"> {{ asset.symbol }}</span>
+          <span class="top-info__currency"> {{ asset.name }}</span>
         </div>
       </div>
 
@@ -24,7 +24,7 @@
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
-                     :symbol="asset.symbol"
+                     :symbol="asset.name"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
                      :max="Number(available)">
@@ -48,7 +48,7 @@
               <div class="summary__value">
                 {{ (Number(available) - Number(stakeValue)) > 0 ? Number(available) - Number(stakeValue) : 0 | smartRound }}
                 <span class="currency">
-                  {{asset.symbol}}
+                  {{asset.name}}
                 </span>
               </div>
             </div>
@@ -60,7 +60,7 @@
               </div>
               <div class="summary__value">
                 {{ Number(staked) + Number(stakeValue) | smartRound }}
-                <span class="currency">{{ asset.symbol }}</span>
+                <span class="currency">{{ asset.name }}</span>
               </div>
             </div>
             <div class="summary__divider divider--long"></div>
@@ -70,7 +70,7 @@
                 Daily interest ≈
               </div>
               <div class="summary__value">
-                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.symbol }}</span>
+                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
               </div>
             </div>
           </div>
