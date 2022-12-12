@@ -30,11 +30,11 @@
         {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell">
+      <div class="table__cell table__cell--double-value apr">
+        {{ apr | percent }}
       </div>
 
       <div class="table__cell">
-        {{ lpToken.apr | percent }}
       </div>
 
       <div class="table__cell actions">
@@ -99,6 +99,7 @@ export default {
 
   async mounted() {
     this.setupActionsConfiguration();
+    await this.setupApr();
   },
 
   data() {
@@ -107,6 +108,7 @@ export default {
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
+      apr: 0,
       tvl: 0
     };
   },
@@ -119,7 +121,7 @@ export default {
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
-    }
+    },
   },
 
   watch: {
@@ -183,6 +185,13 @@ export default {
           ]
         },
       ];
+    },
+
+    async setupApr() {
+      const resp = await fetch(this.lpToken.aprUrl);
+      const json = await resp.json();
+
+      this.apr = json.swapFeeApr / 100;
     },
 
     toggleChart() {
@@ -432,7 +441,7 @@ export default {
         align-items: flex-end;
       }
 
-      &.loan {
+      &.loan, &.apr {
         align-items: flex-end;
       }
 
