@@ -1,5 +1,6 @@
 <template>
   <div class="page-content">
+    <button v-on:click="testClick()">test</button>
     <Banner v-if="showNetworkBanner">
       You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
@@ -40,9 +41,11 @@ import config from '@/config';
 
 const ethereum = window.ethereum;
 import Vue from 'vue';
+import Button from './components/Button';
 
 export default {
   components: {
+    Button,
     Navbar,
     Wallet,
     Banner
@@ -77,14 +80,17 @@ export default {
         this.closeModal();
       }
     });
+    // this.serviceRegistryInit();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
-    ...mapState('fundsStore', ['protocolPaused', 'oracleError'])
+    ...mapState('fundsStore', ['protocolPaused', 'oracleError']),
+    ...mapState('serviceRegistry', ['refreshService']),
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
     ...mapActions('nft', ['initNfts']),
+    ...mapActions('serviceRegistry', ['serviceRegistryInit']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
@@ -170,7 +176,12 @@ export default {
       const blockchainData = await resp.json();
 
       this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
-    }
+    },
+
+    testClick() {
+      console.log(this.refreshService);
+      this.refreshService.emit();
+    },
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);

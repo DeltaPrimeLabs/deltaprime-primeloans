@@ -89,9 +89,10 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
-import config from "../config";
-import {erc20ABI} from "../utils/blockchain";
-import {fromWei} from "../utils/calculate";
+import config from '../config';
+import {erc20ABI} from '../utils/blockchain';
+import {fromWei} from '../utils/calculate';
+
 const ethers = require('ethers');
 
 
@@ -143,15 +144,23 @@ export default {
 
   methods: {
     submit() {
+      console.log(this.addedLiquidity);
       this.transactionOngoing = true;
-      this.$emit('PROVIDE_LIQUIDITY',
-          { firstAsset: this.firstAsset, secondAsset: this.secondAsset, firstAmount: this.firstAmount, secondAmount: this.secondAmount });
+      const provideLiquidityEvent = {
+        firstAsset: this.firstAsset,
+        secondAsset: this.secondAsset,
+        firstAmount: this.firstAmount,
+        secondAmount: this.secondAmount,
+        addedLiquidity: this.addedLiquidity
+      };
+      console.log(provideLiquidityEvent);
+      this.$emit('PROVIDE_LIQUIDITY', provideLiquidityEvent);
     },
 
     async firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
-      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(15): 0);
+      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(15) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
@@ -176,7 +185,7 @@ export default {
       const secondTokenBalance = fromWei(await secondToken.balanceOf(this.lpToken.address));
 
       this.addedLiquidity = Math.min(this.firstAmount * totalSupply / firstTokenBalance,
-          this.secondAmount * totalSupply / secondTokenBalance);
+        this.secondAmount * totalSupply / secondTokenBalance);
     },
 
     setupValidators() {

@@ -110,15 +110,26 @@ export default {
     this.setupAvailableProtocols();
     this.setupMaxStakingApy();
     this.setupTotalStaked();
+    this.watchExternalAssetBalanceUpdate();
+    this.watchExternalTotalStakedUpdate();
   },
 
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     balance() {
-      return this.asset ? (this.asset.secondary ? this.lpBalances && this.lpBalances[this.assetSymbol] : this.assetBalances && this.assetBalances[this.assetSymbol]) : 0;
+      if (this.asset) {
+        if (this.asset.secondary) {
+          return this.lpBalances && this.lpBalances[this.assetSymbol];
+        } else {
+          return this.assetBalances && this.assetBalances[this.assetSymbol];
+        }
+      } else {
+        return 0;
+      }
     },
     calculateStakingProtocolsHeight() {
       const headerHeight = 53;
@@ -171,7 +182,7 @@ export default {
           this.totalStaked = 0;
           allResults.forEach(result => {
             this.totalStaked += Number(result);
-          })
+          });
         });
       }
     },
@@ -186,6 +197,33 @@ export default {
 
     balanceChange() {
       this.setupTotalStaked();
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          console.log('staking refresh triggered for: ', updateEvent);
+          if (updateEvent.isLP) {
+            this.lpBalances[this.asset.symbol] = updateEvent.balance;
+          } else {
+            this.assetBalances[this.asset.symbol] = updateEvent.balance;
+          }
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchExternalTotalStakedUpdate() {
+      this.totalStakedExternalUpdateService.totalStakedExternalUpdate$.subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          if (updateEvent.action === 'STAKE') {
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+          } else if (updateEvent.action === 'UNSTAKE') {
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+          }
+          this.$forceUpdate();
+        }
+      });
     },
   },
   watch: {

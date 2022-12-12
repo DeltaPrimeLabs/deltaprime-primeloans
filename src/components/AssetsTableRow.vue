@@ -105,6 +105,7 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits} from '@/utils/calculate';
 import {erc20ABI} from '../utils/blockchain';
+import AssetBalancesExternalUpdateService from '../services/assetBalancesExternalUpdateService';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -122,6 +123,7 @@ export default {
   mounted() {
     this.setupActionsConfiguration();
     this.setup24HourChange();
+    this.watchExternalAssetBalanceUpdate();
   },
   data() {
     return {
@@ -134,6 +136,7 @@ export default {
     ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -265,9 +268,17 @@ export default {
           asset: this.asset.symbol,
           amount: value.toFixed(config.DECIMALS_PRECISION)
         };
-        this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}).then(() => {
-          this.closeModal();
-        });
+        this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
+          console.log('success');
+          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
+          this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
+          this.$forceUpdate();
+        }, () => {
+          console.log('fail');
+        })
+          .then(() => {
+            this.closeModal();
+          });
       });
     },
 
@@ -280,12 +291,20 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.$on('SWAP', swapData => {
+      modalInstance.$on('SWAP', swapEvent => {
         const swapRequest = {
-          ...swapData,
-          sourceAmount: swapData.sourceAmount.toFixed(config.DECIMALS_PRECISION)
+          ...swapEvent,
+          sourceAmount: swapEvent.sourceAmount.toFixed(config.DECIMALS_PRECISION)
         };
-        this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
+        this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+          const sourceBalanceAfterTransaction = Number(this.assetBalances[swapRequest.sourceAsset]) - Number(swapRequest.sourceAmount);
+          const targetBalanceAfterTransaction = Number(this.assetBalances[swapRequest.targetAsset]) + Number(swapRequest.targetAmount);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterTransaction);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterTransaction);
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });
@@ -294,7 +313,6 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       this.updateBalance().then(() => {
-        console.log('updated balance', this.accountBalance);
         modalInstance.setWalletNativeTokenBalance(this.accountBalance);
         this.$forceUpdate();
       });
@@ -314,7 +332,12 @@ export default {
             });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
-              this.handleTransaction(this.fundNativeToken, {value: value}).then(() => {
+              this.handleTransaction(this.fundNativeToken, {value: value}, () => {
+                console.log('TX____________ internal success');
+              }, () => {
+                console.log('TX____________ internal fail');
+              }).then(() => {
+                console.log('tx success native');
                 this.closeModal();
               });
             } else {
@@ -323,7 +346,14 @@ export default {
                 asset: this.asset.symbol,
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
+              this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+                console.log('fund erc20 success');
+                this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
+                this.$forceUpdate();
+              }, () => {
+                console.log('fund failed');
+              }).then(() => {
+                console.log('handle transactions then callback');
                 this.closeModal();
               });
             }
@@ -348,18 +378,31 @@ export default {
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
-          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}).then(() => {
-            this.closeModal();
-          });
+          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
+            console.log('withdraw native on success');
+          }, () => {
+            console.log('withdraw native on fail');
+          })
+            .then(() => {
+              this.closeModal();
+            });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
-          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
-            this.closeModal();
-          });
+          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+            console.log('withdraw success');
+            this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
+            this.$forceUpdate();
+          }, () => {
+            console.log('withdraw fail');
+          })
+            .then(() => {
+              console.log('withdraw then');
+              this.closeModal();
+            });
         }
       });
     },
@@ -376,7 +419,14 @@ export default {
           asset: this.asset.symbol,
           amount: value.toFixed(config.DECIMALS_PRECISION)
         };
-        this.handleTransaction(this.repay, {repayRequest: repayRequest}).then(() => {
+        this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
+          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
+          this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
+          this.$forceUpdate();
+        }, () => {
+
+        })
+          .then(() => {
           this.closeModal();
         });
       });
@@ -385,6 +435,16 @@ export default {
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          console.log('refresh triggered for: ', updateEvent);
+          this.assetBalances[this.asset.symbol] = updateEvent.balance;
+          this.$forceUpdate();
+        }
+      });
     },
   },
   watch: {

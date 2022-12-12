@@ -114,6 +114,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets']),
     ...mapState('network', ['provider', 'account']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -269,9 +270,22 @@ export default {
             secondAsset: this.lpToken.secondary,
             firstAmount: provideLiquidityEvent.firstAmount.toFixed(config.DECIMALS_PRECISION),
             secondAmount: provideLiquidityEvent.secondAmount.toFixed(config.DECIMALS_PRECISION),
-            dex: this.lpToken.dex
+            dex: this.lpToken.dex,
+            addedLiquidity: provideLiquidityEvent.addedLiquidity,
         };
-          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}).then(() => {
+          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
+            const firstBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.firstAsset]) - Number(provideLiquidityRequest.firstAmount);
+            const secondBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.secondAsset]) - Number(provideLiquidityRequest.secondAmount);
+            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
+            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
+            console.log(Number(this.lpBalances[this.lpToken.symbol]));
+            console.log(Number(provideLiquidityRequest.addedLiquidity));
+            this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
+            console.log(this.lpBalances[this.lpToken.symbol]);
+            this.$forceUpdate();
+          }, () => {
+
+          }).then(() => {
             this.closeModal();
           });
         }
@@ -297,7 +311,19 @@ export default {
           dex: this.lpToken.dex
         }
 
-        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}).then(() => {
+        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+          const firstBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.firstAsset]) + Number(removeLiquidityRequest.minFirstAmount);
+          const secondBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.secondAsset]) + Number(removeLiquidityRequest.minSecondAmount);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
+          console.log(this.lpBalances[this.lpToken.symbol]);
+          console.log(removeLiquidityRequest.value);
+          this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
+          console.log(this.lpBalances[this.lpToken.symbol]);
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });

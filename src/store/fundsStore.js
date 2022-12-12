@@ -328,6 +328,7 @@ export default {
     },
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
+      console.log('fund', fundRequest.asset);
       const provider = rootState.network.provider;
 
       const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
@@ -343,9 +344,7 @@ export default {
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'fund');
-      await dispatch('getAllAssetsBalances');
       setTimeout(async () => {
-        await dispatch('updateFunds');
         await dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
 
@@ -364,12 +363,13 @@ export default {
         [config.nativeToken]
       ]);
 
-      const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
         gasLimit: 8000000
       });
 
       console.log('firing transaction');
+      console.log(transaction);
       await awaitConfirmation(transaction, provider, 'fund');
       console.log('transaction success');
       setTimeout(async () => {
@@ -391,12 +391,9 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
         parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 8000000});
       await awaitConfirmation(transaction, provider, 'withdraw');
-      setTimeout(async () => {
-        await dispatch('updateFunds');
-      }, 1000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -450,11 +447,6 @@ export default {
 
       await awaitConfirmation(transaction, provider, 'create LP token');
 
-      await dispatch('getAllAssetsBalances');
-      setTimeout(async () => {
-        await dispatch('updateFunds');
-      }, 1000);
-
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, 30000);
@@ -491,11 +483,6 @@ export default {
 
       await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      await dispatch('getAllAssetsBalances');
-      setTimeout(async () => {
-        await dispatch('updateFunds');
-      }, 1000);
-
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, 30000);
@@ -515,7 +502,6 @@ export default {
 
       await awaitConfirmation(transaction, provider, 'borrow');
       setTimeout(async () => {
-        await dispatch('updateFunds');
         await dispatch('poolStore/setupPools', {}, {root: true});
       }, 1000);
 
@@ -536,7 +522,6 @@ export default {
 
       await awaitConfirmation(transaction, provider, 'repay');
       setTimeout(async () => {
-        await dispatch('updateFunds');
         await dispatch('poolStore/setupPools', {}, {root: true});
       }, 1000);
 
@@ -569,9 +554,6 @@ export default {
       );
 
       await awaitConfirmation(transaction, provider, 'swap');
-      setTimeout(async () => {
-        await dispatch('updateFunds');
-      }, 1000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
