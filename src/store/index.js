@@ -6,6 +6,7 @@ import nft from './nft';
 import fundsStore from './fundsStore';
 import poolStore from './poolStore';
 import stakeStore from './stakeStore';
+import serviceRegistry from './serviceRegistry';
 
 Vue.use(Vuex);
 
@@ -15,6 +16,7 @@ export default new Vuex.Store({
     nft,
     fundsStore,
     poolStore,
-    stakeStore
+    stakeStore,
+    serviceRegistry
   },
 });

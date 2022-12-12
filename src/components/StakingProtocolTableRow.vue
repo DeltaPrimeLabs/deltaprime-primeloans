@@ -45,8 +45,10 @@
 
       <div class="table__cell">
         <div class="actions">
-          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/plus.svg" v-on:click="openStakeModal()">
-          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/minus.svg" v-on:click="openUnstakeModal()">
+          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/plus.svg"
+               v-on:click="openStakeModal()">
+          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/minus.svg"
+               v-on:click="openUnstakeModal()">
         </div>
       </div>
 
@@ -97,6 +99,7 @@ export default {
   computed: {
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
     calculateDailyInterest() {
       return this.apy / 365 * this.balance;
     },
@@ -113,7 +116,9 @@ export default {
   methods: {
     ...mapActions('stakeStore', ['stake', 'unstake']),
     openStakeModal() {
-      if (this.disabled) {return;}
+      if (this.disabled) {
+        return;
+      }
 
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
@@ -129,18 +134,35 @@ export default {
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals
         };
-        this.handleTransaction(this.stake, {stakeRequest: stakeRequest}).then(() => {
+        this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
+          console.log('stake success');
+          console.log(this.balance);
+          console.log(stakeRequest.amount);
+          this.balance = Number(this.balance) + Number(stakeRequest.amount);
+          const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
+          const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, isLP);
+          this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
+          this.$forceUpdate();
+        }, () => {
+          console.log('stake fail');
+
+        }).then(() => {
           this.closeModal();
-          this.farm.staked(this.smartLoanContract.address).then((balance) => {
-            this.balance = balance;
-            this.$emit('balanceChange', this.balance);
-          });
+          setTimeout(() => {
+            this.farm.staked(this.smartLoanContract.address).then((balance) => {
+              this.balance = balance;
+              this.$emit('balanceChange', this.balance);
+            });
+          }, 30000);
         });
       });
     },
 
     openUnstakeModal() {
-      if (this.disabled) {return;}
+      if (this.disabled) {
+        return;
+      }
 
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
@@ -155,12 +177,26 @@ export default {
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals
         };
-        this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}).then(result => {
+        this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
+          console.log('unstake success');
+          console.log(this.balance);
+          console.log(unstakeRequest.amount);
+          this.balance = Number(this.balance) - Number(unstakeRequest.amount);
+          const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
+          const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, isLP);
+          this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
+          this.$forceUpdate();
+        }, () => {
+          console.log('unstake fail');
+        }).then(result => {
           this.closeModal();
-          this.farm.staked(this.smartLoanContract.address).then((balance) => {
-            this.balance = balance;
-            this.$emit('balanceChange', this.balance);
-          });
+          setTimeout(() => {
+            this.farm.staked(this.smartLoanContract.address).then((balance) => {
+              this.balance = balance;
+              this.$emit('balanceChange', this.balance);
+            });
+          }, 30000);
         });
       });
     },

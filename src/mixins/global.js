@@ -26,7 +26,7 @@ export default {
       return parseInt(hex, 16);
     },
 
-    formatTokenBalance(value, precision = 5, toFixed = false) {
+      formatTokenBalance(value, precision = 5, toFixed = false) {
       const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
       const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);

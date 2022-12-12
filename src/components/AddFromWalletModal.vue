@@ -160,7 +160,6 @@ export default {
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      console.log('this.walletAssetBalance', this.walletAssetBalance);
       if (this.asset.symbol === 'AVAX') {
         if (this.selectedDepositAsset === 'AVAX') {
           return this.walletNativeTokenBalance;
