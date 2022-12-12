@@ -11,7 +11,7 @@ import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 
 //This path is updated during deployment
-import "../lib/avalanche/DeploymentConstants.sol";
+import "../lib/local/DeploymentConstants.sol";
 
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     struct AssetPrice {

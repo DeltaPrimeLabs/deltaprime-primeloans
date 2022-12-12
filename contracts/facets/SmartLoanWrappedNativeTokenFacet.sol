@@ -7,7 +7,7 @@ import "../interfaces/IWrappedNativeToken.sol";
 import "../lib/SolvencyMethods.sol";
 
 //This path is updated during deployment
-import "../lib/avalanche/DeploymentConstants.sol";
+import "../lib/local/DeploymentConstants.sol";
 
 contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
     using TransferHelper for address payable;

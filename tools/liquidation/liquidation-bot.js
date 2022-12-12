@@ -5,16 +5,18 @@ import LOAN_LIQUIDATION
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
-import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
+import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
+import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
+import {ethers} from 'hardhat'
+import {SmartLoanGigaChadInterface} from "../../typechain";
 
 const args = require('yargs').argv;
 const https = require('https');
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
-import {ethers} from 'hardhat'
-import {BigNumber} from "ethers";
-import {expect} from "chai";
+
 const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const fs = require('fs');
@@ -30,7 +32,7 @@ const erc20ABI = [
     'function transfer(address dst, uint wad) public returns (bool)'
 ]
 
-const PRIVATE_KEY =  fs.readFileSync(path.resolve(__dirname, "./.private")).toString().trim();
+const PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "./.private")).toString().trim();
 const RPC_URL = getUrlForNetwork(network);
 
 let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
@@ -39,13 +41,14 @@ const factory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, w
 
 
 async function wrapLoanStatus(loanAddress) {
-    let loan = wrapLogicFacet(loanAddress);
+    let loan = await wrapLoan(loanAddress);
     let rawStatus = await loan.getFullLoanStatus();
     let status = {
         value: rawStatus[0].toString(),
         debt: rawStatus[1].toString(),
-        solvencyRatio: parseFloat(rawStatus[2].toString()),
-        isSolvent: parseInt(rawStatus[3].toString()) == 1 ? true : false
+        getThresholdWeightedValue: rawStatus[2].toString(),
+        healthRatio: parseFloat(rawStatus[3].toString()),
+        isSolvent: parseInt(rawStatus[4].toString()) == 1 ? true : false
     };
     return status;
 }
@@ -57,7 +60,8 @@ async function wrapLoan(loanAddress) {
         {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
-            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "USDT", "sAVAX", "QI", "PNG", "PTP", "PNG_AVAX_USDC_LP", "PNG_AVAX_USDT_LP", "PNG_AVAX_ETH_LP", "TJ_AVAX_USDC_LP", "TJ_AVAX_USDT_LP", "TJ_AVAX_ETH_LP", "TJ_AVAX_BTC_LP", "TJ_AVAX_sAVAX_LP", "YY_AAVE_AVAX", "YY_PTP_sAVAX", "YY_PNG_AVAX_USDC_LP", "YY_PNG_AVAX_ETH_LP", "YY_TJ_AVAX_sAVAX_LP", "YY_TJ_AVAX_USDC_LP", "YY_TJ_AVAX_ETH_LP"],
+            disablePayloadsDryRun: true
         },
         [
             "https://cache-service-direct-1.a.redstone.finance",
@@ -76,7 +80,7 @@ function wrapLiquidationFacet(loanAddress) {
         {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
-            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "LINK"],
+            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "USDT", "sAVAX", "QI", "PNG", "PTP", "PNG_AVAX_USDC_LP", "PNG_AVAX_USDT_LP", "PNG_AVAX_ETH_LP", "TJ_AVAX_USDC_LP", "TJ_AVAX_USDT_LP", "TJ_AVAX_ETH_LP", "TJ_AVAX_BTC_LP", "TJ_AVAX_sAVAX_LP", "YY_AAVE_AVAX", "YY_PTP_sAVAX", "YY_PNG_AVAX_USDC_LP", "YY_PNG_AVAX_ETH_LP", "YY_TJ_AVAX_sAVAX_LP", "YY_TJ_AVAX_USDC_LP", "YY_TJ_AVAX_ETH_LP"],
             disablePayloadsDryRun: true
         },
         [
@@ -100,7 +104,7 @@ async function getInsolventLoans() {
     let loans = await getAllLoans();
     let insolventLoans = []
     await Promise.all(loans.map(async (loan) => {
-        if((await wrapLoanStatus(loan)).isSolvent === false) {
+        if ((await wrapLoanStatus(loan)).isSolvent === false) {
             insolventLoans.push(loan)
         }
     }));
@@ -109,18 +113,9 @@ async function getInsolventLoans() {
 
 export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
     let loan = await wrapLoan(loanAddress);
-    let liquidateFacet = wrapLiquidationFacet(loanAddress);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
-    let maxBonus = (await liquidateFacet.getMaxLiquidationBonus()).toNumber() / 1000;
-
-    // const bonus = calculateBonus(
-    //     'LIQUIDATE',
-    //     fromWei(await solvencyLoan.getDebt()),
-    //     fromWei(await solvencyLoan.getTotalValue()),
-    //     4.1,
-    //     maxBonus
-    // );
+    let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
     //TODO: optimize to unstake only as much as needed
     for (let p of await loan.getStakedPositions()) {
@@ -197,11 +192,16 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
     const bonusInWei = (bonus * 1000).toFixed(0);
 
     let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, diamondOwner);
-    await liquidatorsList.whitelistLiquidators([wallet.address]);
-    expect(await liquidatorsList.isLiquidatorWhitelisted(wallet.address)).to.be.true;
+    if (!(await liquidatorsList.isLiquidatorWhitelisted(wallet.address))) {
+        await liquidatorsList.whitelistLiquidators([wallet.address]);
+    }
 
-    let tx = await liquidateFacet.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
-    await provider.waitForTransaction(tx.hash);
+    if (!loanIsBankrupt) {
+        let tx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
+        await provider.waitForTransaction(tx.hash);
+    } else {
+        console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
+    }
 }
 
 
@@ -219,15 +219,21 @@ async function liquidateInsolventLoans() {
         let loans = await getInsolventLoans();
         console.log(`INSOLVENT LOANS[${loans.length}]: ${loans}`)
 
-        for(const x in loans) {
-            await liquidateLoan(loans[x]);
+        for (const x in loans) {
+            await liquidateLoan(loans[x], TOKEN_MANAGER_TUP.address, SMART_LOAN_DIAMOND.address, wallet);
         }
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }
+
+const run = liquidateInsolventLoans;
+
 
 function getTokenContract(address) {
     return new ethers.Contract(address, erc20ABI, wallet);
 }
 
 console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}. Minutes sync: ${minutesSync}`);
+run();
+
+module.exports.liquidateInsolventLoans = liquidateInsolventLoans;

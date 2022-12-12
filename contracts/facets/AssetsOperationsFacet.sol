@@ -11,7 +11,7 @@ import "../lib/SolvencyMethods.sol";
 import "../TokenManager.sol";
 
 //this path is updated during deployment
-import "../lib/avalanche/DeploymentConstants.sol";
+import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;

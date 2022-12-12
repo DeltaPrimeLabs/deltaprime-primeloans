@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "../UniswapV2Intermediary.sol";
-import "../../lib/avalanche/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
 /**
  * @title PangolinIntermediary
