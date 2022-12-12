@@ -107,6 +107,12 @@ export default {
 
   props: {
     asset: {},
+    assets: {},
+    assetBalances: {},
+    debtsPerAsset: {},
+    lpAssets: {},
+    lpBalances: {},
+    farms: {},
     thresholdWeightedValue: Number,
     loan: Number,
     assetBalance: Number,
@@ -177,11 +183,43 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      if (this.value) {
-        this.healthAfterTransaction = calculateHealth(this.loan, this.thresholdWeightedValue + this.value * this.asset.price * this.asset.maxLeverage);
-      } else {
-        this.healthAfterTransaction = this.health !== null ? this.health : 0;
+      if (this.noSmartLoan) this.healthAfterTransaction = 1;
+
+      let added = this.value ? this.value : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = (this.debtsPerAsset && this.debtsPerAsset[symbol]) ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.asset.symbol) {
+          balance += added;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
       }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        let balance = parseFloat(this.lpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance += added;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.balance),
+            borrowed: 0,
+            debtCoverage: farm.maxLeverage
+          });
+        });
+      }
+
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
 
     setupValidators() {

@@ -4,7 +4,7 @@
       <StatsBarBeta
         :total-value="noSmartLoanInternal ? 0 : totalValue"
         :debt="noSmartLoanInternal ? 0 : debt"
-        :health="noSmartLoanInternal ? 0 : health"
+        :health="noSmartLoanInternal ? 0 : getHealth"
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
@@ -59,6 +59,7 @@ export default {
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble},
   computed: {
     ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan']),
+    ...mapState('stakeStore', ['farms']),
     ...mapGetters('fundsStore', ['getHealth'])
   },
   watch: {

@@ -101,7 +101,12 @@ export default {
   props: {
     asset: {},
     health: {},
-    assetBalance: {},
+    assetBalances: {},
+    assets: {},
+    farms: {},
+    debtsPerAsset: {},
+    lpAssets: {},
+    lpBalances: {},
   },
 
   data() {
@@ -161,9 +166,42 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      let withdrawValue = this.withdrawValue ? this.withdrawValue : 0;
-      this.healthAfterTransaction = calculateHealth(this.debt + withdrawValue * this.asset.price,
-        this.thresholdWeightedValue + withdrawValue * this.asset.price * this.asset.maxLeverage);
+      let withdrawn = this.withdrawValue ? this.withdrawValue : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        let balance = parseFloat(this.lpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.balance),
+            borrowed: 0,
+            debtCoverage: farm.maxLeverage
+          });
+        });
+      }
+
+      this.healthAfterTransaction = calculateHealthNew(tokens);
+
       this.$forceUpdate();
     },
 

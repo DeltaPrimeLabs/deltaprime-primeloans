@@ -78,6 +78,12 @@ export default {
     initialLoan: {},
     thresholdWeightedValue: {},
     assetDebt: {},
+    assetBalances: {},
+    assets: {},
+    debtsPerAsset: {},
+    lpAssets: {},
+    lpBalances: {},
+    farms: {}
   },
 
   data() {
@@ -112,8 +118,37 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      this.healthAfterTransaction = Math.min(1, calculateHealth(this.assetDebt - Number(this.repayValue) * this.asset.price,
-        this.thresholdWeightedValue - Number(this.repayValue) * this.asset.price * this.asset.maxLeverage));
+      let repaid = this.repayValue ? this.repayValue : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          borrowed -= repaid;
+          balance -= repaid;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.balance),
+            borrowed: 0,
+            debtCoverage: farm.maxLeverage
+          });
+        });
+      }
+
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
 
     setupValidators() {

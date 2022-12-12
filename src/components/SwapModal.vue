@@ -133,7 +133,11 @@ export default {
       targetInputError: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       healthAfterTransaction: 0,
-      assetBalances: [],
+      assetBalances: {},
+      assets: {},
+      debtsPerAsset: {},
+      lpAssets: {},
+      lpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -322,14 +326,28 @@ export default {
       ];
     },
 
-    calculateHealthAfterTransaction(sourceAssetAmount = this.sourceAssetAmount, targetAssetAmount = this.targetAssetAmount) {
-      const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
-      const targetAsset = config.ASSETS_CONFIG[this.targetAsset];
-      const weightedSourceAssetValue = sourceAssetAmount * sourceAsset.price * sourceAsset.maxLeverage;
-      const weightedTargetAssetValue = targetAssetAmount * targetAsset.price * targetAsset.maxLeverage;
+    calculateHealthAfterTransaction() {
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
 
-      this.healthAfterTransaction = calculateHealth(this.debt, this.thresholdWeightedValue - weightedSourceAssetValue + weightedTargetAssetValue);
-      return this.healthAfterTransaction;
+        if (this.sourceAsset === this.asset) {
+          balance -= this.sourceAssetAmount;
+        }
+
+        if (this.targetAsset === this.asset) {
+          balance += this.minTargetAssetAmount;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.maxLeverage});
+      }
+
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
   }
 };

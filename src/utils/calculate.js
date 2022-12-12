@@ -9,8 +9,12 @@ export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
-export function calculateHealth(debt, thresholdWeightedValue) {
-  return thresholdWeightedValue === 0 ? 0 : Math.max(1 - debt / thresholdWeightedValue, 0);
+export function calculateHealth(tokens) {
+  let weightedCollateral = tokens.reduce((acc, t) => acc + t.price * (t.balance - t.borrowed) * t.debtCoverage, 0);
+  let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
+  let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
+
+  return weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0;
 }
 
 export function mergeArrays(arrays) {

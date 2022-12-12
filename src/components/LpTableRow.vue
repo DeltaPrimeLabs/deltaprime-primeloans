@@ -112,7 +112,8 @@ export default {
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets']),
+    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets', 'debtsPerAsset', 'lpAssets', 'lpBalances']),
+    ...mapState('stakeStore', ['farms']),
     ...mapState('network', ['provider', 'account']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
 
@@ -218,6 +219,12 @@ export default {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = true;
@@ -241,6 +248,12 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {

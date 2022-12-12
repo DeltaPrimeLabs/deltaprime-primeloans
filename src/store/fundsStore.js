@@ -8,9 +8,9 @@ import TOKEN_MANANGER_TUP from '@contracts/TokenManagerTUP.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
-import {BigNumber, Contract} from 'ethers';
+import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -111,10 +111,47 @@ export default {
   },
 
   getters: {
-    getHealth(state) {
-      if (state.fullLoanStatus) {
-        return state.fullLoanStatus.thresholdWeightedValue ? Math.max(1 - state.fullLoanStatus.debt / state.fullLoanStatus.thresholdWeightedValue) : 0;
+    getHealth(state, getters, rootState) {
+      if (state.noSmartLoan) return 1;
+
+      let health = 0;
+
+      if (state.debtsPerAsset && state.assets && state.assetBalances && state.lpAssets && state.lpBalances && rootState.stakeStore && rootState.stakeStore.farms) {
+        let tokens = [];
+        for (const [symbol, data] of Object.entries(state.assets)) {
+          let borrowed = state.debtsPerAsset[symbol] ? parseFloat(state.debtsPerAsset[symbol].debt) : 0;
+
+          tokens.push({
+            price: data.price,
+            balance: parseFloat(state.assetBalances[symbol]),
+            borrowed: borrowed,
+            debtCoverage: data.maxLeverage
+          });
+        }
+
+        for (const [symbol, data] of Object.entries(state.lpAssets)) {
+          tokens.push({
+            price: data.price,
+            balance: parseFloat(state.lpBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.maxLeverage
+          });
+        }
+
+        for (const [, farms] of Object.entries(rootState.stakeStore.farms)) {
+          farms.forEach(farm => {
+            tokens.push({
+              price: farm.price,
+              balance: parseFloat(farm.balance),
+              borrowed: 0,
+              debtCoverage: farm.maxLeverage
+            });
+          });
+        }
+
+        health = calculateHealth(tokens);
       }
+      return health;
     }
   },
 
@@ -125,6 +162,7 @@ export default {
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
+      await dispatch('stakeStore/updateStakedPrices', null, { root: true });
       state.assetBalances = [];
 
       const diamond = new ethers.Contract(DIAMOND_BEACON.address, DIAMOND_BEACON.abi, provider.getSigner());
@@ -134,6 +172,7 @@ export default {
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
         await dispatch('getAllAssetsBalances');
+        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
         await dispatch('getDebtsPerAsset');
         try {
           await dispatch('getFullLoanStatus');
@@ -467,10 +506,6 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      console.log('remove')
-      console.log(removePaddedTrailingZeros(removeLiquidityRequest.value))
-      console.log(removeLiquidityRequest.minFirstAmount)
-      console.log(removeLiquidityRequest.minSecondAmount)
       const transaction = await wrappedContract[config.DEX_CONFIG[removeLiquidityRequest.dex].removeLiquidityMethod](
         toBytes32(removeLiquidityRequest.firstAsset),
         toBytes32(removeLiquidityRequest.secondAsset),
