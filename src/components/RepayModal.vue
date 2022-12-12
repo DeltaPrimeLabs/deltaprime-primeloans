@@ -130,11 +130,11 @@ export default {
           balance -= repaid;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
-        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
       for (const [, farms] of Object.entries(this.farms)) {
@@ -143,7 +143,7 @@ export default {
             price: farm.price,
             balance: parseFloat(farm.balance),
             borrowed: 0,
-            debtCoverage: farm.maxLeverage
+            debtCoverage: farm.debtCoverage
           });
         });
       }

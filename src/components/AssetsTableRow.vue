@@ -37,7 +37,7 @@
       </div>
 
       <div class="table__cell impact">
-        <span v-if="asset.maxLeverage > 0">5x</span>
+        <span v-if="asset.debtCoverage > 0">5x</span>
         <span v-else>0x</span>
       </div>
 

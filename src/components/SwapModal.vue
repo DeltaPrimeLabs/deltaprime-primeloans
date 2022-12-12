@@ -340,11 +340,11 @@ export default {
           balance += this.minTargetAssetAmount;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
-        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
       this.healthAfterTransaction = calculateHealth(tokens);

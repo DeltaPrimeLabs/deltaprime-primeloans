@@ -176,7 +176,7 @@ export default {
           balance -= withdrawn;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
@@ -186,7 +186,7 @@ export default {
           balance -= withdrawn;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.maxLeverage});
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
       for (const [, farms] of Object.entries(this.farms)) {
@@ -195,7 +195,7 @@ export default {
             price: farm.price,
             balance: parseFloat(farm.balance),
             borrowed: 0,
-            debtCoverage: farm.maxLeverage
+            debtCoverage: farm.debtCoverage
           });
         });
       }
@@ -231,7 +231,7 @@ export default {
     calculateMaxWithdraw() {
       const MIN_HEALTH = 0.0182;
       const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
-      const denominator = this.asset.price - (this.asset.price * this.asset.maxLeverage) + (MIN_HEALTH * this.asset.price * this.asset.maxLeverage);
+      const denominator = this.asset.price - (this.asset.price * this.asset.debtCoverage) + (MIN_HEALTH * this.asset.price * this.asset.debtCoverage);
       const maxWithdrawLimitedByHealth = numerator / denominator;
       this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
     },
