@@ -1,6 +1,6 @@
 <template>
   <div class="page-content">
-    <button v-on:click="testClick()">test</button>
+<!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
       You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
