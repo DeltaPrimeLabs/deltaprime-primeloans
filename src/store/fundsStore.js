@@ -125,7 +125,7 @@ export default {
             price: data.price,
             balance: parseFloat(state.assetBalances[symbol]),
             borrowed: borrowed,
-            debtCoverage: data.maxLeverage
+            debtCoverage: data.debtCoverage
           });
         }
 
@@ -134,20 +134,25 @@ export default {
             price: data.price,
             balance: parseFloat(state.lpBalances[symbol]),
             borrowed: 0,
-            debtCoverage: data.maxLeverage
+            debtCoverage: data.debtCoverage
           });
         }
 
         for (const [, farms] of Object.entries(rootState.stakeStore.farms)) {
+
           farms.forEach(farm => {
+            console.log('farm')
+            console.log(farm)
             tokens.push({
               price: farm.price,
               balance: parseFloat(farm.balance),
               borrowed: 0,
-              debtCoverage: farm.maxLeverage
+              debtCoverage: farm.debtCoverage
             });
           });
         }
+
+        console.log(tokens)
 
         health = calculateHealth(tokens);
       }

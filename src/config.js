@@ -13,16 +13,16 @@ export default {
     chainId: 43114,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
-      "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, maxLeverage: 0.83333333333},
-      "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, maxLeverage: 0.83333333333},
-      "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, maxLeverage: 0.83333333333},
-      "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, maxLeverage: 0.83333333333},
-      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, maxLeverage: 0.83333333333},
-      "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, maxLeverage: 0.83333333333},
-      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, maxLeverage: 0.83333333333},
-      "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, maxLeverage: 0},
-      "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, maxLeverage: 0},
-      "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, maxLeverage: 0},
+      "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, debtCoverage: 0.83333333333},
+      "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
+      "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
+      "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
+      "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
+      "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, debtCoverage: 0.83333333333},
+      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333},
+      "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0},
+      "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0},
+      "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0},
     },
     POOLS_CONFIG: {
         AVAX: {
@@ -35,14 +35,14 @@ export default {
         }
     },
     LP_ASSETS_CONFIG: {
-        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP},
-        "PNG_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP},
-        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP},
-        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP},
-        "TJ_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP},
-        "TJ_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP},
-        "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP},
-        "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP},
+        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
     },
     DEX_CONFIG: {
         'Pangolin': {
@@ -80,7 +80,8 @@ export default {
                 unstakeMethod: 'unstakeAVAXYak',
                 feedSymbol: 'YY_AAVE_AVAX',
                 token: 'AVAX',
-                info: 'This strategy compounds AVAX in AAVE'
+                info: 'This strategy compounds AVAX in AAVE',
+                debtCoverage: 0.83333333333
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -90,7 +91,8 @@ export default {
                 unstakeMethod: 'vectorUnstakeWAVAX1',
                 minAmount: 0.8,
                 token: 'AVAX',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply'
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
+                debtCoverage: 0.83333333333
             }
         ],
         sAVAX: [
@@ -100,7 +102,8 @@ export default {
                 staked: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
-                token: 'SAVAX'
+                token: 'SAVAX',
+                debtCoverage: 0.83333333333
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -110,7 +113,8 @@ export default {
                 unstakeMethod: 'vectorUnstakeSAVAX1',
                 minAmount: 0.8,
                 token: 'SAVAX',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply'
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
+                debtCoverage: 0.83333333333
             }
         ],
         USDC: [
@@ -122,7 +126,8 @@ export default {
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
                 minAmount: 0.8,
-                token: 'USDC'
+                token: 'USDC',
+                debtCoverage: 0.83333333333
             }
         ],
         PNG_AVAX_USDC_LP: [
@@ -133,7 +138,8 @@ export default {
                 stakeMethod: 'stakePNGAVAXUSDCYak',
                 unstakeMethod: 'unstakePNGAVAXUSDCYak',
                 feedSymbol: 'YY_PNG_AVAX_USDC_LP',
-                token: 'PNG_AVAX_USDC_LP'
+                token: 'PNG_AVAX_USDC_LP',
+                debtCoverage: 0.83333333333
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -144,7 +150,8 @@ export default {
                 stakeMethod: 'stakePNGAVAXETHYak',
                 unstakeMethod: 'unstakePNGAVAXETHYak',
                 feedSymbol: 'YY_PNG_AVAX_ETH_LP',
-                token: 'PNG_AVAX_ETH_LP'
+                token: 'PNG_AVAX_ETH_LP',
+                debtCoverage: 0.83333333333
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -156,6 +163,8 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
                 feedSymbol: 'YY_TJ_AVAX_USDC_LP',
                 token: 'TJ_AVAX_USDC_LP',
+                debtCoverage: 0.83333333333
+
             }
         ],
         TJ_AVAX_ETH_LP: [
@@ -166,7 +175,8 @@ export default {
                 stakeMethod: 'stakeTJAVAXETHYak',
                 unstakeMethod: 'unstakeTJAVAXETHYak',
                 feedSymbol: 'YY_TJ_AVAX_ETH_LP',
-                token: 'TJ_AVAX_ETH_LP'
+                token: 'TJ_AVAX_ETH_LP',
+                debtCoverage: 0.83333333333
             }
         ],
         TJ_AVAX_sAVAX_LP: [
@@ -177,7 +187,8 @@ export default {
                 stakeMethod: 'stakeTJAVAXSAVAXYak',
                 unstakeMethod: 'unstakeTJAVAXSAVAXYak',
                 feedSymbol: 'YY_TJ_AVAX_sAVAX_LP',
-                token: 'TJ_AVAX_sAVAX_LP'
+                token: 'TJ_AVAX_sAVAX_LP',
+                debtCoverage: 0.83333333333
             }
         ],
     },
