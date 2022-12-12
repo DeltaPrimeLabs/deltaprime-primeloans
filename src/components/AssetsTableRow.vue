@@ -351,7 +351,8 @@ export default {
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
-                console.log('TX____________ internal success');
+                this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
+                this.$forceUpdate();
               }, () => {
                 console.log('TX____________ internal fail');
               }).then(() => {
@@ -403,7 +404,8 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
-            console.log('withdraw native on success');
+            this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
+            this.$forceUpdate();
           }, () => {
             console.log('withdraw native on fail');
           })

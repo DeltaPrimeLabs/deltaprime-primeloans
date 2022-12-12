@@ -29,10 +29,10 @@
 
       <div class="table__cell table__cell--double-value interest">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.interest != null" :value="formatTokenBalance(pool.interest, 8)"></LoadedValue>
+          <LoadedValue :check="() => dailyInterest != null" :value="formatTokenBalance(dailyInterest, 8, true)"></LoadedValue>
         </div>
         <div class="double-value__usd">
-          <span v-if="pool.interest">{{ pool.interest * pool.asset.price | usd }}</span>
+          <span v-if="dailyInterest != null">{{ dailyInterest * pool.asset.price | usd }}</span>
         </div>
       </div>
 
@@ -88,7 +88,14 @@ export default {
   },
 
   computed: {
-    ...mapState('network', ['accountBalance'])
+    ...mapState('network', ['accountBalance']),
+    dailyInterest() {
+      if (this.pool && this.pool.deposit !== null && this.pool.apy !== null) {
+        return this.pool.deposit * this.pool.apy / 365;
+      } else {
+        return null;
+      }
+    },
   },
 
   methods: {
@@ -132,7 +139,12 @@ export default {
           depositNativeToken: depositEvent.depositNativeToken
         };
 
-        this.handleTransaction(this.deposit, {depositRequest: depositRequest}).then(() => {
+        this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
+          this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });
@@ -150,7 +162,12 @@ export default {
           amount: withdrawEvent.value,
           withdrawNativeToken: withdrawEvent.withdrawNativeToken,
         };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });

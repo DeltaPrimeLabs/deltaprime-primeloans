@@ -98,9 +98,12 @@ export default {
       }
       await awaitConfirmation(depositTransaction, provider, 'deposit');
       setTimeout(() => {
-        dispatch('setupPools');
         dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
+
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 30000);
     },
 
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
@@ -120,9 +123,12 @@ export default {
       await awaitConfirmation(withdrawTransaction, provider, 'deposit');
 
       setTimeout(() => {
-        dispatch('setupPools');
         dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
+
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 30000);
     },
   }
 };

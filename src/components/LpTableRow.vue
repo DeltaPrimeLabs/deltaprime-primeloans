@@ -236,7 +236,12 @@ export default {
                 asset: this.lpToken.symbol,
                 assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
               };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
+              this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+                this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
+                this.$forceUpdate();
+              }, () => {
+
+              }).then(() => {
                 this.closeModal();
               });
           }
@@ -263,7 +268,12 @@ export default {
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
         }
 
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });
