@@ -411,11 +411,6 @@ export default {
       console.log(transaction);
       await awaitConfirmation(transaction, provider, 'fund');
       console.log('transaction success');
-      setTimeout(async () => {
-        await dispatch('getAllAssetsBalances');
-        await dispatch('updateFunds');
-        await dispatch('network/updateBalance', {}, {root: true});
-      }, 1000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -452,7 +447,7 @@ export default {
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 1000);
+      }, 30000);
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
