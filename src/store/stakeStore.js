@@ -10,22 +10,16 @@ const fromBytes32 = require('ethers').utils.parseBytes32String;
 export default {
   namespaced: true,
   state: {
-    stakedAssets: null,
-  },
-  getters: {
-    getStakedAssets(state) {
-      return state.stakedAssets;
-    }
+    farms: config.FARMED_TOKENS_CONFIG,
   },
   mutations: {
-    setStakedAssets(state, stakedAssets) {
-      state.stakedAssets = stakedAssets;
+    setFarms(state, farms) {
+      state.farms = farms;
     },
   },
   actions: {
 
     async stakeStoreSetup({dispatch}) {
-      await dispatch('updateStakedBalances');
     },
 
     //TODO: stakeRequest
@@ -80,8 +74,33 @@ export default {
       }, 30000);
     },
 
-    async updateStakedBalances({rootState, commit}) {
+    async updateStakedBalances({rootState, state, commit}) {
+      let farms = state.farms;
 
+      for (const [, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
+        for (let farm of tokenFarms) {
+          farm.balance = await farm.staked(rootState.fundsStore.smartLoanContract.address);
+        }
+      }
+
+      commit('setFarms', farms);
+    },
+
+    async updateStakedPrices({state, rootState, commit}) {
+      let farms = state.farms;
+      for (const [symbol, tokenFarms] of Object.entries(farms)) {
+        const asset = rootState.fundsStore.assets[symbol] ?
+            rootState.fundsStore.assets[symbol]
+            :
+            rootState.fundsStore.lpAssets[symbol];
+
+        if (asset) {
+          for (let farm of tokenFarms) {
+            farm.price = asset.price;
+          }
+        }
+      }
+      commit('setFarms', farms);
     },
   }
 };

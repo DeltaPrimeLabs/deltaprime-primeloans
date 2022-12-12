@@ -133,7 +133,8 @@ export default {
     };
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset']),
+    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'noSmartLoan']),
+    ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
@@ -258,6 +259,12 @@ export default {
       const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
@@ -286,7 +293,12 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -319,6 +331,12 @@ export default {
 
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances && this.assetBalances[this.asset.symbol] ? this.assetBalances[this.asset.symbol] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
@@ -366,6 +384,12 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -410,6 +434,12 @@ export default {
     openRepayModal() {
       const modalInstance = this.openModal(RepayModal);
       modalInstance.asset = this.asset;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
