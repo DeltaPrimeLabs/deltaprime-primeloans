@@ -188,10 +188,14 @@ export default {
     },
 
     async setupApr() {
-      const resp = await fetch(this.lpToken.aprUrl);
-      const json = await resp.json();
+      if (this.lpToken.aprUrl) {
+        const resp = await fetch(this.lpToken.aprUrl);
+        const json = await resp.json();
 
-      this.apr = json.swapFeeApr / 100;
+        this.apr = json.swapFeeApr / 100;
+      } else {
+        this.apr = 0;
+      }
     },
 
     toggleChart() {

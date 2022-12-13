@@ -141,8 +141,6 @@ export default {
         for (const [, farms] of Object.entries(rootState.stakeStore.farms)) {
 
           farms.forEach(farm => {
-            console.log('farm')
-            console.log(farm)
             tokens.push({
               price: farm.price,
               balance: parseFloat(farm.balance),
@@ -151,8 +149,6 @@ export default {
             });
           });
         }
-
-        console.log(tokens)
 
         health = calculateHealth(tokens);
       }

@@ -4,7 +4,9 @@
       <div class="modal__title">
         Withdraw
       </div>
-
+      <div class="modal-top-info">
+        You can withdraw only if you have enough tokens to repay all your loans.
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
@@ -200,7 +202,7 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealthNew(tokens);
+      this.healthAfterTransaction = calculateHealth(tokens);
 
       this.$forceUpdate();
     },
@@ -222,6 +224,23 @@ export default {
           validate: (value) => {
             if (this.assetBalance - value < 0) {
               return `Withdraw amount exceeds balance`;
+            }
+          }
+        },
+        {
+          validate: (value) => {
+            let canRepayAllDebts = Object.values(this.debtsPerAsset).every(
+                debt => {
+                  let balance = parseFloat(this.assetBalances[debt.asset]);
+                  if (debt.asset === this.asset.symbol) {
+                    balance -= value;
+                  }
+                  return parseFloat(debt.debt) <= balance;
+                }
+            );
+
+            if (!canRepayAllDebts) {
+              return 'Not enough balances of borrowed tokens to withdraw'
             }
           }
         }
