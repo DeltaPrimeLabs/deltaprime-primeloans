@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/facets/avalanche/IYieldYak.sol";
 
@@ -162,9 +163,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
-        uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
 
-        require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
+        amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
         yakStakingContract.withdraw(amount);
 
@@ -188,9 +188,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function unstakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYieldYak yakStakingContract = IYieldYak(YY_PTP_sAVAX);
-        uint256 initialStakedBalance = yakStakingContract.balanceOf(address(this));
 
-        require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
+        amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
         yakStakingContract.withdraw(amount);
 
@@ -315,9 +314,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
-        uint256 initialStakedBalance = vaultContract.balanceOf(address(this));
-
-        require(initialStakedBalance >= stakingDetails.amount, "Cannot unstake more than was initially staked");
+        stakingDetails.amount = Math.min(vaultContract.balanceOf(address(this)), stakingDetails.amount);
 
         vaultContract.withdraw(stakingDetails.amount);
 

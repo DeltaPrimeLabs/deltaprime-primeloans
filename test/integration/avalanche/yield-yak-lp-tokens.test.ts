@@ -259,10 +259,6 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
         });
 
-        it("should fail to unstake TJ LP tokens from YY", async () => {
-            await expect(wrappedLoan.unstakeTJAVAXUSDCYak(toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        });
-
         it("should unstake TJ LP tokens from YY", async () => {
             let initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
             let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
@@ -289,6 +285,12 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 2);
+        });
+
+        it("should not fail to unstake TJ LP tokens from YY but unstake everything", async () => {
+            await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
+            await wrappedLoan.unstakeTJAVAXUSDCYak(toWei("9999"));
+            expect(await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
     });
 

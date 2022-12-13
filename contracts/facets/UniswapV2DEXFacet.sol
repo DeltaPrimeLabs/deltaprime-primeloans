@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../lib/SolvencyMethods.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
@@ -128,6 +129,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
         address lpTokenAddress = exchange.getPair(address(tokenA), address(tokenB));
+        liquidity = Math.min(liquidity, IERC20(lpTokenAddress).balanceOf(address(this)));
 
         lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
 

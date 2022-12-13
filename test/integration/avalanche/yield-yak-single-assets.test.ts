@@ -221,8 +221,9 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
         });
 
-        it("should fail to unstake more than was initially staked", async () => {
-            await expect(wrappedLoan.unstakeAVAXYak(toWei("999999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+        it("should not fail to unstake more than was initially staked but unstake all", async () => {
+            await wrappedLoan.unstakeAVAXYak(toWei("999999"));
+            expect(await yakStakingContract.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
     });
 
