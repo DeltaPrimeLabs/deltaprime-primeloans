@@ -289,7 +289,8 @@ export default {
       //TODO: make it more robust
       if (asset === 'AVAX') {
         asset = config.ASSETS_CONFIG['AVAX'];
-        await state.wavaxTokenContract.deposit({value: toWei(String(value))});
+        let depositTransaction = await state.wavaxTokenContract.deposit({value: toWei(String(value))});
+        await awaitConfirmation(depositTransaction, provider, 'deposit');
       }
 
       if (asset === 'WAVAX') {
@@ -299,7 +300,8 @@ export default {
       const amount = parseUnits(String(value), config.ASSETS_CONFIG[asset.symbol].decimals);
       const fundTokenContract = new ethers.Contract(tokenAddresses[asset.symbol], erc20ABI, provider.getSigner());
 
-      await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
+      const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
+      await awaitConfirmation(approveTransaction, provider, 'approve');
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 

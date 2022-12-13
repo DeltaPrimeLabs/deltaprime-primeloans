@@ -89,9 +89,12 @@ export default {
           .connect(provider.getSigner())
           .depositNativeToken({value: parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals)});
       } else {
-        await tokenContract.connect(provider.getSigner())
+        let approveTransaction = await tokenContract.connect(provider.getSigner())
           .approve(state.pools[depositRequest.assetSymbol].contract.address,
             parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+
         depositTransaction = await state.pools[depositRequest.assetSymbol].contract
           .connect(provider.getSigner())
           .deposit(parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
