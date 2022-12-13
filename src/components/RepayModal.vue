@@ -7,6 +7,9 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound}}</div>
+        <div class="top-info__divider"></div>
+        <div class="top-info__label">Debt:</div>
         <div class="top-info__value"> {{assetDebt | smartRound}}</div>
         <span class="top-info__currency">
           {{asset.symbol}}
@@ -15,7 +18,7 @@
 
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
-                     :max="assetDebt"
+                     :max="assetDebt * maxRepaymentOfDebt"
                      :validators="validators">
       </CurrencyInput>
 
@@ -62,6 +65,8 @@ import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import {calculateHealth} from "../utils/calculate";
 
+const MAX_REPAYMENT_OF_DEBT = 1.000001;
+
 export default {
   name: 'WithdrawModal',
   components: {
@@ -104,12 +109,19 @@ export default {
     })
   },
 
+  computed: {
+    //because the debt is continously compounding, we have to allow repaying a little more to allow users to fully
+    //repay their debts
+    maxRepaymentOfDebt() {
+      return MAX_REPAYMENT_OF_DEBT;
+    },
+  },
+
   methods: {
     submit() {
       this.transactionOngoing = true;
       this.$emit('REPAY', this.repayValue);
     },
-
 
     repayValueChange(event) {
       this.repayValue = Number(event.value);
@@ -155,8 +167,15 @@ export default {
       this.validators = [
         {
           validate: (value) => {
-            if (value > this.assetDebt) {
+            if (value > this.assetDebt * this.maxRepaymentOfDebt) {
               return `Repay value exceeds debt`;
+            }
+          }
+        },
+        {
+          validate: (value) => {
+            if (value > this.assetBalances[this.asset.symbol]) {
+              return `Not enough funds to repay`;
             }
           }
         }

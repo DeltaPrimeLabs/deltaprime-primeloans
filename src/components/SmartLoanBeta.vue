@@ -2,7 +2,7 @@
   <div class="smart-loan-beta-component">
     <div class="container">
       <StatsBarBeta
-        :total-value="noSmartLoanInternal ? 0 : totalValue"
+        :collateral="noSmartLoanInternal ? 0 : getCollateral"
         :debt="noSmartLoanInternal ? 0 : debt"
         :health="noSmartLoanInternal ? 0 : getHealth"
         :noSmartLoan="noSmartLoanInternal">
@@ -60,7 +60,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan']),
     ...mapState('stakeStore', ['farms']),
-    ...mapGetters('fundsStore', ['getHealth'])
+    ...mapGetters('fundsStore', ['getHealth', 'getCollateral'])
   },
   watch: {
     assetBalances: {

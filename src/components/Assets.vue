@@ -5,7 +5,7 @@
     <!--      <Checkbox :label="'Show only my assets'"></Checkbox>-->
     <!--    </div>-->
     <div class="funds">
-      <!--      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>-->
+      <NameValueBadgeBeta class="total-value" :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
         <TableHeader :config="fundsTableHeaderConfig"></TableHeader>
         <div class="funds-table__body">
@@ -334,7 +334,11 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 35px;
+    margin-top: 23px;
+
+    .total-value {
+      margin-bottom: 57px;
+    }
 
     .funds-table {
       display: flex;

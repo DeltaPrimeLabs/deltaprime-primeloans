@@ -2,14 +2,14 @@
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
       <stats-bar-element-beta
-        :label="'Total value'"
-        :value="totalValue ? totalValue : 0 | usd" :info-tooltip="'total value'">
+        :label="'Borrowed'"
+        :value="debt ? debt : 0 | usd" :info-tooltip="'Value of all your borrowed tokens'">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
       <div class="health-loader-container" v-if="noSmartLoan === null">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
-      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent" :info-tooltip="'Health ratio'">
+      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent" :info-tooltip="'Health of your portfolio. Remember to keep it above 0%'">
         <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
       </stats-bar-element-beta>
 
@@ -17,7 +17,7 @@
 
       <div class="stats-bar__divider"></div>
 
-      <stats-bar-element-beta :label="'Borrowed'" :value="debt ? debt : 0 | usd">
+      <stats-bar-element-beta :label="'Collateral'" :value="collateral ? collateral : 0 | usd" :info-tooltip="'Total value of your portfolio minus sum of your debts'">
       </stats-bar-element-beta>
     </div>
   </div>
@@ -35,6 +35,7 @@ export default {
   props: {
     totalValue: null,
     debt: null,
+    collateral: null,
     health: null,
     noSmartLoan: null,
   },

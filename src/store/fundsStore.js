@@ -153,6 +153,9 @@ export default {
         health = calculateHealth(tokens);
       }
       return health;
+    },
+    getCollateral(state) {
+      return state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
     }
   },
 
@@ -373,7 +376,8 @@ export default {
 
       const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
 
-      await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
+      const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
+      await awaitConfirmation(approveTransaction, provider, 'approve');
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
