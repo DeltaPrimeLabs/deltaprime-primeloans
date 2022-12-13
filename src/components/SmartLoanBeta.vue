@@ -4,6 +4,7 @@
       <StatsBarBeta
         :collateral="noSmartLoanInternal ? 0 : getCollateral"
         :debt="noSmartLoanInternal ? 0 : debt"
+
         :health="noSmartLoanInternal ? 0 : getHealth"
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>

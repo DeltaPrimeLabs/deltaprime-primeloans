@@ -240,7 +240,7 @@ export default {
             );
 
             if (!canRepayAllDebts) {
-              return 'Not enough balances of borrowed tokens to withdraw'
+              return 'Missing AVAX/USDC in portfolio. Please make sure you can repay your debt before withdrawing.'
             }
           }
         }
