@@ -1,4 +1,6 @@
-pragma solidity ^0.8.4;
+// SPDX-License-Identifier: BUSL-1.1
+// Last deployed from commit: ef416f84579db4de2c5d5bbfa7ce2add3437dbd1;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./aave_v3/flashloan/base/FlashLoanReceiverBase.sol";
@@ -13,6 +15,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
 
   IUniswapV2Router01 uniswapV2Router;
   address wrappedNativeToken;
+  SmartLoanLiquidationFacet whitelistedLiquidatorsContract;
 
   struct AssetAmount {
     address asset;
@@ -40,10 +43,12 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
   constructor(
     address _addressProvider,
     address _uniswapV2Router,
-    address _wrappedNativeToken
+    address _wrappedNativeToken,
+    SmartLoanLiquidationFacet _whitelistedLiquidatorsContract
   ) FlashLoanReceiverBase(IPoolAddressesProvider(_addressProvider)) {
     uniswapV2Router = IUniswapV2Router01(_uniswapV2Router);
     wrappedNativeToken = _wrappedNativeToken;
+    whitelistedLiquidatorsContract = _whitelistedLiquidatorsContract;
   }
 
   // ---- Extract calldata arguments ----
@@ -174,7 +179,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
     return true;
   }
 
-  function executeFlashloan(FlashLoanArgs calldata _args) public {
+  function executeFlashloan(FlashLoanArgs calldata _args) public onlyWhitelistedLiquidators{
     bytes memory enrichedParams = bytes.concat(abi.encodePacked(_args.loanAddress), abi.encodePacked(_args.liquidator), abi.encodePacked(_args.tokenManager), abi.encodePacked(_args.bonus), _args.params);
 
     IPool(address(POOL)).flashLoan(
@@ -292,5 +297,11 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
     }
 
     return path;
+  }
+
+  modifier onlyWhitelistedLiquidators() {
+    // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+    require(whitelistedLiquidatorsContract.isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
+    _;
   }
 }
