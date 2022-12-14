@@ -187,21 +187,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         * @param amount amount of sAVAX to be unstaked
     **/
     function unstakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
-        IYieldYak yakStakingContract = IYieldYak(YY_PTP_sAVAX);
-
-        amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
-
-        yakStakingContract.withdraw(amount);
-
-        if(yakStakingContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("YY_PTP_sAVAX");
-        }
-
-        if(IERC20(SAVAX_TOKEN).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset("sAVAX", SAVAX_TOKEN);
-        }
-
-        emit Unstaked(msg.sender, "sAVAX", YY_PTP_sAVAX, amount, block.timestamp);
+        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+        tokenAddress: SAVAX_TOKEN,
+        vaultAddress: YY_PTP_sAVAX,
+        tokenSymbol: "sAVAX",
+        vaultTokenSymbol: "YY_PTP_sAVAX",
+        amount: amount
+        }));
     }
 
     /**
