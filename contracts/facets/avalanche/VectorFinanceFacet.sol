@@ -18,13 +18,13 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address private constant VectorMainStaking = 0x8B3d9F0017FA369cD8C164D0Cc078bf4cA588aE5;
 
     address private constant USDCAddress = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
-    address private constant VectorUSDCStaking1 = 0x994F0e36ceB953105D05897537BF55d201245156;
+    address private constant VectorUSDCStaking1 = 0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A;
 
     address private constant WAVAXAddress = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-    address private constant VectorWAVAXStaking1 = 0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69;
+    address private constant VectorWAVAXStaking1 = 0x4E42d1a0b83fA354882f19E89a316E00bc106a98;
 
     address private constant SAVAXAddress = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
-    address private constant VectorSAVAXStaking1 = 0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1;
+    address private constant VectorSAVAXStaking1 = 0x822C11be60258D6Bf00C5B0907B2015633d11a62;
 
     // PUBLIC FUNCTIONS
 

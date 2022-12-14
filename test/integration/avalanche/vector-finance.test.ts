@@ -48,9 +48,9 @@ const {deployContract, provider} = waffle;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const VectorUSDCStaking1 = '0x994F0e36ceB953105D05897537BF55d201245156';
-const VectorWAVAXStaking1 = '0xff5386aF93cF4bD8d5AeCad6df7F4f4be381fD69';
-const VectorSAVAXStaking1 = '0x812b7C3b5a9164270Dd8a0b3bc47550877AECdB1';
+const VectorUSDCStaking1 = '0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A';
+const VectorWAVAXStaking1 = '0x4E42d1a0b83fA354882f19E89a316E00bc106a98';
+const VectorSAVAXStaking1 = '0x822C11be60258D6Bf00C5B0907B2015633d11a62';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
