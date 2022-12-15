@@ -24,10 +24,9 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-    LiquidationFlashloan,
     TraderJoeIntermediary,
     SmartLoansFactory,
-    TokenManager
+    TokenManager, LiquidationFlashloan
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot-flashloan';
@@ -161,8 +160,16 @@ describe('Test liquidator with a flashloan', () => {
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
                 traderJoeRouterAddress,
-                wavaxTokenAddress
+                wavaxTokenAddress,
+                diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should whitelist LIQUIDATOR and flashloan contract", async () => {
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
+            expect(await whitelistingFacet.isLiquidatorWhitelisted(liquidationFlashloan.address)).to.be.true;
+            expect(await whitelistingFacet.isLiquidatorWhitelisted("0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6")).to.be.true;
         });
 
 
@@ -215,7 +222,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -310,8 +317,16 @@ describe('Test liquidator with a flashloan', () => {
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
                 traderJoeRouterAddress,
-                wavaxTokenAddress
+                wavaxTokenAddress,
+                diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should whitelist LIQUIDATOR and flashloan contract", async () => {
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
+            expect(await whitelistingFacet.isLiquidatorWhitelisted(liquidationFlashloan.address)).to.be.true;
+            expect(await whitelistingFacet.isLiquidatorWhitelisted("0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6")).to.be.true;
         });
 
 
@@ -380,7 +395,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -493,8 +508,16 @@ describe('Test liquidator with a flashloan', () => {
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
                 traderJoeRouterAddress,
-                wavaxTokenAddress
+                wavaxTokenAddress,
+                diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should whitelist LIQUIDATOR and flashloan contract", async () => {
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
+            expect(await whitelistingFacet.isLiquidatorWhitelisted(liquidationFlashloan.address)).to.be.true;
+            expect(await whitelistingFacet.isLiquidatorWhitelisted("0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6")).to.be.true;
         });
 
 
@@ -552,7 +575,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -665,8 +688,16 @@ describe('Test liquidator with a flashloan', () => {
             liquidationFlashloan = await LiquidationFlashloan.deploy(
                 aavePoolAddressesProviderAdress,
                 traderJoeRouterAddress,
-                wavaxTokenAddress
+                wavaxTokenAddress,
+                diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should whitelist LIQUIDATOR and flashloan contract", async () => {
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
+            expect(await whitelistingFacet.isLiquidatorWhitelisted(liquidationFlashloan.address)).to.be.true;
+            expect(await whitelistingFacet.isLiquidatorWhitelisted("0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6")).to.be.true;
         });
 
 
@@ -712,7 +743,7 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, diamondAddress, owner);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });

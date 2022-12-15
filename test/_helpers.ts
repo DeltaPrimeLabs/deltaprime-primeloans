@@ -158,7 +158,7 @@ export const getHealingLiquidationAmounts = function (
     debts.forEach(debt => {
         const asset = assets.find(a => a.name == debt.name)!;
         repayAmounts.push(new Repayment(debt.name, 1.001 * debt.debt));
-        deliveredAmounts.push(new Allowance(debt.name, 1.005 * (debt.debt - asset.balance)));
+        deliveredAmounts.push(new Allowance(debt.name, debt.debt > asset.balance ? 1.005 * (debt.debt - asset.balance) : 0));
     });
 
     return {repayAmounts, deliveredAmounts}
@@ -309,7 +309,7 @@ export const getProfitableLiquidationAmounts = function (
             //IMPORTANT:
             //approve a little more to account for the debt compounding
             let delivered = deliveredAmount; // to account for inaccuracies and debt compounding
-            deliveredAmounts.push(new Allowance(debt.name, delivered));
+            deliveredAmounts.push(new Allowance(debt.name, delivered < 0 ? 0 : delivered));
             let repayment = repayAmounts.find(el => el.name == debt.name)!;
             repayment.amount = deliveredAmount + initialRepayAmount;
         }

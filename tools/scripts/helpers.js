@@ -6,6 +6,8 @@ module.exports.getChainIdForNetwork = function getChainIdForNetwork(networkName)
       return 43113;
     case 'mainnet':
       return 43114;
+    case 'avalanche':
+      return 43114;
   }
 }
 
@@ -16,6 +18,8 @@ module.exports.getUrlForNetwork = function getUrlForNetwork(networkName) {
     case 'fuji':
       return 'https://api.avax-test.network/ext/bc/C/rpc';
     case 'mainnet':
+      return 'https://api.avax.network/ext/bc/C/rpc';
+    case 'avalanche':
       return 'https://api.avax.network/ext/bc/C/rpc';
   }
 }

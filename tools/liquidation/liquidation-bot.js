@@ -1,7 +1,5 @@
 import LOAN_FACTORYTUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json'
-import LOAN_LIQUIDATION
-    from '../../artifacts/contracts/facets/SmartLoanLiquidationFacet.sol/SmartLoanLiquidationFacet.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
@@ -9,7 +7,7 @@ import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import {ethers} from 'hardhat'
-import {SmartLoanGigaChadInterface} from "../../typechain";
+import {wrapLoan} from "./utlis";
 
 const args = require('yargs').argv;
 const https = require('https');
@@ -18,7 +16,6 @@ const interval = args.interval ? args.interval : 10;
 const minutesSync = args.minutesSync ? args.minutesSync : 0;
 
 const {getUrlForNetwork} = require("../scripts/helpers");
-const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const fs = require('fs');
 const {fromWei, formatUnits} = require("../../test/_helpers");
 const {parseUnits} = require("ethers/lib/utils");
@@ -41,7 +38,7 @@ const factory = new ethers.Contract(LOAN_FACTORYTUP.address, LOAN_FACTORY.abi, w
 
 
 async function wrapLoanStatus(loanAddress) {
-    let loan = await wrapLoan(loanAddress);
+    let loan = await wrapLoan(loanAddress, wallet);
     let rawStatus = await loan.getFullLoanStatus();
     let status = {
         value: rawStatus[0].toString(),
@@ -51,45 +48,6 @@ async function wrapLoanStatus(loanAddress) {
         isSolvent: parseInt(rawStatus[4].toString()) == 1 ? true : false
     };
     return status;
-}
-
-async function wrapLoan(loanAddress) {
-    let loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, wallet);
-
-    loan = WrapperBuilder.wrap(loan).usingDataService(
-        {
-            dataServiceId: "redstone-avalanche-prod",
-            uniqueSignersCount: 3,
-            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "USDT", "sAVAX", "QI", "PNG", "PTP", "PNG_AVAX_USDC_LP", "PNG_AVAX_USDT_LP", "PNG_AVAX_ETH_LP", "TJ_AVAX_USDC_LP", "TJ_AVAX_USDT_LP", "TJ_AVAX_ETH_LP", "TJ_AVAX_BTC_LP", "TJ_AVAX_sAVAX_LP", "YY_AAVE_AVAX", "YY_PTP_sAVAX", "YY_PNG_AVAX_USDC_LP", "YY_PNG_AVAX_ETH_LP", "YY_TJ_AVAX_sAVAX_LP", "YY_TJ_AVAX_USDC_LP", "YY_TJ_AVAX_ETH_LP"],
-            disablePayloadsDryRun: true
-        },
-        [
-            "https://cache-service-direct-1.a.redstone.finance",
-            "https://cache-service-direct-2.a.redstone.finance",
-            "https://cache-service-streamr-1.a.redstone.finance",
-        ]
-    );
-
-    return loan
-}
-
-function wrapLiquidationFacet(loanAddress) {
-    let loan = new ethers.Contract(loanAddress, LOAN_LIQUIDATION.abi, wallet);
-
-    loan = WrapperBuilder.wrap(loan).usingDataService(
-        {
-            dataServiceId: "redstone-avalanche-prod",
-            uniqueSignersCount: 3,
-            dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "USDT", "sAVAX", "QI", "PNG", "PTP", "PNG_AVAX_USDC_LP", "PNG_AVAX_USDT_LP", "PNG_AVAX_ETH_LP", "TJ_AVAX_USDC_LP", "TJ_AVAX_USDT_LP", "TJ_AVAX_ETH_LP", "TJ_AVAX_BTC_LP", "TJ_AVAX_sAVAX_LP", "YY_AAVE_AVAX", "YY_PTP_sAVAX", "YY_PNG_AVAX_USDC_LP", "YY_PNG_AVAX_ETH_LP", "YY_TJ_AVAX_sAVAX_LP", "YY_TJ_AVAX_USDC_LP", "YY_TJ_AVAX_ETH_LP"],
-            disablePayloadsDryRun: true
-        },
-        [
-            "https://cache-service-direct-1.a.redstone.finance",
-            "https://cache-service-direct-2.a.redstone.finance",
-            "https://cache-service-streamr-1.a.redstone.finance",
-        ]
-    );
-    return loan
 }
 
 function getTokenManager(tokenManagerAddress) {
@@ -112,7 +70,7 @@ async function getInsolventLoans() {
 }
 
 export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
-    let loan = await wrapLoan(loanAddress);
+    let loan = await wrapLoan(loanAddress, wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
     let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;

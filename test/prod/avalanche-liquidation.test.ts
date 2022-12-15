@@ -1,76 +1,57 @@
 import {ethers, network, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import {BigNumber, Contract} from "ethers";
-import Web3 from 'web3';
-
-const web3 = new Web3();
 import {
-    Pool,
-    SmartLoanGigaChadInterface,
-    SmartLoansFactory,
+    AssetsOperationsFacet,
     AssetsOperationsMock,
-    VariableUtilisationRatesCalculator,
-    IUniswapV2Router01,
-    WrappedNativeTokenPool,
-    SmartLoanDiamondBeacon,
-    OwnershipFacet,
     DiamondCutFacet,
-    TokenManager,
-    IERC20,
-    PangolinIntermediary, AssetsOperationsFacet
+    IUniswapV2Router01,
+    OwnershipFacet,
+    Pool,
+    SmartLoanDiamondBeacon,
+    SmartLoanGigaChadInterface,
+    SmartLoanLiquidationFacetDebug,
+    SmartLoansFactory,
+    TokenManager
 } from "../../typechain";
 import SMART_LOAN_DIAMOND_BEACON from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import OWNERSHIP_FACET from '../../deployments/avalanche/OwnershipFacet.json';
 import DIAMOND_CUT_FACET from '../../deployments/avalanche/DiamondCutFacet.json';
 import SMART_LOAN_FACTORY_TUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json';
 import SMART_LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json';
-import SMART_LOAN_GIGACHAD_INTERFACE from '../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
+import SMART_LOAN_GIGACHAD_INTERFACE
+    from '../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import WAVAX_POOL_TUP from '../../deployments/avalanche/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '../../deployments/avalanche/UsdcPoolTUP.json';
 import WAVAX_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import USDC_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
-import WRAPPED_POOL from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
-import RATES_CALCULATOR from '../../deployments/avalanche/VariableUtilisationRatesCalculator.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import {
-    asset,
-    Asset, AssetNameDebt,
     erc20ABI,
-    formatUnits, fromBytes32,
+    formatUnits,
+    fromBytes32,
     fromWei,
-    getFixedGasSigners, pool,
+    getFixedGasSigners,
     syncTime,
     toBytes32,
     toWei,
-    wavaxAbi,
-    ZERO
+    wavaxAbi
 } from "../_helpers";
-import {pangolinAssets} from "../../common/addresses/avax/pangolin_supported_assets";
-import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_assets";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {JsonRpcSigner} from "@ethersproject/providers";
-import VariableUtilisationRatesCalculatorArtifact
-    from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
 import {parseUnits} from "ethers/lib/utils";
-import web3Abi from "web3-eth-abi";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
-import {supportedAssetsAvax} from '../../common/addresses/avax/avalanche_supported_assets';
-import addresses from "../../common/addresses/avax/token_addresses.json";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
-import config from "@redstone-finance/evm-connector/dist/hardhat.config";
 import {FacetCutAction} from "hardhat-deploy/dist/types";
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
-const randomContractAddress = '0xF8d1b34651f2c9230beB9b83B2260529769FDeA4';
 const traderJoeRouter = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 
 chai.use(solidity);
 
-const {deployContract, provider} = waffle;
+const {provider} = waffle;
 
 const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
 const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
@@ -131,7 +112,7 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             let amountInWei = parseUnits(amount.toString(), decimals);
 
             for (let user of users) {
-                await wavaxTokenContract.connect(user).deposit({ value: amountInWei })
+                await wavaxTokenContract.connect(user).deposit({value: amountInWei})
             }
         }
 
@@ -141,14 +122,14 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             let router = await ethers.getContractAt("IUniswapV2Router01", traderJoeRouter);
 
             for (let user of users) {
-                await wavaxTokenContract.connect(user).deposit({ value: amountInWei });
+                await wavaxTokenContract.connect(user).deposit({value: amountInWei});
                 await wavaxTokenContract.connect(user).approve(router.address, amountInWei);
 
                 await router.connect(user).swapExactTokensForTokens(amountInWei, 0, [wavaxTokenContract.address, usdcTokenContract.address], user.address, 1880333856);
             }
         }
 
-        async function wrapLoan(loan: any){
+        async function wrapLoan(loan: any) {
             // @ts-ignore
             return WrapperBuilder.wrap(loan).usingDataService(
                 {
@@ -171,7 +152,7 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             await wavaxPool.connect(USER_6).deposit(toWei("2000"));
 
             let resultWavaxPoolBalance = fromWei(await wavaxPool.totalSupply());
-            expect(resultWavaxPoolBalance - initialWavaxPoolBalance).to.be.closeTo(2000, 1e-8);
+            expect(resultWavaxPoolBalance - initialWavaxPoolBalance).to.be.closeTo(2000, 1e-6);
             console.log(`AVAX pool balance: ${resultWavaxPoolBalance}`)
 
             console.log('Deposit USDC')
@@ -182,14 +163,14 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             await usdcPool.connect(USER_6).deposit(parseUnits("2000", await usdcTokenContract.decimals()));
 
             let resultUsdcPoolBalance = formatUnits(await usdcPool.totalSupply(), await usdcTokenContract.decimals());
-            expect(resultUsdcPoolBalance - initialUsdcPoolBalance).to.be.closeTo(2000, 1e-8);
+            expect(resultUsdcPoolBalance - initialUsdcPoolBalance).to.be.closeTo(2000, 1e-6);
             console.log(`USDC pool balance: ${resultUsdcPoolBalance}`)
         });
 
         it('Should create loans for USERS 1 through 5', async () => {
             const loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
-            for(const user of [USER_1, USER_2, USER_3, USER_4, USER_5]){
+            for (const user of [USER_1, USER_2, USER_3, USER_4, USER_5]) {
                 await smartLoansFactory.connect(user).createLoan();
             }
 
@@ -198,23 +179,23 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             expect(loansAfterCreate.length - loansBeforeCreate.length).to.be.equal(5);
             console.log('Created 5 loans');
 
-            loan1 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_1.address),SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_1) as SmartLoanGigaChadInterface);
-            loan2 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_2.address),SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_2) as SmartLoanGigaChadInterface);
-            loan3 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_3.address),SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_3) as SmartLoanGigaChadInterface);
-            loan4 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_4.address),SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_4) as SmartLoanGigaChadInterface);
-            loan5 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_5.address),SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_5) as SmartLoanGigaChadInterface);
+            loan1 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_1.address), SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_1) as SmartLoanGigaChadInterface);
+            loan2 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_2.address), SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_2) as SmartLoanGigaChadInterface);
+            loan3 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_3.address), SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_3) as SmartLoanGigaChadInterface);
+            loan4 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_4.address), SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_4) as SmartLoanGigaChadInterface);
+            loan5 = await wrapLoan(new ethers.Contract(await smartLoansFactory.getLoanForOwner(USER_5.address), SMART_LOAN_GIGACHAD_INTERFACE.abi, USER_5) as SmartLoanGigaChadInterface);
             console.log('Fetched and wrapped 5 loans')
         });
 
         it('Should deposit collaterals as USERS 1 through 5', async () => {
             const usdcDecimals = await usdcTokenContract.decimals();
-            for(const depositConfig of [
+            for (const depositConfig of [
                 {depositAmountInAVAX: "100", depositAmountInUSDC: "100", user: USER_1, loan: loan1},
                 {depositAmountInAVAX: "100", depositAmountInUSDC: "0", user: USER_2, loan: loan2},
                 {depositAmountInAVAX: "0", depositAmountInUSDC: "100", user: USER_3, loan: loan3},
                 {depositAmountInAVAX: "60", depositAmountInUSDC: "40", user: USER_4, loan: loan4},
                 {depositAmountInAVAX: "90", depositAmountInUSDC: "10", user: USER_5, loan: loan5}
-            ]){
+            ]) {
                 await wavaxTokenContract.connect(depositConfig.user).approve(depositConfig.loan.address, toWei(depositConfig.depositAmountInAVAX));
                 await depositConfig.loan.connect(depositConfig.user).fund(toBytes32("AVAX"), toWei(depositConfig.depositAmountInAVAX));
 
@@ -228,13 +209,13 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
 
         it('Should borrow as USERS 1 through 5', async () => {
             const usdcDecimals = await usdcTokenContract.decimals();
-            for(const depositConfig of [
+            for (const depositConfig of [
                 {borrowAmountInAVAX: 300, borrowAmountInUSDC: 300, user: USER_1, loan: loan1},
                 {borrowAmountInAVAX: 300, borrowAmountInUSDC: 100, user: USER_2, loan: loan2},
                 {borrowAmountInAVAX: 5, borrowAmountInUSDC: 300, user: USER_3, loan: loan3},
                 {borrowAmountInAVAX: 180, borrowAmountInUSDC: 120, user: USER_4, loan: loan4},
                 {borrowAmountInAVAX: 270, borrowAmountInUSDC: 30, user: USER_5, loan: loan5}
-            ]){
+            ]) {
                 // Solvency assertions
                 let initialHR = await depositConfig.loan.getHealthRatio();
                 expect(await depositConfig.loan.isSolvent()).to.be.true;
@@ -285,13 +266,13 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
 
         it('Should withdraw part of funds making the loans insolvent', async () => {
             const usdcDecimals = await usdcTokenContract.decimals();
-            for(const depositConfig of [
+            for (const depositConfig of [
                 {withdrawAmountInAVAX: "50", withdrawAmountInUSDC: "100", user: USER_1, loan: loan1},
                 {withdrawAmountInAVAX: "60", withdrawAmountInUSDC: "0", user: USER_2, loan: loan2},
-                {withdrawAmountInAVAX: "0", withdrawAmountInUSDC: "100", user: USER_3, loan: loan3},
-                {withdrawAmountInAVAX: "130", withdrawAmountInUSDC: "80", user: USER_4, loan: loan4},
-                {withdrawAmountInAVAX: "190", withdrawAmountInUSDC: "10", user: USER_5, loan: loan5}
-            ]){
+                {withdrawAmountInAVAX: "1", withdrawAmountInUSDC: "70", user: USER_3, loan: loan3},
+                {withdrawAmountInAVAX: "30", withdrawAmountInUSDC: "90", user: USER_4, loan: loan4},
+                {withdrawAmountInAVAX: "90", withdrawAmountInUSDC: "22", user: USER_5, loan: loan5}
+            ]) {
                 expect(await depositConfig.loan.isSolvent()).to.be.true;
 
                 await depositConfig.loan.connect(depositConfig.user).withdraw(toBytes32("AVAX"), toWei(depositConfig.withdrawAmountInAVAX));
@@ -303,7 +284,7 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
         });
 
         it('Should update protocol to use the default withdraw method implementation', async () => {
-            // Deploy AssetsOperationsMock
+            // Deploy AssetsOperationsFacet
             let assetsOperationsFactory = await ethers.getContractFactory("AssetsOperationsFacet");
             let assetsOperationsFacet = (await assetsOperationsFactory.deploy()).connect(MAINNET_DEPLOYER) as AssetsOperationsFacet;
 
@@ -326,6 +307,31 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
 
             // Verify successful replacement of the withdraw() method
             expect(await diamondLoupe.facetAddress("0x040cf020")).to.be.equal(assetsOperationsFacet.address);
+        });
+
+        xit('Should deploy SmartLoanLiquidationFacetDebug', async () => {
+            // Deploy SmartLoanLiquidationFacetDebug contract
+            const LiquidationFacetDebugFactory = await ethers.getContractFactory('SmartLoanLiquidationFacetDebug');
+
+            let LiquidationFacetDebug = await LiquidationFacetDebugFactory.deploy() as SmartLoanLiquidationFacetDebug;
+
+            console.log(`Deployed SmartLoanLiquidationFacetDebug at: ${LiquidationFacetDebug.address}`);
+
+            // Prepare diamondCut and diamondLoupe
+            let diamondCut = await ethers.getContractAt("IDiamondCut", SMART_LOAN_DIAMOND_BEACON.address, MAINNET_DEPLOYER);
+
+            // Pause
+            await diamondCut.pause();
+            // Prepare replace diamondCut
+            let cut = [{
+                facetAddress: LiquidationFacetDebug.address,
+                action: FacetCutAction.Replace,
+                functionSelectors: ["0x38df9add", "0xe799d994"]  // 0x38df9add == liquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent) ; 0xe799d994 == unsafeLiquidateLoan(bytes32[] memory assetsToRepay, uint256[] memory amountsToRepay, uint256 _liquidationBonusPercent)
+            }]
+            // Perform diamondCut replace
+            await diamondCut.diamondCut(cut, ethers.constants.AddressZero, []);
+            // Unpause
+            await diamondCut.unpause();
         });
     });
 });
