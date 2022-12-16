@@ -157,7 +157,9 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
 
     if (!loanIsBankrupt) {
         let tx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
-        await provider.waitForTransaction(tx.hash);
+        console.log(tx);
+        let res = await provider.waitForTransaction(tx.hash);
+        console.log(res)
     } else {
         console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
     }
