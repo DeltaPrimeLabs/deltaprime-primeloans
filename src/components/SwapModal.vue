@@ -4,7 +4,6 @@
       <div class="modal__title">
         Swap
       </div>
-
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
                           v-on:valueChange="sourceInputChange"
@@ -160,7 +159,7 @@ export default {
 
   computed: {
     slippage() {
-      return Math.max(0, (this.targetAssetAmount - this.estimatedReceivedTokens) / this.targetAssetAmount);
+      return this.estimatedReceivedTokens ? Math.max(0, (this.targetAssetAmount - this.estimatedReceivedTokens) / this.targetAssetAmount) : 0;
     },
     slippageInfo() {
       return () =>
@@ -253,8 +252,8 @@ export default {
 
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
-          this.calculateHealthAfterTransaction();
           await this.chooseBestTrade();
+          this.calculateHealthAfterTransaction();
         }
       }
       this.sourceInputError = changeEvent.error;
@@ -274,8 +273,8 @@ export default {
 
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
-          this.calculateHealthAfterTransaction();
           await this.chooseBestTrade();
+          this.calculateHealthAfterTransaction();
         }
       }
       this.targetInputError = change.error;
@@ -316,7 +315,8 @@ export default {
           }
         },
         {
-          validate: (value) => {
+          validate: async (value) => {
+            await this.chooseBestTrade();
             this.calculateHealthAfterTransaction(value);
             if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
               return 'The health is below allowed limit';
@@ -332,11 +332,11 @@ export default {
         let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
         let balance = parseFloat(this.assetBalances[symbol]);
 
-        if (this.sourceAsset === this.asset) {
+        if (symbol === this.sourceAsset) {
           balance -= this.sourceAssetAmount;
         }
 
-        if (this.targetAsset === this.asset) {
+        if (symbol === this.targetAsset) {
           balance += this.minTargetAssetAmount;
         }
 
@@ -345,6 +345,17 @@ export default {
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
         tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.balance),
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage
+          });
+        });
       }
 
       this.healthAfterTransaction = calculateHealth(tokens);
