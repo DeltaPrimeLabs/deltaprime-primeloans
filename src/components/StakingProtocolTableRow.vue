@@ -29,11 +29,8 @@
         {{ apy | percent }}
       </div>
 
-      <div class="table__cell">
-        <div class="double-value">
-          <div class="double-value__pieces">{{ calculateDailyInterest | smartRound }}</div>
-          <div class="double-value__usd">{{ calculateDailyInterest * asset.price | usd }}</div>
-        </div>
+      <div class="table__cell max-apy">
+        {{ calculateMaxApy | percent }}
       </div>
 
       <div class="table__cell">
@@ -97,11 +94,12 @@ export default {
     },
   },
   computed: {
+    ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
-    calculateDailyInterest() {
-      return this.apy / 365 * this.balance;
+    calculateMaxApy() {
+      return Math.max(this.apy * 5.5 - 4.5 * Math.min(...Object.values(this.pools).map(pool => pool.borrowingAPY)), this.apy);
     },
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -135,9 +133,6 @@ export default {
           decimals: this.asset.decimals
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
-          console.log('stake success');
-          console.log(this.balance);
-          console.log(stakeRequest.amount);
           this.balance = Number(this.balance) + Number(stakeRequest.amount);
           const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
           const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
@@ -286,12 +281,10 @@ export default {
           font-size: $font-size-xxs;
           color: $medium-gray;
         }
+      }
 
-        &.staked-balance {
-          .double-value__pieces {
-
-          }
-        }
+      &.max-apy {
+        font-weight: 600;
       }
 
       .actions {

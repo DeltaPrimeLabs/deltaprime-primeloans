@@ -61,7 +61,7 @@
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked</div>
             <div class="table__header__cell">APY</div>
-            <div class="table__header__cell">Daily interest</div>
+            <div class="table__header__cell">Max. APY</div>
             <div class="table__header__cell">Total interest</div>
             <div class="table__header__cell">Actions</div>
           </div>
