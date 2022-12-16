@@ -7,6 +7,7 @@ import LOAN_FACTORYTUP from "../../deployments/avalanche/SmartLoansFactoryTUP.js
 import LOAN_FACTORY from "../../deployments/avalanche/SmartLoansFactory.json";
 import {getLiquidatorSigner, wrapLoan} from "./utlis";
 
+const https = require('https');
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
@@ -41,10 +42,18 @@ async function getInsolventLoans() {
     return insolventLoans
 }
 
+function healthcheckPing() {
+    console.log(`[${(new Date).toLocaleString()}][HEALTHCHECK] Ping!`);
+    // Beta: 3bd80bcc-e9c8-48b8-8f44-e672bb498700 | Alpha: 7581371b-01cc-4a9a-96d2-711464fcd2cc
+    https.get('https://hc-ping.com/3bd80bcc-e9c8-48b8-8f44-e672bb498700').on('error', (err) => {
+        console.log('Ping failed: ' + err)
+    });
+}
+
 async function liquidateInsolventLoans() {
     let date = new Date();
+    healthcheckPing();
     if (date.getMinutes() % 2 == minutesSync) {
-        healthcheckPing();
         let loans = await getInsolventLoans();
 
         for (const loan of loans) {
