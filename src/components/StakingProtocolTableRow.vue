@@ -99,6 +99,7 @@ export default {
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
     calculateMaxApy() {
+      if (!this.pools) return;
       return Math.max(this.apy * 5.5 - 4.5 * Math.min(...Object.values(this.pools).map(pool => pool.borrowingAPY)), this.apy);
     },
     protocol() {
@@ -309,5 +310,11 @@ export default {
       }
     }
   }
+}
+</style>
+<style lang="scss">
+.tooltip {
+  max-width: none;
+  width: auto;
 }
 </style>

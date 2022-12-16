@@ -29,16 +29,15 @@
           <div class="header__cell__value">{{ totalStaked | smartRound }}</div>
         </div>
 
-        <div class="header__cell cell__max-apy">
-          <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value">{{ maxStakingApy | percent }}</div>
-        </div>
-
         <div class="header__cell cell__available">
           <div class="header__cell__label">Available:</div>
           <div class="header__cell__value">{{ formatTokenBalance(balance, 10, true) }}</div>
         </div>
 
+        <div class="header__cell cell__max-apy">
+          <div class="header__cell__label">Max APY:</div>
+          <div class="header__cell__value">{{ maxLeveragedApy | percent }}</div>
+        </div>
 
         <div class="header__cell cell__protocols">
           <div class="header__cell__label">Protocols:</div>
@@ -61,7 +60,14 @@
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked</div>
             <div class="table__header__cell">APY</div>
-            <div class="table__header__cell">Max. APY</div>
+            <div class="table__header__cell">Max. APY
+            <div class="info__icon__wrapper">
+              <img v-if="maxApyTooltip"
+                   class="info__icon"
+                   src="src/assets/icons/info.svg"
+                   v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip'}">
+            </div>
+            </div>
             <div class="table__header__cell">Total interest</div>
             <div class="table__header__cell">Actions</div>
           </div>
@@ -100,7 +106,7 @@ export default {
       tableBodyExpanded: false,
       bodyHasCollapsed: true,
       stakingHeaderRoundBottom: false,
-      maxStakingApy: 0,
+      maxLeveragedApy: 0,
       totalStaked: 0,
       availableFarms: [],
       protocolConfig: null,
@@ -108,7 +114,6 @@ export default {
   },
   mounted() {
     this.setupAvailableProtocols();
-    this.setupMaxStakingApy();
     this.setupTotalStaked();
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
@@ -116,6 +121,7 @@ export default {
 
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances']),
+    ...mapState('poolStore', ['pools']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
@@ -146,6 +152,16 @@ export default {
         total += protocol.totalStaked;
       });
       return total;
+    },
+
+    lowestApyPool() {
+      if (!this.pools) return;
+      let poolWithLowestApy = Object.keys(this.pools)[0];
+      Object.entries(this.pools).forEach((asset, pool) => { if (pool.borrowingAPY > this.pools[poolWithLowestApy].borrowingAPY) poolWithLowestApy = pool.asset} );
+      return poolWithLowestApy;
+    },
+    maxApyTooltip() {
+      return `Borrow 4.5x from ${this.lowestApyPool} pool, swap it with your collateral to ${this.asset.name} and farm`;
     }
   },
 
@@ -166,13 +182,20 @@ export default {
       }
     },
 
-    setupMaxStakingApy() {
-      this.availableFarms.forEach(async protocol => {
-        const apy = await protocol.apy();
-        if (apy > this.maxStakingApy) {
-          this.maxStakingApy = apy;
+    async setupMaxStakingApy() {
+      if (!this.lowestApyPool) return;
+      const minBorrowApy = this.pools[this.lowestApyPool].borrowingAPY;
+      let maxApy = 0;
+
+      for (let farm of this.availableFarms) {
+        const apy = await farm.apy();
+        if (apy > maxApy) {
+          maxApy = apy;
         }
-      });
+      }
+
+      this.maxLeveragedApy = Math.max(maxApy * 5.5 - 4.5 * minBorrowApy, maxApy);
+
     },
 
     setupTotalStaked() {
@@ -231,6 +254,13 @@ export default {
       handler(smartLoanContract) {
         if (this) {
           this.setupTotalStaked();
+        }
+      },
+    },
+    pools: {
+      async handler(pools) {
+        if (pools) {
+          await this.setupMaxStakingApy();
         }
       },
     }
@@ -293,6 +323,16 @@ export default {
 
         .header__cell__value {
           font-weight: 500;
+        }
+
+        &.cell__max-apy {
+          .header__cell__value {
+            font-weight: 600;
+          }
+        }
+
+        &.cell__available {
+          width: 230px;
         }
 
         .asset {
@@ -377,6 +417,10 @@ export default {
 
             &.asset {
               justify-content: flex-start;
+            }
+
+            .info__icon__wrapper {
+              transform: translate(3px, -1px);
             }
           }
         }

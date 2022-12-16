@@ -216,11 +216,11 @@ export default {
             id: 'LOAN'
           },
           {
-            label: 'Impact',
+            label: 'Power',
             sortable: false,
             class: 'impact',
             id: 'IMPACT',
-            tooltip: 'impact tooltip'
+            tooltip: 'The Borrowing Power indicates how much you can borrow against this token'
           },
           {
             label: 'Trend (24h)',
