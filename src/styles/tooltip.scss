@@ -1,6 +1,9 @@
 .tooltip {
   display: block !important;
   z-index: 10000;
+  white-space: nowrap;
+  max-width: none;
+  width: auto;
 
   .tooltip-inner {
     background: #6B70ED;
