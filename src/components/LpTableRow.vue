@@ -128,11 +128,7 @@ export default {
     },
 
     maxApr() {
-      return this.hasFarm ? calculateMaxApy(this.pools, this.apr) : this.apr;
-    },
-
-    hasFarm() {
-      return this.farms[this.lpToken.symbol]
+      return calculateMaxApy(this.pools, this.apr);
     }
   },
 
