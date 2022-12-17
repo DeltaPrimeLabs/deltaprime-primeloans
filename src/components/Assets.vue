@@ -279,7 +279,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'MAX-APR',
-            tooltip: 'Borrow 4.5x from the pool, create LP token and stake on Farms page'
+            tooltip: 'Borrow 4.5x from the pool and create LP token using borrowed funds and collateral'
           },
           {
             label: '',
