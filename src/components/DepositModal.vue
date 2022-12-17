@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> AVAX</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{ assetSymbol }}</span></div>
       </div>
 
       <CurrencyInput v-on:newValue="depositValueChange"
@@ -65,6 +65,9 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
+import ethers from "ethers";
+import addresses from "../../common/addresses/avax/token_addresses.json";
+import {erc20ABI} from "../utils/blockchain";
 
 export default {
   name: 'DepositModal',
@@ -78,7 +81,8 @@ export default {
 
   props: {
     apy: null,
-    available: null,
+    walletAssetBalance: null,
+    accountBalance: null,
     deposit: 0,
     assetSymbol: null,
   },
@@ -104,6 +108,10 @@ export default {
     getModalHeight() {
       return this.assetSymbol === 'AVAX' ? '561px' : null;
     },
+
+    available() {
+      return (this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX') ? this.accountBalance : this.walletAssetBalance;
+    }
   },
 
   methods: {
