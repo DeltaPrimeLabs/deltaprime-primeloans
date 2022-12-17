@@ -34,8 +34,11 @@
         {{ apr | percent }}
       </div>
 
-      <div class="table__cell">
+      <div class="table__cell table__cell--double-value max-apr">
+        {{ maxApr | percent }}
       </div>
+
+      <div class="table__cell"></div>
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
@@ -76,7 +79,7 @@ import RemoveLiquidityModal from "./RemoveLiquidityModal";
 import WithdrawModal from "./WithdrawModal";
 const ethers = require('ethers');
 import {erc20ABI} from "../utils/blockchain";
-import {fromWei} from "../utils/calculate";
+import {calculateMaxApy, fromWei} from "../utils/calculate";
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from "ethers/lib/utils";
 
@@ -116,12 +119,21 @@ export default {
   computed: {
     ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets', 'debtsPerAsset', 'lpAssets', 'lpBalances']),
     ...mapState('stakeStore', ['farms']),
+    ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     },
+
+    maxApr() {
+      return this.hasFarm ? calculateMaxApy(this.pools, this.apr) : this.apr;
+    },
+
+    hasFarm() {
+      return this.farms[this.lpToken.symbol]
+    }
   },
 
   watch: {
@@ -400,7 +412,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 20% 1fr 20% 1fr 76px 102px;
+    grid-template-columns: 20% repeat(2, 1fr) 15% 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -438,8 +450,12 @@ export default {
         align-items: flex-end;
       }
 
-      &.loan, &.apr {
+      &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.max-apr {
+        font-weight: 600;
       }
 
       &.trend {

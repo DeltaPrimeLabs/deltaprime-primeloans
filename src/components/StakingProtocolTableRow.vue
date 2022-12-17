@@ -30,14 +30,7 @@
       </div>
 
       <div class="table__cell max-apy">
-        {{ calculateMaxApy | percent }}
-      </div>
-
-      <div class="table__cell">
-        <div class="double-value">
-          <div class="double-value__pieces">0</div>
-          <div class="double-value__usd">{{ 0 | usd }}</div>
-        </div>
+        {{ maxApy | percent }}
       </div>
 
       <div class="table__cell">
@@ -58,6 +51,7 @@ import StakeModal from './StakeModal';
 import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
+import {calculateMaxApy} from "../utils/calculate";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -76,8 +70,6 @@ export default {
   },
   data() {
     return {
-      dailyInterest: 0,
-      totalInterest: 0,
       balance: 0,
       apy: 0
     };
@@ -98,9 +90,8 @@ export default {
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
-    calculateMaxApy() {
-      if (!this.pools) return;
-      return Math.max(this.apy * 5.5 - 4.5 * Math.min(...Object.values(this.pools).map(pool => pool.borrowingAPY)), this.apy);
+    maxApy() {
+      return calculateMaxApy(this.pools, this.apy);
     },
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -207,7 +198,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
+    grid-template-columns: 16% 1fr 170px 160px 180px 22px;
     height: 60px;
     border-style: solid;
     border-width: 2px 0 0 0;

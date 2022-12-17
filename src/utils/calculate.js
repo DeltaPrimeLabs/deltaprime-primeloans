@@ -19,6 +19,11 @@ export function calculateHealth(tokens) {
   return weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0;
 }
 
+export function calculateMaxApy(pools, apy) {
+  if (!pools) return;
+  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools).map(pool => pool.borrowingAPY)), apy);
+}
+
 export function mergeArrays(arrays) {
   return [...new Set(arrays.flat())];
 }

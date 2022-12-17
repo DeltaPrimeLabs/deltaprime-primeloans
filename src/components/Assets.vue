@@ -248,7 +248,7 @@ export default {
 
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% 1fr 20% 1fr 76px 102px',
+        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 80px 22px',
         cells: [
           {
             label: 'LP Token',
@@ -269,13 +269,20 @@ export default {
             id: 'tvl'
           },
           {
-            label: 'APR',
+            label: 'Min. APR',
             sortable: false,
             class: 'apr',
             id: 'APR'
           },
           {
-            label: ''
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: 'Borrow 4.5x from the pool, create LP token and stake on Farms page'
+          },
+          {
+            label: '',
           },
           {
             label: 'Actions',
@@ -290,7 +297,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'],
+          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
           key: 'asset'
         },
         {

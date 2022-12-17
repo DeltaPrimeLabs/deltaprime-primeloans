@@ -59,7 +59,7 @@
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked</div>
-            <div class="table__header__cell">APY</div>
+            <div class="table__header__cell">Min. APY</div>
             <div class="table__header__cell">Max. APY
             <div class="info__icon__wrapper">
               <img v-if="maxApyTooltip"
@@ -68,7 +68,6 @@
                    v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip'}">
             </div>
             </div>
-            <div class="table__header__cell">Total interest</div>
             <div class="table__header__cell">Actions</div>
           </div>
           <div class="table__body">
@@ -404,7 +403,7 @@ export default {
 
         .table__header {
           display: grid;
-          grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
+          grid-template-columns: 16% 1fr 170px 160px 180px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {
