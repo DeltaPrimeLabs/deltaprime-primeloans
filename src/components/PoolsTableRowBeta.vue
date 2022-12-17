@@ -27,15 +27,6 @@
         </LoadedValue>
       </div>
 
-      <div class="table__cell table__cell--double-value interest">
-        <div class="double-value__pieces">
-          <LoadedValue :check="() => dailyInterest != null" :value="formatTokenBalance(dailyInterest, 8, true)"></LoadedValue>
-        </div>
-        <div class="double-value__usd">
-          <span v-if="dailyInterest != null">{{ dailyInterest * pool.asset.price | usd }}</span>
-        </div>
-      </div>
-
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
           <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
@@ -88,14 +79,7 @@ export default {
   },
 
   computed: {
-    ...mapState('network', ['accountBalance']),
-    dailyInterest() {
-      if (this.pool && this.pool.deposit !== null && this.pool.apy !== null) {
-        return this.pool.deposit * this.pool.apy / 365;
-      } else {
-        return null;
-      }
-    },
+    ...mapState('network', ['accountBalance'])
   },
 
   methods: {
@@ -186,7 +170,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 102px;
+    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

@@ -162,7 +162,7 @@ export default {
 
         .pools-table__header {
           display: grid;
-          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 102px;
+          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
           border-style: solid;
           border-width: 0 0 2px 0;
           border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
