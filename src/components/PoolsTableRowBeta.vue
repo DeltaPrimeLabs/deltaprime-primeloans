@@ -59,6 +59,9 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
+const ethers = require('ethers');
+import addresses from "../../common/addresses/avax/token_addresses.json";
+import {erc20ABI} from "../utils/blockchain";
 
 
 export default {
@@ -79,7 +82,7 @@ export default {
   },
 
   computed: {
-    ...mapState('network', ['accountBalance'])
+    ...mapState('network', ['account', 'accountBalance', 'provider'])
   },
 
   methods: {
@@ -110,12 +113,20 @@ export default {
       }
     },
 
-    openDepositModal() {
+    async getWalletAssetBalance() {
+      console.log(this.pool.asset.symbol)
+      console.log(addresses[this.pool.asset.symbol])
+      const tokenContract = new ethers.Contract(addresses[this.pool.asset.symbol], erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.pool.asset.symbol, tokenContract, false);
+    },
+
+    async openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
       modalInstance.apy = this.pool.apy;
-      modalInstance.available = this.accountBalance;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
-      modalInstance.assetSymbol = this.pool.asset.name;
+      modalInstance.assetSymbol = this.pool.asset.symbol;
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
