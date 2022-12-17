@@ -160,7 +160,7 @@ export default {
     async firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
-      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(15) : 0);
+      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
@@ -169,7 +169,7 @@ export default {
     async secondInputChange(change) {
       this.secondAmount = change;
       this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
-      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(15) : 0);
+      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(this.firstAsset.decimals) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
