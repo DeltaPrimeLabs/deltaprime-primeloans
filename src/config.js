@@ -1,5 +1,11 @@
 import addresses from '../common/addresses/avax/token_addresses.json';
-import {vectorFinanceApy, vectorFinanceBalance, yieldYakApy, yieldYakBalance} from "./utils/calculate";
+import {
+    getPangolinLpApr, getTraderJoeLpApr,
+    vectorFinanceApy,
+    vectorFinanceBalance,
+    yieldYakApy,
+    yieldYakBalance
+} from "./utils/calculate";
 import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
