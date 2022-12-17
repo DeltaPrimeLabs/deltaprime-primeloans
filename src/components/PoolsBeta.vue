@@ -11,7 +11,6 @@
                 <div class="header__cell asset">Asset</div>
                 <div class="header__cell deposit">Deposit</div>
                 <div class="header__cell apy">APY</div>
-                <div class="header__cell interest">Daily interest</div>
                 <div class="header__cell tvl">Pool size</div>
                 <div></div>
                 <div class="header__cell actions">Actions</div>
