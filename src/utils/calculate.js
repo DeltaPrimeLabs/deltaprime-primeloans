@@ -4,6 +4,8 @@ import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import {BigNumber} from "ethers";
 import {erc20ABI} from "./blockchain";
+import ApolloClient from "apollo-boost";
+import gql from "graphql-tag";
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
@@ -87,6 +89,135 @@ export async function vectorFinanceBalance(stakingContractAddress, address, deci
   const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
 
   return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+}
+
+export async function getPangolinLpApr(url) {
+  let apr;
+
+  if (url) {
+    const resp = await fetch(url);
+    const json = await resp.json();
+
+    apr = json.swapFeeApr / 100;
+  } else {
+    apr = 0;
+  }
+
+  return apr;
+}
+
+export async function getTraderJoeLpApr(lpAddress) {
+  let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
+
+  const FEE_RATE = 0.0025;
+
+  const pairDayDatasQuery = gql(`
+    query pairDayDatasQuery(
+      $first: Int = 1000
+      $date: Int = 0
+      $pairs: [Bytes]!
+    ) {
+      pairDayDatas(
+        first: $first
+        orderBy: date
+        orderDirection: desc
+        where: { pair_in: $pairs, date_gt: $date }
+      ) {
+        date
+        pair {
+          id
+        }
+        token0 {
+          derivedAVAX
+        }
+        token1 {
+          derivedAVAX
+        }
+        reserveUSD
+        volumeToken0
+        volumeToken1
+        volumeUSD
+        txCount
+      }
+    }
+  `);
+
+  const pairTokenFieldsQuery = `
+    fragment pairTokenFields on Token {
+      id
+      name
+      symbol
+      totalSupply
+      derivedAVAX
+    }
+  `;
+
+  const pairFieldsQuery = `
+    fragment pairFields on Pair {
+      id
+      reserveUSD
+      reserveAVAX
+      volumeUSD
+      untrackedVolumeUSD
+      trackedReserveAVAX
+      token0 {
+        ...pairTokenFields
+      }
+      token1 {
+        ...pairTokenFields
+      }
+      reserve0
+      reserve1
+      token0Price
+      token1Price
+      totalSupply
+      txCount
+      timestamp
+    }
+    ${pairTokenFieldsQuery}
+  `;
+
+  const pairQuery = gql(`
+    query pairQuery($id: String!) {
+      pair(id: $id) {
+        ...pairFields
+      }
+    }
+    ${pairFieldsQuery}
+  `);
+
+  const client = new ApolloClient({
+    uri: tjSubgraphUrl
+  });
+  //
+  const firstResponse = await client.query({query: pairDayDatasQuery, variables: {
+    pairs: [
+      lpAddress.toLowerCase()
+      ],
+      first: 1,
+      date: 0
+    }});
+
+
+  const secondResponse = await client.query({query: pairDayDatasQuery, variables: {
+      pairs: [
+        lpAddress.toLowerCase()
+      ],
+      first: 1000,
+      date: 86400000
+    }});
+
+  const response = await client.query({query: pairQuery, variables: { id: lpAddress.toLowerCase()}});
+
+  let volumeUSD = parseFloat(response.data.pair.volumeUSD);
+  let reserveUSD = parseFloat(response.data.pair.reserveUSD);
+
+  const volume = volumeUSD - parseFloat(oneDayVolumeUSD);
+
+  const feesUSD = volume * FEE_RATE;
+
+  // return feesUSD * 365 / reserveUSD;
+  return 0;
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
