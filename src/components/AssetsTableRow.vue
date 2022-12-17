@@ -48,9 +48,9 @@
                           :line-width="2"
                           :width="60"
                           :height="25"
-                          :positive-change="asset.todayPriceChange > 0">
+                          :positive-change="todayPriceChange > 0">
           </SmallChartBeta>
-          <ColoredValueBeta v-if="asset.todayPriceChange" :value="asset.todayPriceChange" :formatting="'percent'"
+          <ColoredValueBeta v-if="todayPriceChange" :value="todayPriceChange" :formatting="'percent'"
                             :percentage-rounding-precision="2" :show-sign="true"></ColoredValueBeta>
         </div>
       </div>
@@ -78,7 +78,7 @@
                :line-width="3"
                :min-y="asset.minPrice"
                :max-y="asset.maxPrice"
-               :positive-change="asset.todayPriceChange > 0">
+               :positive-change="todayPriceChange > 0">
         </Chart>
       </SmallBlock>
     </div>
@@ -94,8 +94,6 @@ import Chart from './Chart';
 import SmallBlock from './SmallBlock';
 import LoadedValue from './LoadedValue';
 import config from '../config';
-import redstone from 'redstone-api';
-import Vue from 'vue';
 import {mapActions, mapState} from 'vuex';
 import BorrowModal from './BorrowModal';
 import SwapModal from './SwapModal';
@@ -103,9 +101,7 @@ import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits} from '@/utils/calculate';
 import {erc20ABI} from '../utils/blockchain';
-import AssetBalancesExternalUpdateService from '../services/assetBalancesExternalUpdateService';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -122,7 +118,6 @@ export default {
   },
   mounted() {
     this.setupActionsConfiguration();
-    this.setup24HourChange();
     this.watchExternalAssetBalanceUpdate();
   },
   data() {
@@ -145,6 +140,10 @@ export default {
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
+
+    todayPriceChange() {
+      return this.asset.prices && (this.asset.prices[this.asset.prices.length - 1].y - this.asset.prices[0].y) / this.asset.prices[this.asset.prices.length - 1].y;
     }
   },
   methods: {
@@ -213,16 +212,6 @@ export default {
       const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
       return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
-    },
-
-    setup24HourChange() {
-      const date24HoursAgo = Date.now() - 1000 * 3600 * 24;
-      redstone.getHistoricalPrice(this.asset.symbol, {
-        date: date24HoursAgo,
-      }).then(price => {
-        const priceChange = this.asset.price - price.value;
-        Vue.set(this.asset, 'todayPriceChange', priceChange / this.asset.price);
-      });
     },
 
     actionClick(key) {

@@ -212,9 +212,9 @@ export async function getTraderJoeLpApr(lpAddress) {
   let volumeUSD = parseFloat(response.data.pair.volumeUSD);
   let reserveUSD = parseFloat(response.data.pair.reserveUSD);
 
-  const volume = volumeUSD - parseFloat(oneDayVolumeUSD);
+  // const volume = volumeUSD - parseFloat(oneDayVolumeUSD);
 
-  const feesUSD = volume * FEE_RATE;
+  // const feesUSD = volume * FEE_RATE;
 
   // return feesUSD * 365 / reserveUSD;
   return 0;
