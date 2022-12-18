@@ -144,7 +144,6 @@ export default {
     },
 
     async inputChange(event) {
-      console.log(event);
       this.amount = event.value;
       this.currencyInputError = event.error;
       this.$forceUpdate();

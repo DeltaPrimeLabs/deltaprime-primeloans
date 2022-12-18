@@ -14,8 +14,7 @@
       <div class="table__cell table__cell--double-value balance">
         <template v-if="assetBalances && assetBalances[asset.symbol]">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => assetBalances[asset.symbol] != null"
-                         :value="formatTokenBalance(assetBalances[asset.symbol])"></LoadedValue>
+            <span v-if="approxBalance">~</span>{{assetBalances[asset.symbol] | smartRound}}
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
@@ -28,7 +27,9 @@
 
       <div class="table__cell table__cell--double-value loan">
         <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
-          <div class="double-value__pieces">{{ debtsPerAsset[asset.symbol].debt | smartRound }}</div>
+          <div class="double-value__pieces">
+            <span v-if="approxDebt">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound }}
+          </div>
           <div class="double-value__usd">{{ debtsPerAsset[asset.symbol].debt * asset.price | usd }}</div>
         </template>
         <template v-else>
@@ -119,12 +120,16 @@ export default {
   mounted() {
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
+    this.watchAssetBalancesDataRefreshEvent();
+    this.watchDebtsPerAssetDataRefreshEvent();
   },
   data() {
     return {
       actionsConfig: null,
       showChart: false,
       rowExpanded: false,
+      approxBalance: false,
+      approxDebt: false,
     };
   },
   computed: {
@@ -132,7 +137,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -265,12 +270,12 @@ export default {
           amount: value.toFixed(config.DECIMALS_PRECISION)
         };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-          console.log('success');
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
+          this.approxBalance = true;
+          this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
-          console.log('fail');
         })
           .then(() => {
             this.closeModal();
@@ -341,11 +346,10 @@ export default {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
+                this.approxBalance = true;
                 this.$forceUpdate();
               }, () => {
-                console.log('TX____________ internal fail');
               }).then(() => {
-                console.log('tx success native');
                 this.closeModal();
               });
             } else {
@@ -355,13 +359,11 @@ export default {
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-                console.log('fund erc20 success');
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
+                this.approxBalance = true;
                 this.$forceUpdate();
               }, () => {
-                console.log('fund failed');
               }).then(() => {
-                console.log('handle transactions then callback');
                 this.closeModal();
               });
             }
@@ -394,9 +396,9 @@ export default {
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
+            this.approxBalance = true;
             this.$forceUpdate();
           }, () => {
-            console.log('withdraw native on fail');
           })
             .then(() => {
               this.closeModal();
@@ -408,14 +410,12 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-            console.log('withdraw success');
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
+            this.approxBalance = true;
             this.$forceUpdate();
           }, () => {
-            console.log('withdraw fail');
           })
             .then(() => {
-              console.log('withdraw then');
               this.closeModal();
             });
         }
@@ -443,6 +443,8 @@ export default {
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
+          this.approxBalance = true;
+          this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
 
@@ -461,11 +463,23 @@ export default {
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
-          console.log('refresh triggered for: ', updateEvent);
           this.assetBalances[this.asset.symbol] = updateEvent.balance;
+          this.approxBalance = true;
           this.$forceUpdate();
         }
       });
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.approxBalance = false;
+      });
+    },
+
+    watchDebtsPerAssetDataRefreshEvent() {
+      this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
+        this.approxDebt = false;
+      })
     },
   },
   watch: {
@@ -476,6 +490,7 @@ export default {
         }
       },
     },
+
     pools: {
       handler(pools) {
         this.setupActionsConfiguration();

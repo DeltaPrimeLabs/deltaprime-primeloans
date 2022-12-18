@@ -24,7 +24,7 @@
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
-                     :symbol="asset.name"
+                     :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
                      :max="Number(available)">

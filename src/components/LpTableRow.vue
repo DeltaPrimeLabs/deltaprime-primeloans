@@ -14,11 +14,13 @@
       <div class="table__cell table__cell--double-value balance">
         <template v-if="lpBalances">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => lpBalances[lpToken.symbol] != null"
-                         :value="formatTokenBalance(lpBalances[lpToken.symbol], 10, true)"></LoadedValue>
+            <span v-if="isLpBalanceEstimated">~</span>
+            {{formatTokenBalance(lpBalances[lpToken.symbol], 10, true)}}
           </div>
           <div class="double-value__usd">
-            <span v-if="lpBalances[lpToken.symbol]">{{ lpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+            <span v-if="lpBalances[lpToken.symbol]">
+              {{ lpBalances[lpToken.symbol] * lpToken.price | usd }}
+            </span>
           </div>
         </template>
         <template v-if="!lpBalances || !lpBalances[lpToken.symbol]">
@@ -102,6 +104,7 @@ export default {
 
   async mounted() {
     this.setupActionsConfiguration();
+    this.watchAssetBalancesDataRefreshEvent();
     await this.setupApr();
   },
 
@@ -112,7 +115,8 @@ export default {
       rowExpanded: false,
       poolBalance: 0,
       apr: 0,
-      tvl: 0
+      tvl: 0,
+      isLpBalanceEstimated: false,
     };
   },
 
@@ -121,7 +125,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -252,6 +256,7 @@ export default {
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
+                this.isLpBalanceEstimated = true;
                 this.$forceUpdate();
               }, () => {
 
@@ -284,6 +289,7 @@ export default {
 
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
+          this.isLpBalanceEstimated = true;
           this.$forceUpdate();
         }, () => {
 
@@ -315,10 +321,8 @@ export default {
             const secondBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.secondAsset]) - Number(provideLiquidityRequest.secondAmount);
             this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
             this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
-            console.log(Number(this.lpBalances[this.lpToken.symbol]));
-            console.log(Number(provideLiquidityRequest.addedLiquidity));
             this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
-            console.log(this.lpBalances[this.lpToken.symbol]);
+            this.isLpBalanceEstimated = true;
             this.$forceUpdate();
           }, () => {
 
@@ -353,10 +357,8 @@ export default {
           const secondBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.secondAsset]) + Number(removeLiquidityRequest.minSecondAmount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
-          console.log(this.lpBalances[this.lpToken.symbol]);
-          console.log(removeLiquidityRequest.value);
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
-          console.log(this.lpBalances[this.lpToken.symbol]);
+          this.isLpBalanceEstimated = true;
           this.$forceUpdate();
         }, () => {
 
@@ -390,6 +392,12 @@ export default {
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, true);
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.isLpBalanceEstimated = false;
+      });
     },
   },
 };

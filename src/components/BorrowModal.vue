@@ -116,7 +116,7 @@ export default {
     },
 
     inputChange(change) {
-      this.value = change;
+      this.value = Number(change);
       this.calculateHealthAfterTransaction();
     },
 

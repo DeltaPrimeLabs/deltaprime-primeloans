@@ -190,7 +190,7 @@ export default {
     },
 
     setMax() {
-      this.setValue(this.max);
+      this.setValue(Number(this.max).toFixed(12));
       this.checkErrors(this.value);
       this.$emit('inputChange', this.value);
     },

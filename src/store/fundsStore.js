@@ -320,7 +320,8 @@ export default {
       }, 30000);
     },
 
-    async getAllAssetsBalances({state, commit}) {
+    async getAllAssetsBalances({state, commit, rootState}) {
+      const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
       const lpBalances = {};
       const assetBalances = await state.smartLoanContract.getAllAssetsBalances();
@@ -338,9 +339,11 @@ export default {
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
+      dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent({assetBalances: balances, lpBalances: lpBalances});
     },
 
-    async getDebtsPerAsset({state, commit}) {
+    async getDebtsPerAsset({state, commit, rootState}) {
+      const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const debtsPerAsset = {};
       const debts = await state.smartLoanContract.getDebts();
       debts.forEach(debt => {
@@ -348,7 +351,8 @@ export default {
         const debtValue = formatUnits(debt.debt, config.ASSETS_CONFIG[asset].decimals);
         debtsPerAsset[asset] = {asset: asset, debt: debtValue};
       });
-      commit('setDebtsPerAsset', debtsPerAsset);
+      await commit('setDebtsPerAsset', debtsPerAsset);
+      dataRefreshNotificationService.emitDebtsPerAssetDataRefreshEvent(debtsPerAsset);
     },
 
     async getFullLoanStatus({state, commit}) {

@@ -144,7 +144,6 @@ export default {
 
   methods: {
     submit() {
-      console.log(this.addedLiquidity);
       this.transactionOngoing = true;
       const provideLiquidityEvent = {
         firstAsset: this.firstAsset,
@@ -153,7 +152,6 @@ export default {
         secondAmount: this.secondAmount,
         addedLiquidity: this.addedLiquidity
       };
-      console.log(provideLiquidityEvent);
       this.$emit('PROVIDE_LIQUIDITY', provideLiquidityEvent);
     },
 

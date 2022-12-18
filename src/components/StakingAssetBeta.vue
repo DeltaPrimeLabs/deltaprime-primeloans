@@ -26,12 +26,16 @@
 
         <div class="header__cell cell__staked">
           <div class="header__cell__label">Staked:</div>
-          <div class="header__cell__value">{{ totalStaked | smartRound }}</div>
+          <div class="header__cell__value">
+            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
+          </div>
         </div>
 
         <div class="header__cell cell__available">
           <div class="header__cell__label">Available:</div>
-          <div class="header__cell__value">{{ formatTokenBalance(balance, 10, true) }}</div>
+          <div class="header__cell__value">
+            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(balance, 10, true) }}
+          </div>
         </div>
 
         <div class="header__cell cell__max-apy">
@@ -75,7 +79,7 @@
                                      v-bind:key="index"
                                      :farm="farm"
                                      :asset="asset"
-                                     v-on:balanceChange="balanceChange">
+                                     v-on:stakedChange="stakedChange">
             </StakingProtocolTableRow>
           </div>
         </div>
@@ -109,6 +113,8 @@ export default {
       totalStaked: 0,
       availableFarms: [],
       protocolConfig: null,
+      isTotalStakedEstimated: false,
+      isAvailableEstimated: false,
     };
   },
   mounted() {
@@ -116,12 +122,13 @@ export default {
     this.setupTotalStaked();
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
+    this.watchAssetBalancesDataRefreshEvent();
   },
 
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -217,14 +224,15 @@ export default {
       return config.PROTOCOLS_CONFIG[protocol.protocol].logo;
     },
 
-    balanceChange() {
+    stakedChange() {
       this.setupTotalStaked();
+      this.isTotalStakedEstimated = false;
     },
 
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
-          console.log('staking refresh triggered for: ', updateEvent);
+          this.isAvailableEstimated = true;
           if (updateEvent.isLP) {
             this.lpBalances[this.asset.symbol] = updateEvent.balance;
           } else {
@@ -238,6 +246,7 @@ export default {
     watchExternalTotalStakedUpdate() {
       this.totalStakedExternalUpdateService.totalStakedExternalUpdate$.subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.isTotalStakedEstimated = true;
           if (updateEvent.action === 'STAKE') {
             this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
           } else if (updateEvent.action === 'UNSTAKE') {
@@ -245,6 +254,13 @@ export default {
           }
           this.$forceUpdate();
         }
+      });
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.isAvailableEstimated = false;
+        this.$forceUpdate();
       });
     },
   },
