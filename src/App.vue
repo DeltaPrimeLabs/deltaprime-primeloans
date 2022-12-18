@@ -85,12 +85,10 @@ export default {
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError']),
-    ...mapState('serviceRegistry', ['refreshService']),
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
     ...mapActions('nft', ['initNfts']),
-    ...mapActions('serviceRegistry', ['serviceRegistryInit']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
@@ -178,10 +176,6 @@ export default {
       this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
     },
 
-    testClick() {
-      console.log(this.refreshService);
-      this.refreshService.emit();
-    },
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);

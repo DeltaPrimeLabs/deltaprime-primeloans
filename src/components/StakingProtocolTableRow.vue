@@ -20,7 +20,9 @@
 
       <div class="table__cell">
         <div class="double-value staked-balance">
-          <div class="double-value__pieces">{{ isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance) }}</div>
+          <div class="double-value__pieces">
+            <span v-if="isStakedBalanceEstimated">~</span>{{ isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance) }}
+          </div>
           <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
         </div>
       </div>
@@ -71,7 +73,8 @@ export default {
   data() {
     return {
       balance: 0,
-      apy: 0
+      apy: 0,
+      isStakedBalanceEstimated: false,
     };
   },
   watch: {
@@ -79,7 +82,7 @@ export default {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
           this.balance = await this.farm.staked(this.smartLoanContract.address);
-          this.$emit('balanceChange', this.balance);
+          this.$emit('stakedChange', this.balance);
         }
       },
       immediate: true
@@ -100,7 +103,7 @@ export default {
       return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS;
     },
     isLP() {
-      return this.asset.secondary !== null;
+      return this.asset.secondary != null;
     }
   },
   methods: {
@@ -126,19 +129,19 @@ export default {
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
           this.balance = Number(this.balance) + Number(stakeRequest.amount);
+          this.isStakedBalanceEstimated = true;
           const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
           const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, isLP);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
           this.$forceUpdate();
         }, () => {
-          console.log('stake fail');
-
         }).then(() => {
           this.closeModal();
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
+              this.isStakedBalanceEstimated = false;
               this.$emit('balanceChange', this.balance);
             });
           }, 30000);
@@ -165,23 +168,21 @@ export default {
           decimals: this.asset.decimals
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
-          console.log('unstake success');
-          console.log(this.balance);
-          console.log(unstakeRequest.amount);
           this.balance = Number(this.balance) - Number(unstakeRequest.amount);
+          this.isStakedBalanceEstimated = true;
           const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
           const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, isLP);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
           this.$forceUpdate();
         }, () => {
-          console.log('unstake fail');
         }).then(result => {
           this.closeModal();
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
-              this.$emit('balanceChange', this.balance);
+              this.isStakedBalanceEstimated = false;
+              this.$emit('stakedChange', this.balance);
             });
           }, 30000);
         });
