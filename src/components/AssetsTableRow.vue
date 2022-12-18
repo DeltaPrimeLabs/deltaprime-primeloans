@@ -14,7 +14,7 @@
       <div class="table__cell table__cell--double-value balance">
         <template v-if="assetBalances && assetBalances[asset.symbol]">
           <div class="double-value__pieces">
-            <span v-if="approxBalance">~</span>{{assetBalances[asset.symbol] | smartRound}}
+            <span v-if="isBalanceEstimated">~</span>{{assetBalances[asset.symbol] | smartRound}}
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
@@ -128,7 +128,7 @@ export default {
       actionsConfig: null,
       showChart: false,
       rowExpanded: false,
-      approxBalance: false,
+      isBalanceEstimated: false,
       approxDebt: false,
     };
   },
@@ -272,7 +272,7 @@ export default {
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
-          this.approxBalance = true;
+          this.isBalanceEstimated = true;
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
@@ -346,7 +346,7 @@ export default {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
-                this.approxBalance = true;
+                this.isBalanceEstimated = true;
                 this.$forceUpdate();
               }, () => {
               }).then(() => {
@@ -360,7 +360,7 @@ export default {
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
-                this.approxBalance = true;
+                this.isBalanceEstimated = true;
                 this.$forceUpdate();
               }, () => {
               }).then(() => {
@@ -396,7 +396,7 @@ export default {
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
-            this.approxBalance = true;
+            this.isBalanceEstimated = true;
             this.$forceUpdate();
           }, () => {
           })
@@ -411,7 +411,7 @@ export default {
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
-            this.approxBalance = true;
+            this.isBalanceEstimated = true;
             this.$forceUpdate();
           }, () => {
           })
@@ -443,7 +443,7 @@ export default {
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
-          this.approxBalance = true;
+          this.isBalanceEstimated = true;
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
@@ -464,7 +464,7 @@ export default {
       this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
           this.assetBalances[this.asset.symbol] = updateEvent.balance;
-          this.approxBalance = true;
+          this.isBalanceEstimated = true;
           this.$forceUpdate();
         }
       });
@@ -472,7 +472,7 @@ export default {
 
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
-        this.approxBalance = false;
+        this.isBalanceEstimated = false;
       });
     },
 
