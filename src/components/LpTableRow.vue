@@ -250,7 +250,7 @@ export default {
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
               const fundRequest = {
-                value: addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION),
+                value: addFromWalletEvent.value.toString(),
                 asset: this.lpToken.symbol,
                 assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
               };
@@ -282,7 +282,7 @@ export default {
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
-          value: withdrawEvent.value.toFixed(config.DECIMALS_PRECISION),
+          value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
         }
@@ -311,8 +311,8 @@ export default {
             symbol: this.lpToken.symbol,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: provideLiquidityEvent.firstAmount.toFixed(config.DECIMALS_PRECISION),
-            secondAmount: provideLiquidityEvent.secondAmount.toFixed(config.DECIMALS_PRECISION),
+            firstAmount: provideLiquidityEvent.firstAmount.toString(),
+            secondAmount: provideLiquidityEvent.secondAmount.toString(),
             dex: this.lpToken.dex,
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
         };
@@ -346,8 +346,8 @@ export default {
           symbol: this.lpToken.symbol,
           firstAsset: this.lpToken.primary,
           secondAsset: this.lpToken.secondary,
-          minFirstAmount: removeEvent.minReceivedFirst.toFixed(config.DECIMALS_PRECISION),
-          minSecondAmount: removeEvent.minReceivedSecond.toFixed(config.DECIMALS_PRECISION),
+          minFirstAmount: removeEvent.minReceivedFirst.toString(),
+          minSecondAmount: removeEvent.minReceivedSecond.toString(),
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
         }

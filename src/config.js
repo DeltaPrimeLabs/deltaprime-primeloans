@@ -80,7 +80,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: async () => yieldYakApy('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95'),
-                balance: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
+                staked: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 rewards: async (address) => yieldYakRewards('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakeMethod: 'stakeAVAXYak',
                 unstakeMethod: 'unstakeAVAXYak',
@@ -93,7 +93,7 @@ export default {
             {
                 protocol: 'VECTOR_FINANCE',
                 apy: async () => vectorFinanceApy('AVAX'),
-                balance: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
+                staked: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
                 rewards: async (address) => vectorFinanceRewards('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
@@ -108,7 +108,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: async () => yieldYakApy('0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557'),
-                balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
+                staked: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 rewards: async (address) => yieldYakRewards('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
@@ -119,7 +119,7 @@ export default {
             {
                 protocol: 'VECTOR_FINANCE',
                 apy: () => vectorFinanceApy('SAVAX'),
-                balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
+                staked: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
                 rewards: (address) => vectorFinanceRewards('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
@@ -135,7 +135,7 @@ export default {
                 protocol: 'VECTOR_FINANCE',
                 //TODO: check if it's a right APY
                 apy: () => vectorFinanceApy('USDC'),
-                balance: (address) => vectorFinanceBalance('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
+                staked: (address) => vectorFinanceBalance('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
                 rewards: (address) => vectorFinanceRewards('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
@@ -149,7 +149,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656'),
-                balance: (address) => yieldYakBalance('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656', address),
+                staked: (address) => yieldYakBalance('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656', address),
                 rewards: (address) => yieldYakRewards('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656', address),
                 stakeMethod: 'stakePNGAVAXUSDCYak',
                 unstakeMethod: 'unstakePNGAVAXUSDCYak',
@@ -162,7 +162,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0xFCD2050E213cC54db2c9c99632AC870574FbC261'),
-                balance: (address) => yieldYakBalance('0xFCD2050E213cC54db2c9c99632AC870574FbC261', address),
+                staked: (address) => yieldYakBalance('0xFCD2050E213cC54db2c9c99632AC870574FbC261', address),
                 rewards: (address) => yieldYakRewards('0xFCD2050E213cC54db2c9c99632AC870574FbC261', address),
                 stakeMethod: 'stakePNGAVAXETHYak',
                 unstakeMethod: 'unstakePNGAVAXETHYak',
@@ -175,7 +175,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC'),
-                balance: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
+                staked: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 rewards: (address) => yieldYakRewards('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakeMethod: 'stakeTJAVAXUSDCYak',
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
@@ -189,7 +189,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0x5219558ee591b030E075892acc41334A1694fd8A'),
-                balance: (address) => yieldYakBalance('0x5219558ee591b030E075892acc41334A1694fd8A', address),
+                staked: (address) => yieldYakBalance('0x5219558ee591b030E075892acc41334A1694fd8A', address),
                 rewards: (address) => yieldYakRewards('0x5219558ee591b030E075892acc41334A1694fd8A', address),
                 stakeMethod: 'stakeTJAVAXETHYak',
                 unstakeMethod: 'unstakeTJAVAXETHYak',
@@ -202,7 +202,7 @@ export default {
             {
                 protocol: 'YIELD_YAK',
                 apy: () => yieldYakApy('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56'),
-                balance: (address) => yieldYakBalance('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56', address),
+                staked: (address) => yieldYakBalance('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56', address),
                 rewards: (address) => yieldYakRewards('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56', address),
                 stakeMethod: 'stakeTJAVAXSAVAXYak',
                 unstakeMethod: 'unstakeTJAVAXSAVAXYak',
