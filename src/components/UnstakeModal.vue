@@ -9,8 +9,8 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Staked:</div>
-        <div class="top-info__value">{{ staked | smartRound }}<span class="top-info__currency"> {{ asset.name }}</span></div>
+        <div class="top-info__label">Balance:</div>
+        <div class="top-info__value">{{ balance | smartRound }}<span class="top-info__currency"> {{ asset.name }}</span></div>
       </div>
 
       <CurrencyInput v-if="isLP"
@@ -18,14 +18,14 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="balance">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="balance">
       </CurrencyInput>
 
 
@@ -41,10 +41,10 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              Staked:
+              Balance:
             </div>
             <div class="summary__value">
-              {{ staked - unstakeValue > 0 ? staked - unstakeValue : 0 | smartRound }} <span class="currency">{{ asset.name }}</span>
+              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound }} <span class="currency">{{ asset.name }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
@@ -86,7 +86,7 @@ export default {
   props: {
     apy: {},
     available: {},
-    staked: {},
+    balance: {},
     asset: {},
     isLp: false,
     protocol: null,
@@ -107,7 +107,7 @@ export default {
 
   computed: {
     calculateDailyInterest() {
-      const balance = this.staked - this.unstakeValue;
+      const balance = this.balance - this.unstakeValue;
       if (balance <= 0) {
         return 0;
       } else {
@@ -131,8 +131,8 @@ export default {
       this.validators = [
         {
           validate: (value) => {
-            if (value > this.staked) {
-              return `Exceeds staked`;
+            if (value > this.balance) {
+              return `Exceeds balance`;
             }
           }
         }
