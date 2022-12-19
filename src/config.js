@@ -2,7 +2,7 @@ import addresses from '../common/addresses/avax/token_addresses.json';
 import {
     getPangolinLpApr, getTraderJoeLpApr,
     vectorFinanceApy,
-    vectorFinanceBalance,
+    vectorFinanceBalance, vectorFinanceRewards,
     yieldYakApy,
     yieldYakBalance, yieldYakRewards
 } from "./utils/calculate";
@@ -101,7 +101,7 @@ export default {
                 token: 'AVAX',
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP']
+                rewardTokens: ['PTP', 'QI']
             }
         ],
         sAVAX: [
@@ -113,7 +113,8 @@ export default {
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
                 token: 'SAVAX',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['sAVAX']
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -125,7 +126,8 @@ export default {
                 minAmount: 0.8,
                 token: 'SAVAX',
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP', 'QI']
             }
         ],
         USDC: [
@@ -139,7 +141,8 @@ export default {
                 unstakeMethod: 'vectorUnstakeUSDC1',
                 minAmount: 0.8,
                 token: 'USDC',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP']
             }
         ],
         PNG_AVAX_USDC_LP: [
