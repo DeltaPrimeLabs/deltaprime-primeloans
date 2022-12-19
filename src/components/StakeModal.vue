@@ -56,7 +56,7 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Staked:
+                Balance:
               </div>
               <div class="summary__value">
                 {{ Number(staked) + Number(stakeValue) | smartRound }}
@@ -127,7 +127,7 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.staked) + Number(this.stakeValue));
+      return this.apy / 365 * (Number(this.balance) + Number(this.stakeValue));
     }
   },
 

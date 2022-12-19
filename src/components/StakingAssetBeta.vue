@@ -25,7 +25,7 @@
         </div>
 
         <div class="header__cell cell__staked">
-          <div class="header__cell__label">Staked:</div>
+          <div class="header__cell__label">Balance:</div>
           <div class="header__cell__value">
             <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
           </div>
@@ -62,7 +62,8 @@
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
-            <div class="table__header__cell">Staked</div>
+            <div class="table__header__cell">Balance</div>
+            <div class="table__header__cell">Rewards</div>
             <div class="table__header__cell">Min. APY</div>
             <div class="table__header__cell">Max. APY
             <div class="info__icon__wrapper">
@@ -206,7 +207,7 @@ export default {
 
     setupTotalStaked() {
       if (this.smartLoanContract) {
-        const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
+        const totalStakedPromises = this.availableFarms.map(farm => farm.balance(this.smartLoanContract.address));
         Promise.all(totalStakedPromises).then((allResults) => {
           this.totalStaked = 0;
           allResults.forEach(result => {
@@ -248,9 +249,9 @@ export default {
         if (updateEvent.assetSymbol === this.asset.symbol) {
           this.isTotalStakedEstimated = true;
           if (updateEvent.action === 'STAKE') {
-            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.balanceChange);
           } else if (updateEvent.action === 'UNSTAKE') {
-            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.balanceChange);
           }
           this.$forceUpdate();
         }
@@ -419,7 +420,7 @@ export default {
 
         .table__header {
           display: grid;
-          grid-template-columns: 16% 1fr 170px 160px 180px 22px;
+          grid-template-columns: 16% 1fr 170px 170px 160px 156px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {

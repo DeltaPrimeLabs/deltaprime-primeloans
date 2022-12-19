@@ -65,7 +65,6 @@ export default {
           {gasLimit: 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});
-      ;
 
       await awaitConfirmation(unstakeTransaction, provider, 'unstake');
 
@@ -79,7 +78,7 @@ export default {
 
       for (const [, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
-          farm.balance = await farm.staked(rootState.fundsStore.smartLoanContract.address);
+          farm.balance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
         }
       }
 

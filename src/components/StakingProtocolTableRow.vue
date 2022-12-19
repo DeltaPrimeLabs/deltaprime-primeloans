@@ -28,6 +28,17 @@
       </div>
 
       <div class="table__cell">
+        <div class="reward__icons">
+          <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens" :src="logoSrc(token)">
+        </div>
+        <div class="double-value">
+          <div class="double-value__pieces">
+            {{ rewards | usd }}
+          </div>
+        </div>
+      </div>
+
+      <div class="table__cell">
         {{ apy | percent }}
       </div>
 
@@ -69,11 +80,13 @@ export default {
   },
   async mounted() {
     this.apy = await this.farm.apy();
+    this.rewards = await this.farm.rewards();
   },
   data() {
     return {
       balance: 0,
       apy: 0,
+      rewards: 0,
       isStakedBalanceEstimated: false,
     };
   },
@@ -81,7 +94,7 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.balance = await this.farm.staked(this.smartLoanContract.address);
+          this.balance = await this.farm.balance(this.smartLoanContract.address);
           this.$emit('stakedChange', this.balance);
         }
       },
@@ -116,7 +129,8 @@ export default {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
       modalInstance.available = this.asset.secondary ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
-      modalInstance.staked = Number(this.balance);
+      modalInstance.balance = Number(this.balance);
+      modalInstance.rewards = Number(this.rewards);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
@@ -139,7 +153,7 @@ export default {
         }).then(() => {
           this.closeModal();
           setTimeout(() => {
-            this.farm.staked(this.smartLoanContract.address).then((balance) => {
+            this.farm.balance(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
               this.$emit('balanceChange', this.balance);
@@ -156,7 +170,7 @@ export default {
 
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.staked = Number(this.balance);
+      modalInstance.balance = Number(this.balance);
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
@@ -179,7 +193,7 @@ export default {
         }).then(result => {
           this.closeModal();
           setTimeout(() => {
-            this.farm.staked(this.smartLoanContract.address).then((balance) => {
+            this.farm.balance(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
               this.$emit('stakedChange', this.balance);
@@ -199,7 +213,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 16% 1fr 170px 160px 180px 22px;
+    grid-template-columns: 16% 1fr 170px 170px 160px 156px 22px;
     height: 60px;
     border-style: solid;
     border-width: 2px 0 0 0;
@@ -264,7 +278,7 @@ export default {
           font-size: $font-size-xsm;
         }
 
-        &.staked-balance {
+        &.balance-balance {
           .double-value__pieces {
             font-weight: 600;
           }
@@ -278,6 +292,14 @@ export default {
 
       &.max-apy {
         font-weight: 600;
+      }
+
+      .reward__icons {
+        .reward__asset__icon {
+          margin-right: 5px;
+          width: 20px;
+          height: 20px;
+        }
       }
 
       .actions {
