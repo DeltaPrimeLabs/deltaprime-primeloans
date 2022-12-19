@@ -170,7 +170,7 @@ export default {
 
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.balance = Number(this.balance);
+      modalInstance.balance = this.balance;
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;

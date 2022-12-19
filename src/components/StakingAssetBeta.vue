@@ -211,7 +211,7 @@ export default {
         Promise.all(totalStakedPromises).then((allResults) => {
           this.totalStaked = 0;
           allResults.forEach(result => {
-            this.totalStaked += Number(result);
+            this.totalStaked += parseFloat(result);
           });
         });
       }
