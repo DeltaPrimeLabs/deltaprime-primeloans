@@ -81,11 +81,11 @@ export async function vectorFinanceApy(token) {
 
 export async function yieldYakRewards(stakingContractAddress, address) {
   const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
-  const totalSupply = Number(await tokenContract.totalSupply());
-  const totalDeposits = Number(await tokenContract.totalDeposits());
+  const totalSupply = formatUnits(await tokenContract.totalSupply(), 18);
+  const totalDeposits = formatUnits(await tokenContract.totalDeposits(), 18);
   const yrtToAvaxConversionRate = totalDeposits / totalSupply;
   const stakedYrtWei = await tokenContract.balanceOf(address);
-  const stakedYrt = Number(fromWei(stakedYrtWei));
+  const stakedYrt = formatUnits(stakedYrtWei, 18);
 
   return stakedYrt * yrtToAvaxConversionRate - stakedYrt;
 }
@@ -94,7 +94,7 @@ export async function yieldYakBalance(stakingContractAddress, address) {
   const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
   const stakedYrtWei = await tokenContract.balanceOf(address);
 
-  return Number(fromWei(stakedYrtWei));
+  return formatUnits(stakedYrtWei, 18);
 }
 
 export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {
