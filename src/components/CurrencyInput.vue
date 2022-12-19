@@ -5,7 +5,7 @@
          @click="$refs.input.focus()">
       <span class="input">
         <input  ref="input" v-model="internalValue" v-on:input="valueChange"
-               placeholder="0" min="0" maxlength="15" lang="en-US">
+               placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
         <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
@@ -155,7 +155,7 @@ export default {
       return this.error;
     },
     valueChange() {
-      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,8}$/);
+      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,18}$/);
       if (match) {
         this.value = Number(this.internalValue.replaceAll(',', '.'));
       } else {
@@ -190,7 +190,7 @@ export default {
     },
 
     setMax() {
-      this.setValue(Number(this.max).toFixed(12));
+      this.setValue(Number(this.max).toFixed(18));
       this.checkErrors(this.value);
       this.$emit('inputChange', this.value);
     },
