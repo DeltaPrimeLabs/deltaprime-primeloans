@@ -15,8 +15,6 @@ interface IVectorFinanceFacet {
 
     function vectorUSDC1Balance() external view returns(uint256);
 
-    function vectorUSDC2Balance() external view returns(uint256);
-
     function vectorWAVAX1Balance() external view returns(uint256);
 
     function vectorSAVAX1Balance() external view returns(uint256);

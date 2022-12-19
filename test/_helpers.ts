@@ -810,6 +810,16 @@ export class PoolAsset {
     }
 }
 
+export class AddressIdentifier {
+    _address: string;
+    _identifier: string;
+
+    constructor(_address: string, _identifier: string) {
+        this._address = _address;
+        this._identifier = _identifier;
+    }
+}
+
 export class AssetBalanceLeverage {
     name: string;
     balance: number;

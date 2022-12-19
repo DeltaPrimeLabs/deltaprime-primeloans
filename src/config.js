@@ -84,7 +84,7 @@ export default {
             {
                 protocol: 'VECTOR_FINANCE',
                 apy: async () => vectorFinanceApy('AVAX'),
-                staked: async (address) => vectorFinanceBalance('0x4E42d1a0b83fA354882f19E89a316E00bc106a98', address),
+                staked: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
                 minAmount: 0.8,
@@ -103,7 +103,7 @@ export default {
             {
                 protocol: 'VECTOR_FINANCE',
                 apy: () => vectorFinanceApy('SAVAX'),
-                staked: (address) => vectorFinanceBalance('0x822C11be60258D6Bf00C5B0907B2015633d11a62', address),
+                staked: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
                 minAmount: 0.8,
@@ -115,7 +115,7 @@ export default {
                 protocol: 'VECTOR_FINANCE',
                 //TODO: check if it's a right APY
                 apy: () => vectorFinanceApy('USDC'),
-                staked: (address) => vectorFinanceBalance('0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A', address, 6),
+                staked: (address) => vectorFinanceBalance('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
                 minAmount: 0.8,

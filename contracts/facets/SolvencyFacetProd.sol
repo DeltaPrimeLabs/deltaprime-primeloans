@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
+import "../interfaces/facets/avalanche/IVectorFinanceFacet.sol";
 import "../TokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";
@@ -281,8 +282,10 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
 
-                weightedValueOfStaked += stakedPositionsPrices[i].price * balance * tokenManager.debtCoverage(positions[i].vault) / (10 ** token.decimals() * 10**8);
+                weightedValueOfStaked += stakedPositionsPrices[i].price * balance * tokenManager.debtCoverageStaked(positions[i].identifier) / (10 ** token.decimals() * 10**8);
             }
+
+
         }
         return weightedValueOfStaked;
     }
@@ -426,9 +429,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
-
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
-
                 usdValue += stakedPositionsPrices[i].price * 10 ** 10 * balance / (10 ** token.decimals());
             }
         }

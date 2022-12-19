@@ -40,6 +40,8 @@ contract TokenManager is OwnableUpgradeable {
     address[] public supportedTokensList;
 
     mapping(address => uint256) public tokenToStatus;
+    // used for defining different leverage ratios for staked assets
+    mapping(bytes32 => uint256) public debtCoverageStaked;
 
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
@@ -182,6 +184,12 @@ contract TokenManager is OwnableUpgradeable {
         //LTV must be lower than 5
         require(coverage <= 0.833333333333333333e18, 'Debt coverage higher than maximum acceptable');
         debtCoverage[token] = coverage;
+    }
+
+    function setDebtCoverageStaked(bytes32 stakedAsset, uint256 coverage) public onlyOwner {
+        //LTV must be lower than 5
+        require(coverage <= 0.833333333333333333e18, 'Debt coverage higher than maximum acceptable');
+        debtCoverageStaked[stakedAsset] = coverage;
     }
 
     /* ========== OVERRIDDEN FUNCTIONS ========== */

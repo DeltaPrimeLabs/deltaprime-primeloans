@@ -3,8 +3,6 @@ import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 const {ethers} = require("hardhat");
 import {deployDiamond} from "../../tools/diamond/deploy-diamond";
 import {deployAllFacets, recompileConstantsFile} from "../../test/_helpers";
-import verifyContract from "../../tools/scripts/verify-contract";
-import hre from "hardhat";
 import web3Abi from "web3-eth-abi";
 
 module.exports = async ({

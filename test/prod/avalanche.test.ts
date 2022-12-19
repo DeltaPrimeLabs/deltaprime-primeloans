@@ -1119,7 +1119,7 @@ describe('Test deployed contracts on Avalanche', () => {
         let amountInWei = parseUnits(avaxAmount.toString(), 18);
         await loan1.depositNativeToken({ value: amountInWei});
 
-        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'vectorStakeWAVAX1', '0x4E42d1a0b83fA354882f19E89a316E00bc106a98', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'vectorStakeWAVAX1', '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', 'balance', loan1, USER_1, USER_2, true);
 
         //sAVAX
 
@@ -1127,7 +1127,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
-        await testVault('vectorStakeSAVAX1', 'vectorUnstakeSAVAX1', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'vectorStakeSAVAX1', '0x822C11be60258D6Bf00C5B0907B2015633d11a62', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeSAVAX1', 'vectorUnstakeSAVAX1', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'vectorStakeSAVAX1', '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', 'balance', loan1, USER_1, USER_2, true);
 
         //USDC
 
@@ -1135,7 +1135,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('USDC'), amountInWei, 0);
-        await testVault('vectorStakeUSDC1', 'vectorUnstakeUSDC1', 'USDC', await loan1.getBalance(toBytes32('USDC')),'vectorStakeUSDC1', '0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeUSDC1', 'vectorUnstakeUSDC1', 'USDC', await loan1.getBalance(toBytes32('USDC')),'vectorStakeUSDC1', '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', 'balance', loan1, USER_1, USER_2, true);
     }
 
     async function testVault(

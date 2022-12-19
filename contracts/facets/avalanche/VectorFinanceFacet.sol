@@ -8,6 +8,7 @@ import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
+import "../../interfaces/IVectorFinanceMainStaking.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
@@ -17,71 +18,86 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     address private constant VectorMainStaking = 0x8B3d9F0017FA369cD8C164D0Cc078bf4cA588aE5;
 
-    address private constant USDCAddress = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
-    address private constant VectorUSDCStaking1 = 0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A;
-
-    address private constant WAVAXAddress = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-    address private constant VectorWAVAXStaking1 = 0x4E42d1a0b83fA354882f19E89a316E00bc106a98;
-
-    address private constant SAVAXAddress = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
-    address private constant VectorSAVAXStaking1 = 0x822C11be60258D6Bf00C5B0907B2015633d11a62;
-
     // PUBLIC FUNCTIONS
 
     function vectorStakeUSDC1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            vault: VectorUSDCStaking1,
+            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
             symbol: "USDC",
+            identifier: "VF_USDC_MAIN",
             balanceSelector: this.vectorUSDC1Balance.selector,
             unstakeSelector: this.vectorUnstakeUSDC1.selector
         });
-        stakeToken("USDC", USDCAddress, VectorUSDCStaking1, amount, position);
+        stakeToken(amount, position);
     }
 
     function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("USDC", USDCAddress, VectorUSDCStaking1, amount, minAmount, this.vectorUSDC1Balance.selector);
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            symbol: "USDC",
+            identifier: "VF_USDC_MAIN",
+            balanceSelector: this.vectorUSDC1Balance.selector,
+            unstakeSelector: this.vectorUnstakeUSDC1.selector
+        });
+        unstakeToken(amount, minAmount, position);
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(VectorUSDCStaking1);
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E));
         _stakedBalance = stakingContract.balance(address(this));
     }
 
     function vectorStakeWAVAX1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            vault: VectorWAVAXStaking1,
+            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
             symbol: "AVAX",
+            identifier: "VF_AVAX_SAVAX",
             balanceSelector: this.vectorWAVAX1Balance.selector,
             unstakeSelector: this.vectorUnstakeWAVAX1.selector
         });
-        stakeToken("AVAX", WAVAXAddress, VectorWAVAXStaking1, amount, position);
+        stakeToken(amount, position);
     }
 
     function vectorUnstakeWAVAX1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("AVAX", WAVAXAddress, VectorWAVAXStaking1, amount, minAmount, this.vectorWAVAX1Balance.selector);
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol: "AVAX",
+            identifier: "VF_AVAX_SAVAX",
+            balanceSelector: this.vectorWAVAX1Balance.selector,
+            unstakeSelector: this.vectorUnstakeWAVAX1.selector
+        });
+        unstakeToken(amount, minAmount, position);
     }
 
     function vectorWAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(VectorWAVAXStaking1);
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7));
         _stakedBalance = stakingContract.balance(address(this));
     }
 
     function vectorStakeSAVAX1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            vault: VectorSAVAXStaking1,
+            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
             symbol: "sAVAX",
+            identifier: "VF_SAVAX_MAIN",
             balanceSelector: this.vectorSAVAX1Balance.selector,
             unstakeSelector: this.vectorUnstakeSAVAX1.selector
         });
-        stakeToken("sAVAX", SAVAXAddress, VectorSAVAXStaking1, amount, position);
+        stakeToken(amount, position);
     }
 
     function vectorUnstakeSAVAX1(uint256 amount, uint256 minAmount) public {
-        unstakeToken("sAVAX", SAVAXAddress, VectorSAVAXStaking1, amount, minAmount, this.vectorSAVAX1Balance.selector);
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol: "sAVAX",
+            identifier: "VF_SAVAX_MAIN",
+            balanceSelector: this.vectorSAVAX1Balance.selector,
+            unstakeSelector: this.vectorUnstakeSAVAX1.selector
+        });
+        unstakeToken(amount, minAmount, position);
     }
 
     function vectorSAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(VectorSAVAXStaking1);
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE));
         _stakedBalance = stakingContract.balance(address(this));
     }
 
@@ -89,24 +105,25 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
     * @dev This function uses the redstone-evm-connector
     **/
-    function stakeToken(bytes32 stakedTokenSymbol, address stakedToken, address receiptToken, uint256 amount, IStakingPositions.StakedPosition memory position) internal
+    function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
     onlyOwner nonReentrant remainsSolvent {
+        IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
+        IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
+
         require(amount > 0, "Cannot stake 0 tokens");
-        require(IERC20Metadata(stakedToken).balanceOf(address(this)) >= amount, "Not enough token available");
+        require(stakedToken.balanceOf(address(this)) >= amount, "Not enough token available");
 
-        IERC20Metadata(stakedToken).approve(VectorMainStaking, amount);
+        stakedToken.approve(VectorMainStaking, amount);
 
-        IVectorFinanceStaking(receiptToken).deposit(amount);
+        poolHelper.deposit(amount);
 
         DiamondStorageLib.addStakedPosition(position);
 
-        IERC20Metadata token = getERC20TokenInstance(stakedTokenSymbol, false);
-
-        if (token.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakedTokenSymbol);
+        if (stakedToken.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(position.symbol);
         }
 
-        emit Staked(msg.sender, stakedTokenSymbol, receiptToken, amount, block.timestamp);
+        emit Staked(msg.sender, position.symbol, address(poolHelper), amount, block.timestamp);
     }
 
     /**
@@ -115,31 +132,31 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * if needed it has to be performed in a separate transaction to liquidation
     * @dev This function uses the redstone-evm-connector
     **/
-    function unstakeToken(bytes32 stakedTokenSymbol, address stakedToken, address receiptToken, uint256 amount, uint256 minAmount, bytes4 balanceSelector) internal
+    function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
     onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
+        IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
+
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(receiptToken);
-        uint256 initialStakedBalance = stakingContract.balance(address(this));
+        uint256 initialStakedBalance = poolHelper.balance(address(this));
 
         require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
 
-        IERC20Metadata token = getERC20TokenInstance(stakedTokenSymbol, true);
+        uint256 balance = unstakedToken.balanceOf(address(this));
 
-        uint256 balance = token.balanceOf(address(this));
+        poolHelper.withdraw(amount, minAmount);
 
-        stakingContract.withdraw(amount, minAmount);
+        uint256 newBalance = unstakedToken.balanceOf(address(this));
 
-        uint256 newBalance = token.balanceOf(address(this));
-
-        if (stakingContract.balance(address(this)) == 0) {
-            DiamondStorageLib.removeStakedPosition(balanceSelector);
+        if (poolHelper.balance(address(this)) == 0) {
+            DiamondStorageLib.removeStakedPosition(position.identifier);
         }
-        DiamondStorageLib.addOwnedAsset(stakedTokenSymbol, stakedToken);
+        DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
 
-        emit Unstaked(msg.sender, stakedTokenSymbol, receiptToken, newBalance - balance, block.timestamp);
+        emit Unstaked(msg.sender, position.symbol, address(poolHelper), newBalance - balance, block.timestamp);
 
-        _handleRewards(stakingContract);
+        _handleRewards(poolHelper);
 
         return newBalance - balance;
     }
@@ -168,6 +185,11 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             }
             index += 1;
         }
+    }
+
+    function getAssetPoolHelper(address asset) internal view returns(IVectorFinanceStaking){
+        IVectorFinanceMainStaking mainStaking = IVectorFinanceMainStaking(VectorMainStaking);
+        return IVectorFinanceStaking(mainStaking.getPoolInfo(asset).helper);
     }
 
     // MODIFIERS

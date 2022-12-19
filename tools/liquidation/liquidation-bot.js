@@ -192,6 +192,6 @@ function getTokenContract(address) {
 }
 
 console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}. Minutes sync: ${minutesSync}`);
-run();
+// run();
 
 module.exports.liquidateInsolventLoans = liquidateInsolventLoans;

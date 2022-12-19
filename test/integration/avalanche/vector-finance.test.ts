@@ -9,7 +9,7 @@ import IVectorFinanceStakingArtifact
 import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-    addMissingTokenContracts,
+    addMissingTokenContracts, AddressIdentifier,
     Asset,
     convertAssetsListToSupportedAssets,
     convertTokenPricesMapToMockPrices,
@@ -48,9 +48,9 @@ const {deployContract, provider} = waffle;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const VectorUSDCStaking1 = '0x7a4a145bb3126fd29fe820c7cafd6a6Ff428621A';
-const VectorWAVAXStaking1 = '0x4E42d1a0b83fA354882f19E89a316E00bc106a98';
-const VectorSAVAXStaking1 = '0x822C11be60258D6Bf00C5B0907B2015633d11a62';
+const VectorUSDCStaking1 = '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30';
+const VectorWAVAXStaking1 = '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc';
+const VectorSAVAXStaking1 = '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -103,6 +103,10 @@ describe('Smart loan', () => {
             await tokenManager.setDebtCoverage(VectorUSDCStaking1, toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverage(VectorWAVAXStaking1, toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverage(VectorSAVAXStaking1, toWei("0.8333333333333333"));
+
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_USDC_MAIN"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_AVAX_SAVAX"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_SAVAX_MAIN"), toWei("0.8333333333333333"));
 
             await recompileConstantsFile(
                 'local',
