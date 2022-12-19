@@ -267,7 +267,7 @@ export default {
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
-          amount: value.toFixed(config.DECIMALS_PRECISION)
+          amount: value.toString()
         };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
@@ -300,7 +300,7 @@ export default {
       modalInstance.$on('SWAP', swapEvent => {
         const swapRequest = {
           ...swapEvent,
-          sourceAmount: swapEvent.sourceAmount.toFixed(config.DECIMALS_PRECISION)
+          sourceAmount: swapEvent.sourceAmount.toString()
         };
         this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
           const sourceBalanceAfterTransaction = Number(this.assetBalances[swapRequest.sourceAsset]) - Number(swapRequest.sourceAmount);
@@ -438,7 +438,7 @@ export default {
       modalInstance.$on('REPAY', value => {
         const repayRequest = {
           asset: this.asset.symbol,
-          amount: value.toFixed(config.DECIMALS_PRECISION)
+          amount: value.toString()
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);

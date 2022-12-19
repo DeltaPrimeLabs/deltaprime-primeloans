@@ -25,7 +25,7 @@
         </div>
 
         <div class="header__cell cell__staked">
-          <div class="header__cell__label">Balance:</div>
+          <div class="header__cell__label">Staked:</div>
           <div class="header__cell__value">
             <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
           </div>
@@ -62,7 +62,7 @@
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
-            <div class="table__header__cell">Balance</div>
+            <div class="table__header__cell">Staked</div>
             <div class="table__header__cell">Rewards</div>
             <div class="table__header__cell">Min. APY</div>
             <div class="table__header__cell">Max. APY
@@ -207,7 +207,7 @@ export default {
 
     setupTotalStaked() {
       if (this.smartLoanContract) {
-        const totalStakedPromises = this.availableFarms.map(farm => farm.balance(this.smartLoanContract.address));
+        const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
         Promise.all(totalStakedPromises).then((allResults) => {
           this.totalStaked = 0;
           allResults.forEach(result => {

@@ -20,14 +20,14 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="Number(available)">
+                     :max="available">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="Number(available)">
+                     :max="available">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -56,7 +56,7 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Balance:
+                Staked:
               </div>
               <div class="summary__value">
                 {{ Number(staked) + Number(stakeValue) | smartRound }}
@@ -127,7 +127,7 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.balance) + Number(this.stakeValue));
+      return this.apy / 365 * (Number(this.staked) + Number(this.stakeValue));
     }
   },
 

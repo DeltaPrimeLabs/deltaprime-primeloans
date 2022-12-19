@@ -80,7 +80,6 @@ export default {
   },
   async mounted() {
     this.apy = await this.farm.apy();
-    this.rewards = await this.farm.rewards();
   },
   data() {
     return {
@@ -94,7 +93,8 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.balance = await this.farm.balance(this.smartLoanContract.address);
+          this.balance = await this.farm.staked(this.smartLoanContract.address);
+          this.rewards = await this.farm.rewards(this.smartLoanContract.address);
           this.$emit('stakedChange', this.balance);
         }
       },
@@ -121,7 +121,7 @@ export default {
   },
   methods: {
     ...mapActions('stakeStore', ['stake', 'unstake']),
-    openStakeModal() {
+    async openStakeModal() {
       if (this.disabled) {
         return;
       }
@@ -129,15 +129,15 @@ export default {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
       modalInstance.available = this.asset.secondary ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
-      modalInstance.balance = Number(this.balance);
-      modalInstance.rewards = Number(this.rewards);
+      modalInstance.staked = this.balance;
+      modalInstance.rewards = this.rewards;
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.$on('STAKE', (stakeValue) => {
         const stakeRequest = {
           symbol: this.farm.feedSymbol,
-          amount: stakeValue.toFixed(config.DECIMALS_PRECISION),
+          amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals
         };
@@ -153,7 +153,7 @@ export default {
         }).then(() => {
           this.closeModal();
           setTimeout(() => {
-            this.farm.balance(this.smartLoanContract.address).then((balance) => {
+            this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
               this.$emit('balanceChange', this.balance);
@@ -176,7 +176,7 @@ export default {
       modalInstance.isLP = this.isLP;
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
         const unstakeRequest = {
-          amount: unstakeValue.toFixed(config.DECIMALS_PRECISION),
+          amount: unstakeValue.toString(),
           minAmount: this.farm.minAmount * unstakeValue,
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals
@@ -193,7 +193,7 @@ export default {
         }).then(result => {
           this.closeModal();
           setTimeout(() => {
-            this.farm.balance(this.smartLoanContract.address).then((balance) => {
+            this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
               this.$emit('stakedChange', this.balance);

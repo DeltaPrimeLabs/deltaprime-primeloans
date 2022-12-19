@@ -122,7 +122,7 @@ export default {
 
       const hasError = this.error.length > 0;
 
-      this.$emit('newValue', {value: Number(value), error: hasError});
+      this.$emit('newValue', {value: value, error: hasError});
     },
     async checkWarnings(newValue) {
       this.warning = '';
@@ -157,10 +157,10 @@ export default {
     valueChange() {
       const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,18}$/);
       if (match) {
-        this.value = Number(this.internalValue.replaceAll(',', '.'));
+        this.value = parseFloat(this.internalValue.replaceAll(',', '.'));
       } else {
         this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1);
-        this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
+        this.value = parseFloat(this.internalValue.substring(0, this.internalValue.length - 1));
         this.$forceUpdate();
       }
       this.$emit('inputChange', this.value);
@@ -190,7 +190,7 @@ export default {
     },
 
     setMax() {
-      this.setValue(Number(this.max).toFixed(18));
+      this.setValue(this.max);
       this.checkErrors(this.value);
       this.$emit('inputChange', this.value);
     },
@@ -244,17 +244,6 @@ export default {
 
 .input {
   position: relative;
-
-  &:after {
-    content: ' ';
-    position: absolute;
-    width: 25px;
-    right: 0;
-    height: 100%;
-    top: 0;
-    background: linear-gradient(to right, rgba(244, 244, 255, 0), rgba(244, 244, 255, 0.95) 50%);
-    z-index: 1;
-  }
 }
 
 input {
