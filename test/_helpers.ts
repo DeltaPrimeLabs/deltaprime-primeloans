@@ -833,14 +833,16 @@ export class AssetBalanceLeverage {
 }
 
 export class StakedPosition {
-    vault: string;
+    asset: string;
     symbol: string;
+    identifier: string;
     balanceSelector: string;
     unstakeSelector: string;
 
-    constructor(vault: string, symbol: string, balanceSelector: string, unstakeSelector: string) {
-        this.vault = vault;
+    constructor(asset: string, identifier: string, symbol: string, balanceSelector: string, unstakeSelector: string) {
+        this.asset = asset;
         this.symbol = symbol;
+        this.identifier = identifier;
         this.balanceSelector = balanceSelector;
         this.unstakeSelector = unstakeSelector;
     }
