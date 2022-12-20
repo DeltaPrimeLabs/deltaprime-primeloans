@@ -207,7 +207,7 @@ export async function getTraderJoeLpApr(lpAddress) {
   const client = new ApolloClient({
     uri: tjSubgraphUrl
   });
-  //
+
   const firstResponse = await client.query({query: pairDayDatasQuery, variables: {
     pairs: [
       lpAddress.toLowerCase()
@@ -225,17 +225,25 @@ export async function getTraderJoeLpApr(lpAddress) {
       date: 86400000
     }});
 
+
+
   const response = await client.query({query: pairQuery, variables: { id: lpAddress.toLowerCase()}});
 
-  let volumeUSD = parseFloat(response.data.pair.volumeUSD);
+  let volumeUSD = parseFloat(secondResponse.data.pairDayDatas[1].volumeUSD - secondResponse.data.pairDayDatas[2].volumeUSD);
   let reserveUSD = parseFloat(response.data.pair.reserveUSD);
+  // console.log(Object.values(config.LP_ASSETS_CONFIG).find(lp => lp.address === lpAddress).name)
+  // console.log(volumeUSD)
+  // console.log(secondResponse.data.pairDayDatas[0].volumeUSD)
+  // console.log(secondResponse.data.pairDayDatas[1].volumeUSD)
+  // console.log(secondResponse.data.pairDayDatas[2].volumeUSD)
+  // console.log(secondResponse.data.pairDayDatas[3].volumeUSD)
+  // console.log(new Date(secondResponse.data.pairDayDatas[1].date * 1000))
+  // console.log(new Date(secondResponse.data.pairDayDatas[2].date * 1000))
 
-  // const volume = volumeUSD - parseFloat(oneDayVolumeUSD);
 
-  // const feesUSD = volume * FEE_RATE;
+  const feesUSD = volumeUSD * FEE_RATE;
 
-  // return feesUSD * 365 / reserveUSD;
-  return 0;
+  return feesUSD * 365 / reserveUSD;
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
