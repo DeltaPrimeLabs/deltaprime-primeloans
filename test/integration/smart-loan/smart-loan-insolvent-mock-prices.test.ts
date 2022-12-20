@@ -286,7 +286,7 @@ describe('Smart loan', () => {
 
             async function depositToPool(symbol: string, tokenContract: Contract, pool: Pool, amount: number, price: number) {
                 const initialTokenDepositWei = parseUnits(amount.toString(), await tokenContract.decimals());
-                let requiredAvax = toWei((amount * price * 1.5 / INITIAL_PRICES.AVAX).toString());
+                let requiredAvax = toWei((amount * price * 20 / INITIAL_PRICES.AVAX).toString());
 
                 await tokenContracts['AVAX'].connect(depositor).deposit({value: requiredAvax});
                 await tokenContracts['AVAX'].connect(depositor).transfer(exchange.address, requiredAvax);
@@ -377,7 +377,7 @@ describe('Smart loan', () => {
                                 let contract = getTokenContract(symbol)!;
                                 let tokenDecimals = await contract.decimals();
 
-                                let requiredAvax = toWei((value * getPrice(symbol)! * 1.5 / INITIAL_PRICES.AVAX).toString());
+                                let requiredAvax = toWei((value * getPrice(symbol)! * 10 / INITIAL_PRICES.AVAX).toString());
                                 await tokenContracts['AVAX'].connect(borrower).deposit({value: requiredAvax});
 
                                 if (symbol !== 'AVAX') {
