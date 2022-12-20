@@ -34,7 +34,7 @@
         <div class="header__cell cell__available">
           <div class="header__cell__label">Available:</div>
           <div class="header__cell__value">
-            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(balance, 10, true) }}
+            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(available, 10, true) }}
           </div>
         </div>
 
@@ -112,6 +112,7 @@ export default {
       stakingHeaderRoundBottom: false,
       maxLeveragedApy: 0,
       totalStaked: 0,
+      available: 0,
       availableFarms: [],
       protocolConfig: null,
       isTotalStakedEstimated: false,
@@ -125,24 +126,12 @@ export default {
     this.watchExternalTotalStakedUpdate();
     this.watchAssetBalancesDataRefreshEvent();
   },
-
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances']),
+    ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances', 'noSmartLoan']),
     ...mapState('poolStore', ['pools']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
-    },
-    balance() {
-      if (this.asset) {
-        if (this.asset.secondary) {
-          return this.lpBalances && this.lpBalances[this.assetSymbol];
-        } else {
-          return this.assetBalances && this.assetBalances[this.assetSymbol];
-        }
-      } else {
-        return 0;
-      }
     },
     calculateStakingProtocolsHeight() {
       const headerHeight = 53;
@@ -217,6 +206,16 @@ export default {
       }
     },
 
+    setupAvailable() {
+      if (this.asset && !this.noSmartLoan) {
+        if (this.asset.secondary) {
+          this.available = this.lpBalances && this.lpBalances[this.assetSymbol];
+        } else {
+          this.available =  this.assetBalances && this.assetBalances[this.assetSymbol];
+        }
+      }
+    },
+
     setupAvailableProtocols() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.assetSymbol];
     },
@@ -270,6 +269,13 @@ export default {
       handler(smartLoanContract) {
         if (this) {
           this.setupTotalStaked();
+        }
+      },
+    },
+    noSmartLoan: {
+      handler(noSmartLoan) {
+        if (noSmartLoan === false) {
+          this.setupAvailable();
         }
       },
     },
