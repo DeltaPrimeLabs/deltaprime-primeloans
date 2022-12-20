@@ -19,7 +19,7 @@ module.exports = async ({
     embedCommitHash('SmartLoansFactory');
     embedCommitHash('SmartLoansFactoryTUP', './contracts/proxies/tup');
 
-    let smartLoansFactory = await deploy('SmartLoansFactory', {
+    let smartLoansFactory = await deploy('SmartLoansFactoryRestrictedAccess', {
         from: deployer,
         gasLimit: 8000000,
         args: []
@@ -28,7 +28,7 @@ module.exports = async ({
     const initializeInterface =   {
         "inputs": [
             {
-                "internalType": "contract SmartLoan",
+                "internalType": "contract SmartLoansFactoryRestrictedAccess",
                 "name": "_smartLoanImplementation",
                 "type": "address"
             }

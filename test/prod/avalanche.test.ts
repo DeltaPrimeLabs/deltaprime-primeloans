@@ -11,16 +11,21 @@ import {
     SmartLoansFactory,
     MockVariableUtilisationRatesCalculator,
     IUniswapV2Router01,
-    WrappedNativeTokenPool, SmartLoanDiamondBeacon, OwnershipFacet, DiamondCutFacet, TokenManager, IERC20
+    WrappedNativeTokenPool,
+    SmartLoanDiamondBeacon,
+    OwnershipFacet,
+    DiamondCutFacet,
+    TokenManager,
+    SmartLoansFactoryRestrictedAccess
 } from "../../typechain";
-import SMART_LOAN_DIAMOND_BEACON from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
-import OWNERSHIP_FACET from '../../deployments/avalanche/OwnershipFacet.json';
-import DIAMOND_CUT_FACET from '../../deployments/avalanche/DiamondCutFacet.json';
-import SMART_LOAN_FACTORY_TUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json';
-import SMART_LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json';
+import SMART_LOAN_DIAMOND_BEACON from '../../deployments/localhost/SmartLoanDiamondBeacon.json';
+import OWNERSHIP_FACET from '../../deployments/localhost/OwnershipFacet.json';
+import DIAMOND_CUT_FACET from '../../deployments/localhost/DiamondCutFacet.json';
+import SMART_LOAN_FACTORY_TUP from '../../deployments/localhost/SmartLoansFactoryTUP.json';
+import SMART_LOAN_FACTORY from '../../deployments/localhost/SmartLoansFactoryRestrictedAccess.json';
 import SMART_LOAN_GIGACHAD_INTERFACE from '../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
-import WAVAX_POOL_TUP from '../../deployments/avalanche/WavaxPoolTUP.json';
-import USDC_POOL_TUP from '../../deployments/avalanche/UsdcPoolTUP.json';
+import WAVAX_POOL_TUP from '../../deployments/localhost/WavaxPoolTUP.json';
+import USDC_POOL_TUP from '../../deployments/localhost/UsdcPoolTUP.json';
 import WAVAX_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import USDC_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import WRAPPED_POOL from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
@@ -47,10 +52,8 @@ import {JsonRpcSigner} from "@ethersproject/providers";
 import VariableUtilisationRatesCalculatorArtifact
     from "../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json";
 import {parseUnits} from "ethers/lib/utils";
-import web3Abi from "web3-eth-abi";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {supportedAssetsAvax} from '../../common/addresses/avax/avalanche_supported_assets';
-import addresses from "../../common/addresses/avax/token_addresses.json";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 
@@ -75,7 +78,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
 
     describe(`Run tests`, () => {
-        let smartLoansFactory: SmartLoansFactory,
+        let smartLoansFactory: SmartLoansFactoryRestrictedAccess,
             smartLoansDiamondBeacon: SmartLoanDiamondBeacon & OwnershipFacet & DiamondCutFacet,
             loan1: SmartLoanGigaChadInterface,
             loan2: SmartLoanGigaChadInterface,
@@ -95,7 +98,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
             before("setup deployed protocol contracts", async () => {
             smartLoansDiamondBeacon = new ethers.Contract(SMART_LOAN_DIAMOND_BEACON.address, [...SMART_LOAN_DIAMOND_BEACON.abi, ...OWNERSHIP_FACET.abi, ...DIAMOND_CUT_FACET.abi], provider.getSigner()) as SmartLoanDiamondBeacon & OwnershipFacet & DiamondCutFacet;
-            smartLoansFactory = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner()) as SmartLoansFactory;
+            smartLoansFactory = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner()) as  SmartLoansFactoryRestrictedAccess;
             wavaxPool = new ethers.Contract(WAVAX_POOL_TUP.address, WAVAX_POOL.abi, provider.getSigner()) as Pool;
             usdcPool = new ethers.Contract(USDC_POOL_TUP.address, USDC_POOL.abi, provider.getSigner()) as Pool;
             tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner()) as TokenManager;
@@ -141,6 +144,10 @@ describe('Test deployed contracts on Avalanche', () => {
             //createLoan
             let loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
+            //do not allow non-whitelisted users
+            await expect(smartLoansFactory.connect(USER_1).createLoan()).to.be.revertedWith('Only whitelisted borrowers can create a Prime Account.');
+
+            await smartLoansFactory.connect(MAINNET_DEPLOYER).whitelistBorrowers([USER_1.address]);
             await smartLoansFactory.connect(USER_1).createLoan();
 
             let loansAfterCreate = await smartLoansFactory.getAllLoans();
@@ -159,6 +166,9 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await usdcTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await usdcTokenContract.decimals()));
             await wavaxTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await wavaxTokenContract.decimals()));
+
+            await smartLoansFactory.connect(MAINNET_DEPLOYER).whitelistBorrowers([USER_2.address]);
+
             //provided wrong token address
             await expect(smartLoansFactory.connect(USER_2).createAndFundLoan(
                 toBytes32('USDC'), wavaxTokenContract.address, parseUnits('1', await usdcTokenContract.decimals()))
@@ -441,7 +451,7 @@ describe('Test deployed contracts on Avalanche', () => {
         expect(userBalanceAfterWithdraw - userBalanceBeforeWithdraw).to.be.closeTo(withdrawnAmount, 0.09);
 
         //test DEXes
-
+        await smartLoansFactory.connect(MAINNET_DEPLOYER).whitelistBorrowers([USER_3.address]);
         await smartLoansFactory.connect(USER_3).createLoan();
 
         let newLoan = await smartLoansFactory.getLoanForOwner(USER_3.address);
@@ -459,6 +469,7 @@ describe('Test deployed contracts on Avalanche', () => {
             USER_5
         );
 
+        await smartLoansFactory.connect(MAINNET_DEPLOYER).whitelistBorrowers([USER_4.address]);
         await smartLoansFactory.connect(USER_4).createLoan();
         newLoan = await smartLoansFactory.getLoanForOwner(USER_4.address);
         loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
@@ -476,6 +487,7 @@ describe('Test deployed contracts on Avalanche', () => {
         );
 
 
+        await smartLoansFactory.connect(MAINNET_DEPLOYER).whitelistBorrowers([USER_6.address]);
         await smartLoansFactory.connect(USER_6).createLoan();
         newLoan = await smartLoansFactory.getLoanForOwner(USER_6.address);
         loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
@@ -1003,7 +1015,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         let vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_AAVE_AVAX'), true);
 
-        await testVault('stakeAVAXYak', 'unstakeAVAXYak', 'AVAX', amountInWei,'YY_AAVE_AVAX', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakeAVAXYak', 'unstakeAVAXYak', 'AVAX', amountInWei,'YY_AAVE_AVAX', vaultAddress, '', null, loan1, USER_1, USER_2, false);
 
 
         //sAVAX
@@ -1014,7 +1026,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PTP_sAVAX'), true);
 
-        await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')), 'YY_PTP_sAVAX', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakeSAVAXYak', 'unstakeSAVAXYak', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')), 'YY_PTP_sAVAX', vaultAddress, '', null, loan1, USER_1, USER_2, false);
 
         //YY_PNG_AVAX_USDC_LP
         avaxAmount = 20;
@@ -1032,7 +1044,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_USDC_LP'), true);
 
-        await testVault('stakePNGAVAXUSDCYak', 'unstakePNGAVAXUSDCYak', 'PNG_AVAX_USDC_LP', await loan1.getBalance(toBytes32('PNG_AVAX_USDC_LP')),'YY_PNG_AVAX_USDC_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakePNGAVAXUSDCYak', 'unstakePNGAVAXUSDCYak', 'PNG_AVAX_USDC_LP', await loan1.getBalance(toBytes32('PNG_AVAX_USDC_LP')),'YY_PNG_AVAX_USDC_LP', vaultAddress, '', null, loan1, USER_1, USER_2, false);
 
         //YY_PNG_AVAX_ETH_LP
         avaxAmount = 20;
@@ -1050,7 +1062,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_PNG_AVAX_ETH_LP'), true);
 
-        await testVault('stakePNGAVAXETHYak', 'unstakePNGAVAXETHYak', 'PNG_AVAX_ETH_LP', await loan1.getBalance(toBytes32('PNG_AVAX_ETH_LP')),'YY_PNG_AVAX_ETH_LP', vaultAddress, null,  loan1, USER_1, USER_2, false);
+        await testVault('stakePNGAVAXETHYak', 'unstakePNGAVAXETHYak', 'PNG_AVAX_ETH_LP', await loan1.getBalance(toBytes32('PNG_AVAX_ETH_LP')),'YY_PNG_AVAX_ETH_LP', vaultAddress, '', null,  loan1, USER_1, USER_2, false);
 
         //YY_TJ_AVAX_USDC_LP
         avaxAmount = 20;
@@ -1068,7 +1080,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_TJ_AVAX_USDC_LP'), true);
 
-        await testVault('stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak', 'TJ_AVAX_USDC_LP', await loan1.getBalance(toBytes32('TJ_AVAX_USDC_LP')),'YY_TJ_AVAX_USDC_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakeTJAVAXUSDCYak', 'unstakeTJAVAXUSDCYak', 'TJ_AVAX_USDC_LP', await loan1.getBalance(toBytes32('TJ_AVAX_USDC_LP')),'YY_TJ_AVAX_USDC_LP', vaultAddress, '', null, loan1, USER_1, USER_2, false);
 
         //YY_TJ_AVAX_ETH_LP
         avaxAmount = 20;
@@ -1086,7 +1098,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_TJ_AVAX_ETH_LP'), true);
 
-        await testVault('stakeTJAVAXETHYak', 'unstakeTJAVAXETHYak', 'TJ_AVAX_ETH_LP', await loan1.getBalance(toBytes32('TJ_AVAX_ETH_LP')),'YY_TJ_AVAX_ETH_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakeTJAVAXETHYak', 'unstakeTJAVAXETHYak', 'TJ_AVAX_ETH_LP', await loan1.getBalance(toBytes32('TJ_AVAX_ETH_LP')),'YY_TJ_AVAX_ETH_LP', vaultAddress, '', null, loan1, USER_1, USER_2, false);
 
         //YY_TJ_AVAX_sAVAX_LP
         avaxAmount = 20;
@@ -1104,7 +1116,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         vaultAddress = await tokenManager.getAssetAddress(toBytes32('YY_TJ_AVAX_sAVAX_LP'), true);
 
-        await testVault('stakeTJAVAXSAVAXYak', 'unstakeTJAVAXSAVAXYak', 'TJ_AVAX_sAVAX_LP', await loan1.getBalance(toBytes32('TJ_AVAX_sAVAX_LP')),'YY_TJ_AVAX_sAVAX_LP', vaultAddress, null, loan1, USER_1, USER_2, false);
+        await testVault('stakeTJAVAXSAVAXYak', 'unstakeTJAVAXSAVAXYak', 'TJ_AVAX_sAVAX_LP', await loan1.getBalance(toBytes32('TJ_AVAX_sAVAX_LP')),'YY_TJ_AVAX_sAVAX_LP', vaultAddress, '', null, loan1, USER_1, USER_2, false);
     }
 
     async function testVector(
@@ -1119,7 +1131,7 @@ describe('Test deployed contracts on Avalanche', () => {
         let amountInWei = parseUnits(avaxAmount.toString(), 18);
         await loan1.depositNativeToken({ value: amountInWei});
 
-        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'vectorStakeWAVAX1', '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeWAVAX1', 'vectorUnstakeWAVAX1', 'AVAX', amountInWei,'vectorStakeWAVAX1', '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', 'VF_AVAX_SAVAX', 'balance', loan1, USER_1, USER_2, true);
 
         //sAVAX
 
@@ -1127,7 +1139,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('sAVAX'), amountInWei, 0);
-        await testVault('vectorStakeSAVAX1', 'vectorUnstakeSAVAX1', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'vectorStakeSAVAX1', '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeSAVAX1', 'vectorUnstakeSAVAX1', 'sAVAX', await loan1.getBalance(toBytes32('sAVAX')),'vectorStakeSAVAX1', '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',  'VF_SAVAX_MAIN', 'balance', loan1, USER_1, USER_2, true);
 
         //USDC
 
@@ -1135,7 +1147,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountInWei = parseUnits(avaxAmount.toString(), 18);
         await wrappedLoan1User1.depositNativeToken({ value: amountInWei});
         await wrappedLoan1User1.swapTraderJoe(toBytes32('AVAX'), toBytes32('USDC'), amountInWei, 0);
-        await testVault('vectorStakeUSDC1', 'vectorUnstakeUSDC1', 'USDC', await loan1.getBalance(toBytes32('USDC')),'vectorStakeUSDC1', '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', 'balance', loan1, USER_1, USER_2, true);
+        await testVault('vectorStakeUSDC1', 'vectorUnstakeUSDC1', 'USDC', await loan1.getBalance(toBytes32('USDC')),'vectorStakeUSDC1', '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', 'VF_USDC_MAIN', 'balance', loan1, USER_1, USER_2, true);
     }
 
     async function testVault(
@@ -1145,6 +1157,7 @@ describe('Test deployed contracts on Avalanche', () => {
         amountStaked: BigNumber,
         vaultTokenSymbol: string,
         vaultAddress: string,
+        vaultSymbol: string,
         balanceMethod: string | null,
         loan1: SmartLoanGigaChadInterface,
         USER_1: any,
@@ -1159,7 +1172,7 @@ describe('Test deployed contracts on Avalanche', () => {
         //stake
 
         isStakedPosition ?
-            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.false
+            expect((await loan1.getStakedPositions()).some(sp => sp.identifier === toBytes32(vaultSymbol))).to.be.false
             :
             expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
 
@@ -1184,7 +1197,7 @@ describe('Test deployed contracts on Avalanche', () => {
             expect(fromWei(await vault.balanceOf(loan1.address))).to.be.gt(0);
 
         isStakedPosition ?
-            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.true
+            expect((await loan1.getStakedPositions()).some(sp => sp.identifier === toBytes32(vaultSymbol))).to.be.true
             :
             expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.true;
 
@@ -1211,7 +1224,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
 
         isStakedPosition ?
-            expect((await loan1.getStakedPositions()).some(sp => sp.vault === vaultAddress)).to.be.false
+            expect((await loan1.getStakedPositions()).some(sp => sp.identifier === toBytes32(vaultSymbol))).to.be.false
             :
             expect((await loan1.getAllOwnedAssets()).includes(toBytes32(vaultTokenSymbol))).to.be.false;
 
