@@ -77,7 +77,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
 
     //TODO: optimize to unstake only as much as needed
     for (let p of await loan.getStakedPositions()) {
-        let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), p[2], p[3]);
+        let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), fromBytes32(p[2]), p[3], p[4]);
 
         let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
         let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
