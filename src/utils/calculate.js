@@ -129,116 +129,56 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const FEE_RATE = 0.0025;
 
-  const pairDayDatasQuery = gql(`
-    query pairDayDatasQuery(
-      $first: Int = 1000
-      $date: Int = 0
-      $pairs: [Bytes]!
-    ) {
-      pairDayDatas(
-        first: $first
-        orderBy: date
-        orderDirection: desc
-        where: { pair_in: $pairs, date_gt: $date }
-      ) {
-        date
-        pair {
-          id
-        }
-        token0 {
-          derivedAVAX
-        }
-        token1 {
-          derivedAVAX
-        }
-        reserveUSD
-        volumeToken0
-        volumeToken1
-        volumeUSD
-        txCount
-      }
-    }
-  `);
-
-  const pairTokenFieldsQuery = `
-    fragment pairTokenFields on Token {
-      id
-      name
-      symbol
-      totalSupply
-      derivedAVAX
-    }
-  `;
-
-  const pairFieldsQuery = `
-    fragment pairFields on Pair {
-      id
-      reserveUSD
-      reserveAVAX
-      volumeUSD
-      untrackedVolumeUSD
-      trackedReserveAVAX
-      token0 {
-        ...pairTokenFields
-      }
-      token1 {
-        ...pairTokenFields
-      }
-      reserve0
-      reserve1
-      token0Price
-      token1Price
-      totalSupply
-      txCount
-      timestamp
-    }
-    ${pairTokenFieldsQuery}
-  `;
-
+  console.log('lpAddress: ', lpAddress)
   const pairQuery = gql(`
-    query pairQuery($id: String!) {
-      pair(id: $id) {
-        ...pairFields
-      }
+{
+  pairs(
+    first: 1
+    where: {id: "${lpAddress}"}
+  ) {
+    id
+    name
+    token0Price
+    token1Price
+    token0 {
+      id
+      symbol
+      decimals
     }
-    ${pairFieldsQuery}
-  `);
+    token1 {
+      id
+      symbol
+      decimals
+    }
+    reserve0
+    reserve1
+    reserveUSD
+    volumeUSD
+    hourData(
+      first: 24
+      orderBy: date
+      orderDirection: desc
+    ) {
+      volumeUSD
+      date
+      volumeToken0
+      volumeToken1
+    }
+    timestamp
+  }
+}
+`)
+
 
   const client = new ApolloClient({
     uri: tjSubgraphUrl
   });
 
-  const firstResponse = await client.query({query: pairDayDatasQuery, variables: {
-    pairs: [
-      lpAddress.toLowerCase()
-      ],
-      first: 1,
-      date: 0
-    }});
+  const response = await client.query({query: pairQuery});
 
+  let volumeUSD = parseFloat(response.data.pairs[0].hourData.reduce((sum, data) => sum + parseFloat(data.volumeUSD), 0));
+  let reserveUSD = parseFloat(response.data.pairs[0].reserveUSD);
 
-  const secondResponse = await client.query({query: pairDayDatasQuery, variables: {
-      pairs: [
-        lpAddress.toLowerCase()
-      ],
-      first: 1000,
-      date: 86400000
-    }});
-
-
-
-  const response = await client.query({query: pairQuery, variables: { id: lpAddress.toLowerCase()}});
-
-  let volumeUSD = parseFloat(secondResponse.data.pairDayDatas[1].volumeUSD - secondResponse.data.pairDayDatas[2].volumeUSD);
-  let reserveUSD = parseFloat(response.data.pair.reserveUSD);
-  // console.log(Object.values(config.LP_ASSETS_CONFIG).find(lp => lp.address === lpAddress).name)
-  // console.log(volumeUSD)
-  // console.log(secondResponse.data.pairDayDatas[0].volumeUSD)
-  // console.log(secondResponse.data.pairDayDatas[1].volumeUSD)
-  // console.log(secondResponse.data.pairDayDatas[2].volumeUSD)
-  // console.log(secondResponse.data.pairDayDatas[3].volumeUSD)
-  // console.log(new Date(secondResponse.data.pairDayDatas[1].date * 1000))
-  // console.log(new Date(secondResponse.data.pairDayDatas[2].date * 1000))
 
 
   const feesUSD = volumeUSD * FEE_RATE;
