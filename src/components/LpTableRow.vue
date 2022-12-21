@@ -171,7 +171,7 @@ export default {
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add from wallet'
+              name: 'Add collateral'
             },
             {
               key: 'PROVIDE_LIQUIDITY',
@@ -188,7 +188,7 @@ export default {
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw to wallet'
+              name: 'Remove collateral'
             },
             {
               key: 'REMOVE_LIQUIDITY',

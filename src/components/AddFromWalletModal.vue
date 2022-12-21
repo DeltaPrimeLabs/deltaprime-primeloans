@@ -2,7 +2,7 @@
   <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Add from wallet
+        Add collateral
       </div>
       <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your
         funds.<br/>
