@@ -68,7 +68,8 @@
           v-for="(actionConfig, index) of actionsConfig"
           v-bind:key="index"
           :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+          v-on:iconButtonClick="actionClick"
+          :disabled="waitingForHardRefresh">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -122,6 +123,7 @@ export default {
     this.watchExternalAssetBalanceUpdate();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
+    this.watchHardRefreshScheduledEvent();
   },
   data() {
     return {
@@ -130,6 +132,7 @@ export default {
       rowExpanded: false,
       isBalanceEstimated: false,
       approxDebt: false,
+      waitingForHardRefresh: false,
     };
   },
   computed: {
@@ -273,6 +276,7 @@ export default {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
           this.isBalanceEstimated = true;
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
@@ -347,6 +351,7 @@ export default {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
                 this.isBalanceEstimated = true;
+                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
                 this.$forceUpdate();
               }, () => {
               }).then(() => {
@@ -361,6 +366,7 @@ export default {
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
                 this.isBalanceEstimated = true;
+                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
                 this.$forceUpdate();
               }, () => {
               }).then(() => {
@@ -397,6 +403,7 @@ export default {
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
             this.isBalanceEstimated = true;
+            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
             this.$forceUpdate();
           }, () => {
           })
@@ -412,6 +419,7 @@ export default {
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
             this.isBalanceEstimated = true;
+            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
             this.$forceUpdate();
           }, () => {
           })
@@ -444,6 +452,7 @@ export default {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
           this.isBalanceEstimated = true;
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
@@ -473,12 +482,23 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isBalanceEstimated = false;
+        this.waitingForHardRefresh = false;
+        this.$forceUpdate();
       });
     },
 
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
         this.approxDebt = false;
+        this.waitingForHardRefresh = false;
+        this.$forceUpdate();
+      })
+    },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+        this.$forceUpdate();
       })
     },
   },
