@@ -24,17 +24,17 @@
           </div>
         </div>
 
+        <div class="header__cell cell__available">
+          <div class="header__cell__label">Balance:</div>
+          <div class="header__cell__value">
+            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(available, 10, true) }}
+          </div>
+        </div>
+
         <div class="header__cell cell__staked">
           <div class="header__cell__label">Staked:</div>
           <div class="header__cell__value">
             <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
-          </div>
-        </div>
-
-        <div class="header__cell cell__available">
-          <div class="header__cell__label">Available:</div>
-          <div class="header__cell__value">
-            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(available, 10, true) }}
           </div>
         </div>
 
