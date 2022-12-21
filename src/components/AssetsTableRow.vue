@@ -162,7 +162,7 @@ export default {
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add from wallet'
+              name: 'Add collateral'
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
@@ -176,12 +176,12 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Remove / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw to wallet',
+              name: 'Remove collateral',
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {

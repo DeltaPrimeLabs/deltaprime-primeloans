@@ -2,7 +2,7 @@
   <div v-if="asset" id="modal" class="withdraw-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Withdraw
+        Remove collateral
       </div>
       <div class="modal-top-info">
         You can withdraw only if you have enough tokens to repay all your loans.
