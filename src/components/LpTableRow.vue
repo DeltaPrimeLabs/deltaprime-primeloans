@@ -48,7 +48,8 @@
           v-for="(actionConfig, index) of actionsConfig"
           v-bind:key="index"
           :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+          v-on:iconButtonClick="actionClick"
+          :disabled="waitingForHardRefresh">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -105,6 +106,7 @@ export default {
   async mounted() {
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchHardRefreshScheduledEvent();
     await this.setupApr();
   },
 
@@ -117,6 +119,7 @@ export default {
       apr: 0,
       tvl: 0,
       isLpBalanceEstimated: false,
+      waitingForHardRefresh: false,
     };
   },
 
@@ -257,6 +260,7 @@ export default {
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
                 this.isLpBalanceEstimated = true;
+                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
                 this.$forceUpdate();
               }, () => {
 
@@ -290,6 +294,7 @@ export default {
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
           this.isLpBalanceEstimated = true;
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.$forceUpdate();
         }, () => {
 
@@ -323,6 +328,7 @@ export default {
             this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
             this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
             this.isLpBalanceEstimated = true;
+            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
             this.$forceUpdate();
           }, () => {
 
@@ -359,6 +365,7 @@ export default {
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
           this.isLpBalanceEstimated = true;
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.$forceUpdate();
         }, () => {
 
@@ -397,7 +404,16 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isLpBalanceEstimated = false;
+        this.waitingForHardRefresh = false;
+        this.$forceUpdate();
       });
+    },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+        this.$forceUpdate();
+      })
     },
   },
 };

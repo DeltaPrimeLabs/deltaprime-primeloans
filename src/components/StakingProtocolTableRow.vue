@@ -79,6 +79,7 @@ export default {
     }
   },
   async mounted() {
+    this.watchHardRefreshScheduledEvent();
     this.apy = await this.farm.apy();
   },
   data() {
@@ -87,6 +88,7 @@ export default {
       apy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
+      waitingForHardRefresh: false,
     };
   },
   watch: {
@@ -105,7 +107,7 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
     maxApy() {
       return calculateMaxApy(this.pools, this.apy);
     },
@@ -113,7 +115,7 @@ export default {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.waitingForHardRefresh;
     },
     isLP() {
       return this.asset.secondary != null;
@@ -148,6 +150,7 @@ export default {
           const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.$forceUpdate();
         }, () => {
         }).then(() => {
@@ -156,6 +159,7 @@ export default {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
+              this.waitingForHardRefresh = false;
               this.$emit('balanceChange', this.balance);
             });
           }, 30000);
@@ -188,6 +192,7 @@ export default {
           const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
+          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
           this.$forceUpdate();
         }, () => {
         }).then(result => {
@@ -196,12 +201,20 @@ export default {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
+              this.waitingForHardRefresh = false;
               this.$emit('stakedChange', this.balance);
             });
           }, 30000);
         });
       });
     },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+        this.$forceUpdate();
+      })
+    }
   }
 };
 </script>
