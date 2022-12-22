@@ -303,7 +303,7 @@ export default {
 
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
-      if (allowance < value) {
+      if (parseFloat(allowance) < parseFloat(value)) {
         const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
