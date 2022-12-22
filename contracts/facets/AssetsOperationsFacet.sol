@@ -8,7 +8,7 @@ import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
-import "../TokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -32,6 +32,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
         }
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.increaseProtocolExposure(_fundedAsset, _amount);
+
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
 
@@ -52,6 +55,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(_withdrawnAsset);
         }
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure(_withdrawnAsset, _amount);
+
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
     }
 
@@ -65,7 +71,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         ds._lastBorrowTimestamp = block.timestamp;
 
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool pool = Pool(tokenManager.getPoolAddress(_asset));
         pool.borrow(_amount);
 

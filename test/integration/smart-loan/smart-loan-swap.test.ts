@@ -2,7 +2,6 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -88,13 +87,23 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ethers.constants.AddressZero,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            let tokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                tokenManagerArtifact,
                 []
             ) as TokenManager;
-
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             await recompileConstantsFile(
                 'local',
@@ -105,6 +114,8 @@ describe('Smart loan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
@@ -291,6 +302,133 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+        });
+    });
+
+    describe('A loan with max exposure limitations', () => {
+        let exchange: PangolinIntermediary,
+            smartLoansFactory: SmartLoansFactory,
+            loan: SmartLoanGigaChadInterface,
+            wrappedLoan: any,
+            tokenManager: TokenManager,
+            owner: SignerWithAddress,
+            depositor: SignerWithAddress,
+            MOCK_PRICES: any,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
+
+        before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
+            [owner, depositor] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC', 'sAVAX'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [depositor]},
+                {name: 'MCKUSD', airdropList: [owner, depositor]}
+            ];
+
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
+            addMissingTokenContracts(tokenContracts, assetsList);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ethers.constants.AddressZero,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            let tokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
+            tokenManager = await deployContract(
+                owner,
+                tokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                tokenManager.address,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [
+                    {
+                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        contractAddress: exchange.address,
+                    }
+                ],
+                tokenManager.address,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            await deployAllFacets(diamondAddress)
+        });
+
+        it("should deploy a smart loan", async () => {
+            await smartLoansFactory.connect(owner).createLoan();
+
+            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+
+            wrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+        });
+
+        it("should set and check identifier to exposure group mappunig", async () => {
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("AVAX")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("");
+
+            await tokenManager.setIdentifiersToExposureGroups(
+                [
+                    toBytes32("AVAX"),
+                    toBytes32("sAVAX"),
+                    toBytes32("MCKUSD"),
+                    toBytes32("USDC")
+                ],
+                [
+                    toBytes32("AVAX_GROUP"),
+                    toBytes32("AVAX_GROUP"),
+                    toBytes32("STABLES_GROUP"),
+                    toBytes32("STABLES_GROUP")
+                ]
+            );
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("AVAX")))).to.be.equal("AVAX_GROUP");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("AVAX_GROUP");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("STABLES_GROUP");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("STABLES_GROUP");
         });
     });
 });

@@ -96,7 +96,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
     bytes calldata _params
   ) public override returns (bool) {
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
-    address[] memory supportedTokens = TokenManager(lep.tokenManager).getSupportedTokensAddresses();
+    address[] memory supportedTokens = ITokenManager(lep.tokenManager).getSupportedTokensAddresses();
 
     AssetAmount[] memory assetSurplus = new AssetAmount[](supportedTokens.length);
     AssetAmount[] memory assetDeficit = new AssetAmount[](supportedTokens.length);
@@ -117,7 +117,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
         abi.encodePacked(
           abi.encodeWithSelector(
             SmartLoanLiquidationFacet.liquidateLoan.selector,
-            TokenManager(lep.tokenManager).getAllPoolAssets(),
+            ITokenManager(lep.tokenManager).getAllPoolAssets(),
             amounts,
             lep.bonus
           ),

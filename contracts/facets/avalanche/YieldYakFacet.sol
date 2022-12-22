@@ -279,7 +279,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
     function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(stakingDetails.amount > 0, "Cannot stake 0 tokens");
         // _ACTIVE = 2
@@ -288,13 +288,18 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(IERC20Metadata(stakingDetails.tokenAddress).balanceOf(address(this)) >= stakingDetails.amount, "Not enough token available");
 
         IERC20Metadata(stakingDetails.tokenAddress).approve(stakingDetails.vaultAddress, stakingDetails.amount);
-        IYieldYak(stakingDetails.vaultAddress).deposit(stakingDetails.amount);
+        IYieldYak vault = IYieldYak(stakingDetails.vaultAddress);
+        uint256 lpTokenInitialBalance = vault.balanceOf(address(this));
+        vault.deposit(stakingDetails.amount);
 
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
         if(IERC20(stakingDetails.tokenAddress).balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
         }
+
+        tokenManager.decreaseProtocolExposure(stakingDetails.tokenSymbol, stakingDetails.amount);
+        tokenManager.increaseProtocolExposure(stakingDetails.vaultTokenSymbol, vault.balanceOf(address(this)) - lpTokenInitialBalance);
 
         emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
@@ -307,6 +312,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         stakingDetails.amount = Math.min(vaultContract.balanceOf(address(this)), stakingDetails.amount);
+        IERC20 unstakedToken = IERC20(stakingDetails.tokenAddress);
+        uint256 unstakedTokenInitialBalance = unstakedToken.balanceOf(address(this));
 
         vaultContract.withdraw(stakingDetails.amount);
 
@@ -315,6 +322,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         if(vaultContract.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
         }
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.increaseProtocolExposure(stakingDetails.tokenSymbol, unstakedToken.balanceOf(address(this)) - unstakedTokenInitialBalance);
+        tokenManager.decreaseProtocolExposure(stakingDetails.vaultTokenSymbol, stakingDetails.amount);
 
         emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }

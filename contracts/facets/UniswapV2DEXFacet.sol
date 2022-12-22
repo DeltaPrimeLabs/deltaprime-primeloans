@@ -17,6 +17,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    struct TokenABInitialBalances {
+        uint256 tokenABalance;
+        uint256 tokenBBalance;
+    }
+
     function getProtocolID() pure internal virtual returns (bytes32) {
         return "";
     }
@@ -55,6 +60,9 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
+        uint256 soldTokenInitialBalance = soldToken.balanceOf(address(this));
+        uint256 boughtTokenInitialBalance = boughtToken.balanceOf(address(this));
+
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
         address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
 
@@ -62,7 +70,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         uint256[] memory amounts = exchange.swap(address(soldToken), address(boughtToken), _exactSold, _minimumBought);
 
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset, false);
 
@@ -74,6 +82,10 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         if (soldToken.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
+
+        // Handle Max Protocol Exposure
+        tokenManager.decreaseProtocolExposure(_soldAsset, soldTokenInitialBalance - soldToken.balanceOf(address(this)));
+        tokenManager.increaseProtocolExposure(_boughtAsset, boughtToken.balanceOf(address(this)) - boughtTokenInitialBalance);
 
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
@@ -87,8 +99,13 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
-        require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
-        require(tokenB.balanceOf(address(this)) >= amountB, "Not enough tokenB to provide");
+        TokenABInitialBalances memory balances = TokenABInitialBalances({
+            tokenABalance: tokenA.balanceOf(address(this)),
+            tokenBBalance: tokenB.balanceOf(address(this))
+        });
+
+        require(balances.tokenABalance >= amountA, "Not enough tokenA to provide");
+        require(balances.tokenBBalance >= amountB, "Not enough tokenB to provide");
 
         address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
         address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
@@ -105,6 +122,9 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
             bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
             DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
+
+            // Handle Max Protocol Exposure
+            DeploymentConstants.getTokenManager().increaseProtocolExposure(lpToken, liquidity);
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
@@ -116,6 +136,14 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(_assetB);
         }
 
+        // Handle Max Protocol Exposure
+        {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            tokenManager.decreaseProtocolExposure(_assetA, balances.tokenABalance - tokenA.balanceOf(address(this)));
+            tokenManager.decreaseProtocolExposure(_assetB, balances.tokenBBalance - tokenB.balanceOf(address(this)));
+        }
+
+
         emit AddLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
 
@@ -125,6 +153,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
+
+        TokenABInitialBalances memory balances = TokenABInitialBalances({
+            tokenABalance: tokenA.balanceOf(address(this)),
+            tokenBBalance: tokenB.balanceOf(address(this))
+        });
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
@@ -140,9 +173,19 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
             bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
             DiamondStorageLib.removeOwnedAsset(lpToken);
+
+            // Handle Max Protocol Exposure
+            DeploymentConstants.getTokenManager().decreaseProtocolExposure(lpToken, liquidity);
         }
         DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
         DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
+
+        // Handle Max Protocol Exposure
+        {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            tokenManager.increaseProtocolExposure(_assetA, tokenA.balanceOf(address(this)) - balances.tokenABalance);
+            tokenManager.increaseProtocolExposure(_assetB, tokenB.balanceOf(address(this)) - balances.tokenBBalance);
+        }
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }

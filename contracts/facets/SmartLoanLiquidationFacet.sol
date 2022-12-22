@@ -8,7 +8,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../lib/SolvencyMethods.sol";
 import "../Pool.sol";
-import "../TokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -149,7 +149,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));

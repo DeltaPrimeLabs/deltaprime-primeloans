@@ -109,6 +109,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     onlyOwner nonReentrant remainsSolvent {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
+        uint256 lpTokenInitialBalance = poolHelper.balance(address(this));
 
         require(amount > 0, "Cannot stake 0 tokens");
         require(stakedToken.balanceOf(address(this)) >= amount, "Not enough token available");
@@ -122,6 +123,10 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         if (stakedToken.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(position.symbol);
         }
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure(position.symbol, amount);
+        tokenManager.increaseProtocolExposure(position.identifier, poolHelper.balance(address(this)) - lpTokenInitialBalance);
 
         emit Staked(msg.sender, position.symbol, address(poolHelper), amount, block.timestamp);
     }
@@ -158,12 +163,16 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _handleRewards(poolHelper);
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.increaseProtocolExposure(position.symbol, newBalance - balance);
+        tokenManager.decreaseProtocolExposure(position.identifier, amount);
+
         return newBalance - balance;
     }
 
     function _handleRewards(IVectorFinanceStaking stakingContract) internal {
         IVectorRewarder rewarder = stakingContract.rewarder();
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         uint256 index;
 
         // We do not want to revert in case of unsupported rewardTokens in order not to block the unstaking/liquidation process
