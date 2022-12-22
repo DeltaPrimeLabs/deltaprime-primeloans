@@ -297,26 +297,33 @@ export default {
         asset = config.ASSETS_CONFIG['AVAX'];
       }
 
-      const amount = parseUnits(String(value), config.ASSETS_CONFIG[asset.symbol].decimals);
+      const decimals = config.ASSETS_CONFIG[asset.symbol].decimals;
+      const amount = parseUnits(String(value), decimals);
       const fundTokenContract = new ethers.Contract(tokenAddresses[asset.symbol], erc20ABI, provider.getSigner());
 
-      const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
-      await awaitConfirmation(approveTransaction, provider, 'approve');
+      const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
+
+      if (allowance < value) {
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
       const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 8000000});
 
-      await awaitConfirmation(transaction, provider, 'createAndFundLoan');
+      await awaitConfirmation(transaction, provider, 'create Prime Account');
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
       setTimeout(async () => {
         await dispatch('updateFunds');
         await dispatch('network/updateBalance', {}, {root: true});
+        await dispatch('getFullLoanStatus');
       }, 5000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('getFullLoanStatus');
       }, 30000);
     },
 
@@ -377,13 +384,16 @@ export default {
     },
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
-      console.log('fund', fundRequest.asset);
       const provider = rootState.network.provider;
-
+      const amountInWei = parseUnits(fundRequest.value, fundRequest.assetDecimals);
       const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
 
-      const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, parseUnits(fundRequest.value, fundRequest.assetDecimals));
-      await awaitConfirmation(approveTransaction, provider, 'approve');
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
+
+      if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -391,7 +401,7 @@ export default {
         [fundRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), parseUnits(fundRequest.value, fundRequest.assetDecimals), {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), amountInWei, {gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'fund');
       setTimeout(async () => {
