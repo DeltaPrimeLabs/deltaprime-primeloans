@@ -20,7 +20,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -163,6 +163,18 @@ describe('Test liquidator with a flashloan', () => {
                 wavaxTokenAddress,
                 diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should check onlyOwner methods", async () => {
+            await expect(liquidationFlashloan.connect(depositor).transferERC20(ZERO, ZERO, 0)).to.be.revertedWith("Ownable: caller is not the owner");
+
+            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(0);
+            await tokenContracts.get('USDC')!.connect(owner).transfer(1_000_000, liquidationFlashloan.address);
+            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(1_000_000);
+
+            let ownerUSDCBalance = await tokenContracts.get('USDC')!.balanceOf(owner.address);
+            await liquidationFlashloan.connect(owner).transferERC20(tokenContracts.get('USDC')!.address, owner.address, 1_000_000);
+            expect(await tokenContracts.get('USDC')!.balanceOf(owner.address)).to.be.equal(ownerUSDCBalance + 1_000_000);
         });
 
         it("should whitelist LIQUIDATOR and flashloan contract", async () => {

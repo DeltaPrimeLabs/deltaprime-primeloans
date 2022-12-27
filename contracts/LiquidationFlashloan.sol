@@ -6,10 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./aave_v3/flashloan/base/FlashLoanReceiverBase.sol";
 import "./facets/SmartLoanLiquidationFacet.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-contract LiquidationFlashloan is FlashLoanReceiverBase {
+contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
@@ -49,6 +50,10 @@ contract LiquidationFlashloan is FlashLoanReceiverBase {
     uniswapV2Router = IUniswapV2Router01(_uniswapV2Router);
     wrappedNativeToken = _wrappedNativeToken;
     whitelistedLiquidatorsContract = _whitelistedLiquidatorsContract;
+  }
+
+  function transferERC20(address tokenAddress, address recipient, uint256 amount) external onlyOwner {
+    tokenAddress.safeTransfer(recipient, amount);
   }
 
   // ---- Extract calldata arguments ----
