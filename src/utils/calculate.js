@@ -129,7 +129,12 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const FEE_RATE = 0.0025;
 
-  console.log('lpAddress: ', lpAddress)
+  lpAddress = lpAddress.toLowerCase();
+
+  let aprDate = new Date();
+
+  const date = Math.round(aprDate.getTime() / 1000 - 32 * 3600);
+
   const pairQuery = gql(`
 {
   pairs(
@@ -155,18 +160,20 @@ export async function getTraderJoeLpApr(lpAddress) {
     reserveUSD
     volumeUSD
     hourData(
-      first: 24
-      orderBy: date
-      orderDirection: desc
-    ) {
-      volumeUSD
-      date
-      volumeToken0
-      volumeToken1
-    }
+        first: 25
+        where: {date_gte: ${date}}
+        orderBy: date
+        orderDirection: desc
+      ) {
+        untrackedVolumeUSD
+        volumeUSD
+        date
+        volumeToken0
+        volumeToken1
+      }
     timestamp
+    }
   }
-}
 `)
 
 
@@ -176,7 +183,10 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const response = await client.query({query: pairQuery});
 
-  let volumeUSD = parseFloat(response.data.pairs[0].hourData.reduce((sum, data) => sum + parseFloat(data.volumeUSD), 0));
+  const hourData = response.data.pairs[0].hourData;
+  hourData.shift();
+
+  let volumeUSD = parseFloat(hourData.reduce((sum, data) => sum + parseFloat(data.volumeUSD), 0));
   let reserveUSD = parseFloat(response.data.pairs[0].reserveUSD);
 
 

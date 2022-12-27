@@ -1,6 +1,6 @@
 <template>
   <div class="wallet">
-    <img class="logo" v-if="network === 'Avalanche'" src="src/assets/icons/avax-icon.svg"/>
+    <img class="logo" src="src/assets/icons/avax-icon.svg"/>
     <div class="network">{{network}}</div>
     <div class="separator"></div>
     <div class="account" v-tooltip="{content: account, classes: 'info-tooltip'}">{{ account | tx(true) }}</div>
@@ -21,7 +21,7 @@
     computed: {
       ...mapState('network', ['provider', 'account', 'accountBalance']),
       network() {
-        return (this.provider && this.provider._network && this.provider._network.chainId === 43114) ? 'Avalanche' : 'Localhost';
+        return 'Avalanche';
       },
     },
     data() {
