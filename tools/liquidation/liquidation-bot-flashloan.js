@@ -137,22 +137,26 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
 
-    const flashLoanTx = await flashLoan.executeFlashloan(
-        {
-            assets: poolTokenAddresses,
-            amounts: amountsToRepayInWei,
-            interestRateModes: new Array(poolTokenAddresses.length).fill(0),
-            params: '0x' + redstonePayload,
-            bonus: bonusInWei,
-            liquidator: liquidator_wallet.address,
-            loanAddress: loanAddress,
-            tokenManager: tokenManager.address
-        }, {
-            gasLimit: 8_000_000
-        }
-    );
+    try {
+        const flashLoanTx = await flashLoan.executeFlashloan(
+            {
+                assets: poolTokenAddresses,
+                amounts: amountsToRepayInWei,
+                interestRateModes: new Array(poolTokenAddresses.length).fill(0),
+                params: '0x' + redstonePayload,
+                bonus: bonusInWei,
+                liquidator: liquidator_wallet.address,
+                loanAddress: loanAddress,
+                tokenManager: tokenManager.address
+            }, {
+                gasLimit: 8_000_000
+            }
+        );
 
-    console.log("Waiting for flashLoanTx: " + flashLoanTx.hash);
-    let receipt = await provider.waitForTransaction(flashLoanTx.hash);
-    console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
+        console.log("Waiting for flashLoanTx: " + flashLoanTx.hash);
+        let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+        console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
+    } catch (error) {
+        console.log(error)
+    }
 }
