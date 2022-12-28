@@ -70,7 +70,7 @@
               <img v-if="maxApyTooltip"
                    class="info__icon"
                    src="src/assets/icons/info.svg"
-                   v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip'}">
+                   v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long'}">
             </div>
             </div>
             <div class="table__header__cell">Actions</div>

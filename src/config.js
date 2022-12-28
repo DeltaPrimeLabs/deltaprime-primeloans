@@ -86,7 +86,7 @@ export default {
                 unstakeMethod: 'unstakeAVAXYak',
                 feedSymbol: 'YY_AAVE_AVAX',
                 token: 'AVAX',
-                info: 'This strategy compounds AVAX in AAVE',
+                info: 'Repeatedly lends and borrows AVAX on Aave to optimize rewards.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['AVAX']
             },
@@ -99,7 +99,7 @@ export default {
                 unstakeMethod: 'vectorUnstakeWAVAX1',
                 minAmount: 0.8,
                 token: 'AVAX',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI']
             }
@@ -125,7 +125,7 @@ export default {
                 unstakeMethod: 'vectorUnstakeSAVAX1',
                 minAmount: 0.8,
                 token: 'SAVAX',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply',
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI']
             }
@@ -139,6 +139,7 @@ export default {
                 rewards: (address) => vectorFinanceRewards('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 minAmount: 0.8,
                 token: 'USDC',
                 debtCoverage: 0.83333333333,
