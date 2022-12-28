@@ -1,4 +1,4 @@
-import {awaitConfirmation, erc20ABI} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, erc20ABI, signMessage} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import config from '@/config';
@@ -84,6 +84,12 @@ export default {
       const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
       const decimals = config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals;
       const poolContract = state.pools[depositRequest.assetSymbol].contract;
+      const wallet = rootState.network.account;
+
+      console.log()
+      if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
+        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account))) return;
+      }
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
