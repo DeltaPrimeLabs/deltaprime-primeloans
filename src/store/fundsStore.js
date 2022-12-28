@@ -1,4 +1,11 @@
-import {awaitConfirmation, erc20ABI, isOracleError, isPausedError, wrapContract} from '../utils/blockchain';
+import {
+  awaitConfirmation,
+  erc20ABI,
+  isOracleError,
+  isPausedError, signMessage,
+  loanTermsToSign,
+  wrapContract
+} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
@@ -11,6 +18,7 @@ import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import Vue from "vue";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -280,6 +288,8 @@ export default {
     async createLoan({state, rootState}) {
       const provider = rootState.network.provider;
 
+      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+
       const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 8000000});
 
       await awaitConfirmation(transaction, provider, 'createLoan');
@@ -287,6 +297,9 @@ export default {
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
       const provider = rootState.network.provider;
+
+      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+
       //TODO: make it more robust
       if (asset === 'AVAX') {
         asset = config.ASSETS_CONFIG['AVAX'];

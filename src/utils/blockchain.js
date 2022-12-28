@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
+const ethers = require('ethers');
 
 export const erc20ABI = [
   'function decimals() public view returns (uint8)',
@@ -110,3 +111,43 @@ export function isOracleError(e) {
   const ORACLE_ERROR = '0x2b13aef500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003';
   return e.data && e.data.data && e.data.data.includes(ORACLE_ERROR);
 }
+
+export async function signMessage(provider, message, wallet) {
+  const signer = provider.getSigner();
+  let signedMessage = await signer.signMessage(message);
+
+  let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
+  if (signingWallet !== wallet) {
+    Vue.$toast.error(`Wrong signing wallet. Please do not change your Metamask wallet during the procedure.`);
+    return false;
+  }
+  return true;
+}
+
+export const loanTermsToSign =
+`
+By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
+ 
+
+I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited, licensed, restricted or taxed by applicable state, territorial, provincial or local laws, rules or regulations e.g. United States of America (including its territories: American Samoa, Guam, Puerto Rico, the Northern Mariana Islands and the U.S. Virgin Islands) or any other restricted jurisdiction. It is my responsibility to ensure that I am legally eligible to enter the DeltaPrime and use DeltaPrime protocol under any laws applicable to me in my jurisdiction of residence or otherwise.
+
+I am not a person nor acting on behalf of a person residing in any country embargoed by the European Union or person listed in “Specially Designated Nationals and Blocked Persons List” published by the Office of Foreign Assets Control ("OFAC") of the US Department of the Treasury and/or subject to European Union or USA export controls or sanctions (including without limitation Iran, Cuba, Sudan, Syria and North Korea), or any other sanctioned jurisdiction or sanction list.
+
+I understand that sufficient collateral is required when using DeltaPrime, and that my credit accounts may be terminated if I do not maintain one, in which case I may be charged penalty by the protocol.
+
+I also understand that notorious not collateralized positions from one account may result in termination of my account or accounts, in which case I may be charged penalty by the protocol as well.
+
+I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
+`
+
+export const depositTermsToSign =
+    `
+By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
+ 
+
+I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited, licensed, restricted or taxed by applicable state, territorial, provincial or local laws, rules or regulations e.g. United States of America (including its territories: American Samoa, Guam, Puerto Rico, the Northern Mariana Islands and the U.S. Virgin Islands) or any other restricted jurisdiction. It is my responsibility to ensure that I am legally eligible to enter the DeltaPrime and use DeltaPrime protocol under any laws applicable to me in my jurisdiction of residence or otherwise.
+
+I am not a person nor acting on behalf of a person residing in any country embargoed by the European Union or person listed in “Specially Designated Nationals and Blocked Persons List” published by the Office of Foreign Assets Control ("OFAC") of the US Department of the Treasury and/or subject to European Union or USA export controls or sanctions (including without limitation Iran, Cuba, Sudan, Syria and North Korea), or any other sanctioned jurisdiction or sanction list.
+
+I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
+`
