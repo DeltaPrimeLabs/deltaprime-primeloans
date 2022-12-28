@@ -21,6 +21,7 @@ Vue.use(VueLoadersBallBeat);
 Vue.use(Toast);
 Vue.use(VTooltip, {
   defaultPlacement: 'bottom',
+  autoHide: false
 });
 
 Vue.mixin(globalMixin);
