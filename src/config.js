@@ -88,7 +88,8 @@ export default {
                 token: 'AVAX',
                 info: 'Repeatedly lends and borrows AVAX on Aave to optimize rewards.',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['AVAX']
+                rewardTokens: ['AVAX'],
+                strategy: 'AAVE'
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -101,7 +102,8 @@ export default {
                 token: 'AVAX',
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI']
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus'
             }
         ],
         sAVAX: [
@@ -114,7 +116,8 @@ export default {
                 unstakeMethod: 'unstakeSAVAXYak',
                 token: 'SAVAX',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['sAVAX']
+                rewardTokens: ['sAVAX'],
+                strategy: 'Platypus'
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -127,7 +130,8 @@ export default {
                 token: 'SAVAX',
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI']
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus'
             }
         ],
         USDC: [
@@ -143,7 +147,8 @@ export default {
                 minAmount: 0.8,
                 token: 'USDC',
                 debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP']
+                rewardTokens: ['PTP'],
+                strategy: 'Platypus'
             }
         ],
         PNG_AVAX_USDC_LP: [
@@ -156,7 +161,8 @@ export default {
                 unstakeMethod: 'unstakePNGAVAXUSDCYak',
                 feedSymbol: 'YY_PNG_AVAX_USDC_LP',
                 token: 'PNG_AVAX_USDC_LP',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                strategy: 'Pangolin'
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -169,7 +175,8 @@ export default {
                 unstakeMethod: 'unstakePNGAVAXETHYak',
                 feedSymbol: 'YY_PNG_AVAX_ETH_LP',
                 token: 'PNG_AVAX_ETH_LP',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                strategy: 'Pangolin'
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -182,8 +189,8 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
                 feedSymbol: 'YY_TJ_AVAX_USDC_LP',
                 token: 'TJ_AVAX_USDC_LP',
-                debtCoverage: 0.83333333333
-
+                debtCoverage: 0.83333333333,
+                strategy: 'Pangolin'
             }
         ],
         TJ_AVAX_ETH_LP: [
@@ -196,7 +203,8 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXETHYak',
                 feedSymbol: 'YY_TJ_AVAX_ETH_LP',
                 token: 'TJ_AVAX_ETH_LP',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                strategy: 'Pangolin'
             }
         ],
         TJ_AVAX_sAVAX_LP: [
@@ -209,7 +217,8 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXSAVAXYak',
                 feedSymbol: 'YY_TJ_AVAX_sAVAX_LP',
                 token: 'TJ_AVAX_sAVAX_LP',
-                debtCoverage: 0.83333333333
+                debtCoverage: 0.83333333333,
+                strategy: 'Pangolin'
             }
         ],
     },

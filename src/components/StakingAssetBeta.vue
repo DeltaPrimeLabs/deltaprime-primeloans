@@ -18,7 +18,7 @@
                 {{ asset.name }}
               </div>
               <div class="asset__dex" v-if="asset.dex">
-                by {{ asset.dex }}
+                from {{ asset.dex }}
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ export default {
 
         .table__header {
           display: grid;
-          grid-template-columns: 16% 1fr 170px 170px 160px 156px 22px;
+          grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {

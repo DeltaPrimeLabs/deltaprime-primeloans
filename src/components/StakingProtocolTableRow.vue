@@ -12,8 +12,7 @@
                    src="src/assets/icons/info.svg"
                    v-tooltip="{content: farm.info, classes: 'info-tooltip long'}">
             </div>
-            <div class="by-farm">by {{ protocol.name }}</div>
-
+            <div class="by-farm">{{ protocol.name }} -> {{ farm.strategy }}</div>
           </div>
         </div>
       </div>
@@ -226,7 +225,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 16% 1fr 170px 170px 160px 156px 22px;
+    grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
     height: 60px;
     border-style: solid;
     border-width: 2px 0 0 0;
