@@ -1,4 +1,4 @@
-import {awaitConfirmation, erc20ABI} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, erc20ABI, signMessage} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import config from '@/config';
@@ -82,22 +82,34 @@ export default {
       const provider = rootState.network.provider;
 
       const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
+      const decimals = config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals;
+      const poolContract = state.pools[depositRequest.assetSymbol].contract;
+      const wallet = rootState.network.account;
+
+      console.log()
+      if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
+        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account))) return;
+      }
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
-        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+        depositTransaction = await poolContract
           .connect(provider.getSigner())
-          .depositNativeToken({value: parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals)});
+          .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});
       } else {
-        let approveTransaction = await tokenContract.connect(provider.getSigner())
-          .approve(state.pools[depositRequest.assetSymbol].contract.address,
-            parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+        const allowance = formatUnits(await tokenContract.allowance(rootState.network.account, poolContract.address), decimals);
 
-        await awaitConfirmation(approveTransaction, provider, 'approve');
+        if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
+          let approveTransaction = await tokenContract.connect(provider.getSigner())
+              .approve(poolContract.address,
+                  parseUnits(String(depositRequest.amount), decimals));
 
-        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+          await awaitConfirmation(approveTransaction, provider, 'approve');
+        }
+
+        depositTransaction = await poolContract
           .connect(provider.getSigner())
-          .deposit(parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+          .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       await awaitConfirmation(depositTransaction, provider, 'deposit');
       setTimeout(() => {

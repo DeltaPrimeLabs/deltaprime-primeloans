@@ -1,8 +1,11 @@
 <template>
   <div class="wallet">
-    <div class="balance">{{ accountBalance | avax }}<img class="logo" src="src/assets/icons/avax-icon.svg"/>
-</div>
-    <div class="account">{{ account | tx(true) }}</div>
+    <img class="logo" src="src/assets/icons/avax-icon.svg"/>
+    <div class="network">{{network}}</div>
+    <div class="separator"></div>
+    <div class="account" v-tooltip="{content: account, classes: 'info-tooltip'}">{{ account | tx(true) }}</div>
+    <div class="balance">{{ accountBalance | avax }}</div>
+    <img class="logo" src="src/assets/icons/avax-icon.svg"/>
   </div>
 </template>
 
@@ -16,13 +19,16 @@
       title: String
     },
     computed: {
-      ...mapState('network', ['account', 'accountBalance'])
+      ...mapState('network', ['provider', 'account', 'accountBalance']),
+      network() {
+        return 'Avalanche';
+      },
     },
     data() {
       return {
 
       }
-    },
+    }
   }
 </script>
 
@@ -31,10 +37,6 @@
 
 .wallet {
   display: flex;
-  border-radius: 14px;
-  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 15px 20px;
   font-weight: 500;
   font-size: 14px;
 
@@ -44,17 +46,28 @@
 }
 
 .account {
-  margin-left: 7px;
-
-  @media screen and (min-width: $md) {
-    margin-left: 20px;
-  }
+  margin-right: 13px;
+  color: $steel-gray;
+  font-weight: 500;
 }
 
 .logo {
-  opacity: 0.7;
   height: 16px;
   vertical-align: middle;
+  margin-left: 5px;
+  transform: translateY(2px);
+}
+
+.separator {
+  width: 2px;
+  height: 25px;
+  flex-grow: 0;
+  margin: 0 13px 0 14px;
+  transform: translateY(-2px);
+  border: solid 1px $smoke-gray;
+}
+
+.network {
   margin-left: 5px;
 }
 </style>

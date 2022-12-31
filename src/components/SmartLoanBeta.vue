@@ -176,6 +176,7 @@ export default {
 
 .main-content {
   margin-top: 30px;
+  margin-bottom: 600px;
 }
 
 </style>
