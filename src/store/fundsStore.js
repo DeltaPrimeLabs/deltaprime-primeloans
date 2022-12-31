@@ -202,6 +202,7 @@ export default {
       setTimeout(async () => {
         await dispatch('getFullLoanStatus');
       }, 5000);
+      console.log('update funds finished', new Date());
     },
 
 
@@ -597,6 +598,7 @@ export default {
       await awaitConfirmation(transaction, provider, 'swap');
 
       setTimeout(async () => {
+        console.log('updateFunds fired', new Date());
         await dispatch('updateFunds');
       }, 30000);
     },

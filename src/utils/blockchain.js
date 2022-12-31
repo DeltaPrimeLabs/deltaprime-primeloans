@@ -55,10 +55,8 @@ export async function awaitConfirmation(tx, provider, actionName) {
 
   if (transaction.status === 0) {
     console.log(transaction);
-    Vue.$toast.error(`Failed to ${actionName}. Check Metamask for more info.`);
-  } else Vue.$toast.success(`${capitalizeFirstLetter(actionName)} transaction success!`);
-
-  // await provider.waitForTransaction(tx.hash, 4);
+    throw `Failed to ${actionName}`;
+  }
 }
 
 function capitalizeFirstLetter(string) {
