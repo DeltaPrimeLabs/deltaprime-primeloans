@@ -28,7 +28,9 @@
       <Wallet class="wallet" v-else/>
     </div>
     <router-view></router-view>
+    <ProgressBar></ProgressBar>
   </div>
+
 </template>
 
 
@@ -42,9 +44,11 @@ import config from '@/config';
 const ethereum = window.ethereum;
 import Vue from 'vue';
 import Button from './components/Button';
+import ProgressBar from './components/ProgressBar';
 
 export default {
   components: {
+    ProgressBar,
     Button,
     Navbar,
     Wallet,

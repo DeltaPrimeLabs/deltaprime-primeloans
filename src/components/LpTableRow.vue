@@ -128,7 +128,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -260,10 +260,10 @@ export default {
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
                 this.isLpBalanceEstimated = true;
-                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+                this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, () => {
-
+                this.progressBarService.emitProgressBarErrorState();
               }).then(() => {
                 this.closeModal();
               });
@@ -294,10 +294,10 @@ export default {
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
           this.isLpBalanceEstimated = true;
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-
+          this.progressBarService.emitProgressBarErrorState();
         }).then(() => {
           this.closeModal();
         });
@@ -328,9 +328,10 @@ export default {
             this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
             this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
             this.isLpBalanceEstimated = true;
-            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
+            this.progressBarService.emitProgressBarErrorState();
 
           }).then(() => {
             this.closeModal();
@@ -365,10 +366,10 @@ export default {
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
           this.isLpBalanceEstimated = true;
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-
+          this.progressBarService.emitProgressBarErrorState();
         }).then(() => {
           this.closeModal();
         });
@@ -415,6 +416,11 @@ export default {
         this.$forceUpdate();
       })
     },
+
+    scheduleHardRefresh() {
+      this.progressBarService.requestProgressBar();
+      this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    }
   },
 };
 </script>

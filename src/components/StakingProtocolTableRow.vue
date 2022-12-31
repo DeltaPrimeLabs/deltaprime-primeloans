@@ -107,7 +107,7 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['stakedAssets']),
     ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
     maxApy() {
       return calculateMaxApy(this.pools, this.apy);
     },
@@ -150,9 +150,10 @@ export default {
           const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
+          this.progressBarService.emitProgressBarErrorState();
         }).then(() => {
           this.closeModal();
           setTimeout(() => {
@@ -192,9 +193,10 @@ export default {
           const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
+          this.progressBarService.emitProgressBarErrorState();
         }).then(result => {
           this.closeModal();
           setTimeout(() => {
@@ -214,7 +216,12 @@ export default {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
       })
-    }
+    },
+
+    scheduleHardRefresh() {
+      this.progressBarService.requestProgressBar();
+      this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    },
   }
 };
 </script>

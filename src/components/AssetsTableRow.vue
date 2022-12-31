@@ -140,7 +140,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -253,6 +253,7 @@ export default {
     },
 
     openBorrowModal() {
+      this.progressBarService.progressBarState$.next('SUCCESS');
       const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
@@ -276,10 +277,11 @@ export default {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
           this.isBalanceEstimated = true;
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
+          this.progressBarService.emitProgressBarErrorState();
         })
           .then(() => {
             this.closeModal();
@@ -311,9 +313,10 @@ export default {
           const targetBalanceAfterTransaction = Number(this.assetBalances[swapRequest.targetAsset]) + Number(swapRequest.targetAmount);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterTransaction);
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterTransaction);
+          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-
+          this.progressBarService.emitProgressBarErrorState();
         }).then(() => {
           this.closeModal();
         });
@@ -351,9 +354,10 @@ export default {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
                 this.isBalanceEstimated = true;
-                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+                this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, () => {
+                this.progressBarService.emitProgressBarErrorState();
               }).then(() => {
                 this.closeModal();
               });
@@ -366,9 +370,10 @@ export default {
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
                 this.isBalanceEstimated = true;
-                this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+                this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, () => {
+                this.progressBarService.emitProgressBarErrorState();
               }).then(() => {
                 this.closeModal();
               });
@@ -403,9 +408,10 @@ export default {
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
             this.isBalanceEstimated = true;
-            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
+            this.progressBarService.emitProgressBarErrorState();
           })
             .then(() => {
               this.closeModal();
@@ -419,9 +425,10 @@ export default {
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
             this.isBalanceEstimated = true;
-            this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
+            this.progressBarService.emitProgressBarErrorState();
           })
             .then(() => {
               this.closeModal();
@@ -452,11 +459,11 @@ export default {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
           this.isBalanceEstimated = true;
-          this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+          this.scheduleHardRefresh();
           this.approxDebt = true;
           this.$forceUpdate();
         }, () => {
-
+          this.progressBarService.emitProgressBarErrorState();
         })
           .then(() => {
           this.closeModal();
@@ -483,6 +490,7 @@ export default {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isBalanceEstimated = false;
         this.waitingForHardRefresh = false;
+        this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
       });
     },
@@ -491,6 +499,7 @@ export default {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
         this.approxDebt = false;
         this.waitingForHardRefresh = false;
+        this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
       })
     },
@@ -500,6 +509,11 @@ export default {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
       })
+    },
+
+    scheduleHardRefresh() {
+      this.progressBarService.requestProgressBar();
+      this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     },
   },
   watch: {
