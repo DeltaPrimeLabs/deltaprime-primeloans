@@ -147,6 +147,22 @@ export const getLiquidationAmounts = function (
         getProfitableLiquidationAmounts(action, debts, assets, prices, finalHealthRatio, bonus);
 }
 
+export const getLiquidationAmountsBasedOnLtv = function (
+    action: string,
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any,
+    finalHealthRatio: number,
+    //TODO: bonus in edge scenarios
+    bonus: number,
+    loanIsBankrupt: boolean
+) {
+    return loanIsBankrupt ?
+        getHealingLiquidationAmounts(action, debts, assets)
+        :
+        getProfitableLiquidationAmountsBasedOnLtv(action, debts, assets, prices, finalHealthRatio, bonus);
+}
+
 export const getHealingLiquidationAmounts = function (
     action: string,
     debts: Debt[],
@@ -318,6 +334,29 @@ export const getProfitableLiquidationAmounts = function (
     return {repayAmounts, deliveredAmounts};
 }
 
+//this is a simplified formula based on an assumption that all assets has 0.833333 max. debtCoverage
+export const getProfitableLiquidationAmountsBasedOnLtv = function (
+    action: string,
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any,
+    finalHealthRatio: number,
+    //TODO: bonus in edge scenarios
+    bonus: number
+) {
+    function getPrice(asset: string) {
+        return prices.find((feed: any) => feed.dataFeedId === asset).value;
+    }
+    const debt = debts.reduce((sum, debt) => sum += debt.debt * getPrice(debt.name), 0);
+
+    //we are calculating total value excluding assets with 0 debtCoverage. We assume that every other asset has 0.83333 corresponding to 500% max. LTV
+    const initialTotalValue = assets.reduce((sum, asset) => sum += (asset.debtCoverage != 0 ? asset.balance * getPrice(asset.name) : 0), 0);
+
+    const targetLTV = 4.1; //4 is minimum acceptable by protocol, added .1 for additional robustness
+
+    return toRepayBasedOnLtv(action, debt, initialTotalValue, targetLTV, bonus);
+}
+
 export const calculateHealthRatio = function (
     debts: Debt[],
     assets: AssetBalanceLeverage[],
@@ -341,6 +380,48 @@ export const calculateHealthRatio = function (
     );
 
     return debt == 0 ? Infinity : maxDebt / debt;
+}
+
+export const toRepayBasedOnLtv = function (
+    action: string,
+    debt: number,
+    initialTotalValue: number,
+    targetLTV: number,
+    bonus: number
+) {
+    switch (action) {
+        case 'CLOSE':
+            return debt;
+        case 'HEAL':
+            //bankrupt loan
+            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
+        default:
+            //liquidate
+            return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+
+    }
+}
+
+
+export const getRepayAmounts = function (
+    debts: Array<number>,
+    poolAssetsIndices: Array<number>,
+    toRepayInUsd: number,
+    prices: Array<{symbol: string, value: number}>
+) {
+    let repayAmounts: Array<number> = [];
+    let leftToRepayInUsd = toRepayInUsd;
+    poolAssetsIndices.forEach(
+        (index, i) => {
+            let availableToRepayInUsd = debts[i] * prices[index].value;
+            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+            leftToRepayInUsd -= repaidToPool;
+            repayAmounts[i] = repaidToPool / prices[index].value;
+        }
+    );
+
+    //repayAmounts are measured in appropriate tokens (not USD)
+    return repayAmounts;
 }
 
 export const toSupply = function (

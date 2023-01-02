@@ -2,7 +2,13 @@ import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManag
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
+import {
+    fromBytes32,
+    getLiquidationAmounts,
+    getLiquidationAmountsBasedOnLtv,
+    StakedPosition,
+    toWei
+} from "../../test/_helpers";
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import {
@@ -29,7 +35,7 @@ function getTokenManager(tokenManagerAddress) {
 }
 
 
-export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress) {
+export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
@@ -91,12 +97,23 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
         }
     });
 
-    let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+    let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
+        getLiquidationAmounts(
+            'LIQUIDATE',
+            debts,
+            balances,
+            prices,
+            1.04,
+            bonus,
+            loanIsBankrupt
+        )
+        :
+     getLiquidationAmountsBasedOnLtv(
         'LIQUIDATE',
         debts,
         balances,
         prices,
-        1.04,
+        4.1,
         bonus,
         loanIsBankrupt
     );
