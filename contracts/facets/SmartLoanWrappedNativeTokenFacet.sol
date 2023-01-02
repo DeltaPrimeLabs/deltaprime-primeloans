@@ -32,6 +32,9 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
             DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), address(wrapped));
         }
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.increaseProtocolExposure("AVAX", msg.value);
+
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
 
@@ -44,6 +47,9 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
         if (wrapped.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(DeploymentConstants.getNativeTokenSymbol());
         }
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure("AVAX", _amount);
 
         payable(msg.sender).safeTransferETH(_amount);
 

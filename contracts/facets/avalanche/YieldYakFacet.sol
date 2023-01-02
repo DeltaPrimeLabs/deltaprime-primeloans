@@ -298,8 +298,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
         }
 
-        tokenManager.decreaseProtocolExposure(stakingDetails.tokenSymbol, stakingDetails.amount);
-        tokenManager.increaseProtocolExposure(stakingDetails.vaultTokenSymbol, vault.balanceOf(address(this)) - lpTokenInitialBalance);
+        tokenManager.decreaseProtocolExposure(stakingDetails.tokenSymbol, stakingDetails.amount * 1e18 / vault.decimals());
+        tokenManager.increaseProtocolExposure(stakingDetails.vaultTokenSymbol, (vault.balanceOf(address(this)) - lpTokenInitialBalance) * 1e18 / vault.decimals());
 
         emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
@@ -312,7 +312,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         stakingDetails.amount = Math.min(vaultContract.balanceOf(address(this)), stakingDetails.amount);
-        IERC20 unstakedToken = IERC20(stakingDetails.tokenAddress);
+        IERC20Metadata unstakedToken = IERC20Metadata(stakingDetails.tokenAddress);
         uint256 unstakedTokenInitialBalance = unstakedToken.balanceOf(address(this));
 
         vaultContract.withdraw(stakingDetails.amount);
@@ -324,8 +324,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(stakingDetails.tokenSymbol, unstakedToken.balanceOf(address(this)) - unstakedTokenInitialBalance);
-        tokenManager.decreaseProtocolExposure(stakingDetails.vaultTokenSymbol, stakingDetails.amount);
+        tokenManager.increaseProtocolExposure(stakingDetails.tokenSymbol, (unstakedToken.balanceOf(address(this)) - unstakedTokenInitialBalance)  * 1e18 / unstakedToken.decimals());
+        tokenManager.decreaseProtocolExposure(stakingDetails.vaultTokenSymbol, stakingDetails.amount * 1e18 / unstakedToken.decimals());
 
         emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }

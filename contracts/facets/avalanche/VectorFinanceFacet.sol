@@ -125,8 +125,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(position.symbol, amount);
-        tokenManager.increaseProtocolExposure(position.identifier, poolHelper.balance(address(this)) - lpTokenInitialBalance);
+        tokenManager.decreaseProtocolExposure(position.symbol, amount * 1e18 / stakedToken.decimals());
+        tokenManager.increaseProtocolExposure(position.identifier, (poolHelper.balance(address(this)) - lpTokenInitialBalance) * 1e18 / stakedToken.decimals());
 
         emit Staked(msg.sender, position.symbol, address(poolHelper), amount, block.timestamp);
     }
@@ -163,9 +163,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _handleRewards(poolHelper);
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(position.symbol, newBalance - balance);
-        tokenManager.decreaseProtocolExposure(position.identifier, amount);
+        DeploymentConstants.getTokenManager().increaseProtocolExposure(position.symbol, (newBalance - balance) * 1e18 / unstakedToken.decimals());
+        DeploymentConstants.getTokenManager().decreaseProtocolExposure(position.identifier, amount * 1e18 / unstakedToken.decimals());
 
         return newBalance - balance;
     }
