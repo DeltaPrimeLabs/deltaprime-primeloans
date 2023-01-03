@@ -78,7 +78,7 @@ export default {
 
       for (const [, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
-          farm.staked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
+          farm.totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
         }
       }
 

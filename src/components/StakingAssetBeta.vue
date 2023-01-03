@@ -250,6 +250,7 @@ export default {
           } else {
             this.assetBalances[this.asset.symbol] = updateEvent.balance;
           }
+          this.setupAvailable();
           this.$forceUpdate();
         }
       });
@@ -260,9 +261,9 @@ export default {
         if (updateEvent.assetSymbol === this.asset.symbol) {
           this.isTotalStakedEstimated = true;
           if (updateEvent.action === 'STAKE') {
-            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.balanceChange);
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
           } else if (updateEvent.action === 'UNSTAKE') {
-            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.balanceChange);
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
           }
           this.$forceUpdate();
         }

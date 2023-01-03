@@ -37,15 +37,12 @@ export default {
     ...mapState('serviceRegistry', ['progressBarService']),
   },
   mounted() {
-    console.log('progress bar mounted');
     this.watchProgressBarRequest();
     this.watchProgressBarState();
   },
   methods: {
     watchProgressBarRequest() {
       this.progressBarService.progressBarRequested$.subscribe((progressBarRequest) => {
-        console.log('progress bar requested');
-        console.log(progressBarRequest);
         if (!this.progressBarVisible) {
           this.value = 0;
           this.showProgressBar(progressBarRequest.duration);
@@ -55,13 +52,10 @@ export default {
 
     watchProgressBarState() {
       this.progressBarService.progressBarState$.subscribe((state) => {
-        console.log('state changed to ', state);
         this.state = state;
         if (this.progressBarVisible) {
           if (state === 'SUCCESS' || state === 'ERROR') {
-            console.log('starting 30s timer');
-            timer(30000).subscribe(() => {
-              console.log('hide after timer');
+            timer(5000).subscribe(() => {
               this.progressBarVisible = false;
             });
           }
@@ -72,11 +66,9 @@ export default {
     showProgressBar(duration) {
       this.progressBarVisible = true;
       this.state = 'IN_PROGRESS';
-      console.log(new Date());
       setTimeout(() => {
         this.value = 0;
         this.clock = timer(duration * 1000).subscribe(() => {
-          console.log('FINSHED');
         });
       });
       setTimeout(() => {
