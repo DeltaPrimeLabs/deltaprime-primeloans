@@ -298,8 +298,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
         }
 
-        tokenManager.decreaseProtocolExposure(stakingDetails.tokenSymbol, stakingDetails.amount * 1e18 / vault.decimals());
-        tokenManager.increaseProtocolExposure(stakingDetails.vaultTokenSymbol, (vault.balanceOf(address(this)) - lpTokenInitialBalance) * 1e18 / vault.decimals());
+        tokenManager.decreaseProtocolExposure(stakingDetails.tokenSymbol, stakingDetails.amount * 1e18 / 10 ** vault.decimals());
+        tokenManager.increaseProtocolExposure(stakingDetails.vaultTokenSymbol, (vault.balanceOf(address(this)) - lpTokenInitialBalance) * 1e18 / 10 ** vault.decimals());
 
         emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
@@ -324,8 +324,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(stakingDetails.tokenSymbol, (unstakedToken.balanceOf(address(this)) - unstakedTokenInitialBalance)  * 1e18 / unstakedToken.decimals());
-        tokenManager.decreaseProtocolExposure(stakingDetails.vaultTokenSymbol, stakingDetails.amount * 1e18 / unstakedToken.decimals());
+        tokenManager.increaseProtocolExposure(stakingDetails.tokenSymbol, (unstakedToken.balanceOf(address(this)) - unstakedTokenInitialBalance)  * 1e18 / 10 ** unstakedToken.decimals());
+        tokenManager.decreaseProtocolExposure(stakingDetails.vaultTokenSymbol, stakingDetails.amount * 1e18 / 10 ** unstakedToken.decimals());
 
         emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }

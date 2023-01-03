@@ -33,7 +33,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / token.decimals());
+        tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
@@ -56,7 +56,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(_withdrawnAsset, _amount * 1e18 / token.decimals());
+        tokenManager.decreaseProtocolExposure(_withdrawnAsset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
     }
