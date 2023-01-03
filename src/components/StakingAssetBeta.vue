@@ -64,14 +64,19 @@
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked</div>
             <div class="table__header__cell">Rewards</div>
-            <div class="table__header__cell">Min. APY</div>
-            <div class="table__header__cell">Max. APY
-            <div class="info__icon__wrapper">
-              <img v-if="maxApyTooltip"
-                   class="info__icon"
-                   src="src/assets/icons/info.svg"
-                   v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long'}">
+            <div class="table__header__cell">Min. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long'}">
+              </div>
             </div>
+            <div class="table__header__cell">Max. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long'}">
+              </div>
             </div>
             <div class="table__header__cell">Actions</div>
           </div>
@@ -157,7 +162,14 @@ export default {
       return poolWithLowestApy;
     },
     maxApyTooltip() {
-      return `Borrow 4.5x from ${this.lowestApyPool} pool, swap it with your collateral to ${this.asset.name} and farm`;
+      return `Calculated as:<br>
+              0) If borrow APY < farm APY<br>
+              1) borrow 4.5x asset with the lowest borrow APY;<br>
+              2) swap to get the right tokens;<br>
+              3) provide all in this farm.`;
+    },
+    minApyTooltip() {
+      return `Does not take swap fees into account from the pool.`;
     }
   },
 
