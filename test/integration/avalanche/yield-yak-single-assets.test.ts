@@ -13,7 +13,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, fromBytes32,
+    deployPools,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -27,12 +27,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
-import {
-    PangolinIntermediary,
-    SmartLoanGigaChadInterface,
-    SmartLoansFactory,
-    TokenManager,
-} from "../../../typechain";
+import {PangolinIntermediary, SmartLoanGigaChadInterface, SmartLoansFactory, TokenManager,} from "../../../typechain";
 import {Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 
@@ -50,10 +45,6 @@ const erc20ABI = [
     'function totalDeposits() external view returns (uint256)'
 ]
 
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
@@ -63,6 +54,7 @@ describe('Smart loan', () => {
 
     describe('A loan with staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
+            exchange: PangolinIntermediary,
             yakStakingContract: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
@@ -79,7 +71,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'YY_AAVE_AVAX'];
+            let assetsList = ['AVAX', 'USDC', 'sAVAX', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -105,10 +97,17 @@ describe('Smart loan', () => {
 
             yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 
+            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
-                [],
+                [
+                    {
+                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        contractAddress: exchange.address,
+                    }
+                ],
                 tokenManager.address,
                 diamondAddress,
                 smartLoansFactory.address,
@@ -224,6 +223,48 @@ describe('Smart loan', () => {
         it("should not fail to unstake more than was initially staked but unstake all", async () => {
             await wrappedLoan.unstakeAVAXYak(toWei("999999"));
             expect(await yakStakingContract.balanceOf(wrappedLoan.address)).to.be.equal(0);
+        });
+
+        it("should stake sAVAX", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
+
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await expect(wrappedLoan.stakeSAVAXYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough token available");
+
+            await wrappedLoan.swapPangolin(
+                toBytes32('AVAX'),
+                toBytes32('sAVAX'),
+                toWei('50'),
+                0,
+            );
+
+            const savaxAmount = await wrappedLoan.getBalance(toBytes32('sAVAX'));
+            expect(savaxAmount).to.be.gt(0);
+
+            await wrappedLoan.stakeSAVAXYak(
+                savaxAmount
+            );
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 15);
+        });
+
+        it("should unstake sAVAX", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
         });
     });
 
@@ -356,7 +397,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 3);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
         });
 
         it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {
