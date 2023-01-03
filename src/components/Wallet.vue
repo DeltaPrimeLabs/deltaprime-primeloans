@@ -3,7 +3,7 @@
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
     <div class="network">{{network}}</div>
     <div class="separator"></div>
-    <div class="account" v-tooltip="{content: account, classes: 'info-tooltip'}">{{ account | tx(true) }}</div>
+    <div class="account" v-tooltip="{content: account, classes: 'info-tooltip long'}">{{ account | tx(true) }}</div>
     <div class="balance">{{ accountBalance | avax }}</div>
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
   </div>

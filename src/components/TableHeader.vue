@@ -7,7 +7,7 @@
         <span>{{ headerCell.label }}</span>
         <img v-if="headerCell.tooltip" class="info__icon"
              src="src/assets/icons/info.svg"
-             v-tooltip="{content: headerCell.tooltip, classes: 'info-tooltip'}">
+             v-tooltip="{content: headerCell.tooltip, placement: 'top', classes: 'info-tooltip'}">
         <div v-if="headerCell.sortable" class="cell__sort" v-on:click="sortClick(headerCell)">
           <img v-if="sortBy !== headerCell.id" src="src/assets/icons/icon_order.svg">
           <img v-if="sortBy === headerCell.id" src="src/assets/icons/icon_order_active.svg" v-bind:class="{'sort-descending': !sortAscending}">
