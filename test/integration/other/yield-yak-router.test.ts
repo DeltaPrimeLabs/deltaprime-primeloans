@@ -8,7 +8,6 @@ import {
     TokenManager
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {
     Asset,
@@ -18,7 +17,7 @@ import {
     getFixedGasSigners,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {BigNumber, Contract} from "ethers";
@@ -66,13 +65,6 @@ describe('Yield Yak test stake AVAX', () => {
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
         ]
-        let tokenManager = await deployContract(
-            owner,
-            TokenManagerArtifact,
-            []
-        ) as TokenManager;
-
-        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         let diamondAddress = await deployDiamond();
 
@@ -83,11 +75,32 @@ describe('Yield Yak test stake AVAX', () => {
             'local',
             "DeploymentConstants",
             [],
+            ZERO,
+            diamondAddress,
+            smartLoansFactory.address,
+            'lib'
+        );
+
+        const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
+        let tokenManager = await deployContract(
+            owner,
+            TokenManagerArtifact,
+            []
+        ) as TokenManager;
+
+        await recompileConstantsFile(
+            'local',
+            "DeploymentConstants",
+            [],
             tokenManager.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
         );
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
+
         await deployAllFacets(diamondAddress)
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -183,6 +196,25 @@ describe('Yield Yak test stake sAVAX', () => {
             new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
             new Asset(toBytes32('YY_PTP_sAVAX'), TOKEN_ADDRESSES['YY_PTP_sAVAX']),
         ]
+
+        let diamondAddress = await deployDiamond();
+
+        smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+        await smartLoansFactory.initialize(diamondAddress);
+
+        await recompileConstantsFile(
+            'local',
+            "DeploymentConstants",
+            [],
+            ZERO,
+            diamondAddress,
+            smartLoansFactory.address,
+            'lib'
+        );
+
+        delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+        const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
         let tokenManager = await deployContract(
             owner,
             TokenManagerArtifact,
@@ -190,11 +222,6 @@ describe('Yield Yak test stake sAVAX', () => {
         ) as TokenManager;
 
         await tokenManager.connect(owner).initialize(supportedAssets, []);
-
-        let diamondAddress = await deployDiamond();
-
-        smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-        await smartLoansFactory.initialize(diamondAddress);
 
         await recompileConstantsFile(
             'local',

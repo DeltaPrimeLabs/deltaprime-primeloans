@@ -2,7 +2,6 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -22,7 +21,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei,
+    toWei, ZERO,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -95,6 +94,20 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
+            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
             let tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
@@ -102,8 +115,6 @@ describe('Smart loan', () => {
             ) as TokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
-
-            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 
             await recompileConstantsFile(
                 'local',
@@ -256,6 +267,7 @@ describe('Smart loan', () => {
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
@@ -265,6 +277,19 @@ describe('Smart loan', () => {
             addMissingTokenContracts(tokenContracts, assetsList);
 
             yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
 
             let tokenManager = await deployContract(
                 owner,

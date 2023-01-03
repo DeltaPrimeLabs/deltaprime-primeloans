@@ -3,7 +3,6 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -16,7 +15,7 @@ import {
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toWei,
+    toWei, ZERO,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -116,6 +115,19 @@ describe('Smart loan', () => {
                 new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
                 new Asset(toBytes32('PNG_AVAX_USDC_LP'), TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'])
             ]
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
 
             let tokenManager = await deployContract(
                 owner,

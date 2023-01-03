@@ -3,7 +3,6 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import DestructableArtifact from '../../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -26,7 +25,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -85,6 +84,18 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
 
             let tokenManager = await deployContract(
                 owner,

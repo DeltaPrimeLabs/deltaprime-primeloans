@@ -2,7 +2,6 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -22,7 +21,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -93,6 +92,18 @@ describe('Smart loan - upgrading', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
 
             tokenManager = await deployContract(
                 owner,

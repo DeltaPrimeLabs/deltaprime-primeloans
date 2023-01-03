@@ -2,7 +2,6 @@ import chai, {expect} from 'chai'
 import {deployContract, solidity} from "ethereum-waffle";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
@@ -11,7 +10,7 @@ import {
     PoolAsset, PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -64,6 +63,19 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib',
+                5020
+            );
+
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
 
             let tokenManager = await deployContract(
                 owner,

@@ -1,7 +1,6 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -20,7 +19,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -110,6 +109,21 @@ describe('Test liquidator with a flashloan', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
+            diamondAddress = await deployDiamond();
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
@@ -118,15 +132,13 @@ describe('Test liquidator with a flashloan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
-            diamondAddress = await deployDiamond();
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
 
@@ -267,6 +279,21 @@ describe('Test liquidator with a flashloan', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
+            diamondAddress = await deployDiamond();
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                ZERO,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
             tokenManager = await deployContract(
                 owner,
                 TokenManagerArtifact,
@@ -275,15 +302,13 @@ describe('Test liquidator with a flashloan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
-            diamondAddress = await deployDiamond();
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
 
@@ -433,11 +458,6 @@ describe('Test liquidator with a flashloan', () => {
             ];
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -466,8 +486,6 @@ describe('Test liquidator with a flashloan', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
-
             diamondAddress = await deployDiamond();
 
             await recompileConstantsFile(
@@ -476,9 +494,20 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             await smartLoansFactory.initialize(diamondAddress);
 
@@ -613,11 +642,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -646,8 +670,6 @@ describe('Test liquidator with a flashloan', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
-
             diamondAddress = await deployDiamond();
 
             await recompileConstantsFile(
@@ -656,9 +678,20 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
+
+            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
+            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
+
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             await smartLoansFactory.initialize(diamondAddress);
 
