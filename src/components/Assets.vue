@@ -203,26 +203,34 @@ export default {
             label: 'Asset',
             sortable: false,
             class: 'asset',
-            id: 'ASSET'
+            id: 'ASSET',
+            tooltip: `Asset names are simplified for a smoother UI. To see the exact asset-names and their contracts, check our
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>docs</a>.`
           },
           {
             label: 'Balance',
             sortable: false,
             class: 'balance',
-            id: 'BALANCE'
+            id: 'BALANCE',
+            tooltip: `The amount/value of the tokens that you are holding on your Account. Numbers shown here can still be provided to Liquidity Pools and Farms.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#balance' target='_blank'>More information</a>.`
           },
           {
             label: 'Borrowed',
             sortable: false,
             class: 'loan',
-            id: 'LOAN'
+            id: 'LOAN',
+            tooltip: `The amount/value of tokens borrowed. Shows a '-' if tokens can't be borrowed.<br>
+                      In order to withdraw to your wallet, the number in "balance" needs to be equal or higher than the number in "borrowed".<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#borrowed' target='_blank'>More information</a>.`
           },
           {
             label: 'Power',
             sortable: false,
             class: 'impact',
             id: 'IMPACT',
-            tooltip: 'The Borrowing Power indicates how much you can borrow against this token'
+            tooltip: `The Borrowing Power indicates how much can borrow against this token.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/health-and-borrowing-power#borrowing-power' target='_blank'>More information</a>.`,
           },
           {
             label: 'Trend (24h)',
@@ -242,7 +250,10 @@ export default {
           {
             label: 'Actions',
             class: 'actions',
-            id: 'ACTIONS'
+            id: 'ACTIONS',
+            tooltip: `Click
+            <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+            for more information on the different actions you can perform in your Prime Account.`
           },
         ]
       };
@@ -268,20 +279,28 @@ export default {
             label: 'TVL',
             sortable: false,
             class: 'balance',
-            id: 'tvl'
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
             label: 'Min. APR',
             sortable: false,
             class: 'apr',
-            id: 'APR'
+            id: 'APR',
+            tooltip: `This shows the APR of the underlying pool. This number can go up through compounding, farming, or borrowing at a lower rate.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#min.-apr' target='_blank'>More information</a>.`
           },
           {
             label: 'Max. APR',
             sortable: false,
             class: 'apr',
             id: 'MAX-APR',
-            tooltip: 'Borrow 4.5x from the pool and create LP token using borrowed funds and collateral'
+            tooltip: `Calculated as:<br>
+                      1) Borrow 4.5x asset with lowest borrow APY;<br>
+                      2) swap to get the right tokens;<br>
+                      3) provide all in this pool;<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#max.-apr' target='_blank'>More information</a>.`
           },
           {
             label: '',
@@ -289,7 +308,10 @@ export default {
           {
             label: 'Actions',
             class: 'actions',
-            id: 'ACTIONS'
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
           },
         ]
       };

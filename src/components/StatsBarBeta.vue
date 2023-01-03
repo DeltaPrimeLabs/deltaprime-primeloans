@@ -3,13 +3,21 @@
     <div class="stats-bar">
       <stats-bar-element-beta
         :label="'Borrowed'"
-        :value="debt ? debt : 0 | usd" :info-tooltip="'Value of all your borrowed tokens'">
+        :value="debt ? debt : 0 | usd"
+        :info-tooltip="`Value of all borrowed tokens.<br><a href='https://docs.deltaprime.io/liquidity-pools/borrowing#how-to-borrow' target='_blank'>More information.</a>`
+      ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
       <div class="health-loader-container" v-if="noSmartLoan === null">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
-      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent" :info-tooltip="'Health of your portfolio. Remember to keep it above 0%'">
+      <stats-bar-element-beta
+          v-if="noSmartLoan !== null && health != null"
+          :label="'Health'"
+          :value="health | percent"
+          :info-tooltip="`Your health meter represents how close you are to liquidation and goes from 100% to 0%.<br>
+          <a href='https://docs.deltaprime.io/prime-brokerage-account/health-and-borrowing-power/interpretation' target='_blank'>More information.`
+          ">
         <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
       </stats-bar-element-beta>
 
@@ -17,7 +25,10 @@
 
       <div class="stats-bar__divider"></div>
 
-      <stats-bar-element-beta :label="'Collateral'" :value="collateral ? collateral : 0 | usd" :info-tooltip="'Total value of your portfolio minus sum of your debts'">
+      <stats-bar-element-beta
+          :label="'Collateral'"
+          :value="collateral ? collateral : 0 | usd"
+          :info-tooltip="`Value of all assets in your portfolio minus value of all borrowed tokens.<br><a href='https://docs.deltaprime.io/liquidity-pools/borrowing#how-to-add-collateral' target='_blank'>More information.`">
       </stats-bar-element-beta>
     </div>
   </div>
