@@ -79,6 +79,7 @@ export default {
   },
   async mounted() {
     this.watchHardRefreshScheduledEvent();
+    this.watchAssetBalancesDataRefreshEvent();
     this.apy = await this.farm.apy();
   },
   data() {
@@ -159,8 +160,8 @@ export default {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
-              this.waitingForHardRefresh = false;
-              this.$emit('balanceChange', this.balance);
+              this.$emit('stakedChange', this.balance);
+              this.$forceUpdate();
             });
           }, 30000);
         });
@@ -202,8 +203,8 @@ export default {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
               this.isStakedBalanceEstimated = false;
-              this.waitingForHardRefresh = false;
               this.$emit('stakedChange', this.balance);
+              this.$forceUpdate();
             });
           }, 30000);
         });
@@ -215,6 +216,13 @@ export default {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
       })
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.waitingForHardRefresh = false;
+        this.$forceUpdate();
+      });
     },
 
     scheduleHardRefresh() {
