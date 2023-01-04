@@ -163,8 +163,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _handleRewards(poolHelper);
 
-        DeploymentConstants.getTokenManager().increaseProtocolExposure(position.symbol, (newBalance - balance) * 1e18 / 10 ** unstakedToken.decimals());
         DeploymentConstants.getTokenManager().decreaseProtocolExposure(position.identifier, amount * 1e18 / 10 ** unstakedToken.decimals());
+        DeploymentConstants.getTokenManager().increaseProtocolExposure(position.symbol, (newBalance - balance) * 1e18 / 10 ** unstakedToken.decimals());
 
         return newBalance - balance;
     }

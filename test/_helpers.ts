@@ -728,15 +728,6 @@ export async function recompileConstantsFile(chain: string, contractName: string
     return require(artifactsDirectory);
 }
 
-export class Exposure {
-    current: BigNumber;
-    max: BigNumber;
-
-    constructor(current: BigNumber, max: BigNumber) {
-        this.current = current;
-        this.max = max;
-    }
-}
 
 export class Asset {
     asset: string;

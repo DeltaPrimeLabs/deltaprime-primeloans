@@ -56,6 +56,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IWrappedNativeToken(AVAX_TOKEN).withdraw(amount);
         IYieldYak(YY_AAVE_AVAX).deposit{value: amount}();
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure("AVAX", amount);
+        tokenManager.increaseProtocolExposure("YY_AAVE_AVAX", IYieldYak(YY_AAVE_AVAX).balanceOf(address(this)));
+
         DiamondStorageLib.addOwnedAsset("YY_AAVE_AVAX", YY_AAVE_AVAX);
 
         emit Staked(msg.sender, "AVAX", YY_AAVE_AVAX, amount, block.timestamp);
@@ -163,6 +167,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
+        IWrappedNativeToken WavaxToken = IWrappedNativeToken(AVAX_TOKEN);
+        uint256 initialWavaxBalance = WavaxToken.balanceOf(address(this));
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
@@ -174,11 +180,15 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         emit Unstaked(msg.sender, "AVAX", YY_AAVE_AVAX, amount, block.timestamp);
 
+        WavaxToken.deposit{value: amount}();
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure("YY_AAVE_AVAX", amount);
+        tokenManager.increaseProtocolExposure("AVAX", WavaxToken.balanceOf(address(this)) - initialWavaxBalance);
+
         if(IERC20(AVAX_TOKEN).balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
         }
-
-        IWrappedNativeToken(AVAX_TOKEN).deposit{value: amount}();
     }
 
     /**

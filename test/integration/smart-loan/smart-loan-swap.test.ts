@@ -13,7 +13,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, Exposure,
+    deployPools,
     extractAssetNameBalances,
     extractAssetNamePrices,
     formatUnits, fromBytes32,
@@ -331,7 +331,7 @@ describe('Smart loan', () => {
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC', 'sAVAX', 'PNG_AVAX_USDC_LP'];
+            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC', 'sAVAX', 'PNG_AVAX_USDC_LP', 'YY_AAVE_AVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
                 {name: 'MCKUSD', airdropList: [owner, depositor]}
@@ -419,25 +419,33 @@ describe('Smart loan', () => {
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("YY_AAVE_AVAX")))).to.be.equal("");
 
             await tokenManager.setIdentifiersToExposureGroups(
                 [
                     toBytes32("AVAX"),
                     toBytes32("sAVAX"),
                     toBytes32("MCKUSD"),
-                    toBytes32("USDC")
+                    toBytes32("USDC"),
+                    toBytes32("VF_USDC_MAIN"),
+                    toBytes32("YY_AAVE_AVAX"),
                 ],
                 [
                     toBytes32("AVAX_GROUP"),
                     toBytes32("AVAX_GROUP"),
                     toBytes32("STABLES_GROUP"),
-                    toBytes32("STABLES_GROUP")
+                    toBytes32("STABLES_GROUP"),
+                    toBytes32("VECTOR_FINANCE"),
+                    toBytes32("YIELD_YAK"),
                 ]
             );
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("AVAX")))).to.be.equal("AVAX_GROUP");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("AVAX_GROUP");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("STABLES_GROUP");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("STABLES_GROUP");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN")))).to.be.equal("VECTOR_FINANCE");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("YY_AAVE_AVAX")))).to.be.equal("YIELD_YAK");
         });
 
         it("should set and check exposure group max exposures", async () => {
@@ -445,21 +453,29 @@ describe('Smart loan', () => {
             expect((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[1]).to.be.equal(0);
             expect((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0]).to.be.equal(0);
             expect((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[1]).to.be.equal(0);
+            expect((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0]).to.be.equal(0);
+            expect((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[1]).to.be.equal(0);
 
             await tokenManager.setMaxProtocolsExposure(
                 [
                     toBytes32("AVAX_GROUP"),
                     toBytes32("STABLES_GROUP"),
+                    toBytes32("VECTOR_FINANCE"),
+                    toBytes32("YIELD_YAK"),
                 ],
                 [
                     toWei("20"),
                     toWei("500"),
+                    toWei("10"),
+                    toWei("3"),
                 ]
             );
             expect((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0]).to.be.equal(0);
             expect((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[1]).to.be.equal(toWei("20"));
             expect((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0]).to.be.equal(0);
             expect((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[1]).to.be.equal(toWei("500"));
+            expect((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0]).to.be.equal(0);
+            expect((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[1]).to.be.equal(toWei("10"));
         });
 
         it("should fund a loan", async () => {
@@ -496,6 +512,7 @@ describe('Smart loan', () => {
             });
 
         it("should buy an asset from funded", async () => {
+            const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
             const expectedUSDCAmount = 90;
 
             const slippageTolerance = 0.03;
@@ -505,7 +522,7 @@ describe('Smart loan', () => {
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei(requiredAvaxAmount.toString()),
-                parseUnits(expectedUSDCAmount.toString(), await tokenContracts.get('USDC')!.decimals())
+                parseUnits(expectedUSDCAmount.toString(), usdcDecimals)
             )).to.be.revertedWith("Max asset exposure breached");
 
             await wrappedLoan.withdraw(toBytes32("MCKUSD"), toWei("100"));
@@ -519,18 +536,32 @@ describe('Smart loan', () => {
                 toBytes32('AVAX'),
                 toBytes32('USDC'),
                 toWei(requiredAvaxAmount.toString()),
-                parseUnits(expectedUSDCAmount.toString(), await tokenContracts.get('USDC')!.decimals())
+                parseUnits(expectedUSDCAmount.toString(), usdcDecimals)
             )
 
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.equal(20-requiredAvaxAmount);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(20-requiredAvaxAmount,1e-4);
             expect((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[1]).to.be.equal(toWei("20"));
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.closeTo(493, 1);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.closeTo(
+                400 + formatUnits(
+                    await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address),
+                    usdcDecimals
+                ),
+                1
+            );
             expect((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[1]).to.be.equal(toWei("500"));
         });
 
-        it("should buy an asset from funded", async () => {
+        it("should buy an LP token", async () => {
+            const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
             let AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             let PNG_AVAX_USDC_LP = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], lpABI, provider);
+
+            let initialAvaxBalance = fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address));
+            let initialUsdcBalance = formatUnits(
+                await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address),
+                usdcDecimals
+            )
+
             let initialAvaxExposure = fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0]);
             let initialUsdcExposure = fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0]);
 
@@ -543,9 +574,55 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 2).toFixed(6), BigNumber.from("6"))
             );
 
+            let finalAvaxBalance = fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address));
+            let finalUsdcBalance = formatUnits(
+                await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address),
+                usdcDecimals
+            )
+
             expect(fromWei(await PNG_AVAX_USDC_LP.balanceOf(wrappedLoan.address))).to.be.gt(0);
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.lt(initialAvaxExposure);
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.lt(initialUsdcExposure);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(initialAvaxExposure - (initialAvaxBalance - finalAvaxBalance), 1e-4);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.closeTo(initialUsdcExposure - (initialUsdcBalance - finalUsdcBalance), 1e-4);
+        });
+
+        it("should stake & unstake in VF", async () => {
+            const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
+            let initialUsdcBalance = formatUnits(
+                await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address),
+                usdcDecimals
+            )
+            let initialUsdcExposure = fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0]);
+
+            await expect(wrappedLoan.vectorStakeUSDC1(parseUnits("11", usdcDecimals))).to.be.revertedWith("Max asset exposure breached");
+            await wrappedLoan.vectorStakeUSDC1(parseUnits("10", usdcDecimals));
+            expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.equal(initialUsdcBalance - 10);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.equal(10);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.equal(initialUsdcExposure - 10);
+
+            await wrappedLoan.vectorUnstakeUSDC1(parseUnits("10", usdcDecimals), parseUnits("9", usdcDecimals));
+
+            expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.closeTo(initialUsdcBalance, 0.01);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.equal(0);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.closeTo(initialUsdcExposure, 0.01);
+        });
+
+        it("should stake & unstake in YY", async () => {
+
+            let YY_AAVE_AVAX = new ethers.Contract("0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95", erc20ABI, provider);
+            let initialAvaxBalance = fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))
+            let initialAvaxExposure = fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0]);
+
+            await expect(wrappedLoan.stakeAVAXYak(toWei("4"))).to.be.revertedWith("Max asset exposure breached");
+            await wrappedLoan.stakeAVAXYak(toWei("2"));
+            expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(initialAvaxBalance - 2, 1e-8);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("YIELD_YAK")))[0])).to.be.equal(fromWei(await YY_AAVE_AVAX.balanceOf(wrappedLoan.address)));
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(initialAvaxExposure - 2, 1e-8);
+
+            await wrappedLoan.unstakeAVAXYak(toWei("2"));
+
+            expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(initialAvaxBalance, 0.1);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("YIELD_YAK")))[0])).to.be.equal(0);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(initialAvaxExposure, 0.1);
         });
 
 
