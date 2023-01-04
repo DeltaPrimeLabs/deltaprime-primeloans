@@ -122,6 +122,8 @@ export default {
       protocolConfig: null,
       isTotalStakedEstimated: false,
       isAvailableEstimated: false,
+      assetBalances: {},
+      lpBalances: {}
     };
   },
   mounted() {
@@ -132,7 +134,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances', 'noSmartLoan']),
+    ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
     ...mapState('poolStore', ['pools']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
     asset() {
@@ -158,7 +160,9 @@ export default {
     lowestApyPool() {
       if (!this.pools) return;
       let poolWithLowestApy = Object.keys(this.pools)[0];
-      Object.entries(this.pools).forEach((asset, pool) => { if (pool.borrowingAPY > this.pools[poolWithLowestApy].borrowingAPY) poolWithLowestApy = pool.asset} );
+      Object.entries(this.pools).forEach((asset, pool) => {
+        if (pool.borrowingAPY > this.pools[poolWithLowestApy].borrowingAPY) poolWithLowestApy = pool.asset;
+      });
       return poolWithLowestApy;
     },
     maxApyTooltip() {
@@ -223,7 +227,7 @@ export default {
         if (this.asset.secondary) {
           this.available = this.lpBalances && this.lpBalances[this.assetSymbol];
         } else {
-          this.available =  this.assetBalances && this.assetBalances[this.assetSymbol];
+          this.available = this.assetBalances && this.assetBalances[this.assetSymbol];
         }
       }
     },
@@ -271,8 +275,11 @@ export default {
     },
 
     watchAssetBalancesDataRefreshEvent() {
-      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe((refreshEvent) => {
+        this.assetBalances = refreshEvent.assetBalances;
+        this.lpBalances = refreshEvent.lpBalances;
         this.isAvailableEstimated = false;
+        this.setupAvailable();
         this.$forceUpdate();
       });
     },

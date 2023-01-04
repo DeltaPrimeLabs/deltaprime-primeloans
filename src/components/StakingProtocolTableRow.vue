@@ -20,7 +20,9 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
-            <span v-if="isStakedBalanceEstimated">~</span>{{ isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance) }}
+            <span v-if="isStakedBalanceEstimated">~</span>{{
+              isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance)
+            }}
           </div>
           <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
         </div>
@@ -28,7 +30,8 @@
 
       <div class="table__cell">
         <div class="reward__icons">
-          <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens" :src="logoSrc(token)">
+          <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens"
+               :src="logoSrc(token)">
         </div>
         <div class="double-value">
           <div class="double-value__pieces">
@@ -63,7 +66,7 @@ import StakeModal from './StakeModal';
 import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
-import {calculateMaxApy} from "../utils/calculate";
+import {calculateMaxApy} from '../utils/calculate';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -89,6 +92,8 @@ export default {
       rewards: 0,
       isStakedBalanceEstimated: false,
       waitingForHardRefresh: false,
+      assetBalances: {},
+      lpBalances: {}
     };
   },
   watch: {
@@ -106,7 +111,7 @@ export default {
   computed: {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['stakedAssets']),
-    ...mapState('fundsStore', ['assetBalances', 'lpBalances', 'smartLoanContract']),
+    ...mapState('fundsStore', ['smartLoanContract']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
     maxApy() {
       return calculateMaxApy(this.pools, this.apy);
@@ -215,11 +220,13 @@ export default {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
-      })
+      });
     },
 
     watchAssetBalancesDataRefreshEvent() {
-      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe((refreshEvent) => {
+        this.assetBalances = refreshEvent.assetBalances;
+        this.lpBalances = refreshEvent.lpBalances;
         this.waitingForHardRefresh = false;
         this.$forceUpdate();
       });
