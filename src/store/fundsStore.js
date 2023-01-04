@@ -360,7 +360,8 @@ export default {
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
-      dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent({assetBalances: balances, lpBalances: lpBalances});
+      const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
+      dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
     },
 
     async getDebtsPerAsset({state, commit, rootState}) {

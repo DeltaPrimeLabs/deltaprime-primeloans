@@ -6,9 +6,9 @@ export default class DataRefreshEventService {
   debtsPerAssetDataRefreshEvent$ = new Subject();
   hardRefreshScheduledEvent$ = new Subject();
 
-  emitAssetBalancesDataRefreshEvent() {
+  emitAssetBalancesDataRefreshEvent(refreshEvent) {
     console.log('emitAssetBalancesDataRefreshEvent');
-    this.assetBalancesDataRefreshEvent$.next(null);
+    this.assetBalancesDataRefreshEvent$.next(refreshEvent);
   }
 
   emitDebtsPerAssetDataRefreshEvent() {
