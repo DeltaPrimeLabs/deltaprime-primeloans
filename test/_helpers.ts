@@ -354,7 +354,9 @@ export const getProfitableLiquidationAmountsBasedOnLtv = function (
 
     const targetLTV = 4.1; //4 is minimum acceptable by protocol, added .1 for additional robustness
 
-    return toRepayBasedOnLtv(action, debt, initialTotalValue, targetLTV, bonus);
+    let repayAmounts = getRepayAmounts(debts, toRepayBasedOnLtv(action, debt, initialTotalValue, targetLTV, bonus), prices);
+    let deliveredAmounts = getDeliveredAmounts(assets, repayAmounts);
+    return { repayAmounts, deliveredAmounts };
 }
 
 export const calculateHealthRatio = function (
@@ -404,39 +406,43 @@ export const toRepayBasedOnLtv = function (
 
 
 export const getRepayAmounts = function (
-    debts: Array<number>,
-    poolAssetsIndices: Array<number>,
+    debts: Array<Debt>,
     toRepayInUsd: number,
     prices: Array<{symbol: string, value: number}>
 ) {
-    let repayAmounts: Array<number> = [];
+    let repayAmounts: Array<Repayment> = [];
     let leftToRepayInUsd = toRepayInUsd;
-    poolAssetsIndices.forEach(
-        (index, i) => {
-            let availableToRepayInUsd = debts[i] * prices[index].value;
-            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
-            leftToRepayInUsd -= repaidToPool;
-            repayAmounts[i] = repaidToPool / prices[index].value;
-        }
-    );
+    debts.forEach(
+    (debt) => {
+        let price = prices.find((y: any) => y.dataFeedId == debt.name)!.value;
+
+        let availableToRepayInUsd = debt.debt * price;
+        let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+        leftToRepayInUsd -= repaidToPool;
+
+
+        repayAmounts.push(new Repayment(debt.name, repaidToPool / price));
+    });
 
     //repayAmounts are measured in appropriate tokens (not USD)
     return repayAmounts;
 }
 
-export const toSupply = function (
-    balances: any,
-    repayAmounts: any
+export const getDeliveredAmounts = function (
+    assets: AssetBalanceLeverage[],
+    repayAmounts: Array<Repayment>
 ) {
     //multiplied by 1.00001 to account for limited accuracy of calculations
-    let toSupply: any = {};
+    let deliveredAmounts: any = [];
 
-    for (const [asset, amount] of Object.entries(repayAmounts)) {
-        // TODO: Change 1.1 to smth smaller if possible
-        toSupply[asset] = 1.1 * Math.max(Number(amount) - (balances[asset] ?? 0), 0);
+    for (const repayment of repayAmounts) {
+        // TODO: Change 1.01 to smth smaller if possible
+        let name = repayment.name;
+        let asset = assets.find(el => el.name === name)!;
+        deliveredAmounts.push(new Allowance(name, 1.01 * Math.max(Number(repayment.amount) - (asset.balance ?? 0), 0)));
     }
 
-    return toSupply;
+    return deliveredAmounts;
 }
 
 export const deployPools = async function(

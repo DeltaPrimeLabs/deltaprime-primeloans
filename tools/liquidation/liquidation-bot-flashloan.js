@@ -98,22 +98,22 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     });
 
     let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
-        getLiquidationAmounts(
-            'LIQUIDATE',
-            debts,
-            balances,
-            prices,
-            1.04,
-            bonus,
-            loanIsBankrupt
-        )
-        :
      getLiquidationAmountsBasedOnLtv(
         'LIQUIDATE',
         debts,
         balances,
         prices,
         4.1,
+        bonus,
+        loanIsBankrupt
+    )
+    :
+    getLiquidationAmounts(
+        'LIQUIDATE',
+        debts,
+        balances,
+        prices,
+        1.04,
         bonus,
         loanIsBankrupt
     );
