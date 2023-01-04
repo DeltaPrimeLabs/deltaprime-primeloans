@@ -85,7 +85,8 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
         await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8000000});
     }
 
-    const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
+    //TODO: calculate in the future
+    const bonus = 0;
 
     const weiDebts = (await loan.getDebts());
 
