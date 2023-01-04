@@ -3,6 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import DestructableArtifact from '../../../artifacts/contracts/mock/DestructableContract.sol/DestructableContract.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -29,10 +30,9 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
-    DestructableContract,
+    DestructableContract, MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
 } from "../../../typechain";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -85,25 +85,14 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',

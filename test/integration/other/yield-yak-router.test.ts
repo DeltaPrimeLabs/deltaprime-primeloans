@@ -2,13 +2,14 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
+    MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
@@ -71,23 +72,14 @@ describe('Yield Yak test stake AVAX', () => {
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
 
-        await recompileConstantsFile(
-            'local',
-            "DeploymentConstants",
-            [],
-            ZERO,
-            diamondAddress,
-            smartLoansFactory.address,
-            'lib'
-        );
-
-        const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
         let tokenManager = await deployContract(
             owner,
-            TokenManagerArtifact,
+            MockTokenManagerArtifact,
             []
-        ) as TokenManager;
+        ) as MockTokenManager;
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
+        await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
         await recompileConstantsFile(
             'local',
@@ -98,8 +90,6 @@ describe('Yield Yak test stake AVAX', () => {
             smartLoansFactory.address,
             'lib'
         );
-
-        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         await deployAllFacets(diamondAddress)
 
@@ -202,26 +192,14 @@ describe('Yield Yak test stake sAVAX', () => {
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
 
-        await recompileConstantsFile(
-            'local',
-            "DeploymentConstants",
-            [],
-            ZERO,
-            diamondAddress,
-            smartLoansFactory.address,
-            'lib'
-        );
-
-        delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-        const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
         let tokenManager = await deployContract(
             owner,
-            TokenManagerArtifact,
+            MockTokenManagerArtifact,
             []
-        ) as TokenManager;
+        ) as MockTokenManager;
 
         await tokenManager.connect(owner).initialize(supportedAssets, []);
+        await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
         await recompileConstantsFile(
             'local',

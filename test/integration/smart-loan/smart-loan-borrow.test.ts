@@ -3,14 +3,17 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import DoubleMethodTxArtifact from '../../../artifacts/contracts/mock/DoubleBorrowExecInSingleTx.sol/DoubleBorrowExecInSingleTx.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import DoubleMethodTxArtifact
+    from '../../../artifacts/contracts/mock/DoubleBorrowExecInSingleTx.sol/DoubleBorrowExecInSingleTx.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
     convertAssetsListToSupportedAssets,
-    convertTokenPricesMapToMockPrices, customError,
+    convertTokenPricesMapToMockPrices,
+    customError,
     deployAllFacets,
     deployPools,
     fromWei,
@@ -21,14 +24,14 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    DoubleBorrowExecInSingleTx,
+    MockTokenManager,
     SmartLoanGigaChadInterface,
-    SmartLoansFactory,
-    TokenManager,
-    DoubleBorrowExecInSingleTx
+    SmartLoansFactory
 } from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {Contract} from "ethers";
@@ -79,26 +82,14 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            let tokenManager = (await deployContract(
+            let tokenManager = await deployContract(
                 admin,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            )).connect(admin) as TokenManager;
+            ) as MockTokenManager;
 
-            await tokenManager.initialize(supportedAssets, lendingPools);
-
+            await tokenManager.connect(admin).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(admin).setFactoryAddress(smartLoansFactory.address);
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",

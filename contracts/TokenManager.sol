@@ -7,9 +7,6 @@ import "./interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-//This path is updated during deployment
-import "./lib/local/DeploymentConstants.sol";
-
 contract TokenManager is OwnableUpgradeable {
     /**
      * For adding supported assets
@@ -98,19 +95,19 @@ contract TokenManager is OwnableUpgradeable {
         return assetAddress;
     }
 
-    function increaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureIncrease) public onlyPrimeAccount {
+    function increaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureIncrease) public onlyPrimeAccountOrOwner {
         bytes32 group = identifierToExposureGroup[assetIdentifier];
         if(group != ""){
             Exposure storage exposure = groupToExposure[group];
             if(exposure.max != 0){
-                require(exposure.current + exposureIncrease <= exposure.max, "Max asset exposure breached");
                 exposure.current += exposureIncrease;
+                require(exposure.current <= exposure.max, "Max asset exposure breached");
                 emit ProtocolExposureChanged(msg.sender, group, exposureIncrease, block.timestamp);
             }
         }
     }
 
-    function decreaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureDecrease) public onlyPrimeAccount {
+    function decreaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureDecrease) public onlyPrimeAccountOrOwner {
         bytes32 group = identifierToExposureGroup[assetIdentifier];
         if(group != ""){
             Exposure storage exposure = groupToExposure[group];
@@ -122,6 +119,7 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function setMaxProtocolsExposure(bytes32[] memory groupIdentifiers, uint256[] memory maxExposures) public onlyOwner {
+        require(groupIdentifiers.length == maxExposures.length, "Arrays lengths mismatch");
         for (uint256 i = 0; i < groupIdentifiers.length; i++) {
             _setMaxProtocolExposure(groupIdentifiers[i], maxExposures[i]);
         }
@@ -136,6 +134,7 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function setIdentifiersToExposureGroups(bytes32[] memory identifiers, bytes32[] memory exposureGroups) public onlyOwner {
+        require(identifiers.length == exposureGroups.length, "Arrays lengths mismatch");
         for(uint i=0; i<identifiers.length; i++){
             identifierToExposureGroup[identifiers[i]] = exposureGroups[i];
             emit IdentifierToExposureGroupSet(msg.sender, identifiers[i], exposureGroups[i], block.timestamp);
@@ -250,15 +249,19 @@ contract TokenManager is OwnableUpgradeable {
         debtCoverageStaked[stakedAsset] = coverage;
     }
 
+    function getSmartLoansFactoryAddress() public view virtual returns (address) {
+        return 0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D;
+    }
+
     /* ========== OVERRIDDEN FUNCTIONS ========== */
 
     function renounceOwnership() public virtual override {}
 
     /* ========== MODIFIERS ========== */
 
-    modifier onlyPrimeAccount() {
-        IBorrowersRegistry borrowersRegistry = IBorrowersRegistry(DeploymentConstants.getSmartLoansFactoryAddress());
-        require(borrowersRegistry.getOwnerOfLoan(msg.sender) != address(0), "Only PrimeAccount can change protocol exposure");
+    modifier onlyPrimeAccountOrOwner() {
+        IBorrowersRegistry borrowersRegistry = IBorrowersRegistry(getSmartLoansFactoryAddress());
+        require(borrowersRegistry.canBorrow(msg.sender) || owner() == _msgSender(), "Only PrimeAccount can change protocol exposure");
         _;
     }
 

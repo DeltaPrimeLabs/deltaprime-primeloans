@@ -2,6 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -23,9 +24,9 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    MockTokenManager,
     PangolinIntermediary,
     SmartLoansFactory,
-    TokenManager,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot'
@@ -91,26 +92,14 @@ describe('Test liquidator', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
@@ -231,26 +220,14 @@ describe('Test liquidator', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 

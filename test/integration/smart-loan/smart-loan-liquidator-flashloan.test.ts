@@ -2,6 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -25,7 +26,7 @@ import {syncTime} from "../../_syncTime"
 import {
     TraderJoeIntermediary,
     SmartLoansFactory,
-    TokenManager, LiquidationFlashloan
+    LiquidationFlashloan, MockTokenManager
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot-flashloan';
@@ -111,26 +112,14 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',
@@ -281,26 +270,14 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                ZERO,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
+            let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',
@@ -458,6 +435,19 @@ describe('Test liquidator with a flashloan', () => {
             ];
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+
+            let tokenManager = await deployContract(
+                owner,
+                MockTokenManagerArtifact,
+                []
+            ) as MockTokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -471,9 +461,7 @@ describe('Test liquidator with a flashloan', () => {
             await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
             await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
 
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
             await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
@@ -488,27 +476,7 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                tokenManager.address,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
-
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
-
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
             await smartLoansFactory.initialize(diamondAddress);
 
             await recompileConstantsFile(
@@ -642,6 +610,18 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            let tokenManager = await deployContract(
+                owner,
+                MockTokenManagerArtifact,
+                []
+            ) as MockTokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -655,9 +635,7 @@ describe('Test liquidator with a flashloan', () => {
             await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
             await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
 
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
             await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
@@ -672,26 +650,7 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            await recompileConstantsFile(
-                'local',
-                "DeploymentConstants",
-                [],
-                tokenManager.address,
-                diamondAddress,
-                smartLoansFactory.address,
-                'lib'
-            );
-
-            delete require.cache[require.resolve('../../../artifacts/contracts/TokenManager.sol/TokenManager.json')]
-            const TokenManagerArtifact = require('../../../artifacts/contracts/TokenManager.sol/TokenManager.json');
-
-            tokenManager = await deployContract(
-                owner,
-                TokenManagerArtifact,
-                []
-            ) as TokenManager;
-
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await smartLoansFactory.initialize(diamondAddress);
 

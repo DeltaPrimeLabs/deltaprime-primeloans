@@ -1,9 +1,9 @@
 import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
-import {TokenManager} from "../../../typechain";
+import {MockTokenManager, TokenManager} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei} from "../../_helpers";
 import {Contract} from "ethers";
 const addresses = require("../../../common/addresses/avax/token_addresses.json");
@@ -23,8 +23,8 @@ describe('Token Manager tests', () => {
 
         tokenManager = await deployContract(
             owner,
-            TokenManagerArtifact
-        ) as TokenManager;
+            MockTokenManagerArtifact
+        ) as MockTokenManager;
 
         await tokenManager.connect(owner).initialize([], []);
     })
