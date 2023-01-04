@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8c36e18a206b9e6649c00da51c54b92171ce3413;
+// Last deployed from commit: 5bae95ca244e96444fe80078195944f6637e72d8;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -22,7 +22,6 @@ import "./interfaces/IPoolRewarder.sol";
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     using TransferHelper for address payable;
 
-    uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.90e18;
     uint256 public totalSupplyCap;
 
     mapping(address => mapping(address => uint256)) private _allowed;
@@ -342,6 +341,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         return poolRewarder.earned(msg.sender);
     }
 
+    // Returns max. acceptable pool utilisation after borrow action
+    function getMaxPoolUtilisationForBorrowing() virtual public view returns (uint256) {
+        return 0.9e18;
+    }
+
     /**
      * Returns the current deposited amount for the given user
      * The value includes the interest rates earned at the current moment
@@ -438,7 +442,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         if(!borrowersRegistry.canBorrow(msg.sender)) revert NotAuthorizedToBorrow();
         if(totalSupply() == 0) revert InsufficientPoolFunds();
         _;
-        if((totalBorrowed() * 1e18) / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert MaxPoolUtilisationBreached();
+        if((totalBorrowed() * 1e18) / totalSupply() > getMaxPoolUtilisationForBorrowing()) revert MaxPoolUtilisationBreached();
     }
 
     /* ========== EVENTS ========== */
@@ -559,6 +563,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     // Trying to repay more than was borrowed
     error RepayingMoreThanWasBorrowed();
 
-    // MAX_POOL_UTILISATION_FOR_BORROWING was breached
+    // getMaxPoolUtilisationForBorrowing was breached
     error MaxPoolUtilisationBreached();
 }
