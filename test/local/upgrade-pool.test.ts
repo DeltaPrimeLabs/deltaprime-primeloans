@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -20,7 +20,7 @@ import {
     Pool__factory,
     TransparentUpgradeableProxy,
     TransparentUpgradeableProxy__factory,
-    VariableUtilisationRatesCalculator
+    MockVariableUtilisationRatesCalculator
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -46,7 +46,7 @@ describe('Upgradeable pool', () => {
             depositor2: SignerWithAddress,
             borrower: SignerWithAddress,
             admin: SignerWithAddress,
-            VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
+            MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator,
             proxy: TransparentUpgradeableProxy,
             tokenContract: Contract;
 
@@ -59,7 +59,7 @@ describe('Upgradeable pool', () => {
 
             mockUsdToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, depositor2.address]])) as MockToken;
 
-            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
             const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
             const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
@@ -67,7 +67,7 @@ describe('Upgradeable pool', () => {
             tokenContract = new ethers.Contract(mockUsdToken.address, erc20ABI, provider);
 
             await pool.initialize(
-                VariableUtilisationRatesCalculator.address,
+                MockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
@@ -118,7 +118,7 @@ describe('Upgradeable pool', () => {
         });
 
         it("should allow owner-only functions after upgrade", async () => {
-            let ratesCalculatorV2 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            let ratesCalculatorV2 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
 
             //Should prevent setting new value from non-owner
             await expect(pool.connect(depositor).setRatesCalculator(ratesCalculatorV2.address))

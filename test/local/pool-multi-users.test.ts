@@ -3,11 +3,11 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
-import VariableUtilisationRatesCalculatorChangedOffsetArtifact
-    from '../../artifacts/contracts/mock/VariableUtilisationRatesCalculatorChangedOffset.sol/VariableUtilisationRatesCalculatorChangedOffset.json';
+import MockVariableUtilisationRatesCalculatorChangedOffsetArtifact
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculatorChangedOffset.sol/MockVariableUtilisationRatesCalculatorChangedOffset.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -17,8 +17,8 @@ import {
     MockToken,
     OpenBorrowersRegistry__factory,
     Pool,
-    VariableUtilisationRatesCalculator,
-    VariableUtilisationRatesCalculatorChangedOffset
+    MockVariableUtilisationRatesCalculator,
+    MockVariableUtilisationRatesCalculatorChangedOffset
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -37,11 +37,11 @@ describe('Pool with multiple users interactions', () => {
             user3: SignerWithAddress,
             user4: SignerWithAddress,
             mockToken: Contract,
-            ratesCalculator: VariableUtilisationRatesCalculator;
+            ratesCalculator: MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
             [owner, user1, user2, user3, user4] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, user1.address, user2.address, user3.address, user4.address]])) as MockToken;
@@ -243,14 +243,14 @@ describe('Pool with multiple users interactions', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             depositIndex: LinearIndex,
             borrowingIndex: LinearIndex,
             mockToken: Contract;
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -356,8 +356,8 @@ describe('Pool with multiple users interactions', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculatorChangedOffset,
-            updatedRatesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculatorChangedOffset,
+            updatedRatesCalculator: MockVariableUtilisationRatesCalculator,
             depositIndex: LinearIndex,
             borrowingIndex: LinearIndex,
             mockToken: Contract;
@@ -392,8 +392,8 @@ describe('Pool with multiple users interactions', () => {
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorChangedOffsetArtifact) as VariableUtilisationRatesCalculatorChangedOffset);
-            updatedRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, MockVariableUtilisationRatesCalculatorChangedOffsetArtifact) as MockVariableUtilisationRatesCalculatorChangedOffset);
+            updatedRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;

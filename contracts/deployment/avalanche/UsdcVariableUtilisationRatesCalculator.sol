@@ -3,34 +3,40 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IRatesCalculator.sol";
+import "../../interfaces/IRatesCalculator.sol";
 
 /**
- * @title VariableUtilisationRatesCalculator
+ * @title UsdcVariableUtilisationRatesCalculator
  * @dev Contract which calculates the interest rates based on pool utilisation.
  * Utilisation is computed as the ratio between funds borrowed and funds deposited to the pool.
  * Borrowing rates are calculated using a piecewise linear function. The first piece is defined by SLOPE_1
  * and OFFSET (shift). Second piece is defined by SLOPE_2 (calculated off-chain), BREAKPOINT (threshold value above
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
-contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-    uint256 public constant SLOPE_1 = 0;
-    uint256 public constant OFFSET_1 = 0.03e18;
+contract UsdcVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
+    uint256 public constant SLOPE_1 = 0.05e18;
+    uint256 public constant OFFSET_1 = 0;
 
     uint256 public constant BREAKPOINT_1 = 0.6e18;
 
-    uint256 public constant SLOPE_2 = 0.45e18;
+    uint256 public constant SLOPE_2 = 0.2e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.24e18;
+    uint256 public constant OFFSET_2 = 0.09e18;
 
     uint256 public constant BREAKPOINT_2 = 0.8e18;
 
-    uint256 public constant SLOPE_3 = 3.15e18;
+    uint256 public constant SLOPE_3 = 0.5e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 2.4e18;
+    uint256 public constant OFFSET_3 = 0.33e18;
 
     // BREAKPOINT must be lower than 1e18
-    uint256 public constant MAX_RATE = 0.75e18;
+    uint256 public constant BREAKPOINT_3 = 0.9e18;
+
+    uint256 public constant SLOPE_4 = 4.8e18;
+    //negative, hence minus in calculations
+    uint256 public constant OFFSET_4 = 4.2e18;
+
+    uint256 public constant MAX_RATE = 0.6e18;
 
     //residual spread to account for arithmetic inaccuracies in calculation of deposit rate. Does not result in any meaningful
     //profit generation
@@ -89,10 +95,12 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
             return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET_1;
         } else if (poolUtilisation <= BREAKPOINT_2) {
             return (poolUtilisation * SLOPE_2) / 1e18 - OFFSET_2;
-        } else {
-            // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
-            // unsigned integer safety check)
+        } else if (poolUtilisation <= BREAKPOINT_3) {
             return (poolUtilisation * SLOPE_3) / 1e18 - OFFSET_3;
+        } else {
+            // full formula derived from piecewise linear function calculation except for SLOPE_2/3/4 subtraction (separated for
+            // unsigned integer safety check)
+            return (poolUtilisation * SLOPE_4) / 1e18 - OFFSET_4;
         }
     }
 

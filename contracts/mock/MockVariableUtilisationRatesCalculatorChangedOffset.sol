@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IRatesCalculator.sol";
 
 /**
- * @title VariableUtilisationRatesCalculator
+ * @title MockVariableUtilisationRatesCalculatorChangedOffset
  * @dev Contract which calculates the interest rates based on pool utilisation.
  * Utilisation is computed as the ratio between funds borrowed and funds deposited to the pool.
  * Borrowing rates are calculated using a piecewise linear function. The first piece is defined by SLOPE_1
  * and OFFSET (shift). Second piece is defined by SLOPE_2 (calculated off-chain), BREAKPOINT (threshold value above
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
-contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ownable {
+contract MockVariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ownable {
     uint256 public constant SLOPE_1 = 0;
     uint256 public constant OFFSET_1 = 0.05e18;
 

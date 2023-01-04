@@ -11,8 +11,8 @@ module.exports = async ({
     const {deploy} = deployments;
     const {deployer} = await getNamedAccounts();
 
-    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "WavaxPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", TOKEN_ADDRESSES['AVAX']);
-    await initPool(deploy, deployer, "VariableUtilisationRatesCalculator", "UsdcPoolTUP", "UsdcDepositIndexTUP", "UsdcBorrowIndexTUP",TOKEN_ADDRESSES['USDC']);
+    await initPool(deploy, deployer, "WavaxVariableUtilisationRatesCalculator", "WavaxPoolTUP", "WavaxDepositIndexTUP", "WavaxBorrowIndexTUP", TOKEN_ADDRESSES['AVAX']);
+    await initPool(deploy, deployer, "UsdcVariableUtilisationRatesCalculator", "UsdcPoolTUP", "UsdcDepositIndexTUP", "UsdcBorrowIndexTUP",TOKEN_ADDRESSES['USDC']);
 };
 
 async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex, borrowIndex, tokenAddress) {

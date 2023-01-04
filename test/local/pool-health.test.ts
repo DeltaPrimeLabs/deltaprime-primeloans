@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -20,7 +20,7 @@ import {
     OpenBorrowersRegistry,
     OpenBorrowersRegistry__factory,
     Pool, PoolRewarder,
-    VariableUtilisationRatesCalculator,
+    MockVariableUtilisationRatesCalculator,
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
 import addresses from "../../common/addresses/avax/token_addresses.json";
@@ -36,7 +36,7 @@ describe('Safety tests of pool', () => {
             rewarder: PoolRewarder,
             owner: SignerWithAddress,
             nonContractAddress: string,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             borrowersRegistry: OpenBorrowersRegistry,
             depositIndex: LinearIndex,
             borrowingIndex: LinearIndex,
@@ -45,7 +45,7 @@ describe('Safety tests of pool', () => {
         before("Deploy a pool contract", async () => {
             [owner] = await getFixedGasSigners(10000000);
             nonContractAddress = '88a5c2d9919e46f883eb62f7b8dd9d0cc45bc290';
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -157,12 +157,12 @@ describe('Safety tests of pool', () => {
             user1: SignerWithAddress,
             user2: SignerWithAddress,
             user3: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             mockToken: Contract;
 
         before("Deploy a pool contract and a destructable contract for force funding", async () => {
             [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as VariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             destructable = (await deployContract(user1, DestructableArtifact)) as DestructableContract;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -234,12 +234,12 @@ describe('Safety tests of pool', () => {
             user1: SignerWithAddress,
             user2: SignerWithAddress,
             user3: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             mockToken: Contract;
 
         before("Deploy Pool contract", async () => {
             [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -360,12 +360,12 @@ describe('Safety tests of pool', () => {
             user1: SignerWithAddress,
             user2: SignerWithAddress,
             user3: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             mockToken: Contract;
 
         before("Deploy Pool contract", async () => {
             [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -453,12 +453,12 @@ describe('Safety tests of pool', () => {
             user1: SignerWithAddress,
             user2: SignerWithAddress,
             user3: SignerWithAddress,
-            ratesCalculator: VariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
             mockToken: Contract;
 
         before("Deploy Pool contract", async () => {
             [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -611,7 +611,7 @@ describe('Safety tests of pool', () => {
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
             admin: SignerWithAddress,
-            variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
+            mockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator,
             mockToken: Contract;
 
         before("should deploy a pool", async () => {
@@ -620,7 +620,7 @@ describe('Safety tests of pool', () => {
 
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
-            variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            mockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
             await depositIndex.initialize(pool.address);
@@ -630,7 +630,7 @@ describe('Safety tests of pool', () => {
             mockToken = (await deployContract(owner, MockTokenArtifact, [[owner.address, borrower.address, depositor.address]])) as MockToken;
 
             await pool.initialize(
-                variableUtilisationRatesCalculator.address,
+                mockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
@@ -684,7 +684,7 @@ describe('Safety tests of pool', () => {
 
 
         it("should set back a standard calculator", async () => {
-            await pool.connect(owner).setRatesCalculator(variableUtilisationRatesCalculator.address)
+            await pool.connect(owner).setRatesCalculator(mockVariableUtilisationRatesCalculator.address)
         });
 
         it("should allow basic actions for a standard calculator ", async () => {

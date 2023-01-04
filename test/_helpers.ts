@@ -1,11 +1,11 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CompoundingIndex, MockToken, Pool, VariableUtilisationRatesCalculator} from "../typechain";
+import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
-    from '../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -744,7 +744,7 @@ export async function syncTime() {
 
 export async function deployAndInitializeLendingPool(owner: any, tokenName: string, smartLoansFactoryAddress: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
 
-    const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+    const mockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, PoolArtifact)) as Pool;
     let tokenContract: any;
     if (chain === 'AVAX') {
@@ -789,7 +789,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     await pool.initialize(
-        variableUtilisationRatesCalculator.address,
+        mockVariableUtilisationRatesCalculator.address,
         smartLoansFactoryAddress,
         depositIndex.address,
         borrowingIndex.address,

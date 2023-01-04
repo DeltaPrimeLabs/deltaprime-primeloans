@@ -20,10 +20,16 @@ module.exports = async ({
 }) => {
     const {deployer, admin} = await getNamedAccounts();
 
-    const facet = await ethers.getContract("VariableUtilisationRatesCalculator");
+    let calculator = await ethers.getContract("WavaxVariableUtilisationRatesCalculator");
 
     await verifyContract(hre, {
-      address: facet.address
+      address: calculator.address
+    });
+
+    calculator = await ethers.getContract("UsdcVariableUtilisationRatesCalculator");
+
+    await verifyContract(hre, {
+        address: calculator.address
     });
 
     let wavaxPoolJSON = require('../../deployments/avalanche/by-factory/WavaxPool.json');
