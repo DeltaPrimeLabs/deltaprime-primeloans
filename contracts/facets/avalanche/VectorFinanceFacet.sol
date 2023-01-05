@@ -106,10 +106,9 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant remainsSolvent {
+    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
-        uint256 lpTokenInitialBalance = poolHelper.balance(address(this));
 
         require(amount > 0, "Cannot stake 0 tokens");
         require(stakedToken.balanceOf(address(this)) >= amount, "Not enough token available");
@@ -124,10 +123,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DiamondStorageLib.removeOwnedAsset(position.symbol);
         }
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(position.symbol, amount * 1e18 / 10 ** stakedToken.decimals());
-        tokenManager.increaseProtocolExposure(position.identifier, (poolHelper.balance(address(this)) - lpTokenInitialBalance) * 1e18 / 10 ** stakedToken.decimals());
-
         emit Staked(msg.sender, position.symbol, address(poolHelper), amount, block.timestamp);
     }
 
@@ -138,7 +133,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
 
@@ -162,9 +157,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit Unstaked(msg.sender, position.symbol, address(poolHelper), newBalance - balance, block.timestamp);
 
         _handleRewards(poolHelper);
-
-        DeploymentConstants.getTokenManager().decreaseProtocolExposure(position.identifier, amount * 1e18 / 10 ** unstakedToken.decimals());
-        DeploymentConstants.getTokenManager().increaseProtocolExposure(position.symbol, (newBalance - balance) * 1e18 / 10 ** unstakedToken.decimals());
 
         return newBalance - balance;
     }

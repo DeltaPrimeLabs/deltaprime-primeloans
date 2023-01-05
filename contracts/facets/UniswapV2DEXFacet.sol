@@ -56,12 +56,9 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns (uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure remainsSolvent returns (uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
-
-        uint256 soldTokenInitialBalance = soldToken.balanceOf(address(this));
-        uint256 boughtTokenInitialBalance = boughtToken.balanceOf(address(this));
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
         address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
@@ -83,10 +80,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(_soldAsset);
         }
 
-        // Handle Max Protocol Exposure
-        tokenManager.decreaseProtocolExposure(_soldAsset, (soldTokenInitialBalance - soldToken.balanceOf(address(this))) * 1e18 / 10 ** soldToken.decimals());
-        tokenManager.increaseProtocolExposure(_boughtAsset, (boughtToken.balanceOf(address(this)) - boughtTokenInitialBalance) * 1e18 / 10 ** boughtToken.decimals());
-
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
         return amounts;
@@ -95,17 +88,12 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal remainsSolvent {
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
-        TokenABInitialBalances memory balances = TokenABInitialBalances({
-            tokenABalance: tokenA.balanceOf(address(this)),
-            tokenBBalance: tokenB.balanceOf(address(this))
-        });
-
-        require(balances.tokenABalance >= amountA, "Not enough tokenA to provide");
-        require(balances.tokenBBalance >= amountB, "Not enough tokenB to provide");
+        require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
+        require(tokenB.balanceOf(address(this)) >= amountB, "Not enough tokenB to provide");
 
         address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
         address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
@@ -118,19 +106,9 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         (lpTokenAddress, amountA, amountB, liquidity)
           = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
 
-        // Handle Max Protocol Exposure
-        {
-            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-            tokenManager.decreaseProtocolExposure(_assetA, (balances.tokenABalance - tokenA.balanceOf(address(this))) * 1e18 / 10 ** tokenA.decimals());
-            tokenManager.decreaseProtocolExposure(_assetB, (balances.tokenBBalance - tokenB.balanceOf(address(this))) * 1e18 / 10 ** tokenB.decimals());
-        }
-
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
             bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
             DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
-
-            // Handle Max Protocol Exposure
-            DeploymentConstants.getTokenManager().increaseProtocolExposure(lpToken, liquidity * 1e18 / 10 ** IERC20Metadata(lpTokenAddress).decimals());
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
@@ -142,21 +120,15 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(_assetB);
         }
 
-
         emit AddLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
 
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
-
-        TokenABInitialBalances memory balances = TokenABInitialBalances({
-            tokenABalance: tokenA.balanceOf(address(this)),
-            tokenBBalance: tokenB.balanceOf(address(this))
-        });
 
         IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
@@ -173,14 +145,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
         DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
         DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
-
-        // Handle Max Protocol Exposure
-        {
-            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-            DeploymentConstants.getTokenManager().decreaseProtocolExposure(calculateLpTokenSymbol(_assetA, _assetB), liquidity * 1e18 / 10 ** IERC20Metadata(lpTokenAddress).decimals());
-            tokenManager.increaseProtocolExposure(_assetA, (tokenA.balanceOf(address(this)) - balances.tokenABalance) * 1e18 / 10 ** tokenA.decimals());
-            tokenManager.increaseProtocolExposure(_assetB, (tokenB.balanceOf(address(this)) - balances.tokenBBalance) * 1e18 / 10 ** tokenB.decimals());
-        }
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }

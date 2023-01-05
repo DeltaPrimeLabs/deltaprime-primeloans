@@ -33,7 +33,7 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure("AVAX", msg.value);
+        tokenManager.increaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), msg.value);
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
@@ -49,7 +49,7 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure("AVAX", _amount);
+        tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), _amount);
 
         payable(msg.sender).safeTransferETH(_amount);
 

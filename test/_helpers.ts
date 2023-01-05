@@ -461,6 +461,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+    await deployFacet(
+        "AssetsExposureController",
+        diamondAddress,
+        [
+            'decreaseAssetsExposure',
+            'increaseAssetsExposure',
+        ],
+        hardhatConfig
+    )
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
             'canRepayDebtFully',

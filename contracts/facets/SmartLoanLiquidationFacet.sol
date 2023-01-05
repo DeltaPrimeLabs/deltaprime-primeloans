@@ -133,7 +133,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
     * @param config configuration for liquidation
     **/
-    function liquidate(LiquidationConfig memory config) internal {
+    function liquidate(LiquidationConfig memory config) internal recalculateAssetsExposure{
         SolvencyFacetProd.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
         
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 

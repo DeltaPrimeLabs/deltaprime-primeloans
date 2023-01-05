@@ -5,7 +5,6 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
-import "../interfaces/facets/avalanche/IVectorFinanceFacet.sol";
 import "../interfaces/ITokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";

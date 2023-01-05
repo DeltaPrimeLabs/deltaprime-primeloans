@@ -261,7 +261,7 @@ contract TokenManager is OwnableUpgradeable {
 
     modifier onlyPrimeAccountOrOwner() {
         IBorrowersRegistry borrowersRegistry = IBorrowersRegistry(getSmartLoansFactoryAddress());
-        require(borrowersRegistry.canBorrow(msg.sender) || owner() == _msgSender(), "Only PrimeAccount can change protocol exposure");
+        require(borrowersRegistry.canBorrow(msg.sender) || owner() == _msgSender(), "Only PrimeAccount or owner can change protocol exposure");
         _;
     }
 
