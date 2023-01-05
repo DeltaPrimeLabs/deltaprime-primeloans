@@ -548,6 +548,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+    await deployFacet(
+        "AssetsExposureController",
+        diamondAddress,
+        [
+            'decreaseAssetsExposure',
+            'increaseAssetsExposure',
+        ],
+        hardhatConfig
+    )
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
             'canRepayDebtFully',
@@ -814,6 +823,7 @@ export async function recompileConstantsFile(chain: string, contractName: string
     execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }
+
 
 export class Asset {
     asset: string;

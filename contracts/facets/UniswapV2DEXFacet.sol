@@ -17,6 +17,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    struct TokenABInitialBalances {
+        uint256 tokenABalance;
+        uint256 tokenBBalance;
+    }
+
     function getProtocolID() pure internal virtual returns (bytes32) {
         return "";
     }
@@ -51,7 +56,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns (uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure remainsSolvent returns (uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
@@ -62,7 +67,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         uint256[] memory amounts = exchange.swap(address(soldToken), address(boughtToken), _exactSold, _minimumBought);
 
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         // Add asset to ownedAssets
         address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset, false);
 
@@ -83,7 +88,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal remainsSolvent {
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
@@ -102,8 +107,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
           = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
 
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
-            (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
-            bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
+            bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
             DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
         }
 
@@ -122,7 +126,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal remainsSolvent {
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 
@@ -137,9 +141,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
-            (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
-            bytes32 lpToken = calculateLpTokenSymbol(token0, token1);
-            DiamondStorageLib.removeOwnedAsset(lpToken);
+            DiamondStorageLib.removeOwnedAsset(calculateLpTokenSymbol(_assetA, _assetB));
         }
         DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
         DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
@@ -147,7 +149,8 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
 
-    function calculateLpTokenSymbol(bytes32 token0, bytes32 token1) internal pure returns (bytes32 name) {
+    function calculateLpTokenSymbol(bytes32 _assetA, bytes32 _assetB) internal pure returns (bytes32 name) {
+        (bytes32 token0, bytes32 token1) = _assetA < _assetB ? (_assetA, _assetB) : (_assetB, _assetA);
         name = stringToBytes32(string.concat(
                 bytes32ToString(getProtocolID()),
                 '_',

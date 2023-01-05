@@ -8,7 +8,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../lib/SolvencyMethods.sol";
 import "../Pool.sol";
-import "../TokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -159,7 +159,7 @@ contract SmartLoanLiquidationFacetDebug is ReentrancyGuardKeccak, SolvencyMethod
 
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         console.log('1');
 

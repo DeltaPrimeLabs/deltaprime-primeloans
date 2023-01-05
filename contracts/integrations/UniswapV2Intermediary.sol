@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/IAssetsExchange.sol";
 import "../TokenList.sol";
-import "../TokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 
 /**
  * @title UniswapV2Intermediary
@@ -24,10 +24,10 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
     /* ========= STATE VARIABLES ========= */
     IUniswapV2Router01 router;
     IUniswapV2Factory factory;
-    TokenManager tokenManager;
+    ITokenManager tokenManager;
 
     function initialize(address _router, address _tokenManager, address[] memory _whitelistedTokens) external initializer {
-        tokenManager = TokenManager(_tokenManager);
+        tokenManager = ITokenManager(_tokenManager);
         router = IUniswapV2Router01(_router);
         factory = IUniswapV2Factory(router.factory());
 

@@ -106,7 +106,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant remainsSolvent {
+    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
 
@@ -133,7 +133,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
 
@@ -163,7 +163,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function _handleRewards(IVectorFinanceStaking stakingContract) internal {
         IVectorRewarder rewarder = stakingContract.rewarder();
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         uint256 index;
 
         // We do not want to revert in case of unsupported rewardTokens in order not to block the unstaking/liquidation process

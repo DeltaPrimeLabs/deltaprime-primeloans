@@ -63,12 +63,12 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     function getSupportedTokensAddresses() external view returns (address[] memory) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         return tokenManager.getSupportedTokensAddresses();
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllTokenAssets();
         AssetNameBalance[] memory result = new AssetNameBalance[](assets.length);
 
@@ -83,7 +83,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     function getDebts() public view returns (AssetNameDebt[] memory) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory assets = tokenManager.getAllPoolAssets();
         AssetNameDebt[] memory result = new AssetNameDebt[](assets.length);
 

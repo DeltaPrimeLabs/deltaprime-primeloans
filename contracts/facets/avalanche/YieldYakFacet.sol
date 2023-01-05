@@ -49,7 +49,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be staked
     **/
-    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         require(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)) >= amount, "Not enough AVAX available");
 
@@ -161,7 +161,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
@@ -278,8 +278,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(stakingDetails.amount > 0, "Cannot stake 0 tokens");
         // _ACTIVE = 2
@@ -304,7 +304,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
+    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         stakingDetails.amount = Math.min(vaultContract.balanceOf(address(this)), stakingDetails.amount);
 

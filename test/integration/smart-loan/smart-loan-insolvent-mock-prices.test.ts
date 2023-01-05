@@ -2,8 +2,8 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -15,7 +15,7 @@ import {
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toWei,
+    toWei, ZERO,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -24,7 +24,7 @@ import {
     Pool,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
+    MockTokenManager,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -257,11 +257,12 @@ describe('Smart loan', () => {
 
             tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',
@@ -269,7 +270,7 @@ describe('Smart loan', () => {
                 [],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
 
@@ -323,7 +324,7 @@ describe('Smart loan', () => {
                 ],
                 tokenManager.address,
                 diamondAddress,
-                ethers.constants.AddressZero,
+                smartLoansFactory.address,
                 'lib'
             );
 

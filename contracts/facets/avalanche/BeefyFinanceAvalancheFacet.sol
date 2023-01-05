@@ -131,7 +131,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @param stakingDetails IBeefyFinance.BeefyStakingDetails staking details
     **/
     function _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails memory stakingDetails) private {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(stakingDetails.amount > 0, "Cannot stake 0 tokens");
         // _ACTIVE = 2
