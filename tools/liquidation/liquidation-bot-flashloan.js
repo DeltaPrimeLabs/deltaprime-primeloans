@@ -2,7 +2,13 @@ import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManag
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
+import {
+    fromBytes32,
+    getLiquidationAmounts,
+    getLiquidationAmountsBasedOnLtv,
+    StakedPosition,
+    toWei
+} from "../../test/_helpers";
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import {
@@ -29,7 +35,7 @@ function getTokenManager(tokenManagerAddress) {
 }
 
 
-export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress) {
+export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
@@ -53,7 +59,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     }
 
     // const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
-    const bonus = 0.005;
+    //TODO: calculate in the future
+    const bonus = 0;
 
     const weiDebts = (await loan.getDebts());
 
@@ -91,7 +98,18 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
         }
     });
 
-    let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+    let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
+     getLiquidationAmountsBasedOnLtv(
+        'LIQUIDATE',
+        debts,
+        balances,
+        prices,
+        4.1,
+        bonus,
+        loanIsBankrupt
+    )
+    :
+    getLiquidationAmounts(
         'LIQUIDATE',
         debts,
         balances,
@@ -137,22 +155,26 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
 
-    const flashLoanTx = await flashLoan.executeFlashloan(
-        {
-            assets: poolTokenAddresses,
-            amounts: amountsToRepayInWei,
-            interestRateModes: new Array(poolTokenAddresses.length).fill(0),
-            params: '0x' + redstonePayload,
-            bonus: bonusInWei,
-            liquidator: liquidator_wallet.address,
-            loanAddress: loanAddress,
-            tokenManager: tokenManager.address
-        }, {
-            gasLimit: 8_000_000
-        }
-    );
+    try {
+        const flashLoanTx = await flashLoan.executeFlashloan(
+            {
+                assets: poolTokenAddresses,
+                amounts: amountsToRepayInWei,
+                interestRateModes: new Array(poolTokenAddresses.length).fill(0),
+                params: '0x' + redstonePayload,
+                bonus: bonusInWei,
+                liquidator: liquidator_wallet.address,
+                loanAddress: loanAddress,
+                tokenManager: tokenManager.address
+            }, {
+                gasLimit: 8_000_000
+            }
+        );
 
-    console.log("Waiting for flashLoanTx: " + flashLoanTx.hash);
-    let receipt = await provider.waitForTransaction(flashLoanTx.hash);
-    console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
+        console.log("Waiting for flashLoanTx: " + flashLoanTx.hash);
+        let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+        console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
+    } catch (error) {
+        console.log(error)
+    }
 }

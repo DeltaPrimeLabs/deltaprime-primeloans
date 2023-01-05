@@ -740,5 +740,173 @@ describe('Test liquidator with a flashloan', () => {
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
     });
+
+    describe('A loan liquidated based on LTV', () => {
+        let exchange: TraderJoeIntermediary,
+            smartLoansFactory: SmartLoansFactory,
+            loan: Contract,
+            diamondCut: Contract,
+            wrappedLoan: any,
+            tokenManager: any,
+            MOCK_PRICES: any,
+            AVAX_PRICE: number,
+            ETH_PRICE: number,
+            BTC_PRICE: number,
+            QI_PRICE: number,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>,
+            owner: SignerWithAddress,
+            depositor: SignerWithAddress,
+            borrower: SignerWithAddress,
+            diamondAddress: any,
+            liquidationFlashloan: LiquidationFlashloan;
+
+
+        before("deploy factory, exchange, wavaxPool and usdPool", async () => {
+            [owner, depositor, borrower] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC', 'QI'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [borrower, depositor]},
+                {name: 'USDC', airdropList: [borrower, depositor]}
+            ];
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+            tokenManager = await deployContract(
+                owner,
+                TokenManagerArtifact,
+                []
+            ) as TokenManager;
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+
+            AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+            ETH_PRICE = (await redstone.getPrice('ETH')).value;
+            BTC_PRICE = (await redstone.getPrice('BTC')).value;
+            QI_PRICE = (await redstone.getPrice('QI')).value;
+            const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+
+            const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
+            const amountSwapped = toWei((4800 / AVAX_PRICE).toString());
+            await wavaxToken.connect(depositor).deposit({value: amountSwapped});
+            await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
+            await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+
+            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
+            await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
+            await poolContracts.get("USDC")!.connect(depositor).deposit(usdcDeposited);
+
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            addMissingTokenContracts(tokenContracts, assetsList);
+
+            //load liquidator wallet
+            await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
+            diamondAddress = await deployDiamond();
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                tokenManager.address,
+                diamondAddress,
+                ethers.constants.AddressZero,
+                'lib'
+            );
+
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [
+                    {
+                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
+                        contractAddress: exchange.address,
+                    }
+                ],
+                tokenManager.address,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+            await deployAllFacets(diamondAddress, false);
+            diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            // Deploy flash loan liquidation contract
+            const LiquidationFlashloan = await ethers.getContractFactory('LiquidationFlashloan');
+
+            liquidationFlashloan = await LiquidationFlashloan.deploy(
+                aavePoolAddressesProviderAdress,
+                traderJoeRouterAddress,
+                wavaxTokenAddress,
+                diamondAddress
+            ) as LiquidationFlashloan;
+        });
+
+        it("should whitelist LIQUIDATOR and flashloan contract", async () => {
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
+            expect(await whitelistingFacet.isLiquidatorWhitelisted(liquidationFlashloan.address)).to.be.true;
+            expect(await whitelistingFacet.isLiquidatorWhitelisted("0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6")).to.be.true;
+        });
+
+
+        it("should deploy a smart loan", async () => {
+            await smartLoansFactory.connect(borrower).createLoan();
+
+            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
+
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
+
+            // @ts-ignore
+            wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+                {
+                    dataServiceId: "redstone-avalanche-prod",
+                    uniqueSignersCount: 3,
+                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC", "QI"],
+                    // @ts-ignore
+                    disablePayloadsDryRun: true
+                },
+                CACHE_LAYER_URLS.urls
+            );
+        });
+
+
+        it("should fund, borrow and swap, making loan's LTV higher than 5", async () => {
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
+            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("500"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("QI"), toWei("50"), 0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);
+        });
+
+        it("replace facet", async () => {
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+        });
+
+        it("liquidate loan", async () => {
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, true);
+
+            expect(await wrappedLoan.isSolvent()).to.be.true;
+        });
+    });
 });
 

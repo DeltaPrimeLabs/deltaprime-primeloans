@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import MockDepositAccessNFTArtifact
@@ -19,7 +19,7 @@ import {
     MockToken,
     OpenBorrowersRegistry,
     PoolWithAccessNFT,
-    VariableUtilisationRatesCalculator
+    MockVariableUtilisationRatesCalculator
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -41,14 +41,14 @@ describe('Pool with ERC721 Alpha access', () => {
         owner: SignerWithAddress,
         user: SignerWithAddress,
         user2: SignerWithAddress,
-        variableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
+        mockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator,
         nftContract: Contract,
         tokenContract: Contract;
 
 
     before(async () => {
         [owner, user, user2] = await getFixedGasSigners(10000000);
-        variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        mockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
 
         mockUsdToken = (await deployContract(owner, MockTokenArtifact, [[user.address, user2.address]])) as MockToken;
         tokenContract = new ethers.Contract(mockUsdToken.address, erc20ABI, provider);
@@ -64,7 +64,7 @@ describe('Pool with ERC721 Alpha access', () => {
         await borrowingIndex.initialize(sut.address);
 
         await sut.initialize(
-            variableUtilisationRatesCalculator.address,
+            mockVariableUtilisationRatesCalculator.address,
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,

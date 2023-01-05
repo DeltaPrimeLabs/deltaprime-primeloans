@@ -7,7 +7,7 @@ module.exports = async ({
   const {deploy} = deployments;
   const {deployer} = await getNamedAccounts();
 
-  embedCommitHash('WavaxVariableUtilisationRatesCalculator');
+  embedCommitHash('WavaxVariableUtilisationRatesCalculator', './contracts/deployment/avalanche');
 
   let result = await deploy('WavaxVariableUtilisationRatesCalculator', {
     from: deployer,
@@ -17,9 +17,10 @@ module.exports = async ({
 
   console.log(`Deployed WavaxVariableUtilisationRatesCalculator at address: ${result.address}`);
 
-  embedCommitHash('UsdcVariableUtilisationRatesCalculator');
 
-  result = await deploy('UsdcxVariableUtilisationRatesCalculator', {
+  embedCommitHash('UsdcVariableUtilisationRatesCalculator', './contracts/deployment/avalanche');
+
+  result = await deploy('UsdcVariableUtilisationRatesCalculator', {
     from: deployer,
     gasLimit: 8000000,
     args: []
@@ -28,4 +29,4 @@ module.exports = async ({
   console.log(`Deployed UsdcVariableUtilisationRatesCalculator at address: ${result.address}`);
 };
 
-module.exports.tags = ['avalanche'];
+module.exports.tags = ['updated-rates-1'];

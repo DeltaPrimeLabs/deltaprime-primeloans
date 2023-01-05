@@ -1,11 +1,11 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {CompoundingIndex, MockToken, Pool, VariableUtilisationRatesCalculator} from "../typechain";
+import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
-    from '../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -145,6 +145,22 @@ export const getLiquidationAmounts = function (
         getHealingLiquidationAmounts(action, debts, assets)
         :
         getProfitableLiquidationAmounts(action, debts, assets, prices, finalHealthRatio, bonus);
+}
+
+export const getLiquidationAmountsBasedOnLtv = function (
+    action: string,
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any,
+    finalHealthRatio: number,
+    //TODO: bonus in edge scenarios
+    bonus: number,
+    loanIsBankrupt: boolean
+) {
+    return loanIsBankrupt ?
+        getHealingLiquidationAmounts(action, debts, assets)
+        :
+        getProfitableLiquidationAmountsBasedOnLtv(action, debts, assets, prices, finalHealthRatio, bonus);
 }
 
 export const getHealingLiquidationAmounts = function (
@@ -318,6 +334,31 @@ export const getProfitableLiquidationAmounts = function (
     return {repayAmounts, deliveredAmounts};
 }
 
+//this is a simplified formula based on an assumption that all assets has 0.833333 max. debtCoverage
+export const getProfitableLiquidationAmountsBasedOnLtv = function (
+    action: string,
+    debts: Debt[],
+    assets: AssetBalanceLeverage[],
+    prices: any,
+    finalHealthRatio: number,
+    //TODO: bonus in edge scenarios
+    bonus: number
+) {
+    function getPrice(asset: string) {
+        return prices.find((feed: any) => feed.dataFeedId === asset).value;
+    }
+    const debt = debts.reduce((sum, debt) => sum += debt.debt * getPrice(debt.name), 0);
+
+    //we are calculating total value excluding assets with 0 debtCoverage. We assume that every other asset has 0.83333 corresponding to 500% max. LTV
+    const initialTotalValue = assets.reduce((sum, asset) => sum += (asset.debtCoverage != 0 ? asset.balance * getPrice(asset.name) : 0), 0);
+
+    const targetLTV = 4.1; //4 is minimum acceptable by protocol, added .1 for additional robustness
+
+    let repayAmounts = getRepayAmounts(debts, toRepayBasedOnLtv(action, debt, initialTotalValue, targetLTV, bonus), prices);
+    let deliveredAmounts = getDeliveredAmounts(assets, repayAmounts);
+    return { repayAmounts, deliveredAmounts };
+}
+
 export const calculateHealthRatio = function (
     debts: Debt[],
     assets: AssetBalanceLeverage[],
@@ -343,19 +384,65 @@ export const calculateHealthRatio = function (
     return debt == 0 ? Infinity : maxDebt / debt;
 }
 
-export const toSupply = function (
-    balances: any,
-    repayAmounts: any
+export const toRepayBasedOnLtv = function (
+    action: string,
+    debt: number,
+    initialTotalValue: number,
+    targetLTV: number,
+    bonus: number
+) {
+    switch (action) {
+        case 'CLOSE':
+            return debt;
+        case 'HEAL':
+            //bankrupt loan
+            return (debt - targetLTV * (initialTotalValue - debt)) / (1 + targetLTV);
+        default:
+            //liquidate
+            return ((1 + targetLTV) * debt - targetLTV * initialTotalValue) / (1 - targetLTV * bonus);
+
+    }
+}
+
+
+export const getRepayAmounts = function (
+    debts: Array<Debt>,
+    toRepayInUsd: number,
+    prices: Array<{symbol: string, value: number}>
+) {
+    let repayAmounts: Array<Repayment> = [];
+    let leftToRepayInUsd = toRepayInUsd;
+    debts.forEach(
+    (debt) => {
+        let price = prices.find((y: any) => y.dataFeedId == debt.name)!.value;
+
+        let availableToRepayInUsd = debt.debt * price;
+        let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+        leftToRepayInUsd -= repaidToPool;
+
+
+        repayAmounts.push(new Repayment(debt.name, repaidToPool / price));
+    });
+
+    //repayAmounts are measured in appropriate tokens (not USD)
+    return repayAmounts;
+}
+
+export const getDeliveredAmounts = function (
+    assets: AssetBalanceLeverage[],
+    repayAmounts: Array<Repayment>
 ) {
     //multiplied by 1.00001 to account for limited accuracy of calculations
-    let toSupply: any = {};
+    let deliveredAmounts: any = [];
 
-    for (const [asset, amount] of Object.entries(repayAmounts)) {
-        // TODO: Change 1.1 to smth smaller if possible
-        toSupply[asset] = 1.1 * Math.max(Number(amount) - (balances[asset] ?? 0), 0);
+    for (const repayment of repayAmounts) {
+        // TODO: Change 1.01 to smth smaller if possible
+        let name = repayment.name;
+        let asset = assets.find(el => el.name === name)!;
+        deliveredAmounts.push(new Allowance(name, 1.01 * Math.max(Number(repayment.amount) - (asset.balance ?? 0), 0)));
     }
 
-    return toSupply;
+    return deliveredAmounts;
 }
 
 export const deployPools = async function(
@@ -672,7 +759,7 @@ export async function syncTime() {
 
 export async function deployAndInitializeLendingPool(owner: any, tokenName: string, smartLoansFactoryAddress: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
 
-    const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+    const mockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, PoolArtifact)) as Pool;
     let tokenContract: any;
     if (chain === 'AVAX') {
@@ -717,7 +804,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
     await pool.initialize(
-        variableUtilisationRatesCalculator.address,
+        mockVariableUtilisationRatesCalculator.address,
         smartLoansFactoryAddress,
         depositIndex.address,
         borrowingIndex.address,

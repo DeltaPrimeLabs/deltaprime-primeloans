@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
@@ -13,7 +13,7 @@ import MockBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/MockBorrowersRegistry.sol/MockBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator, MockBorrowersRegistry} from "../../typechain";
+import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, MockVariableUtilisationRatesCalculator, MockBorrowersRegistry} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -27,7 +27,7 @@ describe('Pool with variable utilisation interest rates', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             mockToken: Contract,
-            VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
@@ -35,7 +35,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, owner.address]])) as MockToken;
 
-            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
             await depositIndex.initialize(sut.address);
@@ -43,7 +43,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await borrowingIndex.initialize(sut.address);
 
             await sut.initialize(
-                VariableUtilisationRatesCalculator.address,
+                MockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
@@ -86,7 +86,7 @@ describe('Pool with variable utilisation interest rates', () => {
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
             mockToken: Contract,
-            VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
@@ -94,7 +94,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, borrower.address]])) as MockToken;
 
-            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
             await depositIndex.initialize(sut.address);
@@ -102,7 +102,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await borrowingIndex.initialize(sut.address);
 
             await sut.initialize(
-                VariableUtilisationRatesCalculator.address,
+                MockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
@@ -152,11 +152,11 @@ describe('Pool with variable utilisation interest rates', () => {
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
             mockToken: Contract,
-            VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, borrower.address]])) as MockToken;
@@ -168,7 +168,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await borrowingIndex.initialize(sut.address);
 
             await sut.initialize(
-                VariableUtilisationRatesCalculator.address,
+                MockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,
@@ -205,7 +205,7 @@ describe('Pool with variable utilisation interest rates', () => {
             borrower: SignerWithAddress,
             mockToken: Contract,
             borrowersRegistry: Contract,
-            VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower, nonRegistered, registered] = await getFixedGasSigners(10000000);
@@ -213,7 +213,7 @@ describe('Pool with variable utilisation interest rates', () => {
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, owner.address]])) as MockToken;
 
-            VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+            MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             borrowersRegistry = (await deployContract(owner, MockBorrowersRegistryArtifact)) as MockBorrowersRegistry;
             const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
             await depositIndex.initialize(sut.address);
@@ -221,7 +221,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await borrowingIndex.initialize(sut.address);
 
             await sut.initialize(
-                VariableUtilisationRatesCalculator.address,
+                MockVariableUtilisationRatesCalculator.address,
                 borrowersRegistry.address,
                 depositIndex.address,
                 borrowingIndex.address,

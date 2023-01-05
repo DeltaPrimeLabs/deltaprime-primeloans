@@ -3,7 +3,7 @@ import chai, {expect} from "chai"
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
+    from "../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json";
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 
 import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
@@ -12,7 +12,7 @@ import OpenBorrowersRegistryArtifact
     from "../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator} from "../../typechain";
+import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, MockVariableUtilisationRatesCalculator} from "../../typechain";
 
 chai.use(solidity);
 
@@ -30,7 +30,7 @@ describe("Pool ERC20 token functions", () => {
         [owner, user1, user2] = await getFixedGasSigners(10000000);
         sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-        let VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        let MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
         let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
         mockToken = (await deployContract(owner, MockTokenArtifact, [[user1.address, user2.address]])) as MockToken;
 
@@ -40,7 +40,7 @@ describe("Pool ERC20 token functions", () => {
         await borrowingIndex.initialize(sut.address);
 
         await sut.initialize(
-            VariableUtilisationRatesCalculator.address,
+            MockVariableUtilisationRatesCalculator.address,
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,

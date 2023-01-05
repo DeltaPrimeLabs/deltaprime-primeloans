@@ -3,7 +3,7 @@ import chai, {expect} from "chai"
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
+    from "../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json";
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
@@ -11,7 +11,7 @@ import OpenBorrowersRegistryArtifact
     from "../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, VariableUtilisationRatesCalculator} from "../../typechain";
+import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, MockVariableUtilisationRatesCalculator} from "../../typechain";
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -43,7 +43,7 @@ describe("Pool ERC20 token functions", () => {
 
         //TODO: replace with a simple rates calculator (constant rates) here and in all other tests where testing compounding
         //is not necessary. Check variable utilisation rates calculator only in the tests where it's essential
-        let VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        let MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
         let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
         const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
         await depositIndex.initialize(sut.address);
@@ -51,7 +51,7 @@ describe("Pool ERC20 token functions", () => {
         await borrowingIndex.initialize(sut.address);
 
         await sut.initialize(
-            VariableUtilisationRatesCalculator.address,
+            MockVariableUtilisationRatesCalculator.address,
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,

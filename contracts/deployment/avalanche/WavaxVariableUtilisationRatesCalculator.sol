@@ -1,47 +1,58 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 48991ca286a107aedf142ae9fd21b421b08f5025;
+// Last deployed from commit: edb582f05f0fb0098ca7ee750c8fde8a8032d991;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IRatesCalculator.sol";
+import "../../interfaces/IRatesCalculator.sol";
 
 /**
- * @title VariableUtilisationRatesCalculator
+ * @title WavaxVariableUtilisationRatesCalculator
  * @dev Contract which calculates the interest rates based on pool utilisation.
  * Utilisation is computed as the ratio between funds borrowed and funds deposited to the pool.
  * Borrowing rates are calculated using a piecewise linear function. The first piece is defined by SLOPE_1
  * and OFFSET (shift). Second piece is defined by SLOPE_2 (calculated off-chain), BREAKPOINT (threshold value above
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
-contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ownable {
-    uint256 public constant SLOPE_1 = 0;
-    uint256 public constant OFFSET_1 = 0.05e18;
+contract WavaxVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
+    uint256 public constant SLOPE_1 = 0.125e18;
+    uint256 public constant OFFSET_1 = 0;
 
-    uint256 public constant BREAKPOINT_1 = 0.6e18;
+    uint256 public constant BREAKPOINT_1 = 0.4e18;
 
-    uint256 public constant SLOPE_2 = 0.45e18;
+    uint256 public constant SLOPE_2 = 0.2e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.24e18;
+    uint256 public constant OFFSET_2 = 0.03e18;
 
     uint256 public constant BREAKPOINT_2 = 0.8e18;
 
-    uint256 public constant SLOPE_3 = 3.15e18;
+    uint256 public constant SLOPE_3 = 0.7e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 2.4e18;
+    uint256 public constant OFFSET_3 = 0.43e18;
 
     // BREAKPOINT must be lower than 1e18
-    uint256 public constant MAX_RATE = 0.75e18;
 
-    //accuracy of 1e18
-    uint256 public depositRateFactor = 1e18 - 1e12;
+    uint256 public constant BREAKPOINT_3 = 0.9e18;
+
+    uint256 public constant SLOPE_4= 29e18;
+    //negative, hence minus in calculations
+    uint256 public constant OFFSET_4 = 25.9e18;
+
+    uint256 public constant MAX_RATE = 3.1e18;
+
+
+
+
+    //residual spread to account for arithmetic inaccuracies in calculation of deposit rate. Does not result in any meaningful
+    //profit generation
+    uint256 public spread = 1e12;
 
     /* ========== VIEW FUNCTIONS ========== */
 
     /**
      * Returns the pool utilisation, which is a ratio between loans and deposits
      * utilisation = value_of_loans / value_of_deposits
-     * @param _totalLoans total value of loans
-     * @param _totalDeposits total value of deposits
+     * @dev _totalLoans total value of loans
+     * @dev _totalDeposits total value of deposits
      **/
     function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns (uint256) {
         if (_totalDeposits == 0) return 0;
@@ -53,16 +64,16 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
      * Returns the current deposit rate
      * The value is based on the current borrowing rate and satisfies the invariant:
      * value_of_loans * borrowing_rate = value_of_deposits * deposit_rate
-     * @param _totalLoans total value of loans
-     * @param _totalDeposits total value of deposits
+     * @dev _totalLoans total value of loans
+     * @dev _totalDeposits total value of deposits
      **/
     function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
         if (_totalDeposits == 0) return 0;
 
         if (_totalLoans >= _totalDeposits) {
-            return MAX_RATE * depositRateFactor / 1e18;
+            return MAX_RATE * (1e18 - spread) / 1e18;
         } else {
-            uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1e18);
+            uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
             return rate;
         }
     }
@@ -74,8 +85,8 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
      * borrowing_rate = SLOPE_1 * utilisation + OFFSET
      * 2) for pool utilisation greater than breakpoint:
      * borrowing_rate = SLOPE_2 * utilisation + MAX_RATE - SLOPE_2
-     * @param totalLoans total value of loans
-     * @param totalDeposits total value of deposits
+     * @dev _totalLoans total value of loans
+     * @dev _totalDeposits total value of deposits
      **/
     function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external pure override returns (uint256) {
         if (totalDeposits == 0) return OFFSET_1;
@@ -88,20 +99,37 @@ contract VariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator, Ow
             return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET_1;
         } else if (poolUtilisation <= BREAKPOINT_2) {
             return (poolUtilisation * SLOPE_2) / 1e18 - OFFSET_2;
-        } else {
-            // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
-            // unsigned integer safety check)
+        } else if (poolUtilisation <= BREAKPOINT_3) {
             return (poolUtilisation * SLOPE_3) / 1e18 - OFFSET_3;
+        } else {
+            // full formula derived from piecewise linear function calculation except for SLOPE_2/3/4 subtraction (separated for
+            // unsigned integer safety check)
+            return (poolUtilisation * SLOPE_4) / 1e18 - OFFSET_4;
         }
     }
 
     /* ========== SETTERS ========== */
     /**
-     * Sets deposit rate factor
-     * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
-     * @param factor total value of loans
+     * Sets the spread between deposit and borrow rate, number between 0 and 1e18
+     * @param _spread spread defined by user
      **/
-    function setDepositRateFactor(uint256 factor) external onlyOwner {
-        depositRateFactor = factor;
+    function setSpread(uint256 _spread) external onlyOwner {
+        require(_spread < 1e18, "Spread must be smaller than 1e18");
+        spread = _spread;
+        emit SpreadChanged(msg.sender, _spread, block.timestamp);
     }
+
+    /* ========== OVERRIDDEN FUNCTIONS ========== */
+
+    function renounceOwnership() public virtual override {}
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @dev emitted after changing the spread
+     * @param performer an address of wallet setting a new spread
+     * @param newSpread new spread
+     * @param timestamp time of a spread change
+     **/
+    event SpreadChanged(address indexed performer, uint256 newSpread, uint256 timestamp);
 }
