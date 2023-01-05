@@ -372,7 +372,7 @@ describe('Smart loan - real prices', () => {
                 new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
             ];
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []

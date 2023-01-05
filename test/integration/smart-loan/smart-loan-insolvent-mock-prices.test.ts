@@ -255,7 +255,7 @@ describe('Smart loan', () => {
                 },
             ];
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []

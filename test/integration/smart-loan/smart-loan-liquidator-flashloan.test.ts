@@ -112,7 +112,7 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
@@ -270,7 +270,7 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
@@ -440,7 +440,7 @@ describe('Test liquidator with a flashloan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
@@ -614,7 +614,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []

@@ -92,7 +92,7 @@ describe('Test liquidator', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
@@ -220,7 +220,7 @@ describe('Test liquidator', () => {
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
