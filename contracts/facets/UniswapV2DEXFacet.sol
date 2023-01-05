@@ -17,11 +17,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    struct TokenABInitialBalances {
-        uint256 tokenABalance;
-        uint256 tokenBBalance;
-    }
-
     function getProtocolID() pure internal virtual returns (bytes32) {
         return "";
     }
