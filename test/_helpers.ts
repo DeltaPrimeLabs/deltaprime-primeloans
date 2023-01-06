@@ -552,8 +552,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "AssetsExposureController",
         diamondAddress,
         [
-            'decreaseAssetsExposure',
-            'increaseAssetsExposure',
+            'resetPrimeAccountAssetsExposure',
+            'setPrimeAccountAssetsExposure',
         ],
         hardhatConfig
     )
