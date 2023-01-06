@@ -186,18 +186,18 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes AssetsExposureController.decreaseAssetsExposure()
-    function _decreaseAssetsExposure() public {
+    function _resetPrimeAccountAssetsExposure() public {
         proxyDelegateCalldata(
-            DiamondHelper._getFacetAddress(AssetsExposureController.decreaseAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.decreaseAssetsExposure.selector)
+            DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
+            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
         );
     }
 
     // This function executes AssetsExposureController.increaseAssetsExposure()
-    function _increaseAssetsExposure() public {
+    function _setPrimeAccountAssetsExposure() public {
         proxyDelegateCalldata(
-            DiamondHelper._getFacetAddress(AssetsExposureController.increaseAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.increaseAssetsExposure.selector)
+            DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
+            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector)
         );
     }
 
@@ -210,9 +210,9 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     modifier recalculateAssetsExposure() {
-        _decreaseAssetsExposure();
+        _resetPrimeAccountAssetsExposure();
         _;
-        _increaseAssetsExposure();
+        _setPrimeAccountAssetsExposure();
     }
 
     /**

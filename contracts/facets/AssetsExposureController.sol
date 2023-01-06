@@ -11,7 +11,7 @@ import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsExposureController {
 
-    function decreaseAssetsExposure() external {
+    function resetPrimeAccountAssetsExposure() external {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -30,7 +30,7 @@ contract AssetsExposureController {
         }
     }
 
-    function increaseAssetsExposure() external {
+    function setPrimeAccountAssetsExposure() external {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
