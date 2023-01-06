@@ -122,8 +122,6 @@ export default {
     getHealth(state, getters, rootState) {
       if (state.noSmartLoan) return 1;
 
-      let health = 0;
-
       if (state.debtsPerAsset && state.assets && state.assetBalances && state.lpAssets && state.lpBalances && rootState.stakeStore && rootState.stakeStore.farms) {
         let tokens = [];
         for (const [symbol, data] of Object.entries(state.assets)) {
@@ -149,6 +147,10 @@ export default {
         for (const [, farms] of Object.entries(rootState.stakeStore.farms)) {
 
           farms.forEach(farm => {
+
+            console.log('farm.totalStaked: ', farm.totalStaked)
+            console.log('parseFloat: ', parseFloat(farm.totalStaked))
+
             tokens.push({
               price: farm.price,
               balance: parseFloat(farm.totalStaked),
@@ -158,9 +160,10 @@ export default {
           });
         }
 
-        health = calculateHealth(tokens);
+        return calculateHealth(tokens);
       }
-      return health;
+
+      return 1;
     },
     getCollateral(state) {
       return state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
@@ -330,12 +333,14 @@ export default {
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
       setTimeout(async () => {
+        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
         await dispatch('updateFunds');
         await dispatch('network/updateBalance', {}, {root: true});
         await dispatch('getFullLoanStatus');
       }, 5000);
 
       setTimeout(async () => {
+        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
         await dispatch('updateFunds');
         await dispatch('getFullLoanStatus');
       }, 30000);
