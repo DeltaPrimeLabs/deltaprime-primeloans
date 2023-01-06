@@ -5,7 +5,7 @@
         :collateral="noSmartLoanInternal ? 0 : getCollateral"
         :debt="noSmartLoanInternal ? 0 : debt"
 
-        :health="noSmartLoanInternal ? 0 : getHealth"
+        :health="noSmartLoanInternal ? 1 : getHealth"
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">

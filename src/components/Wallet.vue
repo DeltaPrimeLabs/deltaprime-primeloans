@@ -3,7 +3,14 @@
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
     <div class="network">{{network}}</div>
     <div class="separator"></div>
-    <div class="account" v-tooltip="{content: account, classes: 'info-tooltip long'}">{{ account | tx(true) }}</div>
+    <img class="logo" src="src/assets/logo/deltaprime.svg"/>
+    <div class="account" v-if="smartLoanContract && smartLoanContract.address" v-tooltip="{content: 'Your Prime Account address', classes: 'info-tooltip long'}">
+      <a :href="`https://snowtrace.io/address/${smartLoanContract.address}`" target="_blank">{{ smartLoanContract.address | tx(true) }}</a></div>
+    <div class="separator"></div>
+    <img class="logo" src="src/assets/logo/metamask.svg"/>
+    <div class="account" v-tooltip="{content: 'Your Metamask address', classes: 'info-tooltip long'}">
+      <a :href='`https://snowtrace.io/address/${account}`' target="_blank">{{ account | tx(true) }}</a>
+    </div>
     <div class="balance">{{ accountBalance | avax }}</div>
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
   </div>
@@ -20,6 +27,7 @@
     },
     computed: {
       ...mapState('network', ['provider', 'account', 'accountBalance']),
+      ...mapState('fundsStore', ['smartLoanContract']),
       network() {
         return 'Avalanche';
       },
@@ -43,10 +51,18 @@
   @media screen and (max-width: $md) {
     font-size: initial;
   }
+
+  a {
+    color: #7d7d7d;
+  }
+
+  .balance {
+    margin-right: 6px;
+    margin-left: 6px;
+  }
 }
 
 .account {
-  margin-right: 13px;
   color: $steel-gray;
   font-weight: 500;
 }
@@ -54,7 +70,7 @@
 .logo {
   height: 16px;
   vertical-align: middle;
-  margin-left: 5px;
+  margin-right: 5px;
   transform: translateY(2px);
 }
 
@@ -65,10 +81,6 @@
   margin: 0 13px 0 14px;
   transform: translateY(-2px);
   border: solid 1px $smoke-gray;
-}
-
-.network {
-  margin-left: 5px;
 }
 </style>
 
