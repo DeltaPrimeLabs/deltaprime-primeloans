@@ -2,10 +2,12 @@
   <div class="wallet">
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
     <div class="network">{{network}}</div>
-    <div class="separator"></div>
-    <img class="logo" src="src/assets/logo/deltaprime.svg"/>
-    <div class="account" v-if="smartLoanContract && smartLoanContract.address" v-tooltip="{content: 'Your Prime Account address', classes: 'info-tooltip long'}">
-      <a :href="`https://snowtrace.io/address/${smartLoanContract.address}`" target="_blank">{{ smartLoanContract.address | tx(true) }}</a></div>
+    <div class="prime-account" v-if="hasSmartLoanContract">
+      <div class="separator"></div>
+      <img class="logo" src="src/assets/logo/deltaprime.svg"/>
+      <div class="account"  v-tooltip="{content: 'Your Prime Account address', classes: 'info-tooltip long'}">
+        <a :href="`https://snowtrace.io/address/${smartLoanContract.address}`" target="_blank">{{ smartLoanContract.address | tx(true) }}</a></div>
+    </div>
     <div class="separator"></div>
     <img class="logo" src="src/assets/logo/metamask.svg"/>
     <div class="account" v-tooltip="{content: 'Your Metamask address', classes: 'info-tooltip long'}">
@@ -19,6 +21,7 @@
 
 <script>
   import { mapState } from "vuex";
+  const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
   export default {
     name: 'Wallet',
@@ -27,9 +30,12 @@
     },
     computed: {
       ...mapState('network', ['provider', 'account', 'accountBalance']),
-      ...mapState('fundsStore', ['smartLoanContract']),
+      ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
       network() {
         return 'Avalanche';
+      },
+      hasSmartLoanContract() {
+        return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
       },
     },
     data() {
@@ -59,6 +65,10 @@
   .balance {
     margin-right: 6px;
     margin-left: 6px;
+  }
+
+  .prime-account {
+    display: flex;
   }
 }
 

@@ -148,9 +148,6 @@ export default {
 
           farms.forEach(farm => {
 
-            console.log('farm.totalStaked: ', farm.totalStaked)
-            console.log('parseFloat: ', parseFloat(farm.totalStaked))
-
             tokens.push({
               price: farm.price,
               balance: parseFloat(farm.totalStaked),

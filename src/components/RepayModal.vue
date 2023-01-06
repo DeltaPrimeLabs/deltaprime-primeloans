@@ -29,7 +29,7 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              Health Ratio:
+              Health:
             </div>
             <div class="summary__value">
               {{ healthAfterTransaction | percent }}

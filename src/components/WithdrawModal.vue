@@ -39,7 +39,7 @@
           <div class="summary__values">
             <div class="summary__label"
                  v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
-              Health Ratio:
+              Health:
             </div>
             <div class="summary__value">
               <span class="summary__value--error" v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
