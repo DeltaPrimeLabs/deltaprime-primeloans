@@ -775,7 +775,6 @@ describe('Test liquidator with a flashloan', () => {
                 {name: 'USDC', airdropList: [borrower, depositor]}
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
@@ -783,11 +782,6 @@ describe('Test liquidator with a flashloan', () => {
             QI_PRICE = (await redstone.getPrice('QI')).value;
             const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
-            const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
-            const amountSwapped = toWei((4800 / AVAX_PRICE).toString());
-            await wavaxToken.connect(depositor).deposit({value: amountSwapped});
-            await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
-            await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
@@ -802,6 +796,14 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+
+            const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
+            const amountSwapped = toWei((4800 / AVAX_PRICE).toString());
+            await wavaxToken.connect(depositor).deposit({value: amountSwapped});
+            await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
+            await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
+
             await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
             await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
             await poolContracts.get("USDC")!.connect(depositor).deposit(usdcDeposited);
@@ -812,8 +814,6 @@ describe('Test liquidator with a flashloan', () => {
 
             //load liquidator wallet
             await tokenContracts.get('AVAX')!.connect(liquidatorWallet).deposit({value: toWei("1000")});
-
-            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
 
             diamondAddress = await deployDiamond();
 
