@@ -346,7 +346,13 @@ export default {
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION);
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
-            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}).then(() => {
+            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
+              this.scheduleHardRefresh();
+            }, () => {
+              this.progressBarService.emitProgressBarErrorState();
+              this.closeModal();
+            })
+            .then(() => {
             });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {

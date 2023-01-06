@@ -326,6 +326,9 @@ export default {
 
       const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 8000000});
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(transaction, provider, 'create Prime Account');
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet

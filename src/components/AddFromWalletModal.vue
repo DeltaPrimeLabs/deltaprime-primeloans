@@ -199,13 +199,15 @@ export default {
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
-        let balance = parseFloat(this.lpBalances[symbol]);
+        if (this.lpBalances) {
+          let balance = parseFloat(this.lpBalances[symbol]);
 
-        if (symbol === this.asset.symbol) {
-          balance += added;
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
         }
-
-        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
       for (const [, farms] of Object.entries(this.farms)) {
