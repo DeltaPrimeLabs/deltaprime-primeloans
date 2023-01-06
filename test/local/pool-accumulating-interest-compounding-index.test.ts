@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import VariableUtilisationRatesCalculatorArtifact
-    from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
+    from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -16,7 +16,7 @@ import {
     MockToken,
     OpenBorrowersRegistry,
     Pool,
-    VariableUtilisationRatesCalculator
+    MockVariableUtilisationRatesCalculator
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -142,13 +142,13 @@ describe('Pool testing suite with accumulating interest', () => {
         borrower1: SignerWithAddress,
         borrower2: SignerWithAddress,
         mockToken: Contract,
-        VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
+        MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
     before("Deploy Pool contract", async () => {
         [owner, depositor1, depositor2, borrower1, borrower2] = await getFixedGasSigners(10000000);
         sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-        VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
         const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
         const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [sut.address])) as CompoundingIndex;
@@ -157,7 +157,7 @@ describe('Pool testing suite with accumulating interest', () => {
         mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address]])) as MockToken;
 
         await sut.initialize(
-            VariableUtilisationRatesCalculator.address,
+            MockVariableUtilisationRatesCalculator.address,
             borrowersRegistry.address,
             depositIndex.address,
             borrowingIndex.address,

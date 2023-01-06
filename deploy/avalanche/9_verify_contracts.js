@@ -20,10 +20,16 @@ module.exports = async ({
 }) => {
     const {deployer, admin} = await getNamedAccounts();
 
-    const facet = await ethers.getContract("VariableUtilisationRatesCalculator");
+    let calculator = await ethers.getContract("WavaxVariableUtilisationRatesCalculator");
 
     await verifyContract(hre, {
-      address: facet.address
+      address: calculator.address
+    });
+
+    calculator = await ethers.getContract("UsdcVariableUtilisationRatesCalculator");
+
+    await verifyContract(hre, {
+        address: calculator.address
     });
 
     let wavaxPoolJSON = require('../../deployments/avalanche/by-factory/WavaxPool.json');
@@ -232,126 +238,11 @@ module.exports = async ({
     })
 
     await verifyContract(hre, {
-        address: (await ethers.getContract("PangolinDEXFacet")).address,
-        contract: `contracts/facets/avalanche/PangolinDEXFacet.sol:PangolinDEXFacet`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("SmartLoanLiquidationFacet")).address,
-        contract: `contracts/facets/SmartLoanLiquidationFacet.sol:SmartLoanLiquidationFacet`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("SmartLoanViewFacet")).address,
-        contract: `contracts/facets/SmartLoanViewFacet.sol:SmartLoanViewFacet`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("SmartLoanWrappedNativeTokenFacet")).address,
-        contract: `contracts/facets/SmartLoanWrappedNativeTokenFacet.sol:SmartLoanWrappedNativeTokenFacet`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("TraderJoeDEXFacet")).address,
-        contract: `contracts/facets/avalanche/TraderJoeDEXFacet.sol:TraderJoeDEXFacet`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("TokenManager")).address,
-        contract: `contracts/TokenManager.sol:TokenManager`,
-    })
-
-    const wavaxPoolTUP = await ethers.getContract("WavaxPoolTUP");
-    const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP");
-
-    let lendingPools = [
-        pool("AVAX", wavaxPoolTUP.address),
-        pool("USDC", usdcPoolTUP.address)
-    ];
-
-    calldata = web3Abi.encodeFunctionCall(
-        TokenManagerArtifact.abi.find(method => method.name === 'initialize'),
-        [supportedAssetsAvax, lendingPools]
-    )
-
-    await verifyContract(hre, {
-      address: (await ethers.getContract("TokenManagerTUP")).address,
-      contract: `contracts/proxies/tup/TokenManagerTUP.sol:TokenManagerTUP`,
-      constructorArguments: [
-        (await ethers.getContract("TokenManager")).address,
-        admin,
-        calldata
-      ]
+        address: (await ethers.getContract("WavaxVariableUtilisationRatesCalculator")).address
     });
 
     await verifyContract(hre, {
-        address: (await ethers.getContract("UsdcBorrowIndex")).address,
-        contract: `contracts/deployment/avalanche/UsdcBorrowIndex.sol:UsdcBorrowIndex`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("UsdcBorrowIndexTUP")).address,
-        contract: `contracts/proxies/tup/avalanche/UsdcBorrowIndexTUP.sol:UsdcBorrowIndexTUP`,
-        constructorArguments: [
-            (await ethers.getContract("UsdcBorrowIndex")).address,
-            admin,
-            []
-        ]
-    });
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("UsdcDepositIndex")).address,
-        contract: `contracts/deployment/avalanche/UsdcDepositIndex.sol:UsdcDepositIndex`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("UsdcDepositIndexTUP")).address,
-        contract: `contracts/proxies/tup/avalanche/UsdcDepositIndexTUP.sol:UsdcDepositIndexTUP`,
-        constructorArguments: [
-            (await ethers.getContract("UsdcDepositIndexTUP")).address,
-            admin,
-            []
-        ]
-    });
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("UsdcPoolFactory")).address,
-        contract: `contracts/deployment/avalanche/UsdcPoolFactory.sol:UsdcPoolFactory`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("WavaxPoolFactory")).address,
-        contract: `contracts/deployment/avalanche/WavaxPoolFactory.sol:WavaxPoolFactory`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("WavaxBorrowIndex")).address,
-        contract: `contracts/deployment/avalanche/WavaxBorrowIndex.sol:WavaxBorrowIndex`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("WavaxDepositIndex")).address,
-        contract: `contracts/deployment/avalanche/WavaxDepositIndex.sol:WavaxDepositIndex`,
-    })
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("WavaxBorrowIndexTUP")).address,
-        contract: `contracts/proxies/tup/avalanche/WavaxBorrowIndexTUP.sol:WavaxBorrowIndexTUP`,
-        constructorArguments: [
-            (await ethers.getContract("WavaxBorrowIndexTUP")).address,
-            admin,
-            []
-        ]
-    });
-
-    await verifyContract(hre, {
-        address: (await ethers.getContract("WavaxDepositIndexTUP")).address,
-        contract: `contracts/proxies/tup/avalanche/WavaxDepositIndexTUP.sol:WavaxDepositIndexTUP`,
-        constructorArguments: [
-            (await ethers.getContract("WavaxDepositIndexTUP")).address,
-            admin,
-            []
-        ]
+        address: (await ethers.getContract("UsdcVariableUtilisationRatesCalculator")).address
     });
 
 };

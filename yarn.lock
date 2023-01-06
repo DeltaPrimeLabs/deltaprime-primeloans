@@ -1747,16 +1747,16 @@
   dependencies:
     "@randlabs/communication-bridge" "1.0.1"
 
-"@redstone-finance/evm-connector@0.0.15":
-  version "0.0.15"
-  resolved "https://registry.yarnpkg.com/@redstone-finance/evm-connector/-/evm-connector-0.0.15.tgz#98b942fb9293b453d419bb17dcd4276ad8330c10"
-  integrity sha512-ouzfuxixeUxtlhk75L9U6nQn2dALK33JwZHS9wJjBd47TFfNxbTjV3TCXQ6b72QrUzg6x6UkpU2nSY6yv4FBpA==
+"@redstone-finance/evm-connector@0.0.16":
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/@redstone-finance/evm-connector/-/evm-connector-0.0.16.tgz#ab3e3d80152a1e341d86e3ff3890eaccbb78a5eb"
+  integrity sha512-VI3NvRpmBbeFqyVF1d0ilyfiP3RiC7kMis0vwyf+vFi1iRycb7kqXKK7dNDPcXRvL/olX3DYJQv9cJsQeo8mng==
   dependencies:
     "@openzeppelin/contracts" "^4.7.3"
     axios "^1.1.3"
     ethers "^5.6.8"
     redstone-protocol "1.0.5"
-    redstone-sdk "1.0.5"
+    redstone-sdk "1.0.6"
 
 "@resolver-engine/core@^0.2.1":
   version "0.2.1"
@@ -15583,7 +15583,7 @@ redstone-node@^0.4.35:
     yahoo-finance "^0.3.7"
     yargs "^16.2.0"
 
-redstone-oracles-smartweave-contracts@latest:
+redstone-oracles-smartweave-contracts@*:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/redstone-oracles-smartweave-contracts/-/redstone-oracles-smartweave-contracts-1.0.1.tgz#51c802139edf2f46b5f50b9e04995ebbf0e8b3b7"
   integrity sha512-W+h3KB2gdxmK+WnfDT+iZHVQ25LkdTuV5a4cem5pgzgjo6vf2nqFPlkXcWpYI791mdeobwC4yoSybrTrIXSKfQ==
@@ -15602,13 +15602,13 @@ redstone-protocol@1.0.5:
   dependencies:
     ethers "^5.6.8"
 
-redstone-sdk@1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/redstone-sdk/-/redstone-sdk-1.0.5.tgz#3e71d021e22a366a50c500bee15b1c02a5fc7066"
-  integrity sha512-1C8VhnZ6EOemhVtBB5VHP8wgk+QzhozCrC0M4Zw0eHUvFWnIvdEgX1UKqBbg8uRFz8gbFFrvQiQ+OivcQVluSQ==
+redstone-sdk@1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/redstone-sdk/-/redstone-sdk-1.0.6.tgz#59bde316172b0a407e8bdc5c30c31bdfa8742a5d"
+  integrity sha512-OuNObR4HjL6DUvM3/xeqIJzAnIv9u8Rho4TvkasEe0nDY09k8Ur3ymIc1FTJ4+JL0IvYqZ9BbMxiH2tZlTHbvQ==
   dependencies:
     axios "^0.27.2"
-    redstone-oracles-smartweave-contracts latest
+    redstone-oracles-smartweave-contracts "*"
     redstone-protocol "*"
 
 redstone-smartweave@^0.3.10-alpha.1:

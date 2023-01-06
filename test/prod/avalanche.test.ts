@@ -9,7 +9,7 @@ import {
     Pool,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    VariableUtilisationRatesCalculator,
+    MockVariableUtilisationRatesCalculator,
     IUniswapV2Router01,
     WrappedNativeTokenPool, SmartLoanDiamondBeacon, OwnershipFacet, DiamondCutFacet, TokenManager, IERC20
 } from "../../typechain";
@@ -24,7 +24,7 @@ import USDC_POOL_TUP from '../../deployments/avalanche/UsdcPoolTUP.json';
 import WAVAX_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import USDC_POOL from '../../artifacts/contracts/Pool.sol/Pool.json';
 import WRAPPED_POOL from '../../artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
-import RATES_CALCULATOR from '../../deployments/avalanche/VariableUtilisationRatesCalculator.json';
+import RATES_CALCULATOR from '../../deployments/avalanche/MockVariableUtilisationRatesCalculator.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import {
@@ -45,7 +45,7 @@ import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_a
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {JsonRpcSigner} from "@ethersproject/providers";
 import VariableUtilisationRatesCalculatorArtifact
-    from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
+    from "../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json";
 import {parseUnits} from "ethers/lib/utils";
 import web3Abi from "web3-eth-abi";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -605,7 +605,7 @@ describe('Test deployed contracts on Avalanche', () => {
         await expect(pool.connect(badActor).setPoolRewarder(randomContractAddress)).to.be.revertedWith('Ownable: caller is not the owner');
 
         //setRatesCalculator
-        let newCalculator = (await deployContract(admin, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+        let newCalculator = (await deployContract(admin, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
 
         await pool.connect(admin).setRatesCalculator(newCalculator.address);
         expect(await pool.connect(admin).ratesCalculator()).to.be.equal(newCalculator.address);
