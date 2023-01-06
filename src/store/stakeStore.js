@@ -44,6 +44,9 @@ export default {
         {gasLimit: 8000000}
       );
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(stakeTransaction, provider, 'stake');
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
@@ -65,6 +68,9 @@ export default {
           {gasLimit: 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(unstakeTransaction, provider, 'unstake');
 

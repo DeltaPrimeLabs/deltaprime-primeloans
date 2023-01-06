@@ -19,6 +19,11 @@ export default class ProgressBarService {
     this.progressBarState$.next('SUCCESS');
   }
 
+  emitProgressBarInProgressState() {
+    console.log('emit bar in progress');
+    this.progressBarState$.next('IN_PROGRESS');
+  }
+
   emitProgressBarState(state) {
     this.progressBarState$.next(state);
   }

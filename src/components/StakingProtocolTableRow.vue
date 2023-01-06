@@ -233,7 +233,7 @@ export default {
     },
 
     scheduleHardRefresh() {
-      this.progressBarService.requestProgressBar();
+      this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     },
   }

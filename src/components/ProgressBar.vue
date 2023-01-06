@@ -2,8 +2,11 @@
   <div class="progress-bar-component" v-if="progressBarVisible">
     <div class="background"
          v-bind:class="{'background--success': state === 'SUCCESS', 'background--error': state === 'ERROR'}"></div>
-    <div v-if="state === 'IN_PROGRESS'" class="value-overlay" v-bind:style="{'width': 100 - value + '%'}"></div>
+    <div v-if="state === 'IN_PROGRESS' || state === 'MINING'"
+         class="value-overlay"
+         v-bind:class="{'value-overlay__clock-running': state === 'IN_PROGRESS'}"></div>
     <div class="text-overlay">
+      <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Mining...</div>
       <div v-if="state === 'IN_PROGRESS'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success
@@ -19,7 +22,7 @@
 
 <script>
 import {mapState} from 'vuex';
-import {interval, startWith, timer} from 'rxjs';
+import {delay, interval, startWith, timer} from 'rxjs';
 
 export default {
   name: 'ProgressBar',
@@ -30,7 +33,7 @@ export default {
       clock: null,
       success: false,
       error: false,
-      state: 'IN_PROGRESS'
+      state: 'IN_PROGRESS',
     };
   },
   computed: {
@@ -51,7 +54,7 @@ export default {
     },
 
     watchProgressBarState() {
-      this.progressBarService.progressBarState$.subscribe((state) => {
+      this.progressBarService.progressBarState$.pipe(delay(2000)).subscribe((state) => {
         this.state = state;
         if (this.progressBarVisible) {
           if (state === 'SUCCESS' || state === 'ERROR') {
@@ -65,14 +68,12 @@ export default {
 
     showProgressBar(duration) {
       this.progressBarVisible = true;
-      this.state = 'IN_PROGRESS';
+      this.state = 'MINING';
       setTimeout(() => {
         this.value = 0;
         this.clock = timer(duration * 1000).subscribe(() => {
+          // clock finished
         });
-      });
-      setTimeout(() => {
-        this.value = 100;
       });
     },
   }
@@ -112,10 +113,14 @@ export default {
     position: absolute;
     right: 0;
     bottom: 0;
-    width: 100%;
+    width: 67%;
     height: 100%;
     background-color: $pearl-gray;
-    transition: width 30s linear;
+
+    &.value-overlay__clock-running {
+      transition: width 30s linear;
+      width: 0;
+    }
   }
 
   .text-overlay {

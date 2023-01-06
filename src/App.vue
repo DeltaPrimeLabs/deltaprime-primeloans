@@ -88,11 +88,12 @@ export default {
         this.closeModal();
       }
     });
-    // this.serviceRegistryInit();
+    this.watchCloseModal();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError']),
+    ...mapState('serviceRegistry', ['modalService']),
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
@@ -182,6 +183,12 @@ export default {
       const blockchainData = await resp.json();
 
       this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
+    },
+
+    watchCloseModal() {
+      this.modalService.watchCloseModal().subscribe(() => {
+        this.closeModal();
+      })
     },
 
   },

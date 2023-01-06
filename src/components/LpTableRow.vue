@@ -15,7 +15,7 @@
         <template v-if="lpBalances">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
-            {{formatTokenBalance(lpBalances[lpToken.symbol], 10, true)}}
+            {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
           </div>
           <div class="double-value__usd">
             <span v-if="lpBalances[lpToken.symbol]">
@@ -74,17 +74,18 @@ import Chart from './Chart';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
-import AddFromWalletModal from "./AddFromWalletModal";
-import config from "../config";
-import {mapActions, mapState} from "vuex";
-import ProvideLiquidityModal from "./ProvideLiquidityModal";
-import RemoveLiquidityModal from "./RemoveLiquidityModal";
-import WithdrawModal from "./WithdrawModal";
+import AddFromWalletModal from './AddFromWalletModal';
+import config from '../config';
+import {mapActions, mapState} from 'vuex';
+import ProvideLiquidityModal from './ProvideLiquidityModal';
+import RemoveLiquidityModal from './RemoveLiquidityModal';
+import WithdrawModal from './WithdrawModal';
+
 const ethers = require('ethers');
-import {erc20ABI} from "../utils/blockchain";
-import {calculateMaxApy, fromWei} from "../utils/calculate";
+import {erc20ABI} from '../utils/blockchain';
+import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from "ethers/lib/utils";
+import {formatUnits, parseUnits} from 'ethers/lib/utils';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -149,7 +150,7 @@ export default {
     },
     provider: {
       async handler(provider) {
-        if (provider){
+        if (provider) {
           await this.setupPoolBalance();
         }
       }
@@ -239,7 +240,7 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances && this.lpBalances[this.lpToken.symbol] ? this.lpBalances[this.lpToken.symbol]: 0;
+      modalInstance.assetBalance = this.lpBalances && this.lpBalances[this.lpToken.symbol] ? this.lpBalances[this.lpToken.symbol] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
@@ -252,22 +253,22 @@ export default {
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
-              const fundRequest = {
-                value: addFromWalletEvent.value.toString(),
-                asset: this.lpToken.symbol,
-                assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-              };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-                this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
-                this.isLpBalanceEstimated = true;
-                this.scheduleHardRefresh();
-                this.$forceUpdate();
-              }, () => {
-                this.progressBarService.emitProgressBarErrorState();
-              }).then(() => {
-                this.closeModal();
-              });
-          }
+          const fundRequest = {
+            value: addFromWalletEvent.value.toString(),
+            asset: this.lpToken.symbol,
+            assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          };
+          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+            this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
+            this.isLpBalanceEstimated = true;
+            this.scheduleHardRefresh();
+            this.$forceUpdate();
+          }, () => {
+            this.progressBarService.emitProgressBarErrorState();
+            this.closeModal();
+          }).then(() => {
+          });
+        }
       });
     },
 
@@ -289,7 +290,7 @@ export default {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
-        }
+        };
 
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
@@ -298,8 +299,8 @@ export default {
           this.$forceUpdate();
         }, () => {
           this.progressBarService.emitProgressBarErrorState();
-        }).then(() => {
           this.closeModal();
+        }).then(() => {
         });
       });
     },
@@ -320,7 +321,7 @@ export default {
             secondAmount: provideLiquidityEvent.secondAmount.toString(),
             dex: this.lpToken.dex,
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
-        };
+          };
           this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
             const firstBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.firstAsset]) - Number(provideLiquidityRequest.firstAmount);
             const secondBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.secondAsset]) - Number(provideLiquidityRequest.secondAmount);
@@ -332,9 +333,8 @@ export default {
             this.$forceUpdate();
           }, () => {
             this.progressBarService.emitProgressBarErrorState();
-
-          }).then(() => {
             this.closeModal();
+          }).then(() => {
           });
         }
       });
@@ -357,8 +357,7 @@ export default {
           minSecondAmount: removeEvent.minReceivedSecond.toString(),
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
-        }
-
+        };
         this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           const firstBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.firstAsset]) + Number(removeLiquidityRequest.minFirstAmount);
           const secondBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.secondAsset]) + Number(removeLiquidityRequest.minSecondAmount);
@@ -370,8 +369,8 @@ export default {
           this.$forceUpdate();
         }, () => {
           this.progressBarService.emitProgressBarErrorState();
-        }).then(() => {
           this.closeModal();
+        }).then(() => {
         });
       });
     },
@@ -414,11 +413,11 @@ export default {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
-      })
+      });
     },
 
     scheduleHardRefresh() {
-      this.progressBarService.requestProgressBar();
+      this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     }
   },

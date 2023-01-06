@@ -14,7 +14,7 @@
       <div class="table__cell table__cell--double-value balance">
         <template v-if="assetBalances && assetBalances[asset.symbol]">
           <div class="double-value__pieces">
-            <span v-if="isBalanceEstimated">~</span>{{assetBalances[asset.symbol] | smartRound}}
+            <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
@@ -282,9 +282,9 @@ export default {
           this.$forceUpdate();
         }, () => {
           this.progressBarService.emitProgressBarErrorState();
+          this.closeModal();
         })
           .then(() => {
-            this.closeModal();
           });
       });
     },
@@ -317,8 +317,8 @@ export default {
           this.$forceUpdate();
         }, () => {
           this.progressBarService.emitProgressBarErrorState();
-        }).then(() => {
           this.closeModal();
+        }).then(() => {
         });
       });
     },
@@ -347,7 +347,6 @@ export default {
           const value = addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION);
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
             this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}).then(() => {
-              this.closeModal();
             });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
@@ -358,8 +357,8 @@ export default {
                 this.$forceUpdate();
               }, () => {
                 this.progressBarService.emitProgressBarErrorState();
-              }).then(() => {
                 this.closeModal();
+              }).then(() => {
               });
             } else {
               const fundRequest = {
@@ -374,8 +373,8 @@ export default {
                 this.$forceUpdate();
               }, () => {
                 this.progressBarService.emitProgressBarErrorState();
-              }).then(() => {
                 this.closeModal();
+              }).then(() => {
               });
             }
           }
@@ -412,9 +411,9 @@ export default {
             this.$forceUpdate();
           }, () => {
             this.progressBarService.emitProgressBarErrorState();
+            this.closeModal();
           })
             .then(() => {
-              this.closeModal();
             });
         } else {
           const withdrawRequest = {
@@ -429,9 +428,9 @@ export default {
             this.$forceUpdate();
           }, () => {
             this.progressBarService.emitProgressBarErrorState();
+            this.closeModal();
           })
             .then(() => {
-              this.closeModal();
             });
         }
       });
@@ -464,10 +463,10 @@ export default {
           this.$forceUpdate();
         }, () => {
           this.progressBarService.emitProgressBarErrorState();
+          this.closeModal();
         })
           .then(() => {
-          this.closeModal();
-        });
+          });
       });
     },
 
@@ -501,18 +500,18 @@ export default {
         this.waitingForHardRefresh = false;
         this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
-      })
+      });
     },
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
-      })
+      });
     },
 
     scheduleHardRefresh() {
-      this.progressBarService.requestProgressBar();
+      this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     },
   },

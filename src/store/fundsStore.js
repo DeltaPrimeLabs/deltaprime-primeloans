@@ -18,7 +18,7 @@ import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
-import Vue from "vue";
+import Vue from 'vue';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -174,7 +174,7 @@ export default {
       await dispatch('setupSupportedAssets');
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
-      await dispatch('stakeStore/updateStakedPrices', null, { root: true });
+      await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
       const diamond = new ethers.Contract(DIAMOND_BEACON.address, DIAMOND_BEACON.abi, provider.getSigner());
@@ -184,7 +184,7 @@ export default {
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
         await dispatch('getAllAssetsBalances');
-        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
+        await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
         try {
           await dispatch('getFullLoanStatus');
@@ -420,6 +420,9 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), amountInWei, {gasLimit: 8000000});
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(transaction, provider, 'fund');
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
@@ -431,7 +434,7 @@ export default {
     },
 
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
-      console.log('fund native token');
+      console.log('fund native token', value);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -446,6 +449,8 @@ export default {
       });
 
       console.log('firing transaction');
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
       console.log(transaction);
       await awaitConfirmation(transaction, provider, 'fund');
       console.log('transaction success');
@@ -465,6 +470,10 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
         parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 8000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(transaction, provider, 'withdraw');
 
       setTimeout(async () => {
@@ -481,6 +490,9 @@ export default {
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'withdraw');
       setTimeout(async () => {
@@ -516,6 +528,8 @@ export default {
       );
 
       console.log(transaction);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'create LP token');
 
@@ -548,6 +562,8 @@ export default {
         {gasLimit: 8000000}
       );
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'unwind LP token');
 
@@ -568,6 +584,9 @@ export default {
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(toBytes32(borrowRequest.asset),
         parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals), {gasLimit: 8000000});
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(transaction, provider, 'borrow');
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
@@ -587,6 +606,9 @@ export default {
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 8000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'repay');
       setTimeout(async () => {
@@ -620,6 +642,9 @@ export default {
         targetAmount,
         {gasLimit: 8000000}
       );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'swap');
 
