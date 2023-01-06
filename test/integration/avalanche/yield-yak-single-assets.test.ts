@@ -2,8 +2,8 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -22,12 +22,17 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei,
+    toWei, ZERO,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
-import {PangolinIntermediary, SmartLoanGigaChadInterface, SmartLoansFactory, TokenManager,} from "../../../typechain";
+import {
+    MockTokenManager,
+    PangolinIntermediary,
+    SmartLoanGigaChadInterface,
+    SmartLoansFactory,
+} from "../../../typechain";
 import {Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 
@@ -87,15 +92,16 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
+            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
-
-            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
@@ -297,6 +303,7 @@ describe('Smart loan', () => {
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
@@ -309,11 +316,12 @@ describe('Smart loan', () => {
 
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',

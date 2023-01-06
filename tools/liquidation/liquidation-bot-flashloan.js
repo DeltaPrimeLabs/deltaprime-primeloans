@@ -59,8 +59,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     }
 
     // const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;
-    //TODO: calculate in the future
-    const bonus = 0;
+    //TODO: calculate in the future - it's needed for the flashloan fees
+    const bonus = 0.01;
 
     const weiDebts = (await loan.getDebts());
 
@@ -89,7 +89,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             });
     }
 
-    let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
+    let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
 
     let prices = (await loan.getAllAssetsPrices()).map(el => {
         return {

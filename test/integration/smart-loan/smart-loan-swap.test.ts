@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -16,7 +16,7 @@ import {
     deployPools,
     extractAssetNameBalances,
     extractAssetNamePrices,
-    formatUnits, fromBytes32,
+    formatUnits,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -29,10 +29,10 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -40,14 +40,21 @@ import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
-const {deployContract} = waffle;
+const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 const erc20ABI = [
     'function decimals() public view returns (uint8)',
     'function balanceOf(address _owner) public view returns (uint256 balance)',
     'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
+    'function allowance(address owner, address spender) public view returns (uint256)',
+    'function totalSupply() external view returns (uint256)',
+    'function totalDeposits() external view returns (uint256)'
+]
+
+const lpABI = [
+    ...erc20ABI,
+    'function getReserves() public view returns (uint112, uint112, uint32)',
 ]
 
 describe('Smart loan', () => {
@@ -90,11 +97,12 @@ describe('Smart loan', () => {
 
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await recompileConstantsFile(
                 'local',

@@ -2,14 +2,14 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
+    MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager
 } from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
@@ -18,7 +18,7 @@ import {
     getFixedGasSigners,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, ZERO
 } from "../../_helpers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {BigNumber, Contract} from "ethers";
@@ -66,18 +66,20 @@ describe('Yield Yak test stake AVAX', () => {
             new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
             new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
         ]
-        let tokenManager = await deployContract(
-            owner,
-            TokenManagerArtifact,
-            []
-        ) as TokenManager;
-
-        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         let diamondAddress = await deployDiamond();
 
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
+
+        let tokenManager = await deployContract(
+            owner,
+            MockTokenManagerArtifact,
+            []
+        ) as MockTokenManager;
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
+        await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
         await recompileConstantsFile(
             'local',
@@ -88,6 +90,7 @@ describe('Yield Yak test stake AVAX', () => {
             smartLoansFactory.address,
             'lib'
         );
+
         await deployAllFacets(diamondAddress)
 
         AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -183,18 +186,20 @@ describe('Yield Yak test stake sAVAX', () => {
             new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
             new Asset(toBytes32('YY_PTP_sAVAX'), TOKEN_ADDRESSES['YY_PTP_sAVAX']),
         ]
-        let tokenManager = await deployContract(
-            owner,
-            TokenManagerArtifact,
-            []
-        ) as TokenManager;
-
-        await tokenManager.connect(owner).initialize(supportedAssets, []);
 
         let diamondAddress = await deployDiamond();
 
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
         await smartLoansFactory.initialize(diamondAddress);
+
+        let tokenManager = await deployContract(
+            owner,
+            MockTokenManagerArtifact,
+            []
+        ) as MockTokenManager;
+
+        await tokenManager.connect(owner).initialize(supportedAssets, []);
+        await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
         await recompileConstantsFile(
             'local',

@@ -2,14 +2,14 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-    addMissingTokenContracts, AddressIdentifier,
+    addMissingTokenContracts,
     Asset,
     convertAssetsListToSupportedAssets,
     convertTokenPricesMapToMockPrices,
@@ -32,10 +32,10 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TokenManager,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
@@ -94,11 +94,12 @@ describe('Smart loan', () => {
 
             let tokenManager = await deployContract(
                 owner,
-                TokenManagerArtifact,
+                MockTokenManagerArtifact,
                 []
-            ) as TokenManager;
+            ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             await tokenManager.setDebtCoverage(VectorUSDCStaking1, toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverage(VectorWAVAXStaking1, toWei("0.8333333333333333"));

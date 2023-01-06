@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../facets/SolvencyFacetProd.sol";
+import "../facets/AssetsExposureController.sol";
 import "../DiamondHelper.sol";
 
 // TODO Rename to contract instead of lib
@@ -184,12 +185,34 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes AssetsExposureController.decreaseAssetsExposure()
+    function _resetPrimeAccountAssetsExposure() public {
+        proxyDelegateCalldata(
+            DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
+            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
+        );
+    }
+
+    // This function executes AssetsExposureController.increaseAssetsExposure()
+    function _setPrimeAccountAssetsExposure() public {
+        proxyDelegateCalldata(
+            DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
+            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector)
+        );
+    }
+
     /**
      * Returns IERC20Metadata instance of a token
      * @param _asset the code of an asset
      **/
     function getERC20TokenInstance(bytes32 _asset, bool allowInactive) internal view returns (IERC20Metadata) {
         return IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset, allowInactive));
+    }
+
+    modifier recalculateAssetsExposure() {
+        _resetPrimeAccountAssetsExposure();
+        _;
+        _setPrimeAccountAssetsExposure();
     }
 
     /**

@@ -2,7 +2,7 @@
 // Last deployed from commit: 8c36e18a206b9e6649c00da51c54b92171ce3413;
 pragma solidity 0.8.17;
 
-import "../../TokenManager.sol";
+import "../../interfaces/ITokenManager.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 /**
@@ -52,8 +52,8 @@ library DeploymentConstants {
         return _SMART_LOANS_FACTORY_ADDRESS;
     }
 
-    function getTokenManager() internal pure returns (TokenManager) {
-        return TokenManager(_TOKEN_MANAGER_ADDRESS);
+    function getTokenManager() internal pure returns (ITokenManager) {
+        return ITokenManager(_TOKEN_MANAGER_ADDRESS);
     }
 
     /**

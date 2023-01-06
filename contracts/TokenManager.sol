@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "./lib/Bytes32EnumerableMap.sol";
+import "./interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -23,6 +24,12 @@ contract TokenManager is OwnableUpgradeable {
         bytes32 asset;
         address poolAddress;
     }
+
+    struct Exposure {
+        uint256 current;
+        uint256 max; // Setting max to 0 means no exposure limitations.
+    }
+
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     uint256 private constant _NOT_SUPPORTED = 0;
@@ -42,6 +49,9 @@ contract TokenManager is OwnableUpgradeable {
     mapping(address => uint256) public tokenToStatus;
     // used for defining different leverage ratios for staked assets
     mapping(bytes32 => uint256) public debtCoverageStaked;
+
+    mapping(bytes32 => bytes32) public identifierToExposureGroup;
+    mapping(bytes32 => Exposure) public groupToExposure;
 
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
@@ -83,6 +93,53 @@ contract TokenManager is OwnableUpgradeable {
         require(assetAddress != address(0), "Pool asset not supported.");
 
         return assetAddress;
+    }
+
+    function increaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureIncrease) public onlyPrimeAccountOrOwner {
+        bytes32 group = identifierToExposureGroup[assetIdentifier];
+        if(group != ""){
+            Exposure storage exposure = groupToExposure[group];
+            if(exposure.max != 0){
+                exposure.current += exposureIncrease;
+                require(exposure.current <= exposure.max, "Max asset exposure breached");
+                emit ProtocolExposureChanged(msg.sender, group, exposureIncrease, block.timestamp);
+            }
+        }
+    }
+
+    function decreaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureDecrease) public onlyPrimeAccountOrOwner {
+        bytes32 group = identifierToExposureGroup[assetIdentifier];
+        if(group != ""){
+            Exposure storage exposure = groupToExposure[group];
+            if(exposure.max != 0){
+                exposure.current = exposure.current <= exposureDecrease ? 0 : exposure.current - exposureDecrease;
+                emit ProtocolExposureChanged(msg.sender, group, exposureDecrease, block.timestamp);
+            }
+        }
+    }
+
+    function setMaxProtocolsExposure(bytes32[] memory groupIdentifiers, uint256[] memory maxExposures) public onlyOwner {
+        require(groupIdentifiers.length == maxExposures.length, "Arrays lengths mismatch");
+        for (uint256 i = 0; i < groupIdentifiers.length; i++) {
+            _setMaxProtocolExposure(groupIdentifiers[i], maxExposures[i]);
+        }
+    }
+
+    function _setMaxProtocolExposure(bytes32 groupIdentifier, uint256 maxExposure) internal {
+        require(groupIdentifier != "", "Cannot set an empty string asset.");
+        uint256 prevExposure = groupToExposure[groupIdentifier].max;
+        groupToExposure[groupIdentifier].max = maxExposure;
+
+        emit ProtocolExposureSet(msg.sender, groupIdentifier, prevExposure, maxExposure, groupToExposure[groupIdentifier].current , block.timestamp);
+    }
+
+    function setIdentifiersToExposureGroups(bytes32[] memory identifiers, bytes32[] memory exposureGroups) public onlyOwner {
+        require(identifiers.length == exposureGroups.length, "Arrays lengths mismatch");
+        for(uint i=0; i<identifiers.length; i++){
+            identifierToExposureGroup[identifiers[i]] = exposureGroups[i];
+            emit IdentifierToExposureGroupSet(msg.sender, identifiers[i], exposureGroups[i], block.timestamp);
+        }
+
     }
 
     function addPoolAssets(poolAsset[] memory poolAssets) public onlyOwner {
@@ -192,10 +249,51 @@ contract TokenManager is OwnableUpgradeable {
         debtCoverageStaked[stakedAsset] = coverage;
     }
 
+    function getSmartLoansFactoryAddress() public view virtual returns (address) {
+        return 0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D;
+    }
+
     /* ========== OVERRIDDEN FUNCTIONS ========== */
 
     function renounceOwnership() public virtual override {}
 
+    /* ========== MODIFIERS ========== */
+
+    modifier onlyPrimeAccountOrOwner() {
+        IBorrowersRegistry borrowersRegistry = IBorrowersRegistry(getSmartLoansFactoryAddress());
+        require(borrowersRegistry.canBorrow(msg.sender) || owner() == _msgSender(), "Only PrimeAccount or owner can change protocol exposure");
+        _;
+    }
+
+    /**
+     * @dev emitted after changing current protocol exposure
+     * @param performer an address of the wallet changing the exposure
+     * @param identifier group identifier
+     * @param newExposure new current protocol exposure
+     * @param timestamp time of associating identifier with a exposure group
+     **/
+    event ProtocolExposureChanged(address indexed performer, bytes32 indexed identifier, uint256 newExposure, uint256 timestamp);
+
+
+    /**
+     * @dev emitted after associating identifier with a exposure group
+     * @param performer an address of the wallet setting max exposure
+     * @param identifier asset identifier
+     * @param exposureGroup exposure group identifier
+     * @param timestamp time of associating identifier with a exposure group
+     **/
+    event IdentifierToExposureGroupSet(address indexed performer, bytes32 indexed identifier, bytes32 indexed exposureGroup, uint256 timestamp);
+
+    /**
+     * @dev emitted after setting max exposure for a given protocol.
+     * @param performer an address of the wallet setting max exposure
+     * @param groupIdentifier exposure group identifier
+     * @param prevMaxExposure previous max protocol exposure
+     * @param newMaxExposure new max protocol exposure
+     * @param currentExposure current protocol exposure
+     * @param timestamp time of setting max exposure
+     **/
+    event ProtocolExposureSet(address indexed performer, bytes32 indexed groupIdentifier, uint256 prevMaxExposure, uint256 newMaxExposure, uint256 currentExposure, uint256 timestamp);
 
     /**
      * @dev emitted after adding a token asset

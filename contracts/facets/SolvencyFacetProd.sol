@@ -5,8 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
-import "../interfaces/facets/avalanche/IVectorFinanceFacet.sol";
-import "../TokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
@@ -74,7 +73,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
       * Returns an array of bytes32[] symbols of debt (borrowable) assets.
     **/
     function getDebtAssets() public view returns(bytes32[] memory result) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         result = tokenManager.getAllPoolAssets();
     }
 
@@ -215,7 +214,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
     // Check whether there is enough debt-denominated tokens to fully repaid what was previously borrowed
     function canRepayDebtFully() external view returns(bool) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory poolAssets = tokenManager.getAllPoolAssets();
 
         for(uint i; i< poolAssets.length; i++) {
@@ -249,7 +248,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     **/
     function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
 
@@ -267,7 +266,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
       * Returns TotalWeightedValue of StakedPositions in USD based on the supplied array of Asset/Price struct, positionBalance and debtCoverage
     **/
     function _getTWVStakedPositions(AssetPrice[] memory stakedPositionsPrices) internal view returns (uint256) {
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
         uint256 weightedValueOfStaked;
@@ -318,7 +317,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getDebtBase(AssetPrice[] memory debtAssetsPrices) internal view returns (uint256){
-        TokenManager tokenManager = DeploymentConstants.getTokenManager();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         uint256 debt;
 
         for (uint256 i; i < debtAssetsPrices.length; i++) {
@@ -357,7 +356,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     **/
     function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public view returns (uint256) {
         if (ownedAssetsPrices.length > 0) {
-            TokenManager tokenManager = DeploymentConstants.getTokenManager();
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
             uint256 total = address(this).balance * ownedAssetsPrices[0].price / 10 ** 8;
 
