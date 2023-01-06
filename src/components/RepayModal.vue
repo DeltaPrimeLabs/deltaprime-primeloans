@@ -124,7 +124,7 @@ export default {
     },
 
     repayValueChange(event) {
-      this.repayValue = Number(event.value);
+      this.repayValue = event.value;
       this.currencyInputError = event.error;
       this.calculateHealthAfterTransaction();
     },

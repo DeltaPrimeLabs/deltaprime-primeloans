@@ -162,7 +162,7 @@ export default {
 
 
     withdrawValueChange(event) {
-      this.withdrawValue = Number(event.value);
+      this.withdrawValue = event.value;
       this.currencyInputError = event.error;
       this.calculateHealthAfterTransaction();
     },
