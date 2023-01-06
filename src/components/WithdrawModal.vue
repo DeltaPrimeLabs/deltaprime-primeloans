@@ -248,11 +248,13 @@ export default {
     },
 
     calculateMaxWithdraw() {
-      const MIN_HEALTH = 0.0182;
-      const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
-      const denominator = this.asset.price - (this.asset.price * this.asset.debtCoverage) + (MIN_HEALTH * this.asset.price * this.asset.debtCoverage);
-      const maxWithdrawLimitedByHealth = numerator / denominator;
-      this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
+      //TODO: we should check it and use correct formula
+      // const MIN_HEALTH = 0.0182;
+      // const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
+      // const denominator = this.asset.price - (this.asset.price * this.asset.debtCoverage) + (MIN_HEALTH * this.asset.price * this.asset.debtCoverage);
+      // const maxWithdrawLimitedByHealth = numerator / denominator;
+      // this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
+      this.maxWithdraw = this.assetBalance;
     },
   }
 };
