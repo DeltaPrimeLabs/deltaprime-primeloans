@@ -59,6 +59,8 @@ export function wrapContractProd(contract) {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
             dataFeeds: supportedTokensList,
+            // @ts-ignore
+            disablePayloadsDryRun: true
         },
         CACHE_LAYER_URLS.urls
     );

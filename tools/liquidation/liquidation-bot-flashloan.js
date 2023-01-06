@@ -89,7 +89,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             });
     }
 
-    let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
+    let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
 
     let prices = (await loan.getAllAssetsPrices()).map(el => {
         return {
