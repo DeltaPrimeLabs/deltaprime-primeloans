@@ -100,7 +100,7 @@ export default {
       } else {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
       }
-      return Number(walletAssetBalance);
+      return walletAssetBalance;
     },
   },
   computed: {

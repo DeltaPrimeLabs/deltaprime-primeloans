@@ -158,10 +158,10 @@ export default {
         if (this.selectedDepositAsset === 'AVAX') {
           return this.walletNativeTokenBalance;
         } else {
-          return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
+          return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
         }
       } else {
-        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
+        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
       }
     },
   },
@@ -243,9 +243,9 @@ export default {
     setupAvailableAssetAmount() {
       if (this.asset.symbol === 'AVAX') {
         const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
-        this.availableAssetAmount = Number(balance);
+        this.availableAssetAmount = balance;
       } else {
-        this.availableAssetAmount = this.walletAssetBalance ? Number(this.walletAssetBalance) : null;
+        this.availableAssetAmount = this.walletAssetBalance ? this.walletAssetBalance : null;
       }
       this.$forceUpdate();
     },
