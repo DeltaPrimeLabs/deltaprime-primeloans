@@ -327,6 +327,7 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
+      console.log('calculateHealthAfterTransaction');
       let tokens = [];
       for (const [symbol, data] of Object.entries(this.assets)) {
         let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
@@ -358,7 +359,7 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      this.healthAfterTransaction = 1;
     },
   }
 };

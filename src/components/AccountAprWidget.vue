@@ -1,0 +1,110 @@
+<template>
+  <div class="account-apr-widget-component">
+    <div class="apr-widget__title">
+      Account APR
+    </div>
+    <div class="apr-widget__value">
+      <ColoredValueBeta :value="apr" :formatting="'percent'" :percentage-rounding-precision="1" :big="true"></ColoredValueBeta>
+    </div>
+    <div class="apr-widget__comment">
+      {{comment}}
+    </div>
+  </div>
+</template>
+
+<script>
+import ColoredValueBeta from './ColoredValueBeta';
+export default {
+  name: 'AccountAprWidget',
+  components: {ColoredValueBeta},
+  props: {
+    apr: {}
+  },
+  data() {
+    return {
+      possibleComments: null,
+      comment: null,
+    }
+  },
+  mounted() {
+    this.setupCommentConfig();
+    this.pickComment();
+  },
+  methods: {
+    setupCommentConfig() {
+      // max is inclusive, min is not
+      this.possibleComments = [
+        {
+          text: 'We\'ve seen better days',
+          min: -999999,
+          max: -0.5
+        },
+        {
+          text: 'On your way to the green',
+          min: -0.5,
+          max: -0.1
+        },
+        {
+          text: 'Not great not terrible',
+          min: -0.1,
+          max: 0
+        },
+        {
+          text: 'Small profit but mighty',
+          min: 0,
+          max: 0.1
+        },
+        {
+          text: 'You are doing great!',
+          min: 0.1,
+          max: 0.5
+        },
+        {
+          text: 'To the moon!',
+          min: 0.5,
+          max: 999999
+        },
+      ]
+    },
+
+    pickComment() {
+      const pickedComment = this.possibleComments.find((comment) => this.apr > comment.min && this.apr <= comment.max);
+      this.comment = pickedComment.text;
+    },
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "~@/styles/variables";
+
+.account-apr-widget-component {
+  width: 222px;
+  height: 107px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.3);
+  border-bottom-left-radius: 35px;
+  border-bottom-right-radius: 35px;
+
+  .apr-widget__title {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $dark-gray;
+    margin-bottom: 4px;
+  }
+
+  .apr-widget__value {
+    margin-bottom: 2px;
+  }
+
+  .apr-widget__comment {
+    font-size: $font-size-xsm;
+    color: $steel-gray;
+  }
+}
+
+</style>
