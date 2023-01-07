@@ -1,6 +1,5 @@
 <template>
   <div class="stake-beta-component">
-    <button v-on:click="forceUpdateStakedBalance()">force update staked balance</button>
     <div class="filters">
       <div class="filter-container">
         <div class="filter__label">Filter by assets:</div>
@@ -66,11 +65,6 @@ export default {
         this.$refs.assetFilter.setupFilterValue();
         this.selectedAssets = this.assetFilterGroups[0].options;
       });
-    },
-
-    forceUpdateStakedBalance() {
-      console.log('forceUpdateStakedBalance');
-      this.updateStakedBalances();
     },
   },
 
