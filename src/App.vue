@@ -23,9 +23,9 @@
       <router-link to="/">
         <img src="src/assets/icons/deltaprime.svg" class="logo">
       </router-link>
-      <div class="account-apr-widget-wrapper">
-        <AccountAprWidget :apr="0.333"></AccountAprWidget>
-      </div>
+<!--      <div class="account-apr-widget-wrapper">-->
+<!--        <AccountAprWidget :apr="0.333"></AccountAprWidget>-->
+<!--      </div>-->
       <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
       <Wallet class="wallet" v-else/>
     </div>
