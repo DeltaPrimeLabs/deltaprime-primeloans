@@ -137,7 +137,7 @@ export default {
       const minReceivedAmounts = await this.calculateReceivedAmounts(this.amount);
       this.$emit('REMOVE_LIQUIDITY', {
         asset: this.lpToken.symbol,
-        amount: this.amount.toFixed(lpTokenDecimals),
+        amount: Number(this.amount).toFixed(lpTokenDecimals),
         minReceivedFirst: minReceivedAmounts.minReceivedFirst,
         minReceivedSecond: minReceivedAmounts.minReceivedSecond
       });
@@ -186,14 +186,16 @@ export default {
 
         this.$forceUpdate();
 
+        console.log('calculateReceivedAmounts')
+        console.log(lpRemoved)
         const firstAmount =
-          parseUnits(lpRemoved.toFixed(18), lpTokenDecimals)
+          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
             .mul(firstTokenBalance)
             .div(totalSupply)
             .mul((1 - slippage) * 1000)
             .div(1000);
         const secondAmount =
-          parseUnits(lpRemoved.toFixed(18), lpTokenDecimals)
+          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
             .mul(secondTokenBalance)
             .div(totalSupply)
             .mul((1 - slippage) * 1000)

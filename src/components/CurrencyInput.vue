@@ -13,8 +13,8 @@
         </div>
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
-          <img class="logo" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}{{ symbolSecondary ? ' - ' + symbolSecondary : ''}}</span>
+          <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
+          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : ''}}</span>
         </div>
       </div>
     </div>
@@ -312,6 +312,10 @@ input[type=number] {
 .logo-wrapper {
   display: flex;
   align-items: center;
+}
+
+.logo.secondary {
+  transform: translateX(-10px);
 }
 
 .max-wrapper {
