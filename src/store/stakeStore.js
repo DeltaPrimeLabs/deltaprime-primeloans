@@ -82,9 +82,10 @@ export default {
     async updateStakedBalances({rootState, state, commit}) {
       let farms = state.farms;
 
-      for (const [, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
+      for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
-          farm.totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
+          const totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
+          farm.totalStaked = totalStaked;
         }
       }
 

@@ -343,7 +343,7 @@ export default {
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
-          const value = addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION);
+          const value = addFromWalletEvent.value;
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
             this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
               this.scheduleHardRefresh();

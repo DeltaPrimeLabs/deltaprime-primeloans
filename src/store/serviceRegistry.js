@@ -3,6 +3,7 @@ import TotalStakedExternalUpdateService from '../services/totalStakedExternalUpd
 import DataRefreshEventService from '../services/dataRefreshEventService';
 import ProgressBarService from '../services/progressBarService';
 import ModalService from '../services/modalService';
+import HealthService from '../services/healthService';
 
 export default {
   namespaced: true,
@@ -12,6 +13,7 @@ export default {
     dataRefreshEventService: new DataRefreshEventService(),
     progressBarService: new ProgressBarService(),
     modalService: new ModalService(),
+    healthService: new HealthService(),
   },
   mutations: {
   },

@@ -1,5 +1,6 @@
 <template>
   <div class="stake-beta-component">
+    <button v-on:click="forceUpdateStakedBalance()">force update staked balance</button>
     <div class="filters">
       <div class="filter-container">
         <div class="filter__label">Filter by assets:</div>
@@ -18,6 +19,7 @@
 import StakingAssetBeta from './StakingAssetBeta';
 import config from '../config';
 import AssetFilter from './AssetFilter';
+import {mapActions} from "vuex";
 
 export default {
   name: 'Farm',
@@ -45,6 +47,7 @@ export default {
     };
   },
   methods: {
+    ...mapActions('stakeStore', ['updateStakedBalances']),
     setFilter(filter) {
       this.selectedAssets = filter.asset;
     },
@@ -63,6 +66,11 @@ export default {
         this.$refs.assetFilter.setupFilterValue();
         this.selectedAssets = this.assetFilterGroups[0].options;
       });
+    },
+
+    forceUpdateStakedBalance() {
+      console.log('forceUpdateStakedBalance');
+      this.updateStakedBalances();
     },
   },
 

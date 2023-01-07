@@ -144,10 +144,9 @@ export default {
           });
         }
 
-        for (const [, farms] of Object.entries(rootState.stakeStore.farms)) {
+        for (const [symbol, farms] of Object.entries(rootState.stakeStore.farms)) {
 
           farms.forEach(farm => {
-
             tokens.push({
               price: farm.price,
               balance: parseFloat(farm.totalStaked),
@@ -168,7 +167,7 @@ export default {
   },
 
   actions: {
-    async fundsStoreSetup({state, dispatch, commit}) {
+    async fundsStoreSetup({state, rootState, dispatch, commit}) {
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
@@ -196,9 +195,10 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
+      rootState.serviceRegistry.healthService.emitRefreshHealth();
     },
 
-    async updateFunds({state, dispatch, commit}) {
+    async updateFunds({state, dispatch, commit, rootState}) {
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         commit('setNoSmartLoan', false);
       }
@@ -207,10 +207,11 @@ export default {
       await dispatch('getAllAssetsBalances');
       await dispatch('getDebtsPerAsset');
       await dispatch('getFullLoanStatus');
+      await dispatch('stakeStore/updateStakedBalances', null, {root: true});
       setTimeout(async () => {
         await dispatch('getFullLoanStatus');
       }, 5000);
-      console.log('update funds finished', new Date());
+      rootState.serviceRegistry.healthService.emitRefreshHealth();
     },
 
 
@@ -437,7 +438,6 @@ export default {
     },
 
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
-      console.log('fund native token', value);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -451,12 +451,9 @@ export default {
         gasLimit: 8000000
       });
 
-      console.log('firing transaction');
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
-      console.log(transaction);
       await awaitConfirmation(transaction, provider, 'fund');
-      console.log('transaction success');
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -504,7 +501,6 @@ export default {
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
-      console.log(provideLiquidityRequest);
       const provider = rootState.network.provider;
 
       const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
@@ -530,7 +526,6 @@ export default {
         {gasLimit: 8000000}
       );
 
-      console.log(transaction);
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
@@ -652,7 +647,6 @@ export default {
       await awaitConfirmation(transaction, provider, 'swap');
 
       setTimeout(async () => {
-        console.log('updateFunds fired', new Date());
         await dispatch('updateFunds');
       }, 30000);
     },

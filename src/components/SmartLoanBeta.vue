@@ -5,7 +5,7 @@
         :collateral="noSmartLoanInternal ? 0 : getCollateral"
         :debt="noSmartLoanInternal ? 0 : debt"
 
-        :health="noSmartLoanInternal ? 1 : getHealth"
+        :health="noSmartLoanInternal ? 1 : health"
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
@@ -61,6 +61,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan']),
     ...mapState('stakeStore', ['farms']),
+    ...mapState('serviceRegistry', ['healthService']),
     ...mapGetters('fundsStore', ['getHealth', 'getCollateral'])
   },
   watch: {
@@ -100,6 +101,7 @@ export default {
 
   async mounted() {
     this.setupSelectedTab();
+    this.watchHealthRefresh();
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
@@ -142,7 +144,6 @@ export default {
       if (fullLoanStatus) {
         this.totalValue = fullLoanStatus.totalValue;
         this.debt = fullLoanStatus.debt;
-        this.health = this.getHealth;
       }
       this.$forceUpdate();
     },
@@ -167,6 +168,12 @@ export default {
       } else if (tabIndex === 1) {
         this.$router.push({name: FARMS_PATH_NAME});
       }
+    },
+
+    watchHealthRefresh() {
+      this.healthService.observeRefreshHealth().subscribe(() => {
+        this.health = this.getHealth;
+      })
     },
   },
 };

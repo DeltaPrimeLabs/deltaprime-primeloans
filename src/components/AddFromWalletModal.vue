@@ -160,13 +160,10 @@ export default {
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      if (this.asset.symbol === 'AVAX') {
-        if (this.selectedDepositAsset === 'AVAX') {
-          return this.walletNativeTokenBalance;
-        } else {
-          return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
-        }
+      if (this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX') {
+        return this.walletNativeTokenBalance;
       } else {
+        console.log((!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance);
         return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
       }
     },

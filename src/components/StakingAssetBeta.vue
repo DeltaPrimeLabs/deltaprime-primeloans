@@ -266,6 +266,7 @@ export default {
           this.isTotalStakedEstimated = true;
           if (updateEvent.action === 'STAKE') {
             this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+
           } else if (updateEvent.action === 'UNSTAKE') {
             this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
           }
