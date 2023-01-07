@@ -100,6 +100,7 @@ import StakingProtocolTableRow from './StakingProtocolTableRow';
 import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
+import {calculateMaxApy} from "../utils/calculate";
 
 
 export default {
@@ -157,14 +158,6 @@ export default {
       return total;
     },
 
-    lowestApyPool() {
-      if (!this.pools) return;
-      let poolWithLowestApy = Object.keys(this.pools)[0];
-      Object.entries(this.pools).forEach((asset, pool) => {
-        if (pool.borrowingAPY > this.pools[poolWithLowestApy].borrowingAPY) poolWithLowestApy = pool.asset;
-      });
-      return poolWithLowestApy;
-    },
     maxApyTooltip() {
       return `Calculated as:<br>
               0) If borrow APY < farm APY<br>
@@ -195,8 +188,6 @@ export default {
     },
 
     async setupMaxStakingApy() {
-      if (!this.lowestApyPool) return;
-      const minBorrowApy = this.pools[this.lowestApyPool].borrowingAPY;
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
@@ -206,7 +197,7 @@ export default {
         }
       }
 
-      this.maxLeveragedApy = Math.max(maxApy * 5.5 - 4.5 * minBorrowApy, maxApy);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, maxApy);
 
     },
 
