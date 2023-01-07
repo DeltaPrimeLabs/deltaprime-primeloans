@@ -54,7 +54,7 @@ export default {
     },
 
     watchProgressBarState() {
-      this.progressBarService.progressBarState$.pipe(delay(2000)).subscribe((state) => {
+      this.progressBarService.progressBarState$.pipe(delay(500)).subscribe((state) => {
         this.state = state;
         if (this.progressBarVisible) {
           if (state === 'SUCCESS' || state === 'ERROR') {

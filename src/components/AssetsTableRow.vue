@@ -124,6 +124,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarRequest();
   },
   data() {
     return {
@@ -520,6 +521,12 @@ export default {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     },
+
+    watchProgressBarRequest() {
+      this.progressBarService.progressBarRequested$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+      })
+    }
   },
   watch: {
     smartLoanContract: {

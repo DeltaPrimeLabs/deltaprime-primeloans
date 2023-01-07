@@ -83,6 +83,7 @@ export default {
   async mounted() {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchProgressBarRequest();
     this.apy = await this.farm.apy();
   },
   data() {
@@ -236,6 +237,12 @@ export default {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
     },
+
+    watchProgressBarRequest() {
+      this.progressBarService.progressBarRequested$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+      })
+    }
   }
 };
 </script>

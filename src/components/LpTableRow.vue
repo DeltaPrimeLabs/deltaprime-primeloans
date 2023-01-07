@@ -108,6 +108,7 @@ export default {
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarRequest();
     await this.setupApr();
   },
 
@@ -419,6 +420,12 @@ export default {
     scheduleHardRefresh() {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    },
+
+    watchProgressBarRequest() {
+      this.progressBarService.progressBarRequested$.subscribe(() => {
+        this.waitingForHardRefresh = true;
+      })
     }
   },
 };
