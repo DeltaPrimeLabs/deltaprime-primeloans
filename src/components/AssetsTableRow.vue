@@ -452,6 +452,7 @@ export default {
       modalInstance.$on('REPAY', value => {
         const repayRequest = {
           asset: this.asset.symbol,
+          decimals: this.asset.decimals,
           amount: value.toString()
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
