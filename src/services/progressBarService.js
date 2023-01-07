@@ -8,6 +8,7 @@ export default class ProgressBarService {
   requestProgressBar(duration = 30) {
     console.log('request progress bar');
     this.progressBarRequested$.next({duration: duration});
+    this.progressBarState$.next('MINING');
   }
 
   emitProgressBarErrorState() {
