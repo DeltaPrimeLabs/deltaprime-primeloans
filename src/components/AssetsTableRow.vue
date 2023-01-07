@@ -28,7 +28,7 @@
       <div class="table__cell table__cell--double-value loan">
         <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
           <div class="double-value__pieces">
-            <span v-if="approxDebt">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound }}
+            <span v-if="isDebtEstimated">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound }}
           </div>
           <div class="double-value__usd">{{ debtsPerAsset[asset.symbol].debt * asset.price | usd }}</div>
         </template>
@@ -124,6 +124,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarState();
   },
   data() {
     return {
@@ -131,7 +132,7 @@ export default {
       showChart: false,
       rowExpanded: false,
       isBalanceEstimated: false,
-      approxDebt: false,
+      isDebtEstimated: false,
       waitingForHardRefresh: false,
     };
   },
@@ -278,11 +279,10 @@ export default {
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
           this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
-          this.approxDebt = true;
+          this.isDebtEstimated = true;
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
-          this.closeModal();
+          this.handleTransactionError();
         })
           .then(() => {
           });
@@ -316,8 +316,7 @@ export default {
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
-          this.closeModal();
+          this.handleTransactionError();
         }).then(() => {
         });
       });
@@ -349,11 +348,10 @@ export default {
             this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
               this.scheduleHardRefresh();
             }, () => {
-              this.progressBarService.emitProgressBarErrorState();
-              this.closeModal();
+              this.handleTransactionError();
             })
-            .then(() => {
-            });
+              .then(() => {
+              });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
@@ -362,8 +360,7 @@ export default {
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, () => {
-                this.progressBarService.emitProgressBarErrorState();
-                this.closeModal();
+                this.handleTransactionError();
               }).then(() => {
               });
             } else {
@@ -378,8 +375,7 @@ export default {
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, () => {
-                this.progressBarService.emitProgressBarErrorState();
-                this.closeModal();
+                this.handleTransactionError();
               }).then(() => {
               });
             }
@@ -416,8 +412,7 @@ export default {
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
-            this.progressBarService.emitProgressBarErrorState();
-            this.closeModal();
+            this.handleTransactionError();
           })
             .then(() => {
             });
@@ -433,8 +428,7 @@ export default {
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
-            this.progressBarService.emitProgressBarErrorState();
-            this.closeModal();
+            this.handleTransactionError();
           })
             .then(() => {
             });
@@ -466,11 +460,10 @@ export default {
           this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
           this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
-          this.approxDebt = true;
+          this.isDebtEstimated = true;
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
-          this.closeModal();
+          this.handleTransactionError();
         })
           .then(() => {
           });
@@ -503,7 +496,7 @@ export default {
 
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
-        this.approxDebt = false;
+        this.isDebtEstimated = false;
         this.waitingForHardRefresh = false;
         this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
@@ -520,6 +513,30 @@ export default {
     scheduleHardRefresh() {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.waitingForHardRefresh = true;
+            break;
+          }
+          case 'ERROR' : {
+            this.waitingForHardRefresh = false;
+            this.isBalanceEstimated = false;
+            this.isDebtEstimated = false;
+          }
+        }
+      });
+    },
+
+    handleTransactionError() {
+      this.progressBarService.emitProgressBarErrorState();
+      this.closeModal();
+      this.waitingForHardRefresh = false;
+      this.isBalanceEstimated = false;
+      this.isBalanceEstimated = false;
     },
   },
   watch: {

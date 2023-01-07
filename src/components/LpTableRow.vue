@@ -108,6 +108,7 @@ export default {
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarState();
     await this.setupApr();
   },
 
@@ -264,8 +265,7 @@ export default {
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
-            this.progressBarService.emitProgressBarErrorState();
-            this.closeModal();
+            this.handleTransactionError();
           }).then(() => {
           });
         }
@@ -298,8 +298,7 @@ export default {
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
-          this.closeModal();
+          this.handleTransactionError();
         }).then(() => {
         });
       });
@@ -332,8 +331,7 @@ export default {
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, () => {
-            this.progressBarService.emitProgressBarErrorState();
-            this.closeModal();
+            this.handleTransactionError();
           }).then(() => {
           });
         }
@@ -368,8 +366,7 @@ export default {
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
-          this.closeModal();
+          this.handleTransactionError();
         }).then(() => {
         });
       });
@@ -417,9 +414,33 @@ export default {
     },
 
     scheduleHardRefresh() {
-      this.progressBarService.emitProgressBarInProgressState();
-      this.dataRefreshEventService.emitHardRefreshScheduledEvent();
-    }
+      setTimeout(() => {
+        this.progressBarService.emitProgressBarInProgressState();
+        this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+      }, 3000)
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.waitingForHardRefresh = true;
+            break;
+          }
+          case 'ERROR' : {
+            this.waitingForHardRefresh = false;
+            this.isBalanceEstimated = false;
+          }
+        }
+      })
+    },
+
+    handleTransactionError() {
+      this.progressBarService.emitProgressBarErrorState();
+      this.closeModal();
+      this.waitingForHardRefresh = false;
+      this.isBalanceEstimated = false;
+    },
   },
 };
 </script>

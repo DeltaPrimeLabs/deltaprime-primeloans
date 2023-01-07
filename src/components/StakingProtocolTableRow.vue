@@ -83,6 +83,7 @@ export default {
   async mounted() {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchProgressBarState();
     this.apy = await this.farm.apy();
   },
   data() {
@@ -158,9 +159,8 @@ export default {
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
+          this.handleTransactionError();
         }).then(() => {
-          this.closeModal();
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
@@ -201,9 +201,8 @@ export default {
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, () => {
-          this.progressBarService.emitProgressBarErrorState();
+          this.handleTransactionError();
         }).then(result => {
-          this.closeModal();
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
               this.balance = balance;
@@ -235,6 +234,28 @@ export default {
     scheduleHardRefresh() {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.waitingForHardRefresh = true;
+            break;
+          }
+          case 'ERROR' : {
+            this.isStakedBalanceEstimated = false;
+            this.waitingForHardRefresh = false;
+          }
+        }
+      })
+    },
+
+    handleTransactionError() {
+      this.progressBarService.emitProgressBarErrorState();
+      this.closeModal();
+      this.waitingForHardRefresh = false;
+      this.isStakedBalanceEstimated = false;
     },
   }
 };
