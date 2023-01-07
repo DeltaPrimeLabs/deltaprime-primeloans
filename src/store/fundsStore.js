@@ -2,7 +2,7 @@ import {
   awaitConfirmation,
   erc20ABI,
   isOracleError,
-  isPausedError, signMessage,
+  signMessage,
   loanTermsToSign,
   wrapContract
 } from '../utils/blockchain';
@@ -18,7 +18,6 @@ import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
-import Vue from 'vue';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -608,7 +607,7 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), toWei(String(repayRequest.amount)), {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), parseUnits(Number(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)), {gasLimit: 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
