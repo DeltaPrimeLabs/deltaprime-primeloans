@@ -92,6 +92,8 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {erc20ABI} from '../utils/blockchain';
 import {fromWei} from '../utils/calculate';
+import {formatUnits} from "ethers/lib/utils";
+import {BigNumber} from "ethers";
 
 const ethers = require('ethers');
 
@@ -179,11 +181,11 @@ export default {
       const secondToken = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());
 
       const totalSupply = fromWei(await lpToken.totalSupply());
-      const firstTokenBalance = fromWei(await firstToken.balanceOf(this.lpToken.address));
-      const secondTokenBalance = fromWei(await secondToken.balanceOf(this.lpToken.address));
+      const firstTokenBalance = formatUnits(await firstToken.balanceOf(this.lpToken.address), BigNumber.from(this.firstAsset.decimals));
+      const secondTokenBalance = formatUnits(await secondToken.balanceOf(this.lpToken.address), BigNumber.from(this.secondAsset.decimals));
 
-      this.addedLiquidity = Math.min(this.firstAmount * totalSupply / firstTokenBalance,
-        this.secondAmount * totalSupply / secondTokenBalance);
+      this.addedLiquidity = (Math.min(this.firstAmount * totalSupply / firstTokenBalance,
+        this.secondAmount * totalSupply / secondTokenBalance)).toFixed(18);
     },
 
     setupValidators() {

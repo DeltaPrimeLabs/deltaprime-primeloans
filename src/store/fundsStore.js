@@ -523,8 +523,8 @@ export default {
       const transaction = await wrappedContract[config.DEX_CONFIG[provideLiquidityRequest.dex].addLiquidityMethod](
         toBytes32(provideLiquidityRequest.firstAsset),
         toBytes32(provideLiquidityRequest.secondAsset),
-        parseUnits(provideLiquidityRequest.firstAmount, BigNumber.from(firstDecimals.toString())),
-        parseUnits(provideLiquidityRequest.secondAmount, BigNumber.from(secondDecimals.toString())),
+        parseUnits(Number(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+        parseUnits(Number(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
         parseUnits((minAmount * Number(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
         parseUnits((minAmount * Number(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
         {gasLimit: 8000000}
