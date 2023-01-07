@@ -19,7 +19,7 @@
   margin-bottom: 63px;
 }
 
-.modal-top-info {
+.modal-top-info, .modal-top-desc {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -49,6 +49,10 @@
     margin-left: 3px;
     font-weight: 400;
   }
+}
+
+.modal-top-desc {
+  flex-direction: column;
 }
 
 .transaction-summary-wrapper {

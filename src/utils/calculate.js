@@ -16,6 +16,8 @@ export function calculateHealth(tokens) {
   let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
   let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
 
+  if (borrowed === 0) return 1;
+
   return weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0;
 }
 

@@ -6,7 +6,7 @@
          class="value-overlay"
          v-bind:class="{'value-overlay__clock-running': state === 'IN_PROGRESS'}"></div>
     <div class="text-overlay">
-      <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Mining...</div>
+      <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'IN_PROGRESS'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success

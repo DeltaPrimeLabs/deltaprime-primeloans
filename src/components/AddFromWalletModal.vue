@@ -4,9 +4,15 @@
       <div class="modal__title">
         Add collateral
       </div>
-      <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your
-        funds.<br/>
-        When it's done, you can explore the power of undercollateralized loans.
+      <div class="modal-top-desc" v-if="noSmartLoan">
+        <div>
+          This action will deploy your <b>Prime Account</b> and add your
+          collateral.
+          <br><br>
+        </div>
+        <div>
+          <b>It will require accepting several consecutive Metamask transactions.</b>
+        </div>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -128,7 +134,7 @@ export default {
   data() {
     return {
       value: 0,
-      healthAfterTransaction: 0,
+      healthAfterTransaction: 1,
       validators: [],
       selectedDepositAsset: 'AVAX',
       validationError: false,
@@ -183,6 +189,8 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
+      console.log('calculateHealthAfterTransaction')
+      console.log(this.noSmartLoan)
       if (this.noSmartLoan) this.healthAfterTransaction = 1;
 
       let added = this.value ? this.value : 0;
@@ -195,7 +203,7 @@ export default {
           balance += added;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+        tokens.push({ price: data.price, balance: balance ? balance : 0, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
@@ -206,7 +214,7 @@ export default {
             balance += added;
           }
 
-          tokens.push({price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
         }
       }
 
@@ -214,12 +222,14 @@ export default {
         farms.forEach(farm => {
           tokens.push({
             price: farm.price,
-            balance: parseFloat(farm.totalStaked),
+            balance: parseFloat(farm.totalStaked) ? parseFloat(farm.totalStaked) : 0,
             borrowed: 0,
             debtCoverage: farm.debtCoverage
           });
         });
       }
+
+      console.log(tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens);
     },
