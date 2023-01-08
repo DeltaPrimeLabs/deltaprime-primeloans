@@ -358,7 +358,7 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = 1;
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
   }
 };
