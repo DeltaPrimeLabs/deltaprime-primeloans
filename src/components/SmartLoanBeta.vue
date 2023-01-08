@@ -18,7 +18,7 @@
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
-          <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex">
+          <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
             <Tab :title="'Assets'"
                  :img-active="'src/assets/icons/assets_on.svg'"
                  :img-not-active="'src/assets/icons/assets_off.svg'">

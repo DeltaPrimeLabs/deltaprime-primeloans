@@ -31,7 +31,7 @@
   }
 
   &[x-placement^="top"] {
-    margin-bottom: 5px;
+    margin-bottom: 2px;
 
     .tooltip-arrow {
       transform: rotate(-135deg);
@@ -43,12 +43,12 @@
   }
 
   &[x-placement^="bottom"] {
-    margin-top: 7px;
+    margin-top: 2px;
 
     .tooltip-arrow {
       transform: rotate(45deg);
       top: -5px;
-      left: calc(50% - 5px);
+      left: calc(50% - 2px);
       margin-top: 0;
       margin-bottom: 0;
     }

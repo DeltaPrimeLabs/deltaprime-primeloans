@@ -162,11 +162,11 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Add / Borrow' : 'Add',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add collateral'
+              name: 'Deposit collateral'
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
@@ -180,12 +180,12 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Remove / Repay' : 'Withdraw',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Remove collateral',
+              name: 'Withdraw collateral',
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
@@ -268,7 +268,8 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = this.loanAPY;
+      modalInstance.loanAPY = this.pools[this.asset.symbol].borrowingAPY;
+      modalInstance.maxUtilisation = this.pools[this.asset.symbol].maxUtilisation;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,

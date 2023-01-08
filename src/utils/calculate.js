@@ -2,10 +2,14 @@ import config from "@/config";
 const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
+import IVectorRewarder
+  from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {BigNumber} from "ethers";
 import {erc20ABI} from "./blockchain";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import redstone from 'redstone-api';
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
@@ -106,8 +110,36 @@ export async function vectorFinanceBalance(stakingContractAddress, address, deci
 }
 
 export async function vectorFinanceRewards(stakingContractAddress, address, decimals = 18) {
-  //TODO
-  return 0;
+  const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
+  const rewarderAddress = await stakingContract.rewarder();
+
+  const rewarderContract = new ethers.Contract(rewarderAddress, IVectorRewarder.abi, provider.getSigner());
+
+  let i = 0;
+  let totalEarned = 0;
+
+  let iterate = true;
+  while (iterate) {
+    let tokenAddress = await rewarderContract.rewardTokens(i);
+    let tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider.getSigner());
+
+    try {
+      let decimals = await tokenContract.decimals();
+      let earned = formatUnits(await stakingContract.earned(tokenAddress), decimals);
+
+      let token = Object.entries(TOKEN_ADDRESSES).find(([token, address]) => address === tokenAddress);
+      //TODO: get prices from store
+      let price = (await redstone.getPrice(token[0])).value;
+
+      totalEarned += price * earned;
+    } catch (e) {
+      iterate = false;
+    }
+
+    i++;
+  }
+
+  return totalEarned;
 }
 
 

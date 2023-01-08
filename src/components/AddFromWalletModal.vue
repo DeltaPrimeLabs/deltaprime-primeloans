@@ -2,7 +2,7 @@
   <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Add collateral
+        Deposit collateral
       </div>
       <div class="modal-top-desc" v-if="noSmartLoan">
         <div>

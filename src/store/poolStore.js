@@ -54,7 +54,8 @@ export default {
           poolContract.balanceOf(rootState.network.account),
           poolContract.getDepositRate(),
           poolContract.getBorrowingRate(),
-          poolContract.totalBorrowed()
+          poolContract.totalBorrowed(),
+          poolContract.getMaxPoolUtilisationForBorrowing(),
         ]).then(poolDetails => {
 
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
@@ -68,7 +69,8 @@ export default {
             apy: apy,
             borrowingAPY: fromWei(poolDetails[3]),
             totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
-            interest: deposit * apy / 365
+            interest: deposit * apy / 365,
+            maxUtilisation: fromWei(poolDetails[5])
           };
           pools[poolAsset] = pool;
         });
