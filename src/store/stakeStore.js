@@ -30,8 +30,11 @@ export default {
 
       let assets = [
         (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ];
+
+      console.log(assets)
 
       if (stakeRequest.symbol) assets.push([stakeRequest.symbol]);
 
