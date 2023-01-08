@@ -116,7 +116,7 @@ export default {
       withdrawValue: 0,
       healthAfterTransaction: 0,
       validators: [],
-      currencyInputError: false,
+      currencyInputError: true,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       selectedWithdrawAsset: 'AVAX',
       isLP: false,

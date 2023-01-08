@@ -97,7 +97,7 @@ export default {
       healthAfterTransaction: 0,
       transactionOngoing: false,
       validators: [],
-      currencyInputError: false,
+      currencyInputError: true,
     }
   },
 

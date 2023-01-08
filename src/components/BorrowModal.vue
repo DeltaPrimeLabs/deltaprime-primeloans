@@ -93,7 +93,7 @@ export default {
       value: 0,
       healthAfterTransaction: 0,
       validators: [],
-      currencyInputError: false,
+      currencyInputError: true,
       transactionOngoing: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       MAX_POOL_UTILISATION: config.MAX_POOL_UTILISATION,

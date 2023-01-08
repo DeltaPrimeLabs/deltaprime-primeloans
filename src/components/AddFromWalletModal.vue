@@ -137,7 +137,7 @@ export default {
       healthAfterTransaction: 1,
       validators: [],
       selectedDepositAsset: 'AVAX',
-      validationError: false,
+      validationError: true,
       availableAssetAmount: 0,
     };
   },

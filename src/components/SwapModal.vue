@@ -128,7 +128,7 @@ export default {
       targetAssetAmount: 0,
       sourceValidators: [],
       targetValidators: [],
-      sourceInputError: false,
+      sourceInputError: true,
       targetInputError: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       healthAfterTransaction: 0,

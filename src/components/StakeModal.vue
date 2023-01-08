@@ -118,7 +118,7 @@ export default {
       stakeValue: 0,
       validators: [],
       transactionOngoing: false,
-      currencyInputError: false,
+      currencyInputError: true,
     };
   },
 

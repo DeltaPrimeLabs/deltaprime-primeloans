@@ -105,7 +105,7 @@ export default {
       minReceivedFirst: 0,
       minReceivedSecond: 0,
       transactionOngoing: false,
-      currencyInputError: false,
+      currencyInputError: true,
     };
   },
 

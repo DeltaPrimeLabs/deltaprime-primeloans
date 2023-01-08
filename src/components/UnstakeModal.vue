@@ -97,7 +97,7 @@ export default {
       unstakeValue: 0,
       validators: [],
       transactionOngoing: false,
-      currencyInputError: false,
+      currencyInputError: true,
     }
   },
 
