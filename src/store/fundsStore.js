@@ -409,7 +409,7 @@ export default {
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
       const provider = rootState.network.provider;
-      const amountInWei = parseUnits(fundRequest.value, fundRequest.assetDecimals);
+      const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
       const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);

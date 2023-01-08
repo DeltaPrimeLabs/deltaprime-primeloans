@@ -28,6 +28,11 @@
   margin-top: 36px;
   margin-bottom: 10px;
 
+  a {
+    text-decoration: none;
+    color: $steel-gray;
+  }
+
   .top-info__label {
     margin-right: 5px;
   }

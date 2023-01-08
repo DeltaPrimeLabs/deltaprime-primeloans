@@ -400,7 +400,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
-        const value = withdrawEvent.value.toFixed(config.DECIMALS_PRECISION);
+        const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,

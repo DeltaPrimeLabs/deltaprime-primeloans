@@ -4,8 +4,8 @@
       <div class="modal__title">
         Withdraw collateral
       </div>
-      <div class="modal-top-info">
-        You can withdraw only if you have enough tokens to repay all your loans.
+      <div class="modal-top-desc">
+        You can withdraw only if you have enough debt tokens to repay all borrows. <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
