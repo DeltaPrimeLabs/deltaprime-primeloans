@@ -65,7 +65,7 @@
               Balance:
             </div>
             <div class="summary__value">
-              {{ (Number(assetBalance) + Number(value)) | smartRound }}
+              {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
               {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
             </div>
           </div>

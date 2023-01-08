@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en.json';
+import {removePaddedTrailingZeros} from './calculate';
 
 TimeAgo.addDefaultLocale(en);
 
@@ -57,10 +58,14 @@ export default function setupFilters() {
     return timeAgo.format(value.getTime());
   });
 
-  Vue.filter('smartRound', function (value, precision = 8) {
+  Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
     const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
     const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
     const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
-    return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
+    if (!toFixed) {
+      return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
+    } else {
+      return value !== null ? removePaddedTrailingZeros((Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision)) : '';
+    }
   });
 }
