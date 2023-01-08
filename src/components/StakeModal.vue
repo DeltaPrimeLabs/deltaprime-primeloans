@@ -47,30 +47,30 @@
               </div>
               <div class="summary__value">
                 {{ (Number(available) - Number(stakeValue)) > 0 ? Number(available) - Number(stakeValue) : 0 | smartRound }}
-                <span class="currency">
+                <div class="currency">
                   {{asset.name}}
-                </span>
+                </div>
               </div>
             </div>
-            <div class="summary__divider divider--long"></div>
+            <div class="summary__divider divider--super-long"></div>
             <div class="summary__value__pair">
 
               <div class="summary__label">
                 Staked:
               </div>
               <div class="summary__value">
-                {{ Number(staked) + Number(stakeValue) | smartRound }}
-                <span class="currency">{{ asset.name }}</span>
+                {{ Number(staked) + Number(stakeValue) | smartRound(8, true) }}
+                <div class="currency">{{ asset.name }}</div>
               </div>
             </div>
-            <div class="summary__divider divider--long"></div>
+            <div class="summary__divider divider--super-long"></div>
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Daily interest ≈
+                Daily interest:
               </div>
               <div class="summary__value">
-                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
+                ≈ {{ calculateDailyInterest | smartRound }} <div class="currency">{{ asset.name }}</div>
               </div>
             </div>
           </div>

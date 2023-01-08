@@ -59,6 +59,9 @@ export default function setupFilters() {
   });
 
   Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
+    if (Number.isNaN(value)) {
+      return '0';
+    }
     const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
     const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
     const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);

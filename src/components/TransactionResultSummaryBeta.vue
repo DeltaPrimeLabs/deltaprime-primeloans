@@ -75,6 +75,11 @@ export default {
           height: 34px;
           margin: 4px 20px 0 20px;
         }
+
+        &.divider--super-long {
+          height: 52px;
+          margin: 4px 20px 0 20px;
+        }
       }
 
       .summary__value {

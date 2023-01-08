@@ -34,7 +34,7 @@
         <div class="header__cell cell__staked">
           <div class="header__cell__label">Staked:</div>
           <div class="header__cell__value">
-            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
+            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound(10, true) }}
           </div>
         </div>
 

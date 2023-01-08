@@ -142,14 +142,12 @@ export default {
     },
 
     async checkErrors(newValue) {
-      console.log('checkErrors', newValue);
       this.error = '';
 
       for (const validator of [...this.validators, ...this.defaultValidators]) {
         let value = typeof newValue === 'number' ? newValue : 0;
 
         let validatorResult = await validator.validate(value);
-        console.log(validatorResult);
         if (validatorResult) {
           this.error = validatorResult;
         }
