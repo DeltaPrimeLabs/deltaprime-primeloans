@@ -147,7 +147,8 @@ export default {
           symbol: this.farm.feedSymbol,
           amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
-          decimals: this.asset.decimals
+          decimals: this.asset.decimals,
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
           this.balance = Number(this.balance) + Number(stakeRequest.amount);
@@ -189,7 +190,8 @@ export default {
           amount: unstakeValue.toString(),
           minAmount: this.farm.minAmount * unstakeValue,
           method: this.farm.unstakeMethod,
-          decimals: this.asset.decimals
+          decimals: this.asset.decimals,
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
           this.balance = Number(this.balance) - Number(unstakeRequest.amount);

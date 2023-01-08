@@ -71,7 +71,7 @@ export default {
       this.state = 'MINING';
       setTimeout(() => {
         this.value = 0;
-        this.clock = timer(duration * 1000).subscribe(() => {
+        this.clock = timer(duration).subscribe(() => {
           // clock finished
         });
       });

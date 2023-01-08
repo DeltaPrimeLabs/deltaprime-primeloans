@@ -47,13 +47,13 @@ export default {
         {gasLimit: 8000000}
       );
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.progressBarService.requestProgressBar(stakeRequest.refreshDelay);
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(stakeTransaction, provider, 'stake');
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
-      }, 30000);
+      }, stakeRequest.refreshDelay);
     },
 
     async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {
@@ -72,14 +72,14 @@ export default {
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(unstakeTransaction, provider, 'unstake');
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
-      }, 30000);
+      }, unstakeRequest.refreshDelay);
     },
 
     async updateStakedBalances({rootState, state, commit}) {
