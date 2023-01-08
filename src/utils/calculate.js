@@ -123,8 +123,9 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   while (iterate) {
     try {
       let tokenAddress = await rewarderContract.rewardTokens(i);
+      let tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider.getSigner());
 
-      let earned = formatUnits(await rewarderContract.earned(loanAddress, tokenAddress), 18);
+      let earned = formatUnits(await rewarderContract.earned(loanAddress, tokenAddress), await tokenContract.decimals());
 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
 
