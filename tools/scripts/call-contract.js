@@ -9,7 +9,7 @@ const fs = require("fs");
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
-provider = new ethers.providers.JsonRpcProvider(jsonRPC);
+let provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 let wallet = mnemonicWallet.connect(provider);
 
 let contract = new ethers.Contract(contractAddress, ARTIFACT.abi, wallet);
