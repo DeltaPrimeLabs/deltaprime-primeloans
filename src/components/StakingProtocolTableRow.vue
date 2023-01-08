@@ -148,6 +148,7 @@ export default {
           amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals,
+          gas: this.farm.gasStake,
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
@@ -191,6 +192,7 @@ export default {
           minAmount: this.farm.minAmount * unstakeValue,
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
+          gas: this.farm.gasUnstake,
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {

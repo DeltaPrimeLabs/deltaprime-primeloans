@@ -25,7 +25,7 @@ export default {
   networks: {
     hardhat: {
       chainId: 1337,
-      gas: 12000000,
+      gas: 8000000,
       blockGasLimit: 0x1fffffffffffff,
       timeout: 1800000,
       settings: {
@@ -45,7 +45,8 @@ export default {
     localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
-      chainId: 1337
+      chainId: 1337,
+      accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',

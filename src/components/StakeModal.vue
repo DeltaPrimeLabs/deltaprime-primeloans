@@ -134,7 +134,7 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('STAKE', this.stakeValue);
+      this.$emit('STAKE', parseFloat(this.stakeValue).toFixed(this.asset.decimals));
     },
 
 

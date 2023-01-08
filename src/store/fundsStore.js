@@ -324,7 +324,7 @@ export default {
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 8000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 1000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -423,7 +423,10 @@ export default {
         [fundRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(toBytes32(fundRequest.asset), amountInWei, {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
+          toBytes32(fundRequest.asset),
+          amountInWei,
+          {gasLimit: 500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -450,7 +453,7 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
-        gasLimit: 8000000
+        gasLimit: 500000
       });
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -471,8 +474,10 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(toBytes32(withdrawRequest.asset),
-        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals), {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
+          toBytes32(withdrawRequest.asset),
+        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+          {gasLimit: 3000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -524,11 +529,11 @@ export default {
       const transaction = await wrappedContract[config.DEX_CONFIG[provideLiquidityRequest.dex].addLiquidityMethod](
         toBytes32(provideLiquidityRequest.firstAsset),
         toBytes32(provideLiquidityRequest.secondAsset),
-        parseUnits(Number(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
-        parseUnits(Number(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-        parseUnits((minAmount * Number(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
-        parseUnits((minAmount * Number(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 8000000}
+        parseUnits(parseFloat(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+        parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+        parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+        parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+        {gasLimit: 4000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -563,7 +568,7 @@ export default {
         parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
         parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
         parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 8000000}
+        {gasLimit: 4000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -586,8 +591,10 @@ export default {
         [borrowRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(toBytes32(borrowRequest.asset),
-        parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals), {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(
+          toBytes32(borrowRequest.asset),
+          parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
+          {gasLimit: 3000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -611,7 +618,10 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(toBytes32(repayRequest.asset), parseUnits(Number(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)), {gasLimit: 8000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(
+          toBytes32(repayRequest.asset),
+          parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)),
+          {gasLimit: 3000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -647,7 +657,7 @@ export default {
         toBytes32(swapRequest.targetAsset),
         sourceAmount,
         targetAmount,
-        {gasLimit: 8000000}
+        {gasLimit: 4000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

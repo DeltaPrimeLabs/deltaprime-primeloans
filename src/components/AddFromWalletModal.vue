@@ -14,6 +14,9 @@
           <b>It will require accepting several consecutive Metamask transactions.</b>
         </div>
       </div>
+      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
+        <b>It will require accepting two consecutive Metamask transactions.</b>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value" v-bind:class="{'available-balance--loading': !getAvailableAssetAmount && getAvailableAssetAmount !== 0}">

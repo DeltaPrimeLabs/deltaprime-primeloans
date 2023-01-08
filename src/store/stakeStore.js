@@ -34,8 +34,6 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ];
 
-      console.log(assets)
-
       if (stakeRequest.symbol) assets.push([stakeRequest.symbol]);
 
       const loanAssets = mergeArrays(assets);
@@ -44,7 +42,7 @@ export default {
       (
         parseUnits(String(stakeRequest.amount),
           BigNumber.from(stakeRequest.decimals.toString())),
-        {gasLimit: 8000000}
+        {gasLimit: stakeRequest.gas ? stakeRequest.gas : 8000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar(stakeRequest.refreshDelay);
@@ -68,9 +66,11 @@ export default {
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
           parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())),
           parseUnits(String(unstakeRequest.minAmount), BigNumber.from(unstakeRequest.decimals.toString())),
-          {gasLimit: 8000000})
+          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
-        await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())), {gasLimit: 8000000});
+        await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
+            parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())),
+            {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
       rootState.serviceRegistry.modalService.closeModal();

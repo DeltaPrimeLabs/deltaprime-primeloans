@@ -90,7 +90,9 @@ export default {
                 info: 'Repeatedly lends and borrows AVAX on Aave to optimize rewards.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['AVAX'],
-                strategy: 'AAVE'
+                strategy: 'AAVE',
+                gasStake: 4000000,
+                gasUnstake: 4000000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -104,7 +106,9 @@ export default {
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
-                strategy: 'Platypus'
+                strategy: 'Platypus',
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         sAVAX: [
@@ -118,7 +122,9 @@ export default {
                 token: 'SAVAX',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
-                strategy: 'Platypus'
+                strategy: 'Platypus',
+                gasStake: 6000000,
+                gasUnstake: 6000000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -133,7 +139,9 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         USDC: [
@@ -150,7 +158,9 @@ export default {
                 token: 'USDC',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
-                strategy: 'Platypus'
+                strategy: 'Platypus',
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         PNG_AVAX_USDC_LP: [
@@ -164,7 +174,9 @@ export default {
                 feedSymbol: 'YY_PNG_AVAX_USDC_LP',
                 token: 'PNG_AVAX_USDC_LP',
                 debtCoverage: 0.83333333333,
-                strategy: 'Pangolin'
+                strategy: 'Pangolin',
+                gasStake: 4000000,
+                gasUnstake: 4000000
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -178,7 +190,9 @@ export default {
                 feedSymbol: 'YY_PNG_AVAX_ETH_LP',
                 token: 'PNG_AVAX_ETH_LP',
                 debtCoverage: 0.83333333333,
-                strategy: 'Pangolin'
+                strategy: 'Pangolin',
+                gasStake: 4000000,
+                gasUnstake: 4000000
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -192,7 +206,9 @@ export default {
                 feedSymbol: 'YY_TJ_AVAX_USDC_LP',
                 token: 'TJ_AVAX_USDC_LP',
                 debtCoverage: 0.83333333333,
-                strategy: 'Pangolin'
+                strategy: 'TraderJoe',
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         TJ_AVAX_ETH_LP: [
@@ -206,7 +222,9 @@ export default {
                 feedSymbol: 'YY_TJ_AVAX_ETH_LP',
                 token: 'TJ_AVAX_ETH_LP',
                 debtCoverage: 0.83333333333,
-                strategy: 'Pangolin'
+                strategy: 'TraderJoe',
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         TJ_AVAX_sAVAX_LP: [
@@ -220,7 +238,9 @@ export default {
                 feedSymbol: 'YY_TJ_AVAX_sAVAX_LP',
                 token: 'TJ_AVAX_sAVAX_LP',
                 debtCoverage: 0.83333333333,
-                strategy: 'Pangolin'
+                strategy: 'TraderJoe',
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
     },

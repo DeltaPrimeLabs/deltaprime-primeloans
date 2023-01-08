@@ -89,7 +89,7 @@ export default {
     balance: {},
     asset: {},
     isLp: false,
-    protocol: null,
+    protocol: null
   },
 
   data() {
@@ -119,7 +119,7 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('UNSTAKE', this.unstakeValue);
+      this.$emit('UNSTAKE', parseFloat(this.unstakeValue).toFixed(this.asset.decimals));
     },
 
     unstakeValueChange(event) {
