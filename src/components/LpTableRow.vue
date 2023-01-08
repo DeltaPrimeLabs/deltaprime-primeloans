@@ -172,11 +172,11 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Add / Create',
+          tooltip: 'Deposit / Create',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add collateral'
+              name: 'Deposit collateral'
             },
             {
               key: 'PROVIDE_LIQUIDITY',
@@ -193,7 +193,7 @@ export default {
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Remove collateral'
+              name: 'Withdraw collateral'
             },
             {
               key: 'REMOVE_LIQUIDITY',
