@@ -191,10 +191,11 @@ export default {
 
     setMax() {
       this.setValue(this.max);
-      this.checkErrors(this.value);
+      const hasError = this.error.length > 0;
+      this.checkErrors(this.max);
       this.$forceUpdate();
-      this.checkErrors(this.value);
-      this.$emit('inputChange', this.value);
+      this.$emit('newValue', {value: this.max, error: hasError});
+      this.$emit('inputChange', this.max);
     },
 
     setValueOfMax(maxValue) {
