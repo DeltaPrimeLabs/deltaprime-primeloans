@@ -1,4 +1,3 @@
-import config from "@/config";
 const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
@@ -35,6 +34,8 @@ export function mergeArrays(arrays) {
 }
 
 export function parseLogs(logs) {
+  const config = require('../config');
+
   let loanEvents = [];
 
   logs.forEach(log => {
@@ -109,7 +110,7 @@ export async function vectorFinanceBalance(stakingContractAddress, address, deci
   return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
 }
 
-export async function vectorFinanceRewards(stakingContractAddress, address, decimals = 18) {
+export async function vectorFinanceRewards(stakingContractAddress, loanAddress) {
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
   const rewarderAddress = await stakingContract.rewarder();
 
@@ -120,16 +121,19 @@ export async function vectorFinanceRewards(stakingContractAddress, address, deci
 
   let iterate = true;
   while (iterate) {
-    let tokenAddress = await rewarderContract.rewardTokens(i);
-    let tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider.getSigner());
-
     try {
-      let decimals = await tokenContract.decimals();
-      let earned = formatUnits(await stakingContract.earned(tokenAddress), decimals);
+      let tokenAddress = await rewarderContract.rewardTokens(i);
 
-      let token = Object.entries(TOKEN_ADDRESSES).find(([token, address]) => address === tokenAddress);
+      let earned = formatUnits(await rewarderContract.earned(loanAddress, tokenAddress), 18);
+
+      let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
+
       //TODO: get prices from store
+      console.log(token[0])
+      console.log(token[1])
+      console.log('earned: ', earned)
       let price = (await redstone.getPrice(token[0])).value;
+      console.log('price: ', price)
 
       totalEarned += price * earned;
     } catch (e) {
@@ -139,6 +143,7 @@ export async function vectorFinanceRewards(stakingContractAddress, address, deci
     i++;
   }
 
+  console.log('totalEarned: ', totalEarned)
   return totalEarned;
 }
 

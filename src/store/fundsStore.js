@@ -363,9 +363,6 @@ export default {
         }
       );
 
-      console.log('balances')
-      console.log(balances)
-
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
