@@ -602,6 +602,7 @@ describe('Test liquidator with a flashloan', () => {
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             ETH_PRICE: number,
+            assetsList: Array<string> = [],
             BTC_PRICE: number,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
@@ -617,7 +618,7 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC'];
+            assetsList = ['AVAX', 'USDC', 'ETH', 'BTC', 'TJ_AVAX_USDC_LP', 'PNG_AVAX_ETH_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
@@ -719,23 +720,32 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    dataFeeds: assetsList,
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                 CACHE_LAYER_URLS.urls
+                CACHE_LAYER_URLS.urls
             );
         });
 
 
         it("should fund, borrow and withdraw, making loan's health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
-            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("30")});
+            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("30"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei('30'));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei('170'))
 
-            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("550"));
 
-            await wrappedLoan.vectorStakeWAVAX1(toWei("550"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("50"), toWei("0"));
+
+
+            let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
+            let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
+
+            await wrappedLoan.addLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), usdcBalance, toWei("50").div(5).mul(4), usdcBalance.div(5).mul(4));
+
+            await wrappedLoan.addLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("50"), ethBalance, toWei("50").div(5).mul(4), ethBalance.div(5).mul(4));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);
         });
