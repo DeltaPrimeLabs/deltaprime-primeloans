@@ -49,6 +49,7 @@ export default {
     usdcTokenContract: null,
     assetBalances: null,
     lpBalances: null,
+    accountApr: null,
     debt: null,
     totalValue: null,
     thresholdWeightedValue: null,
@@ -115,6 +116,10 @@ export default {
     setDebtsPerAsset(state, debtsPerAsset) {
       state.debtsPerAsset = debtsPerAsset;
     },
+
+    setAccountApr(state, apr) {
+      state.accountApr = apr;
+    },
   },
 
   getters: {
@@ -162,7 +167,7 @@ export default {
     },
     getCollateral(state) {
       return state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
-    }
+    },
   },
 
   actions: {
@@ -184,6 +189,7 @@ export default {
         await dispatch('getAllAssetsBalances');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
+        await dispatch('getAccountApr');
         try {
           await dispatch('getFullLoanStatus');
         } catch (e) {
@@ -207,6 +213,7 @@ export default {
       await dispatch('getDebtsPerAsset');
       await dispatch('getFullLoanStatus');
       await dispatch('stakeStore/updateStakedBalances', null, {root: true});
+      await dispatch('getAccountApr');
       setTimeout(async () => {
         await dispatch('getFullLoanStatus');
       }, 5000);
@@ -397,6 +404,72 @@ export default {
         health: fromWei(fullLoanStatusResponse[3]),
       };
       commit('setFullLoanStatus', fullLoanStatus);
+    },
+
+    async getAccountApr({state, getters, rootState, commit}){
+      let apr = 0;
+      let yearlyDebtInterest = 0;
+
+      console.log('getAccountApr')
+      console.log(rootState.poolStore.pools)
+      console.log(state.lpAssets && state.lpBalances)
+      console.log(rootState.stakeStore.farms)
+
+      if (rootState.poolStore.pools) {
+        Object.entries(state.debtsPerAsset).forEach(
+            ([symbol, debt]) => {
+              yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
+            }
+        );
+
+        let yearlyLpInterest = 0;
+
+        if (state.lpAssets && state.lpBalances) {
+          for (let entry of Object.entries(state.lpAssets)) {
+            let symbol = entry[0]
+            let lpAsset = entry[1]
+
+            console.log('symbol: ', symbol)
+            console.log('amount: ', parseFloat(state.lpBalances[symbol]))
+            console.log('apr: ', await lpAsset.apr())
+            console.log('price: ', lpAsset.price)
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * await lpAsset.apr() * lpAsset.price;
+          }
+        }
+        console.log(12)
+
+        let yearlyFarmInterest = 0;
+
+        if (rootState.stakeStore.farms) {
+          for (let entry of Object.entries(rootState.stakeStore.farms)) {
+            let symbol = entry[0];
+            let farms = entry[1];
+
+            for (let farm of farms) {
+              console.log('farm')
+              console.log(farm)
+              console.log('totalStaked: ', parseFloat(farm.totalStaked))
+              console.log('apy: ', await farm.apy())
+              console.log('price: ', farm.price)
+              yearlyFarmInterest += parseFloat(farm.totalStaked) * await farm.apy() * farm.price;
+            }
+          }
+        }
+        console.log(13)
+
+        console.log('yearlyDebtInterest: ', yearlyDebtInterest)
+        console.log('yearlyFarmInterest: ', yearlyFarmInterest)
+        console.log('yearlyLpInterest: ', yearlyLpInterest)
+
+        const collateral = getters.getCollateral;
+
+        if (collateral) {
+          apr = (yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
+        }
+
+        console.log('apr: ', apr)
+        commit('setAccountApr', apr);
+      }
     },
 
     async swapToWavax({state, rootState}) {

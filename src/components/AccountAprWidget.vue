@@ -4,7 +4,10 @@
       Account APR
     </div>
     <div class="apr-widget__value">
-      <ColoredValueBeta :value="apr" :formatting="'percent'" :percentage-rounding-precision="1" :big="true"></ColoredValueBeta>
+      <ColoredValueBeta v-if="accountApr" :value="accountApr" :formatting="'percent'" :percentage-rounding-precision="1" :big="true"></ColoredValueBeta>
+      <div v-else class="health-loader-container"  >
+        <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+      </div>
     </div>
     <div class="apr-widget__comment">
       {{comment}}
@@ -18,7 +21,7 @@ export default {
   name: 'AccountAprWidget',
   components: {ColoredValueBeta},
   props: {
-    apr: {}
+    accountApr: 0
   },
   data() {
     return {
@@ -30,28 +33,30 @@ export default {
     this.setupCommentConfig();
     this.pickComment();
   },
+  watch: {
+    accountApr: {
+      handler() {
+        this.pickComment();
+      }
+    }
+  },
   methods: {
     setupCommentConfig() {
       // max is inclusive, min is not
       this.possibleComments = [
         {
-          text: 'We\'ve seen better days',
+          text: 'One of these should moon, right?',
           min: -999999,
           max: -0.5
         },
         {
-          text: 'On your way to the green',
+          text: 'I’m something of a trader myself.',
           min: -0.5,
           max: -0.1
         },
         {
-          text: 'Not great not terrible',
+          text: 'Let’s set up those strats.',
           min: -0.1,
-          max: 0
-        },
-        {
-          text: 'Small profit but mighty',
-          min: 0,
           max: 0.1
         },
         {
@@ -60,7 +65,7 @@ export default {
           max: 0.5
         },
         {
-          text: 'To the moon!',
+          text: 'Degen, activated.!',
           min: 0.5,
           max: 999999
         },
@@ -68,7 +73,7 @@ export default {
     },
 
     pickComment() {
-      const pickedComment = this.possibleComments.find((comment) => this.apr > comment.min && this.apr <= comment.max);
+      const pickedComment = this.accountApr ? this.possibleComments.find((comment) => this.accountApr > comment.min && this.accountApr <= comment.max) : { text: 'Loading...'};
       this.comment = pickedComment.text;
     },
   }

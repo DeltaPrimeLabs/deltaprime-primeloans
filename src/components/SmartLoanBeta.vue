@@ -1,5 +1,8 @@
 <template>
   <div class="smart-loan-beta-component">
+    <div class="account-apr-widget-wrapper">
+      <AccountAprWidget :accountApr="accountApr"></AccountAprWidget>
+    </div>
     <div class="container">
       <StatsBarBeta
         :collateral="noSmartLoanInternal ? 0 : getCollateral"
@@ -45,6 +48,7 @@ import Assets from './Assets';
 import InfoBubble from "@/components/InfoBubble.vue";
 import {mapActions, mapGetters, mapState} from 'vuex';
 import Farm from './Farm';
+import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
@@ -57,9 +61,9 @@ const FARMS_PATH_NAME = 'Prime Account Farms';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble},
+  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan']),
+    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'accountApr']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('serviceRegistry', ['healthService']),
     ...mapGetters('fundsStore', ['getHealth', 'getCollateral'])
@@ -174,7 +178,7 @@ export default {
       this.healthService.observeRefreshHealth().subscribe(() => {
         this.health = this.getHealth;
       })
-    },
+    }
   },
 };
 </script>
@@ -184,6 +188,14 @@ export default {
 .main-content {
   margin-top: 30px;
   margin-bottom: 600px;
+}
+
+.account-apr-widget-wrapper {
+  position: absolute;
+  left: 50%;
+  margin-left: -100px;
+  width: 200px;
+  top: 0;
 }
 
 </style>

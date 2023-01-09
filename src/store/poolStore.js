@@ -43,7 +43,7 @@ export default {
       await dispatch('setupPools');
     },
 
-    async setupPools({rootState, commit}) {
+    async setupPools({rootState, commit, dispatch}) {
       const provider = rootState.network.provider;
       const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
@@ -75,8 +75,9 @@ export default {
           pools[poolAsset] = pool;
         });
       });
-      setTimeout(() => {
+      setTimeout(async () => {
         commit('setPools', pools);
+        await dispatch('fundsStore/getAccountApr', {}, {root: true});
       }, 1000);
     },
 
@@ -88,7 +89,6 @@ export default {
       const poolContract = state.pools[depositRequest.assetSymbol].contract;
       const wallet = rootState.network.account;
 
-      console.log()
       if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
         if (!(await signMessage(provider, depositTermsToSign, rootState.network.account))) return;
       }

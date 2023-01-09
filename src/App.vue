@@ -23,9 +23,6 @@
       <router-link to="/">
         <img src="src/assets/icons/deltaprime.svg" class="logo">
       </router-link>
-<!--      <div class="account-apr-widget-wrapper">-->
-<!--        <AccountAprWidget :apr="0.333"></AccountAprWidget>-->
-<!--      </div>-->
       <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
       <Wallet class="wallet" v-else/>
     </div>
@@ -47,11 +44,9 @@ const ethereum = window.ethereum;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
-import AccountAprWidget from './components/AccountAprWidget';
 
 export default {
   components: {
-    AccountAprWidget,
     ProgressBar,
     Button,
     Navbar,
