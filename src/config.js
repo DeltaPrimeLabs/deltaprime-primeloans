@@ -119,6 +119,7 @@ export default {
                 rewards: async (address) => yieldYakRewards('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
+                feedSymbol: 'YY_PTP_sAVAX',
                 token: 'SAVAX',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
