@@ -4,7 +4,9 @@
       <div class="modal__title">
         Deposit
       </div>
-
+      <div class="modal-top-desc">
+        <b>It will require accepting several consecutive Metamask transactions.</b>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>

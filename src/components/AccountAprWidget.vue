@@ -53,7 +53,7 @@ export default {
           max: -0.5
         },
         {
-          text: 'I’m something of a trader myself.',
+          text: "Let's short!",
           min: -0.5,
           max: -0.1
         },

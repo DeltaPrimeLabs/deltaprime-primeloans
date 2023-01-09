@@ -410,11 +410,6 @@ export default {
       let apr = 0;
       let yearlyDebtInterest = 0;
 
-      console.log('getAccountApr')
-      console.log(rootState.poolStore.pools)
-      console.log(state.lpAssets && state.lpBalances)
-      console.log(rootState.stakeStore.farms)
-
       if (rootState.poolStore.pools) {
         Object.entries(state.debtsPerAsset).forEach(
             ([symbol, debt]) => {
@@ -430,10 +425,6 @@ export default {
             let symbol = entry[0]
             let lpAsset = entry[1]
 
-            console.log('symbol: ', symbol)
-            console.log('amount: ', parseFloat(state.lpBalances[symbol]))
-            console.log('apr: ', await lpAsset.apr())
-            console.log('price: ', lpAsset.price)
             //TODO: take from API
             let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
             yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + await lpAsset.apr()) * assetAppretiation) - 1) * lpAsset.price;
@@ -448,31 +439,19 @@ export default {
             let farms = entry[1];
 
             for (let farm of farms) {
-              console.log('farm')
-              console.log(farm)
-              console.log('totalStaked: ', parseFloat(farm.totalStaked))
-              console.log('apy: ', await farm.apy())
-              console.log('price: ', farm.price)
               let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
               yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + await farm.apy()) * assetAppretiation) - 1) * farm.price;
-              console.log('farm symbol: ', symbol, ' value: ', parseFloat(farm.totalStaked) * (((1 + await farm.apy()) * assetAppretiation) - 1) * farm.price)
 
             }
           }
         }
 
-        console.log('yearlyDebtInterest: ', yearlyDebtInterest)
-        console.log('yearlyFarmInterest: ', yearlyFarmInterest)
-        console.log('yearlyLpInterest: ', yearlyLpInterest)
-
         const collateral = getters.getCollateral;
 
-        console.log('total yearly profit: ', yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest)
         if (collateral) {
           apr = (yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
         }
 
-        console.log('apr: ', apr)
         commit('setAccountApr', apr);
       }
     },
