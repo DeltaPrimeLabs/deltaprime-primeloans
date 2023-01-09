@@ -17,7 +17,7 @@ import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {aprToApy, calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -418,6 +418,7 @@ export default {
       if (rootState.poolStore.pools) {
         Object.entries(state.debtsPerAsset).forEach(
             ([symbol, debt]) => {
+              console.log('debt symbol: ', symbol, ' value: ', parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price)
               yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
             }
         );
@@ -433,10 +434,11 @@ export default {
             console.log('amount: ', parseFloat(state.lpBalances[symbol]))
             console.log('apr: ', await lpAsset.apr())
             console.log('price: ', lpAsset.price)
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * await lpAsset.apr() * lpAsset.price;
+            //TODO: take from API
+            let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + await lpAsset.apr()) * assetAppretiation) - 1) * lpAsset.price;
           }
         }
-        console.log(12)
 
         let yearlyFarmInterest = 0;
 
@@ -451,11 +453,13 @@ export default {
               console.log('totalStaked: ', parseFloat(farm.totalStaked))
               console.log('apy: ', await farm.apy())
               console.log('price: ', farm.price)
-              yearlyFarmInterest += parseFloat(farm.totalStaked) * await farm.apy() * farm.price;
+              let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
+              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + await farm.apy()) * assetAppretiation) - 1) * farm.price;
+              console.log('farm symbol: ', symbol, ' value: ', parseFloat(farm.totalStaked) * (((1 + await farm.apy()) * assetAppretiation) - 1) * farm.price)
+
             }
           }
         }
-        console.log(13)
 
         console.log('yearlyDebtInterest: ', yearlyDebtInterest)
         console.log('yearlyFarmInterest: ', yearlyFarmInterest)
@@ -463,6 +467,7 @@ export default {
 
         const collateral = getters.getCollateral;
 
+        console.log('total yearly profit: ', yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest)
         if (collateral) {
           apr = (yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
         }

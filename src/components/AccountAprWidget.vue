@@ -1,7 +1,10 @@
 <template>
   <div class="account-apr-widget-component">
     <div class="apr-widget__title">
-      Account APR
+      Account APY
+      <img class="info__icon"
+           src="src/assets/icons/info.svg"
+           v-tooltip="{content: 'Interest resulting from all your farms and debts.', placement: 'top', classes: 'info-tooltip'}">
     </div>
     <div class="apr-widget__value">
       <ColoredValueBeta v-if="accountApr" :value="accountApr" :formatting="'percent'" :percentage-rounding-precision="1" :big="true"></ColoredValueBeta>
@@ -109,6 +112,10 @@ export default {
   .apr-widget__comment {
     font-size: $font-size-xsm;
     color: $steel-gray;
+  }
+
+  .info__icon {
+    transform: translateY(-2px);
   }
 }
 
