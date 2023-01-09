@@ -64,12 +64,12 @@ export default {
 
       const unstakeTransaction = unstakeRequest.minAmount ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-          parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())),
-          parseUnits(String(unstakeRequest.minAmount), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.amount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.minAmount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
           {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-            parseUnits(String(unstakeRequest.amount), BigNumber.from(unstakeRequest.decimals.toString())),
+            parseUnits(parseFloat(unstakeRequest.amount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
             {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
