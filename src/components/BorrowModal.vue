@@ -9,8 +9,10 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool: </div>
-        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{ asset.symbol }}</span></div>
+        <div class="top-info__label">Available in pool:</div>
+        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{
+            asset.symbol
+          }}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.symbol"
@@ -30,10 +32,11 @@
               Health:
             </div>
             <div class="summary__value">
-              <span class="summary__value--error" v-if="healthAfterTransaction === 0">
-                {{ 0 | percent }}
+              <span class="summary__value--error"
+                v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
+                {{ healthAfterTransaction | percent }}
               </span>
-              <span v-if="healthAfterTransaction > 0">
+              <span v-else>
                 {{ healthAfterTransaction | percent }}
               </span>
             </div>
@@ -50,7 +53,8 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError" :waiting="transactionOngoing"></Button>
+        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError"
+                :waiting="transactionOngoing"></Button>
       </div>
     </Modal>
   </div>
@@ -63,7 +67,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth} from "../utils/calculate";
+import {calculateHealth} from '../utils/calculate';
 
 export default {
   name: 'BorrowModal',
@@ -136,11 +140,16 @@ export default {
           balance += addedBorrow;
         }
 
-        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+        tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
-        tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.lpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
       }
 
       for (const [, farms] of Object.entries(this.farms)) {
@@ -161,7 +170,7 @@ export default {
       this.validators = [
         {
           validate: (value) => {
-            if (this.healthAfterTransaction === 0) {
+            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
               return `Health should be higher than 0%`;
             }
           },
