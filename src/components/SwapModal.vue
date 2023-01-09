@@ -239,6 +239,7 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      let targetInputChangeEvent;
       if (changeEvent.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
@@ -248,8 +249,7 @@ export default {
           const value = Math.ceil(targetAssetAmount * 1000000) / 1000000;
           this.sourceAssetAmount = changeEvent.value;
           this.targetAssetAmount = value;
-          this.$refs.targetInput.setCurrencyInputValue(value);
-
+          targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(value);
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
           await this.chooseBestTrade();
@@ -257,27 +257,33 @@ export default {
         }
       }
       this.sourceInputError = changeEvent.error;
+      if (targetInputChangeEvent) {
+        this.targetInputError = targetInputChangeEvent.error;
+      }
     },
 
-    async targetInputChange(change) {
-      if (change.asset === this.sourceAsset) {
+    async targetInputChange(changeEvent) {
+      let sourceInputChangeEvent;
+      if (changeEvent.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
-        this.targetAsset = change.asset;
-        const sourceAssetAmount = change.value * this.conversionRate;
+        this.targetAsset = changeEvent.asset;
+        const sourceAssetAmount = changeEvent.value * this.conversionRate;
         if (!Number.isNaN(sourceAssetAmount)) {
           const value = Math.ceil(sourceAssetAmount * 1000000) / 1000000;
-          this.targetAssetAmount = change.value;
+          this.targetAssetAmount = changeEvent.value;
           this.sourceAssetAmount = value;
-          this.$refs.sourceInput.setCurrencyInputValue(value);
-
+          sourceInputChangeEvent = await this.$refs.sourceInput.setCurrencyInputValue(value);
           this.calculateSourceAssetBalance();
           this.setupConversionRate();
           await this.chooseBestTrade();
           this.calculateHealthAfterTransaction();
         }
       }
-      this.targetInputError = change.error;
+      this.targetInputError = changeEvent.error;
+      if (sourceInputChangeEvent) {
+        this.sourceInputError = sourceInputChangeEvent.error;
+      }
     },
 
     setupConversionRate() {
@@ -317,7 +323,9 @@ export default {
         {
           validate: async (value) => {
             await this.chooseBestTrade();
-            this.calculateHealthAfterTransaction(value);
+            setTimeout(() => {
+              this.calculateHealthAfterTransaction(value);
+            })
             if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
               return 'The health is below allowed limit';
             }

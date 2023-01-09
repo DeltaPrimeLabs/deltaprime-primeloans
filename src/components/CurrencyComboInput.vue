@@ -148,7 +148,7 @@ export default {
     },
 
     setCurrencyInputValue(value) {
-      this.$refs.currencyInput.setValue(value);
+      return this.$refs.currencyInput.setValue(value);
     },
 
   },

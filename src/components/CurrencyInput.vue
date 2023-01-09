@@ -166,9 +166,12 @@ export default {
       this.$emit('inputChange', this.value);
     },
 
-    setValue(value) {
+    async setValue(value) {
       this.value = value;
       this.internalValue = String(value);
+      const checkErrorsResult = await this.checkErrors(this.value);
+      const hasError = checkErrorsResult !== '';
+      return {value: this.value, error: hasError};
     },
 
     setupDefaultValidators() {
