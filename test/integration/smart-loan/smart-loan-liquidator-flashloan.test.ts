@@ -166,6 +166,18 @@ describe('Test liquidator with a flashloan', () => {
             ) as LiquidationFlashloan;
         });
 
+        it("should check onlyOwner methods", async () => {
+            await expect(liquidationFlashloan.connect(depositor).transferERC20(ZERO, ZERO, 0)).to.be.revertedWith("Ownable: caller is not the owner");
+
+            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(0);
+            await tokenContracts.get('USDC')!.connect(owner).transfer(1_000_000, liquidationFlashloan.address);
+            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(1_000_000);
+
+            let ownerUSDCBalance = await tokenContracts.get('USDC')!.balanceOf(owner.address);
+            await liquidationFlashloan.connect(owner).transferERC20(tokenContracts.get('USDC')!.address, owner.address, 1_000_000);
+            expect(await tokenContracts.get('USDC')!.balanceOf(owner.address)).to.be.equal(ownerUSDCBalance + 1_000_000);
+        });
+
         it("should whitelist LIQUIDATOR and flashloan contract", async () => {
             let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
             await whitelistingFacet.whitelistLiquidators([liquidationFlashloan.address, "0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6"]);
