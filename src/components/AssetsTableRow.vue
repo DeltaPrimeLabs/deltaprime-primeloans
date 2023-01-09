@@ -8,6 +8,9 @@
           <div class="asset__loan" v-if="pools && pools[asset.symbol]">
             Borrow&nbsp;APY:&nbsp;{{ pools[asset.symbol].borrowingAPY | percent }}
           </div>
+          <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
+            Profit APY:&nbsp;{{ 0.072 | percent }}
+          </div>
         </div>
       </div>
 
