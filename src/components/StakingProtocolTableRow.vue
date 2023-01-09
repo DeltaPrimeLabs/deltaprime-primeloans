@@ -193,6 +193,7 @@ export default {
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
+          rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens  : [],
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {

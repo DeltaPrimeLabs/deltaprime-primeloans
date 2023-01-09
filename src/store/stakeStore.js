@@ -60,6 +60,7 @@ export default {
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        unstakeRequest.rewardTokens,
         Object.keys(config.POOLS_CONFIG)
       ]);
 
