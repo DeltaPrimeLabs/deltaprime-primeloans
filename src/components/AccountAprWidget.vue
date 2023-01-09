@@ -4,7 +4,7 @@
       Account APY
       <img class="info__icon"
            src="src/assets/icons/info.svg"
-           v-tooltip="{content: 'Interest resulting from all your farms and debts.', placement: 'top', classes: 'info-tooltip'}">
+           v-tooltip="{content: ' How much you annually yield on your collateral. This number includes 7.2% sAVAX price appreciation if you hold that asset.', placement: 'top', classes: 'info-tooltip'}">
     </div>
     <div class="apr-widget__value">
       <ColoredValueBeta v-if="accountApr != null" :value="accountApr ? accountApr : 0" :formatting="'percent'" :percentage-rounding-precision="1" :big="true"></ColoredValueBeta>
