@@ -36,6 +36,7 @@ import fs from "fs";
 import path from "path";
 import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import {disableReplWriterShowProxy} from "hardhat/internal/util/console";
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -618,7 +619,7 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            assetsList = ['AVAX', 'USDC', 'ETH', 'BTC', 'TJ_AVAX_USDC_LP', 'PNG_AVAX_ETH_LP'];
+            assetsList = ['AVAX', 'USDC', 'sAVAX', 'ETH', 'BTC', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX', 'TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP','PNG_AVAX_ETH_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
@@ -635,6 +636,7 @@ describe('Test liquidator with a flashloan', () => {
             ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
@@ -642,6 +644,7 @@ describe('Test liquidator with a flashloan', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
             BTC_PRICE = (await redstone.getPrice('BTC')).value;
+
             const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
             const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
@@ -736,16 +739,24 @@ describe('Test liquidator with a flashloan', () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei('170'))
 
 
-            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), toWei("0"));
-            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("50"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("40"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("40"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("10"), toWei("0"));
 
 
             let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
             let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
 
-            await wrappedLoan.addLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), usdcBalance, toWei("50").div(5).mul(4), usdcBalance.div(5).mul(4));
+            await wrappedLoan.addLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("40"), usdcBalance, toWei("40").div(5).mul(4), usdcBalance.div(5).mul(4));
+            await wrappedLoan.addLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("40"), ethBalance, toWei("40").div(5).mul(4), ethBalance.div(5).mul(4));
+            await wrappedLoan.stakeAVAXYak(toWei('5'));
+            await wrappedLoan.vectorStakeWAVAX1(toWei('5'));
 
-            await wrappedLoan.addLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("50"), ethBalance, toWei("50").div(5).mul(4), ethBalance.div(5).mul(4));
+            await wrappedLoan.stakeSAVAXYak((await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address)).div(2));
+
+            await wrappedLoan.vectorStakeSAVAX1(await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address));
+            await wrappedLoan.stakeTJAVAXUSDCYak((await wrappedLoan.getBalance(toBytes32('TJ_AVAX_USDC_LP'))).div(2));
+
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);
         });
