@@ -10,7 +10,7 @@ export default function setupFilters() {
 
   Vue.filter('usd', function (value, precision = 2) {
     if (value == null) return null;
-    return '$ ' + value.toLocaleString(
+    return '$ ' + Math.abs(value).toLocaleString(
       undefined, // use the visitor's browser
       {
         minimumFractionDigits: 2,
@@ -61,6 +61,9 @@ export default function setupFilters() {
   Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
     if (Number.isNaN(value)) {
       return '0';
+    }
+    if (value < 0) {
+      value = Math.abs(value);
     }
     const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
     const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
