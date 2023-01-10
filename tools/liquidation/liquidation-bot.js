@@ -60,12 +60,14 @@ async function getAllLoans() {
 
 async function getInsolventLoans() {
     let loans = await getAllLoans();
+    console.log(`Found ${loans.length} loans.`)
     let insolventLoans = []
     await Promise.all(loans.map(async (loan) => {
         if ((await wrapLoanStatus(loan)).isSolvent === false) {
             insolventLoans.push(loan)
         }
     }));
+    console.log(`${insolventLoans.length} out of ${loans.length} are insolvent.`)
     return insolventLoans
 }
 
@@ -150,11 +152,6 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
     }
     const bonusInWei = (bonus * 1000).toFixed(0);
 
-    let liquidatorsList = await ethers.getContractAt('ISmartLoanLiquidationFacet', diamondAddress, diamondOwner);
-    if (!(await liquidatorsList.isLiquidatorWhitelisted(wallet.address))) {
-        await liquidatorsList.whitelistLiquidators([wallet.address]);
-    }
-
     if (!loanIsBankrupt) {
         let tx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000});
         await provider.waitForTransaction(tx.hash);
@@ -166,7 +163,8 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
 
 function healthcheckPing() {
     console.log(`[${(new Date).toLocaleString()}][HEALTHCHECK] Ping!`);
-    https.get('https://hc-ping.com/7581371b-01cc-4a9a-96d2-711464fcd2cc').on('error', (err) => {
+    // https://hc-ping.com/cdc33b7f-e908-4598-8c0b-f0343c2cffd4 -> 2k liquidator healthcheck
+    https.get('https://hc-ping.com/cdc33b7f-e908-4598-8c0b-f0343c2cffd4').on('error', (err) => {
         console.log('Ping failed: ' + err)
     });
 }
