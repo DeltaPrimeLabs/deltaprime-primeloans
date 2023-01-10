@@ -7,7 +7,7 @@ import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import {ethers} from 'hardhat'
-import {getERC20Contract, wrapLoan} from "./utlis";
+import {getERC20Contract, getLiquidatorSigner, wrapLoan} from "./utlis";
 import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
 const args = require('yargs').argv;
@@ -32,6 +32,7 @@ const erc20ABI = [
 
 const PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "./.private")).toString().trim();
 const RPC_URL = getUrlForNetwork(network);
+let liquidator_wallet = getLiquidatorSigner(network);
 
 let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
 let wallet = (new ethers.Wallet(PRIVATE_KEY)).connect(provider);

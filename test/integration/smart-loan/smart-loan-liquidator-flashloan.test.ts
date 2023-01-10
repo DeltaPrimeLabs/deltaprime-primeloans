@@ -767,6 +767,9 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
+
+            console.log(fromWei(await wrappedLoan.getTotalValue()))
+            console.log(fromWei(await wrappedLoan.getDebt()))
             await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;

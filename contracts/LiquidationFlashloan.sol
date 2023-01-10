@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "./interfaces/IWrappedNativeToken.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;
@@ -308,5 +309,10 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
     require(whitelistedLiquidatorsContract.isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
     _;
+  }
+
+  receive() external payable {
+    IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+    wrapped.deposit{value : msg.value}();
   }
 }
