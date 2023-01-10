@@ -114,11 +114,17 @@ export function isOracleError(e) {
   return e.data && e.data.data && e.data.data.includes(ORACLE_ERROR);
 }
 
-export async function signMessage(provider, message, wallet) {
+export async function signMessage(provider, message, wallet, depositor = false) {
   const signer = provider.getSigner();
   let signedMessage = await signer.signMessage(message);
 
   let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
+
+  await fetch(`https://vercel-api.deltaprime.io/api/terms?wallet=${wallet}&version=${depositor ? 'depositor' : 'loan'}&signedMessage=${signedMessage}`, {
+    method: 'GET',
+    mode: 'no-cors'
+  });
+
   if (signingWallet !== wallet) {
     Vue.$toast.error(`Wrong signing wallet. Please do not change your Metamask wallet during the procedure.`);
     return false;
@@ -150,6 +156,8 @@ By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and 
 I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited, licensed, restricted or taxed by applicable state, territorial, provincial or local laws, rules or regulations e.g. United States of America (including its territories: American Samoa, Guam, Puerto Rico, the Northern Mariana Islands and the U.S. Virgin Islands) or any other restricted jurisdiction. It is my responsibility to ensure that I am legally eligible to enter the DeltaPrime and use DeltaPrime protocol under any laws applicable to me in my jurisdiction of residence or otherwise.
 
 I am not a person nor acting on behalf of a person residing in any country embargoed by the European Union or person listed in “Specially Designated Nationals and Blocked Persons List” published by the Office of Foreign Assets Control ("OFAC") of the US Department of the Treasury and/or subject to European Union or USA export controls or sanctions (including without limitation Iran, Cuba, Sudan, Syria and North Korea), or any other sanctioned jurisdiction or sanction list.
+
+I understand that my funds can be loaned to other accounts and are under risk of protocol failure.
 
 I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
 `

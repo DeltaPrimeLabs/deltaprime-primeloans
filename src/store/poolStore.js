@@ -90,7 +90,7 @@ export default {
       const wallet = rootState.network.account;
 
       if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
-        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account))) return;
+        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account, true))) return;
       }
 
       let depositTransaction;
