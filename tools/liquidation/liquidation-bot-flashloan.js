@@ -7,7 +7,7 @@ import {
     fromBytes32,
     getLiquidationAmounts,
     getLiquidationAmountsBasedOnLtv,
-    StakedPosition,
+    StakedPosition, toBytes32,
     toWei
 } from "../../test/_helpers";
 import {ethers} from 'hardhat'
@@ -106,7 +106,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     let decimals = await contract.decimals();
     if(formatUnits(balance, decimals)){
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDC"), balance, 0, 0)
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
     }
 
     // PNG_AVAX_USDT_LP
@@ -114,7 +114,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDT"), balance, 0, 0)
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
     }
 
     // PNG_AVAX_ETH_LP
@@ -122,7 +122,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), balance, 0, 0)
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
     }
 
     // TJ_AVAX_USDC_LP
@@ -130,7 +130,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), balance, 0, 0)
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
     }
 
     // TJ_AVAX_USDT_LP
@@ -138,7 +138,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDT"), balance, 0, 0)
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
     }
 
     // TJ_AVAX_ETH_LP
@@ -146,7 +146,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), balance, 0, 0)
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
     }
 
     // TJ_AVAX_BTC_LP
@@ -154,7 +154,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), balance, 0, 0)
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), balance, 1, 1)
     }
 
     // TJ_AVAX_sAVAX_LP
@@ -162,7 +162,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     balance = await contract.balanceOf(loan.address);
     decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), balance, 0, 0)
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), balance, 1, 1)
     }
 
 
