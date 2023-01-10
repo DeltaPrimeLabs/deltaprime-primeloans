@@ -58,7 +58,7 @@ async function liquidateInsolventLoans() {
 
         for (const loan of loans) {
             console.log(`Liquidating: ${loan}`);
-            await liquidateLoan(loan, "0xbEbF96C291508970066bd41840713cEd00be5C34", TOKEN_MANAGER_TUP.address);
+            await liquidateLoan(loan, "0x3a7De0b05A0a7ed9C692E3523cA82Bf6dB345b95", TOKEN_MANAGER_TUP.address);
         }
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
