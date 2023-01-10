@@ -2,6 +2,10 @@
   <div class="container">
     <div class="main-content">
       <div class="protocol-stats">
+        <div class="tvl">
+          <div class="label">TVL: </div>
+          <div class="number">{{ parseInt(parseFloat(poolsList[0].tvl) * parseFloat(poolsList[0].asset.price) + parseFloat(poolsList[1].tvl) * parseFloat(poolsList[1].asset.price) + parseFloat(protocolCollateral)) }} $</div>
+        </div>
         <div class="pools">
           <Block v-for="pool of poolsList" v-bind:key="pool.asset.symbol">
             <div class="title">{{pool.asset.symbol}} pool</div>
@@ -43,6 +47,8 @@
                 <div>Address</div>
                 <div>Health</div>
                 <div>Total value</div>
+                <div>Debt</div>
+                <div>Collateral</div>
                 <div>Solvent</div>
               </div>
               <div
@@ -56,6 +62,8 @@
                 <div><a :href="`https://snowtrace.io/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
                 <div>{{parseFloat(loan.health).toFixed(3)}}</div>
                 <div>{{parseFloat(loan.totalValue).toFixed(2)}}</div>
+                <div>{{parseFloat(loan.debt).toFixed(2)}}</div>
+                <div>{{parseFloat(loan.collateral).toFixed(2)}}</div>
                 <div>{{loan.solvent}}</div>
               </div>
             </div>
@@ -102,6 +110,7 @@ export default {
       totalTVL: 0,
       totalDeposit: 0,
       poolsList: null,
+      protocolCollateral: 0,
       loanAddresses: [],
       loans: []
     };
@@ -175,6 +184,8 @@ export default {
     async setupLoans() {
       const assets = Object.keys(addresses);
 
+      let sumCollateral = 0;
+
       let loansUnsorted = [];
       for (let address of this.loanAddresses) {
         const smartLoanContract = new ethers.Contract(address, SMART_LOAN.abi, provider.getSigner());
@@ -184,11 +195,16 @@ export default {
           address: address,
           totalValue: fromWei(status[0]),
           debt: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
           twv: fromWei(status[2]),
           health: fromWei(status[3]),
           solvent: status[4] !== 1e-18
         })
+
+        sumCollateral += fromWei(status[0]) - fromWei(status[1]);
       }
+
+      this.protocolCollateral = sumCollateral;
 
       this.loans = loansUnsorted.sort((a, b) => {
         return a.health - b.health;
@@ -277,6 +293,27 @@ export default {
     font-size: 16px;
 
   }
+}
+
+.tvl {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .label {
+    font-size: 40px;
+    font-weight: bold;
+    color: black;
+  }
+
+  .number {
+    font-size: 60px;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    color: #7d7d7d;
+  }
+
 }
 
 </style>
