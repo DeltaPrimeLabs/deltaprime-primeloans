@@ -362,10 +362,10 @@ export default {
         asset => {
           let symbol = fromBytes32(asset.name);
           if (config.ASSETS_CONFIG[symbol]) {
-            balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
+            balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals) - 1e-15;
           }
           if (config.LP_ASSETS_CONFIG[symbol]) {
-            lpBalances[symbol] = formatUnits(asset.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals);
+            lpBalances[symbol] = formatUnits(asset.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals) - 1e-15;
           }
         }
       );
