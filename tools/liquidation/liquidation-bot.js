@@ -2,12 +2,13 @@ import LOAN_FACTORYTUP from '../../deployments/avalanche/SmartLoansFactoryTUP.js
 import LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts, StakedPosition, toWei} from "../../test/_helpers";
+import {fromBytes32, getLiquidationAmounts, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import {ethers} from 'hardhat'
-import {wrapLoan} from "./utlis";
+import {getERC20Contract, wrapLoan} from "./utlis";
+import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
 const args = require('yargs').argv;
 const https = require('https');
@@ -85,6 +86,116 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
         let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
 
         await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8000000});
+    }
+
+    // Unstake YieldYak positions
+
+    let contract = new ethers.Contract(TOKEN_ADDRESSES.YY_AAVE_AVAX, IYieldYak.abi, liquidator_wallet);
+    let balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakeAVAXYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PTP_sAVAX, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakeSAVAXYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakePNGAVAXUSDCYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakePNGAVAXETHYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakeTJAVAXUSDCYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakeTJAVAXETHYak(balance);
+    }
+
+    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_sAVAX_LP, IYieldYak.abi, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    if(fromWei(balance) !== 0){
+        await loan.unstakeTJAVAXSAVAXYak(balance);
+    }
+
+    // Unwind LP positions
+
+    // PNG_AVAX_USDC_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDC_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    let decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)){
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
+    }
+
+    // PNG_AVAX_USDT_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDT_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
+    }
+
+    // PNG_AVAX_ETH_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_ETH_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
+    }
+
+    // TJ_AVAX_USDC_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDC_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
+    }
+
+    // TJ_AVAX_USDT_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDT_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
+    }
+
+    // TJ_AVAX_ETH_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_ETH_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
+    }
+
+    // TJ_AVAX_BTC_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_BTC_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), balance, 1, 1)
+    }
+
+    // TJ_AVAX_sAVAX_LP
+    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_sAVAX_LP, liquidator_wallet);
+    balance = await contract.balanceOf(loan.address);
+    decimals = await contract.decimals();
+    if(formatUnits(balance, decimals)) {
+        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), balance, 1, 1)
     }
 
     //TODO: calculate in the future
