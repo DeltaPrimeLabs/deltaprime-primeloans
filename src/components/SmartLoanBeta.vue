@@ -36,7 +36,10 @@
         </Block>
       </div>
     </div>
-    <div class="tutorial-video">
+    <div class="tutorial-video" v-if="videoVisible">
+      <div class="tutorial-video__close" v-on:click="closeVideo">
+        <img class="close__icon" src="src/assets/icons/cross.svg">
+      </div>
       <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>    </div>
   </div>
 </template>
@@ -102,6 +105,7 @@ export default {
       health: 0,
       noSmartLoanInternal: null,
       selectedTabIndex: 0,
+      videoVisible: true,
     };
   },
 
@@ -180,7 +184,11 @@ export default {
       this.healthService.observeRefreshHealth().subscribe(() => {
         this.health = this.getHealth;
       })
-    }
+    },
+
+    closeVideo() {
+      this.videoVisible = false;
+    },
   },
 };
 </script>
@@ -205,6 +213,18 @@ export default {
   border-radius: 25px;
   bottom: 20px;
   right: 20px;
+
+  .tutorial-video__close {
+    position: absolute;
+    right: 0px;
+    top: -35px;
+    cursor: pointer;
+
+    .close__icon {
+      height: 25px;
+      width: 25px;
+    }
+  }
 }
 
 </style>
