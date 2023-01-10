@@ -20,9 +20,9 @@
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
     <div class="top-bar">
-      <router-link to="/">
+      <a href="https://deltaprime.io/">
         <img src="src/assets/icons/deltaprime.svg" class="logo">
-      </router-link>
+      </a>
       <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
       <Wallet class="wallet" v-else/>
     </div>
