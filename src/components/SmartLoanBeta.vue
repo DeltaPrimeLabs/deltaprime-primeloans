@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="account-apr-widget-wrapper">
-      <AccountAprWidget :accountApr="accountApr"></AccountAprWidget>
+      <AccountAprWidget :accountApr="accountApr" :no-smart-loan="noSmartLoanInternal"></AccountAprWidget>
     </div>
     <div class="container">
       <StatsBarBeta
