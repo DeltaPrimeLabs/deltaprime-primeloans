@@ -39,14 +39,14 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="inputChange"
                      :validators="validators"
-                     :max="getAvailableAssetAmount">
+      >
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-if="!isLP"
                      :symbol="asset.symbol"
                      v-on:newValue="inputChange"
                      :validators="validators"
-                     :max="getAvailableAssetAmount">
+      >
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">

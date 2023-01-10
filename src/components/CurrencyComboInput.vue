@@ -8,7 +8,6 @@
                      :warnings="warnings"
                      :info="info"
                      v-on:inputChange="currencyInputChange"
-                     :max="max"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>

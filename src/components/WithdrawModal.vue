@@ -21,13 +21,11 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="withdrawValueChange"
-                     :max="maxWithdraw"
                      :validators="validators">
       </CurrencyInput>
       <CurrencyInput v-else
                      :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
-                     :max="maxWithdraw"
                      :validators="validators">
       </CurrencyInput>
 

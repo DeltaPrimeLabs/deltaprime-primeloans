@@ -16,8 +16,7 @@
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
-                     :validators="firstInputValidators"
-                     :max="Number(firstAssetBalance)">
+                     :validators="firstInputValidators">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -30,8 +29,7 @@
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
-                     :validators="secondInputValidators"
-                     :max="Number(secondAssetBalance)">
+                     :validators="secondInputValidators">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">

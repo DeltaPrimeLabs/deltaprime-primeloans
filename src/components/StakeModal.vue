@@ -19,15 +19,13 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="stakeValueChange"
-                     :validators="validators"
-                     :max="available">
+                     :validators="validators">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
-                     :validators="validators"
-                     :max="available">
+                     :validators="validators">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">

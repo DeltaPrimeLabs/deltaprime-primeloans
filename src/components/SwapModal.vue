@@ -7,8 +7,7 @@
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
                           v-on:valueChange="sourceInputChange"
-                          :validators="sourceValidators"
-                          :max="assetBalances[sourceAsset]">
+                          :validators="sourceValidators"">
       </CurrencyComboInput>
       <div class="asset-info">
         Available:

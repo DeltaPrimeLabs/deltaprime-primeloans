@@ -13,7 +13,7 @@
         <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">AVAX</span></div>
       </div>
 
-      <CurrencyInput :symbol="assetSymbol" v-on:newValue="withdrawValueChange" :max="Number(deposit)"></CurrencyInput>
+      <CurrencyInput :symbol="assetSymbol" v-on:newValue="withdrawValueChange" ></CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>

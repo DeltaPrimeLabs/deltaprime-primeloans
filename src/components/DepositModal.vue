@@ -17,7 +17,6 @@
 
       <CurrencyInput v-on:newValue="depositValueChange"
                      :symbol="assetSymbol"
-                     :max="Number(available)"
                      :validators="validators">
       </CurrencyInput>
 

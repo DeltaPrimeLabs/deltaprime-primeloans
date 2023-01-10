@@ -18,8 +18,7 @@
       <CurrencyInput :symbol="asset.symbol"
                      :validators="validators"
                      v-on:inputChange="inputChange"
-                     v-on:newValue="currencyInputChange"
-                     :max="maxBorrow">
+                     v-on:newValue="currencyInputChange">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">

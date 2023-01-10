@@ -17,15 +17,13 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="unstakeValueChange"
-                     :validators="validators"
-                     :max="balance">
+                     :validators="validators">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="unstakeValueChange"
-                     :validators="validators"
-                     :max="balance">
+                     :validators="validators"">
       </CurrencyInput>
 
 
