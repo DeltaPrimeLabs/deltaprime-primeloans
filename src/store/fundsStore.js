@@ -440,7 +440,15 @@ export default {
 
             for (let farm of farms) {
               let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
-              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + await farm.apy()) * assetAppretiation) - 1) * farm.price;
+              let apy = 0;
+
+              try {
+                apy = await farm.apy();
+              } catch(e) {
+                console.log('apy')
+              }
+
+              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
 
             }
           }
