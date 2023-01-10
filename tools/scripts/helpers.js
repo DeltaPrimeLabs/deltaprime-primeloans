@@ -20,6 +20,7 @@ module.exports.getUrlForNetwork = function getUrlForNetwork(networkName) {
     case 'mainnet':
       return 'https://api.avax.network/ext/bc/C/rpc';
     case 'avalanche':
-      return 'https://api.avax.network/ext/bc/C/rpc';
+      // return 'https://api.avax.network/ext/bc/C/rpc';
+      return 'https://rpc.ankr.com/avalanche';
   }
 }
