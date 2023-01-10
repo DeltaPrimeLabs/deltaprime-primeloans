@@ -64,6 +64,8 @@ const FARMS_PATH = 'farms';
 const ASSETS_PATH_NAME = 'Prime Account Assets';
 const FARMS_PATH_NAME = 'Prime Account Farms';
 
+const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
+
 export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget},
@@ -112,6 +114,7 @@ export default {
   async mounted() {
     this.setupSelectedTab();
     this.watchHealthRefresh();
+    this.setupVideoVisibility();
     if (window.provider) {
       await this.fundsStoreSetup();
       await this.poolStoreSetup();
@@ -188,6 +191,12 @@ export default {
 
     closeVideo() {
       this.videoVisible = false;
+      window.localStorage.setItem(TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY, true);
+    },
+
+    setupVideoVisibility() {
+      const videoWasClosed = window.localStorage.getItem(TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY);
+      this.videoVisible = !videoWasClosed;
     },
   },
 };
