@@ -50,10 +50,16 @@
 
       <div class="table__cell">
         <div class="actions">
-          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/plus.svg"
-               v-on:click="openStakeModal()">
-          <img class="action" v-bind:class="{'disabled': disabled}" src="src/assets/icons/minus.svg"
-               v-on:click="openUnstakeModal()">
+          <img class="action"
+               v-bind:class="{'disabled': disabled}"
+               src="src/assets/icons/plus.svg"
+               v-on:click="openStakeModal()"
+               v-tooltip="{content: 'Stake', classes: 'info-tooltip'}">
+          <img class="action"
+               v-bind:class="{'disabled': disabled}"
+               src="src/assets/icons/minus.svg"
+               v-on:click="openUnstakeModal()"
+               v-tooltip="{content: 'Unstake', classes: 'info-tooltip'}">
         </div>
       </div>
 
