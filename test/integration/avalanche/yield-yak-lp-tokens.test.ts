@@ -34,7 +34,7 @@ import {
     TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import redstone from "redstone-api";
 import {getContract} from "@nomiclabs/hardhat-ethers/internal/helpers";
 
@@ -76,6 +76,7 @@ describe('Smart loan', () => {
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             MOCK_PRICES: any,
             tjLPTokenPrice: number,
             yyTJLPTokenPrice: number,
@@ -89,7 +90,7 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
@@ -180,7 +181,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -291,6 +292,31 @@ describe('Smart loan', () => {
             await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
             await wrappedLoan.unstakeTJAVAXUSDCYak(toWei("9999"));
             expect(await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address)).to.be.equal(0);
+        });
+
+        it("should allow anyone to unstake if insolvent", async () => {
+            await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("3000"));
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).not.to.be.reverted;
         });
     });
 

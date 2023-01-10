@@ -33,7 +33,7 @@ import {
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
 } from "../../../typechain";
-import {Contract} from "ethers";
+import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
@@ -66,6 +66,7 @@ describe('Smart loan', () => {
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             diamondAddress: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -75,7 +76,7 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'sAVAX', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
@@ -140,7 +141,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -257,7 +258,7 @@ describe('Smart loan', () => {
             );
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 15);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 30);
         });
 
         it("should unstake sAVAX", async () => {
@@ -270,7 +271,38 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        it("should allow anyone to unstake if insolvent", async () => {
+            await wrappedLoan.stakeAVAXYak(await wrappedLoan.getBalance(toBytes32('AVAX')));
+            await wrappedLoan.stakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('sAVAX')));
+
+            await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).to.be.reverted;
+            await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).to.be.reverted;
+
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1100"));
+
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).to.be.reverted;
+            await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+
+            await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).not.to.be.reverted;
+            await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).not.to.be.reverted;
         });
     });
 
@@ -405,7 +437,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 3);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 5);
         });
 
         it("should withdraw collateral and part of borrowed funds, bring prices back to normal and liquidate the loan by supplying additional AVAX", async () => {

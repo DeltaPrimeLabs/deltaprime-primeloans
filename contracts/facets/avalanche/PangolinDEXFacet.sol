@@ -25,7 +25,8 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
         addLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin);
     }
 
-    function removeLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public onlyOwner {
+    //onlOwnerOrInsolvent inside UniswapDexFacet
+    function removeLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public {
         removeLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin);
     }
 

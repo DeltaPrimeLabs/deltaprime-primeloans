@@ -25,7 +25,8 @@ contract TraderJoeDEXFacet is UniswapV2DEXFacet {
         addLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin);
     }
 
-    function removeLiquidityTraderJoe(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public onlyOwner {
+    //onlOwnerOrInsolvent inside UniswapDexFacet
+    function removeLiquidityTraderJoe(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public {
         removeLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin);
     }
 

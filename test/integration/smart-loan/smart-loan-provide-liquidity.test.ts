@@ -28,7 +28,7 @@ import {
     SmartLoansFactory,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 
 chai.use(solidity);
 
@@ -68,6 +68,7 @@ describe('Smart loan', () => {
             tokenContracts: any = {},
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             USD_PRICE: number,
@@ -75,7 +76,7 @@ describe('Smart loan', () => {
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
 
             diamondAddress = await deployDiamond();
 
@@ -91,8 +92,8 @@ describe('Smart loan', () => {
                     poolContract,
                     tokenContract
                 } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList);
-                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("1000"));
-                await poolContract.connect(depositor).deposit(toWei("1000"));
+                await tokenContract!.connect(depositor).approve(poolContract.address, toWei("5000"));
+                await poolContract.connect(depositor).deposit(toWei("5000"));
                 lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
                 tokenContracts[token.name] = tokenContract;
             }
@@ -186,7 +187,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -255,6 +256,55 @@ describe('Smart loan', () => {
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.1);
+        });
+
+        it("should allow anyone to remove liquidity if insolvent", async () => {
+            await wrappedLoan.addLiquidityPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                toWei("180"),
+                parseUnits((AVAX_PRICE * 180).toFixed(6), BigNumber.from("6")),
+                toWei("160"),
+                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
+            );
+
+            expect(await lpToken.balanceOf(wrappedLoan.address)).not.to.be.equal(0);
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("3000"));
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.true;
+
+            await expect(nonOwnerWrappedLoan.removeLiquidityPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                await lpToken.balanceOf(wrappedLoan.address),
+                toWei("160"),
+                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
+            )).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+
+            await nonOwnerWrappedLoan.removeLiquidityPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                await lpToken.balanceOf(wrappedLoan.address),
+                toWei("160"),
+                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
+            );
+            expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.false;
+
+
+            expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
 
         async function loanOwnsAsset(asset: string) {
