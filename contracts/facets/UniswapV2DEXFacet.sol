@@ -8,12 +8,13 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../lib/SolvencyMethods.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
+import "../OnlyOwnerOrInsolvent.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 import "../interfaces/IAssetsExchange.sol";
 
-contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -83,7 +84,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure onlyOwnerOrInsolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
@@ -121,7 +122,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure onlyOwnerOrInsolvent{
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 

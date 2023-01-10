@@ -453,7 +453,7 @@ export const deployPools = async function(
    lendingPools: Array<PoolAsset>,
    owner: SignerWithAddress | JsonRpcSigner,
    depositor: SignerWithAddress | Wallet,
-   depositAmount: number = 2000,
+   depositAmount: number = 5000,
    chain: string = 'AVAX'
 ) {
     for (const token of tokens) {
@@ -771,7 +771,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
             case 'AVAX':
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
                 for (const user of tokenAirdropList) {
-                    await tokenContract.connect(user).deposit({value: toWei("2000")});
+                    await tokenContract.connect(user).deposit({value: toWei("5000")});
                 }
                 break;
             case 'ETH':

@@ -8,6 +8,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/facets/avalanche/IYieldYak.sol";
+import "../../OnlyOwnerOrInsolvent.sol";
 
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
@@ -16,7 +17,7 @@ import "../../interfaces/IWrappedNativeToken.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -161,7 +162,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
@@ -186,7 +187,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
         * @param amount amount of sAVAX to be unstaked
     **/
-    function unstakeSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakeSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: SAVAX_TOKEN,
         vaultAddress: YY_PTP_sAVAX,
@@ -201,7 +202,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDC_LP to be staked
     **/
-    function unstakePNGAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakePNGAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: PNG_AVAX_USDC_LP,
         vaultAddress: YY_PNG_AVAX_USDC_LP,
@@ -216,7 +217,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_ETH_LP to be unstaked
     **/
-    function unstakePNGAVAXETHYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakePNGAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: PNG_AVAX_ETH_LP,
         vaultAddress: YY_PNG_AVAX_ETH_LP,
@@ -231,7 +232,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_USDC to be unstaked
     **/
-    function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_USDC_LP,
         vaultAddress: YY_TJ_AVAX_USDC_LP,
@@ -246,7 +247,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_ETH_LP to be unstaked
     **/
-    function unstakeTJAVAXETHYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakeTJAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_ETH_LP,
         vaultAddress: YY_TJ_AVAX_ETH_LP,
@@ -261,7 +262,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods {
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_sAVAX_LP to be unstaked
     **/
-    function unstakeTJAVAXSAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+    function unstakeTJAVAXSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_sAVAX_LP,
         vaultAddress: YY_TJ_AVAX_sAVAX_LP,

@@ -34,7 +34,7 @@ import {
     TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import redstone from "redstone-api";
 import {getContract} from "@nomiclabs/hardhat-ethers/internal/helpers";
 
@@ -291,6 +291,27 @@ describe('Smart loan', () => {
             await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
             await wrappedLoan.unstakeTJAVAXUSDCYak(toWei("9999"));
             expect(await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address)).to.be.equal(0);
+        });
+
+        it("should allow anyone to unstake if insolvent", async () => {
+            await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("3000"));
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).not.to.be.reverted;
         });
     });
 
