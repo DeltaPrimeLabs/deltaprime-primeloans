@@ -66,6 +66,7 @@ describe('Smart loan', () => {
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             diamondAddress: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -75,7 +76,7 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'sAVAX', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
@@ -140,7 +141,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -277,11 +278,9 @@ describe('Smart loan', () => {
             await wrappedLoan.stakeAVAXYak(await wrappedLoan.getBalance(toBytes32('AVAX')));
             await wrappedLoan.stakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('sAVAX')));
 
-            console.log(fromWei(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX'))));
-            console.log(fromWei(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX'))));
-
             await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).to.be.reverted;
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).to.be.reverted;
+
 
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
@@ -297,7 +296,10 @@ describe('Smart loan', () => {
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
-            console.log('is solvent: ', await wrappedLoan.isSolvent())
+            await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).to.be.reverted;
+            await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
 
             await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).not.to.be.reverted;
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).not.to.be.reverted;

@@ -68,6 +68,7 @@ describe('Smart loan', () => {
             tokenContracts: any = {},
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             USD_PRICE: number,
@@ -75,7 +76,7 @@ describe('Smart loan', () => {
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
 
             diamondAddress = await deployDiamond();
 
@@ -186,7 +187,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -282,6 +283,16 @@ describe('Smart loan', () => {
 
 
             expect(await loanOwnsAsset("PNG_AVAX_USDC_LP")).to.be.true;
+
+            await expect(nonOwnerWrappedLoan.removeLiquidityPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                await lpToken.balanceOf(wrappedLoan.address),
+                toWei("160"),
+                parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
+            )).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
 
             await nonOwnerWrappedLoan.removeLiquidityPangolin(
                 toBytes32('AVAX'),

@@ -19,6 +19,9 @@ abstract contract OnlyOwnerOrInsolvent is SolvencyMethods {
         bool wasSolvent = _isSolvent();
         if (wasSolvent) {
             DiamondStorageLib.enforceIsContractOwner();
+        } else {
+            DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
+            require(ls.canLiquidate[msg.sender], "Only whitelisted accounts can perform this action");
         }
 
         _;

@@ -76,6 +76,7 @@ describe('Smart loan', () => {
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             MOCK_PRICES: any,
             tjLPTokenPrice: number,
             yyTJLPTokenPrice: number,
@@ -89,7 +90,7 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
@@ -180,7 +181,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -310,6 +311,10 @@ describe('Smart loan', () => {
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
 
             await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).not.to.be.reverted;
         });
