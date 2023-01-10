@@ -104,7 +104,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // PNG_AVAX_USDC_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDC_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    let decimals = await tokenContract.decimals();
+    let decimals = await contract.decimals();
     if(formatUnits(balance, decimals)){
         await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDC"), balance, 0, 0)
     }
@@ -112,7 +112,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // PNG_AVAX_USDT_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDT_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDT"), balance, 0, 0)
     }
@@ -120,7 +120,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // PNG_AVAX_ETH_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_ETH_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), balance, 0, 0)
     }
@@ -128,7 +128,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // TJ_AVAX_USDC_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDC_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), balance, 0, 0)
     }
@@ -136,7 +136,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // TJ_AVAX_USDT_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDT_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDT"), balance, 0, 0)
     }
@@ -144,7 +144,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // TJ_AVAX_ETH_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_ETH_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), balance, 0, 0)
     }
@@ -152,7 +152,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // TJ_AVAX_BTC_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_BTC_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), balance, 0, 0)
     }
@@ -160,7 +160,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     // TJ_AVAX_sAVAX_LP
     contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_sAVAX_LP, liquidator_wallet);
     balance = await contract.balanceOf(loan.address);
-    decimals = await tokenContract.decimals();
+    decimals = await contract.decimals();
     if(formatUnits(balance, decimals)) {
         await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), balance, 0, 0)
     }
@@ -236,13 +236,13 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
     for (const repayment of repayAmounts) {
         let tokenContract = await getERC20Contract(addresses[repayment.name], liquidator_wallet);
-        let decimals = await tokenContract.decimals();
+        let decimals = await contract.decimals();
         amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
     }
 
     for (const allowance of deliveredAmounts) {
         let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
-        let decimals = await tokenContract.decimals();
+        let decimals = await contract.decimals();
         let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
         await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered);
     }
