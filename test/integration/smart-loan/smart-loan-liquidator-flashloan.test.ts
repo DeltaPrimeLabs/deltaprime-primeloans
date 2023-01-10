@@ -36,7 +36,6 @@ import fs from "fs";
 import path from "path";
 import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
-import {disableReplWriterShowProxy} from "hardhat/internal/util/console";
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -738,11 +737,9 @@ describe('Test liquidator with a flashloan', () => {
             await wrappedLoan.fund(toBytes32("AVAX"), toWei('30'));
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei('170'))
 
-
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("40"), toWei("0"));
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("40"), toWei("0"));
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("10"), toWei("0"));
-
 
             let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
             let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
