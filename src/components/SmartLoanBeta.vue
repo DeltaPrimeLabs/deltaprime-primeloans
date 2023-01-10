@@ -12,8 +12,8 @@
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
-        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button and press "Deposit collateral".<br>
-        This operation creates your Prime Account!
+        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button<br>
+        and press "Deposit collateral".
       </InfoBubble>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
@@ -37,8 +37,7 @@
       </div>
     </div>
     <div class="tutorial-video">
-      <iframe width="560" height="560" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameborder="30" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </div>
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>    </div>
   </div>
 </template>
 
