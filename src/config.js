@@ -176,6 +176,7 @@ export default {
                 token: 'PNG_AVAX_USDC_LP',
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
+                refreshDelay: 60000,
                 gasStake: 4000000,
                 gasUnstake: 4000000
             }

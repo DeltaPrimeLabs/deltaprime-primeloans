@@ -195,6 +195,7 @@ export default {
       modalInstance.$on('UNSTAKE', (unstakeValue) => {
         const unstakeRequest = {
           amount: unstakeValue.toString(),
+          asset: this.asset.symbol,
           minAmount: this.farm.minAmount * parseFloat(unstakeValue),
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
