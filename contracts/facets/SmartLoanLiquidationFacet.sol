@@ -202,17 +202,19 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             partToReturn = (suppliedInUSD + bonusInUSD) * 10 ** 18 / assetsValue;
         }
 
-        // Native token transfer
-        if (address(this).balance > 0) {
-            payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
-        }
+        if(partToReturn > 0){
+            // Native token transfer
+            if (address(this).balance > 0) {
+                payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
+            }
 
-        for (uint256 i; i < assetsOwned.length; i++) {
-            IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
-            uint256 balance = token.balanceOf(address(this));
+            for (uint256 i; i < assetsOwned.length; i++) {
+                IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
+                uint256 balance = token.balanceOf(address(this));
 
-            address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
-            emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
+                address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
+                emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
+            }
         }
 
         uint256 health = _getHealthRatioWithPrices(cachedPrices);
