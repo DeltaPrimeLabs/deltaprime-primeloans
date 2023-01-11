@@ -30,7 +30,7 @@ async function awaitConfirmation(tx, provider, actionName) {
     }
 }
 
-export async function unstakeYieldYak(loan, liquidator_wallet){
+export async function unstakeYieldYak(loan, liquidator_wallet, provider){
     console.log('Check staked YieldYak')
     try{
         let contract = new ethers.Contract(TOKEN_ADDRESSES.YY_AAVE_AVAX, IYieldYak.abi, liquidator_wallet);
@@ -87,7 +87,7 @@ export async function unstakeYieldYak(loan, liquidator_wallet){
 }
 
 
-export async function unwindPangolinLPPositions(loan, liquidator_wallet){
+export async function unwindPangolinLPPositions(loan, liquidator_wallet, provider){
     console.log('Check LP Pangolin')
     try{
         // PNG_AVAX_USDC_LP
@@ -122,7 +122,7 @@ export async function unwindPangolinLPPositions(loan, liquidator_wallet){
 }
 
 
-export async function unwindTraderJoeLPPositions(loan, liquidator_wallet){
+export async function unwindTraderJoeLPPositions(loan, liquidator_wallet, provider){
     console.log('Check LP TraderJoe');
     try{
         // TJ_AVAX_USDC_LP
@@ -185,7 +185,7 @@ export async function unstakeStakedPositions(loan){
             let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
 
             await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
-            await awaitConfirmation(await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8_000_000}));
+            await awaitConfirmation(await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8_000_000}), provider, 'UnstakeStakedPostisions');
         }
     } catch (e) {
         console.log(`StakedPositions-Error: ${e}`);

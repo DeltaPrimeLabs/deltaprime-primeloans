@@ -85,13 +85,13 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
     let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
     //TODO: optimize to unstake only as much as needed
-    await unstakeStakedPositions(loan);
+    await unstakeStakedPositions(loan, provider);
 
-    await unstakeYieldYak(loan, liquidator_wallet);
+    await unstakeYieldYak(loan, liquidator_wallet, provider);
 
-    await unwindPangolinLPPositions(loan, liquidator_wallet);
+    await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
-    await unwindTraderJoeLPPositions(loan, liquidator_wallet);
+    await unwindTraderJoeLPPositions(loan, liquidator_wallet, provider);
 
     //TODO: calculate in the future
     const bonus = 0;
