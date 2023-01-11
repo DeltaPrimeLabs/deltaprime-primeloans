@@ -85,7 +85,8 @@ export default {
       return [
         '0x6c4b7c993a4f68dF0D5DAf68F66BA2dAbC3345a0'.toLowerCase(),
         '0xe23448D99172d100c7D1112306AbDda686F517c6'.toLowerCase(),
-        '0xE020F3729a0e7b5eeaCA3cCa5Af92d263aD0aD59'.toLowerCase()
+        '0xE020F3729a0e7b5eeaCA3cCa5Af92d263aD0aD59'.toLowerCase(),
+        '0x22C0a7a3D86D852032aeFB8dfa03b84e7FC4DAEc'.toLowerCase()
       ].indexOf(this.smartLoanContract.address.toLowerCase()) !== -1;
     },
   },
