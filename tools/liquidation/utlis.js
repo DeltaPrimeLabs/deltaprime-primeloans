@@ -215,6 +215,7 @@ export async function wrapLoan(loanAddress, wallet) {
         {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
+            dataFeeds: supportedTokensList,
             // @ts-ignore
             disablePayloadsDryRun: true
         },
@@ -229,6 +230,7 @@ export function wrapContractProd(contract) {
         {
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
+            dataFeeds: supportedTokensList,
             // @ts-ignore
             disablePayloadsDryRun: true
         },
@@ -240,6 +242,7 @@ export async function getSignedDataPackagesResponse() {
     return await sdk.requestDataPackages({
             dataServiceId: "redstone-avalanche-prod",
             uniqueSignersCount: 3,
+            dataFeeds: supportedTokensList,
         },
         CACHE_LAYER_URLS.urls
     );
