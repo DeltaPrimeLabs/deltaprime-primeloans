@@ -165,7 +165,7 @@ export default {
       const url = document.location.href;
       const lastUrlPart = url.split('/').reverse()[0];
       if (lastUrlPart !== ASSETS_PATH && lastUrlPart !== FARMS_PATH) {
-        this.$router.push({name: ASSETS_PATH_NAME});
+        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
       } else {
         if (lastUrlPart === ASSETS_PATH) {
           this.selectedTabIndex = 0;
@@ -175,11 +175,24 @@ export default {
       }
     },
 
+    extractQueryParams(url) {
+      let params = url.split('?').reverse()[0].split('=');
+      let query = {};
+
+      if (params) {
+        query[params[0]] = params[1];
+      }
+
+      return query;
+    },
+
     tabChange(tabIndex) {
+      const url = document.location.href;
+
       if (tabIndex === 0) {
-        this.$router.push({name: ASSETS_PATH_NAME});
+        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
       } else if (tabIndex === 1) {
-        this.$router.push({name: FARMS_PATH_NAME});
+        this.$router.push({name: FARMS_PATH_NAME, query: this.extractQueryParams(url)});
       }
     },
 

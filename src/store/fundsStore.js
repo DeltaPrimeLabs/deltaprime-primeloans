@@ -18,6 +18,8 @@ import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {aprToApy, calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import router from '@/router'
+
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -285,7 +287,19 @@ export default {
 
     async setupSmartLoanContract({state, rootState, commit}) {
       const provider = rootState.network.provider;
-      const smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
+
+      let smartLoanAddress;
+
+      smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
+
+      if (router && router.currentRoute) {
+        if (router.currentRoute.query.user) {
+          smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(router.currentRoute.query.user);
+        } else if (router.currentRoute.query.account) {
+          smartLoanAddress = router.currentRoute.query.account;
+        }
+      }
+
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
