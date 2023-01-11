@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
-import {fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
+import {formatUnits, fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
 import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
 import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
