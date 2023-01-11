@@ -216,7 +216,7 @@ export default {
           collateral: fromWei(status[0]) - fromWei(status[1]),
           twv: fromWei(status[2]),
           health: fromWei(status[3]),
-          solvent: status[4] !== 1e-18
+          solvent: fromWei(status[4]) !== 1
         })
 
         sumCollateral += fromWei(status[0]) - fromWei(status[1]);
