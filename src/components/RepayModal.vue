@@ -18,7 +18,6 @@
 
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
-                     :max="assetDebt * maxRepaymentOfDebt"
                      :validators="validators">
       </CurrencyInput>
 
