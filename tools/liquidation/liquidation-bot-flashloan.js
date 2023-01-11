@@ -1,25 +1,22 @@
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
-import IYieldYak from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {
-    fromBytes32,
-    getLiquidationAmounts,
-    getLiquidationAmountsBasedOnLtv,
-    StakedPosition, toBytes32,
-    toWei
-} from "../../test/_helpers";
+import {fromBytes32, getLiquidationAmounts, getLiquidationAmountsBasedOnLtv} from "../../test/_helpers";
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import {
     getERC20Contract,
-    getLiquidatorSigner, getProvider,
+    getLiquidatorSigner,
+    getProvider,
     getSignedDataPackagesResponse,
+    unstakeStakedPositions,
+    unstakeYieldYak,
+    unwindPangolinLPPositions,
+    unwindTraderJoeLPPositions,
     wrapContractProd,
     wrapLoan
 } from "./utlis";
-import {ERC20} from "../../typechain";
 
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
@@ -36,7 +33,6 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, liquidator_wallet);
 }
 
-
 export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
@@ -46,124 +42,13 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
     //TODO: optimize to unstake only as much as needed
-    for (let p of await loan.getStakedPositions()) {
-        let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), fromBytes32(p[2]), p[3], p[4]);
+    await unstakeStakedPositions(loan);
 
-        let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
-        let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
+    await unstakeYieldYak(loan);
 
-        await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
-    }
+    await unwindPangolinLPPositions(loan);
 
-    // Unstake YieldYak positions
-
-    let contract = new ethers.Contract(TOKEN_ADDRESSES.YY_AAVE_AVAX, IYieldYak.abi, liquidator_wallet);
-    let balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakeAVAXYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PTP_sAVAX, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakeSAVAXYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakePNGAVAXUSDCYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakePNGAVAXETHYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakeTJAVAXUSDCYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakeTJAVAXETHYak(balance);
-    }
-
-    contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_sAVAX_LP, IYieldYak.abi, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    if(fromWei(balance) !== 0){
-        await loan.unstakeTJAVAXSAVAXYak(balance);
-    }
-
-    // Unwind LP positions
-
-    // PNG_AVAX_USDC_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDC_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    let decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)){
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
-    }
-
-    // PNG_AVAX_USDT_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_USDT_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
-    }
-
-    // PNG_AVAX_ETH_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.PNG_AVAX_ETH_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
-    }
-
-    // TJ_AVAX_USDC_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDC_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), balance, 1, 1)
-    }
-
-    // TJ_AVAX_USDT_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_USDT_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDT"), balance, 1, 1)
-    }
-
-    // TJ_AVAX_ETH_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_ETH_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), balance, 1, 1)
-    }
-
-    // TJ_AVAX_BTC_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_BTC_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), balance, 1, 1)
-    }
-
-    // TJ_AVAX_sAVAX_LP
-    contract = await getERC20Contract(TOKEN_ADDRESSES.TJ_AVAX_sAVAX_LP, liquidator_wallet);
-    balance = await contract.balanceOf(loan.address);
-    decimals = await contract.decimals();
-    if(formatUnits(balance, decimals)) {
-        await loan.removeLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), balance, 1, 1)
-    }
+    await unwindTraderJoeLPPositions(loan);
 
 
     let pricesArg = {}
@@ -280,7 +165,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                 loanAddress: loanAddress,
                 tokenManager: tokenManager.address
             }, {
-                gasLimit: 8_000_000
+                gasLimit: 8_000_000,
+                gasPrice: 100_000_000_000
             }
         );
 

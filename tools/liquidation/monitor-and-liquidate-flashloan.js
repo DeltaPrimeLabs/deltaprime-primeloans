@@ -44,22 +44,21 @@ async function getInsolventLoans() {
 
 function healthcheckPing() {
     console.log(`[${(new Date).toLocaleString()}][HEALTHCHECK] Ping!`);
-    // Beta: 3bd80bcc-e9c8-48b8-8f44-e672bb498700 | Alpha: 7581371b-01cc-4a9a-96d2-711464fcd2cc
+    // BETA-HR: https://hc-ping.com/3bd80bcc-e9c8-48b8-8f44-e672bb498700
+    // BETA-LTV: https://hc-ping.com/5db347bf-6516-4f9b-99ce-5bdcd88e12d0
+    // BETA-2k-2k: https://hc-ping.com/cdc33b7f-e908-4598-8c0b-f0343c2cffd4
     https.get('https://hc-ping.com/3bd80bcc-e9c8-48b8-8f44-e672bb498700').on('error', (err) => {
         console.log('Ping failed: ' + err)
     });
 }
 
 async function liquidateInsolventLoans() {
-    let date = new Date();
     healthcheckPing();
-    if (date.getMinutes() % 2 == minutesSync) {
-        let loans = await getInsolventLoans();
+    let loans = await getInsolventLoans();
 
-        for (const loan of loans) {
-            console.log(`Liquidating: ${loan}`);
-            await liquidateLoan(loan, "0x3a7De0b05A0a7ed9C692E3523cA82Bf6dB345b95", TOKEN_MANAGER_TUP.address);
-        }
+    for (const loan of loans) {
+        console.log(`Liquidating: ${loan}`);
+        await liquidateLoan(loan, "0x3a7De0b05A0a7ed9C692E3523cA82Bf6dB345b95", TOKEN_MANAGER_TUP.address);
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }
