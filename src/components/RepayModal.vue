@@ -164,13 +164,13 @@ export default {
 
     setupValidators() {
       this.validators = [
-        {
-          validate: (value) => {
-            if (value > this.assetDebt * this.maxRepaymentOfDebt) {
-              return `Repay value exceeds debt`;
-            }
-          }
-        },
+        // {
+        //   validate: (value) => {
+        //     if (value > this.assetDebt * this.maxRepaymentOfDebt) {
+        //       return `Repay value exceeds debt`;
+        //     }
+        //   }
+        // },
         {
           validate: (value) => {
             if (value > this.assetBalances[this.asset.symbol]) {
