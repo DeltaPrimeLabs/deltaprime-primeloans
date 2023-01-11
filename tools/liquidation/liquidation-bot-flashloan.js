@@ -44,11 +44,11 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     //TODO: optimize to unstake only as much as needed
     await unstakeStakedPositions(loan);
 
-    await unstakeYieldYak(loan);
+    await unstakeYieldYak(loan, liquidator_wallet);
 
-    await unwindPangolinLPPositions(loan);
+    await unwindPangolinLPPositions(loan, liquidator_wallet);
 
-    await unwindTraderJoeLPPositions(loan);
+    await unwindTraderJoeLPPositions(loan, liquidator_wallet);
 
 
     let pricesArg = {}
@@ -121,13 +121,13 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
     for (const repayment of repayAmounts) {
         let tokenContract = await getERC20Contract(addresses[repayment.name], liquidator_wallet);
-        let decimals = await contract.decimals();
+        let decimals = await tokenContract.decimals();
         amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
     }
 
     for (const allowance of deliveredAmounts) {
         let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
-        let decimals = await contract.decimals();
+        let decimals = await tokenContract.decimals();
         let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
         await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered);
     }

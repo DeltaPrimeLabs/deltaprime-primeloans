@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
-import {fromBytes32, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
+import {fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
 import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
 import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
@@ -30,7 +30,7 @@ async function awaitConfirmation(tx, provider, actionName) {
     }
 }
 
-export async function unstakeYieldYak(loan){
+export async function unstakeYieldYak(loan, liquidator_wallet){
     console.log('Check staked YieldYak')
     try{
         let contract = new ethers.Contract(TOKEN_ADDRESSES.YY_AAVE_AVAX, IYieldYak.abi, liquidator_wallet);
@@ -87,7 +87,7 @@ export async function unstakeYieldYak(loan){
 }
 
 
-export async function unwindPangolinLPPositions(loan){
+export async function unwindPangolinLPPositions(loan, liquidator_wallet){
     console.log('Check LP Pangolin')
     try{
         // PNG_AVAX_USDC_LP
@@ -122,7 +122,7 @@ export async function unwindPangolinLPPositions(loan){
 }
 
 
-export async function unwindTraderJoeLPPositions(loan){
+export async function unwindTraderJoeLPPositions(loan, liquidator_wallet){
     console.log('Check LP TraderJoe');
     try{
         // TJ_AVAX_USDC_LP
