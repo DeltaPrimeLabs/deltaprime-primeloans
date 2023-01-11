@@ -19,6 +19,10 @@
         Your Prime Account is ready! Now you can borrow,<br>
          provide liquidity and farm on the Farms page.
       </InfoBubble>
+      <InfoBubble v-if="wasLiquidated" cacheKey="LIQUIDATED-0" style="margin-top: 40px">
+        Liquidation bots unwinded part of your positions<br>
+        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
+      </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
@@ -46,6 +50,7 @@
 
 <script>
 import StatsBarBeta from './StatsBarBeta';
+import Banner from './Banner';
 import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
@@ -68,12 +73,21 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
 
 export default {
   name: 'SmartLoanBeta',
-  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget},
+  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'accountApr']),
+    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'accountApr', 'smartLoanContract']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('serviceRegistry', ['healthService']),
-    ...mapGetters('fundsStore', ['getHealth', 'getCollateral'])
+    ...mapState('network', ['account']),
+    ...mapGetters('fundsStore', ['getHealth', 'getCollateral']),
+    wasLiquidated() {
+      console.log('this.smartLoanContract: ', this.smartLoanContract.address.toLowerCase())
+      return [
+        '0x6c4b7c993a4f68dF0D5DAf68F66BA2dAbC3345a0'.toLowerCase(),
+        '0xe23448D99172d100c7D1112306AbDda686F517c6'.toLowerCase(),
+        '0xE020F3729a0e7b5eeaCA3cCa5Af92d263aD0aD59'.toLowerCase()
+      ].indexOf(this.smartLoanContract.address.toLowerCase()) !== -1;
+    },
   },
   watch: {
     assetBalances: {
