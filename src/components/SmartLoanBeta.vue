@@ -11,10 +11,6 @@
         :health="noSmartLoanInternal ? 1 : health"
         :noSmartLoan="noSmartLoanInternal">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoanInternal === true" cacheKey="ACCOUNT-INIT" style="margin-top: 40px">
-        To unlock borrowing, add tokens with <img style="transform: translateY(-2px);" src="src/assets/icons/plus.svg"> button<br>
-        and press "Deposit collateral".
-      </InfoBubble>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
          provide liquidity and farm on the Farms page.
