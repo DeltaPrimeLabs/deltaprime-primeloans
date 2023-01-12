@@ -11,7 +11,6 @@ const https = require('https');
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
-const minutesSync = args.minutesSync ? args.minutesSync : 0;
 
 const RPC_URL = getUrlForNetwork(network);
 let liquidator_wallet = getLiquidatorSigner(network);
@@ -65,5 +64,5 @@ async function liquidateInsolventLoans() {
 
 const run = liquidateInsolventLoans;
 
-console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval}. Minutes sync: ${minutesSync}`);
+console.log(`Started liquidation bot for network: ${network} (${RPC_URL}) and interval ${interval} seconds`);
 run();
