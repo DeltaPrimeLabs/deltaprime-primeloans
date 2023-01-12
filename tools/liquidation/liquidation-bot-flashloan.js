@@ -170,7 +170,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             }
         );
 
-        console.log("Waiting for flashLoanTx: " + flashLoanTx.hash);
+        console.log(`[${(new Date()).toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
+
         let receipt = await provider.waitForTransaction(flashLoanTx.hash);
         console.log("Sellout processed with " + (receipt.status == 1 ? "success" : "failure"));
     } catch (error) {
