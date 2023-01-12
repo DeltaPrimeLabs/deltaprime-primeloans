@@ -73,6 +73,7 @@ import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
+import {assetAppreciation} from "../utils/blockchain";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -90,7 +91,7 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchProgressBarState();
-    this.apy = await this.farm.apy();
+    await this.setApy();
   },
   data() {
     return {
@@ -241,6 +242,10 @@ export default {
         this.waitingForHardRefresh = false;
         this.$forceUpdate();
       });
+    },
+
+    async setApy() {
+      this.apy = (1 + await this.farm.apy()) * assetAppreciation(this.asset.symbol) - 1;
     },
 
     scheduleHardRefresh() {

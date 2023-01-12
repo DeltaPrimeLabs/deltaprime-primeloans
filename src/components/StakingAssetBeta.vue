@@ -101,6 +101,7 @@ import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import {calculateMaxApy} from "../utils/calculate";
+import {assetAppreciation} from "../utils/blockchain";
 
 
 export default {
@@ -197,7 +198,7 @@ export default {
         }
       }
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, maxApy);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy) * assetAppreciation(this.asset.symbol) - 1);
 
     },
 
