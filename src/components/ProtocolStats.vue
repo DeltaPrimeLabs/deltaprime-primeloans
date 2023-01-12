@@ -127,7 +127,7 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('fundsStore', ['smartLoanFactoryContract']),
     poolLiquidity() {
-      return parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral);
+      return (this.poolsList && this.poolsList[0] && this.poolsList[1]) ? parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral) : 0;
     }
   },
 
@@ -142,7 +142,6 @@ export default {
     smartLoanFactoryContract: {
       async handler(factory) {
         if (factory) {
-          console.log(factory)
           this.loanAddresses = await factory.getAllLoans();
           await this.setupLoans();
         }
@@ -156,7 +155,6 @@ export default {
     setupPoolsList() {
       setTimeout(() => {
         this.poolsList = Object.values(this.pools);
-        console.log(this.poolsList)
         this.setupTotalTVL();
         this.setupTotalDeposit();
       }, 100);

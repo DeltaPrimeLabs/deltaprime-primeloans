@@ -170,7 +170,7 @@ export default {
         }
 
         const health = calculateHealth(tokens);
-        // const health = -0.23
+
         return health >= 0 ? health : 0;
       }
 
@@ -433,10 +433,9 @@ export default {
       let apr = 0;
       let yearlyDebtInterest = 0;
 
-      if (rootState.poolStore.pools) {
+      if (rootState.poolStore.pools && state.debtsPerAsset) {
         Object.entries(state.debtsPerAsset).forEach(
             ([symbol, debt]) => {
-              console.log('debt symbol: ', symbol, ' value: ', parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price)
               yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
             }
         );
