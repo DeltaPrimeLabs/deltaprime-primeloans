@@ -166,6 +166,7 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
           menuOptions: [
             {
@@ -184,6 +185,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
@@ -201,6 +203,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/swap.svg',
+          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
           tooltip: 'Swap',
           iconButtonActionKey: 'SWAP',
           disabled: !this.hasSmartLoanContract

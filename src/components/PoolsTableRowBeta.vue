@@ -91,11 +91,13 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit',
           iconButtonActionKey: 'DEPOSIT'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },

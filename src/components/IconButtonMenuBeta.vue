@@ -1,12 +1,17 @@
 <template>
-  <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip ? {content: config.tooltip, classes: 'button-tooltip'} : null">
+  <div id="icon-button-menu-component" class="icon-button-menu-component"
+       v-tooltip="!menuOpen && config.tooltip ? {content: config.tooltip, classes: 'button-tooltip'} : null">
     <Bubble v-if="bubbleText">
       <div v-html="bubbleText"></div>
     </Bubble>
-    <img id="icon-button" class="icon-button"
-         v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
-         :src="config.iconSrc"
-         v-on:click="iconButtonClick()">
+    <div id="icon-button-container" class="icon-button-container" v-on:click="iconButtonClick()">
+      <img id="icon-button" class="icon-button"
+           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
+           :src="config.iconSrc">
+      <img id="icon-button--hover" class="icon-button--hover"
+           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
+           :src="config.hoverIconSrc">
+    </div>
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
       <div class="menu__option"
            v-for="option in config.menuOptions"
@@ -19,14 +24,15 @@
         </div>
         <img class="option__info-icon"
              v-if="option.disabled" src="src/assets/icons/info-colorful.svg"
-             v-tooltip="{content: option.disabledInfo, classes: 'button-tooltip'}">
+             v-tooltip="{content: option.disabledInfo}">
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Bubble from "./Bubble";
+import Bubble from './Bubble';
+
 export default {
   name: 'IconButtonMenuBeta',
   components: {Bubble},
@@ -85,7 +91,7 @@ export default {
     },
 
     closeMenuOnClickOutside(event) {
-      if (!document.getElementById('icon-button-menu-component').contains(event.target) && event.target.id !== 'icon-button') {
+      if (!document.getElementById('icon-button-menu-component').contains(event.target) && event.target.id !== 'icon-button--hover') {
         if (this.menuOpen) {
           this.menuOpen = false;
         }
@@ -109,15 +115,35 @@ export default {
 .icon-button-menu-component {
   position: relative;
 
-  .icon-button {
-    height: 26px;
-    width: 26px;
-    cursor: pointer;
+  .icon-button-container {
 
+    &:hover {
+      .icon-button:not(.icon-button--disabled) {
+        display: none;
+      }
 
-    &.icon-button--disabled {
-      opacity: 0.5;
-      cursor: default;
+      .icon-button--hover:not(.icon-button--disabled) {
+        display: block;
+      }
+    }
+
+    .icon-button {
+      height: 26px;
+      width: 26px;
+      cursor: pointer;
+
+      &.icon-button--disabled {
+        opacity: 0.5;
+        filter: grayscale(1);
+        cursor: default;
+      }
+    }
+
+    .icon-button--hover {
+      display: none;
+      height: 26px;
+      width: 26px;
+      cursor: pointer;
     }
   }
 

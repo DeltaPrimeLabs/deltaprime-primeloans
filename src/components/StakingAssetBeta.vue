@@ -68,14 +68,14 @@
               <div class="info__icon__wrapper">
                 <img class="info__icon"
                      src="src/assets/icons/info.svg"
-                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long'}">
+                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
               </div>
             </div>
             <div class="table__header__cell">Max. APY
               <div class="info__icon__wrapper">
                 <img class="info__icon"
                      src="src/assets/icons/info.svg"
-                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long'}">
+                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
               </div>
             </div>
             <div class="table__header__cell">Actions</div>
@@ -160,14 +160,10 @@ export default {
     },
 
     maxApyTooltip() {
-      return `Calculated as:<br>
-              0) If borrow APY < farm APY<br>
-              1) borrow 4.5x asset with the lowest borrow APY;<br>
-              2) swap to get the right tokens;<br>
-              3) provide all in this farm.`;
+      return `The APY if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this farm.`;
     },
     minApyTooltip() {
-      return `Does not take swap fees into account from the pool.`;
+      return `The APY of the farm.`;
     }
   },
 

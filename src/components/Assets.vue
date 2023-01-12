@@ -204,16 +204,15 @@ export default {
             sortable: false,
             class: 'asset',
             id: 'ASSET',
-            tooltip: `Asset names are simplified for a smoother UI. To see the exact asset-names and their contracts, check our
-                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>docs</a>.`
+            tooltip: `The asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
             label: 'Balance',
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
-            tooltip: `The amount/value of the tokens that you are holding on your Account. Numbers shown here can still be provided to Liquidity Pools and Farms.<br>
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#balance' target='_blank'>More information</a>.`
+            tooltip: `The number and value of unstaked assets in your Prime Account.`
           },
           {
             label: 'Borrowed',
@@ -229,8 +228,7 @@ export default {
             sortable: false,
             class: 'impact',
             id: 'IMPACT',
-            tooltip: `The Borrowing Power indicates how much can borrow against this token.<br>
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/health-and-borrowing-power#borrowing-power' target='_blank'>More information</a>.`,
+            tooltip: `How much you can borrow against this asset`,
           },
           {
             label: 'Trend (24h)',
@@ -251,9 +249,7 @@ export default {
             label: 'Actions',
             class: 'actions',
             id: 'ACTIONS',
-            tooltip: `Click
-            <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
-            for more information on the different actions you can perform in your Prime Account.`
+            tooltip: `The different actions you can perform with this asset.`
           },
         ]
       };
@@ -267,13 +263,16 @@ export default {
             label: 'LP Token',
             sortable: false,
             class: 'token',
-            id: 'TOKEN'
+            id: 'TOKEN',
+            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
             label: 'Balance',
             sortable: false,
             class: 'balance',
-            id: 'BALANCE'
+            id: 'BALANCE',
+            tooltip: `The number and value of unstaked assets in your Prime Account.`
           },
           {
             label: 'TVL',
@@ -288,19 +287,14 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `This shows the APR of the underlying pool. This number can go up through compounding, farming, or borrowing at a lower rate.<br>
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#min.-apr' target='_blank'>More information</a>.`
+            tooltip: `The APR of the pool.`
           },
           {
             label: 'Max. APR',
             sortable: false,
             class: 'apr',
             id: 'MAX-APR',
-            tooltip: `Calculated as:<br>
-                      1) Borrow 4.5x asset with lowest borrow APY;<br>
-                      2) swap to get the right tokens;<br>
-                      3) provide all in this pool;<br>
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#max.-apr' target='_blank'>More information</a>.`
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
           },
           {
             label: '',

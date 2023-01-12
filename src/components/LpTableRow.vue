@@ -172,6 +172,7 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit / Create',
           menuOptions: [
             {
@@ -188,6 +189,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw / Unwind',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
@@ -221,6 +223,7 @@ export default {
     },
 
     actionClick(key) {
+      console.log(key);
       switch (key) {
         case 'ADD_FROM_WALLET':
           this.openAddFromWalletModal();
