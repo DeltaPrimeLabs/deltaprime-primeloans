@@ -684,7 +684,7 @@ export default {
           parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
           {gasLimit: 3000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.progressBarService.requestProgressBar(35000);
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'borrow');
@@ -694,7 +694,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, 35000);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
