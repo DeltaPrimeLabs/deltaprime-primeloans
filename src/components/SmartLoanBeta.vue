@@ -212,8 +212,8 @@ export default {
     },
 
     watchHealthRefresh() {
-      this.healthService.observeRefreshHealth().subscribe(() => {
-        this.health = this.getHealth;
+      this.healthService.observeRefreshHealth().subscribe(async () => {
+        this.health = await this.getHealth;
       })
     },
 

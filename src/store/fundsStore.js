@@ -125,8 +125,11 @@ export default {
   },
 
   getters: {
-    getHealth(state, getters, rootState) {
+    async getHealth(state, getters, rootState) {
       if (state.noSmartLoan) return 1;
+
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
 
       if (state.debtsPerAsset && state.assets && state.assetBalances && state.lpAssets && state.lpBalances && rootState.stakeStore && rootState.stakeStore.farms) {
         let tokens = [];
@@ -134,19 +137,22 @@ export default {
           let borrowed = state.debtsPerAsset[symbol] ? parseFloat(state.debtsPerAsset[symbol].debt) : 0;
 
           tokens.push({
-            price: data.price,
+            price: redstonePriceData[symbol][0].dataPoints[0].value,
             balance: parseFloat(state.assetBalances[symbol]),
             borrowed: borrowed,
-            debtCoverage: data.debtCoverage
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
           });
         }
 
         for (const [symbol, data] of Object.entries(state.lpAssets)) {
           tokens.push({
-            price: data.price,
+            price: redstonePriceData[symbol][0].dataPoints[0].value,
             balance: parseFloat(state.lpBalances[symbol]),
             borrowed: 0,
-            debtCoverage: data.debtCoverage
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+
           });
         }
 
@@ -154,15 +160,18 @@ export default {
 
           farms.forEach(farm => {
             tokens.push({
-              price: farm.price,
+              price: redstonePriceData[symbol][0].dataPoints[0].value,
               balance: parseFloat(farm.totalStaked),
               borrowed: 0,
-              debtCoverage: farm.debtCoverage
+              debtCoverage: farm.debtCoverage,
+              symbol: symbol
             });
           });
         }
 
-        return calculateHealth(tokens);
+        const health = calculateHealth(tokens);
+        // const health = -0.23
+        return health >= 0 ? health : 0;
       }
 
       return 1;
