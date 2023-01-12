@@ -13,7 +13,7 @@
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
-         provide liquidity and farm on the Farms page.
+         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b> page.
       </InfoBubble>
       <InfoBubble v-if="wasLiquidated" cacheKey="LIQUIDATED-0" style="margin-top: 40px">
         Liquidation bots unwinded part of your positions<br>

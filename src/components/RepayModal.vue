@@ -5,6 +5,12 @@
         Repay
       </div>
 
+      <div class="modal-top-desc">
+        <div>
+          To fully repay your loan, put a higher value then the current Debt.
+        </div>
+      </div>
+
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound}}</div>

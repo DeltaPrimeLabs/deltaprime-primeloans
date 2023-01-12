@@ -462,7 +462,7 @@ export default {
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
-          this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
+          this.debtsPerAsset[this.asset.symbol].debt = Math.max(Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount), 0);
           this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
           this.isDebtEstimated = true;

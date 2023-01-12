@@ -518,6 +518,7 @@ export default {
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
+      console.log(4)
 
       await awaitConfirmation(transaction, provider, 'fund');
       setTimeout(async () => {
