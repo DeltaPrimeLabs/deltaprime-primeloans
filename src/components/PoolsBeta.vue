@@ -16,7 +16,7 @@
                 <div class="header__cell actions">Actions</div>
               </div>
               <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
+                <PoolsTableRowBeta v-for="pool in list" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
               </div>
             </div>
@@ -69,6 +69,9 @@ export default {
   computed: {
     ...mapState('fundsStore', ['assets']),
     ...mapState('poolStore', ['pools']),
+    list() {
+      return (this.poolsList) ? this.poolsList.sort((a, b) => a > b) : [];
+    }
   },
 
   methods: {
