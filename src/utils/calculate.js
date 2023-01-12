@@ -21,7 +21,7 @@ export function calculateHealth(tokens) {
 
   if (borrowed === 0) return 1;
 
-  return weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0;
+  return Math.max(weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0, 0);
 }
 
 export function calculateMaxApy(pools, apy) {
