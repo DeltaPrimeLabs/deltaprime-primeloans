@@ -1,5 +1,5 @@
 <template>
-  <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip">
+  <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip ? {content: config.tooltip, classes: 'button-tooltip'} : null">
     <Bubble v-if="bubbleText">
       <div v-html="bubbleText"></div>
     </Bubble>
@@ -19,7 +19,7 @@
         </div>
         <img class="option__info-icon"
              v-if="option.disabled" src="src/assets/icons/info-colorful.svg"
-             v-tooltip="{content: option.disabledInfo, classes: 'info-tooltip'}">
+             v-tooltip="{content: option.disabledInfo, classes: 'button-tooltip'}">
       </div>
     </div>
   </div>
