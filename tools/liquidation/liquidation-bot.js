@@ -159,10 +159,14 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
     const bonusInWei = (bonus * 1000).toFixed(0);
 
     if (!loanIsBankrupt) {
+        let liqStartTime = new Date();
         let flashLoanTx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000});
 
-        console.log(`[${(new Date()).toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
-        await provider.waitForTransaction(flashLoanTx.hash);
+        console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
+        let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+
+        console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+
     } else {
         console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
     }
