@@ -1,5 +1,8 @@
 <template>
   <div id="icon-button-menu-component" class="icon-button-menu-component" v-tooltip="!menuOpen && config.tooltip">
+    <Bubble v-if="bubbleText">
+      <div v-html="bubbleText"></div>
+    </Bubble>
     <img id="icon-button" class="icon-button"
          v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
          :src="config.iconSrc"
@@ -23,8 +26,10 @@
 </template>
 
 <script>
+import Bubble from "./Bubble";
 export default {
   name: 'IconButtonMenuBeta',
+  components: {Bubble},
   props: {
     config: {
       type: Object,
@@ -33,6 +38,10 @@ export default {
     disabled: {
       type: Boolean,
       default: false,
+    },
+    bubbleText: {
+      type: String,
+      default: '',
     }
   },
   mounted() {

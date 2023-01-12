@@ -69,6 +69,7 @@
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
+          :bubbleText="(asset.symbol === 'AVAX' && noSmartLoan && index === 0) ? `To create Prime Account deposit collateral with <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button` : ''"
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
