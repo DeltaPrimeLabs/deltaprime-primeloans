@@ -9,7 +9,7 @@ const {getUrlForNetwork} = require("../scripts/helpers");
 const https = require('https');
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
-const interval = args.interval ? args.interval : 60;
+const interval = args.interval ? args.interval : 30;
 const MAX_INSOLVENCY_DURATION = args.duration ? args.duration : 180;
 
 const RPC_URL = getUrlForNetwork(network);
