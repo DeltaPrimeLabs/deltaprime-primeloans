@@ -344,7 +344,7 @@ export default {
         }
 
         if (symbol === this.targetAsset) {
-          balance += this.minTargetAssetAmount;
+          balance += this.targetAssetAmount;
         }
 
         tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
@@ -364,6 +364,8 @@ export default {
           });
         });
       }
+
+      console.log(tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens);
     },
