@@ -82,7 +82,7 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {erc20ABI} from '../utils/blockchain';
+import {assetAppreciation, erc20ABI} from '../utils/blockchain';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
@@ -207,7 +207,7 @@ export default {
     },
 
     async setupApr() {
-      this.apr = await this.lpToken.apr();
+      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + await this.lpToken.apr()) - 1);
     },
 
     toggleChart() {

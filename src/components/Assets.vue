@@ -287,7 +287,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool.`
+            tooltip: `The APR of the pool. This number includes 7.2% sAVAX price appreciation if the pool includes that asset.`
           },
           {
             label: 'Max. APR',
