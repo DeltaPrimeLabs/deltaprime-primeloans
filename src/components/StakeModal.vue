@@ -54,11 +54,10 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Staked:
+                Farm balance:
               </div>
               <div class="summary__value">
                 {{ Number(staked) + Number(stakeValue) | smartRound(8, true) }}
-                <div class="currency">{{ asset.name }}</div>
               </div>
             </div>
             <div class="summary__divider divider--super-long"></div>

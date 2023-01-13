@@ -39,10 +39,10 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              Staked:
+              Farm balance:
             </div>
             <div class="summary__value">
-              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(9, true) }} <span class="currency">{{ asset.name }}</span>
+              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(9, true) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
