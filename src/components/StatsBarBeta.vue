@@ -27,7 +27,7 @@
       <stats-bar-element-beta
           :label="'Collateral'"
           :value="collateral ? collateral : 0 | usd"
-          :info-tooltip="`The total value of all your assets, minus the value of your borrowed assets.`">
+          :info-tooltip="`The total value of all your assets, minus the value of your borrowed assets. <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#borrowed' target='_blank'>More information</a>.`">
       </stats-bar-element-beta>
     </div>
   </div>

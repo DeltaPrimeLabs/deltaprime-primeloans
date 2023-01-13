@@ -249,7 +249,7 @@ export default {
             label: 'Actions',
             class: 'actions',
             id: 'ACTIONS',
-            tooltip: `The different actions you can perform with this asset.`
+            tooltip: `The different actions you can perform with this asset. <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>More information</a>`
           },
         ]
       };
