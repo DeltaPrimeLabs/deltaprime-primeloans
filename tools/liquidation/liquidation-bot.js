@@ -5,7 +5,6 @@ import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
-import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import {ethers} from 'hardhat'
 import {
     getLiquidatorSigner,
@@ -78,7 +77,7 @@ async function getInsolventLoans() {
     return insolventLoans
 }
 
-export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
+export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let loan = await wrapLoan(loanAddress, wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
@@ -189,7 +188,7 @@ async function liquidateInsolventLoans() {
     console.log(`INSOLVENT LOANS[${loans.length}]: ${loans}`)
 
     for (const x in loans) {
-        await liquidateLoan(loans[x], TOKEN_MANAGER_TUP.address, SMART_LOAN_DIAMOND.address, wallet);
+        await liquidateLoan(loans[x], TOKEN_MANAGER_TUP.address);
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }

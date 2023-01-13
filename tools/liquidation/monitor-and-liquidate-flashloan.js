@@ -1,4 +1,5 @@
 import TOKEN_MANAGER_TUP from "../../deployments/avalanche/TokenManagerTUP.json";
+import FlashloanLiquidationArtifact from '../../deployments/avalanche/LiquidationFlashloan.json';
 import {liquidateLoan} from "./liquidation-bot-flashloan";
 import {ethers} from "hardhat";
 const {getUrlForNetwork} = require("../scripts/helpers");
@@ -11,6 +12,7 @@ const https = require('https');
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
 const interval = args.interval ? args.interval : 10;
+const liquidationGasPrice = args.liquidationGasPrice ? args.liquidationGasPrice : 0;
 
 const RPC_URL = getUrlForNetwork(network);
 let liquidator_wallet = getLiquidatorSigner(network);
@@ -57,7 +59,7 @@ async function liquidateInsolventLoans() {
 
     for (const loan of loans) {
         console.log(`Liquidating: ${loan}`);
-        await liquidateLoan(loan, "0x3a7De0b05A0a7ed9C692E3523cA82Bf6dB345b95", TOKEN_MANAGER_TUP.address);
+        await liquidateLoan(loan, FlashloanLiquidationArtifact.address, TOKEN_MANAGER_TUP.address, false, true, liquidationGasPrice);
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }

@@ -33,7 +33,7 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, liquidator_wallet);
 }
 
-export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false) {
+export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false, unwind=true, liquidationGasPrice=0) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
@@ -41,15 +41,16 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
 
-    //TODO: optimize to unstake only as much as needed
-    await unstakeStakedPositions(loan, provider);
+    if(unwind){
+        //TODO: optimize to unstake only as much as needed
+        await unstakeStakedPositions(loan, provider);
 
-    await unstakeYieldYak(loan, liquidator_wallet, provider);
+        await unstakeYieldYak(loan, liquidator_wallet, provider);
 
-    await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
+        await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
-    await unwindTraderJoeLPPositions(loan, liquidator_wallet, provider);
-
+        await unwindTraderJoeLPPositions(loan, liquidator_wallet, provider);
+    }
 
     let pricesArg = {}
     for (const asset of await tokenManager.getAllPoolAssets()) {
@@ -153,6 +154,19 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
 
+    let txParams;
+    if(liquidationGasPrice === 0){
+        txParams = {
+            gasLimit: 8_000_000,
+            gasPrice: 100_000_000_000
+        }
+    }else{
+        txParams = {
+            gasLimit: 8_000_000,
+            gasPrice: liquidationGasPrice
+        }
+    }
+
     try {
         let liqStartTime = new Date();
         const flashLoanTx = await flashLoan.executeFlashloan(
@@ -165,10 +179,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                 liquidator: liquidator_wallet.address,
                 loanAddress: loanAddress,
                 tokenManager: tokenManager.address
-            }, {
-                gasLimit: 8_000_000,
-                gasPrice: 100_000_000_000
-            }
+            }, txParams
         );
 
         console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
