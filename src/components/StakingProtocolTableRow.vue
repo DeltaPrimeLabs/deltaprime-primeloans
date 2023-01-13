@@ -24,7 +24,7 @@
               isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance)
             }}
           </div>
-          <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
+          <div class="double-value__usd">{{ balance * (farm.price ? farm.price : asset.price) | usd }}</div>
         </div>
       </div>
 
