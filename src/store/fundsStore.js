@@ -217,20 +217,29 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
-      if (state.smartLoanContract.address !== NULL_ADDRESS) {
-        commit('setNoSmartLoan', false);
-      }
-      await dispatch('setupAssets');
-      await dispatch('setupLpAssets');
-      await dispatch('getAllAssetsBalances');
-      await dispatch('getDebtsPerAsset');
-      await dispatch('getFullLoanStatus');
-      await dispatch('stakeStore/updateStakedBalances', null, {root: true});
-      await dispatch('getAccountApr');
-      setTimeout(async () => {
+      try {
+        if (state.smartLoanContract.address !== NULL_ADDRESS) {
+          commit('setNoSmartLoan', false);
+        }
+        await dispatch('setupAssets');
+        await dispatch('setupLpAssets');
+        await dispatch('getAllAssetsBalances');
+        await dispatch('getDebtsPerAsset');
         await dispatch('getFullLoanStatus');
-      }, 5000);
-      rootState.serviceRegistry.healthService.emitRefreshHealth();
+        await dispatch('stakeStore/updateStakedBalances', null, {root: true});
+        await dispatch('getAccountApr');
+        setTimeout(async () => {
+          await dispatch('getFullLoanStatus');
+        }, 5000);
+        rootState.serviceRegistry.healthService.emitRefreshHealth();
+      } catch (error) {
+        console.error(error);
+        console.error('ERROR DURING UPDATE FUNDS');
+        console.log('refreshing page in 5s');
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      }
     },
 
 
@@ -370,6 +379,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        console.log('update funds after loan creation finished');
       }, 30000);
     },
 
