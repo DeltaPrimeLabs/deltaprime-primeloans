@@ -15,9 +15,15 @@ export function minAvaxToBeBought(amount, currentSlippage) {
 }
 
 export function calculateHealth(tokens) {
+  console.log(tokens);
+
   let weightedCollateral = tokens.reduce((acc, t) => acc + t.price * (t.balance - t.borrowed) * t.debtCoverage, 0);
   let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
   let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
+
+  console.log('weightedCollateral: ', weightedCollateral);
+  console.log('weightedBorrowed: ', weightedBorrowed);
+  console.log('borrowed: ', borrowed);
 
   if (borrowed === 0) return 1;
 

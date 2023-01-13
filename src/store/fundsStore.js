@@ -157,10 +157,12 @@ export default {
         }
 
         for (const [symbol, farms] of Object.entries(rootState.stakeStore.farms)) {
-
           farms.forEach(farm => {
+
+            let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
+
             tokens.push({
-              price: redstonePriceData[symbol][0].dataPoints[0].value,
+              price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
               balance: parseFloat(farm.totalStaked),
               borrowed: 0,
               debtCoverage: farm.debtCoverage,

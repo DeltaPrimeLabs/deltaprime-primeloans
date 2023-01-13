@@ -24,19 +24,24 @@
           </div>
         </div>
 
+        <div class="header__cell cell__staked">
+        </div>
+
         <div class="header__cell cell__available">
-          <div class="header__cell__label">Balance:</div>
+          <div class="header__cell__label">
+            Available:
+          </div>
           <div class="header__cell__value">
             <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(available, 10, true) }}
           </div>
         </div>
 
-        <div class="header__cell cell__staked">
-          <div class="header__cell__label">Staked:</div>
-          <div class="header__cell__value">
-            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound(10, true) }}
-          </div>
-        </div>
+<!--        <div class="header__cell cell__staked">-->
+<!--          <div class="header__cell__label">Staked:</div>-->
+<!--          <div class="header__cell__value">-->
+<!--            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound(10, true) }}-->
+<!--          </div>-->
+<!--        </div>-->
 
         <div class="header__cell cell__max-apy">
           <div class="header__cell__label">Max APY:</div>
@@ -62,7 +67,13 @@
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
-            <div class="table__header__cell">Staked</div>
+            <div class="table__header__cell">Farm balance&nbsp;
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: 'Your share in a farm. The number can differ from the balance of underlying staked token.', classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
             <div class="table__header__cell">Rewards</div>
             <div class="table__header__cell">Min. APY
               <div class="info__icon__wrapper">
@@ -347,6 +358,7 @@ export default {
         }
 
         .header__cell__label {
+          display: flex;
           color: $dark-gray;
           font-weight: 500;
           margin-right: 5px;
