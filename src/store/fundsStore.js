@@ -363,16 +363,11 @@ export default {
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
       setTimeout(async () => {
-        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
-        await dispatch('updateFunds');
         await dispatch('network/updateBalance', {}, {root: true});
-        await dispatch('getFullLoanStatus');
       }, 5000);
 
       setTimeout(async () => {
-        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
         await dispatch('updateFunds');
-        await dispatch('getFullLoanStatus');
       }, 30000);
     },
 
