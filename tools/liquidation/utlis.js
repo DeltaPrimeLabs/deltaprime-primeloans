@@ -22,13 +22,14 @@ const erc20ABI = [
     'function transfer(address dst, uint wad) public returns (bool)'
 ]
 
-async function awaitConfirmation(tx, provider, actionName, timeout) {
+export async function awaitConfirmation(tx, provider, actionName, timeout) {
     const transaction = await provider.waitForTransaction(tx.hash, timeout);
     if (transaction.status === 0) {
         console.log(transaction);
         throw `Failed to ${actionName}`;
     } else {
         console.log(`Transaction with ${transaction.transactionHash} success`);
+        return transaction;
     }
 }
 

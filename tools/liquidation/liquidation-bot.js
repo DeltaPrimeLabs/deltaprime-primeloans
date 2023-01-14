@@ -8,6 +8,7 @@ import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json'
 import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
 import {ethers} from 'hardhat'
 import {
+    awaitConfirmation,
     getLiquidatorSigner,
     unstakeStakedPositions,
     unstakeYieldYak,
@@ -165,10 +166,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
         let ratio = fromWei(await loan.getHealthRatio());
 
         if (ratio < 0.99) {
-            let flashLoanTx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000});
-
-            console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
-            let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+            let receipt = await awaitConfirmation(loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
 
             console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
         } else {

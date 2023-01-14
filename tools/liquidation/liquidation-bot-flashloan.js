@@ -6,6 +6,7 @@ import {fromBytes32, getLiquidationAmounts, getLiquidationAmountsBasedOnLtv} fro
 import {ethers} from 'hardhat'
 import redstone from "redstone-api";
 import {
+    awaitConfirmation,
     getERC20Contract,
     getLiquidatorSigner,
     getProvider,
@@ -157,7 +158,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     if (healthBeforeLiquidation < .99) {
         try {
             let liqStartTime = new Date();
-            const flashLoanTx = await flashLoan.executeFlashloan(
+            let flashLoanTx = await awaitConfirmation(flashLoan.executeFlashloan(
                 {
                     assets: poolTokenAddresses,
                     amounts: amountsToRepayInWei,
@@ -171,7 +172,10 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                     gasLimit: 8_000_000,
                     gasPrice: 100_000_000_000
                 }
-            );
+            ),
+            provider,
+            'flash loan liquidation',
+            60_000);
 
             console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
 
