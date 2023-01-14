@@ -184,7 +184,6 @@ export async function unstakeStakedPositions(loan){
             let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
             let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
 
-            await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"));
             await awaitConfirmation(await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8_000_000}), provider, 'UnstakeStakedPostisions');
         }
     } catch (e) {
