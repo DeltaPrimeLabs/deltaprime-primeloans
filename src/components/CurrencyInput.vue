@@ -36,7 +36,7 @@
     <div class="warning"
          v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
-        <img src="src/assets/icons/warning.svg"/>
+        <img src="src/assets/icons/error.svg"/>
         {{ warning }}
       </span>
     </div>
