@@ -34,7 +34,7 @@
       </span>
     </div>
     <div class="warning"
-         v-if="warning && !waiting && !ongoingErrorCheck">
+         v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
         <img src="src/assets/icons/warning.svg"/>
         {{ warning }}
@@ -368,7 +368,8 @@ img {
 }
 
 .warning {
-  color: #F5A200;
+  //color: #F5A200;
+  color: $red;
 }
 
 .error, .warning {
