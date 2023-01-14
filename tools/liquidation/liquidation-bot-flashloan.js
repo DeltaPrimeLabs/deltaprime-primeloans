@@ -38,7 +38,6 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     let tokenManager = getTokenManager(tokenManagerAddress);
     let poolTokens = await tokenManager.getAllPoolAssets();
     let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
-    let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
 
     //TODO: optimize to unstake only as much as needed
@@ -129,7 +128,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
         let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
         let decimals = await tokenContract.decimals();
         let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered);
+        await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
     }
 
     const bonusInWei = (bonus * 1000).toFixed(0);
@@ -153,29 +152,36 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
 
-    try {
-        let liqStartTime = new Date();
-        const flashLoanTx = await flashLoan.executeFlashloan(
-            {
-                assets: poolTokenAddresses,
-                amounts: amountsToRepayInWei,
-                interestRateModes: new Array(poolTokenAddresses.length).fill(0),
-                params: '0x' + redstonePayload,
-                bonus: bonusInWei,
-                liquidator: liquidator_wallet.address,
-                loanAddress: loanAddress,
-                tokenManager: tokenManager.address
-            }, {
-                gasLimit: 8_000_000,
-                gasPrice: 100_000_000_000
-            }
-        );
+    const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
 
-        console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
+    if (healthBeforeLiquidation < .99) {
+        try {
+            let liqStartTime = new Date();
+            const flashLoanTx = await flashLoan.executeFlashloan(
+                {
+                    assets: poolTokenAddresses,
+                    amounts: amountsToRepayInWei,
+                    interestRateModes: new Array(poolTokenAddresses.length).fill(0),
+                    params: '0x' + redstonePayload,
+                    bonus: bonusInWei,
+                    liquidator: liquidator_wallet.address,
+                    loanAddress: loanAddress,
+                    tokenManager: tokenManager.address
+                }, {
+                    gasLimit: 8_000_000,
+                    gasPrice: 100_000_000_000
+                }
+            );
 
-        let receipt = await provider.waitForTransaction(flashLoanTx.hash);
-        console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
-    } catch (error) {
-        console.log(error)
+            console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
+
+            let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+            console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+        } catch (error) {
+            console.log(error)
+        }
+    } else {
+        console.log('Loan on the edge of solvency, aborting liquidation.')
     }
+
 }

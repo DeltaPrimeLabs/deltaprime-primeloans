@@ -154,19 +154,26 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAdd
         let tokenContract = await getTokenContract(addresses[allowance.name]);
         let decimals = await tokenContract.decimals();
         let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(wallet).approve(loan.address, delivered);
+        await tokenContract.connect(wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
     }
     const bonusInWei = (bonus * 1000).toFixed(0);
 
     if (!loanIsBankrupt) {
         let liqStartTime = new Date();
-        let flashLoanTx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000});
 
-        console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
-        let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+        let loan = await wrapLoan(loanAddress, wallet);
+        let ratio = fromWei(await loan.getHealthRatio());
 
-        console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+        if (ratio < 0.99) {
+            let flashLoanTx = await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000});
 
+            console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
+            let receipt = await provider.waitForTransaction(flashLoanTx.hash);
+
+            console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+        } else {
+            console.log('Loan on the edge of solvency, aborting liquidation.')
+        }
     } else {
         console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
     }
