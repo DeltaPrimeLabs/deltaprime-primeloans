@@ -175,7 +175,7 @@ export async function unwindTraderJoeLPPositions(loan, liquidator_wallet, provid
 }
 
 
-export async function unstakeStakedPositions(loan){
+export async function unstakeStakedPositions(loan, provider){
     console.log('Check LP TraderJoe');
     try{
         for (let p of await loan.getStakedPositions()) {
