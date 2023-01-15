@@ -92,6 +92,26 @@ import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterfa
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromWei} from "../utils/calculate";
 
+// This could be abstracted in separate store
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyByOwbJLGxjKkAdHzD4cTaDVj7eGeACeec",
+  authDomain: "delta-prime-db.firebaseapp.com",
+  projectId: "delta-prime-db",
+  storageBucket: "delta-prime-db.appspot.com",
+  messagingSenderId: "499112502554",
+  appId: "1:499112502554:web:5d89f34de8f958bf5df8a3"
+};
+
+// Initialize Firebase
+const fireStore = getFirestore(initializeApp(firebaseConfig));
+
+
+
+
 export default {
   name: 'ProtocolStats',
   components: {
@@ -143,7 +163,8 @@ export default {
       async handler(factory) {
         if (factory) {
           this.loanAddresses = await factory.getAllLoans();
-          await this.setupLoans();
+          await this.fetchLoansFromFireBase();
+          //await this.setupLoans();
         }
       }
     },
@@ -194,6 +215,40 @@ export default {
       let parts = x.toString().split(".");
       parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
       return parts.join(",");
+    },
+
+    async fetchLoansFromFireBase() {
+      console.log("Getting loans stats");
+      const loansCol = collection(fireStore, 'loans');
+      
+      //Get latest update time
+      let max = null;
+      const maxQ = query(loansCol, orderBy("time", "desc"), limit(1));
+      const querySnapshot = await getDocs(maxQ);
+      querySnapshot.forEach((doc) => {
+        max = doc.data().time;
+      });
+      console.log("Max timestamp: " + max);
+
+      //Get loans
+      const loansQ = query(loansCol, where("time", "==", max), orderBy("health", "asc"));
+      const loansQuerySnapshot = await getDocs(loansQ);
+      this.protocolCollateral = 0;
+      this.totalBorrowed = 0;
+      loansQuerySnapshot.forEach((doc) => {
+        console.log(doc.data());
+        this.loans.push({
+          address: doc.data().address,
+          health: doc.data().health,
+          debt: doc.data().debt,
+          collateral: doc.data().collateral,
+          totalValue: doc.data().total         
+        });
+        this.protocolCollateral += doc.data().collateral;
+        this.totalBorrowed += doc.data().debt; 
+      });
+      console.log("Loans fetched: " + this.loans.length);
+      console.log("Last updated: " + new Date(max).toTimeString());
     },
 
     async setupLoans() {
