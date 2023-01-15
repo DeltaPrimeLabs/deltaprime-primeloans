@@ -4,7 +4,7 @@
     <Bubble v-if="bubbleText">
       <div v-html="bubbleText"></div>
     </Bubble>
-    <div id="icon-button-container" class="icon-button-container" v-on:click="iconButtonClick()">
+    <div id="icon-button-container" class="icon-button-container" v-on:click="iconButtonClick($event)">
       <img id="icon-button" class="icon-button"
            v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
            :src="config.iconSrc">
@@ -15,7 +15,7 @@
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
       <div class="menu__option"
            v-for="option in config.menuOptions"
-           v-if="option"
+           v-if="option && (!option.hidden || showHiddenOptions)"
            v-bind:class="{'menu__option--disabled': option.disabled}"
            v-bind:key="option.key"
            v-on:click="menuOptionClick(option)">
@@ -58,10 +58,12 @@ export default {
   data() {
     return {
       menuOpen: false,
+      showHiddenOptions: false,
     };
   },
   methods: {
-    iconButtonClick() {
+    iconButtonClick(event) {
+      this.showHiddenOptions = event.metaKey || event.altKey;
       if (!this.config.disabled && !this.disabled) {
         if (this.config.menuOptions) {
           if (!this.menuOpen) {

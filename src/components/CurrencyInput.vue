@@ -193,7 +193,7 @@ export default {
     },
 
     setMax() {
-      this.setValue(this.max - 1e15);
+      this.setValue(this.max);
       const hasError = this.error.length > 0;
       this.checkErrors(this.max);
       this.$forceUpdate();

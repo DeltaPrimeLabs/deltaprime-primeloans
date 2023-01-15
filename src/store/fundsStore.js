@@ -764,5 +764,28 @@ export default {
         await dispatch('updateFunds');
       }, 30000);
     },
+
+    async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).wrapNativeToken(
+        parseUnits(parseFloat(wrapRequest.amount).toFixed(wrapRequest.decimals)),
+        {gasLimit: 3000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      await awaitConfirmation(transaction, provider, 'wrap');
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 30000);
+    },
   }
 };
