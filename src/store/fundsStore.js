@@ -742,11 +742,11 @@ export default {
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[swapRequest.chosenDex].swapMethod](
-        toBytes32(swapRequest.sourceAsset),
-        toBytes32(swapRequest.targetAsset),
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).yakSwap(
         sourceAmount,
         targetAmount,
+        swapRequest.path,
+        swapRequest.adapters,
         {gasLimit: 4000000}
       );
 

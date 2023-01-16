@@ -11,9 +11,10 @@
 
 <script>
 import BarGaugeBeta from './BarGaugeBeta';
+import ProvideLiquidityModal from "./ProvideLiquidityModal";
 export default {
   name: 'TransactionResultSummaryBeta',
-  components: {BarGaugeBeta}
+  components: {ProvideLiquidityModal, BarGaugeBeta}
 };
 </script>
 
@@ -32,24 +33,34 @@ export default {
     flex-direction: column;
     border-radius: 13px;
     background-color: white;
-    padding: 16px 0 18px 30px;
+    padding: 1px 16px 1px 16px;
 
     .summary__title {
       display: flex;
       flex-direction: row;
-      color: $steel-gray;
-      font-size: $font-size-xsm;
-      margin-bottom: 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #acabe3;
+      justify-content: space-around;
+    }
+
+    .summary__horizontal__divider {
+      width: 518px;
+      height: 2px;
+      background-color: #f0f0f0;
     }
 
     .summary__values {
       display: flex;
       flex-direction: row;
       color: $steel-gray;
+      margin-top: 9px;
+      margin-bottom: 6px;
 
       .summary__value__pair {
         display: flex;
         flex-direction: column;
+        padding-left: 14px;
       }
 
       .currency {
@@ -79,6 +90,10 @@ export default {
         &.divider--super-long {
           height: 52px;
           margin: 4px 20px 0 20px;
+        }
+
+        &.light {
+          background-color: #f0f0f0;
         }
       }
 
