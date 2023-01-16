@@ -9,8 +9,8 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Balance:</div>
-        <div class="top-info__value">{{ balance | smartRound(12, true) }}<span class="top-info__currency"> {{ asset.name }}</span></div>
+        <div class="top-info__label">Farm balance:</div>
+        <div class="top-info__value">{{ balance | smartRound(12, true) }}</div>
       </div>
 
       <CurrencyInput v-if="isLP"
@@ -39,10 +39,10 @@
           </div>
           <div class="summary__values">
             <div class="summary__label">
-              Staked:
+              Farm balance:
             </div>
             <div class="summary__value">
-              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(9, true) }} <span class="currency">{{ asset.name }}</span>
+              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(9, true) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">

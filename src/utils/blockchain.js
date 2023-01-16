@@ -53,6 +53,12 @@ export async function handleTransaction(fun, args, onSuccess, onFail) {
   }
 }
 
+export function assetAppreciation(symbol) {
+  if (symbol === 'sAVAX') return 1.072;
+  if (symbol === 'TJ_AVAX_sAVAX_LP') return 1.036;
+  return 1;
+}
+
 export async function awaitConfirmation(tx, provider, actionName) {
   const transaction = await provider.waitForTransaction(tx.hash);
 

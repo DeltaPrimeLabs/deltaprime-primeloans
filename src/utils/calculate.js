@@ -15,13 +15,14 @@ export function minAvaxToBeBought(amount, currentSlippage) {
 }
 
 export function calculateHealth(tokens) {
+
   let weightedCollateral = tokens.reduce((acc, t) => acc + t.price * (t.balance - t.borrowed) * t.debtCoverage, 0);
   let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
   let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
 
   if (borrowed === 0) return 1;
 
-  return weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0;
+  return Math.max(weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0, 0);
 }
 
 export function calculateMaxApy(pools, apy) {
@@ -130,11 +131,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
 
       //TODO: get prices from store
-      console.log(token[0])
-      console.log(token[1])
-      console.log('earned: ', earned)
       let price = (await redstone.getPrice(token[0])).value;
-      console.log('price: ', price)
 
       totalEarned += price * earned;
     } catch (e) {
@@ -144,7 +141,6 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
     i++;
   }
 
-  console.log('totalEarned: ', totalEarned)
   return totalEarned;
 }
 

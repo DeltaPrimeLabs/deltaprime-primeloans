@@ -18,6 +18,8 @@ import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {aprToApy, calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import router from '@/router'
+
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -123,8 +125,11 @@ export default {
   },
 
   getters: {
-    getHealth(state, getters, rootState) {
+    async getHealth(state, getters, rootState) {
       if (state.noSmartLoan) return 1;
+
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
 
       if (state.debtsPerAsset && state.assets && state.assetBalances && state.lpAssets && state.lpBalances && rootState.stakeStore && rootState.stakeStore.farms) {
         let tokens = [];
@@ -132,35 +137,43 @@ export default {
           let borrowed = state.debtsPerAsset[symbol] ? parseFloat(state.debtsPerAsset[symbol].debt) : 0;
 
           tokens.push({
-            price: data.price,
+            price: redstonePriceData[symbol][0].dataPoints[0].value,
             balance: parseFloat(state.assetBalances[symbol]),
             borrowed: borrowed,
-            debtCoverage: data.debtCoverage
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
           });
         }
 
         for (const [symbol, data] of Object.entries(state.lpAssets)) {
           tokens.push({
-            price: data.price,
+            price: redstonePriceData[symbol][0].dataPoints[0].value,
             balance: parseFloat(state.lpBalances[symbol]),
             borrowed: 0,
-            debtCoverage: data.debtCoverage
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+
           });
         }
 
         for (const [symbol, farms] of Object.entries(rootState.stakeStore.farms)) {
-
           farms.forEach(farm => {
+
+            let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
+
             tokens.push({
-              price: farm.price,
+              price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
               balance: parseFloat(farm.totalStaked),
               borrowed: 0,
-              debtCoverage: farm.debtCoverage
+              debtCoverage: farm.debtCoverage,
+              symbol: symbol
             });
           });
         }
 
-        return calculateHealth(tokens);
+        const health = calculateHealth(tokens);
+
+        return health >= 0 ? health : 0;
       }
 
       return 1;
@@ -204,20 +217,29 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
-      if (state.smartLoanContract.address !== NULL_ADDRESS) {
-        commit('setNoSmartLoan', false);
-      }
-      await dispatch('setupAssets');
-      await dispatch('setupLpAssets');
-      await dispatch('getAllAssetsBalances');
-      await dispatch('getDebtsPerAsset');
-      await dispatch('getFullLoanStatus');
-      await dispatch('stakeStore/updateStakedBalances', null, {root: true});
-      await dispatch('getAccountApr');
-      setTimeout(async () => {
+      try {
+        if (state.smartLoanContract.address !== NULL_ADDRESS) {
+          commit('setNoSmartLoan', false);
+        }
+        await dispatch('setupAssets');
+        await dispatch('setupLpAssets');
+        await dispatch('getAllAssetsBalances');
+        await dispatch('getDebtsPerAsset');
         await dispatch('getFullLoanStatus');
-      }, 5000);
-      rootState.serviceRegistry.healthService.emitRefreshHealth();
+        await dispatch('stakeStore/updateStakedBalances', null, {root: true});
+        await dispatch('getAccountApr');
+        setTimeout(async () => {
+          await dispatch('getFullLoanStatus');
+        }, 5000);
+        rootState.serviceRegistry.healthService.emitRefreshHealth();
+      } catch (error) {
+        console.error(error);
+        console.error('ERROR DURING UPDATE FUNDS');
+        console.log('refreshing page in 5s');
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      }
     },
 
 
@@ -285,7 +307,19 @@ export default {
 
     async setupSmartLoanContract({state, rootState, commit}) {
       const provider = rootState.network.provider;
-      const smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
+
+      let smartLoanAddress;
+
+      smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
+
+      if (router && router.currentRoute) {
+        if (router.currentRoute.query.user) {
+          smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(router.currentRoute.query.user);
+        } else if (router.currentRoute.query.account) {
+          smartLoanAddress = router.currentRoute.query.account;
+        }
+      }
+
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
@@ -340,16 +374,12 @@ export default {
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
       setTimeout(async () => {
-        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
-        await dispatch('updateFunds');
         await dispatch('network/updateBalance', {}, {root: true});
-        await dispatch('getFullLoanStatus');
       }, 5000);
 
       setTimeout(async () => {
-        await dispatch('stakeStore/updateStakedBalances', null, { root: true });
         await dispatch('updateFunds');
-        await dispatch('getFullLoanStatus');
+        console.log('update funds after loan creation finished');
       }, 30000);
     },
 
@@ -410,10 +440,9 @@ export default {
       let apr = 0;
       let yearlyDebtInterest = 0;
 
-      if (rootState.poolStore.pools) {
+      if (rootState.poolStore.pools && state.debtsPerAsset) {
         Object.entries(state.debtsPerAsset).forEach(
             ([symbol, debt]) => {
-              console.log('debt symbol: ', symbol, ' value: ', parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price)
               yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
             }
         );
@@ -495,6 +524,7 @@ export default {
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
+      console.log(4)
 
       await awaitConfirmation(transaction, provider, 'fund');
       setTimeout(async () => {
@@ -661,7 +691,7 @@ export default {
           parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
           {gasLimit: 3000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.progressBarService.requestProgressBar(35000);
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'borrow');
@@ -671,7 +701,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, 35000);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
@@ -729,6 +759,29 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'swap');
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, 30000);
+    },
+
+    async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).wrapNativeToken(
+        parseUnits(parseFloat(wrapRequest.amount).toFixed(wrapRequest.decimals)),
+        {gasLimit: 3000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      await awaitConfirmation(transaction, provider, 'wrap');
 
       setTimeout(async () => {
         await dispatch('updateFunds');

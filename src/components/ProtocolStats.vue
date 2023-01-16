@@ -4,22 +4,29 @@
       <div class="protocol-stats">
         <div class="tvl">
           <div class="label">TVL: </div>
-          <div class="number">{{ parseInt(parseFloat(poolsList[0].tvl) * parseFloat(poolsList[0].asset.price) + parseFloat(poolsList[1].tvl) * parseFloat(poolsList[1].asset.price) + parseFloat(protocolCollateral)) }} $</div>
+          <div class="number">${{ numberWithCommas(poolLiquidity.toFixed(2)) }}</div>
+          <br>
+          <div  class="borrow-collateral">
+            <div class="borrow">
+              <div class="label">Total collateral: </div>
+              <div class="number">${{ numberWithCommas(parseFloat(protocolCollateral.toFixed(2))) }} </div>
+            </div>
+            <div class="collateral">
+              <div class="label">Total borrowed: </div>
+              <div class="number">${{ numberWithCommas(parseFloat(totalBorrowed.toFixed(2))) }} </div>
+            </div>
+          </div>
         </div>
         <div class="pools">
           <Block v-for="pool of poolsList" v-bind:key="pool.asset.symbol">
             <div class="title">{{pool.asset.symbol}} pool</div>
             <div class="stat">
-              <div class="desc">TVL:</div>
-              <div class="value">{{(parseFloat(pool.tvl) * parseFloat(pool.asset.price)).toFixed(2)}} $</div>
-            </div>
-            <div class="stat">
-              <div class="desc">Deposited:</div>
-              <div class="value">{{parseFloat(pool.tvl).toFixed(2)}} {{pool.asset.symbol}}</div>
+              <div class="desc">Provided:</div>
+              <div class="value">{{pool.asset.symbol}} {{numberWithCommas(parseFloat(pool.tvl).toFixed(2))}}</div>
             </div>
             <div class="stat">
               <div class="desc">Borrowed:</div>
-              <div class="value">{{parseFloat(pool.totalBorrowed).toFixed(2)}} {{pool.asset.symbol}}</div>
+              <div class="value">{{pool.asset.symbol}} {{numberWithCommas(parseFloat(pool.totalBorrowed).toFixed(2))}}</div>
             </div>
             <div class="stat">
               <div class="desc">Utilisation:</div>
@@ -111,6 +118,7 @@ export default {
       totalDeposit: 0,
       poolsList: null,
       protocolCollateral: 0,
+      totalBorrowed: 0,
       loanAddresses: [],
       loans: []
     };
@@ -118,6 +126,9 @@ export default {
   computed: {
     ...mapState('poolStore', ['pools']),
     ...mapState('fundsStore', ['smartLoanFactoryContract']),
+    poolLiquidity() {
+      return (this.poolsList && this.poolsList[0] && this.poolsList[1]) ? parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral) : 0;
+    }
   },
 
   watch: {
@@ -131,7 +142,6 @@ export default {
     smartLoanFactoryContract: {
       async handler(factory) {
         if (factory) {
-          console.log(factory)
           this.loanAddresses = await factory.getAllLoans();
           await this.setupLoans();
         }
@@ -145,7 +155,6 @@ export default {
     setupPoolsList() {
       setTimeout(() => {
         this.poolsList = Object.values(this.pools);
-        console.log(this.poolsList)
         this.setupTotalTVL();
         this.setupTotalDeposit();
       }, 100);
@@ -181,10 +190,17 @@ export default {
       this.poolsList = pools;
     },
 
+    numberWithCommas(x) {
+      let parts = x.toString().split(".");
+      parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
+      return parts.join(",");
+    },
+
     async setupLoans() {
       const assets = Object.keys(addresses);
 
       let sumCollateral = 0;
+      let sumBorrowed = 0;
 
       let loansUnsorted = [];
       for (let address of this.loanAddresses) {
@@ -202,9 +218,11 @@ export default {
         })
 
         sumCollateral += fromWei(status[0]) - fromWei(status[1]);
+        sumBorrowed += fromWei(status[1]);
       }
 
       this.protocolCollateral = sumCollateral;
+      this.totalBorrowed = sumBorrowed;
 
       this.loans = loansUnsorted.sort((a, b) => {
         return a.health - b.health;
@@ -232,6 +250,12 @@ export default {
 
 .factory {
   margin-top: 30px;
+}
+
+.borrow-collateral {
+  display: flex;
+  width: 900px;
+  justify-content: space-between;
 }
 
 .loan-list {
@@ -276,6 +300,11 @@ export default {
   }
 }
 
+.borrow, .collateral {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
 .stat {
   display: flex;

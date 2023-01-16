@@ -34,9 +34,9 @@
       </span>
     </div>
     <div class="warning"
-         v-if="warning && !waiting && !ongoingErrorCheck">
+         v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
-        <img src="src/assets/icons/warning.svg"/>
+        <img src="src/assets/icons/error.svg"/>
         {{ warning }}
       </span>
     </div>
@@ -193,7 +193,7 @@ export default {
     },
 
     setMax() {
-      this.setValue(this.max - 1e15);
+      this.setValue(this.max);
       const hasError = this.error.length > 0;
       this.checkErrors(this.max);
       this.$forceUpdate();
@@ -368,7 +368,8 @@ img {
 }
 
 .warning {
-  color: #F5A200;
+  //color: #F5A200;
+  color: $red;
 }
 
 .error, .warning {

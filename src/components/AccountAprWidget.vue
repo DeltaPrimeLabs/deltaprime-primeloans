@@ -80,7 +80,7 @@ export default {
           max: 0.5
         },
         {
-          text: 'Degen, activated.!',
+          text: 'Degen, activated!',
           min: 0.5,
           max: 999999
         },

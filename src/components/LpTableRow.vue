@@ -82,7 +82,7 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {erc20ABI} from '../utils/blockchain';
+import {assetAppreciation, erc20ABI} from '../utils/blockchain';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
@@ -172,6 +172,7 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit / Create',
           menuOptions: [
             {
@@ -188,6 +189,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw / Unwind',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
@@ -205,7 +207,7 @@ export default {
     },
 
     async setupApr() {
-      this.apr = await this.lpToken.apr();
+      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + await this.lpToken.apr()) - 1);
     },
 
     toggleChart() {
@@ -221,6 +223,7 @@ export default {
     },
 
     actionClick(key) {
+      console.log(key);
       switch (key) {
         case 'ADD_FROM_WALLET':
           this.openAddFromWalletModal();

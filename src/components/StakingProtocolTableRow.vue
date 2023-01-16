@@ -24,7 +24,7 @@
               isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance)
             }}
           </div>
-          <div class="double-value__usd">{{ balance * asset.price | usd }}</div>
+          <div class="double-value__usd">{{ balance * (farm.price ? farm.price : asset.price) | usd }}</div>
         </div>
       </div>
 
@@ -50,16 +50,14 @@
 
       <div class="table__cell">
         <div class="actions">
-          <img class="action"
-               v-bind:class="{'disabled': disabled}"
-               src="src/assets/icons/plus.svg"
-               v-on:click="openStakeModal()"
-               v-tooltip="{content: 'Stake', classes: 'info-tooltip'}">
-          <img class="action"
-               v-bind:class="{'disabled': disabled}"
-               src="src/assets/icons/minus.svg"
-               v-on:click="openUnstakeModal()"
-               v-tooltip="{content: 'Unstake', classes: 'info-tooltip'}">
+          <IconButtonMenuBeta
+            class="action"
+            v-for="(actionConfig, index) of actionsConfig"
+            :disabled="disabled"
+            v-bind:key="index"
+            :config="actionConfig"
+            v-on:iconButtonClick="actionClick">
+          </IconButtonMenuBeta>
         </div>
       </div>
 
@@ -73,11 +71,14 @@ import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
+import {assetAppreciation} from '../utils/blockchain';
+import IconButtonMenuBeta from './IconButtonMenuBeta';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'StakingProtocolTableRow',
+  components: {IconButtonMenuBeta},
   props: {
     farm: {
       required: true,
@@ -87,10 +88,11 @@ export default {
     }
   },
   async mounted() {
+    this.setupActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchProgressBarState();
-    this.apy = await this.farm.apy();
+    await this.setApy();
   },
   data() {
     return {
@@ -100,7 +102,8 @@ export default {
       isStakedBalanceEstimated: false,
       waitingForHardRefresh: false,
       assetBalances: {},
-      lpBalances: {}
+      lpBalances: {},
+      actionsConfig: {}
     };
   },
   watch: {
@@ -135,6 +138,18 @@ export default {
   },
   methods: {
     ...mapActions('stakeStore', ['stake', 'unstake']),
+
+    actionClick(key) {
+      switch (key) {
+        case 'STAKE':
+          this.openStakeModal();
+          break;
+        case 'UNSTAKE':
+          this.openUnstakeModal();
+          break;
+      }
+    },
+
     async openStakeModal() {
       if (this.disabled) {
         return;
@@ -200,7 +215,7 @@ export default {
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
-          rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens  : [],
+          rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens : [],
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
@@ -243,6 +258,10 @@ export default {
       });
     },
 
+    async setApy() {
+      this.apy = (1 + await this.farm.apy()) * assetAppreciation(this.asset.symbol) - 1;
+    },
+
     scheduleHardRefresh() {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
@@ -260,7 +279,7 @@ export default {
             this.waitingForHardRefresh = false;
           }
         }
-      })
+      });
     },
 
     handleTransactionError() {
@@ -268,6 +287,23 @@ export default {
       this.closeModal();
       this.waitingForHardRefresh = false;
       this.isStakedBalanceEstimated = false;
+    },
+
+    setupActionsConfiguration() {
+      this.actionsConfig = [
+        {
+          iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
+          tooltip: 'Stake',
+          iconButtonActionKey: 'STAKE'
+        },
+        {
+          iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
+          tooltip: 'Unstake',
+          iconButtonActionKey: 'UNSTAKE'
+        },
+      ];
     },
   }
 };

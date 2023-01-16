@@ -69,6 +69,7 @@
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
+          :bubbleText="(asset.symbol === 'AVAX' && noSmartLoan && index === 0) ? `To create Prime Account deposit collateral with <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button` : ''"
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
@@ -107,6 +108,7 @@ import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {erc20ABI} from '../utils/blockchain';
+import WrapModal from './WrapModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -159,12 +161,13 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken']),
+    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken', 'wrapNativeToken']),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
           menuOptions: [
             {
@@ -178,11 +181,17 @@ export default {
                 disabled: this.borrowDisabled(),
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
-              : null
+              : null,
+            {
+              key: 'WRAP',
+              name: 'Wrap native AVAX',
+              hidden: true,
+            }
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
@@ -200,6 +209,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/swap.svg',
+          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
           tooltip: 'Swap',
           iconButtonActionKey: 'SWAP',
           disabled: !this.hasSmartLoanContract
@@ -242,6 +252,9 @@ export default {
           break;
         case 'SWAP':
           this.openSwapModal();
+          break;
+        case 'WRAP':
+          this.openWrapModal();
           break;
       }
     },
@@ -461,7 +474,7 @@ export default {
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
-          this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount);
+          this.debtsPerAsset[this.asset.symbol].debt = Math.max(Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount), 0);
           this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
           this.isDebtEstimated = true;
@@ -474,9 +487,40 @@ export default {
       });
     },
 
+    async openWrapModal() {
+      const smartContractNativeTokenBalance = await this.getSmartLoanContractNativeTokenBalance();
+      const modalInstance = this.openModal(WrapModal);
+      modalInstance.asset = this.asset;
+      modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.nativeTokenBalance = smartContractNativeTokenBalance;
+
+      modalInstance.$on('WRAP', value => {
+        const wrapRequest = {
+          amount: value.toString(),
+          decimals: this.asset.decimals,
+        };
+        this.handleTransaction(this.wrapNativeToken, {wrapRequest: wrapRequest}, () => {
+          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(wrapRequest.amount);
+          this.isBalanceEstimated = true;
+          this.scheduleHardRefresh();
+          this.$forceUpdate();
+        }, () => {
+          this.handleTransactionError();
+        }).then(() => {
+
+        });
+      });
+
+    },
+
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+    },
+
+    async getSmartLoanContractNativeTokenBalance() {
+      const balance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.smartLoanContract.address)));
+      return balance;
     },
 
     watchExternalAssetBalanceUpdate() {

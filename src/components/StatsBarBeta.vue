@@ -4,7 +4,7 @@
       <stats-bar-element-beta
         :label="'Borrowed'"
         :value="debt ? debt : 0 | usd"
-        :info-tooltip="`Value of all borrowed tokens.<br><a href='https://docs.deltaprime.io/liquidity-pools/borrowing#how-to-borrow' target='_blank'>More information.</a>`
+        :info-tooltip="`The value of your borrowed assets.`
       ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
@@ -15,8 +15,7 @@
           v-if="noSmartLoan !== null && health != null"
           :label="'Health'"
           :value="health | percent"
-          :info-tooltip="`Your health meter represents how close you are to liquidation and goes from 100% to 0%.<br>
-          <a href='https://docs.deltaprime.io/prime-brokerage-account/health-and-borrowing-power/interpretation' target='_blank'>More information.`
+          :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
           ">
         <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
       </stats-bar-element-beta>
@@ -28,7 +27,7 @@
       <stats-bar-element-beta
           :label="'Collateral'"
           :value="collateral ? collateral : 0 | usd"
-          :info-tooltip="`Value of all assets in your portfolio minus value of all borrowed tokens.<br><a href='https://docs.deltaprime.io/liquidity-pools/borrowing#how-to-add-collateral' target='_blank'>More information.`">
+          :info-tooltip="`The total value of all your assets, minus the value of your borrowed assets. <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#borrowed' target='_blank'>More information</a>.`">
       </stats-bar-element-beta>
     </div>
   </div>

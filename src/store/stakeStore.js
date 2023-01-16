@@ -99,6 +99,10 @@ export default {
     },
 
     async updateStakedPrices({state, rootState, commit}) {
+      //TODO: optimize, it's used in other place as well
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
       let farms = state.farms;
       for (const [symbol, tokenFarms] of Object.entries(farms)) {
         const asset = rootState.fundsStore.assets[symbol] ?
@@ -108,7 +112,9 @@ export default {
 
         if (asset) {
           for (let farm of tokenFarms) {
-            farm.price = asset.price;
+            let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
+
+            farm.price = redstonePriceData[feedSymbol][0].dataPoints[0].value;
           }
         }
       }

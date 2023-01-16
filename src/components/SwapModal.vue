@@ -6,8 +6,7 @@
       </div>
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
-                          v-on:valueChange="sourceInputChange"
-                          :validators="sourceValidators"">
+                          v-on:valueChange="sourceInputChange">
       </CurrencyComboInput>
       <div class="asset-info">
         Available:
@@ -20,8 +19,10 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
-                          :info="slippageInfo"
-                          v-on:valueChange="targetInputChange">
+                          :info="!transactionOngoing ? slippageInfo : ''"
+                          v-on:valueChange="targetInputChange"
+                          :validators="sourceValidators"
+                          :warnings="sourceWarnings">
       </CurrencyComboInput>
       <div class="asset-info">
         Price: <span
@@ -100,7 +101,7 @@ import {BigNumber, Contract} from "ethers";
 import INTERMEDIARY from '@artifacts/contracts/integrations/UniswapV2Intermediary.sol/UniswapV2Intermediary.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 
-const MIN_ACCEPTABLE_SLIPPAGE = 0.03;
+const MIN_ACCEPTABLE_SLIPPAGE = 0.01;
 export default {
   name: 'SwapModal',
   components: {
@@ -126,6 +127,7 @@ export default {
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
       sourceValidators: [],
+      sourceWarnings: [],
       targetValidators: [],
       sourceInputError: true,
       targetInputError: false,
@@ -152,6 +154,7 @@ export default {
       this.setupTargetAsset();
       this.setupConversionRate();
       this.setupValidators();
+      this.setupWarnings();
       this.calculateHealthAfterTransaction();
     });
   },
@@ -296,6 +299,8 @@ export default {
       this.sourceAssetBalance = sourceAssetBalance;
     },
 
+    async delay(ms) { return new Promise(res => setTimeout(res, ms)) },
+
     reverseSwap() {
       const tempSource = this.sourceAsset;
       this.sourceAsset = this.targetAsset;
@@ -309,16 +314,35 @@ export default {
 
       this.calculateHealthAfterTransaction();
     },
-
-    setupValidators() {
-      this.sourceValidators = [
+    setupWarnings() {
+      this.sourceWarnings = [
         {
-          validate: (value) => {
-            if (value > this.assetBalances[this.sourceAsset]) {
-              return 'Amount exceeds balance';
+          validate: async (value) => {
+            this.transactionOngoing = true;
+            await this.delay(5000);
+            this.transactionOngoing = false;
+
+
+            if (this.slippage > 0.02) {
+              return 'Slippage exceeds 2%. Be careful!';
             }
           }
         },
+      ]
+    },
+    setupValidators() {
+      this.sourceValidators = [
+        // {
+        //   validate: async (value) => {
+        //     this.transactionOngoing = true;
+        //     await this.delay(5000);
+        //     this.transactionOngoing = false;
+        //
+        //     if (this.slippage > 0.05) {
+        //       return 'Slippage exceeds the limit of 5%';
+        //     }
+        //   }
+        // },
         {
           validate: async (value) => {
             await this.chooseBestTrade();
@@ -344,7 +368,7 @@ export default {
         }
 
         if (symbol === this.targetAsset) {
-          balance += this.minTargetAssetAmount;
+          balance += this.targetAssetAmount;
         }
 
         tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
@@ -365,7 +389,13 @@ export default {
         });
       }
 
+      // console.log('swap modal')
+      //
+      // console.log(tokens)
+
       this.healthAfterTransaction = calculateHealth(tokens);
+
+      // console.log(' this.healthAfterTransaction: ',  this.healthAfterTransaction)
     },
   }
 };

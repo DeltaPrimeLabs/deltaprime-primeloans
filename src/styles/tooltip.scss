@@ -116,4 +116,40 @@
       max-width: none;
     }
   }
+
+  &.button-tooltip {
+    white-space: nowrap;
+    max-width: none;
+    width: auto;
+    border: none;
+
+    .tooltip-inner {
+      background: #6B70ED;
+      color: white;
+      border-radius: 12px;
+      padding: 5px 10px 5px;
+      font-weight: 500;
+      border: initial;
+    }
+
+    .tooltip-arrow {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      position: absolute;
+      border-color: #6B70ED;
+      z-index: 1;
+      transform: rotate(135deg);
+
+      margin-top: 3px;
+      border-width: 0 5px 5px 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-top-color: transparent !important;
+
+      border-left: initial;
+      border-top: initial;
+      background-color: initial;
+    }
+  }
 }

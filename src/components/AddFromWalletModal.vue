@@ -176,9 +176,9 @@ export default {
     submit() {
       this.transactionOngoing = true;
       if (this.asset.symbol === 'AVAX') {
-        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.selectedDepositAsset});
+        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
-        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.asset});
+        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.asset});
       }
     },
 
