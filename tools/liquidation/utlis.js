@@ -211,6 +211,17 @@ export function getLiquidatorSigner(network) {
     return (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(provider);
 }
 
+// TODO: Refactor once new liq bots architecture will be in place
+
+export function getLiquidatorSigner2(network) {
+    // 0xCD7D50FDD7481C3ffdeBc4F4d35B8C508986F5aa
+    const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "./.private-liquidator2")).toString().trim();
+    const RPC_URL = getUrlForNetwork(network);
+
+    let provider = new ethers.providers.JsonRpcProvider(RPC_URL)
+    return (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(provider);
+}
+
 export function getProvider(network) {
     const RPC_URL = getUrlForNetwork(network);
 
