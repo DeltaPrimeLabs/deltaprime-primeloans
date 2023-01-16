@@ -525,6 +525,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     console.log('Pausing')
     await diamondCut.pause();
     await deployFacet(
+        "YieldYakSwapFacet",
+        diamondAddress,
+        [
+            'yakSwap',
+        ],
+        hardhatConfig
+    )
+    await deployFacet(
         "OwnershipFacet",
         diamondAddress,
         [
