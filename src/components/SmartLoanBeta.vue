@@ -19,6 +19,10 @@
         Liquidation bots unwinded part of your positions<br>
         to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
       </InfoBubble>
+      <InfoBubble v-if="wasLiquidated" cacheKey="LIQUIDATED-0" style="margin-top: 40px">
+        Liquidation bots unwinded part of your positions<br>
+        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
+      </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
