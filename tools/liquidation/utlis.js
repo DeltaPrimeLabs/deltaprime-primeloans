@@ -23,7 +23,7 @@ const erc20ABI = [
 ]
 
 export async function awaitConfirmation(tx, provider, actionName, timeout) {
-    const transaction = await provider.waitForTransaction(tx.hash, timeout);
+    const transaction = await provider.waitForTransaction(tx.hash, 1, timeout);
     if (transaction.status === 0) {
         console.log(transaction);
         throw `Failed to ${actionName}`;
@@ -38,49 +38,56 @@ export async function unstakeYieldYak(loan, liquidator_wallet, provider){
     try{
         let contract = new ethers.Contract(TOKEN_ADDRESSES.YY_AAVE_AVAX, IYieldYak.abi, liquidator_wallet);
         let balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        let decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_AAVE_AVAX');
             await awaitConfirmation(await loan.unstakeAVAXYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_AAVE', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PTP_sAVAX, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_PTP_sAVAX');
             await awaitConfirmation(await loan.unstakeSAVAXYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_PTP_sAVAX', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_PNG_AVAX_USDC_LP');
             await awaitConfirmation(await loan.unstakePNGAVAXUSDCYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake PNG_AVAX_USDC_LP', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_PNG_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_PNG_AVAX_ETH_LP');
             await awaitConfirmation(await loan.unstakePNGAVAXETHYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_PNG_AVAX_ETH_LP', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_USDC_LP, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_TJ_AVAX_USDC_LP');
             await awaitConfirmation(await loan.unstakeTJAVAXUSDCYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_TJ_AVAX_UDC_LP', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_ETH_LP, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_TJ_AVAX_ETH_LP');
             await awaitConfirmation(await loan.unstakeTJAVAXETHYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_TJ_AVAX_ETH_LP', 60_000);
         }
 
         contract = new ethers.Contract(TOKEN_ADDRESSES.YY_TJ_AVAX_sAVAX_LP, IYieldYak.abi, liquidator_wallet);
         balance = await contract.balanceOf(loan.address);
-        if(fromWei(balance) > 0){
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
             console.log('Unstaking YY_TJ_AVAX_sAVAX_LP');
             await awaitConfirmation(await loan.unstakeTJAVAXSAVAXYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_TJ_AVAX_sAVAX_LP', 60_000);
         }
@@ -179,7 +186,7 @@ export async function unwindTraderJoeLPPositions(loan, liquidator_wallet, provid
 
 
 export async function unstakeStakedPositions(loan, provider){
-    console.log('Check LP TraderJoe');
+    console.log('Check staked postitions');
     try{
         for (let p of await loan.getStakedPositions()) {
             let stakedPosition = new StakedPosition(p[0], fromBytes32(p[1]), fromBytes32(p[2]), p[3], p[4]);

@@ -69,7 +69,7 @@ function loanInsolventPing(loanAddress){
 }
 
 function healthcheckPing() {
-    console.log(`[${(new Date).toLocaleString()}][HEALTHCHECK] Ping!`);
+    console.log(`[HEALTHCHECK] Ping!`);
     // BETA-HR: https://hc-ping.com/3bd80bcc-e9c8-48b8-8f44-e672bb498700
     // BETA-LTV: https://hc-ping.com/5db347bf-6516-4f9b-99ce-5bdcd88e12d0
     // BETA-2k-2k: https://hc-ping.com/cdc33b7f-e908-4598-8c0b-f0343c2cffd4
