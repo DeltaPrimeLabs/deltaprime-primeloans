@@ -7,6 +7,7 @@
                      :validators="validators"
                      :warnings="warnings"
                      :info="info"
+                     :disabled="disabled"
                      v-on:inputChange="currencyInputChange"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
@@ -58,6 +59,7 @@ export default {
     },
     //TODO: make an array like in validators
     info: {type: Function, default: null},
+    disabled: false,
   },
   computed: {
     getDisplayedAssetOptions() {

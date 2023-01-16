@@ -1,22 +1,12 @@
 <template>
-  <div class="currency-input-wrapper" v-bind:class="{'embedded': embedded}">
+  <div class="simple-input-wrapper" v-bind:class="{'embedded': embedded}" :style="{width: width + 'px', height: height + 'px'}">
     <div class="input-wrapper"
-         :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
+         :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0', height: height + 'px'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input  ref="input" v-model="internalValue" v-on:input="valueChange" :disabled="disabled"
+        <input  ref="input" v-model="internalValue" v-on:input="valueChange"
                placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
-      <div class="input-extras-wrapper">
-        <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
-          <div class="max">MAX</div>
-        </div>
-        <div v-if="!embedded" class="logo-wrapper">
-          <img class="logo" :src="logoSrc(symbol)"/>
-          <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : ''}}</span>
-        </div>
-      </div>
     </div>
     <div class="info"
          v-if="!error"
@@ -45,16 +35,12 @@
 
 
 <script>
-import config from '@/config';
-import {mapState} from 'vuex';
 
 export default {
-  name: 'CurrencyInput',
+  name: 'SimpleInput',
   props: {
-    price: {type: Number},
-    max: {default: null},
-    symbol: {type: String, default: 'AVAX'},
-    symbolSecondary: {type: String, default: null},
+    width: {type: Number, default: 70},
+    height: {type: Number, default: 26},
     flexDirection: {type: String, default: 'column'},
     validators: {
       type: Array, default: () => []
@@ -67,8 +53,6 @@ export default {
     defaultValue: null,
     waiting: false,
     disabled: false,
-    denominationButtons: false,
-    slippage: {type: Number, default: 0},
     embedded: false,
     delayErrorCheckAfterValuePropagation: {type: Boolean, default: false}
   },
@@ -79,9 +63,7 @@ export default {
       warning: '',
       value: this.defaultValue,
       defaultValidators: [],
-      asset: config.ASSETS_CONFIG[this.symbol],
       ongoingErrorCheck: false,
-      usdDenominated: true,
       internalValue: this.defaultValue,
     };
   },
@@ -94,6 +76,7 @@ export default {
     },
     defaultValue: function (newValue) {
       this.value = newValue;
+      this.internalValue = newValue;
     },
     warnings: function () {
       this.checkWarnings(this.value);
@@ -175,35 +158,14 @@ export default {
     },
 
     setupDefaultValidators() {
-      const positiveValidator = {
-        validate: (value) => {
-          if (this.internalValue <= 0) {
-            return `Value must be higher than 0`;
-          }
-        }
-      };
       const wrongFormatValidator = {
         validate: (value) => {
-          if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
-            return `Incorrect formatting.`;
+          if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,-]+$/)) {
+            return `Incorrect formatting. Please use only alphanumeric values.`;
           }
         }
       }
-      this.defaultValidators.push(positiveValidator, wrongFormatValidator);
-    },
-
-    setMax() {
-      this.setValue(this.max);
-      const hasError = this.error.length > 0;
-      this.checkErrors(this.max);
-      this.$forceUpdate();
-      this.$emit('newValue', {value: this.max, error: hasError});
-      this.$emit('inputChange', this.max);
-    },
-
-    setValueOfMax(maxValue) {
-      this.max = maxValue;
-      this.$forceUpdate();
+      this.defaultValidators.push(wrongFormatValidator);
     },
   }
 };
@@ -212,7 +174,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.currency-input-wrapper {
+.simple-input-wrapper {
 
   &.embedded {
     height: 60px;
@@ -228,19 +190,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-  background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
-  height: 60px;
-  border-radius: 15px;
-  padding-left: 15px;
-  padding-right: 15px;
-  border: none;
+  height: 30px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-radius: 5px;
+  border: solid 1px #dadada;
   width: 100%;
-
-  @media screen and (min-width: $md) {
-    padding-left: 30px;
-    padding-right: 20px;
-  }
 
   .input-extras-wrapper {
     display: flex;
@@ -256,20 +211,10 @@ input {
   background: transparent;
   border: none;
   font-family: Montserrat;
+  font-size: 16px;
   font-weight: 600;
-  font-size: 24px;
   padding-top: 0;
   padding-bottom: 0;
-  max-width: 40%;
-
-  &:disabled {
-    opacity: 77%;
-  }
-
-  @media screen and (min-width: $md) {
-    padding-right: 5px;
-    max-width: none;
-  }
 }
 
 input:focus {
@@ -312,46 +257,6 @@ input[type=number] {
   }
 }
 
-.symbol {
-  margin-left: 10px;
-  font-family: 'Lato';
-  font-weight: 900;
-  font-size: 18px;
-}
-
-.logo-wrapper {
-  display: flex;
-  align-items: center;
-}
-
-.logo.secondary {
-  transform: translateX(-10px);
-}
-
-.max-wrapper {
-  cursor: pointer;
-  width: 35px;
-  min-width: 35px;
-  margin-right: 20px;
-
-
-  .max {
-    border: solid 1px #8986fe;
-    border-radius: 10px;
-    width: 45px;
-    height: 26px;
-    font-weight: bold;
-    line-height: 24px;
-    color: #8986fe;
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-    }
-  }
-}
-
 img {
   height: 24px;
   width: 24px;
@@ -372,8 +277,7 @@ img {
 }
 
 .warning {
-  //color: #F5A200;
-  color: $red;
+  color: #F5A200;
 }
 
 .error, .warning {
