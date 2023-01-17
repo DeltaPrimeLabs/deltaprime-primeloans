@@ -36,7 +36,7 @@
 .bubble {
   position: absolute;
   z-index: 0;
-  transform: translate(-211px, -161px);
+  transform: translate(-211px, -178px);
 }
 
 .solid-block-wrapper {
