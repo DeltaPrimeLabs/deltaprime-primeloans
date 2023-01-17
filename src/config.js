@@ -91,6 +91,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['AVAX'],
                 strategy: 'AAVE',
+                refreshDelay: 60000,
                 gasStake: 4000000,
                 gasUnstake: 4000000
             },
@@ -107,6 +108,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
             }
@@ -124,6 +126,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
+                refreshDelay: 60000,
                 gasStake: 6000000,
                 gasUnstake: 6000000
             },
@@ -160,6 +163,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
+                refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
             }
@@ -193,6 +197,7 @@ export default {
                 token: 'PNG_AVAX_ETH_LP',
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
+                refreshDelay: 60000,
                 gasStake: 4000000,
                 gasUnstake: 4000000
             }
@@ -209,6 +214,7 @@ export default {
                 token: 'TJ_AVAX_USDC_LP',
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
+                refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
             }
@@ -225,6 +231,7 @@ export default {
                 token: 'TJ_AVAX_ETH_LP',
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
+                refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
             }
@@ -241,6 +248,7 @@ export default {
                 token: 'TJ_AVAX_sAVAX_LP',
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
+                refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
             }

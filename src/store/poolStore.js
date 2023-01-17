@@ -77,7 +77,7 @@ export default {
       });
       setTimeout(async () => {
         commit('setPools', pools);
-        await dispatch('fundsStore/getAccountApr', {}, {root: true});
+        rootState.serviceRegistry.aprService.emitRefreshApr();
       }, 1000);
     },
 

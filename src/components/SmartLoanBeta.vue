@@ -75,11 +75,11 @@ export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'accountApr', 'smartLoanContract']),
+    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('serviceRegistry', ['healthService']),
+    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService']),
     ...mapState('network', ['account']),
-    ...mapGetters('fundsStore', ['getHealth', 'getCollateral']),
+    ...mapGetters('fundsStore', ['getHealth', 'getCollateral', 'getAccountApr']),
     wasLiquidated() {
       if (this.smartLoanContract && this.smartLoanContract.address) {
         return [
@@ -125,12 +125,15 @@ export default {
       noSmartLoanInternal: null,
       selectedTabIndex: 0,
       videoVisible: true,
+      accountApr: null,
     };
   },
 
   async mounted() {
     this.setupSelectedTab();
     this.watchHealthRefresh();
+    this.watchAprRefresh();
+    this.watchProgressBarState();
     this.setupVideoVisibility();
     if (window.provider) {
       await this.fundsStoreSetup();
@@ -218,6 +221,29 @@ export default {
         this.health = await this.getHealth;
       })
     },
+
+    watchAprRefresh() {
+      this.aprService.observeRefreshApr().subscribe(async() => {
+        console.log('watchAprRefresh');
+        this.accountApr = null;
+        this.accountApr = await this.getAccountApr;
+      });
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe(async (state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.accountApr = null;
+            break;
+          }
+          case 'ERROR' : {
+            this.accountApr = await this.getAccountApr;
+          }
+        }
+      });
+    },
+
 
     closeVideo() {
       this.videoVisible = false;

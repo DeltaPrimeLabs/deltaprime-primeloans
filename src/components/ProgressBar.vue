@@ -4,7 +4,8 @@
          v-bind:class="{'background--success': state === 'SUCCESS', 'background--error': state === 'ERROR'}"></div>
     <div v-if="state === 'IN_PROGRESS' || state === 'MINING'"
          class="value-overlay"
-         v-bind:class="{'value-overlay__clock-running': state === 'IN_PROGRESS'}"></div>
+         v-bind:class="{'value-overlay__clock-running': state === 'IN_PROGRESS'}"
+         v-bind:style="state === 'IN_PROGRESS' ? {'transition': `width ${duration}ms linear`} : {'transition': `width 0s linear`}"></div>
     <div class="text-overlay">
       <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'IN_PROGRESS'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
@@ -34,6 +35,7 @@ export default {
       success: false,
       error: false,
       state: 'IN_PROGRESS',
+      duration: 0,
     };
   },
   computed: {
@@ -48,6 +50,7 @@ export default {
       this.progressBarService.progressBarRequested$.subscribe((progressBarRequest) => {
         if (!this.progressBarVisible) {
           this.value = 0;
+          this.duration = progressBarRequest.duration;
           this.showProgressBar(progressBarRequest.duration);
         }
       });
@@ -118,7 +121,6 @@ export default {
     background-color: $pearl-gray;
 
     &.value-overlay__clock-running {
-      transition: width 30s linear;
       width: 0;
     }
   }
