@@ -93,8 +93,8 @@ import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromWei} from "../utils/calculate";
 
 // This could be abstracted in separate store
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
+// import { initializeApp } from "firebase/app";
+// import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -107,10 +107,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const fireStore = getFirestore(initializeApp(firebaseConfig));
-
-
-
+// const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
   name: 'ProtocolStats',
