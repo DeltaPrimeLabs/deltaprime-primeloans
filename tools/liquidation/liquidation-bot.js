@@ -83,101 +83,100 @@ async function getInsolventLoans() {
     return insolventLoans
 }
 
-export async function liquidateLoan(loanAddress, tokenManagerAddress, diamondAddress, diamondOwner) {
+export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let loan = await wrapLoan(loanAddress, wallet);
-    let tokenManager = getTokenManager(tokenManagerAddress);
-    let poolTokens = await tokenManager.getAllPoolAssets();
-    let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
+    let ratio = fromWei(await loan.getHealthRatio());
+    if (ratio < 0.99) {
+        let tokenManager = getTokenManager(tokenManagerAddress);
+        let poolTokens = await tokenManager.getAllPoolAssets();
+        let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
-    //TODO: optimize to unstake only as much as needed
-    await unstakeStakedPositions(loan, provider);
+        //TODO: optimize to unstake only as much as needed
+        await unstakeStakedPositions(loan, provider);
 
-    await unstakeYieldYak(loan, liquidator_wallet, provider);
+        await unstakeYieldYak(loan, liquidator_wallet, provider);
 
-    await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
+        await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
-    await unwindTraderJoeLPPositions(loan, liquidator_wallet, provider);
+        await unwindTraderJoeLPPositions(loan, liquidator_wallet, provider);
 
-    //TODO: calculate in the future
-    const bonus = 0;
+        //TODO: calculate in the future
+        const bonus = 0;
 
-    const weiDebts = (await loan.getDebts());
+        const weiDebts = (await loan.getDebts());
 
-    const debts = [];
-    for (let debt of weiDebts) {
-        let symbol = fromBytes32(debt.name);
-        debts.push(
-            {
-                name: symbol,
-                debt: formatUnits(debt.debt, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
-            });
-    }
-
-    const balances = [];
-
-    const weiBalances = (await loan.getAllAssetsBalances());
-    for (let balance of weiBalances) {
-        let symbol = fromBytes32(balance.name);
-
-        balances.push(
-            {
-                name: symbol,
-                //@ts-ignore
-                debtCoverage: fromWei(await tokenManager.debtCoverage(TOKEN_ADDRESSES[symbol])),
-                balance: formatUnits(balance.balance, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
-            });
-    }
-
-    let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
-
-    let prices = (await loan.getAllAssetsPrices()).map(el => {
-        return {
-            dataFeedId: fromBytes32(el.name),
-            value: formatUnits(el.price, 8)
+        const debts = [];
+        for (let debt of weiDebts) {
+            let symbol = fromBytes32(debt.name);
+            debts.push(
+                {
+                    name: symbol,
+                    debt: formatUnits(debt.debt, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+                });
         }
-    });
 
-    let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
-        'LIQUIDATE',
-        debts,
-        balances,
-        prices,
-        1.04,
-        bonus,
-        loanIsBankrupt
-    );
+        const balances = [];
 
-    let amountsToRepayInWei = [];
+        const weiBalances = (await loan.getAllAssetsBalances());
+        for (let balance of weiBalances) {
+            let symbol = fromBytes32(balance.name);
 
-    for (const repayment of repayAmounts) {
-        let tokenContract = await getTokenContract(addresses[repayment.name]);
-        let decimals = await tokenContract.decimals();
-        amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
-    }
+            balances.push(
+                {
+                    name: symbol,
+                    //@ts-ignore
+                    debtCoverage: fromWei(await tokenManager.debtCoverage(TOKEN_ADDRESSES[symbol])),
+                    balance: formatUnits(balance.balance, await getTokenContract(TOKEN_ADDRESSES[symbol]).decimals())
+                });
+        }
 
-    for (const allowance of deliveredAmounts) {
-        let tokenContract = await getTokenContract(addresses[allowance.name]);
-        let decimals = await tokenContract.decimals();
-        let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
-    }
-    const bonusInWei = (bonus * 1000).toFixed(0);
+        let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
 
-    if (!loanIsBankrupt) {
-        let liqStartTime = new Date();
+        let prices = (await loan.getAllAssetsPrices()).map(el => {
+            return {
+                dataFeedId: fromBytes32(el.name),
+                value: formatUnits(el.price, 8)
+            }
+        });
 
-        let loan = await wrapLoan(loanAddress, wallet);
-        let ratio = fromWei(await loan.getHealthRatio());
+        let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+            'LIQUIDATE',
+            debts,
+            balances,
+            prices,
+            1.04,
+            bonus,
+            loanIsBankrupt
+        );
 
-        if (ratio < 0.99) {
+        let amountsToRepayInWei = [];
+
+        for (const repayment of repayAmounts) {
+            let tokenContract = await getTokenContract(addresses[repayment.name]);
+            let decimals = await tokenContract.decimals();
+            amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
+        }
+
+        for (const allowance of deliveredAmounts) {
+            let tokenContract = await getTokenContract(addresses[allowance.name]);
+            let decimals = await tokenContract.decimals();
+            let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
+            await tokenContract.connect(wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
+        }
+        const bonusInWei = (bonus * 1000).toFixed(0);
+
+        if (!loanIsBankrupt) {
+            let liqStartTime = new Date();
+
             let receipt = await awaitConfirmation(loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
 
             console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+
         } else {
-            console.log('Loan on the edge of solvency, aborting liquidation.')
+            console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
         }
     } else {
-        console.log('This loan is bankrupt sir. I\'m not touching it, sawry!');
+        console.log('Loan on the edge of solvency, aborting liquidation.');
     }
 }
 
@@ -198,7 +197,7 @@ async function liquidateInsolventLoans() {
     console.log(`INSOLVENT LOANS[${loans.length}]: ${loans}`)
 
     for (const x in loans) {
-        await liquidateLoan(loans[x], TOKEN_MANAGER_TUP.address, SMART_LOAN_DIAMOND.address, wallet);
+        await liquidateLoan(loans[x], TOKEN_MANAGER_TUP.address);
     }
     setTimeout(liquidateInsolventLoans, interval * 1000);
 }
