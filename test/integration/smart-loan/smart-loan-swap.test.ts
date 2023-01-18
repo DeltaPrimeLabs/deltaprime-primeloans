@@ -2,6 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -25,7 +26,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei, yakRouterAbi
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -41,28 +42,34 @@ import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const yakRouterAddress = '0xC4729E56b831d74bBc18797e0e17A295fA77488c';
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
+const yakRouter = new ethers.Contract(
+    yakRouterAddress,
+    yakRouterAbi,
+    provider
+)
 
-const lpABI = [
-    ...erc20ABI,
-    'function getReserves() public view returns (uint112, uint112, uint32)',
-]
+async function query(tknFrom: string, tknTo: string, amountIn: BigNumber) {
+    const maxHops = 3
+    const gasPrice = ethers.utils.parseUnits('225', 'gwei')
+    return yakRouter.findBestPathWithGas(
+        amountIn,
+        tknFrom,
+        tknTo,
+        maxHops,
+        gasPrice,
+        { gasLimit: 1e9 }
+    )
+}
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
 
-    describe('A loan without debt', () => {
+    describe('A loan without debt - Pangolin', () => {
         let exchange: PangolinIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
@@ -296,6 +303,192 @@ describe('Smart loan', () => {
             const currentEthTokenBalance = (await extractAssetNameBalances(wrappedLoan))["sAVAX"];
 
             expect(currentEthTokenBalance).to.be.equal(0);
+
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+        });
+    });
+
+    describe('A loan without debt - YakSwap', () => {
+        let exchange: PangolinIntermediary,
+            smartLoansFactory: SmartLoansFactory,
+            loan: SmartLoanGigaChadInterface,
+            wrappedLoan: any,
+            owner: SignerWithAddress,
+            depositor: SignerWithAddress,
+            MOCK_PRICES: any,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
+
+        before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
+            [owner, depositor] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'ETH', 'MCKUSD', 'USDC', 'sAVAX'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [depositor]},
+                {name: 'MCKUSD', airdropList: [owner, depositor]}
+            ];
+
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            await smartLoansFactory.initialize(diamondAddress);
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
+            addMissingTokenContracts(tokenContracts, assetsList);
+
+            let tokenManager = await deployContract(
+                owner,
+                MockTokenManagerArtifact,
+                []
+            ) as MockTokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                tokenManager.address,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib'
+            );
+
+            await deployAllFacets(diamondAddress)
+        });
+
+        it("should deploy a smart loan", async () => {
+            await smartLoansFactory.connect(owner).createLoan();
+
+            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
+
+            wrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+        });
+
+        it("should fund a loan", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+
+            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(0, 0.1);
+
+            await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, parseUnits("1000", await tokenContracts.get('MCKUSD')!.decimals()));
+            await wrappedLoan.fund(toBytes32("MCKUSD"), parseUnits("1000", await tokenContracts.get('MCKUSD')!.decimals()));
+            expect(formatUnits(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address), await tokenContracts.get('MCKUSD')!.decimals())).to.be.closeTo(1000, 0.1);
+
+            tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("1000")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("1000"));
+
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(0, 0.1);
+
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100, 0.1);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 1000, 2);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+        });
+
+        it("should withdraw part of funds", async () => {
+            expect(formatUnits(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address), await tokenContracts.get('MCKUSD')!.decimals())).to.be.closeTo(1000, 0.1);
+
+            await wrappedLoan.withdraw(toBytes32("MCKUSD"), parseUnits("100", await tokenContracts.get('MCKUSD')!.decimals()));
+
+            expect(formatUnits(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address), await tokenContracts.get('MCKUSD')!.decimals())).to.be.closeTo(900, 0.1);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 900, 2);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+        });
+
+
+        it("should fail to swap from a non-owner account", async () => {
+            let nonOwnerWrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+
+            await expect(nonOwnerWrappedLoan.yakSwap(
+                0, 0, [], [])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should buy an asset from funded", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 900, 2);
+            const amountOfAvaxToSell = 20;
+            const queryRes = await query(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['sAVAX'], toWei(amountOfAvaxToSell.toString()));
+            const amountOutMin = queryRes.amounts[queryRes.amounts.length-1];
+
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100, 0.1);
+
+            await wrappedLoan.yakSwap(
+                queryRes.amounts[0],
+                amountOutMin.mul(98).div(100),
+                queryRes.path,
+                queryRes.adapters
+            )
+
+            let assetsNameBalance: any = await extractAssetNameBalances(wrappedLoan);
+
+            expect(fromWei(await tokenContracts.get('AVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(100 - amountOfAvaxToSell, 0.1);
+            expect(fromWei(assetsNameBalance["AVAX"])).to.be.closeTo(100 - amountOfAvaxToSell, 0.05);
+
+            expect(fromWei(await tokenContracts.get('sAVAX')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(amountOutMin), 0.05);
+            expect(fromWei(assetsNameBalance["sAVAX"])).to.be.closeTo(fromWei(amountOutMin), 0.05);
+
+            // total value should stay similar to before swap
+            // big delta of 80 because of slippage
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(tokensPrices.get('AVAX')! * 100 + 900, 80);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+        });
+
+        it("should provide assets balances and prices", async () => {
+            let assetsNameBalance: any = await extractAssetNameBalances(wrappedLoan);
+            let assetsNamePrices: any = await extractAssetNamePrices(wrappedLoan);
+
+            expect(formatUnits(assetsNameBalance["MCKUSD"], await tokenContracts.get('MCKUSD')!.decimals())).to.be.equal(900);
+            expect(formatUnits(assetsNamePrices["MCKUSD"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('MCKUSD')!, 0.001);
+            expect(formatUnits(assetsNameBalance["AVAX"], await tokenContracts.get('AVAX')!.decimals())).to.be.equal(80);
+            expect(formatUnits(assetsNamePrices["AVAX"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('AVAX')!, 0.001);
+            expect(formatUnits(assetsNameBalance["sAVAX"], await tokenContracts.get('sAVAX')!.decimals())).to.be.closeTo(20, 1.5);
+            expect(formatUnits(assetsNamePrices["sAVAX"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('sAVAX')!, 0.001);
+        });
+
+
+        it("should swap back", async () => {
+            const initialSAVAXTokenBalance = (await extractAssetNameBalances(wrappedLoan))["sAVAX"];
+            const queryRes = await query(TOKEN_ADDRESSES['sAVAX'], TOKEN_ADDRESSES['AVAX'], initialSAVAXTokenBalance);
+            const amountOutMin = queryRes.amounts[queryRes.amounts.length-1];
+
+            await wrappedLoan.yakSwap(
+                queryRes.amounts[0],
+                amountOutMin.mul(98).div(100),
+                queryRes.path,
+                queryRes.adapters
+            )
+
+            const currentSAVAXTokenBalance = (await extractAssetNameBalances(wrappedLoan))["sAVAX"];
+
+            expect(currentSAVAXTokenBalance).to.be.equal(0);
 
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);

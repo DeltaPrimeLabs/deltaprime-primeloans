@@ -2,7 +2,6 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-const addresses = require("../../common/addresses/avax/token_addresses.json");
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import PoolRewarderArtifact from '../../artifacts/contracts/PoolRewarder.sol/PoolRewarder.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -23,22 +22,10 @@ import {
 } from "../../typechain";
 import {Contract} from "ethers";
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 chai.use(solidity);
 
-const {deployContract, provider} = waffle;
+const {deployContract} = waffle;
 
 describe('Pool with variable utilisation interest rates and rewards', () => {
     describe('Depositing only (multiple depositors)', () => {

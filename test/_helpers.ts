@@ -18,18 +18,10 @@ import addresses from "../common/addresses/avax/token_addresses.json";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
-export const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-export const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
+export const erc20ABI = require('./abis/ERC20.json');
+export const LPAbi = require('./abis/LP.json');
+export const wavaxAbi = require('./abis/WAVAX.json');
+export const yakRouterAbi = require('./abis/YakRouter.json');
 
 export const ZERO = ethers.constants.AddressZero;
 
@@ -524,6 +516,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
     console.log('Pausing')
     await diamondCut.pause();
+    await deployFacet(
+        "YieldYakSwapFacet",
+        diamondAddress,
+        [
+            'yakSwap',
+        ],
+        hardhatConfig
+    )
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,

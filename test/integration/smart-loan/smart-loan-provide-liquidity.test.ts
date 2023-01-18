@@ -10,13 +10,13 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 import {
     Asset,
     deployAllFacets,
-    deployAndInitializeLendingPool, formatUnits, fromBytes32,
+    deployAndInitializeLendingPool, erc20ABI, formatUnits, fromBytes32,
     fromWei,
-    getFixedGasSigners,
+    getFixedGasSigners, LPAbi,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO,
+    toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -34,21 +34,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
-
-const lpABI = [
-    ...erc20ABI,
-    'function getReserves() public view returns (uint112, uint112, uint32)',
-]
-
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
@@ -101,7 +86,7 @@ describe('Smart loan', () => {
             AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
             USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
 
-            tokenContracts['PNG_AVAX_USDC_LP'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], lpABI, provider);
+            tokenContracts['PNG_AVAX_USDC_LP'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], LPAbi, provider);
 
             let lpTokenTotalSupply = await tokenContracts['PNG_AVAX_USDC_LP'].totalSupply();
             let [lpTokenToken0Reserve, lpTokenToken1Reserve] = (await tokenContracts['PNG_AVAX_USDC_LP'].getReserves());
@@ -292,7 +277,8 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             )).to.be.reverted;
 
-            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidator.address]);
 
             await nonOwnerWrappedLoan.removeLiquidityPangolin(
                 toBytes32('AVAX'),

@@ -308,12 +308,14 @@ describe('Smart loan', () => {
             await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
+            const whitelistingContract = await ethers.getContractAt('SmartLoanGigaChadInterface', diamondAddress, owner);
+
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).to.be.reverted;
 
 
-            await loan.connect(owner).whitelistLiquidators([nonOwner.address]);
+            await whitelistingContract.whitelistLiquidators([nonOwner.address]);
 
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).not.to.be.reverted;
         });

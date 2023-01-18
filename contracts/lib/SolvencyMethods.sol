@@ -229,4 +229,10 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         _;
         require(_canRepayDebtFully(), "Insufficient assets to fully repay the debt");
     }
+
+    modifier noBorrowInTheSameBlock() {
+        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
+        require(ds._lastBorrowTimestamp != block.timestamp, "Borrowing must happen in a standalone transaction");
+        _;
+    }
 }

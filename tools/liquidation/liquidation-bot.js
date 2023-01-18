@@ -2,7 +2,7 @@ import LOAN_FACTORYTUP from '../../deployments/avalanche/SmartLoansFactoryTUP.js
 import LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json'
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
+import {erc20ABI, fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';
 import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeacon.json';
@@ -31,14 +31,6 @@ const path = require("path");
 require('console-stamp')(console, {
     format: ':date(yyyy/mm/dd HH:MM:ss.l)'
 } );
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address dst, uint wad) public returns (bool)'
-]
 
 const PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "./.private")).toString().trim();
 const RPC_URL = getUrlForNetwork(network);
@@ -130,7 +122,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
                 });
         }
 
-        let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
+        let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
 
         let prices = (await loan.getAllAssetsPrices()).map(el => {
             return {
@@ -168,7 +160,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
         if (!loanIsBankrupt) {
             let liqStartTime = new Date();
 
-            let receipt = await awaitConfirmation(loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
+            let receipt = await awaitConfirmation(await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
 
             console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
 

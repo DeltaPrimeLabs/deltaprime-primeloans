@@ -14,13 +14,13 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools,
+    deployPools, erc20ABI,
     formatUnits,
     fromBytes32,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
-    getTokensPricesMap,
+    getTokensPricesMap, LPAbi,
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
@@ -43,20 +43,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
-
-const lpABI = [
-    ...erc20ABI,
-    'function getReserves() public view returns (uint112, uint112, uint32)',
-]
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -292,7 +278,7 @@ describe('Smart loan', () => {
         it("should buy an LP token", async () => {
             const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
             let AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            let PNG_AVAX_USDC_LP = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], lpABI, provider);
+            let PNG_AVAX_USDC_LP = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], LPAbi, provider);
 
             let initialAvaxBalance = fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address));
             let initialUsdcBalance = formatUnits(

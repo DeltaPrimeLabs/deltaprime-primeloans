@@ -13,7 +13,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools, fromBytes32,
+    deployPools,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -22,7 +22,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -36,20 +36,8 @@ import {Contract} from "ethers";
 chai.use(solidity);
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
-const {deployContract, provider} = waffle;
+const {deployContract} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 describe('Smart loan - upgrading', () => {
     before("Synchronize blockchain time", async () => {

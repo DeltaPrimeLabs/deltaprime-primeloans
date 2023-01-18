@@ -171,12 +171,6 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         _;
     }
 
-    modifier noBorrowInTheSameBlock() {
-        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
-        require(ds._lastBorrowTimestamp != block.timestamp, "Borrowing must happen in a standalone transaction");
-        _;
-    }
-
     /**
      * @dev emitted after a swap of assets
      * @param user the address of user making the purchase

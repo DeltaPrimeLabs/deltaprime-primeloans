@@ -8,7 +8,17 @@ import PangolinIntermediaryArtifact
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinIntermediary, TokenManager} from '../../../typechain';
-import {Asset, formatUnits, fromWei, getFixedGasSigners, syncTime, toBytes32, toWei} from "../../_helpers";
+import {
+    Asset,
+    erc20ABI,
+    formatUnits,
+    fromWei,
+    getFixedGasSigners,
+    syncTime,
+    toBytes32,
+    toWei,
+    wavaxAbi
+} from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import redstone from "redstone-api";
@@ -19,19 +29,6 @@ const {deployContract, provider} = waffle;
 const {expect} = chai;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-
-const ERC20Abi = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)'
-]
-
-const WavaxAbi = [
-    'function deposit() public payable',
-    ...ERC20Abi
-]
 
 const UniswapV2IntermediaryAbi = [
     'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
@@ -74,8 +71,8 @@ describe('PangolinIntermediary', () => {
 
             await sut.initialize(pangolinRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
 
-            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
-            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
+            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
             usdTokenDecimalPlaces = await usdToken.decimals();
             router = await new ethers.Contract(pangolinRouterAddress, UniswapV2IntermediaryAbi);
 
@@ -192,13 +189,13 @@ describe('PangolinIntermediary', () => {
                 TOKEN_ADDRESSES['USDC']
             ]);
 
-            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
-            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
+            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
             usdTokenDecimalPlaces = await usdToken.decimals();
             router = await new ethers.Contract(pangolinRouterAddress, UniswapV2IntermediaryAbi);
 
             lpTokenAddress = await sut.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
-            lpToken = new ethers.Contract(lpTokenAddress, ERC20Abi, provider);
+            lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});
         });

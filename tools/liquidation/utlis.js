@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
-import {formatUnits, fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
+import {erc20ABI, formatUnits, fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
 import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
 import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
@@ -13,14 +13,6 @@ const {getUrlForNetwork} = require("../scripts/helpers");
 const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const sdk = require("redstone-sdk");
 const supportedTokensList = supportedAssetsAvax.map(asset => fromBytes32(asset.asset))
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address dst, uint wad) public returns (bool)'
-]
 
 export async function awaitConfirmation(tx, provider, actionName, timeout) {
     const transaction = await provider.waitForTransaction(tx.hash, 1, timeout);
