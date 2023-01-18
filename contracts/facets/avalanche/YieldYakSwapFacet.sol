@@ -31,8 +31,10 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes32 _tokenSoldSymbol = tokenManager.tokenAddressToSymbol(_soldTokenAddress);
         bytes32 _tokenBoughtSymbol = tokenManager.tokenAddressToSymbol(_boughtTokenAddress);
 
-        IERC20Metadata _soldToken = IERC20Metadata(tokenManager.getAssetAddress(_tokenSoldSymbol, true));
-        IERC20Metadata _boughtToken = IERC20Metadata(tokenManager.getAssetAddress(_tokenBoughtSymbol, false));
+        require(tokenManager.isTokenAssetActive(_boughtTokenAddress), "Asset not supported.");
+
+        IERC20Metadata _soldToken = IERC20Metadata(_soldTokenAddress);
+        IERC20Metadata _boughtToken = IERC20Metadata(_boughtTokenAddress);
 
         return SwapTokensDetails({
             tokenSoldSymbol: _tokenSoldSymbol,
@@ -65,7 +67,7 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         // Add asset to ownedAssets
         if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(swapTokensDetails.tokenBoughtSymbol, _path[_path.length - 1]);
+            DiamondStorageLib.addOwnedAsset(swapTokensDetails.tokenBoughtSymbol, address(swapTokensDetails.boughtToken));
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
@@ -85,12 +87,6 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             block.timestamp
         );
 
-    }
-
-    modifier noBorrowInTheSameBlock() {
-        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
-        require(ds._lastBorrowTimestamp != block.timestamp, "Borrowing must happen in a standalone transaction");
-        _;
     }
 
     modifier onlyOwner() {
