@@ -2,6 +2,8 @@ import {ethers} from "hardhat";
 import LOAN_FACTORYTUP from "../../deployments/avalanche/SmartLoansFactoryTUP.json";
 import LOAN_FACTORY from "../../deployments/avalanche/SmartLoansFactory.json";
 import {getLiquidatorSigner, wrapLoan} from "./utlis";
+import {boolean} from "hardhat/internal/core/params/argumentTypes";
+import {fromWei} from "../../test/_helpers";
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const {getUrlForNetwork} = require("../scripts/helpers");
@@ -24,7 +26,7 @@ async function getAllLoans() {
 
 async function wrapLoanIsSolvent(loanAddress) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
-    let isSolvent = await loan.isSolvent();
+    let isSolvent = Boolean(fromWei(await loan.getHealthRatio()) >= 0.99);
     return isSolvent;
 }
 
