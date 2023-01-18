@@ -43,6 +43,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const yakRouterAddress = '0xC4729E56b831d74bBc18797e0e17A295fA77488c';
+const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 const yakRouter = new ethers.Contract(
     yakRouterAddress,

@@ -26,7 +26,7 @@ import {syncTime} from "../../_syncTime"
 import {
     TraderJoeIntermediary,
     SmartLoansFactory,
-    LiquidationFlashloan, MockTokenManager
+    LiquidationFlashloan, MockTokenManager, PangolinIntermediary
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot-flashloan';
@@ -43,6 +43,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const pangolinRouterAddress = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
 
@@ -82,7 +83,7 @@ describe('Test liquidator with a flashloan', () => {
 
             let assetsList = ['AVAX', 'USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
-                {name: 'AVAX', airdropList: [borrower, depositor]},
+                {name: 'AVAX', airdropList: [borrower, depositor, owner]},
                 {name: 'USDC', airdropList: []}
             ];
 
@@ -156,13 +157,14 @@ describe('Test liquidator with a flashloan', () => {
         it("should check onlyOwner methods", async () => {
             await expect(liquidationFlashloan.connect(depositor).transferERC20(ZERO, ZERO, 0)).to.be.revertedWith("Ownable: caller is not the owner");
 
-            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(0);
-            await tokenContracts.get('USDC')!.connect(owner).transfer(1_000_000, liquidationFlashloan.address);
-            expect(await tokenContracts.get('USDC')!.balanceOf(liquidationFlashloan.address)).to.be.equal(1_000_000);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(liquidationFlashloan.address)).to.be.equal(0);
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: 1_000_000});
+            await tokenContracts.get('AVAX')!.connect(owner).transfer(liquidationFlashloan.address, 1_000_000);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(liquidationFlashloan.address)).to.be.equal(1_000_000);
 
-            let ownerUSDCBalance = await tokenContracts.get('USDC')!.balanceOf(owner.address);
-            await liquidationFlashloan.connect(owner).transferERC20(tokenContracts.get('USDC')!.address, owner.address, 1_000_000);
-            expect(await tokenContracts.get('USDC')!.balanceOf(owner.address)).to.be.equal(ownerUSDCBalance + 1_000_000);
+            let ownerUSDCBalance = await tokenContracts.get('AVAX')!.balanceOf(owner.address);
+            await liquidationFlashloan.connect(owner).transferERC20(tokenContracts.get('AVAX')!.address, owner.address, 1_000_000);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(owner.address)).to.be.equal(ownerUSDCBalance + 1_000_000);
         });
 
         it("should whitelist LIQUIDATOR and flashloan contract", async () => {
@@ -581,6 +583,7 @@ describe('Test liquidator with a flashloan', () => {
 
     describe('A loan with debt and swaps in multiple tokens', () => {
         let exchange: TraderJoeIntermediary,
+            exchangePNG: PangolinIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             diamondCut: Contract,
@@ -626,6 +629,7 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchangePNG = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
@@ -665,6 +669,10 @@ describe('Test liquidator with a flashloan', () => {
                     {
                         facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
+                    },
+                    {
+                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        contractAddress: exchangePNG.address,
                     }
                 ],
                 tokenManager.address,
@@ -754,9 +762,6 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-
-            console.log(fromWei(await wrappedLoan.getTotalValue()))
-            console.log(fromWei(await wrappedLoan.getDebt()))
             await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
@@ -914,7 +919,7 @@ describe('Test liquidator with a flashloan', () => {
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
-            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("500"));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("520"));
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("QI"), toWei("50"), 0);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);

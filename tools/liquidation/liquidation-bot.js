@@ -122,7 +122,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
                 });
         }
 
-        let loanIsBankrupt = await loan.getTotalValue() < await loan.getDebt();
+        let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
 
         let prices = (await loan.getAllAssetsPrices()).map(el => {
             return {
@@ -160,7 +160,7 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
         if (!loanIsBankrupt) {
             let liqStartTime = new Date();
 
-            let receipt = await awaitConfirmation(loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
+            let receipt = await awaitConfirmation(await loan.liquidateLoan(poolTokens, amountsToRepayInWei, bonusInWei, {gasLimit: 8000000, gasPrice: 100_000_000_000}), provider, 'flashloan liquidation', 60_000);
 
             console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
 

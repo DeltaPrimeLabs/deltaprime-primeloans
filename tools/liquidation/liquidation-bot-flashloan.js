@@ -158,7 +158,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
         try {
             let liqStartTime = new Date();
-            let flashLoanTx = await awaitConfirmation(flashLoan.executeFlashloan(
+            let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
                 {
                     assets: poolTokenAddresses,
                     amounts: amountsToRepayInWei,
@@ -178,9 +178,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                 60_000);
 
             console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
-
-            let receipt = await provider.waitForTransaction(flashLoanTx.hash);
-            console.log(`Sellout processed with ${receipt.status == 1 ? "success" : "failure"} in ${(new Date() - liqStartTime) / 1000} seconds.`);
+            console.log(`Sellout processed in ${(new Date() - liqStartTime) / 1000} seconds.`);
         } catch (error) {
             console.log(error)
         }

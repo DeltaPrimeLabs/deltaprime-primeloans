@@ -292,11 +292,13 @@ describe('Smart loan', () => {
             await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
+            const whitelistingContract = await ethers.getContractAt('SmartLoanGigaChadInterface', diamondAddress, owner);
+
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
             await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
 
-            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+            await whitelistingContract.whitelistLiquidators([liquidator.address]);
 
             await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).not.to.be.reverted;
         });

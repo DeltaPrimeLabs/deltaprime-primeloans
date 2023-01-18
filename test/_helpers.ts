@@ -21,7 +21,7 @@ const {deployFacet} = require('../tools/diamond/deploy-diamond');
 export const erc20ABI = require('./abis/ERC20.json');
 export const LPAbi = require('./abis/LP.json');
 export const wavaxAbi = require('./abis/WAVAX.json');
-export const yakRouterAbi = require('./abis/WAVAX.json');
+export const yakRouterAbi = require('./abis/YakRouter.json');
 
 export const ZERO = ethers.constants.AddressZero;
 

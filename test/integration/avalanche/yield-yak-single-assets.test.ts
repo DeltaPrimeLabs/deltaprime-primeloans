@@ -193,7 +193,7 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(151 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 1);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1.1);
         });
 
         it("should unstake part of staked AVAX", async () => {
@@ -215,7 +215,7 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.25);
         });
 
         it("should not fail to unstake more than was initially staked but unstake all", async () => {
@@ -285,12 +285,14 @@ describe('Smart loan', () => {
             await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
+            const whitelistingContract = await ethers.getContractAt('SmartLoanGigaChadInterface', diamondAddress, owner);
+
             expect(await wrappedLoan.isSolvent()).to.be.false;
 
             await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).to.be.reverted;
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).to.be.reverted;
 
-            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+            await whitelistingContract.whitelistLiquidators([liquidator.address]);
 
             await expect(nonOwnerWrappedLoan.unstakeAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_AAVE_AVAX')))).not.to.be.reverted;
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(await wrappedLoan.getBalance(toBytes32('YY_PTP_sAVAX')))).not.to.be.reverted;

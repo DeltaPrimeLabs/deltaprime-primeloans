@@ -459,7 +459,7 @@ describe('Smart loan', () => {
                             )
                         }
 
-                        let loanIsBankrupt = await wrappedLoan.getTotalValue() < await wrappedLoan.getDebt();
+                        let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
 
                         let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
                             'LIQUIDATE',

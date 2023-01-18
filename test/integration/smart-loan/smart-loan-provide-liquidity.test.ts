@@ -12,7 +12,7 @@ import {
     deployAllFacets,
     deployAndInitializeLendingPool, erc20ABI, formatUnits, fromBytes32,
     fromWei,
-    getFixedGasSigners,
+    getFixedGasSigners, LPAbi,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
@@ -277,7 +277,8 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 160).toFixed(6), BigNumber.from("6"))
             )).to.be.reverted;
 
-            await loan.connect(owner).whitelistLiquidators([liquidator.address]);
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators([liquidator.address]);
 
             await nonOwnerWrappedLoan.removeLiquidityPangolin(
                 toBytes32('AVAX'),
