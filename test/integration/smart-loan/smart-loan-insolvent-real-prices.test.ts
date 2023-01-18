@@ -9,7 +9,7 @@ import {
     Asset,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployAndInitializeLendingPool,
+    deployAndInitializeLendingPool, erc20ABI,
     formatUnits,
     fromBytes32, fromWei,
     getFixedGasSigners,
@@ -38,15 +38,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function symbol() public view returns (string)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address dst, uint wad) public returns (bool)'
-]
 
 const DEFAULT_MAX_LEVERAGE = {
     AVAX: 0.8333333,

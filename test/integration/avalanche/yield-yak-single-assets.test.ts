@@ -13,7 +13,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools,
+    deployPools, erc20ABI,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -40,15 +40,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 

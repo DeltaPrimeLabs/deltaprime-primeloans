@@ -13,11 +13,11 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools,
+    deployPools, erc20ABI,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
-    getTokensPricesMap,
+    getTokensPricesMap, LPAbi,
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
@@ -36,30 +36,12 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import redstone from "redstone-api";
-import {getContract} from "@nomiclabs/hardhat-ethers/internal/helpers";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
-
-const lpABI = [
-    ...erc20ABI,
-    'function getReserves() public view returns (uint112, uint112, uint32)',
-    'function balance() public view returns (uint256 balance)',
-]
-
-
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-const beefyTJWavaxUsdcLPAddress = "0x7E5bC7088aB3Da3e7fa1Aa7ceF1dC73F5B00681c";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -105,8 +87,8 @@ describe('Smart loan', () => {
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
-            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], lpABI, provider));
-            tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], lpABI, provider));
+            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
+            tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], LPAbi, provider));
 
             tokensPrices = await getTokensPricesMap(
                 [],
@@ -359,8 +341,8 @@ describe('Smart loan', () => {
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
-            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], lpABI, provider));
-            tokenContracts.set('MOO_TJ_AVAX_USDC_LP', new ethers.Contract(beefyTJWavaxUsdcLPAddress, lpABI, provider));
+            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
+            tokenContracts.set('MOO_TJ_AVAX_USDC_LP', new ethers.Contract(beefyTJWavaxUsdcLPAddress, LPAbi, provider));
 
             let lpTokenTotalSupply = await tokenContracts.get('TJ_AVAX_USDC_LP')!.totalSupply();
             let [lpTokenToken0Reserve, lpTokenToken1Reserve] = await tokenContracts.get('TJ_AVAX_USDC_LP')!.getReserves();

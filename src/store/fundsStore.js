@@ -1,4 +1,4 @@
-import {awaitConfirmation, erc20ABI, isOracleError, isPausedError, wrapContract} from '../utils/blockchain';
+import {awaitConfirmation, erc20ABI, isOracleError, wrapContract} from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
 import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
@@ -12,6 +12,7 @@ import {BigNumber, Contract} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 import INTERMEDIARY from '@artifacts/contracts/integrations/UniswapV2Intermediary.sol/UniswapV2Intermediary.json';
+import {wavaxAbi} from "../../test/_helpers";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -22,11 +23,6 @@ const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
 const tokenAddresses = TOKEN_ADDRESSES;
-
-const wavaxAbi = [
-  'function deposit() public payable',
-  ...erc20ABI
-];
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 

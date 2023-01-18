@@ -20,7 +20,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei, wavaxAbi, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -50,19 +50,6 @@ const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3
 const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
 const liquidatorWallet = (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(rpcProvider);
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 describe('Test liquidator with a flashloan', () => {
     before("Synchronize blockchain time", async () => {

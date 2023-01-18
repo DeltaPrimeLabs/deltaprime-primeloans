@@ -9,13 +9,13 @@ import {
     Asset,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployAndInitializeLendingPool, formatUnits, fromBytes32, fromWei,
+    deployAndInitializeLendingPool, erc20ABI, formatUnits, fromBytes32, fromWei,
     getFixedGasSigners,
     getLiquidationAmounts,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO,
+    toWei
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -35,14 +35,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function transfer(address dst, uint wad) public returns (bool)'
-]
 
 const INITIAL_PRICES = {
     AVAX: 15,
