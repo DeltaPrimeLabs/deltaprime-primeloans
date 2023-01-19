@@ -82,7 +82,8 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {assetAppreciation, erc20ABI} from '../utils/blockchain';
+import {assetAppreciation} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/erc20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';

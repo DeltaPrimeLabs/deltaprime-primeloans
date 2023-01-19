@@ -123,6 +123,7 @@ import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import SimpleInput from "./SimpleInput";
 const ethers = require('ethers');
 
@@ -211,7 +212,7 @@ export default {
     },
 
     async query(tknFrom, tknTo, amountIn) {
-      const yakRouter = new ethers.Contract(config.yakRouterAddress, config.yakRouterAbi, provider.getSigner());
+      const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
 
       const maxHops = 3
       const gasPrice = ethers.utils.parseUnits('225', 'gwei')
@@ -240,15 +241,11 @@ export default {
       const queryRes = await this.query(TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset], amountInWei);
       this.path = queryRes.path;
       this.adapters = queryRes.adapters;
-      console.log('queryRes')
-      console.log(queryRes)
       const estimatedReceivedTokens = queryRes.amounts[queryRes.amounts.length - 1];
 
       console.log(estimatedReceivedTokens)
 
       this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(this.targetAssetData.decimals)));
-
-      console.log(this.estimatedReceivedTokens)
 
       this.updateSlippageWithAmounts();
       this.calculateHealthAfterTransaction();

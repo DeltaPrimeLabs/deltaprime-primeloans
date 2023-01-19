@@ -107,7 +107,7 @@ import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {erc20ABI} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/erc20.json';
 import WrapModal from './WrapModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
