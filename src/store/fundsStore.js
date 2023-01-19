@@ -1,6 +1,5 @@
 import {
   awaitConfirmation,
-  erc20ABI,
   isOracleError,
   signMessage,
   loanTermsToSign,
@@ -17,7 +16,9 @@ import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {aprToApy, calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import wavaxAbi from '../../test/abis/WAVAX.json';
+import erc20ABI from '../../test/abis/erc20.json';
 import router from '@/router'
 
 

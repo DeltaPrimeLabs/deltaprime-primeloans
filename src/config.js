@@ -248,6 +248,7 @@ export default {
             }
         ],
     },
+    yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",
