@@ -20,13 +20,13 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei, wavaxAbi, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
     TraderJoeIntermediary,
     SmartLoansFactory,
-    LiquidationFlashloan, MockTokenManager
+    LiquidationFlashloan, MockTokenManager, PangolinIntermediary
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {liquidateLoan} from '../../../tools/liquidation/liquidation-bot-flashloan';
@@ -43,6 +43,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const pangolinRouterAddress = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
 
@@ -50,19 +51,6 @@ const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3
 const LIQUIDATOR_PRIVATE_KEY = fs.readFileSync(path.resolve(__dirname, "../../../tools/liquidation/.private")).toString().trim();
 const rpcProvider = new ethers.providers.JsonRpcProvider()
 const liquidatorWallet = (new ethers.Wallet(LIQUIDATOR_PRIVATE_KEY)).connect(rpcProvider);
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
-
-const wavaxAbi = [
-    'function deposit() public payable',
-    ...erc20ABI
-]
 
 describe('Test liquidator with a flashloan', () => {
     before("Synchronize blockchain time", async () => {
@@ -95,7 +83,7 @@ describe('Test liquidator with a flashloan', () => {
 
             let assetsList = ['AVAX', 'USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
-                {name: 'AVAX', airdropList: [borrower, depositor]},
+                {name: 'AVAX', airdropList: [borrower, depositor, owner]},
                 {name: 'USDC', airdropList: []}
             ];
 
@@ -164,6 +152,19 @@ describe('Test liquidator with a flashloan', () => {
                 wavaxTokenAddress,
                 diamondAddress
             ) as LiquidationFlashloan;
+        });
+
+        it("should check onlyOwner methods", async () => {
+            await expect(liquidationFlashloan.connect(depositor).transferERC20(ZERO, ZERO, 0)).to.be.revertedWith("Ownable: caller is not the owner");
+
+            expect(await tokenContracts.get('AVAX')!.balanceOf(liquidationFlashloan.address)).to.be.equal(0);
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: 1_000_000});
+            await tokenContracts.get('AVAX')!.connect(owner).transfer(liquidationFlashloan.address, 1_000_000);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(liquidationFlashloan.address)).to.be.equal(1_000_000);
+
+            let ownerUSDCBalance = await tokenContracts.get('AVAX')!.balanceOf(owner.address);
+            await liquidationFlashloan.connect(owner).transferERC20(tokenContracts.get('AVAX')!.address, owner.address, 1_000_000);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(owner.address)).to.be.equal(ownerUSDCBalance + 1_000_000);
         });
 
         it("should whitelist LIQUIDATOR and flashloan contract", async () => {
@@ -582,6 +583,7 @@ describe('Test liquidator with a flashloan', () => {
 
     describe('A loan with debt and swaps in multiple tokens', () => {
         let exchange: TraderJoeIntermediary,
+            exchangePNG: PangolinIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
             diamondCut: Contract,
@@ -590,6 +592,7 @@ describe('Test liquidator with a flashloan', () => {
             MOCK_PRICES: any,
             AVAX_PRICE: number,
             ETH_PRICE: number,
+            assetsList: Array<string> = [],
             BTC_PRICE: number,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
@@ -605,7 +608,7 @@ describe('Test liquidator with a flashloan', () => {
 
         before("deploy factory, exchange, wavaxPool and usdPool", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'ETH', 'BTC'];
+            assetsList = ['AVAX', 'USDC', 'sAVAX', 'ETH', 'BTC', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX', 'TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP','PNG_AVAX_ETH_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor]},
                 {name: 'USDC', airdropList: [borrower, depositor]}
@@ -622,13 +625,16 @@ describe('Test liquidator with a flashloan', () => {
             ) as MockTokenManager;
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchangePNG = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
             AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
             ETH_PRICE = (await redstone.getPrice('ETH')).value;
             BTC_PRICE = (await redstone.getPrice('BTC')).value;
+
             const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
 
             const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
@@ -663,6 +669,10 @@ describe('Test liquidator with a flashloan', () => {
                     {
                         facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
                         contractAddress: exchange.address,
+                    },
+                    {
+                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
+                        contractAddress: exchangePNG.address,
                     }
                 ],
                 tokenManager.address,
@@ -707,23 +717,38 @@ describe('Test liquidator with a flashloan', () => {
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "BTC"],
+                    dataFeeds: assetsList,
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                 CACHE_LAYER_URLS.urls
+                CACHE_LAYER_URLS.urls
             );
         });
 
 
         it("should fund, borrow and withdraw, making loan's health ratio lower than 1", async () => {
-            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("100")});
-            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+            await tokenContracts.get('AVAX')!.connect(borrower).deposit({value: toWei("30")});
+            await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("30"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei('30'));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei('170'))
 
-            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("550"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("40"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("40"), toWei("0"));
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("10"), toWei("0"));
 
-            await wrappedLoan.vectorStakeWAVAX1(toWei("550"));
+            let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
+            let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
+
+            await wrappedLoan.addLiquidityTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("40"), usdcBalance, toWei("40").div(5).mul(4), usdcBalance.div(5).mul(4));
+            await wrappedLoan.addLiquidityPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("40"), ethBalance, toWei("40").div(5).mul(4), ethBalance.div(5).mul(4));
+            await wrappedLoan.stakeAVAXYak(toWei('5'));
+            await wrappedLoan.vectorStakeWAVAX1(toWei('5'));
+
+            await wrappedLoan.stakeSAVAXYak((await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address)).div(2));
+
+            await wrappedLoan.vectorStakeSAVAX1(await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address));
+            await wrappedLoan.stakeTJAVAXUSDCYak((await wrappedLoan.getBalance(toBytes32('TJ_AVAX_USDC_LP'))).div(2));
+
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);
         });
@@ -894,7 +919,7 @@ describe('Test liquidator with a flashloan', () => {
             await tokenContracts.get('AVAX')!.connect(borrower).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
-            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("500"));
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("520"));
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("QI"), toWei("50"), 0);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.lt(1);

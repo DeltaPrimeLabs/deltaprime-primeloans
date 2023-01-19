@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 71813826f564de63a2462d95b5c15944fcdf686e;
 pragma solidity 0.8.17;
 
 import "../UniswapV2DEXFacet.sol";
@@ -25,7 +25,8 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
         addLiquidity(_firstAsset, _secondAsset, amountADesired, amountBDesired, amountAMin, amountBMin);
     }
 
-    function removeLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public onlyOwner {
+    //onlOwnerOrInsolvent inside UniswapDexFacet
+    function removeLiquidityPangolin(bytes32 _firstAsset, bytes32 _secondAsset, uint liquidity, uint amountAMin, uint amountBMin) public {
         removeLiquidity(_firstAsset, _secondAsset, liquidity, amountAMin, amountBMin);
     }
 

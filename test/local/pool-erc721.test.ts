@@ -12,7 +12,7 @@ import PoolWithAccessNFTArtifact from '../../artifacts/contracts/upgraded/PoolWi
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {erc20ABI, fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {
     LinearIndex,
     MockDepositAccessNFT,
@@ -24,13 +24,6 @@ import {
 import {Contract} from "ethers";
 
 chai.use(solidity);
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;

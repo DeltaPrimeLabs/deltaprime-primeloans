@@ -3,17 +3,6 @@ import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 const ethers = require('ethers');
 
-export const erc20ABI = [
-  'function name() public view returns (string)',
-  'function symbol() public view returns (string)',
-  'function decimals() public view returns (uint8)',
-  'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function totalSupply() public view returns (uint256 supply)',
-  'function totalDeposits() public view returns (uint256 deposits)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)',
-  'function allowance(address owner, address spender) public view returns (uint256)'
-];
-
 export function transactionUrl(tx) {
   return 'https://snowtrace.io/tx/' + tx;
 }

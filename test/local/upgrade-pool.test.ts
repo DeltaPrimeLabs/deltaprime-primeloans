@@ -10,7 +10,7 @@ import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/Mock
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {erc20ABI, fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {
     CompoundingIndex,
     MockToken,
@@ -28,13 +28,6 @@ chai.use(solidity);
 const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
 
 describe('Upgradeable pool', () => {
 

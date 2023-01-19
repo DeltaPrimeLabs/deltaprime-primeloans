@@ -31,11 +31,6 @@ const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
 const tokenAddresses = TOKEN_ADDRESSES;
 
-const wavaxAbi = [
-  'function deposit() public payable',
-  ...erc20ABI
-];
-
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {

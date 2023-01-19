@@ -16,7 +16,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    extractAssetNameBalances, fromBytes32,
+    extractAssetNameBalances,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -40,14 +40,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ubeswapRouterAddress = '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121';
-
-const erc20ABI = [
-    'function transfer(address recipient, uint256 amount) returns (bool)',
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
 
 describe('Smart loan', () => {
 
