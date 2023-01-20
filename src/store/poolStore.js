@@ -1,7 +1,7 @@
 import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
-import erc20ABI from '../../test/abis/erc20.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
 
 

@@ -8,7 +8,7 @@ import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import redstone from 'redstone-api';
-import erc20ABI from '../../test/abis/erc20.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
