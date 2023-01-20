@@ -103,7 +103,6 @@ export default {
 
       farmService.emitRefreshFarm();
 
-      console.log('setting farms')
       commit('setFarms', farms);
     },
 

@@ -110,6 +110,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchProgressBarState();
+    this.watchLpRefresh();
     await this.setupApr();
   },
 
@@ -132,7 +133,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'lpService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -218,6 +219,7 @@ export default {
     },
 
     async setupApr() {
+      if (!this.lpToken.currentApr) return;
       this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
     },
 
@@ -425,6 +427,12 @@ export default {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
       });
+    },
+
+    watchLpRefresh() {
+      this.lpService.observeRefreshLp().subscribe(async () => {
+        await this.setupApr();
+      })
     },
 
     scheduleHardRefresh() {

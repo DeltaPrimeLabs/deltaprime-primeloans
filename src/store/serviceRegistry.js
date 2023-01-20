@@ -5,6 +5,7 @@ import ProgressBarService from '../services/progressBarService';
 import ModalService from '../services/modalService';
 import HealthService from '../services/healthService';
 import FarmService from "../services/farmService";
+import LpService from "../services/lpService";
 
 export default {
   namespaced: true,
@@ -16,6 +17,7 @@ export default {
     modalService: new ModalService(),
     healthService: new HealthService(),
     farmService: new FarmService(),
+    lpService: new LpService(),
   },
   mutations: {
   },
