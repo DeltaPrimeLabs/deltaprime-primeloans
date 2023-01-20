@@ -61,7 +61,7 @@ import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
 const ethers = require('ethers');
 import addresses from "../../common/addresses/avax/token_addresses.json";
-import erc20ABI from '../../test/abis/erc20.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 
 
 export default {

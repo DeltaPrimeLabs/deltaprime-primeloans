@@ -18,7 +18,7 @@ import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
-import erc20ABI from '../../test/abis/erc20.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router'
 
 

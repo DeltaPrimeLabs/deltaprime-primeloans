@@ -74,7 +74,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import erc20ABI from '../../test/abis/erc20.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 import {parseUnits, formatUnits} from 'ethers/lib/utils';
 
 const ethers = require('ethers');
