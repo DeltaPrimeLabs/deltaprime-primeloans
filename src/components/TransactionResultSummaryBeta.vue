@@ -11,10 +11,9 @@
 
 <script>
 import BarGaugeBeta from './BarGaugeBeta';
-import ProvideLiquidityModal from "./ProvideLiquidityModal";
 export default {
   name: 'TransactionResultSummaryBeta',
-  components: {ProvideLiquidityModal, BarGaugeBeta}
+  components: {BarGaugeBeta}
 };
 </script>
 
@@ -53,9 +52,15 @@ export default {
     .summary__values {
       display: flex;
       flex-direction: row;
+      justify-content: space-around;
       color: $steel-gray;
       margin-top: 9px;
       margin-bottom: 6px;
+
+
+      > div {
+        display: flex;
+      }
 
       .summary__value__pair {
         display: flex;

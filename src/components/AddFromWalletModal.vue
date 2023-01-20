@@ -54,22 +54,27 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Health:
+            <div>
+              <div class="summary__label">
+                Health:
+              </div>
+              <div class="summary__value">
+                {{ healthAfterTransaction | percent }}
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0"
+                            :slim="true"></BarGaugeBeta>
             </div>
-            <div class="summary__value">
-              {{ healthAfterTransaction | percent }}
-            </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0"
-                          :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Balance:
-            </div>
-            <div class="summary__value">
-              {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
-              {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+            <div>
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
+                {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>

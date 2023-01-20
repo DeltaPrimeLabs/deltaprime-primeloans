@@ -32,20 +32,25 @@
           <div class="summary__title">
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Health:
+            <div>
+              <div class="summary__label">
+                Health:
+              </div>
+              <div class="summary__value">
+                {{ healthAfterTransaction | percent }}
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             </div>
-            <div class="summary__value">
-              {{ healthAfterTransaction | percent }}
-            </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Loan:
-            </div>
-            <div class="summary__value">
-              {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}
+            <div>
+              <div class="summary__label">
+                Loan:
+              </div>
+              <div class="summary__value">
+                {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>

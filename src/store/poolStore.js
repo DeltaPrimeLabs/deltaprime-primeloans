@@ -46,6 +46,7 @@ export default {
 
     async setupPools({rootState, commit, dispatch}) {
       const provider = rootState.network.provider;
+      if (!provider) return;
       const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
       poolsFromConfig.forEach(poolAsset => {

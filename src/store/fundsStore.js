@@ -181,6 +181,7 @@ export default {
 
   actions: {
     async fundsStoreSetup({state, rootState, dispatch, commit}) {
+      if (!rootState.network.provider) return;
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
@@ -282,8 +283,9 @@ export default {
       );
 
       await redstone.getPrice(Object.keys(lpTokens)).then(prices => {
-        Object.keys(lpTokens).forEach(assetSymbol => {
+        Object.keys(lpTokens).forEach(async assetSymbol => {
           lpTokens[assetSymbol].price = prices[assetSymbol].value;
+          lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].apr();
         });
       });
       commit('setLpAssets', lpTokens);
@@ -443,6 +445,13 @@ export default {
             }
         );
 
+        let yearlyAssetInterest = 0;
+
+
+        if (state.assetBalances) {
+          yearlyAssetInterest = state.assetBalances['sAVAX'] * state.assets['sAVAX'].price * 0.072;
+        }
+
         let yearlyLpInterest = 0;
 
         if (state.lpAssets && state.lpBalances) {
@@ -452,7 +461,7 @@ export default {
 
             //TODO: take from API
             let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + await lpAsset.apr()) * assetAppretiation) - 1) * lpAsset.price;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppretiation) - 1) * lpAsset.price;
           }
         }
 
@@ -467,11 +476,7 @@ export default {
               let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
               let apy = 0;
 
-              try {
-                apy = await farm.apy();
-              } catch(e) {
-                console.log('apy')
-              }
+              apy = await farm.currentApy;
 
               yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
 
@@ -482,7 +487,7 @@ export default {
         const collateral = getters.getCollateral;
 
         if (collateral) {
-          apr = (yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
+          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
         }
 
         commit('setAccountApr', apr);

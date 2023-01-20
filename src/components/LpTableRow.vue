@@ -121,6 +121,7 @@ export default {
       poolBalance: 0,
       apr: 0,
       tvl: 0,
+      lpTokenBalances: [],
       isLpBalanceEstimated: false,
       waitingForHardRefresh: false,
     };
@@ -165,6 +166,14 @@ export default {
       },
       immediate: true
     },
+    lpBalances: {
+      handler(lpBalances) {
+        if (lpBalances) {
+          this.lpTokenBalances = lpBalances;
+        }
+      },
+      immediate: true
+    },
   },
 
   methods: {
@@ -175,6 +184,7 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit / Create',
+          disabled: !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -192,7 +202,7 @@ export default {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw / Unwind',
-          disabled: !this.hasSmartLoanContract,
+          disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'WITHDRAW',

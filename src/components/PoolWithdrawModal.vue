@@ -26,19 +26,24 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Deposit:
-            </div>
-            <div class="summary__value">
-              {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+            <div>
+              <div class="summary__label">
+                Deposit:
+              </div>
+              <div class="summary__value">
+                {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              </div>
             </div>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Daily interest ≈
-            </div>
-            <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+            <div>
+              <div class="summary__label">
+                Daily interest ≈
+              </div>
+              <div class="summary__value">
+                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
