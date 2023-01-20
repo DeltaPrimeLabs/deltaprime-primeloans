@@ -5,7 +5,7 @@
          @click="$refs.input.focus()">
       <span class="input">
         <input  ref="input" v-model="internalValue" v-on:input="valueChange"
-               placeholder="0" min="0" maxlength="20" lang="en-US">
+               placeholder="0" maxlength="20" lang="en-US">
       </span>
     </div>
     <div class="info"
@@ -138,7 +138,7 @@ export default {
       return this.error;
     },
     valueChange() {
-      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,18}$/);
+      const match = this.internalValue.match(/^\-?\d*[\.|\,]?\d{0,18}$/);
       if (match) {
         this.value = parseFloat(this.internalValue.replaceAll(',', '.'));
       } else {

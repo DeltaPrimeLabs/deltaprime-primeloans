@@ -11,8 +11,12 @@
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
                           :validators="sourceValidators"
+                          :disabled="checkingPrices"
                           :info="() => `~ $${(Number(sourceAssetAmount) * sourceAssetData.price).toFixed(2)}`"
-                          v-on:valueChange="sourceInputChange">
+                          :typingTimeout="2000"
+                          v-on:valueChange="sourceInputChange"
+                          v-on:ongoingTyping="ongoingTyping"
+      >
       </CurrencyComboInput>
 
       <div class="reverse-swap-button">
@@ -105,7 +109,7 @@
         <Button :label="'Swap'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
-                :waiting="transactionOngoing">
+                :waiting="transactionOngoing || isTyping">
         </Button>
       </div>
     </Modal>
@@ -162,6 +166,8 @@ export default {
       targetValidators: [],
       sourceInputError: true,
       targetInputError: false,
+      checkingPrices: false,
+      isTyping: false,
       marketDeviation: 0,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       healthAfterTransaction: 0,
@@ -239,6 +245,7 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryRes = await this.query(TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset], amountInWei);
+
       this.path = queryRes.path;
       this.adapters = queryRes.adapters;
       const estimatedReceivedTokens = queryRes.amounts[queryRes.amounts.length - 1];
@@ -308,6 +315,7 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      this.checkingPrices = true;
       let targetInputChangeEvent;
       if (changeEvent.asset === this.targetAsset) {
         this.reverseSwap();
@@ -318,9 +326,17 @@ export default {
           this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
           await this.chooseBestTrade(false);
         } else {
-          this.sourceAssetAmount = changeEvent.value;
-          this.estimatedNeededTokens = changeEvent.value;
-          await this.chooseBestTrade();
+          let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
+          this.sourceAssetAmount = value;
+          this.estimatedNeededTokens = value;
+
+          if (value !== 0) {
+            await this.chooseBestTrade();
+          } else {
+            this.targetAssetAmount = 0;
+            this.estimatedReceivedTokens = 0;
+            await this.$refs.targetInput.setCurrencyInputValue(0);
+          }
         }
       }
 
@@ -328,10 +344,12 @@ export default {
       if (targetInputChangeEvent) {
         this.targetInputError = targetInputChangeEvent.error;
       }
+      this.checkingPrices = false;
     },
 
     async targetInputChange(changeEvent) {
       let sourceInputChangeEvent;
+
       if (changeEvent.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
@@ -352,6 +370,10 @@ export default {
       }
     },
 
+    ongoingTyping(event) {
+      this.isTyping = event.typing;
+    },
+
     async userSlippageChange(changeEvent) {
       this.userSlippage = changeEvent.value ? changeEvent.value : 0;
 
@@ -359,8 +381,6 @@ export default {
     },
 
     calculateSourceAssetBalance() {
-      console.log('calculateSourceAssetBalance')
-      console.log(this.sourceAsset)
       const sourceAssetBalance = this.assetBalances[this.sourceAsset];
       this.sourceAssetBalance = sourceAssetBalance;
     },

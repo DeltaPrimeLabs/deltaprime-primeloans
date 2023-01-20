@@ -271,7 +271,8 @@ export default {
       commit('setAssets', assets);
     },
 
-    async setupLpAssets({state, commit}) {
+    async setupLpAssets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
 
       Object.values(config.LP_ASSETS_CONFIG).forEach(
@@ -286,6 +287,7 @@ export default {
         Object.keys(lpTokens).forEach(async assetSymbol => {
           lpTokens[assetSymbol].price = prices[assetSymbol].value;
           lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].apr();
+          lpService.emitRefreshLp();
         });
       });
       commit('setLpAssets', lpTokens);
