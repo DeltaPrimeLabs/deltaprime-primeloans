@@ -38,6 +38,7 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values" v-if="asset">
             <div class="summary__value__pair">
               <div class="summary__label">

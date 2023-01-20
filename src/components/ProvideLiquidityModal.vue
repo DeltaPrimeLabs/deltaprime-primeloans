@@ -37,6 +37,7 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__value__pair">
               <div class="summary__label">

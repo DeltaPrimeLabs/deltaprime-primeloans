@@ -54,7 +54,7 @@
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
-          <div class="summary__title bold">
+          <div class="summary__title">
             Values after transaction
           </div>
           <div class="summary__horizontal__divider"></div>

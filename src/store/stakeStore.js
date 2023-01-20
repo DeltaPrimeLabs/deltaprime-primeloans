@@ -92,6 +92,11 @@ export default {
         for (let farm of tokenFarms) {
           const totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
           farm.totalStaked = totalStaked;
+          try {
+            farm.currentApy = await farm.apy();
+          } catch(e) {
+            console.log('Error fetching farm APY');
+          }
         }
       }
 

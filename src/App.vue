@@ -5,6 +5,9 @@
       You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
     </Banner>
+    <Banner v-if="showConnectBanner">
+      You are not connected to Metamask. <a @click="initNetwork"><b>Click here</b></a> to connect.
+    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
@@ -19,15 +22,17 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <div class="top-bar">
-      <a href="https://deltaprime.io/">
-        <img src="src/assets/icons/deltaprime.svg" class="logo">
-      </a>
-      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
-      <Wallet class="wallet" v-else/>
+    <div class="content">
+      <div class="top-bar">
+        <a href="https://deltaprime.io/">
+          <img src="src/assets/icons/deltaprime.svg" class="logo">
+        </a>
+        <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
+        <Wallet class="wallet"/>
+      </div>
+      <router-view></router-view>
+      <ProgressBar></ProgressBar>
     </div>
-    <router-view></router-view>
-    <ProgressBar></ProgressBar>
   </div>
 
 </template>
@@ -57,6 +62,7 @@ export default {
     return {
       showNetworkBanner: false,
       showMetamaskBanner: false,
+      showConnectBanner: false,
       highGasPrice: false,
       gasPriceIntervalId: null
     };
@@ -74,6 +80,12 @@ export default {
 
     await this.metamaskChecks();
     await this.initNetwork();
+
+    if (!this.provider || !this.account) {
+      this.showConnectBanner = true;
+      return;
+    }
+
     this.initGasPrices();
   },
 
@@ -212,6 +224,10 @@ a {
   z-index: -1;
 
   background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
+}
+
+.content {
+  position: relative;
 }
 
 .top-bar {

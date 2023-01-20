@@ -259,7 +259,7 @@ export default {
     },
 
     async setApy() {
-      this.apy = (1 + await this.farm.apy()) * assetAppreciation(this.asset.symbol) - 1;
+      this.apy = (1 + await this.farm.currentApy) * assetAppreciation(this.asset.symbol) - 1;
     },
 
     scheduleHardRefresh() {

@@ -31,12 +31,15 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Deposit:
-            </div>
-            <div class="summary__value">
-              {{ Number(deposit) + Number(depositValue) | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+            <div>
+              <div class="summary__label">
+                Deposit:
+              </div>
+              <div class="summary__value">
+                {{ Number(deposit) + Number(depositValue) | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              </div>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
