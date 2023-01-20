@@ -218,7 +218,7 @@ export default {
     },
 
     async setupApr() {
-      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + await this.lpToken.apr()) - 1);
+      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
     },
 
     toggleChart() {

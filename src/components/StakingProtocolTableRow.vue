@@ -92,7 +92,7 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchProgressBarState();
-    await this.setApy();
+    this.watchFarmRefreshEvent();
   },
   data() {
     return {
@@ -116,13 +116,13 @@ export default {
         }
       },
       immediate: true
-    },
+    }
   },
   computed: {
     ...mapState('poolStore', ['pools']),
-    ...mapState('stakeStore', ['stakedAssets']),
+    ...mapState('stakeStore', ['stakedAssets', 'farms']),
     ...mapState('fundsStore', ['smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
     maxApy() {
       return calculateMaxApy(this.pools, this.apy);
     },
@@ -258,8 +258,15 @@ export default {
       });
     },
 
+    watchFarmRefreshEvent() {
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        await this.setApy();
+      })
+    },
+
     async setApy() {
-      this.apy = (1 + await this.farm.currentApy) * assetAppreciation(this.asset.symbol) - 1;
+      if (!this.farm.currentApy) return 0;
+      this.apy = (1 + this.farm.currentApy) * assetAppreciation(this.asset.symbol) - 1;
     },
 
     scheduleHardRefresh() {
