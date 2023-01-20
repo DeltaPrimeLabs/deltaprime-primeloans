@@ -460,7 +460,7 @@ export default {
             let lpAsset = entry[1]
 
             //TODO: take from API
-            let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
+            let assetAppretiation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
             yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppretiation) - 1) * lpAsset.price;
           }
         }
@@ -473,10 +473,14 @@ export default {
             let farms = entry[1];
 
             for (let farm of farms) {
-              let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
+              let assetAppretiation = 1;
+
+              if (symbol.includes('sAVAX')) assetAppretiation =  1.036;
+              if (symbol === 'sAVAX') assetAppretiation =  1.072;
+
               let apy = 0;
 
-              apy = await farm.currentApy;
+              apy = farm.currentApy;
 
               yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
 

@@ -86,6 +86,7 @@ export default {
     },
 
     async updateStakedBalances({rootState, state, commit}) {
+      const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
@@ -100,6 +101,9 @@ export default {
         }
       }
 
+      farmService.emitRefreshFarm();
+
+      console.log('setting farms')
       commit('setFarms', farms);
     },
 
