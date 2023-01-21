@@ -25,4 +25,5 @@ export const supportedAssetsAvax = [
     asset('YY_TJ_AVAX_sAVAX_LP'),
     asset('YY_TJ_AVAX_USDC_LP'),
     asset('YY_TJ_AVAX_ETH_LP'),
+    asset('GLP'),
 ]

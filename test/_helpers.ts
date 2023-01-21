@@ -22,6 +22,7 @@ export const erc20ABI = require('./abis/ERC20.json');
 export const LPAbi = require('./abis/LP.json');
 export const wavaxAbi = require('./abis/WAVAX.json');
 export const yakRouterAbi = require('./abis/YakRouter.json');
+export const GLPManagerRewarderAbi = require('./abis/GLPManagerRewarder.json');
 
 export const ZERO = ethers.constants.AddressZero;
 
@@ -521,6 +522,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         diamondAddress,
         [
             'yakSwap',
+        ],
+        hardhatConfig
+    )
+    await deployFacet(
+        "GLPFacet",
+        diamondAddress,
+        [
+            'mintAndStakeGlp',
+            'unstakeAndRedeemGlp',
         ],
         hardhatConfig
     )
