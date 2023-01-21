@@ -181,8 +181,8 @@ export default {
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
@@ -227,8 +227,8 @@ export default {
           this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(result => {
           setTimeout(() => {
             this.farm.staked(this.smartLoanContract.address).then((balance) => {
@@ -277,13 +277,23 @@ export default {
           case 'ERROR' : {
             this.isStakedBalanceEstimated = false;
             this.waitingForHardRefresh = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.isStakedBalanceEstimated = false;
+            this.waitingForHardRefresh = false;
+            break;
           }
         }
       });
     },
 
-    handleTransactionError() {
-      this.progressBarService.emitProgressBarErrorState();
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
       this.closeModal();
       this.waitingForHardRefresh = false;
       this.isStakedBalanceEstimated = false;

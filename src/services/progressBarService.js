@@ -16,6 +16,11 @@ export default class ProgressBarService {
     this.progressBarState$.next('ERROR');
   }
 
+  emitProgressBarCancelledState() {
+    this.requestProgressBar();
+    this.progressBarState$.next('CANCELLED');
+  }
+
   emitProgressBarSuccessState() {
     this.progressBarState$.next('SUCCESS');
   }

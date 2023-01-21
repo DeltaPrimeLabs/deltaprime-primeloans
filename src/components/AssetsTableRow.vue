@@ -299,8 +299,8 @@ export default {
           this.scheduleHardRefresh();
           this.isDebtEstimated = true;
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         })
           .then(() => {
           });
@@ -333,8 +333,8 @@ export default {
           this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterTransaction);
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -365,8 +365,8 @@ export default {
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
             this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
               this.scheduleHardRefresh();
-            }, () => {
-              this.handleTransactionError();
+            }, (error) => {
+              this.handleTransactionError(error);
             })
               .then(() => {
               });
@@ -377,8 +377,9 @@ export default {
                 this.isBalanceEstimated = true;
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
-              }, () => {
-                this.handleTransactionError();
+              }, (error) => {
+                console.log(error);
+                this.handleTransactionError(error);
               }).then(() => {
               });
             } else {
@@ -392,8 +393,8 @@ export default {
                 this.isBalanceEstimated = true;
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
-              }, () => {
-                this.handleTransactionError();
+              }, (error) => {
+                this.handleTransactionError(error);
               }).then(() => {
               });
             }
@@ -429,8 +430,8 @@ export default {
             this.isBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
-          }, () => {
-            this.handleTransactionError();
+          }, (error) => {
+            this.handleTransactionError(error);
           })
             .then(() => {
             });
@@ -445,8 +446,8 @@ export default {
             this.isBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
-          }, () => {
-            this.handleTransactionError();
+          }, (error) => {
+            this.handleTransactionError(error);
           })
             .then(() => {
             });
@@ -480,8 +481,8 @@ export default {
           this.scheduleHardRefresh();
           this.isDebtEstimated = true;
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         })
           .then(() => {
           });
@@ -505,8 +506,8 @@ export default {
           this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
 
         });
@@ -575,13 +576,24 @@ export default {
             this.waitingForHardRefresh = false;
             this.isBalanceEstimated = false;
             this.isDebtEstimated = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.waitingForHardRefresh = false;
+            this.isBalanceEstimated = false;
+            this.isDebtEstimated = false;
+            break;
           }
         }
       });
     },
 
-    handleTransactionError() {
-      this.progressBarService.emitProgressBarErrorState();
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
       this.closeModal();
       this.waitingForHardRefresh = false;
       this.isBalanceEstimated = false;

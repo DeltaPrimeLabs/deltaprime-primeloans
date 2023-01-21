@@ -1,7 +1,7 @@
 <template>
   <div class="progress-bar-component" v-if="progressBarVisible">
     <div class="background"
-         v-bind:class="{'background--success': state === 'SUCCESS', 'background--error': state === 'ERROR'}"></div>
+         v-bind:class="{'background--success': state === 'SUCCESS', 'background--error': state === 'ERROR', 'background--cancelled': state === 'CANCELLED'}"></div>
     <div v-if="state === 'IN_PROGRESS' || state === 'MINING'"
          class="value-overlay"
          v-bind:class="{'value-overlay__clock-running': state === 'IN_PROGRESS'}"
@@ -15,6 +15,10 @@
       </div>
       <div v-if="state === 'ERROR'" class="text-overlay__text text-overlay__error">
         Transaction Failed
+        <img class="text-overlay__icon" src="src/assets/icons/x-white.svg">
+      </div>
+      <div v-if="state === 'CANCELLED'" class="text-overlay__text text-overlay__cancelled">
+        Transaction Cancelled
         <img class="text-overlay__icon" src="src/assets/icons/x-white.svg">
       </div>
     </div>
@@ -60,7 +64,7 @@ export default {
       this.progressBarService.progressBarState$.pipe(delay(500)).subscribe((state) => {
         this.state = state;
         if (this.progressBarVisible) {
-          if (state === 'SUCCESS' || state === 'ERROR') {
+          if (state === 'SUCCESS' || state === 'ERROR' || state === 'CANCELLED') {
             timer(5000).subscribe(() => {
               this.progressBarVisible = false;
             });
@@ -110,6 +114,10 @@ export default {
     &.background--error {
       background: $red;
     }
+
+    &.background--cancelled {
+      background: $orange;
+    }
   }
 
   .value-overlay {
@@ -149,12 +157,7 @@ export default {
         padding: 1px 10px;
       }
 
-      &.text-overlay__success {
-        color: white;
-        font-weight: bold;
-      }
-
-      &.text-overlay__error {
+      &.text-overlay__success, &.text-overlay__error, &.text-overlay__cancelled {
         color: white;
         font-weight: bold;
       }

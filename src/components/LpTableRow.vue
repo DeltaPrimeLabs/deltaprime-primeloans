@@ -267,8 +267,8 @@ export default {
             this.isLpBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
-          }, () => {
-            this.handleTransactionError();
+          }, (error) => {
+            this.handleTransactionError(error);
           }).then(() => {
           });
         }
@@ -300,8 +300,8 @@ export default {
           this.isLpBalanceEstimated = true;
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -333,8 +333,8 @@ export default {
             this.isLpBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
-          }, () => {
-            this.handleTransactionError();
+          }, (error) => {
+            this.handleTransactionError(error);
           }).then(() => {
           });
         }
@@ -368,8 +368,8 @@ export default {
           this.isLpBalanceEstimated = true;
           this.scheduleHardRefresh();
           this.$forceUpdate();
-        }, () => {
-          this.handleTransactionError();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -433,13 +433,23 @@ export default {
           case 'ERROR' : {
             this.waitingForHardRefresh = false;
             this.isBalanceEstimated = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.waitingForHardRefresh = false;
+            this.isBalanceEstimated = false;
+            break;
           }
         }
       })
     },
 
-    handleTransactionError() {
-      this.progressBarService.emitProgressBarErrorState();
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
       this.closeModal();
       this.waitingForHardRefresh = false;
       this.isBalanceEstimated = false;

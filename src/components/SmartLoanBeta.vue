@@ -240,6 +240,11 @@ export default {
           }
           case 'ERROR' : {
             this.accountApr = await this.getAccountApr;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.accountApr = await this.getAccountApr;
+            break;
           }
         }
       });

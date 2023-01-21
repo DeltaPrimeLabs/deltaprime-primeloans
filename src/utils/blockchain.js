@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
+
 const ethers = require('ethers');
 
 export const erc20ABI = [
@@ -46,6 +47,7 @@ export async function handleTransaction(fun, args, onSuccess, onFail) {
     }
 
   } catch (error) {
+    console.log(error);
     if (onFail) {
       console.log('BLOCKCHAIN.js onFail');
       onFail(error);
@@ -139,7 +141,7 @@ export async function signMessage(provider, message, wallet, depositor = false) 
 }
 
 export const loanTermsToSign =
-`
+  `
 By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
  
 
@@ -152,10 +154,10 @@ I understand that sufficient collateral is required when using DeltaPrime, and t
 I also understand that notorious not collateralized positions from one account may result in termination of my account or accounts, in which case I may be charged penalty by the protocol as well.
 
 I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
-`
+`;
 
 export const depositTermsToSign =
-    `
+  `
 By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
  
 
@@ -166,4 +168,4 @@ I am not a person nor acting on behalf of a person residing in any country embar
 I understand that my funds can be loaned to other accounts and are under risk of protocol failure.
 
 I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
-`
+`;
