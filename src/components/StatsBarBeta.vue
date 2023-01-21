@@ -17,7 +17,9 @@
           :value="health | percent"
           :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
           ">
-        <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+        <div class="bar-gauge-container">
+          <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+        </div>
       </stats-bar-element-beta>
 
       <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
@@ -99,6 +101,11 @@ export default {
       border-width: 0 0 0 2px;
       border-image-source: linear-gradient(to bottom, #dfe0ff 41%, #ffe1c2 58%, #ffd3e0 77%);
       border-image-slice: 1;
+    }
+
+    .bar-gauge-container {
+      margin-top: 9px;
+      margin-right: 10px;
     }
   }
 }

@@ -56,9 +56,11 @@
           </div>
         </div>
 
-        <div class="header__cell">
-          <img class="chevron" v-bind:class="{'expanded': tableBodyExpanded}"
+        <div class="header__cell cell__action" v-bind:class="{'expanded': tableBodyExpanded}">
+          <img class="chevron"
                src="src/assets/icons/chevron-down.svg">
+          <img class="chevron chevron--hover"
+               src="src/assets/icons/chevron-down_hover.svg">
         </div>
       </div>
 
@@ -422,11 +424,27 @@ export default {
           }
         }
 
-        .chevron {
-          transition: transform 300ms ease-in-out;
+        &.cell__action {
+          .chevron {
+            transition: transform 200ms ease-in-out;
+          }
 
-          &.expanded {
+          .chevron--hover {
+            display: none;
+          }
+
+          &.expanded .chevron {
             transform: rotate(-180deg);
+          }
+
+          &:hover {
+            .chevron {
+              display: none;
+            }
+
+            .chevron--hover {
+              display: flex;
+            }
           }
         }
       }

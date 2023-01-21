@@ -108,6 +108,7 @@ export default {
 
   .tab-icon {
     cursor: pointer;
+    margin-left: -10px;
   }
 
   .tab-selected .tab-button {

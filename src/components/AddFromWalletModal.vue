@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
-        <b>It will require accepting two consecutive Metamask transactions.</b>
+        <b>This action requires two separate transactions to be approved.</b>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>

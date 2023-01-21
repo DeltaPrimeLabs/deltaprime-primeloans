@@ -218,6 +218,7 @@ export default {
 
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
+        console.log('recalculate health');
         this.health = await this.getHealth;
       })
     },
@@ -260,16 +261,18 @@ export default {
 
 <style lang="scss" scoped>
 
+.smart-loan-beta-component {
+  min-height: 1700px;
+}
+
 .main-content {
   margin-top: 30px;
-  margin-bottom: 600px;
 }
 
 .account-apr-widget-wrapper {
   position: absolute;
-  left: 50%;
-  margin-left: -100px;
-  width: 200px;
+  left: calc(50% - 111px);
+  width: 222px;
   top: 0;
 }
 

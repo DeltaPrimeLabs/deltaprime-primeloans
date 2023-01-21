@@ -172,6 +172,7 @@ export default {
         }
 
         const health = calculateHealth(tokens);
+        console.log('health', health);
 
         return health >= 0 ? health : 0;
       }

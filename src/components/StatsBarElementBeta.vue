@@ -89,8 +89,6 @@ export default {
       }
 
       .stat__extras {
-        margin-top: 9px;
-        margin-right: 10px;
       }
     }
 

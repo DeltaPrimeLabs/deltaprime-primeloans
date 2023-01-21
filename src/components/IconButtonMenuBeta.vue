@@ -22,9 +22,11 @@
         <div class="option__text" v-bind:class="{'option__text--disabled': option.disabled}">
           {{ option.name }}
         </div>
-        <img class="option__info-icon"
-             v-if="option.disabled" src="src/assets/icons/info-colorful.svg"
-             v-tooltip="{content: option.disabledInfo}">
+        <div class="option__info__wrapper">
+          <img class="option__info-icon"
+               v-if="option.disabled" src="src/assets/icons/info.svg"
+               v-tooltip="{content: option.disabledInfo}">
+        </div>
       </div>
     </div>
   </div>
@@ -193,17 +195,30 @@ export default {
 
       .option__text {
         &:hover {
-          color: $delta-primary;
+          color: $black;
         }
       }
 
       .option__text--disabled {
         opacity: 0.5;
         cursor: default;
+
+        &:hover {
+          color: $dark-gray;
+        }
       }
 
-      .option__info-icon {
+      .option__info__wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
         margin-left: 5px;
+
+        .option__info-icon {
+          width: 16px;
+          height: 16px;
+        }
       }
     }
   }
