@@ -58,8 +58,6 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
         })
     }
 
-    console.log(`cut: ${cut}`)
-
     const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress)
     let tx
     let receipt

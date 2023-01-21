@@ -77,7 +77,7 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(address(this)) - swapTokensDetails.initialBoughtTokenBalance;
-        require(boughtTokenFinalAmount >= _amountOut, "Insuficient output amount");
+        require(boughtTokenFinalAmount >= _amountOut, "Insufficient output amount");
 
         emit Swap(
             msg.sender,
