@@ -123,6 +123,22 @@ export async function unwindPangolinLPPositions(loan, liquidator_wallet, provide
     }
 }
 
+export async function unstakeGlp(loan, liquidator_wallet, provider){
+    console.log('Check GLP');
+    try{
+        // GLP
+        let contract = await getERC20Contract(TOKEN_ADDRESSES.GLP, liquidator_wallet);
+        let balance = await contract.balanceOf(loan.address);
+        let decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0) {
+            console.log('Unwinding GLP');
+            await awaitConfirmation(await loan.unstakeAndRedeemGlp(toBytes32("AVAX"), balance, 1, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake GLP', 60_000);
+        }
+    } catch (e) {
+        console.log(`GLP-Error: ${e}`);
+    }
+}
+
 
 export async function unwindTraderJoeLPPositions(loan, liquidator_wallet, provider){
     console.log('Check LP TraderJoe');
