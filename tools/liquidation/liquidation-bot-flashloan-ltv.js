@@ -42,6 +42,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
     //TODO: optimize to unstake only as much as needed
+    await unstakeGlp(loan, liquidator_wallet, provider);
+
     await unstakeStakedPositions(loan, provider);
 
     await unstakeYieldYak(loan, liquidator_wallet, provider);
