@@ -36,14 +36,14 @@
               Deposit:
             </div>
             <div class="summary__value">
-              {{ Number(deposit) + Number(depositValue) | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              {{ Number(deposit) + Number(depositValue) | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
