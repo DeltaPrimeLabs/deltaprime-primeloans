@@ -624,6 +624,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeAVAXYak',
             'stakeSAVAXYak',
             'unstakeSAVAXYak',
+            'stakeGLPYak',
+            'unstakeGLPYak',
             'stakeTJAVAXUSDCYak',
             'unstakeTJAVAXUSDCYak',
             'stakePNGAVAXUSDCYak',
