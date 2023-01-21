@@ -24,6 +24,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     // Staking Vaults tokens
     address private constant YY_AAVE_AVAX = 0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95;
     address private constant YY_PTP_sAVAX = 0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977;
+    address private constant YY_GLP = 0x9f637540149f922145c06e1aa3f38dcDc32Aff5C;
 
     // Staking Vaults LPs
     address private constant YY_PNG_AVAX_USDC_LP = 0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656;
@@ -35,6 +36,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     // Tokens
     address private constant SAVAX_TOKEN = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
     address private constant AVAX_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+    address private constant GLP_TOKEM = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
     // LPs
     address private constant PNG_AVAX_USDC_LP = 0x0e0100Ab771E9288e0Aa97e11557E6654C3a9665;
     address private constant PNG_AVAX_ETH_LP = 0x7c05d54fc5CB6e4Ad87c6f5db3b807C94bB89c52;
@@ -74,6 +76,21 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             tokenSymbol: "sAVAX",
             vaultTokenSymbol: "YY_PTP_sAVAX",
             amount: amount
+        }));
+    }
+
+    /**
+       * Stakes GLP in Yield Yak protocol
+       * @dev This function uses the redstone-evm-connector
+       * @param amount amount of sAVAX to be staked
+    **/
+    function stakeGLPYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+        _stakeTokenYY(IYieldYak.YYStakingDetails({
+        tokenAddress: GLP_TOKEM,
+        vaultAddress: YY_GLP,
+        tokenSymbol: "GLP",
+        vaultTokenSymbol: "YY_GLP",
+        amount: amount
         }));
     }
 
@@ -193,6 +210,21 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         vaultAddress: YY_PTP_sAVAX,
         tokenSymbol: "sAVAX",
         vaultTokenSymbol: "YY_PTP_sAVAX",
+        amount: amount
+        }));
+    }
+
+    /**
+    * Unstakes GLP from Yield Yak protocol
+    * @dev This function uses the redstone-evm-connector
+        * @param amount amount of sAVAX to be unstaked
+    **/
+    function unstakeGLPYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
+        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+        tokenAddress: GLP_TOKEM,
+        vaultAddress: YY_GLP,
+        tokenSymbol: "GLP",
+        vaultTokenSymbol: "YY_GLP",
         amount: amount
         }));
     }
