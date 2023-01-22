@@ -70,7 +70,7 @@
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
           :bubbleText="(asset.symbol === 'AVAX' && noSmartLoan && index === 0) ?
-           `To create your Prime Account, click on the <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button , and then click &quot;deposit collateral&quot;` : ''"
+           `To create your Prime Account, click on the <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button, and then click &quot;Deposit collateral&quot;` : ''"
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"

@@ -11,7 +11,7 @@
           <br><br>
         </div>
         <div>
-          <b>It will require accepting several consecutive Metamask transactions.</b>
+          <b>It will require accepting Terms and <span v-if="isNativeAvax">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
         </div>
       </div>
       <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
@@ -168,13 +168,17 @@ export default {
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      if (this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX') {
+      if (this.isNativeAvax) {
         return this.walletNativeTokenBalance;
       } else {
         console.log((!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance);
         return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
       }
     },
+
+    isNativeAvax() {
+      return this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX';
+    }
   },
 
   methods: {
