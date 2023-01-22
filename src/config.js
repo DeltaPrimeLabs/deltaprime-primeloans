@@ -125,6 +125,7 @@ export default {
                 unstakeMethod: 'unstakeSAVAXYak',
                 feedSymbol: 'YY_PTP_sAVAX',
                 token: 'SAVAX',
+                info: 'Uses Yield Yak strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',

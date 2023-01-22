@@ -10,7 +10,7 @@
               <img v-if="farm.info"
                    class="info__icon"
                    src="src/assets/icons/info.svg"
-                   v-tooltip="{content: farm.info, classes: 'info-tooltip long'}">
+                   v-tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}">
             </div>
             <div class="by-farm">{{ protocol.name }} -> {{ farm.strategy }}</div>
           </div>
