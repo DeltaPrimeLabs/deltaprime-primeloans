@@ -173,7 +173,10 @@ describe('Test liquidator', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, tokenManager.address, diamondAddress, owner);
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators(["0xfabb0ac9d68b0b445fb7357272ff202c5651694a"]);
+
+            await liquidateLoan(wrappedLoan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -296,7 +299,10 @@ describe('Test liquidator', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, tokenManager.address, diamondAddress, owner);
+            let whitelistingFacet = await ethers.getContractAt("ISmartLoanLiquidationFacet", diamondAddress, owner);
+            await whitelistingFacet.whitelistLiquidators(["0xfabb0ac9d68b0b445fb7357272ff202c5651694a"]);
+
+            await liquidateLoan(wrappedLoan.address, tokenManager.address);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });

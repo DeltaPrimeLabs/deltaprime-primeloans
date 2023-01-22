@@ -86,14 +86,22 @@ export default {
     },
 
     async updateStakedBalances({rootState, state, commit}) {
+      const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
           const totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
           farm.totalStaked = totalStaked;
+          try {
+            farm.currentApy = await farm.apy();
+          } catch(e) {
+            console.log('Error fetching farm APY');
+          }
         }
       }
+
+      farmService.emitRefreshFarm();
 
       commit('setFarms', farms);
     },

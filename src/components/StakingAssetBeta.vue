@@ -201,7 +201,7 @@ export default {
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
-        const apy = await farm.apy();
+        const apy = await farm.currentApy;
         if (apy > maxApy) {
           maxApy = apy;
         }

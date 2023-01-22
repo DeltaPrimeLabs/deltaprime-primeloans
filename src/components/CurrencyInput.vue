@@ -4,7 +4,10 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input  ref="input" v-model="internalValue" v-on:input="valueChange"
+        <input  ref="input"
+                v-model="internalValue"
+                :disabled="disabled"
+                v-on:input="typeWatch"
                placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
@@ -63,6 +66,7 @@ export default {
       type: Array, default: () => []
     },
     //TODO: make an array like in validators
+    typingTimeout: {type: Number, default: 0},
     info: {type: Function, default: null},
     defaultValue: null,
     waiting: false,
@@ -77,6 +81,7 @@ export default {
     return {
       error: '',
       warning: '',
+      timer: 0,
       value: this.defaultValue,
       defaultValidators: [],
       asset: config.ASSETS_CONFIG[this.symbol],
@@ -124,6 +129,18 @@ export default {
 
       this.$emit('newValue', {value: value, error: hasError});
     },
+    typeWatch() {
+      this.$emit('ongoingTyping', {typing: true});
+
+      this.parseValue();
+      if (this.typingTimeout !== 0) {
+
+        clearTimeout(this.timer);
+        this.timer = setTimeout(this.emitValue, this.typingTimeout);
+      } else {
+        this.emitValue();
+      }
+    },
     async checkWarnings(newValue) {
       this.warning = '';
 
@@ -154,7 +171,7 @@ export default {
       }
       return this.error;
     },
-    valueChange() {
+    parseValue() {
       const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,18}$/);
       if (match) {
         this.value = parseFloat(this.internalValue.replaceAll(',', '.'));
@@ -163,6 +180,11 @@ export default {
         this.value = parseFloat(this.internalValue.substring(0, this.internalValue.length - 1));
         this.$forceUpdate();
       }
+    },
+
+    emitValue() {
+      this.$emit('ongoingTyping', {typing: false});
+
       this.$emit('inputChange', this.value);
     },
 
@@ -185,7 +207,7 @@ export default {
       const wrongFormatValidator = {
         validate: (value) => {
           if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
-            return `Incorrect formatting. Please use only alphanumeric values.`;
+            return `Incorrect formatting.`;
           }
         }
       }
@@ -261,6 +283,10 @@ input {
   padding-top: 0;
   padding-bottom: 0;
   max-width: 40%;
+
+  &:disabled {
+    opacity: 77%;
+  }
 
   @media screen and (min-width: $md) {
     padding-right: 5px;

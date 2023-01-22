@@ -13,11 +13,11 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
-    deployPools,
+    deployPools, erc20ABI,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
-    getTokensPricesMap,
+    getTokensPricesMap, LPAbi,
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
@@ -34,32 +34,14 @@ import {
     TraderJoeIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
+import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import redstone from "redstone-api";
-import {getContract} from "@nomiclabs/hardhat-ethers/internal/helpers";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)',
-    'function totalSupply() external view returns (uint256)',
-    'function totalDeposits() external view returns (uint256)'
-]
-
-const lpABI = [
-    ...erc20ABI,
-    'function getReserves() public view returns (uint112, uint112, uint32)',
-    'function balance() public view returns (uint256 balance)',
-]
-
-
 const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-const beefyTJWavaxUsdcLPAddress = "0x7E5bC7088aB3Da3e7fa1Aa7ceF1dC73F5B00681c";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -76,6 +58,7 @@ describe('Smart loan', () => {
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
+            liquidator: SignerWithAddress,
             MOCK_PRICES: any,
             tjLPTokenPrice: number,
             yyTJLPTokenPrice: number,
@@ -89,7 +72,7 @@ describe('Smart loan', () => {
             tokensPrices: Map<string, number>;
 
         before("deploy factory and pool", async () => {
-            [owner, depositor] = await getFixedGasSigners(10000000);
+            [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
@@ -104,8 +87,8 @@ describe('Smart loan', () => {
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
-            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], lpABI, provider));
-            tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], lpABI, provider));
+            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
+            tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], LPAbi, provider));
 
             tokensPrices = await getTokensPricesMap(
                 [],
@@ -180,7 +163,7 @@ describe('Smart loan', () => {
 
             nonOwnerWrappedLoan = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan.connect(depositor))
+                .wrap(loan.connect(liquidator))
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
@@ -292,6 +275,33 @@ describe('Smart loan', () => {
             await wrappedLoan.unstakeTJAVAXUSDCYak(toWei("9999"));
             expect(await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
+
+        it("should allow anyone to unstake if insolvent", async () => {
+            await wrappedLoan.stakeTJAVAXUSDCYak(await lpToken.balanceOf(wrappedLoan.address));
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("3000"));
+
+            await diamondCut.pause();
+            await replaceFacet('SolvencyFacetMock', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+
+            const whitelistingContract = await ethers.getContractAt('SmartLoanGigaChadInterface', diamondAddress, owner);
+
+            expect(await wrappedLoan.isSolvent()).to.be.false;
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).to.be.reverted;
+
+            await whitelistingContract.whitelistLiquidators([liquidator.address]);
+
+            await expect(nonOwnerWrappedLoan.unstakeTJAVAXUSDCYak(await wrappedLoan.getBalance(toBytes32('YY_TJ_AVAX_USDC_LP')))).not.to.be.reverted;
+        });
     });
 
     /*
@@ -333,8 +343,8 @@ describe('Smart loan', () => {
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
-            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], lpABI, provider));
-            tokenContracts.set('MOO_TJ_AVAX_USDC_LP', new ethers.Contract(beefyTJWavaxUsdcLPAddress, lpABI, provider));
+            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
+            tokenContracts.set('MOO_TJ_AVAX_USDC_LP', new ethers.Contract(beefyTJWavaxUsdcLPAddress, LPAbi, provider));
 
             let lpTokenTotalSupply = await tokenContracts.get('TJ_AVAX_USDC_LP')!.totalSupply();
             let [lpTokenToken0Reserve, lpTokenToken1Reserve] = await tokenContracts.get('TJ_AVAX_USDC_LP')!.getReserves();

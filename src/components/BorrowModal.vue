@@ -26,26 +26,31 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction === 0}">
-              Health:
-            </div>
-            <div class="summary__value">
+            <div>
+              <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction === 0}">
+                Health:
+              </div>
+              <div class="summary__value">
               <span class="summary__value--error"
-                v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
+                    v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
                 {{ healthAfterTransaction | percent }}
               </span>
-              <span v-else>
+                <span v-else>
                 {{ healthAfterTransaction | percent }}
               </span>
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Balance:
-            </div>
-            <div class="summary__value">
-              {{ Number(assetBalance) + Number(value) | smartRound }} {{ asset.symbol }}
+            <div>
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{ Number(assetBalance) + Number(value) | smartRound }} {{ asset.symbol }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>

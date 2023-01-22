@@ -31,12 +31,15 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Deposit:
-            </div>
-            <div class="summary__value">
-              {{ Number(deposit) + Number(depositValue) | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
+            <div>
+              <div class="summary__label">
+                Deposit:
+              </div>
+              <div class="summary__value">
+                {{ Number(deposit) + Number(depositValue) | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
+              </div>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
@@ -68,7 +71,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import ethers from "ethers";
 import addresses from "../../common/addresses/avax/token_addresses.json";
-import {erc20ABI} from "../utils/blockchain";
+import erc20ABI from '../../test/abis/ERC20.json';
 
 export default {
   name: 'DepositModal',

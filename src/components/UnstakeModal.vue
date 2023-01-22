@@ -37,6 +37,7 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__label">
               Farm balance:

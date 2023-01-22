@@ -4,14 +4,20 @@
       <div class="modal__title">
         Swap
       </div>
-      <CurrencyComboInput ref="sourceInput"
-                          :asset-options="sourceAssetOptions"
-                          v-on:valueChange="sourceInputChange">
-      </CurrencyComboInput>
       <div class="asset-info">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound }}</span>
       </div>
+      <CurrencyComboInput ref="sourceInput"
+                          :asset-options="sourceAssetOptions"
+                          :validators="sourceValidators"
+                          :disabled="checkingPrices"
+                          :info="() => `~ $${(Number(sourceAssetAmount) * sourceAssetData.price).toFixed(2)}`"
+                          :typingTimeout="2000"
+                          v-on:valueChange="sourceInputChange"
+                          v-on:ongoingTyping="ongoingTyping"
+      >
+      </CurrencyComboInput>
 
       <div class="reverse-swap-button">
         <img src="src/assets/icons/swap-arrow.svg" class="reverse-swap-icon" v-on:click="reverseSwap">
@@ -19,21 +25,43 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
-                          :info="!transactionOngoing ? slippageInfo : ''"
                           v-on:valueChange="targetInputChange"
-                          :validators="sourceValidators"
-                          :warnings="sourceWarnings">
+                          :info="() => `~ $${(Number(targetAssetAmount) * targetAssetData.price).toFixed(2)}`"
+                          :disabled="true"
+                          :validators="targetValidators">
       </CurrencyComboInput>
-      <div class="asset-info">
-        Price: <span
-        class="asset-info__value">1 {{ targetAsset }} = {{ conversionRate | smartRound }} {{ sourceAsset }}</span>
+      <div class="target-asset-info">
+        <div class="usd-info">
+          Price:&nbsp;<span
+            class="price-info__value">1 {{ targetAsset }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
+        </div>
+      </div>
+
+      <div class="slippage-bar">
+        <div class="slippage-info">
+          <span class="slippage-label">Max. acceptable slippage:</span>
+          <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
+        </div>
+        <div class="slippage__divider"></div>
+        DEX slippage: <span class="deviation-value">{{marketDeviation}}<span class="percent">%</span></span>
+        <div class="info__icon__wrapper">
+          <img class="info__icon"
+               src="src/assets/icons/info.svg"
+               v-tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}">
+        </div>
+      </div>
+      <div v-if="slippageWarning" class="slippage-warning">
+        <img src="src/assets/icons/error.svg"/>
+        {{ slippageWarning }}
       </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            Values after transaction:
+            Values after transaction
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__value__pair">
               <div class="summary__label"
@@ -52,7 +80,7 @@
                               :display-inline="true"></BarGaugeBeta>
               </div>
             </div>
-            <div class="summary__divider divider--long"></div>
+            <div class="summary__divider divider--long light"></div>
             <div class="summary__value__pair">
               <div class="summary__label">
                 {{ sourceAsset }} balance:
@@ -64,7 +92,7 @@
               </div>
             </div>
 
-            <div class="summary__divider divider--long"></div>
+            <div class="summary__divider divider--long light"></div>
             <div class="summary__value__pair">
               <div class="summary__label">
                 {{ targetAsset }} balance:
@@ -81,7 +109,7 @@
         <Button :label="'Swap'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
-                :waiting="transactionOngoing">
+                :waiting="transactionOngoing || isTyping">
         </Button>
       </div>
     </Modal>
@@ -97,14 +125,16 @@ import CurrencyComboInput from './CurrencyComboInput';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
-import {BigNumber, Contract} from "ethers";
-import INTERMEDIARY from '@artifacts/contracts/integrations/UniswapV2Intermediary.sol/UniswapV2Intermediary.json';
+import {BigNumber} from "ethers";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import YAK_ROUTER from '../../test/abis/YakRouter.json';
+import SimpleInput from "./SimpleInput";
+const ethers = require('ethers');
 
-const MIN_ACCEPTABLE_SLIPPAGE = 0.01;
 export default {
   name: 'SwapModal',
   components: {
+    SimpleInput,
     CurrencyComboInput,
     Button,
     CurrencyInput,
@@ -121,16 +151,24 @@ export default {
       targetAssetOptions: [],
       sourceAsset: null,
       targetAsset: null,
+      sourceAssetData: null,
+      targetAssetData: null,
       sourceAssetBalance: 0,
       targetAssetBalance: null,
       conversionRate: null,
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
+      userSlippage: 0,
+      lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
+      slippageWarning: '',
       targetValidators: [],
       sourceInputError: true,
       targetInputError: false,
+      checkingPrices: false,
+      isTyping: false,
+      marketDeviation: 0,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       healthAfterTransaction: 0,
       assetBalances: {},
@@ -142,7 +180,12 @@ export default {
       debt: 0,
       thresholdWeightedValue: 0,
       chosenDex: config.DEX_CONFIG[0],
-      estimatedReceivedTokens: 0
+      estimatedReceivedTokens: 0,
+      estimatedNeededTokens: 0,
+      receivedAccordingToOracle: 0,
+      neededAccordingToOracle: 0,
+      path: null,
+      adapters: null
     };
   },
 
@@ -152,7 +195,6 @@ export default {
     setTimeout(() => {
       this.setupSourceAsset();
       this.setupTargetAsset();
-      this.setupConversionRate();
       this.setupValidators();
       this.setupWarnings();
       this.calculateHealthAfterTransaction();
@@ -160,16 +202,6 @@ export default {
   },
 
   computed: {
-    slippage() {
-      return this.estimatedReceivedTokens ? Math.max(0, (this.targetAssetAmount - this.estimatedReceivedTokens) / this.targetAssetAmount) : 0;
-    },
-    slippageInfo() {
-      return () =>
-          `Current slippage ${(this.slippage * 100).toFixed(2)}%, maximum ${((this.slippage + MIN_ACCEPTABLE_SLIPPAGE) * 100).toFixed(2)}%`;
-    },
-    minTargetAssetAmount() {
-      return this.targetAssetAmount * (1 - (this.slippage + MIN_ACCEPTABLE_SLIPPAGE));
-    }
   },
 
   methods: {
@@ -179,39 +211,79 @@ export default {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
         sourceAmount: this.sourceAssetAmount,
-        targetAmount: this.minTargetAssetAmount,
-        chosenDex: this.chosenDex
+        targetAmount: this.targetAssetAmount,
+        path: this.path,
+        adapters: this.adapters
       });
     },
 
-    async chooseBestTrade() {
-      if (!this.sourceAssetAmount) return;
+    async query(tknFrom, tknTo, amountIn) {
+      const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
 
-      let estimatedReceivedTokens = 0;
-      let chosenDex = 'Pangolin';
+      const maxHops = 3
+      const gasPrice = ethers.utils.parseUnits('225', 'gwei')
 
-      for (let dex in config.DEX_CONFIG) {
-        const intermediaryContract = new Contract(config.DEX_CONFIG[dex].intermediaryAddress, INTERMEDIARY.abi, provider.getSigner());
+      return await yakRouter.findBestPathWithGas(
+          amountIn,
+          tknFrom,
+          tknTo,
+          maxHops,
+          gasPrice,
+          { gasLimit: 1e9 }
+      )
+    },
 
-        const whitelistedTokens = await intermediaryContract.getAllWhitelistedTokens();
-        const whiteListedTokensUppercase = whitelistedTokens.map(address => address.toUpperCase());
-        const isSourceAssetWhiteListed = whiteListedTokensUppercase.includes(TOKEN_ADDRESSES[this.sourceAsset].toUpperCase());
-        const isTargetAssetWhiteListed = whiteListedTokensUppercase.includes(TOKEN_ADDRESSES[this.targetAsset].toUpperCase());
-        const areWhitelisted = isSourceAssetWhiteListed && isTargetAssetWhiteListed;
-
-        if (areWhitelisted) {
-          let receivedAmount = await intermediaryContract.getMaximumTokensReceived(parseUnits(this.sourceAssetAmount.toString(), BigNumber.from(config.ASSETS_CONFIG[this.sourceAsset].decimals)), TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset]);
-
-          if (receivedAmount.gt(estimatedReceivedTokens)) {
-            estimatedReceivedTokens = receivedAmount;
-            chosenDex = dex;
-          }
-        }
+    async chooseBestTrade(basedOnSource = true) {
+      if (this.sourceAssetAmount == null) return;
+      if (this.sourceAssetAmount === 0) {
+        this.targetAssetAmount = 0;
+        return;
       }
 
-      this.chosenDex = chosenDex;
-      this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(config.ASSETS_CONFIG[this.targetAsset].decimals)));
+      this.lastChangedSource = true;
+      let decimals = this.sourceAssetData.decimals;
+      let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
+
+      const queryRes = await this.query(TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset], amountInWei);
+
+      this.path = queryRes.path;
+      this.adapters = queryRes.adapters;
+      const estimatedReceivedTokens = queryRes.amounts[queryRes.amounts.length - 1];
+
+      this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(this.targetAssetData.decimals)));
+
+      this.updateSlippageWithAmounts();
+      this.calculateHealthAfterTransaction();
     },
+
+    async updateAmountsWithSlippage() {
+      this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
+      let sourceInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
+      let targetInputChangeEvent = await this.$refs.sourceInput.setCurrencyInputValue(this.sourceAssetAmount);
+      this.setSlippageWarning();
+    },
+
+    async updateSlippageWithAmounts() {
+      let dexSlippage = 0;
+      this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
+      dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
+
+      const SLIPPAGE_MARGIN = 0.1;
+      this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
+
+      let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;
+
+      this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
+
+      await this.updateAmountsWithSlippage();
+    },
+
+    setSlippageWarning() {
+      this.slippageWarning = '';
+      if (this.userSlippage > 2) { this.slippageWarning =  'Slippage exceeds 2%. Be careful.' }
+      else if (this.userSlippage < this.marketDeviation) { this.slippageWarning =  'Slippage below current DEX slippage. Transaction will likely fail.' }
+      else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.1) { this.slippageWarning =  'Slippage close to current DEX slippage. Transaction can fail.' }
+      },
 
     setupSourceAssetOptions() {
       Object.keys(config.ASSETS_CONFIG).forEach(assetSymbol => {
@@ -232,55 +304,65 @@ export default {
 
     setupSourceAsset() {
       this.$refs.sourceInput.setSelectedAsset(this.sourceAsset, true);
+      this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
         this.$refs.targetInput.setSelectedAsset(this.targetAsset, true);
+        this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
       }
     },
 
     async sourceInputChange(changeEvent) {
+      this.checkingPrices = true;
       let targetInputChangeEvent;
       if (changeEvent.asset === this.targetAsset) {
         this.reverseSwap();
       } else {
-        this.sourceAsset = changeEvent.asset;
-        const targetAssetAmount = changeEvent.value / this.conversionRate;
-        if (!Number.isNaN(targetAssetAmount)) {
-          const value = Math.ceil(targetAssetAmount * 1000000) / 1000000;
-          this.sourceAssetAmount = changeEvent.value;
-          this.targetAssetAmount = value;
-          targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(value);
+        if (this.sourceAsset !== changeEvent.asset) {
+          this.sourceAsset = changeEvent.asset;
           this.calculateSourceAssetBalance();
-          this.setupConversionRate();
-          await this.chooseBestTrade();
-          this.calculateHealthAfterTransaction();
+          this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
+          await this.chooseBestTrade(false);
+        } else {
+          let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
+          this.sourceAssetAmount = value;
+          this.estimatedNeededTokens = value;
+
+          if (value !== 0) {
+            await this.chooseBestTrade();
+          } else {
+            this.targetAssetAmount = 0;
+            this.estimatedReceivedTokens = 0;
+            await this.$refs.targetInput.setCurrencyInputValue(0);
+          }
         }
       }
+
       this.sourceInputError = changeEvent.error;
       if (targetInputChangeEvent) {
         this.targetInputError = targetInputChangeEvent.error;
       }
+      this.checkingPrices = false;
     },
 
     async targetInputChange(changeEvent) {
       let sourceInputChangeEvent;
+
       if (changeEvent.asset === this.sourceAsset) {
         this.reverseSwap();
       } else {
-        this.targetAsset = changeEvent.asset;
-        const sourceAssetAmount = changeEvent.value * this.conversionRate;
-        if (!Number.isNaN(sourceAssetAmount)) {
-          const value = Math.ceil(sourceAssetAmount * 1000000) / 1000000;
+        if (this.targetAsset !== changeEvent.asset) {
+          this.targetAsset = changeEvent.asset;
+          this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
+          await this.chooseBestTrade(true);
+        } else {
           this.targetAssetAmount = changeEvent.value;
-          this.sourceAssetAmount = value;
-          sourceInputChangeEvent = await this.$refs.sourceInput.setCurrencyInputValue(value);
-          this.calculateSourceAssetBalance();
-          this.setupConversionRate();
-          await this.chooseBestTrade();
-          this.calculateHealthAfterTransaction();
+          this.estimatedReceivedTokens = changeEvent.value;
+          await this.chooseBestTrade(false);
         }
+
       }
       this.targetInputError = changeEvent.error;
       if (sourceInputChangeEvent) {
@@ -288,10 +370,14 @@ export default {
       }
     },
 
-    setupConversionRate() {
-      const sourceAsset = config.ASSETS_CONFIG[this.sourceAsset];
-      const targetAsset = config.ASSETS_CONFIG[this.targetAsset];
-      this.conversionRate = targetAsset.price / sourceAsset.price;
+    ongoingTyping(event) {
+      this.isTyping = event.typing;
+    },
+
+    async userSlippageChange(changeEvent) {
+      this.userSlippage = changeEvent.value ? changeEvent.value : 0;
+
+      await this.updateAmountsWithSlippage();
     },
 
     calculateSourceAssetBalance() {
@@ -303,54 +389,35 @@ export default {
 
     reverseSwap() {
       const tempSource = this.sourceAsset;
+      this.sourceAssetData = config.ASSETS_CONFIG[this.targetAsset]
+      this.targetAssetData = config.ASSETS_CONFIG[this.sourceAsset]
       this.sourceAsset = this.targetAsset;
       this.targetAsset = tempSource;
 
       this.setupSourceAsset();
       this.setupTargetAsset();
 
-      this.calculateSourceAssetBalance();
-      this.setupConversionRate();
+      this.chooseBestTrade();
 
-      this.calculateHealthAfterTransaction();
+      this.calculateSourceAssetBalance();
     },
     setupWarnings() {
-      this.sourceWarnings = [
-        {
-          validate: async (value) => {
-            this.transactionOngoing = true;
-            await this.delay(5000);
-            this.transactionOngoing = false;
-
-
-            if (this.slippage > 0.02) {
-              return 'Slippage exceeds 2%. Be careful!';
-            }
-          }
-        },
-      ]
     },
     setupValidators() {
       this.sourceValidators = [
-        // {
-        //   validate: async (value) => {
-        //     this.transactionOngoing = true;
-        //     await this.delay(5000);
-        //     this.transactionOngoing = false;
-        //
-        //     if (this.slippage > 0.05) {
-        //       return 'Slippage exceeds the limit of 5%';
-        //     }
-        //   }
-        // },
         {
           validate: async (value) => {
-            await this.chooseBestTrade();
-            setTimeout(() => {
-              this.calculateHealthAfterTransaction(value);
-            })
+            if (value > parseFloat(this.assetBalances[this.sourceAsset])) {
+              return 'Amount exceeds the current balance.';
+            }
+          }
+        },
+      ];
+      this.targetValidators = [
+        {
+          validate: async (value) => {
             if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-              return 'The health is below allowed limit';
+              return 'The health is below allowed limit.';
             }
           }
         },
@@ -389,13 +456,7 @@ export default {
         });
       }
 
-      // console.log('swap modal')
-      //
-      // console.log(tokens)
-
       this.healthAfterTransaction = calculateHealth(tokens);
-
-      // console.log(' this.healthAfterTransaction: ',  this.healthAfterTransaction)
     },
   }
 };
@@ -425,12 +486,30 @@ export default {
     }
   }
 
+  .usd-info {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    font-size: $font-size-xsm;
+    color: $steel-gray;
+    margin-top: 3px;
+
+    .asset-info__value {
+      margin-left: 5px;
+    }
+
+    .price-info__value {
+      font-weight: 600;
+    }
+  }
+
   .reverse-swap-button {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    margin-top: 40px;
 
     .reverse-swap-icon {
       width: 52px;
@@ -440,8 +519,77 @@ export default {
   }
 }
 
+.received-amount {
+  display: flex;
+  font-size: 14px;
+  color: #7d7d7d;
+}
+
+.target-asset-info {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.slippage-bar {
+  border-top: solid 2px #f0f0f0;
+  border-bottom: solid 2px #f0f0f0;
+  margin-top: 26px;
+  height: 42px;
+  font-family: Montserrat;
+  font-size: 16px;
+  color: #7d7d7d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 15px;
+  padding-right: 15px;
+
+  .info__icon {
+    transform: translateY(-1px);
+  }
+
+  .percent {
+    font-weight: 600;
+  }
+
+  .slippage-info {
+    display: flex;
+    align-items: center;
+
+    .percent {
+      margin-left: 6px;
+    }
+
+    .slippage-label {
+      margin-right: 6px;
+    }
+  }
+
+  .deviation-value {
+    font-weight: 600;
+  }
+
+  .slippage__divider {
+    width: 2px;
+    height: 17px;
+    background-color: #f0f0f0;
+    margin: 0 10px;
+  }
+}
+
 .bar-gauge-tall-wrapper {
   padding-top: 5px;
+}
+
+.slippage-warning {
+  color: $red;
+  margin-top: 4px;
+
+  img {
+    width: 20px;
+    height: 20px;
+    transform: translateY(-1px);
+  }
 }
 
 </style>

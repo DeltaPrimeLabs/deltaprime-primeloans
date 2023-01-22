@@ -27,17 +27,12 @@
                      v-on:newValue="stakeValueChange"
                      :validators="validators">
       </CurrencyInput>
-
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div v-if="protocol" class="protocol">
-              <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
-              <div class="protocol__name">{{ protocol.name }}</div>
-              ,
-            </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values" v-if="asset">
             <div class="summary__value__pair">
               <div class="summary__label">

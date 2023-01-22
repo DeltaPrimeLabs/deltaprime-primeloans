@@ -4,6 +4,8 @@ import DataRefreshEventService from '../services/dataRefreshEventService';
 import ProgressBarService from '../services/progressBarService';
 import ModalService from '../services/modalService';
 import HealthService from '../services/healthService';
+import FarmService from "../services/farmService";
+import LpService from "../services/lpService";
 import AprService from '../services/aprService';
 
 export default {
@@ -16,6 +18,8 @@ export default {
     modalService: new ModalService(),
     healthService: new HealthService(),
     aprService: new AprService(),
+    farmService: new FarmService(),
+    lpService: new LpService(),
   },
   mutations: {
   },

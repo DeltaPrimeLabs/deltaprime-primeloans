@@ -4,6 +4,7 @@
 
 import {DiamondStorageLib} from "./lib/DiamondStorageLib.sol";
 import "./lib/SolvencyMethods.sol";
+import "./facets/SmartLoanLiquidationFacet.sol";
 
 pragma solidity 0.8.17;
 
@@ -19,6 +20,8 @@ abstract contract OnlyOwnerOrInsolvent is SolvencyMethods {
         bool wasSolvent = _isSolvent();
         if (wasSolvent) {
             DiamondStorageLib.enforceIsContractOwner();
+        } else {
+            require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted accounts can perform this action");
         }
 
         _;

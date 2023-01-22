@@ -1,6 +1,5 @@
 import {
   awaitConfirmation,
-  erc20ABI,
   isOracleError,
   signMessage,
   loanTermsToSign,
@@ -17,7 +16,9 @@ import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {aprToApy, calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import wavaxAbi from '../../test/abis/WAVAX.json';
+import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router'
 
 
@@ -30,11 +31,6 @@ const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
 
 const tokenAddresses = TOKEN_ADDRESSES;
-
-const wavaxAbi = [
-  'function deposit() public payable',
-  ...erc20ABI
-];
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -267,6 +263,7 @@ export default {
 
   actions: {
     async fundsStoreSetup({state, rootState, dispatch, commit}) {
+      if (!rootState.network.provider) return;
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
@@ -356,7 +353,8 @@ export default {
       commit('setAssets', assets);
     },
 
-    async setupLpAssets({state, commit}) {
+    async setupLpAssets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
 
       Object.values(config.LP_ASSETS_CONFIG).forEach(
@@ -368,8 +366,10 @@ export default {
       );
 
       await redstone.getPrice(Object.keys(lpTokens)).then(prices => {
-        Object.keys(lpTokens).forEach(assetSymbol => {
+        Object.keys(lpTokens).forEach(async assetSymbol => {
           lpTokens[assetSymbol].price = prices[assetSymbol].value;
+          lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].apr();
+          lpService.emitRefreshLp();
         });
       });
       commit('setLpAssets', lpTokens);
@@ -516,6 +516,70 @@ export default {
         health: fromWei(fullLoanStatusResponse[3]),
       };
       commit('setFullLoanStatus', fullLoanStatus);
+    },
+
+    async getAccountApr({state, getters, rootState, commit}){
+      let apr = 0;
+      let yearlyDebtInterest = 0;
+
+      if (rootState.poolStore.pools && state.debtsPerAsset) {
+        Object.entries(state.debtsPerAsset).forEach(
+            ([symbol, debt]) => {
+              yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
+            }
+        );
+
+        let yearlyAssetInterest = 0;
+
+
+        if (state.assetBalances) {
+          yearlyAssetInterest = state.assetBalances['sAVAX'] * state.assets['sAVAX'].price * 0.072;
+        }
+
+        let yearlyLpInterest = 0;
+
+        if (state.lpAssets && state.lpBalances) {
+          for (let entry of Object.entries(state.lpAssets)) {
+            let symbol = entry[0]
+            let lpAsset = entry[1]
+
+            //TODO: take from API
+            let assetAppretiation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppretiation) - 1) * lpAsset.price;
+          }
+        }
+
+        let yearlyFarmInterest = 0;
+
+        if (rootState.stakeStore.farms) {
+          for (let entry of Object.entries(rootState.stakeStore.farms)) {
+            let symbol = entry[0];
+            let farms = entry[1];
+
+            for (let farm of farms) {
+              let assetAppretiation = 1;
+
+              if (symbol.includes('sAVAX')) assetAppretiation =  1.036;
+              if (symbol === 'sAVAX') assetAppretiation =  1.072;
+
+              let apy = 0;
+
+              apy = farm.currentApy;
+
+              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
+
+            }
+          }
+        }
+
+        const collateral = getters.getCollateral;
+
+        if (collateral) {
+          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
+        }
+
+        commit('setAccountApr', apr);
+      }
     },
 
     async swapToWavax({state, rootState}) {
@@ -772,11 +836,11 @@ export default {
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))[config.DEX_CONFIG[swapRequest.chosenDex].swapMethod](
-        toBytes32(swapRequest.sourceAsset),
-        toBytes32(swapRequest.targetAsset),
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).yakSwap(
         sourceAmount,
         targetAmount,
+        swapRequest.path,
+        swapRequest.adapters,
         {gasLimit: 4000000}
       );
 

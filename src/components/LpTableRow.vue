@@ -82,7 +82,8 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {assetAppreciation, erc20ABI} from '../utils/blockchain';
+import {assetAppreciation} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
@@ -109,6 +110,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchProgressBarState();
+    this.watchLpRefresh();
     await this.setupApr();
   },
 
@@ -120,6 +122,7 @@ export default {
       poolBalance: 0,
       apr: 0,
       tvl: 0,
+      lpTokenBalances: [],
       isLpBalanceEstimated: false,
       waitingForHardRefresh: false,
     };
@@ -130,7 +133,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'lpService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -164,6 +167,14 @@ export default {
       },
       immediate: true
     },
+    lpBalances: {
+      handler(lpBalances) {
+        if (lpBalances) {
+          this.lpTokenBalances = lpBalances;
+        }
+      },
+      immediate: true
+    },
   },
 
   methods: {
@@ -174,6 +185,7 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit / Create',
+          disabled: !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -191,7 +203,7 @@ export default {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw / Unwind',
-          disabled: !this.hasSmartLoanContract,
+          disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'WITHDRAW',
@@ -207,7 +219,8 @@ export default {
     },
 
     async setupApr() {
-      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + await this.lpToken.apr()) - 1);
+      if (!this.lpToken.currentApr) return;
+      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
     },
 
     toggleChart() {
@@ -414,6 +427,12 @@ export default {
         this.waitingForHardRefresh = true;
         this.$forceUpdate();
       });
+    },
+
+    watchLpRefresh() {
+      this.lpService.observeRefreshLp().subscribe(async () => {
+        await this.setupApr();
+      })
     },
 
     scheduleHardRefresh() {

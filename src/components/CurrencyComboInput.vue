@@ -7,7 +7,10 @@
                      :validators="validators"
                      :warnings="warnings"
                      :info="info"
+                     :disabled="disabled"
+                     :typingTimeout="typingTimeout"
                      v-on:inputChange="currencyInputChange"
+                     v-on:ongoingTyping="ongoingTyping"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>
@@ -58,6 +61,8 @@ export default {
     },
     //TODO: make an array like in validators
     info: {type: Function, default: null},
+    disabled: false,
+    typingTimeout: {type: Number, default: 0},
   },
   computed: {
     getDisplayedAssetOptions() {
@@ -139,6 +144,10 @@ export default {
       if (!disableEmitValue) {
         this.emitValue();
       }
+    },
+
+    ongoingTyping(event) {
+      this.$emit('ongoingTyping', {typing: event.typing});
     },
 
     async emitValue() {

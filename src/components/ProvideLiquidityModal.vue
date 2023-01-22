@@ -37,6 +37,7 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__value__pair">
               <div class="summary__label">
@@ -88,7 +89,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {erc20ABI} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/ERC20.json';
 import {fromWei} from '../utils/calculate';
 import {formatUnits} from "ethers/lib/utils";
 import {BigNumber} from "ethers";

@@ -37,15 +37,8 @@ import {parseUnits} from "ethers/lib/utils";
 chai.use(solidity);
 
 const {deployDiamond} = require('../../../tools/diamond/deploy-diamond');
-const {deployContract, provider} = waffle;
+const {deployContract} = waffle;
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-
-const erc20ABI = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function allowance(address owner, address spender) public view returns (uint256)'
-]
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {

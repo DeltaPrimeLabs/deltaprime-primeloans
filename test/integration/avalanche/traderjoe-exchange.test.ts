@@ -9,14 +9,14 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TokenManager, TraderJoeIntermediary} from '../../../typechain';
 import {
-    addMissingTokenContracts, Asset,
+    addMissingTokenContracts, Asset, erc20ABI,
     formatUnits,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
     syncTime, toBytes32,
-    toWei
+    toWei, wavaxAbi
 } from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
@@ -27,19 +27,6 @@ const {deployContract, provider} = waffle;
 const {expect} = chai;
 
 const traderjoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
-
-const ERC20Abi = [
-    'function decimals() public view returns (uint8)',
-    'function balanceOf(address _owner) public view returns (uint256 balance)',
-    'function approve(address _spender, uint256 _value) public returns (bool success)',
-    'function transfer(address _to, uint256 _value) public returns (bool success)',
-    'function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)'
-]
-
-const WavaxAbi = [
-    'function deposit() public payable',
-    ...ERC20Abi
-]
 
 const UniswapV2IntermediaryAbi = [
     'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
@@ -87,8 +74,8 @@ describe('TraderJoeIntermediary', () => {
 
             await sut.initialize(traderjoeRouterAddress, tokenManager.address, [TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']]);
 
-            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], WavaxAbi, provider);
-            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], ERC20Abi, provider);
+            wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+            usdToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
             router = await new ethers.Contract(traderjoeRouterAddress, UniswapV2IntermediaryAbi);
 
             await wavaxToken.connect(owner).deposit({value: toWei("1000")});

@@ -1,6 +1,7 @@
-import {awaitConfirmation, depositTermsToSign, erc20ABI, signMessage} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
+import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
 
 
@@ -45,6 +46,7 @@ export default {
 
     async setupPools({rootState, commit, dispatch}) {
       const provider = rootState.network.provider;
+      if (!provider) return;
       const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
       poolsFromConfig.forEach(poolAsset => {
