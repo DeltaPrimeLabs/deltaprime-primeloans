@@ -39,7 +39,7 @@
                 Balance:
               </div>
               <div class="summary__value">
-                {{ (Number(available) - Number(stakeValue)) > 0 ? Number(available) - Number(stakeValue) : 0 | smartRound }}
+                {{ (Number(available) - Number(stakeValue)) > 0 ? Number(available) - Number(stakeValue) : 0 | smartRound(8, true) }}
                 <div class="currency">
                   {{asset.name}}
                 </div>
@@ -62,7 +62,7 @@
                 Daily interest:
               </div>
               <div class="summary__value">
-                ≈ {{ calculateDailyInterest | smartRound }} <div class="currency">{{ asset.name }}</div>
+                ≈ {{ calculateDailyInterest | smartRound(10, true) }} <div class="currency">{{ asset.name }}</div>
               </div>
             </div>
           </div>

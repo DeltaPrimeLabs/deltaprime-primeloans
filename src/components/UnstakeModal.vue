@@ -43,14 +43,14 @@
               Farm balance:
             </div>
             <div class="summary__value">
-              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(9, true) }}
+              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(8, true) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ asset.name }}</span>
+              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ asset.name }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
