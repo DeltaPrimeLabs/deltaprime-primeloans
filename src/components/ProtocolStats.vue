@@ -44,10 +44,17 @@
         </div>
         <div class="factory">
           <Block>
-            <div class="title">Loans</div>
+            <div class="title">Accounts</div>
             <div class="stat">
               <div class="desc">Number of loans:</div>
               <div class="value">{{loanAddresses.length}}</div>
+            </div>
+            <div class="liquidators">
+              <div class="desc">Liquidators:</div>
+              <div class="liquidator-info" v-for="liquidator in liquidators">
+                <div class="account"><a :href="`https://snowtrace.io/address/${liquidator.account}`" target="_blank">{{liquidator.account | tx}}</a></div>
+                <div class="balance">{{liquidator.balance.toFixed(2)}}</div>
+              </div>
             </div>
             <div class="loan-list">
               <div class="loan-list-header">
@@ -93,8 +100,8 @@ import addresses from '../../common/addresses/avax/token_addresses.json';
 import {fromWei} from "../utils/calculate";
 
 // This could be abstracted in separate store
-// import { initializeApp } from "firebase/app";
-// import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -107,7 +114,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// const fireStore = getFirestore(initializeApp(firebaseConfig));
+const fireStore = getFirestore(initializeApp(firebaseConfig));
+const liquidatorAccounts = ["0xe8D4E496ef28A0A6E0F2ce7805ff12482D8FdCE6","0xE091dFe40B8578FAF6FeC601686B4332Da5D43cc", "0xCD7D50FDD7481C3ffdeBc4F4d35B8C508986F5aa"];
 
 export default {
   name: 'ProtocolStats',
@@ -119,10 +127,12 @@ export default {
     if (window.provider) {
       await this.poolStoreSetup();
       await this.fundsStoreSetup();
+      await this.liquidatorAccountsSetup();
     } else {
       setTimeout(async () => {
         await this.poolStoreSetup();
         await this.fundsStoreSetup();
+        await this.liquidatorAccountsSetup();
       }, 1000);
 
     }
@@ -137,12 +147,14 @@ export default {
       protocolCollateral: 0,
       totalBorrowed: 0,
       loanAddresses: [],
-      loans: []
+      loans: [],
+      liquidators: []
     };
   },
   computed: {
     ...mapState('poolStore', ['pools']),
     ...mapState('fundsStore', ['smartLoanFactoryContract']),
+    ...mapState('network', ['provider']),
     poolLiquidity() {
       return (this.poolsList && this.poolsList[0] && this.poolsList[1]) ? parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral) : 0;
     }
@@ -196,6 +208,15 @@ export default {
 
     },
 
+    async liquidatorAccountsSetup() {
+      for (const account of liquidatorAccounts) {
+        this.liquidators.push({
+          account: account,
+          balance: fromWei(await this.provider.getBalance(account))
+        })
+      }
+    },
+
     initPools() {
       const pools = [];
       Object.entries(config.POOLS_CONFIG).forEach(([symbol, pool]) => {
@@ -233,7 +254,6 @@ export default {
       this.protocolCollateral = 0;
       this.totalBorrowed = 0;
       loansQuerySnapshot.forEach((doc) => {
-        console.log(doc.data());
         this.loans.push({
           address: doc.data().address,
           health: doc.data().health,
@@ -266,7 +286,7 @@ export default {
           collateral: fromWei(status[0]) - fromWei(status[1]),
           twv: fromWei(status[2]),
           health: fromWei(status[3]),
-          solvent: fromWei(status[4]) !== 1
+          solvent: fromWei(status[4]) === 1e-18
         })
 
         sumCollateral += fromWei(status[0]) - fromWei(status[1]);
@@ -360,7 +380,6 @@ export default {
 
 .stat {
   display: flex;
-  justify-content: space-between;
   width: 100%;
   color: #7d7d7d;
   margin-top: 10px;
@@ -372,7 +391,7 @@ export default {
 
   .value {
     font-size: 16px;
-
+    margin-left: 50px;
   }
 }
 
@@ -394,7 +413,38 @@ export default {
     margin-bottom: 50px;
     color: #7d7d7d;
   }
+}
 
+.liquidators {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: #7d7d7d;
+  height: 100px;
+  width: 100%;
+  margin-top: 40px;
+
+  .desc {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+
+  .liquidator-info {
+    display: flex;
+
+    .account {
+      a {
+        text-decoration: none;
+        font-weight: 500;
+        color: #7d7d7d;
+      }
+    }
+
+    .balance {
+      margin-left: 30px;
+    }
+  }
 }
 
 </style>
