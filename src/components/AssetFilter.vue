@@ -13,7 +13,7 @@
       </div>
       <div v-if="index !== assetFilterGroups.length - 1" class="filter__separator"></div>
     </div>
-    <div class="filter__clear">
+    <div class="filter__clear" v-if="!allSelected">
       <button class="clear__button" type="button" v-on:click="resetAll()">
         <img class="clear__icon" src="src/assets/icons/cross.svg">
         <span class="clear__text">Clear all filters</span>
@@ -36,6 +36,7 @@ export default {
     return {
       dexesConfig: config.DEX_CONFIG,
       filterValue: null,
+      allSelected: true,
     };
   },
 
@@ -55,13 +56,16 @@ export default {
       if (allSelected) {
         Object.keys(this.filterValue[group.key]).forEach(o => {
           this.filterValue[group.key][o].active = false;
+          this.checkResetButton();
           this.$forceUpdate();
         });
         this.filterValue[group.key][option].active = true;
+        this.checkResetButton();
         this.$forceUpdate();
       } else {
         this.filterValue[group.key][option].active = !this.filterValue[group.key][option].active;
         this.$forceUpdate();
+        this.checkResetButton();
         const noneSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => !o);
         if (noneSelected) {
           this.resetGroup(group);
@@ -73,11 +77,13 @@ export default {
     resetGroup(group) {
       Object.keys(this.filterValue[group.key]).forEach(option => {
         this.filterValue[group.key][option].active = true;
+        this.checkResetButton();
         this.$forceUpdate();
       });
     },
 
     resetAll() {
+      console.log(this.filterValue);
       this.assetFilterGroups.forEach(group => {
         this.resetGroup(group);
       });
@@ -90,7 +96,15 @@ export default {
         filterValue[groupKey] = Object.values(this.filterValue[groupKey]).filter(option => option.active).map(option => option.asset);
       });
       this.$emit('filterChange', filterValue);
-    }
+    },
+
+    checkResetButton() {
+      let allSelectedPerGroup = {};
+      Object.keys(this.filterValue).forEach(group => {
+        allSelectedPerGroup[group] = Object.keys(this.filterValue[group]).every(option => this.filterValue[group][option].active);
+      });
+      this.allSelected = Object.keys(allSelectedPerGroup).every(group => allSelectedPerGroup[group]);
+    },
   },
 
   watch: {
