@@ -7,6 +7,8 @@ import HealthService from '../services/healthService';
 import FarmService from "../services/farmService";
 import LpService from "../services/lpService";
 import AprService from '../services/aprService';
+import ProviderService from '../services/providerService';
+import AccountService from '../services/accountService';
 
 export default {
   namespaced: true,
@@ -20,9 +22,7 @@ export default {
     aprService: new AprService(),
     farmService: new FarmService(),
     lpService: new LpService(),
-  },
-  mutations: {
-  },
-  actions: {
+    providerService: new ProviderService(),
+    accountService: new AccountService(),
   },
 };

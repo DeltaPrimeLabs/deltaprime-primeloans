@@ -391,7 +391,6 @@ export default {
       const provider = rootState.network.provider;
 
       let smartLoanAddress;
-
       smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
 
       if (router && router.currentRoute) {

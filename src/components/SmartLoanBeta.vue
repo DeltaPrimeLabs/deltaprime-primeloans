@@ -62,6 +62,7 @@ import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
+import {combineLatest, delay} from 'rxjs';
 
 const ASSETS_PATH = 'assets';
 const FARMS_PATH = 'farms';
@@ -77,7 +78,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService']),
     ...mapState('network', ['account']),
     ...mapGetters('fundsStore', ['getHealth', 'getCollateral', 'getAccountApr']),
     wasLiquidated() {
@@ -135,22 +136,22 @@ export default {
     this.watchAprRefresh();
     this.watchProgressBarState();
     this.setupVideoVisibility();
-    if (window.provider) {
-      await this.fundsStoreSetup();
-      await this.poolStoreSetup();
-      await this.stakeStoreSetup();
-    } else {
-      setTimeout(async () => {
-        await this.fundsStoreSetup();
-        await this.poolStoreSetup();
-        await this.stakeStoreSetup();
-      }, 3000);
-    }
+
+    this.initStoresWhenProviderAndAccountCreated();
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('stakeStore', ['stakeStoreSetup']),
+
+    initStoresWhenProviderAndAccountCreated() {
+      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+        .subscribe(async ([provider, account]) => {
+          await this.fundsStoreSetup();
+          await this.poolStoreSetup();
+          await this.stakeStoreSetup();
+        });
+    },
 
     async assetBalancesChange(balances) {
       if (balances && balances.length > 0) {

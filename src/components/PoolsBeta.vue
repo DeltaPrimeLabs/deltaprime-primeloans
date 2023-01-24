@@ -36,6 +36,7 @@ import PoolsTableRowBeta from './PoolsTableRowBeta';
 import redstone from 'redstone-api';
 import {fromWei} from '../utils/calculate';
 import {mapActions, mapState} from 'vuex';
+import {combineLatest} from 'rxjs';
 
 export default {
   name: 'PoolsBeta',
@@ -46,16 +47,8 @@ export default {
   },
   async mounted() {
     this.initPools();
-    if (window.provider) {
-      await this.fundsStoreSetup();
-      await this.poolStoreSetup();
-    } else {
-      setTimeout(async () => {
-        await this.fundsStoreSetup();
-        await this.poolStoreSetup();
-      }, 1000);
 
-    }
+    this.initStoresWhenProviderAndAccountCreated();
   },
 
   data() {
@@ -69,6 +62,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['assets']),
     ...mapState('poolStore', ['pools']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService']),
     list() {
       return (this.poolsList) ? this.poolsList.sort((a, b) => a > b) : [];
     }
@@ -77,6 +71,15 @@ export default {
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('fundsStore', ['fundsStoreSetup']),
+
+    initStoresWhenProviderAndAccountCreated() {
+      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+        .subscribe(async ([provider, account]) => {
+          await this.fundsStoreSetup();
+          await this.poolStoreSetup();
+        });
+    },
+
     setupPoolsList() {
       setTimeout(() => {
         this.poolsList = Object.values(this.pools);

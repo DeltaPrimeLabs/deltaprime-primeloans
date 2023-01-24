@@ -102,6 +102,7 @@ import {fromWei} from "../utils/calculate";
 // This could be abstracted in separate store
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
+import {combineLatest} from 'rxjs';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -124,18 +125,7 @@ export default {
   },
   async mounted() {
     this.initPools();
-    if (window.provider) {
-      await this.poolStoreSetup();
-      await this.fundsStoreSetup();
-      await this.liquidatorAccountsSetup();
-    } else {
-      setTimeout(async () => {
-        await this.poolStoreSetup();
-        await this.fundsStoreSetup();
-        await this.liquidatorAccountsSetup();
-      }, 1000);
-
-    }
+    this.initStoresWhenProviderAndAccountCreated();
   },
 
   data() {
@@ -155,6 +145,7 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('fundsStore', ['smartLoanFactoryContract']),
     ...mapState('network', ['provider']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService']),
     poolLiquidity() {
       return (this.poolsList && this.poolsList[0] && this.poolsList[1]) ? parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral) : 0;
     }
@@ -182,6 +173,16 @@ export default {
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
     ...mapActions('fundsStore', ['fundsStoreSetup']),
+
+    initStoresWhenProviderAndAccountCreated() {
+      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+        .subscribe(async ([provider, account]) => {
+          await this.poolStoreSetup();
+          await this.fundsStoreSetup();
+          await this.liquidatorAccountsSetup();
+        });
+    },
+
     setupPoolsList() {
       setTimeout(() => {
         this.poolsList = Object.values(this.pools);
