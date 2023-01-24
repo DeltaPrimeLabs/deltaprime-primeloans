@@ -144,7 +144,7 @@ export default {
         await this.fundsStoreSetup();
         await this.poolStoreSetup();
         await this.stakeStoreSetup();
-      }, 1000);
+      }, 3000);
     }
   },
   methods: {

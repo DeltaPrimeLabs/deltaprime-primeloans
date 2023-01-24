@@ -68,6 +68,8 @@ export default {
     };
   },
   async created() {
+    await this.initNetwork();
+
     if (!ethereum) {
       this.showMetamaskBanner = true;
       return;
@@ -79,7 +81,6 @@ export default {
     }
 
     await this.metamaskChecks();
-    await this.initNetwork();
 
     if (!this.provider || !this.account) {
       this.showConnectBanner = true;
