@@ -53,13 +53,22 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         require(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)) >= amount, "Not enough AVAX available");
+        IERC20Metadata yrtToken = IERC20Metadata(YY_AAVE_AVAX);
+        uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
 
         IWrappedNativeToken(AVAX_TOKEN).withdraw(amount);
         IYieldYak(YY_AAVE_AVAX).deposit{value: amount}();
 
         DiamondStorageLib.addOwnedAsset("YY_AAVE_AVAX", YY_AAVE_AVAX);
 
-        emit Staked(msg.sender, "AVAX", YY_AAVE_AVAX, amount, block.timestamp);
+        emit Staked(
+            msg.sender,
+            "AVAX",
+            YY_AAVE_AVAX,
+            amount,
+            yrtToken.balanceOf(address(this)) - initialYRTBalance,
+            block.timestamp
+        );
     }
 
     /**
@@ -164,6 +173,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
+        IERC20Metadata depositToken = IERC20Metadata(AVAX_TOKEN);
+        uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
@@ -173,7 +184,14 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.removeOwnedAsset("YY_AAVE_AVAX");
         }
 
-        emit Unstaked(msg.sender, "AVAX", YY_AAVE_AVAX, amount, block.timestamp);
+        emit Unstaked(
+            msg.sender,
+            "AVAX",
+            YY_AAVE_AVAX,
+            depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
+            amount,
+            block.timestamp
+        );
 
         if(IERC20(AVAX_TOKEN).balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
@@ -281,6 +299,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        IERC20Metadata yrtToken = IERC20Metadata(stakingDetails.vaultAddress);
+        uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
 
         require(stakingDetails.amount > 0, "Cannot stake 0 tokens");
         // _ACTIVE = 2
@@ -297,7 +317,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
         }
 
-        emit Staked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
+        emit Staked(
+            msg.sender,
+            stakingDetails.tokenSymbol,
+            stakingDetails.vaultAddress,
+            stakingDetails.amount,
+            yrtToken.balanceOf(address(this)) - initialYRTBalance,
+            block.timestamp);
     }
 
     /**
@@ -307,6 +333,8 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
+        IERC20Metadata depositToken = IERC20Metadata(stakingDetails.tokenAddress);
+        uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
         stakingDetails.amount = Math.min(vaultContract.balanceOf(address(this)), stakingDetails.amount);
 
         vaultContract.withdraw(stakingDetails.amount);
@@ -317,7 +345,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
         }
 
-        emit Unstaked(msg.sender, stakingDetails.tokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
+        emit Unstaked(
+            msg.sender,
+            stakingDetails.tokenSymbol,
+            stakingDetails.vaultAddress,
+            depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
+            stakingDetails.amount,
+            block.timestamp);
     }
 
 
@@ -332,20 +366,22 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     /**
         * @dev emitted when user stakes an asset
         * @param user the address executing staking
-        * @param vault address of the vault token
         * @param asset the asset that was staked
-        * @param amount of the asset that was staked
+        * @param vault address of the vault token
+        * @param depositTokenAmount how much of deposit token was staked
+        * @param receiptTokenAmount how much of receipt token was received
         * @param timestamp of staking
     **/
-    event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
+    event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user unstakes an asset
         * @param user the address executing unstaking
         * @param vault address of the vault token
         * @param asset the asset that was unstaked
-        * @param amount of the asset that was unstaked
+        * @param depositTokenAmount how much deposit token was received
+        * @param receiptTokenAmount how much receipt token was unstaked
         * @param timestamp of unstaking
     **/
-    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
+    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 }
