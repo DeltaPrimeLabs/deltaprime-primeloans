@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 7a685d0c44dff8be57b9e03ea6790bae464d2e43;
+// Last deployed from commit: 8ece108de56da49c6f3a0b4b26e63cd94ca50d4e;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -173,7 +173,6 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
-        IERC20Metadata depositToken = IERC20Metadata(AVAX_TOKEN);
         uint256 initialDepositTokenBalance = address(this).balance;
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
