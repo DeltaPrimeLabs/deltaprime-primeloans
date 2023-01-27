@@ -174,7 +174,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
         IERC20Metadata depositToken = IERC20Metadata(AVAX_TOKEN);
-        uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
+        uint256 initialDepositTokenBalance = address(this).balance;
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
@@ -184,20 +184,22 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.removeOwnedAsset("YY_AAVE_AVAX");
         }
 
-        emit Unstaked(
-            msg.sender,
-            "AVAX",
-            YY_AAVE_AVAX,
-            depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
-            amount,
-            block.timestamp
-        );
+        uint256 depositTokenBalanceAfterWithdrawal = address(this).balance;
+
+        IWrappedNativeToken(AVAX_TOKEN).deposit{value: address(this).balance}();
 
         if(IERC20(AVAX_TOKEN).balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
         }
 
-        IWrappedNativeToken(AVAX_TOKEN).deposit{value: amount}();
+        emit Unstaked(
+            msg.sender,
+            "AVAX",
+            YY_AAVE_AVAX,
+            depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance,
+            amount,
+            block.timestamp
+        );
     }
 
     /**
