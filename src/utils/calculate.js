@@ -1,3 +1,5 @@
+import config from "../config";
+
 const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
@@ -103,6 +105,29 @@ export async function yieldYakBalance(stakingContractAddress, address) {
   const stakedYrtWei = await tokenContract.balanceOf(address);
 
   return formatUnits(stakedYrtWei, 18);
+}
+
+export async function yieldYakStaked(address) {
+  let query = `
+    {   
+      smartLoan(id: "${address}") {
+        YY_AAVE_AVAX
+        YY_PTP_sAVAX
+        YY_PNG_AVAX_USDC_LP
+        YY_PNG_AVAX_ETH_LP
+        YY_TJ_AVAX_USDC_LP
+        YY_TJ_AVAX_ETH_LP
+        YY_TJ_AVAX_sAVAX_LP
+      }
+    }
+  `;
+
+  const client = new ApolloClient({
+    uri: config.subgraph
+  });
+  console.log(await client.query({query: gql(query)}))
+
+  return (await client.query({query: gql(query)})).data.smartLoan;
 }
 
 export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {

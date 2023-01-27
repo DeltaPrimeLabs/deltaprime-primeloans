@@ -1,8 +1,8 @@
 import {awaitConfirmation, wrapContract} from '../utils/blockchain';
 import config from '../config';
-import {parseUnits} from 'ethers/lib/utils';
+import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
-import {mergeArrays} from '../utils/calculate';
+import {mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../utils/calculate';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
 
@@ -65,14 +65,14 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const unstakeTransaction = unstakeRequest.minAmount ?
+      const unstakeTransaction = unstakeRequest.minUnderlyingTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-          parseUnits(parseFloat(unstakeRequest.amount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          parseUnits(parseFloat(unstakeRequest.minAmount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.minUnderlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
           {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-            parseUnits(parseFloat(unstakeRequest.amount).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+            parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
             {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
@@ -89,14 +89,26 @@ export default {
       const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
+      const stakedInYieldYak = await yieldYakStaked(rootState.fundsStore.smartLoanContract.address);
+
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
-          const totalStaked = await farm.staked(rootState.fundsStore.smartLoanContract.address);
-          farm.totalStaked = totalStaked;
+          farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
           try {
             farm.currentApy = await farm.apy();
           } catch(e) {
             console.log('Error fetching farm APY');
+          }
+
+          if (farm.protocol === 'YIELD_YAK') {
+            const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token]
+            const decimals = token.decimals;
+            farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
+
+            farm.rewards = farm.totalBalance * farm.price - farm.totalStaked * token.price;
+          } else if (farm.protocol === 'VECTOR_FINANCE') {
+            farm.totalStaked = farm.totalBalance;
+            farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
           }
         }
       }
@@ -104,6 +116,8 @@ export default {
       farmService.emitRefreshFarm();
 
       commit('setFarms', farms);
+
+      farmService.emitRefreshFarm();
     },
 
     async updateStakedPrices({state, rootState, commit}) {

@@ -159,7 +159,7 @@ export default {
 
             tokens.push({
               price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
-              balance: parseFloat(farm.totalStaked),
+              balance: parseFloat(farm.totalBalance),
               borrowed: 0,
               debtCoverage: farm.debtCoverage,
               symbol: symbol
@@ -244,7 +244,7 @@ export default {
                 console.log('apy')
               }
 
-              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
+              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
 
             }
           }
@@ -565,7 +565,7 @@ export default {
 
               apy = farm.currentApy;
 
-              yearlyFarmInterest += parseFloat(farm.totalStaked) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
+              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
 
             }
           }

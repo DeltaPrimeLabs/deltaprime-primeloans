@@ -21,10 +21,10 @@
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
             <span v-if="isStakedBalanceEstimated">~</span>{{
-              isLP ? formatTokenBalance(balance, 10, true) : formatTokenBalance(balance)
+              isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked)
             }}
           </div>
-          <div class="double-value__usd">{{ balance * (farm.price ? farm.price : asset.price) | usd }}</div>
+          <div class="double-value__usd">{{ underlyingTokenStaked * asset.price | usd }}</div>
         </div>
       </div>
 
@@ -96,8 +96,10 @@ export default {
   },
   data() {
     return {
-      balance: 0,
+      receiptTokenBalance: 0,
+      underlyingTokenStaked: 0,
       apy: 0,
+      maxApy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
       waitingForHardRefresh: false,
@@ -110,22 +112,22 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.balance = await this.farm.staked(this.smartLoanContract.address);
-          this.rewards = await this.farm.rewards(this.smartLoanContract.address);
-          this.$emit('stakedChange', this.balance);
+          this.$emit('stakedChange', this.underlyingTokenStaked);
         }
       },
       immediate: true
+    },
+    pools: {
+      handler(pools) {
+        this.maxApy = calculateMaxApy(this.pools, this.apy);
+      }
     }
   },
   computed: {
     ...mapState('poolStore', ['pools']),
-    ...mapState('stakeStore', ['stakedAssets', 'farms']),
+    ...mapState('stakeStore', ['stakedAssets', 'farms', 'updateStakedBalances']),
     ...mapState('fundsStore', ['smartLoanContract']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
-    maxApy() {
-      return calculateMaxApy(this.pools, this.apy);
-    },
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
@@ -158,7 +160,7 @@ export default {
       const modalInstance = this.openModal(StakeModal);
       modalInstance.apy = this.apy;
       modalInstance.available = this.asset.secondary ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
-      modalInstance.staked = this.balance;
+      modalInstance.underlyingTokenStaked = this.underlyingTokenStaked;
       modalInstance.rewards = this.rewards;
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
@@ -173,7 +175,7 @@ export default {
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
-          this.balance = Number(this.balance) + Number(stakeRequest.amount);
+          this.underlyingTokenStaked = Number(this.underlyingTokenStaked) + Number(stakeRequest.amount);
           this.isStakedBalanceEstimated = true;
           const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
           const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
@@ -183,15 +185,6 @@ export default {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
-          setTimeout(() => {
-            this.farm.staked(this.smartLoanContract.address).then((balance) => {
-              this.balance = balance;
-              this.isStakedBalanceEstimated = false;
-              this.$emit('stakedChange', this.balance);
-              this.$forceUpdate();
-            });
-          }, 30000);
         });
       });
     },
@@ -203,15 +196,17 @@ export default {
 
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.apy;
-      modalInstance.balance = this.balance;
+      modalInstance.staked = this.underlyingTokenStaked;
       modalInstance.asset = this.asset;
+      modalInstance.receiptTokenBalance = this.farm.totalBalance;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
-      modalInstance.$on('UNSTAKE', (unstakeValue) => {
+      modalInstance.$on('UNSTAKE', unstakeEvent => {
         const unstakeRequest = {
-          amount: unstakeValue.toString(),
+          receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
+          underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),
+          minUnderlyingTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
           asset: this.asset.symbol,
-          minAmount: this.farm.minAmount * parseFloat(unstakeValue),
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
@@ -219,7 +214,8 @@ export default {
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
-          this.balance = Number(this.balance) - Number(unstakeRequest.amount);
+          this.underlyingTokenStaked = Number(this.underlyingTokenStaked) - Number(unstakeRequest.underlyingTokenUnstaked);
+          this.receiptTokenBalance = Number(this.receiptTokenBalance) - Number(unstakeRequest.receiptTokenUnstaked);
           this.isStakedBalanceEstimated = true;
           const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
           const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
@@ -229,15 +225,6 @@ export default {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(result => {
-          setTimeout(() => {
-            this.farm.staked(this.smartLoanContract.address).then((balance) => {
-              this.balance = balance;
-              this.isStakedBalanceEstimated = false;
-              this.$emit('stakedChange', this.balance);
-              this.$forceUpdate();
-            });
-          }, 30000);
         });
       });
     },
@@ -260,6 +247,9 @@ export default {
 
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
+        this.balance = this.farm.totalBalance;
+        this.underlyingTokenStaked = this.farm.totalStaked;
+        this.rewards = this.farm.rewards;
         await this.setApy();
       })
     },
@@ -267,6 +257,9 @@ export default {
     async setApy() {
       if (!this.farm.currentApy) return 0;
       this.apy = (1 + this.farm.currentApy) * assetAppreciation(this.asset.symbol) - 1;
+      if (this.pools) {
+        this.maxApy = calculateMaxApy(this.pools, this.apy);
+      }
     },
 
     scheduleHardRefresh() {

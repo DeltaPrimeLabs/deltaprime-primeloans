@@ -231,7 +231,7 @@ export default {
         farms.forEach(farm => {
           tokens.push({
             price: farm.price,
-            balance: parseFloat(farm.totalStaked) ? parseFloat(farm.totalStaked) : 0,
+            balance: parseFloat(farm.totalBalance) ? parseFloat(farm.totalBalance) : 0,
             borrowed: 0,
             debtCoverage: farm.debtCoverage
           });

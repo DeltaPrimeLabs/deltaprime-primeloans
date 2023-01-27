@@ -49,10 +49,10 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Farm balance:
+                Staked:
               </div>
               <div class="summary__value">
-                {{ Number(staked) + Number(stakeValue) | smartRound(8, true) }}
+                {{ Number(underlyingTokenStaked) + Number(stakeValue) | smartRound(8, true) }}
               </div>
             </div>
             <div class="summary__divider divider--super-long"></div>
@@ -99,7 +99,7 @@ export default {
   props: {
     apy: {},
     available: {},
-    staked: {},
+    underlyingTokenStaked: {},
     asset: {},
     isLp: false,
     protocol: null
@@ -119,7 +119,7 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.staked) + Number(this.stakeValue));
+      return this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue));
     }
   },
 

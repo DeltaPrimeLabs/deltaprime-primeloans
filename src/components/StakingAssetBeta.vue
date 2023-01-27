@@ -36,12 +36,12 @@
           </div>
         </div>
 
-<!--        <div class="header__cell cell__staked">-->
-<!--          <div class="header__cell__label">Staked:</div>-->
-<!--          <div class="header__cell__value">-->
-<!--            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound(10, true) }}-->
-<!--          </div>-->
-<!--        </div>-->
+        <div class="header__cell cell__staked">
+          <div class="header__cell__label">Staked:</div>
+          <div class="header__cell__value">
+            <span v-if="isTotalStakedEstimated">~</span>{{ formatTokenBalance(totalStaked, 10, true) }}
+          </div>
+        </div>
 
         <div class="header__cell cell__max-apy">
           <div class="header__cell__label">Max APY:</div>
@@ -69,11 +69,11 @@
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
-            <div class="table__header__cell">Farm balance&nbsp;
+            <div class="table__header__cell">Staked&nbsp;
               <div class="info__icon__wrapper">
                 <img class="info__icon"
                      src="src/assets/icons/info.svg"
-                     v-tooltip="{content: 'Your share in a farm. The number can differ from the balance of underlying staked token.', classes: 'info-tooltip long', placement: 'top'}">
+                     v-tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}">
               </div>
             </div>
             <div class="table__header__cell">Rewards</div>
@@ -143,15 +143,15 @@ export default {
   },
   mounted() {
     this.setupAvailableProtocols();
-    this.setupTotalStaked();
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchFarmRefreshEvent();
   },
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'farmService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -162,14 +162,6 @@ export default {
 
         return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
       }
-    },
-
-    getTotalStaked() {
-      let total = 0;
-      this.availableFarms.forEach(protocol => {
-        total += protocol.totalStaked;
-      });
-      return total;
     },
 
     maxApyTooltip() {
@@ -211,18 +203,6 @@ export default {
 
     },
 
-    setupTotalStaked() {
-      if (this.smartLoanContract) {
-        const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
-        Promise.all(totalStakedPromises).then((allResults) => {
-          this.totalStaked = 0;
-          allResults.forEach(result => {
-            this.totalStaked += parseFloat(result);
-          });
-        });
-      }
-    },
-
     setupAvailable() {
       if (this.asset && !this.noSmartLoan) {
         if (this.asset.secondary) {
@@ -242,7 +222,6 @@ export default {
     },
 
     stakedChange() {
-      this.setupTotalStaked();
       this.isTotalStakedEstimated = false;
     },
 
@@ -285,15 +264,15 @@ export default {
         this.$forceUpdate();
       });
     },
+
+    watchFarmRefreshEvent() {
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        console.log(this.availableFarms)
+        this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+      })
+    },
   },
   watch: {
-    smartLoanContract: {
-      handler(smartLoanContract) {
-        if (this) {
-          this.setupTotalStaked();
-        }
-      },
-    },
     noSmartLoan: {
       handler(noSmartLoan) {
         if (noSmartLoan === false) {
@@ -331,7 +310,7 @@ export default {
     .staking-asset__header {
       cursor: pointer;
       display: grid;
-      grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
+      grid-template-columns: 22% 1fr 195px 210px 170px 180px 80px;
       height: 60px;
       padding: 0 24px;
       background-color: $delta-off-white;

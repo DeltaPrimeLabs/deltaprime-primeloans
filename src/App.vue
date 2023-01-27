@@ -142,7 +142,7 @@ export default {
               walletParams = {
                 chainName: 'Avalanche Mainnet C-Chain',
                 chainId: this.toHex(config.chainId),
-                rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+                rpcUrls: ['https://rpc.ankr.com/avalanche'],
                 nativeCurrency: {
                   name: 'AVAX',
                   symbol: 'AVAX',

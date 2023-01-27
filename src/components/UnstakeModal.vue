@@ -9,8 +9,8 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Farm balance:</div>
-        <div class="top-info__value">{{ balance | smartRound(12, true) }}</div>
+        <div class="top-info__label">Staked:</div>
+        <div class="top-info__value">{{ staked | smartRound(12, true) }}</div>
       </div>
 
       <CurrencyInput v-if="isLP"
@@ -30,20 +30,15 @@
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
-            <div v-if="protocol" class="protocol">
-              <img class="protocol__icon" :src="`src/assets/logo/${protocol.logo}`">
-              <div class="protocol__name">{{ protocol.name }}</div>
-              ,
-            </div>
             Values after confirmation:
           </div>
           <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__label">
-              Farm balance:
+              Staked:
             </div>
             <div class="summary__value">
-              {{ balance - unstakeValue > 0 ? balance - unstakeValue : 0 | smartRound(8, true) }}
+              {{ staked - unstakeValue > 0 ? staked - unstakeValue : 0 | smartRound(8, true) }}
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
@@ -85,7 +80,8 @@ export default {
   props: {
     apy: {},
     available: {},
-    balance: {},
+    staked: {},
+    receiptTokenBalance: {},
     asset: {},
     isLp: false,
     protocol: null
@@ -106,11 +102,11 @@ export default {
 
   computed: {
     calculateDailyInterest() {
-      const balance = this.balance - this.unstakeValue;
-      if (balance <= 0) {
+      const staked = this.staked - this.unstakeValue;
+      if (staked <= 0) {
         return 0;
       } else {
-        return this.apy / 365 * balance;
+        return this.apy / 365 * staked;
       }
     }
   },
@@ -118,7 +114,14 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('UNSTAKE', parseFloat(this.unstakeValue).toFixed(this.asset.decimals));
+      const unstakedReceiptToken = Math.min(this.unstakeValue / this.staked * this.receiptTokenBalance, this.receiptTokenBalance)
+
+      const unstakeEvent = {
+        receiptTokenUnstaked: this.unstakeValue,
+        underlyingTokenUnstaked: unstakedReceiptToken
+      };
+
+      this.$emit('UNSTAKE', unstakeEvent);
     },
 
     unstakeValueChange(event) {
@@ -127,15 +130,6 @@ export default {
     },
 
     setupValidators() {
-      this.validators = [
-        {
-          validate: (value) => {
-            if (value > this.balance) {
-              return `Exceeds balance`;
-            }
-          }
-        }
-      ];
     },
   }
 };
