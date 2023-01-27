@@ -7,9 +7,9 @@
       <StatsBarBeta
         :collateral="noSmartLoanInternal ? 0 : getCollateral"
         :debt="noSmartLoanInternal ? 0 : debt"
-
         :health="noSmartLoanInternal ? 1 : health"
-        :noSmartLoan="noSmartLoanInternal">
+        :noSmartLoan="noSmartLoanInternal"
+        :healthLoading="healthLoading">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
         Your Prime Account is ready! Now you can borrow,<br>
@@ -76,11 +76,11 @@ export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
+    ...mapState('fundsStore', ['assetBalances', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService']),
     ...mapState('network', ['account']),
-    ...mapGetters('fundsStore', ['getHealth', 'getCollateral', 'getAccountApr']),
+    ...mapGetters('fundsStore', ['getCollateral', 'getAccountApr']),
     wasLiquidated() {
       if (this.smartLoanContract && this.smartLoanContract.address) {
         return [
@@ -127,6 +127,7 @@ export default {
       selectedTabIndex: 0,
       videoVisible: true,
       accountApr: null,
+      healthLoading: false,
     };
   },
 
@@ -219,8 +220,19 @@ export default {
 
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
-        console.log('recalculate health');
-        this.health = await this.getHealth;
+        this.healthLoading = true;
+        const healthCalculatedDirectly = await this.healthService.calculateHealth(
+          this.noSmartLoanInternal,
+          this.debtsPerAsset,
+          this.assets,
+          this.assetBalances,
+          this.lpAssets,
+          this.lpBalances,
+          this.farms
+        );
+        this.health = healthCalculatedDirectly;
+        this.healthLoading = false;
+        console.log('healthCalculatedDirectly', healthCalculatedDirectly);
       })
     },
 

@@ -8,11 +8,11 @@
       ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
-      <div class="health-loader-container" v-if="noSmartLoan === null">
+      <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
       <stats-bar-element-beta
-          v-if="noSmartLoan !== null && health != null"
+          v-if="noSmartLoan !== null && health != null && !healthLoading"
           :label="'Health'"
           :value="health | percent"
           :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
@@ -50,6 +50,7 @@ export default {
     collateral: null,
     health: null,
     noSmartLoan: null,
+    healthLoading: false,
   },
   computed: {
   }
