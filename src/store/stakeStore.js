@@ -51,7 +51,8 @@ export default {
 
       let tx = await awaitConfirmation(stakeTransaction, provider, 'stake');
       //TODO: update after rebase
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.amount));
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount)); //how much of token was staked
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount)); //how much of vault token was obtained
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
@@ -83,8 +84,8 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(unstakeTransaction, provider, 'unstake');
-      //TODO: update after rebase
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.amount));
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount)); //how much of token was unstaked
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount)); //how much of vault token was used (unstaked/burned)
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
