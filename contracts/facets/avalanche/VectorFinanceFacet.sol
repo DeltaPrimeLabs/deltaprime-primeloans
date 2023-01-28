@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 9dba6d989c2efc9f26d1b404ebc349945bd79a25;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -109,6 +109,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
+        uint256 initialReceiptTokenBalance = poolHelper.balance(address(this));
 
         require(amount > 0, "Cannot stake 0 tokens");
         require(stakedToken.balanceOf(address(this)) >= amount, "Not enough token available");
@@ -123,7 +124,14 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DiamondStorageLib.removeOwnedAsset(position.symbol);
         }
 
-        emit Staked(msg.sender, position.symbol, address(poolHelper), amount, block.timestamp);
+        emit Staked(
+            msg.sender,
+            position.symbol,
+            address(poolHelper),
+            amount,
+            poolHelper.balance(address(this)) - initialReceiptTokenBalance,
+            block.timestamp
+        );
     }
 
     /**
@@ -154,7 +162,14 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
         DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
 
-        emit Unstaked(msg.sender, position.symbol, address(poolHelper), newBalance - balance, block.timestamp);
+        emit Unstaked(
+            msg.sender,
+            position.symbol,
+            address(poolHelper),
+            newBalance - balance,
+            amount,
+            block.timestamp
+        );
 
         _handleRewards(poolHelper);
 
@@ -206,20 +221,22 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         * @param user the address executing staking
         * @param asset the asset that was staked
         * @param vault address of receipt token
-        * @param amount of the asset that was staked
+        * @param depositTokenAmount how much of deposit token was staked
+        * @param receiptTokenAmount how much of receipt token was received
         * @param timestamp of staking
     **/
-    event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
+    event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user unstakes an asset
         * @param user the address executing unstaking
         * @param asset the asset that was unstaked
         * @param vault address of receipt token
-        * @param amount of the asset that was unstaked
+        * @param depositTokenAmount how much deposit token was received
+        * @param receiptTokenAmount how much receipt token was unstaked
         * @param timestamp of unstaking
     **/
-    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);
+    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user collects rewards in tokens that are not supported
