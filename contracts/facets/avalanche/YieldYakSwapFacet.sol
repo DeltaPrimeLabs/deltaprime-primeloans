@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../interfaces/facets/avalanche/IYieldYakRouter.sol";
 import "../../ReentrancyGuardKeccak.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/ITokenManager.sol";
@@ -49,8 +50,8 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function yakSwap(uint256 _amountIn, uint256 _amountOut, address[] calldata _path, address[] calldata _adapters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
         SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(_path[0], _path[_path.length - 1]);
 
+        _amountIn = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), _amountIn);
         require(_amountIn > 0, "Amount of tokens to sell has to be greater than 0");
-        require(swapTokensDetails.soldToken.balanceOf(address(this)) >= _amountIn, "Not enough token to sell");
 
         swapTokensDetails.soldToken.approve(YY_ROUTER, _amountIn);
 

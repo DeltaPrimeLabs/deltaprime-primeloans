@@ -215,8 +215,6 @@ describe('Smart loan', () => {
 
             expect(initialStakedBalance).to.be.equal(0);
 
-            await expect(wrappedLoan[stakeMethod](toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough token available");
-
             await wrappedLoan[stakeMethod](amount);
 
             expect(await wrappedLoan[balanceMethod]()).to.be.equal(amount);

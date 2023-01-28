@@ -3,9 +3,9 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+
+import "../../ReentrancyGuardKeccak.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/facets/avalanche/IYieldYak.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
@@ -303,11 +303,11 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         IERC20Metadata yrtToken = IERC20Metadata(stakingDetails.vaultAddress);
         uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
 
+        stakingDetails.amount = Math.min(IERC20Metadata(stakingDetails.tokenAddress).balanceOf(address(this)), stakingDetails.amount);
         require(stakingDetails.amount > 0, "Cannot stake 0 tokens");
         // _ACTIVE = 2
         require(tokenManager.tokenToStatus(stakingDetails.tokenAddress) == 2, "Token not supported");
         require(tokenManager.tokenToStatus(stakingDetails.vaultAddress) == 2, "Vault token not supported");
-        require(IERC20Metadata(stakingDetails.tokenAddress).balanceOf(address(this)) >= stakingDetails.amount, "Not enough token available");
 
         IERC20Metadata(stakingDetails.tokenAddress).approve(stakingDetails.vaultAddress, stakingDetails.amount);
         IYieldYak(stakingDetails.vaultAddress).deposit(stakingDetails.amount);
