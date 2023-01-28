@@ -1,8 +1,9 @@
-import {awaitConfirmation, wrapContract} from '../utils/blockchain';
+import {awaitConfirmation, getLog, wrapContract} from '../utils/blockchain';
 import config from '../config';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
-import {mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../utils/calculate';
+import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../utils/calculate';
+import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
 
@@ -48,7 +49,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar(stakeRequest.refreshDelay);
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(stakeTransaction, provider, 'stake');
+      let tx = await awaitConfirmation(stakeTransaction, provider, 'stake');
+      //TODO: update after rebase
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.amount));
+
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
@@ -78,7 +82,9 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(unstakeTransaction, provider, 'unstake');
+      let tx = await awaitConfirmation(unstakeTransaction, provider, 'unstake');
+      //TODO: update after rebase
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.amount));
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});

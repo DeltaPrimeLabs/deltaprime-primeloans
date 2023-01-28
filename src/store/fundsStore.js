@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract
+  wrapContract, getLog
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
@@ -14,9 +14,9 @@ import TOKEN_MANANGER_TUP from '@contracts/TokenManagerTUP.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
-import {BigNumber} from 'ethers';
+import {BigNumber, utils} from 'ethers';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {calculateHealth, mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router'
@@ -258,12 +258,12 @@ export default {
           await dispatch('getFullLoanStatus');
         }, 5000);
       } catch (error) {
-        console.error(error);
-        console.error('ERROR DURING UPDATE FUNDS');
-        console.log('refreshing page in 5s');
-        setTimeout(() => {
-          window.location.reload();
-        }, 5000);
+        // console.error(error);
+        // console.error('ERROR DURING UPDATE FUNDS');
+        // console.log('refreshing page in 5s');
+        // setTimeout(() => {
+        //   window.location.reload();
+        // }, 5000);
       }
     },
 
@@ -559,7 +559,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'fund');
+      let tx = await awaitConfirmation(transaction, provider, 'fund');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount));
+
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
@@ -586,7 +589,9 @@ export default {
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
-      await awaitConfirmation(transaction, provider, 'fund');
+      let tx = await awaitConfirmation(transaction, provider, 'fund');
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, "DepositNative").args.amount));
+
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -610,7 +615,9 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'withdraw');
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount));
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -631,7 +638,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'withdraw');
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount));
+
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, 30000);
@@ -667,7 +677,12 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'create LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'create LP token');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount)); // how much of tokenA was used
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount)); //how much of tokenB was used
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity)); //how much LP was created
+
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -702,7 +717,11 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'unwind LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount)); //how much of tokenA was received
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount)); //how much of tokenB was received
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity)); //how much of LP was removed
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -727,7 +746,9 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar(35000);
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'borrow');
+      let tx = await awaitConfirmation(transaction, provider, 'borrow');
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount));
+
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
       }, 1000);
@@ -754,7 +775,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'repay');
+      let tx = await awaitConfirmation(transaction, provider, 'repay');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Repay').args.amount));
+
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
       }, 1000);
@@ -791,7 +815,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'swap');
+      let tx = await awaitConfirmation(transaction, provider, 'swap');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Swap').args.amountSold));
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Swap').args.amountBought));
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -814,7 +841,9 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'wrap');
+      let tx = await awaitConfirmation(transaction, provider, 'wrap');
+
+      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'WrapNative').args.amount));
 
       setTimeout(async () => {
         await dispatch('updateFunds');

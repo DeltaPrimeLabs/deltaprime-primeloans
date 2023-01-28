@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
+import {utils} from "ethers";
 
 const ethers = require('ethers');
 
@@ -57,6 +58,26 @@ export async function awaitConfirmation(tx, provider, actionName) {
     console.log(transaction);
     throw `Failed to ${actionName}`;
   }
+  return transaction;
+}
+
+export function getLog(tx, abi, name = '') {
+  const iface = new utils.Interface(abi);
+  let chosenLog;
+
+  tx.logs.forEach(log => {
+      try{
+        let parsed = iface.parseLog(log);
+
+        if (parsed.name === name) {
+          chosenLog = parsed;
+        }
+      } catch (e) {
+      }
+    }
+  );
+
+  return chosenLog;
 }
 
 function capitalizeFirstLetter(string) {
