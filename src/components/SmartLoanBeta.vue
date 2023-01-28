@@ -15,11 +15,7 @@
         Your Prime Account is ready! Now you can borrow,<br>
          provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b> page.
       </InfoBubble>
-      <InfoBubble v-if="wasLiquidated" cacheKey="LIQUIDATED-0" style="margin-top: 40px">
-        Liquidation bots unwinded part of your positions<br>
-        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
-      </InfoBubble>
-      <InfoBubble v-if="wasLiquidated" cacheKey="LIQUIDATED-0" style="margin-top: 40px">
+      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp" :cacheKey="`LIQUIDATED-${timestamp}`" style="margin-top: 40px">
         Liquidation bots unwinded part of your positions<br>
         to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
       </InfoBubble>
@@ -63,6 +59,7 @@ import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
 import {combineLatest, delay} from 'rxjs';
+import {fetchLiquidatedEvents} from "../utils/graph";
 
 const ASSETS_PATH = 'assets';
 const FARMS_PATH = 'farms';
@@ -81,17 +78,6 @@ export default {
     ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService']),
     ...mapState('network', ['account']),
     ...mapGetters('fundsStore', ['getCollateral', 'getAccountApr']),
-    wasLiquidated() {
-      if (this.smartLoanContract && this.smartLoanContract.address) {
-        return [
-          '0x6c4b7c993a4f68dF0D5DAf68F66BA2dAbC3345a0'.toLowerCase(),
-          '0xe23448D99172d100c7D1112306AbDda686F517c6'.toLowerCase(),
-          '0xE020F3729a0e7b5eeaCA3cCa5Af92d263aD0aD59'.toLowerCase(),
-          '0x22C0a7a3D86D852032aeFB8dfa03b84e7FC4DAEc'.toLowerCase()
-        ].indexOf(this.smartLoanContract.address.toLowerCase()) !== -1;
-      }
-      return false;
-    },
   },
   watch: {
     assetBalances: {
@@ -115,6 +101,13 @@ export default {
       },
       immediate: true
     },
+    smartLoanContract: {
+      handler(smartLoan) {
+        if (smartLoan && smartLoan.address) {
+          this.getLiquidatedEvents();
+        }
+      }
+    }
   },
   data() {
     return {
@@ -128,6 +121,7 @@ export default {
       videoVisible: true,
       accountApr: null,
       healthLoading: false,
+      liquidationTimestamps: []
     };
   },
 
@@ -206,6 +200,16 @@ export default {
       }
 
       return query;
+    },
+
+    getLiquidatedEvents() {
+      console.log('getLiquidatedEvents')
+      // console.log(await fetchLiquidatedEvents(this.smartLoanContract.address).map(event => event.timestamp))
+      fetchLiquidatedEvents(this.smartLoanContract.address).then(
+          events => {
+            this.liquidationTimestamps = events.map(event => event.timestamp);
+          }
+      )
     },
 
     tabChange(tabIndex) {
