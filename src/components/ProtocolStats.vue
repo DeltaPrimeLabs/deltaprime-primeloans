@@ -4,7 +4,7 @@
       <div class="protocol-stats">
         <div class="tvl">
           <div class="label">TVL: </div>
-          <div class="number">${{ numberWithCommas(poolLiquidity.toFixed(2)) }}</div>
+          <div class="number">${{ numberWithCommas(tvl.toFixed(2)) }}</div>
           <br>
           <div  class="borrow-collateral">
             <div class="borrow">
@@ -18,7 +18,7 @@
           </div>
         </div>
         <div class="pools">
-          <Block v-for="pool of poolsList" v-bind:key="pool.asset.symbol">
+          <Block v-for="pool of pools" v-bind:key="pool.asset.symbol">
             <div class="title">{{pool.asset.symbol}} pool</div>
             <div class="stat">
               <div class="desc">Provided:</div>
@@ -124,47 +124,34 @@ export default {
     Block,
   },
   async mounted() {
-    this.initPools();
     this.initStoresWhenProviderAndAccountCreated();
+    this.watchPools();
   },
 
   data() {
     return {
       funds: config.ASSETS_CONFIG,
-      totalTVL: 0,
-      totalDeposit: 0,
-      poolsList: null,
       protocolCollateral: 0,
       totalBorrowed: 0,
       loanAddresses: [],
       loans: [],
-      liquidators: []
+      liquidators: [],
+      tvl: 0
     };
   },
   computed: {
     ...mapState('poolStore', ['pools']),
     ...mapState('fundsStore', ['smartLoanFactoryContract']),
     ...mapState('network', ['provider']),
-    ...mapState('serviceRegistry', ['providerService', 'accountService']),
-    poolLiquidity() {
-      return (this.poolsList && this.poolsList[0] && this.poolsList[1]) ? parseFloat(this.poolsList[0].tvl) * parseFloat(this.poolsList[0].asset.price) + parseFloat(this.poolsList[1].tvl) * parseFloat(this.poolsList[1].asset.price) + parseFloat(this.protocolCollateral) : 0;
-    }
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'priceService'])
   },
 
   watch: {
-    pools: {
-      handler() {
-        setTimeout(() => {
-          this.setupPoolsList();
-        });
-      }
-    },
     smartLoanFactoryContract: {
       async handler(factory) {
         if (factory) {
           this.loanAddresses = await factory.getAllLoans();
           await this.fetchLoansFromFireBase();
-          //await this.setupLoans();
         }
       }
     },
@@ -183,30 +170,11 @@ export default {
         });
     },
 
-    setupPoolsList() {
-      setTimeout(() => {
-        this.poolsList = Object.values(this.pools);
-        this.setupTotalTVL();
-        this.setupTotalDeposit();
-      }, 100);
-    },
-
-    setupTotalTVL() {
-      let totalTVL = 0;
-      this.poolsList.forEach(pool => {
-        totalTVL += pool.tvl * pool.asset.price;
-      });
-      this.totalTVL = totalTVL;
-    },
-
-    setupTotalDeposit() {
-      let totalDeposit = 0;
-      this.poolsList.forEach(pool => {
-        totalDeposit += pool.deposit * pool.asset.price;
-      });
-      this.totalDeposit = totalDeposit;
-      this.$forceUpdate();
-
+    watchPools() {
+      combineLatest([this.poolService.observeRefreshPools(), this.priceService.observeRefreshPrices()])
+          .subscribe(async () => {
+            this.tvl = parseFloat(this.pools['AVAX'].tvl) * parseFloat(this.pools['AVAX'].asset.price) + parseFloat(this.pools['USDC'].tvl) * parseFloat(this.pools['USDC'].asset.price) + parseFloat(this.protocolCollateral);
+          });
     },
 
     async liquidatorAccountsSetup() {
@@ -216,18 +184,6 @@ export default {
           balance: fromWei(await this.provider.getBalance(account))
         })
       }
-    },
-
-    initPools() {
-      const pools = [];
-      Object.entries(config.POOLS_CONFIG).forEach(([symbol, pool]) => {
-        pools.push({
-          asset: {
-            symbol: symbol
-          }
-        });
-      });
-      this.poolsList = pools;
     },
 
     numberWithCommas(x) {

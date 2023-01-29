@@ -9,6 +9,8 @@ import LpService from "../services/lpService";
 import AprService from '../services/aprService';
 import ProviderService from '../services/providerService';
 import AccountService from '../services/accountService';
+import PoolService from "../services/poolService";
+import PriceService from "../services/priceService";
 
 export default {
   namespaced: true,
@@ -24,5 +26,7 @@ export default {
     lpService: new LpService(),
     providerService: new ProviderService(),
     accountService: new AccountService(),
+    poolService: new PoolService(),
+    priceService: new PriceService(),
   },
 };

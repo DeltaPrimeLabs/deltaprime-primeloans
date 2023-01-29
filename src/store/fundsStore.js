@@ -277,7 +277,7 @@ export default {
       commit('setSupportedAssets', supported);
     },
 
-    async setupAssets({state, commit}) {
+    async setupAssets({state, commit, rootState}) {
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
       let assets = {};
@@ -297,6 +297,9 @@ export default {
         });
       });
       commit('setAssets', assets);
+      console.log('set assets')
+
+      rootState.serviceRegistry.priceService.emitRefreshPrices();
     },
 
     async setupLpAssets({state, rootState, commit}) {

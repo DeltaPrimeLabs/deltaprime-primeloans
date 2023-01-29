@@ -49,6 +49,9 @@ export default {
       if (!provider) return;
       const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
       const pools = {};
+
+      console.log('setup pools')
+      console.log(config.POOLS_CONFIG)
       poolsFromConfig.forEach(poolAsset => {
         const poolContract = new ethers.Contract(config.POOLS_CONFIG[poolAsset].address, POOL.abi, provider.getSigner());
         Promise.all([
@@ -80,6 +83,7 @@ export default {
       setTimeout(async () => {
         commit('setPools', pools);
         rootState.serviceRegistry.aprService.emitRefreshApr();
+        rootState.serviceRegistry.poolService.emitRefreshPools();
       }, 1000);
     },
 
