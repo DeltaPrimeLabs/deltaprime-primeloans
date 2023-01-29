@@ -17,8 +17,8 @@ export default {
     COMPETITION_START_BLOCK: 14858534,
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.1,
-    // chainId: 43114,
-    chainId: 1337,
+    chainId: 43114,
+    // chainId: 1337,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, debtCoverage: 0.83333333333},
