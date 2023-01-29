@@ -166,6 +166,7 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.$on('STAKE', (stakeValue) => {
+        console.log(stakeValue);
         const stakeRequest = {
           symbol: this.farm.feedSymbol,
           amount: stakeValue.toString(),
@@ -202,6 +203,7 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.$on('UNSTAKE', unstakeEvent => {
+        console.log(unstakeEvent);
         const unstakeRequest = {
           receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
           underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),

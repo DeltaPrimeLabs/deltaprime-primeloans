@@ -17,13 +17,15 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="unstakeValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :max="staked">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="unstakeValueChange"
-                     :validators="validators"">
+                     :validators="validators"
+                     :max="staked">
       </CurrencyInput>
 
 
@@ -67,6 +69,7 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import config from '../config';
 
 export default {
   name: 'StakeModal',
@@ -114,10 +117,11 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      const unstakedReceiptToken = Math.min(this.unstakeValue / this.staked * this.receiptTokenBalance, this.receiptTokenBalance)
+      const unstakeValue = this.maxButtonUsed ? this.unstakeValue * config.MAX_BUTTON_MULTIPLIER : this.unstakeValue;
+      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.receiptTokenBalance)
 
       const unstakeEvent = {
-        receiptTokenUnstaked: this.unstakeValue,
+        receiptTokenUnstaked: unstakeValue,
         underlyingTokenUnstaked: unstakedReceiptToken
       };
 
@@ -127,6 +131,7 @@ export default {
     unstakeValueChange(event) {
       this.unstakeValue = event.value;
       this.currencyInputError = event.error;
+      this.maxButtonUsed = event.maxButtonUsed;
     },
 
     setupValidators() {

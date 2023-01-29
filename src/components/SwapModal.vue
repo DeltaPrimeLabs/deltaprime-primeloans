@@ -12,6 +12,7 @@
                           :asset-options="sourceAssetOptions"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
+                          :max="sourceAssetBalance"
                           :info="() => `~ $${(Number(sourceAssetAmount) * sourceAssetData.price).toFixed(2)}`"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -185,7 +186,8 @@ export default {
       receivedAccordingToOracle: 0,
       neededAccordingToOracle: 0,
       path: null,
-      adapters: null
+      adapters: null,
+      maxButtonUsed: false,
     };
   },
 
@@ -207,10 +209,11 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
+      const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
-        sourceAmount: this.sourceAssetAmount,
+        sourceAmount: sourceAssetAmount,
         targetAmount: this.targetAssetAmount,
         path: this.path,
         adapters: this.adapters
@@ -257,9 +260,9 @@ export default {
     },
 
     async updateAmountsWithSlippage() {
+      console.log('slippage');
       this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
-      let sourceInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
-      let targetInputChangeEvent = await this.$refs.sourceInput.setCurrencyInputValue(this.sourceAssetAmount);
+      const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
       this.setSlippageWarning();
     },
 
@@ -315,6 +318,8 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      console.log(changeEvent);
+      this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
       if (changeEvent.asset === this.targetAsset) {

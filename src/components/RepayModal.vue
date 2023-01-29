@@ -24,7 +24,9 @@
 
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :max="assetDebt"
+      >
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -74,6 +76,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import {calculateHealth} from "../utils/calculate";
+import config from '../config';
 
 const MAX_REPAYMENT_OF_DEBT = 1.000001;
 
@@ -108,6 +111,7 @@ export default {
       transactionOngoing: false,
       validators: [],
       currencyInputError: true,
+      maxButtonUsed: false,
     }
   },
 
@@ -130,12 +134,14 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('REPAY', this.repayValue);
+      const repayValue = this.maxButtonUsed ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
+      this.$emit('REPAY', repayValue);
     },
 
     repayValueChange(event) {
       this.repayValue = event.value;
       this.currencyInputError = event.error;
+      this.maxButtonUsed = event.maxButtonUsed;
       this.calculateHealthAfterTransaction();
     },
 

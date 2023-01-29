@@ -4,10 +4,10 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input  ref="input"
-                v-model="internalValue"
-                :disabled="disabled"
-                v-on:input="typeWatch"
+        <input ref="input"
+               v-model="internalValue"
+               :disabled="disabled"
+               v-on:input="typeWatch"
                placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
@@ -17,7 +17,7 @@
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : ''}}</span>
+          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@ export default {
     denominationButtons: false,
     slippage: {type: Number, default: 0},
     embedded: false,
-    delayErrorCheckAfterValuePropagation: {type: Boolean, default: false}
+    delayErrorCheckAfterValuePropagation: {type: Boolean, default: false},
   },
   computed: {},
   data() {
@@ -88,6 +88,7 @@ export default {
       ongoingErrorCheck: false,
       usdDenominated: true,
       internalValue: this.defaultValue,
+      maxButtonUsed: false,
     };
   },
   created() {
@@ -109,6 +110,7 @@ export default {
   },
   methods: {
     async updateValue(value) {
+      console.log('updateValue');
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
 
@@ -127,7 +129,11 @@ export default {
 
       const hasError = this.error.length > 0;
 
-      this.$emit('newValue', {value: value, error: hasError});
+      if (value !== this.max) {
+        this.maxButtonUsed = false;
+      }
+
+      this.$emit('newValue', {value: value, error: hasError, maxButtonUsed: this.maxButtonUsed});
     },
     typeWatch() {
       this.$emit('ongoingTyping', {typing: true});
@@ -210,16 +216,17 @@ export default {
             return `Incorrect formatting.`;
           }
         }
-      }
+      };
       this.defaultValidators.push(positiveValidator, wrongFormatValidator);
     },
 
     setMax() {
       this.setValue(this.max);
+      this.maxButtonUsed = true;
       const hasError = this.error.length > 0;
       this.checkErrors(this.max);
       this.$forceUpdate();
-      this.$emit('newValue', {value: this.max, error: hasError});
+      this.$emit('newValue', {value: this.max, error: hasError, maxButtonUsed: this.maxButtonUsed});
       this.$emit('inputChange', this.max);
     },
 

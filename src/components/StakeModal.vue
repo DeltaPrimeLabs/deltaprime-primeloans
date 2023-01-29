@@ -19,13 +19,15 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="stakeValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :max="available">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :max="available">
       </CurrencyInput>
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -111,6 +113,7 @@ export default {
       validators: [],
       transactionOngoing: false,
       currencyInputError: true,
+      maxButtonUsed: false,
     };
   },
 
@@ -126,13 +129,16 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('STAKE', parseFloat(this.stakeValue).toFixed(this.asset.decimals));
+      console.log(this.stakeValue);
+      const stakeValue = this.maxButtonUsed ? parseFloat(this.stakeValue) * config.MAX_BUTTON_MULTIPLIER : parseFloat(this.stakeValue);
+      this.$emit('STAKE', stakeValue.toFixed(this.asset.decimals));
     },
 
 
     stakeValueChange(event) {
       this.stakeValue = event.value;
       this.currencyInputError = event.error;
+      this.maxButtonUsed = event.maxButtonUsed;
     },
 
     setupValidators() {

@@ -322,6 +322,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.$on('SWAP', swapEvent => {
+        console.log(swapEvent);
         const swapRequest = {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
@@ -418,6 +419,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
+        console.log(withdrawEvent);
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
@@ -469,6 +471,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
       modalInstance.$on('REPAY', value => {
+        console.log(value);
         const repayRequest = {
           asset: this.asset.symbol,
           decimals: this.asset.decimals,
