@@ -13,7 +13,7 @@ import {
     erc20ABI,
     formatUnits,
     fromWei,
-    getFixedGasSigners,
+    getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
     syncTime,
     toBytes32,
     toWei,
@@ -21,7 +21,6 @@ import {
 } from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
-import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -181,8 +180,9 @@ describe('PangolinIntermediary', () => {
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices, []);
+            AVAX_PRICE = tokensPrices.get('AVAX')!;
+            USD_PRICE = tokensPrices.get('USDC')!;
 
             await sut.initialize(pangolinRouterAddress, tokenManager.address, [
                 TOKEN_ADDRESSES['AVAX'],
