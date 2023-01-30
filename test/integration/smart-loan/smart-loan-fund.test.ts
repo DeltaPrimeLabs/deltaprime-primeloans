@@ -248,8 +248,12 @@ describe('Smart loan', () => {
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.equal(10);
         });
 
-        it("should revert withdrawing too much native token", async () => {
-            await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).to.be.revertedWith("Not enough native token to unwrap and withdraw");
+        it("should not revert withdrawing too much native token", async () => {
+            let initialWAVAXBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            expect(fromWei(initialWAVAXBalance)).to.be.lt(30);
+            await expect(wrappedLoan.unwrapAndWithdraw(toWei("30"))).not.to.be.reverted;
+            await wrappedLoan.depositNativeToken({value: initialWAVAXBalance});
+            expect(initialWAVAXBalance).to.be.equal(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))
         });
 
         it("should fail to withdraw funds as a non-owner", async () => {

@@ -149,9 +149,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        uint256 initialStakedBalance = poolHelper.balance(address(this));
-
-        require(initialStakedBalance >= amount, "Cannot unstake more than was initially staked");
+        amount = Math.min(poolHelper.balance(address(this)), amount);
 
         uint256 balance = unstakedToken.balanceOf(address(this));
 

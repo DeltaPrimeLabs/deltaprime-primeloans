@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "../../ReentrancyGuardKeccak.sol";
@@ -52,7 +53,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
-        require(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)) >= amount, "Not enough AVAX available");
+        amount = Math.min(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)), amount);
         IERC20Metadata yrtToken = IERC20Metadata(YY_AAVE_AVAX);
         uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
 
