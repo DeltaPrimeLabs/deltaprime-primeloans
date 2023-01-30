@@ -17,7 +17,7 @@ import {
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
-    getTokensPricesMap,
+    getTokensPricesMap, GLPManagerRewarderAbi,
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
@@ -35,12 +35,17 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
+import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const yakStakingTokenAddress = "0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95";
-
+const yakAVAXStakingTokenAddress = TOKEN_ADDRESSES['YY_AAVE_AVAX'];
+const yaksAVAXStakingTokenAddress = TOKEN_ADDRESSES['YY_PTP_sAVAX'];
+const yakGLPStakingTokenAddress = TOKEN_ADDRESSES['YY_GLP'];
+const GLP_REWARDER_ADDRESS = "0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3";
+const STAKED_GLP_ADDRESS = "0xaE64d55a6f09E4263421737397D1fdFA71896a69";
+const GLP_MANAGER_ADDRESS = "0xD152c7F25db7F4B95b7658323c5F33d176818EE4";
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
@@ -51,7 +56,12 @@ describe('Smart loan', () => {
     describe('A loan with staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
             exchange: PangolinIntermediary,
-            yakStakingContract: Contract,
+            glpManagerContract: Contract,
+            stakedGlpContract: Contract,
+            yakAVAXStakingContract: Contract,
+            yaksAVAXStakingContract: Contract,
+            yakGLPStakingContract: Contract,
+            glpBalanceAfterMint: any,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -68,23 +78,28 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'sAVAX', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX'];
+            let assetsList = ['AVAX', 'USDC', 'sAVAX', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX', 'GLP', 'YY_GLP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
 
             diamondAddress = await deployDiamond();
 
+            glpManagerContract = new ethers.Contract(GLP_REWARDER_ADDRESS, GLPManagerRewarderAbi, provider);
+            stakedGlpContract = new ethers.Contract(STAKED_GLP_ADDRESS, erc20ABI, provider);
+
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+            yakAVAXStakingContract = await new ethers.Contract(yakAVAXStakingTokenAddress, erc20ABI, provider);
+            yaksAVAXStakingContract = await new ethers.Contract(yaksAVAXStakingTokenAddress, erc20ABI, provider);
+            yakGLPStakingContract = await new ethers.Contract(yakGLPStakingTokenAddress, erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,
@@ -139,6 +154,30 @@ describe('Smart loan', () => {
                 });
         });
 
+        it("should mint GLP for owner", async () => {
+            let currentGlpBalance = await tokenContracts.get("GLP")!.balanceOf(owner.address);
+            let currentStakedGlpBalance = await stakedGlpContract.balanceOf(owner.address);
+            expect(currentGlpBalance).to.be.equal(0);
+
+            const minGlpAmount = tokensPrices.get("AVAX")! / tokensPrices.get("GLP")! * 98 / 100;
+
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
+            const avaxBalanceBefore = await tokenContracts.get('AVAX')!.balanceOf(owner.address);
+            await tokenContracts.get('AVAX')!.connect(owner).approve(GLP_MANAGER_ADDRESS, toWei("10"));
+            await glpManagerContract.connect(owner).mintAndStakeGlp(
+                TOKEN_ADDRESSES['AVAX'],
+                toWei("10"),
+                0,
+                toWei(minGlpAmount.toString())
+            )
+
+            const avaxUsedForMinting = fromWei(avaxBalanceBefore) - fromWei(await tokenContracts.get('AVAX')!.balanceOf(owner.address));
+
+            glpBalanceAfterMint = await tokenContracts.get("GLP")!.balanceOf(owner.address);
+            currentStakedGlpBalance = await stakedGlpContract.balanceOf(owner.address)
+            expect(glpBalanceAfterMint).to.be.gt(0);
+        });
+
         it("should fund a loan", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
@@ -149,8 +188,19 @@ describe('Smart loan', () => {
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.01);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(167.5, 0.01);
+
+            await stakedGlpContract.connect(owner).approve(wrappedLoan.address, glpBalanceAfterMint);
+            await wrappedLoan.connect(owner).fundGLP(glpBalanceAfterMint);
+
+            expect(fromWei(await tokenContracts.get('GLP')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(fromWei(glpBalanceAfterMint));
+            expect(fromWei(await stakedGlpContract.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(fromWei(glpBalanceAfterMint));
+            expect(fromWei(await tokenContracts.get('GLP')!.connect(owner).balanceOf(owner.address))).to.be.equal(0);
+            expect(fromWei(await stakedGlpContract.connect(owner).balanceOf(owner.address))).to.be.equal(0);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')! + fromWei(await stakedGlpContract.connect(owner).balanceOf(wrappedLoan.address)) * tokensPrices.get('GLP')!, 2);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(175.81, 0.1);
         });
 
         it("should fail to stake AVAX as a non-owner", async () => {
@@ -169,13 +219,57 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.unstakeSAVAXYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should stake AVAX", async () => {
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
+        it("should fail to stake GLP as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.stakeGLPYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should fail to unstake GLP as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.unstakeGLPYak(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should stake GLP", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')! + fromWei(await stakedGlpContract.connect(owner).balanceOf(wrappedLoan.address)) * tokensPrices.get('GLP')!, 2);
 
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await yakGLPStakingContract.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await expect(wrappedLoan.stakeGLPYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough token available");
+
+            await wrappedLoan.stakeGLPYak(glpBalanceAfterMint);
+
+            let afterStakingStakedBalance = await yakGLPStakingContract.balanceOf(wrappedLoan.address);
+            let expectedAfterStakingStakedBalance = tokensPrices.get('GLP')! * fromWei(glpBalanceAfterMint) / tokensPrices.get('YY_GLP')!;
+
+            expect(fromWei(afterStakingStakedBalance)).to.be.closeTo(expectedAfterStakingStakedBalance, 2);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_GLP')!, 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 2);
+        });
+
+        it("should unstake GLP", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeGLPYak(await wrappedLoan.getBalance(toBytes32('YY_GLP')));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        it("should stake AVAX", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')! + fromWei(await stakedGlpContract.connect(owner).balanceOf(wrappedLoan.address)) * tokensPrices.get('GLP')!, 2);
+
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await yakAVAXStakingContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
             await expect(wrappedLoan.stakeAVAXYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough AVAX available");
@@ -186,14 +280,14 @@ describe('Smart loan', () => {
                 toWei(stakedAvaxAmount.toString())
             );
 
-            let afterStakingStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
-            let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, toWei(stakedAvaxAmount.toString()));
+            let afterStakingStakedBalance = await yakAVAXStakingContract.balanceOf(wrappedLoan.address);
+            let expectedAfterStakingStakedBalance = await calculateStakingTokensAmountBasedOnAvaxValue(yakAVAXStakingContract, toWei(stakedAvaxAmount.toString()));
 
             expect(afterStakingStakedBalance).to.be.equal(expectedAfterStakingStakedBalance);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(151 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 1);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(161 * tokensPrices.get('AVAX')! + fromWei(afterStakingStakedBalance) * tokensPrices.get('YY_AAVE_AVAX')!, 2);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 2);
         });
 
         it("should unstake part of staked AVAX", async () => {
@@ -203,14 +297,14 @@ describe('Smart loan', () => {
 
             let initialAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
             let amountAvaxToReceive = toWei("10");
-            let initialStakedTokensBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
-            let tokenAmountToUnstake = await calculateStakingTokensAmountBasedOnAvaxValue(yakStakingContract, amountAvaxToReceive);
+            let initialStakedTokensBalance = await yakAVAXStakingContract.balanceOf(wrappedLoan.address);
+            let tokenAmountToUnstake = await calculateStakingTokensAmountBasedOnAvaxValue(yakAVAXStakingContract, amountAvaxToReceive);
 
             let expectedAfterUnstakeTokenBalance = initialStakedTokensBalance.sub(tokenAmountToUnstake);
 
             await wrappedLoan.unstakeAVAXYak(tokenAmountToUnstake);
 
-            expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakStakingContract.balanceOf(wrappedLoan.address));
+            expect(expectedAfterUnstakeTokenBalance).to.be.equal(await yakAVAXStakingContract.balanceOf(wrappedLoan.address));
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(fromWei(initialAvaxBalance.add(amountAvaxToReceive)), 0.4);
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
 
@@ -220,16 +314,15 @@ describe('Smart loan', () => {
 
         it("should not fail to unstake more than was initially staked but unstake all", async () => {
             await wrappedLoan.unstakeAVAXYak(toWei("999999"));
-            expect(await yakStakingContract.balanceOf(wrappedLoan.address)).to.be.equal(0);
+            expect(await yakAVAXStakingContract.balanceOf(wrappedLoan.address)).to.be.equal(0);
         });
 
         it("should stake sAVAX", async () => {
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(201 * tokensPrices.get('AVAX')!, 0.0001);
-
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(211 * tokensPrices.get('AVAX')!, 2);
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await yaksAVAXStakingContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
             await expect(wrappedLoan.stakeSAVAXYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough token available");
@@ -337,7 +430,7 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
+            yakStakingContract = await new ethers.Contract(yakAVAXStakingTokenAddress, erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,

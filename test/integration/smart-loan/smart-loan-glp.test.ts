@@ -24,7 +24,7 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei, wavaxAbi, ZERO
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -41,6 +41,7 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const GLP_REWARDER_ADDRESS = "0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3";
 const GLP_MANAGER_ADDRESS = "0xD152c7F25db7F4B95b7658323c5F33d176818EE4";
+const STAKED_GLP_ADDRESS = "0xaE64d55a6f09E4263421737397D1fdFA71896a69";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -53,7 +54,7 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             glpBalanceAfterMint: any,
-            glpManagerContract: Contract,
+            glpRewarderContract: Contract,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
@@ -71,7 +72,7 @@ describe('Smart loan', () => {
                 {name: 'MCKUSD', airdropList: [owner, depositor]}
             ];
 
-            glpManagerContract = new ethers.Contract(GLP_REWARDER_ADDRESS, GLPManagerRewarderAbi, provider);
+            glpRewarderContract = new ethers.Contract(GLP_REWARDER_ADDRESS, GLPManagerRewarderAbi, provider);
 
             let diamondAddress = await deployDiamond();
 
@@ -83,6 +84,7 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
+            tokenContracts.set('sGLP', new ethers.Contract(STAKED_GLP_ADDRESS , wavaxAbi, provider));
 
             let tokenManager = await deployContract(
                 owner,
@@ -134,7 +136,7 @@ describe('Smart loan', () => {
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(GLP_MANAGER_ADDRESS, toWei("1"));
-            await glpManagerContract.connect(owner).mintAndStakeGlp(
+            await glpRewarderContract.connect(owner).mintAndStakeGlp(
                 TOKEN_ADDRESSES['AVAX'],
                 toWei("1"),
                 0,
@@ -142,15 +144,6 @@ describe('Smart loan', () => {
             )
             glpBalanceAfterMint = await tokenContracts.get("GLP")!.balanceOf(owner.address);
             expect(glpBalanceAfterMint).to.be.gt(0);
-            console.log(`Balance: ${glpBalanceAfterMint}`);
-            await glpManagerContract.connect(owner).unstakeAndRedeemGlp(
-                TOKEN_ADDRESSES['AVAX'],
-                glpBalanceAfterMint,
-                0,
-                owner.address
-            )
-            glpBalanceAfterMint = await tokenContracts.get("GLP")!.balanceOf(owner.address);
-            console.log(`Balance2: ${glpBalanceAfterMint}`);
         });
 
 
@@ -158,8 +151,8 @@ describe('Smart loan', () => {
             await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("1000"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("300"));
 
-            await tokenContracts.get('GLP')!.connect(owner).approve(wrappedLoan.address, glpBalanceAfterMint);
-            await wrappedLoan.fund(toBytes32("GLP"), glpBalanceAfterMint);
+            await tokenContracts.get('sGLP')!.connect(owner).approve(wrappedLoan.address, glpBalanceAfterMint);
+            await wrappedLoan.fundGLP(glpBalanceAfterMint);
 
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
         });

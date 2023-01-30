@@ -13,9 +13,9 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
-    deployAllFacets, erc20ABI, fromBytes32,
+    deployAllFacets, erc20ABI,
     fromWei,
-    getFixedGasSigners,
+    getFixedGasSigners, getRedstonePrices, getTokensPricesMap,
     recompileConstantsFile,
     toBytes32,
     toWei, wavaxAbi, ZERO
@@ -23,7 +23,6 @@ import {
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {BigNumber, Contract} from "ethers";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
-import redstone from "redstone-api";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 const {deployContract} = waffle;
@@ -80,8 +79,9 @@ describe('Yield Yak test stake AVAX', () => {
 
         await deployAllFacets(diamondAddress)
 
-        AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
-        YY_AAVE_AVAX_PRICE = (await redstone.getPrice('YY_AAVE_AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+        let tokensPrices = await getTokensPricesMap(['AVAX', 'YY_AAVE_AVAX'], getRedstonePrices, []);
+        AVAX_PRICE = tokensPrices.get('AVAX')!;
+        YY_AAVE_AVAX_PRICE = tokensPrices.get('YY_AAVE_AVAX')!;
 
         MOCK_PRICES = [
             {
@@ -219,10 +219,10 @@ describe('Yield Yak test stake sAVAX', () => {
 
         await deployAllFacets(diamondAddress)
 
-        // TODO: Include sAVAX and $YYVSAVAXV2 prices once available in redstone
-        AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-        SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
-        YY_PTP_sAVAX_PRICE = (await redstone.getPrice('YY_PTP_sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
+        let tokensPrices = await getTokensPricesMap(['AVAX', 'sAVAX', 'YY_PTP_sAVAX'], getRedstonePrices, []);
+        AVAX_PRICE = tokensPrices.get('AVAX')!;
+        SAVAX_PRICE = tokensPrices.get('sAVAX')!;
+        YY_PTP_sAVAX_PRICE = tokensPrices.get('YY_PTP_sAVAX')!;
 
         MOCK_PRICES = [
             {

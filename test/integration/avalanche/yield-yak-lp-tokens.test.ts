@@ -35,7 +35,6 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -84,21 +83,12 @@ describe('Smart loan', () => {
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'YY_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
             tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
             tokenContracts.set('YY_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['YY_TJ_AVAX_USDC_LP'], LPAbi, provider));
 
-            tokensPrices = await getTokensPricesMap(
-                [],
-                getRedstonePrices,
-                [
-                        {symbol: 'TJ_AVAX_USDC_LP', value: tjLPTokenPrice},
-                        {symbol: 'YY_TJ_AVAX_USDC_LP', value: yyTJLPTokenPrice},
-                    ],
-                tokensPrices
-            );
             addMissingTokenContracts(tokenContracts, assetsList);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
 
@@ -142,15 +132,6 @@ describe('Smart loan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
-            tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices,
-                [{
-                symbol: 'TJ_AVAX_USDC_LP',
-                value: (await redstone.getPrice('TJ_AVAX_USDC_LP', {provider: "redstone-avalanche-prod-1"})).value
-            },
-                {
-                    symbol: 'YY_TJ_AVAX_USDC_LP',
-                    value: (await redstone.getPrice('YY_TJ_AVAX_USDC_LP', {provider: "redstone-avalanche-prod-1"})).value
-                }]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             wrappedLoan = WrapperBuilder
