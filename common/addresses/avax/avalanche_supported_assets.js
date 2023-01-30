@@ -7,6 +7,7 @@ export const supportedAssetsAvax = [
     asset('ETH'),
     asset('USDT'),
     asset('sAVAX'),
+    asset('GLP'),
     asset('QI', '0'),
     asset('PNG', '0'),
     asset('PTP', '0'),
@@ -25,5 +26,5 @@ export const supportedAssetsAvax = [
     asset('YY_TJ_AVAX_sAVAX_LP'),
     asset('YY_TJ_AVAX_USDC_LP'),
     asset('YY_TJ_AVAX_ETH_LP'),
-    asset('GLP'),
+    asset('YY_GLP'),
 ]

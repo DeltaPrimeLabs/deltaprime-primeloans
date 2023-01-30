@@ -9,10 +9,9 @@ import VariableUtilisationRatesCalculatorArtifact
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
-
+import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
-import redstone from "redstone-api";
 import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
 
@@ -446,7 +445,7 @@ export const deployPools = async function(
    lendingPools: Array<PoolAsset>,
    owner: SignerWithAddress | JsonRpcSigner,
    depositor: SignerWithAddress | Wallet,
-   depositAmount: number = 5000,
+   depositAmount: number = 1000,
    chain: string = 'AVAX'
 ) {
     for (const token of tokens) {
@@ -472,8 +471,30 @@ function zip(arrays: any) {
     });
 }
 
-export const getRedstonePrices = async function(tokenSymbols: Array<string>, priceProvider: string = "redstone-avalanche-prod-1"): Promise<Array<number>> {
-    return await Promise.all(tokenSymbols.map(async (tokenSymbol: string) => (await redstone.getPrice(tokenSymbol, {provider: priceProvider})).value));
+function getPriceWithLatestTimestamp(prices: any, symbol: any){
+    if(symbol in prices){
+        let symbolPriceObject = prices[symbol];
+        let currentNewestTimestamp = 0;
+        let currentNewestTimestampIndex = 0;
+        for(let i=0; i<symbolPriceObject.length; i++){
+            if(symbolPriceObject[0].timestampMilliseconds > currentNewestTimestamp){
+                currentNewestTimestamp = symbolPriceObject[0].timestampMilliseconds;
+                currentNewestTimestampIndex = i;
+            }
+        }
+        return symbolPriceObject[currentNewestTimestampIndex].dataPoints[0].value;
+    } else {
+        throw new Error(`Symbol ${symbol} not found in the prices object`);
+    }
+}
+
+export const getRedstonePrices = async function(tokenSymbols: Array<string>, priceProvider: string = "redstone-avalanche-prod-1"): Promise<any> {
+    const redstonePrices = await (await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod')).json();
+    let result = [];
+    for(const symbol of tokenSymbols){
+        result.push(getPriceWithLatestTimestamp(redstonePrices, symbol));
+    }
+    return result;
 }
 
 export const getTokensPricesMap = async function(tokenSymbols: Array<string>, priceProviderFunc: Function, additionalMockTokensPrices: Array<MockTokenPriceObject> = [], resultMap: Map<string, number> = new Map()): Promise<Map<string, number>> {
@@ -554,6 +575,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'borrow',
             'repay',
             'fund',
+            'fundGLP',
             'withdraw',
         ],
         hardhatConfig
