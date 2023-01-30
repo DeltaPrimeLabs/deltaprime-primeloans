@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 9dba6d989c2efc9f26d1b404ebc349945bd79a25;
+// Last deployed from commit: f14df032e1f35f6a051c254ec22090b57b073c87;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 import "../../ReentrancyGuardKeccak.sol";
 import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
@@ -111,8 +113,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = poolHelper.balance(address(this));
 
+        amount = Math.min(stakedToken.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot stake 0 tokens");
-        require(stakedToken.balanceOf(address(this)) >= amount, "Not enough token available");
 
         stakedToken.approve(VectorMainStaking, amount);
 

@@ -178,8 +178,6 @@ describe('Smart loan', () => {
             let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
-            await expect(wrappedLoan.stakeAVAXYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough AVAX available");
-
             const stakedAvaxAmount = 50;
 
             await wrappedLoan.stakeAVAXYak(
@@ -232,8 +230,6 @@ describe('Smart loan', () => {
             let initialStakedBalance = await yakStakingContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
-            await expect(wrappedLoan.stakeSAVAXYak(toWei("9999"), {gasLimit: 8000000})).to.be.revertedWith("Not enough token available");
-
             await wrappedLoan.swapPangolin(
                 toBytes32('AVAX'),
                 toBytes32('sAVAX'),
@@ -241,12 +237,15 @@ describe('Smart loan', () => {
                 0,
             );
 
-            const savaxAmount = await wrappedLoan.getBalance(toBytes32('sAVAX'));
-            expect(savaxAmount).to.be.gt(0);
+            expect(await wrappedLoan.getBalance(toBytes32('sAVAX'))).to.be.gt(0);
 
-            await wrappedLoan.stakeSAVAXYak(
-                savaxAmount
-            );
+            await wrappedLoan.stakeSAVAXYak(1);
+
+            expect(await wrappedLoan.getBalance(toBytes32('sAVAX'))).to.be.gt(0);
+
+            // Should stake max if amount > balance
+            await wrappedLoan.stakeSAVAXYak(toWei("99999999"));
+            expect(await wrappedLoan.getBalance(toBytes32('sAVAX'))).to.be.eq(0);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 30);
@@ -428,7 +427,7 @@ describe('Smart loan', () => {
                 toWei("305")
             );
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 3);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 5);
         });

@@ -210,7 +210,6 @@ describe('Smart loan', () => {
             await expect(wrappedLoan.stakeTJAVAXUSDCYak(1)).to.be.revertedWith("Vault token not supported");
 
             await tokenManager.activateToken(tokenContracts.get("YY_TJ_AVAX_USDC_LP")!.address);
-            await expect(wrappedLoan.stakeTJAVAXUSDCYak(toWei("9999"))).to.be.revertedWith("Not enough token available");
         });
 
 
@@ -227,7 +226,19 @@ describe('Smart loan', () => {
             expect(initialTJAVAXUSDCBalance).to.be.gt(0);
             expect(initialStakedBalance).to.be.eq(0);
 
-            await wrappedLoan.stakeTJAVAXUSDCYak(initialTJAVAXUSDCBalance);
+            await wrappedLoan.stakeTJAVAXUSDCYak(100000);
+
+            initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            initialStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+            expect(initialTJAVAXUSDCBalance).to.be.gt(0);
+            expect(initialStakedBalance).to.be.gt(0);
+
+            // Should stake max if amount > balance
+            await wrappedLoan.stakeTJAVAXUSDCYak(toWei("9999999"));
+
+            initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            expect(await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address)).to.be.gt(initialStakedBalance);
+            expect(initialTJAVAXUSDCBalance).to.be.eq(0);
 
             let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
             let endStakedBalance = await tokenContracts.get('YY_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
