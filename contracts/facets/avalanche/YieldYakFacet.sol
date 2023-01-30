@@ -37,7 +37,9 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     // Tokens
     address private constant SAVAX_TOKEN = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE;
     address private constant AVAX_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-    address private constant GLP_TOKEM = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
+    address private constant GLP_TOKEN = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
+    // Older version of stakedGLP token (without decimals() that YieldYak uses
+    address private constant sGLP_TOKEN = 0x5643F4b25E36478eE1E90418d5343cb6591BcB9d;
     // LPs
     address private constant PNG_AVAX_USDC_LP = 0x0e0100Ab771E9288e0Aa97e11557E6654C3a9665;
     address private constant PNG_AVAX_ETH_LP = 0x7c05d54fc5CB6e4Ad87c6f5db3b807C94bB89c52;
@@ -95,8 +97,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
        * @param amount amount of sAVAX to be staked
     **/
     function stakeGLPYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+        // Extra approve for the stakedGLP contract that is being used to transfer fsGLP
+        IERC20Metadata(sGLP_TOKEN).approve(YY_GLP, amount);
         _stakeTokenYY(IYieldYak.YYStakingDetails({
-        tokenAddress: GLP_TOKEM,
+        tokenAddress: GLP_TOKEN,
         vaultAddress: YY_GLP,
         tokenSymbol: "GLP",
         vaultTokenSymbol: "YY_GLP",
@@ -241,7 +245,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function unstakeGLPYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({
-        tokenAddress: GLP_TOKEM,
+        tokenAddress: GLP_TOKEN,
         vaultAddress: YY_GLP,
         tokenSymbol: "GLP",
         vaultTokenSymbol: "YY_GLP",

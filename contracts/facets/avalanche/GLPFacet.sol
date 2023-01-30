@@ -7,15 +7,18 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../interfaces/facets/avalanche/IGLPRewarder.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../lib/SolvencyMethods.sol";
+import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/ITokenManager.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract GLPFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    // Used to mint/redeem GLP
     address private constant GLP_REWARDER_ADDRESS = 0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3;
+    // Used to approve tokens to mint GLP with
     address private constant GLP_MANAGER_ADDRESS = 0xD152c7F25db7F4B95b7658323c5F33d176818EE4;
+    // fsGLP
     address private constant GLP_TOKEN_ADDRESS = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
 
     function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
@@ -60,7 +63,7 @@ contract GLPFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     }
 
-    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(_tokenOut), "Asset not supported.");
 
