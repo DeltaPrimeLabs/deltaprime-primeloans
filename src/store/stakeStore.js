@@ -15,7 +15,21 @@ export default {
   },
   mutations: {
     setFarms(state, farms) {
+      console.log('STAKE STORE FARMS +++++++');
+      console.log(farms);
       state.farms = farms;
+    },
+
+    setStakedBalanceInFarm(state, stakedBalanceChange) {
+      const farm = state.farms[stakedBalanceChange.assetSymbol].find(farm => farm.protocol === stakedBalanceChange.protocol);
+      console.log('found farm', farm);
+      farm.totalStaked = stakedBalanceChange.totalStaked;
+    },
+
+    setReceiptTokenBalanceInFarm(state, receiptTokenBalanceChange) {
+      const farm = state.farms[receiptTokenBalanceChange.assetSymbol].find(farm => farm.protocol === receiptTokenBalanceChange.protocol);
+      console.log('found farm', farm);
+      farm.totalBalance = receiptTokenBalanceChange.totalBalance;
     },
   },
   actions: {
@@ -35,7 +49,7 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ];
 
-      if (stakeRequest.symbol) assets.push([stakeRequest.symbol]);
+      if (stakeRequest.feedSymbol) assets.push([stakeRequest.feedSymbol]);
 
       const loanAssets = mergeArrays(assets);
 
@@ -51,8 +65,36 @@ export default {
 
       let tx = await awaitConfirmation(stakeTransaction, provider, 'stake');
       //TODO: update after rebase
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount)); //how much of token was staked
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount)); //how much of vault token was obtained
+      const depositTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount, stakeRequest.decimals);
+      console.log('depositTokenAmount', depositTokenAmount); //how much of token was staked
+      const receiptTokenDepositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, 18);
+      console.log('receiptTokenDepositAmount', receiptTokenDepositAmount); //how much of vault token was obtained
+
+      const farm = state.farms[stakeRequest.assetSymbol].find(farm => farm.protocol === stakeRequest.protocol);
+      console.log(farm);
+
+      const totalStakedAfterTransaction = Number(farm.totalStaked) + Number(depositTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: stakeRequest.assetSymbol,
+        protocol: stakeRequest.protocol,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = Number(farm.totalBalance) + Number(receiptTokenDepositAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: stakeRequest.assetSymbol,
+        protocol: stakeRequest.protocol,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+        .emitExternalStakedBalancesPerFarmUpdate(stakeRequest.assetSymbol, stakeRequest.protocol, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceAfterStaking = Number(rootState.fundsStore.assetBalances[stakeRequest.assetSymbol]) - Number(depositTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(stakeRequest.assetSymbol, assetBalanceAfterStaking, stakeRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+        .emitExternalTotalStakedUpdate(stakeRequest.assetSymbol, depositTokenAmount, 'STAKE', true);
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
@@ -84,8 +126,36 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(unstakeTransaction, provider, 'unstake');
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount)); //how much of token was unstaked
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount)); //how much of vault token was used (unstaked/burned)
+      const unstakedTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount, unstakeRequest.decimals);
+      console.log(unstakedTokenAmount); //how much of token was unstaked
+      const unstakedReceiptTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, 18);
+      console.log(unstakedReceiptTokenAmount); //how much of vault token was used (unstaked/burned)
+
+      const farm = state.farms[unstakeRequest.assetSymbol].find(farm => farm.protocol === unstakeRequest.protocol);
+      console.log(farm);
+
+      const totalStakedAfterTransaction = Number(farm.totalStaked) - Number(unstakedTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: unstakeRequest.assetSymbol,
+        protocol: unstakeRequest.protocol,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = Number(farm.totalBalance) - Number(unstakedReceiptTokenAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: unstakeRequest.assetSymbol,
+        protocol: unstakeRequest.protocol,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+        .emitExternalStakedBalancesPerFarmUpdate(unstakeRequest.assetSymbol, unstakeRequest.protocol, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceAfterStaking = Number(rootState.fundsStore.assetBalances[unstakeRequest.assetSymbol]) + Number(unstakedTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(unstakeRequest.assetSymbol, assetBalanceAfterStaking, unstakeRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+        .emitExternalTotalStakedUpdate(unstakeRequest.assetSymbol, unstakedTokenAmount, 'UNSTAKE', true);
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});

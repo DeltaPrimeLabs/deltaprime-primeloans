@@ -15,7 +15,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="assetBalances && assetBalances[asset.symbol]">
+        <template v-if="assetBalances !== null && assetBalances !== undefined && assetBalances[asset.symbol] !== null && assetBalances[asset.symbol] !== undefined">
           <div class="double-value__pieces">
             <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
@@ -378,7 +378,8 @@ export default {
               const fundRequest = {
                 value: value,
                 asset: this.asset.symbol,
-                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+                isLP: false,
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.scheduleHardRefresh();
@@ -414,7 +415,8 @@ export default {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
             value: value,
-            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+            isLP: false,
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.scheduleHardRefresh();
@@ -428,7 +430,8 @@ export default {
           const withdrawRequest = {
             asset: this.asset.symbol,
             value: value,
-            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+            isLP: false,
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.scheduleHardRefresh();

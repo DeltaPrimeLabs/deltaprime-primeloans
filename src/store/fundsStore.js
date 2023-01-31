@@ -575,11 +575,12 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
       const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.assetDecimals);
-      const assetBalanceAfterDeposit = Number(state.assetBalances[fundRequest.asset]) + Number(depositAmount);
+      const assetBalanceBeforeDeposit = fundRequest.isLP ? state.lpBalances[fundRequest.asset] : state.assetBalances[fundRequest.asset];
+      const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
       await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLp), true);
+        .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
 
       console.log(depositAmount);
 
@@ -644,12 +645,13 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, config.ASSETS_CONFIG[withdrawRequest.asset].decimals);
-      const assetBalanceAfterWithdraw = Number(state.assetBalances[withdrawRequest.asset]) - Number(withdrawAmount);
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.assetDecimals);
+      const assetBalanceBeforeWithdraw = withdrawRequest.isLP ? state.lpBalances[withdrawRequest.asset] : state.assetBalances[withdrawRequest.asset];
+      const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
 
       await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, false, true);
+        .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
 
       console.log(withdrawAmount);
 
@@ -690,10 +692,12 @@ export default {
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
+      console.log(provideLiquidityRequest);
       const provider = rootState.network.provider;
 
       const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
       const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
+      const lpTokenDecimals = config.LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
 
       let minAmount = 0.9;
 
@@ -721,10 +725,22 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount)); // how much of tokenA was used
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount)); //how much of tokenB was used
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity)); //how much LP was created
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals);
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals);
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals);
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+      console.log(firstAssetAmount); // how much of tokenA was used
+      console.log(secondAssetAmount); //how much of tokenB was used
+      console.log(lpTokenCreated); //how much LP was created
 
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -737,6 +753,7 @@ export default {
 
       const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
       const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
+      const lpTokenDecimals = config.LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -761,9 +778,23 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount)); //how much of tokenA was received
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount)); //how much of tokenB was received
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity)); //how much of LP was removed
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount, firstDecimals);
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount, secondDecimals);
+      const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity, lpTokenDecimals);
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(firstAssetAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(secondAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.lpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenRemoved);
+      console.log(firstAssetAmount); // how much of tokenA was received
+      console.log(secondAssetAmount); //how much of tokenB was received
+      console.log(lpTokenRemoved); //how much LP was removed
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -864,7 +895,8 @@ export default {
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(String(swapRequest.sourceAmount), sourceDecimals);
+      console.log(sourceDecimals);
+      let sourceAmount = parseUnits(Number(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);

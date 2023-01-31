@@ -93,6 +93,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
+    this.watchExternalStakedPerFarm();
   },
   data() {
     return {
@@ -125,9 +126,9 @@ export default {
   },
   computed: {
     ...mapState('poolStore', ['pools']),
-    ...mapState('stakeStore', ['stakedAssets', 'farms', 'updateStakedBalances']),
+    ...mapState('stakeStore', ['farms']),
     ...mapState('fundsStore', ['smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
@@ -153,6 +154,7 @@ export default {
     },
 
     async openStakeModal() {
+      console.log(this.farm);
       if (this.disabled) {
         return;
       }
@@ -168,20 +170,18 @@ export default {
       modalInstance.$on('STAKE', (stakeValue) => {
         console.log(stakeValue);
         const stakeRequest = {
-          symbol: this.farm.feedSymbol,
+          feedSymbol: this.farm.feedSymbol,
+          assetSymbol: this.asset.symbol,
+          protocol: this.farm.protocol,
           amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasStake,
-          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
+          isLP: this.isLP,
         };
+        console.log(stakeRequest);
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
-          this.underlyingTokenStaked = Number(this.underlyingTokenStaked) + Number(stakeRequest.amount);
-          this.isStakedBalanceEstimated = true;
-          const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
-          const assetBalanceAfterTransaction = Number(assetBalance) - Number(stakeRequest.amount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
-          this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, stakeRequest.amount, 'STAKE');
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
@@ -208,21 +208,17 @@ export default {
           receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
           underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),
           minUnderlyingTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
-          asset: this.asset.symbol,
+          assetSymbol: this.asset.symbol,
+          feedSymbol: this.farm.feedSymbol,
+          protocol: this.farm.protocol,
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
           rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens : [],
-          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
+          isLP: this.isLP
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
-          this.underlyingTokenStaked = Number(this.underlyingTokenStaked) - Number(unstakeRequest.underlyingTokenUnstaked);
-          this.receiptTokenBalance = Number(this.receiptTokenBalance) - Number(unstakeRequest.receiptTokenUnstaked);
-          this.isStakedBalanceEstimated = true;
-          const assetBalance = this.isLP ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
-          const assetBalanceAfterTransaction = Number(assetBalance) + Number(unstakeRequest.amount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(this.asset.symbol, assetBalanceAfterTransaction, this.isLP);
-          this.totalStakedExternalUpdateService.emitExternalTotalStakedUpdate(this.asset.symbol, unstakeRequest.amount, 'UNSTAKE');
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
@@ -254,6 +250,22 @@ export default {
         this.rewards = this.farm.rewards;
         await this.setApy();
       })
+    },
+
+    watchExternalStakedPerFarm() {
+      this.stakedExternalUpdateService.observeExternalStakedBalancesPerFarmUpdate().subscribe(stakedBalancesPerFarmUpdate => {
+        if (this.asset.symbol === stakedBalancesPerFarmUpdate.assetSymbol && this.farm.protocol === stakedBalancesPerFarmUpdate.protocol) {
+          console.log('got update request________________________');
+          console.log(this.farm);
+          this.receiptTokenBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
+          this.farm.totalBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
+          this.underlyingTokenStaked = stakedBalancesPerFarmUpdate.stakedBalance;
+          this.farm.totalStaked = stakedBalancesPerFarmUpdate.stakedBalance;
+          console.log('this.receiptTokenBalance', this.receiptTokenBalance);
+          console.log('this.farm.totalBalance', this.farm.totalBalance);
+        }
+        this.$forceUpdate();
+      });
     },
 
     async setApy() {
