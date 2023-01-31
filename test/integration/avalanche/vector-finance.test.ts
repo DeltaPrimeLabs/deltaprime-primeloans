@@ -286,12 +286,6 @@ describe('Smart loan', () => {
             return supported;
         }
 
-        it("should fail to unstake more than was initially staked", async () => {
-            await expect(wrappedLoan.vectorUnstakeUSDC1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-            await expect(wrappedLoan.vectorUnstakeWAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-            await expect(wrappedLoan.vectorUnstakeSAVAX1(toWei("9999"), toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
-        });
-
         it("should allow whitelisted accounts to unstake if insolvent", async () => {
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");;
 

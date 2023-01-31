@@ -2,6 +2,7 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../interfaces/IWrappedNativeToken.sol";
 import "../lib/SolvencyMethods.sol";
@@ -40,6 +41,7 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
 
     function unwrapAndWithdraw(uint256 _amount) onlyOwner remainsSolvent canRepayDebtFully public payable virtual {
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+        _amount = Math.min(wrapped.balanceOf(address(this)), _amount);
         require(wrapped.balanceOf(address(this)) >= _amount, "Not enough native token to unwrap and withdraw");
 
         wrapped.withdraw(_amount);
@@ -53,7 +55,7 @@ contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
 
         payable(msg.sender).safeTransferETH(_amount);
 
-        emit UnwrapAndWithdraw(msg.sender, msg.value, block.timestamp);
+        emit UnwrapAndWithdraw(msg.sender, _amount, block.timestamp);
     }
 
     /* ========== MODIFIERS ========== */
