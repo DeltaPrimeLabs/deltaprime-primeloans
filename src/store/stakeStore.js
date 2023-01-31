@@ -89,7 +89,9 @@ export default {
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalStakedBalancesPerFarmUpdate(stakeRequest.assetSymbol, stakeRequest.protocol, totalStakedAfterTransaction, totalBalanceAfterTransaction);
 
-      const assetBalanceAfterStaking = Number(rootState.fundsStore.assetBalances[stakeRequest.assetSymbol]) - Number(depositTokenAmount);
+      const assetBalanceBeforeStaking =
+        stakeRequest.isLP ? rootState.fundsStore.lpBalances[stakeRequest.assetSymbol] : rootState.fundsStore.assetBalances[stakeRequest.assetSymbol];
+      const assetBalanceAfterStaking = Number(assetBalanceBeforeStaking) - Number(depositTokenAmount);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(stakeRequest.assetSymbol, assetBalanceAfterStaking, stakeRequest.isLP, true);
 
@@ -150,9 +152,12 @@ export default {
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalStakedBalancesPerFarmUpdate(unstakeRequest.assetSymbol, unstakeRequest.protocol, totalStakedAfterTransaction, totalBalanceAfterTransaction);
 
-      const assetBalanceAfterStaking = Number(rootState.fundsStore.assetBalances[unstakeRequest.assetSymbol]) + Number(unstakedTokenAmount);
+      const assetBalanceBeforeUnstaking =
+        unstakeRequest.isLP ? rootState.fundsStore.lpBalances[unstakeRequest.assetSymbol] : rootState.fundsStore.assetBalances[unstakeRequest.assetSymbol];
+
+      const assetBalanceAfterUnstaking = Number(assetBalanceBeforeUnstaking) + Number(unstakedTokenAmount);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(unstakeRequest.assetSymbol, assetBalanceAfterStaking, unstakeRequest.isLP, true);
+        .emitExternalAssetBalanceUpdate(unstakeRequest.assetSymbol, assetBalanceAfterUnstaking, unstakeRequest.isLP, true);
 
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalTotalStakedUpdate(unstakeRequest.assetSymbol, unstakedTokenAmount, 'UNSTAKE', true);
