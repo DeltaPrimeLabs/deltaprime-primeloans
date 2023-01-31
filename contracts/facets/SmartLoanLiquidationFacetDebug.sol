@@ -241,6 +241,9 @@ contract SmartLoanLiquidationFacetDebug is ReentrancyGuardKeccak, SolvencyMethod
             require(_getDebtWithPrices(cachedPrices.debtAssetsPrices) == 0, "Healing a loan must end up with 0 debt");
             require(_getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices) == 0, "Healing a loan must end up with 0 total value");
         } else {
+            console.log('Health: %s', health);
+            console.log('Total value: %s', _getTotalValue());
+            console.log('Debt: %s', _getDebt());
             require(health <= getMaxHealthAfterLiquidation(), "This operation would result in a loan with health ratio higher than Maxium Health Ratio which would put loan's owner in a risk of an unnecessarily high loss");
         }
 

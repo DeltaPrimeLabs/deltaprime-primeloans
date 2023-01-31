@@ -83,6 +83,14 @@ export async function unstakeYieldYak(loan, liquidator_wallet, provider){
             console.log('Unstaking YY_TJ_AVAX_sAVAX_LP');
             await awaitConfirmation(await loan.unstakeTJAVAXSAVAXYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_TJ_AVAX_sAVAX_LP', 60_000);
         }
+
+        contract = new ethers.Contract(TOKEN_ADDRESSES.YY_GLP, IYieldYak.abi, liquidator_wallet);
+        balance = await contract.balanceOf(loan.address);
+        decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0){
+            console.log('Unstaking YY_GLP');
+            await awaitConfirmation(await loan.unstakeGLPYak(balance, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake YY_GLP', 60_000);
+        }
     } catch (e) {
         console.log(`YieldYak-Error: ${e}`);
     }
@@ -120,6 +128,22 @@ export async function unwindPangolinLPPositions(loan, liquidator_wallet, provide
         }
     } catch (e) {
         console.log(`Pangolin-Error: ${e}`);
+    }
+}
+
+export async function unstakeGlp(loan, liquidator_wallet, provider){
+    console.log('Check GLP');
+    try{
+        // GLP
+        let contract = await getERC20Contract(TOKEN_ADDRESSES.GLP, liquidator_wallet);
+        let balance = await contract.balanceOf(loan.address);
+        let decimals = await contract.decimals();
+        if(formatUnits(balance, decimals) > 0) {
+            console.log('Unwinding GLP');
+            await awaitConfirmation(await loan.unstakeAndRedeemGlp(TOKEN_ADDRESSES["AVAX"], balance, 1, {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'Unstake GLP', 60_000);
+        }
+    } catch (e) {
+        console.log(`GLP-Error: ${e}`);
     }
 }
 

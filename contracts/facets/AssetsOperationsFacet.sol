@@ -39,6 +39,24 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     /**
+    * Funds the loan with a specified amount of a GLP
+    * @dev Requires approval for stakedGLP token on frontend side
+    * @param _amount to be funded
+    **/
+    function fundGLP(uint256 _amount) public virtual {
+        IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+        address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
+        if (stakedGlpToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset("GLP", address(stakedGlpToken));
+        }
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.increaseProtocolExposure("GLP", _amount);
+
+        emit Funded(msg.sender, "GLP", _amount, block.timestamp);
+    }
+
+    /**
     * Withdraws an amount of a defined asset from the loan
     * This method could be used to cash out profits from investments
     * The loan needs to remain solvent after the withdrawal
