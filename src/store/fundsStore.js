@@ -91,6 +91,11 @@ export default {
       state.assetBalances = assetBalances;
     },
 
+    setSingleAssetBalance(state, assetBalanceChange) {
+      console.log('fundsStore.setSingleAssetBalance', assetBalanceChange.asset, assetBalanceChange.balance);
+      state.assetBalances[assetBalanceChange.asset] = assetBalanceChange.balance;
+    },
+
     setLpBalances(state, lpBalances) {
       state.lpBalances = lpBalances;
     },
@@ -113,6 +118,11 @@ export default {
 
     setDebtsPerAsset(state, debtsPerAsset) {
       state.debtsPerAsset = debtsPerAsset;
+    },
+
+    setSingleAssetDebt(state, assetDebtChange) {
+      console.log('fundsStore.setSingleAssetDebt', assetDebtChange.asset, assetDebtChange.debt);
+      state.debtsPerAsset[assetDebtChange.asset].debt = assetDebtChange.debt;
     },
 
     setAccountApr(state, apr) {
@@ -564,7 +574,14 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount));
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.assetDecimals);
+      const assetBalanceAfterDeposit = Number(state.assetBalances[fundRequest.asset]) + Number(depositAmount);
+
+      await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLp), true);
+
+      console.log(depositAmount);
 
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
@@ -593,8 +610,15 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
       let tx = await awaitConfirmation(transaction, provider, 'fund');
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, "DepositNative").args.amount));
+      console.log(getLog(tx, SMART_LOAN.abi, 'DepositNative'));
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'DepositNative').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
+      const assetBalanceAfterDeposit = Number(state.assetBalances['AVAX']) + Number(depositAmount);
+      console.log(depositAmount);
+      console.log(assetBalanceAfterDeposit);
 
+      await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterDeposit});
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterDeposit, false, true);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -620,7 +644,14 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount));
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, config.ASSETS_CONFIG[withdrawRequest.asset].decimals);
+      const assetBalanceAfterWithdraw = Number(state.assetBalances[withdrawRequest.asset]) - Number(withdrawAmount);
+
+      await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, false, true);
+
+      console.log(withdrawAmount);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -642,8 +673,16 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
+      console.log(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw'));
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
+      const assetBalanceAfterWithdraw = Number(state.assetBalances['AVAX']) - Number(withdrawAmount);
+      console.log('assetBalanceAfterWithdraw', assetBalanceAfterWithdraw);
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount));
+      await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterWithdraw});
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterWithdraw, false, true);
+
+      console.log(assetBalanceAfterWithdraw);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
@@ -732,6 +771,8 @@ export default {
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
+      console.log(state.debtsPerAsset);
+      console.log(Number(state.debtsPerAsset[borrowRequest.asset].debt));
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -750,7 +791,15 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'borrow');
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount));
+      const borrowedAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount, config.ASSETS_CONFIG[borrowRequest.asset].decimals);
+      console.log(borrowedAmount);
+      const balanceAfterTransaction = Number(state.assetBalances[borrowRequest.asset]) + Number(borrowedAmount);
+      const debtAfterTransaction = Number(state.debtsPerAsset[borrowRequest.asset].debt) + Number(borrowedAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(borrowRequest.asset, balanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetDebtsExternalUpdateService
+        .emitExternalAssetDebtUpdate(borrowRequest.asset, debtAfterTransaction, true);
 
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
@@ -780,7 +829,20 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'repay');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Repay').args.amount));
+      const repayAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Repaid').args.amount, config.ASSETS_CONFIG[repayRequest.asset].decimals);
+      console.log(repayAmount);
+
+      const balanceAfterRepay = Number(state.assetBalances[repayRequest.asset]) - Number(repayAmount);
+      const debtAfterRepay = Number(state.debtsPerAsset[repayRequest.asset].debt) - Number(repayAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(repayRequest.asset, balanceAfterRepay, false, true);
+      rootState.serviceRegistry.assetDebtsExternalUpdateService
+        .emitExternalAssetDebtUpdate(repayRequest.asset, debtAfterRepay, true);
+
+      commit('setSingleAssetBalance', {asset: repayRequest.asset, balance: balanceAfterRepay});
+      commit('setSingleAssetDebt', {asset: repayRequest.asset, debt: debtAfterRepay});
+
 
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
@@ -820,8 +882,22 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'swap');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Swap').args.amountSold));
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'Swap').args.amountBought));
+      console.log(getLog(tx, SMART_LOAN.abi, 'Swap'));
+
+      const amountSold = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.maximumSold, config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
+      console.log('amountSold', amountSold);
+      const amountBought = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.minimumBought, config.ASSETS_CONFIG[swapRequest.targetAsset].decimals);
+      console.log('amountBought', amountBought);
+      const sourceBalanceAfterSwap = Number(state.assetBalances[swapRequest.sourceAsset]) - Number(amountSold);
+      const targetBalanceAfterSwap = Number(state.assetBalances[swapRequest.targetAsset]) + Number(amountBought);
+
+      commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
+      commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterSwap, false, true);
 
       setTimeout(async () => {
         await dispatch('updateFunds');

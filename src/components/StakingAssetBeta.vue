@@ -226,9 +226,10 @@ export default {
     },
 
     watchExternalAssetBalanceUpdate() {
-      this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe((updateEvent) => {
+        console.log(updateEvent);
         if (updateEvent.assetSymbol === this.asset.symbol) {
-          this.isAvailableEstimated = true;
+          this.isAvailableEstimated = !updateEvent.isTrueData;
           if (updateEvent.isLP) {
             this.lpBalances[this.asset.symbol] = updateEvent.balance;
           } else {

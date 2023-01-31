@@ -259,5 +259,9 @@ export async function getTraderJoeLpApr(lpAddress) {
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
+
+// String -> BigNumber
 export const parseUnits = ethers.utils.parseUnits;
+
+// BigNumber -> String
 export const formatUnits = ethers.utils.formatUnits;

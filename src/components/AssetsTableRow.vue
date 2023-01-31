@@ -23,7 +23,7 @@
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
           </div>
         </template>
-        <template v-if="!(assetBalances && assetBalances[asset.symbol])">
+        <template v-if="assetBalances === null">
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -127,6 +127,7 @@ export default {
   mounted() {
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
+    this.watchExternalAssetDebtUpdate();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
@@ -147,7 +148,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -293,11 +294,7 @@ export default {
           amount: value.toString()
         };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(borrowRequest.amount);
-          this.debtsPerAsset[this.asset.symbol].debt = Number(this.debtsPerAsset[this.asset.symbol].debt) + Number(borrowRequest.amount);
-          this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
-          this.isDebtEstimated = true;
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -328,10 +325,6 @@ export default {
           sourceAmount: swapEvent.sourceAmount.toString()
         };
         this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
-          const sourceBalanceAfterTransaction = Number(this.assetBalances[swapRequest.sourceAsset]) - Number(swapRequest.sourceAmount);
-          const targetBalanceAfterTransaction = Number(this.assetBalances[swapRequest.targetAsset]) + Number(swapRequest.targetAmount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterTransaction);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterTransaction);
           this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
@@ -374,8 +367,6 @@ export default {
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
-                this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(value);
-                this.isBalanceEstimated = true;
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, (error) => {
@@ -390,8 +381,6 @@ export default {
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-                this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(fundRequest.value);
-                this.isBalanceEstimated = true;
                 this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, (error) => {
@@ -428,8 +417,6 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
-            this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
-            this.isBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
@@ -444,8 +431,6 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-            this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(withdrawRequest.value);
-            this.isBalanceEstimated = true;
             this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
@@ -478,11 +463,7 @@ export default {
           amount: value.toString()
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
-          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) - Number(repayRequest.amount);
-          this.debtsPerAsset[this.asset.symbol].debt = Math.max(Number(this.debtsPerAsset[this.asset.symbol].debt) - Number(repayRequest.amount), 0);
-          this.isBalanceEstimated = true;
           this.scheduleHardRefresh();
-          this.isDebtEstimated = true;
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -529,10 +510,20 @@ export default {
     },
 
     watchExternalAssetBalanceUpdate() {
-      this.assetBalancesExternalUpdateService.assetBalanceExternalUpdate$.subscribe((updateEvent) => {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
           this.assetBalances[this.asset.symbol] = updateEvent.balance;
-          this.isBalanceEstimated = true;
+          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchExternalAssetDebtUpdate() {
+      this.assetDebtsExternalUpdateService.observeExternalAssetDebtUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.debtsPerAsset[this.asset.symbol].debt = updateEvent.debt;
+          this.isDebtEstimated = !updateEvent.isTrueData;
           this.$forceUpdate();
         }
       });

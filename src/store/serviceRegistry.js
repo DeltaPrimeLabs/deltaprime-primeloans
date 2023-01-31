@@ -11,11 +11,13 @@ import ProviderService from '../services/providerService';
 import AccountService from '../services/accountService';
 import PoolService from "../services/poolService";
 import PriceService from "../services/priceService";
+import AssetDebtsExternalUpdateService from '../services/assetDebtsExternalUpdateService';
 
 export default {
   namespaced: true,
   state: {
     assetBalancesExternalUpdateService: new AssetBalancesExternalUpdateService(),
+    assetDebtsExternalUpdateService: new AssetDebtsExternalUpdateService(),
     totalStakedExternalUpdateService: new TotalStakedExternalUpdateService(),
     dataRefreshEventService: new DataRefreshEventService(),
     progressBarService: new ProgressBarService(),

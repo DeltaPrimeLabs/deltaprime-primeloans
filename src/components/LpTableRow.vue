@@ -274,6 +274,7 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+            isLP: true,
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
@@ -340,8 +341,8 @@ export default {
           this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
             const firstBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.firstAsset]) - Number(provideLiquidityRequest.firstAmount);
             const secondBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.secondAsset]) - Number(provideLiquidityRequest.secondAmount);
-            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
-            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
+            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstBalanceAfterTransaction, false);
+            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction, false);
             this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
             this.isLpBalanceEstimated = true;
             this.scheduleHardRefresh();
@@ -375,8 +376,8 @@ export default {
         this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           const firstBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.firstAsset]) + Number(removeLiquidityRequest.minFirstAmount);
           const secondBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.secondAsset]) + Number(removeLiquidityRequest.minSecondAmount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstBalanceAfterTransaction);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstBalanceAfterTransaction, false);
+          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction, false);
           this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
           this.isLpBalanceEstimated = true;
           this.scheduleHardRefresh();
