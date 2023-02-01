@@ -193,13 +193,14 @@ export default {
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
-        const apy = await farm.currentApy;
+        const apy = farm.currentApy;
         if (apy > maxApy) {
           maxApy = apy;
         }
       }
+      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy) * assetAppreciation(this.asset.symbol) - 1);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
 
     },
 
