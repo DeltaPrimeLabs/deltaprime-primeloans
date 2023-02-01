@@ -117,12 +117,14 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      const unstakeValue = this.maxButtonUsed ? this.unstakeValue * config.MAX_BUTTON_MULTIPLIER : this.unstakeValue;
-      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.receiptTokenBalance)
+      let unstakedPart = this.unstakeValue / this.staked;
+      const unstakeValue = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
+      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.staked)
 
       const unstakeEvent = {
         receiptTokenUnstaked: unstakeValue,
-        underlyingTokenUnstaked: unstakedReceiptToken
+        underlyingTokenUnstaked: unstakedReceiptToken,
+        isMax: this.maxButtonUsed
       };
 
       this.$emit('UNSTAKE', unstakeEvent);

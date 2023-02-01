@@ -134,15 +134,14 @@ export default {
       console.log(unstakedReceiptTokenAmount); //how much of vault token was used (unstaked/burned)
 
       const farm = state.farms[unstakeRequest.assetSymbol].find(farm => farm.protocol === unstakeRequest.protocol);
-      console.log(farm);
 
-      const totalStakedAfterTransaction = Number(farm.totalStaked) - Number(unstakedTokenAmount);
+      const totalStakedAfterTransaction = unstakeRequest.isMax ? 0 : Number(farm.totalStaked) - Number(unstakedTokenAmount);
       await commit('setStakedBalanceInFarm', {
         assetSymbol: unstakeRequest.assetSymbol,
         protocol: unstakeRequest.protocol,
         totalStaked: totalStakedAfterTransaction
       });
-      const totalBalanceAfterTransaction = Number(farm.totalBalance) - Number(unstakedReceiptTokenAmount);
+      const totalBalanceAfterTransaction = unstakeRequest.isMax ? 0 : Number(farm.totalBalance) - Number(unstakedReceiptTokenAmount);
       await commit('setReceiptTokenBalanceInFarm', {
         assetSymbol: unstakeRequest.assetSymbol,
         protocol: unstakeRequest.protocol,

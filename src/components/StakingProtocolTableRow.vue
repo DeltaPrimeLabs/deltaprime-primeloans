@@ -216,7 +216,8 @@ export default {
           gas: this.farm.gasUnstake,
           rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens : [],
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
-          isLP: this.isLP
+          isLP: this.isLP,
+          isMax: unstakeEvent.isMax
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
           this.scheduleHardRefresh();
@@ -255,8 +256,6 @@ export default {
     watchExternalStakedPerFarm() {
       this.stakedExternalUpdateService.observeExternalStakedBalancesPerFarmUpdate().subscribe(stakedBalancesPerFarmUpdate => {
         if (this.asset.symbol === stakedBalancesPerFarmUpdate.assetSymbol && this.farm.protocol === stakedBalancesPerFarmUpdate.protocol) {
-          console.log('got update request________________________');
-          console.log(this.farm);
           this.receiptTokenBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.farm.totalBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.underlyingTokenStaked = stakedBalancesPerFarmUpdate.stakedBalance;

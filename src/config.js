@@ -16,7 +16,7 @@ export default {
     MIN_ALLOWED_HEALTH: 0.0182,
     COMPETITION_START_BLOCK: 14858534,
     DECIMALS_PRECISION: 8,
-    MAX_BUTTON_MULTIPLIER: 1.1,
+    MAX_BUTTON_MULTIPLIER: 1.01,
     chainId: 43114,
     // chainId: 1337,
     //update leverage after every change in contracts
