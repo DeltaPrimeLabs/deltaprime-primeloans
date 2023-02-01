@@ -103,7 +103,7 @@ export default {
       maxApy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
-      waitingForHardRefresh: false,
+      disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
       actionsConfig: {}
@@ -133,7 +133,7 @@ export default {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.waitingForHardRefresh;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
     },
     isLP() {
       return this.asset.secondary != null;
@@ -182,7 +182,6 @@ export default {
         };
         console.log(stakeRequest);
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -220,7 +219,6 @@ export default {
           isMax: unstakeEvent.isMax
         };
         this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -230,7 +228,7 @@ export default {
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
-        this.waitingForHardRefresh = true;
+        this.disableAllButtons = true;
         this.$forceUpdate();
       });
     },
@@ -239,7 +237,7 @@ export default {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe((refreshEvent) => {
         this.assetBalances = refreshEvent.assetBalances;
         this.lpBalances = refreshEvent.lpBalances;
-        this.waitingForHardRefresh = false;
+        this.disableAllButtons = false;
         this.$forceUpdate();
       });
     },
@@ -284,17 +282,21 @@ export default {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
           case 'MINING' : {
-            this.waitingForHardRefresh = true;
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
             break;
           }
           case 'ERROR' : {
             this.isStakedBalanceEstimated = false;
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             break;
           }
           case 'CANCELLED' : {
             this.isStakedBalanceEstimated = false;
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             break;
           }
         }
@@ -308,7 +310,7 @@ export default {
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
-      this.waitingForHardRefresh = false;
+      this.disableAllButtons = false;
       this.isStakedBalanceEstimated = false;
     },
 

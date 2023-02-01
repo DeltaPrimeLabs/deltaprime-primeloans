@@ -34,6 +34,9 @@ const tokenAddresses = TOKEN_ADDRESSES;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
+const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+const HARD_REFRESH_DELAY = 60000;
+
 export default {
   namespaced: true,
   state: {
@@ -584,13 +587,18 @@ export default {
 
       console.log(depositAmount);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
@@ -621,9 +629,18 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterDeposit, false, true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('network/updateBalance', {}, {root: true});
+      }, 1000);
+
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
@@ -655,9 +672,14 @@ export default {
 
       console.log(withdrawAmount);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
@@ -686,9 +708,14 @@ export default {
 
       console.log(assetBalanceAfterWithdraw);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
@@ -742,9 +769,14 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async removeLiquidity({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
@@ -795,10 +827,14 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
@@ -818,7 +854,7 @@ export default {
           parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
           {gasLimit: 3000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar(35000);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'borrow');
@@ -832,13 +868,18 @@ export default {
       rootState.serviceRegistry.assetDebtsExternalUpdateService
         .emitExternalAssetDebtUpdate(borrowRequest.asset, debtAfterTransaction, true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
       }, 1000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 35000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
@@ -874,6 +915,10 @@ export default {
       commit('setSingleAssetBalance', {asset: repayRequest.asset, balance: balanceAfterRepay});
       commit('setSingleAssetDebt', {asset: repayRequest.asset, debt: debtAfterRepay});
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {
         await dispatch('poolStore/setupPools', {}, {root: true});
@@ -881,7 +926,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
@@ -931,9 +976,14 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterSwap, false, true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
@@ -958,7 +1008,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, 30000);
+      }, HARD_REFRESH_DELAY);
     },
   }
 };

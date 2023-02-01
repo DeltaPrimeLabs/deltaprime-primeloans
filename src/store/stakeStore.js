@@ -6,7 +6,7 @@ import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../uti
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
-
+const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 
 export default {
   namespaced: true,
@@ -60,7 +60,7 @@ export default {
         {gasLimit: stakeRequest.gas ? stakeRequest.gas : 8000000}
       );
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar(stakeRequest.refreshDelay);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(stakeTransaction, provider, 'stake');
@@ -98,6 +98,11 @@ export default {
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalTotalStakedUpdate(stakeRequest.assetSymbol, depositTokenAmount, 'STAKE', true);
 
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
@@ -124,7 +129,7 @@ export default {
             parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
             {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar(unstakeRequest.refreshDelay);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(unstakeTransaction, provider, 'unstake');
@@ -160,6 +165,11 @@ export default {
 
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalTotalStakedUpdate(unstakeRequest.assetSymbol, unstakedTokenAmount, 'UNSTAKE', true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});

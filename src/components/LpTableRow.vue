@@ -49,7 +49,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="waitingForHardRefresh">
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -125,7 +125,7 @@ export default {
       tvl: 0,
       lpTokenBalances: [],
       isLpBalanceEstimated: false,
-      waitingForHardRefresh: false,
+      disableAllButtons: false,
     };
   },
 
@@ -278,7 +278,6 @@ export default {
             isLP: true,
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -309,7 +308,6 @@ export default {
           isLP: true,
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -336,7 +334,6 @@ export default {
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
           this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -365,7 +362,6 @@ export default {
           dex: this.lpToken.dex
         };
         this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -403,14 +399,14 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isLpBalanceEstimated = false;
-        this.waitingForHardRefresh = false;
+        this.disableAllButtons = false;
         this.$forceUpdate();
       });
     },
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
-        this.waitingForHardRefresh = true;
+        this.disableAllButtons = true;
         this.$forceUpdate();
       });
     },
@@ -442,16 +438,20 @@ export default {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
           case 'MINING' : {
-            this.waitingForHardRefresh = true;
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
             break;
           }
           case 'ERROR' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
           }
           case 'CANCELLED' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
           }
@@ -466,7 +466,7 @@ export default {
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
-      this.waitingForHardRefresh = false;
+      this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
   },

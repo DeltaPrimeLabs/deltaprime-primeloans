@@ -31,7 +31,7 @@
       <div class="table__cell table__cell--double-value loan">
         <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
           <div class="double-value__pieces">
-            <span v-if="isDebtEstimated">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound }}
+            <span v-if="isDebtEstimated">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound(8, true) }}
           </div>
           <div class="double-value__usd">{{ debtsPerAsset[asset.symbol].debt * asset.price | usd }}</div>
         </template>
@@ -74,7 +74,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="waitingForHardRefresh">
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -140,7 +140,7 @@ export default {
       rowExpanded: false,
       isBalanceEstimated: false,
       isDebtEstimated: false,
-      waitingForHardRefresh: false,
+      disableAllButtons: false,
     };
   },
   computed: {
@@ -294,7 +294,6 @@ export default {
           amount: value.toString()
         };
         this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -325,7 +324,6 @@ export default {
           sourceAmount: swapEvent.sourceAmount.toString()
         };
         this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -358,7 +356,6 @@ export default {
           const value = addFromWalletEvent.value;
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
             this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
-              this.scheduleHardRefresh();
             }, (error) => {
               this.handleTransactionError(error);
             })
@@ -367,7 +364,6 @@ export default {
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
-                this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, (error) => {
                 console.log(error);
@@ -382,7 +378,6 @@ export default {
                 isLP: false,
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-                this.scheduleHardRefresh();
                 this.$forceUpdate();
               }, (error) => {
                 this.handleTransactionError(error);
@@ -419,7 +414,6 @@ export default {
             isLP: false,
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -434,7 +428,6 @@ export default {
             isLP: false,
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -466,7 +459,6 @@ export default {
           amount: value.toString()
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -491,7 +483,6 @@ export default {
         this.handleTransaction(this.wrapNativeToken, {wrapRequest: wrapRequest}, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(wrapRequest.amount);
           this.isBalanceEstimated = true;
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -535,7 +526,7 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isBalanceEstimated = false;
-        this.waitingForHardRefresh = false;
+        this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
       });
@@ -544,7 +535,7 @@ export default {
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
         this.isDebtEstimated = false;
-        this.waitingForHardRefresh = false;
+        this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
         this.$forceUpdate();
       });
@@ -552,7 +543,7 @@ export default {
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
-        this.waitingForHardRefresh = true;
+        this.disableAllButtons = true;
         this.$forceUpdate();
       });
     },
@@ -566,17 +557,21 @@ export default {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
           case 'MINING' : {
-            this.waitingForHardRefresh = true;
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
             break;
           }
           case 'ERROR' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             this.isDebtEstimated = false;
             break;
           }
           case 'CANCELLED' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             this.isDebtEstimated = false;
             break;
@@ -592,7 +587,7 @@ export default {
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
-      this.waitingForHardRefresh = false;
+      this.disableAllButtons = false;
       this.isBalanceEstimated = false;
       this.isBalanceEstimated = false;
     },
