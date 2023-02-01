@@ -47,7 +47,7 @@
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ asset.name }}</span>
+              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">&nbsp;{{ asset.name }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>

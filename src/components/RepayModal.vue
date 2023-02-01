@@ -129,7 +129,7 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const repayValue = this.maxButtonUsed ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
-      this.$emit('REPAY', repayValue);
+      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed });
     },
 
     repayValueChange(event) {

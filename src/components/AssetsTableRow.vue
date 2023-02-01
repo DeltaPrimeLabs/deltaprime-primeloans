@@ -15,7 +15,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="assetBalances !== null && assetBalances !== undefined && assetBalances[asset.symbol] !== null && assetBalances[asset.symbol] !== undefined">
+        <template v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
             <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
@@ -23,13 +23,13 @@
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
           </div>
         </template>
-        <template v-if="assetBalances === null">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
+        <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && parseFloat(debtsPerAsset[asset.symbol].debt)">
           <div class="double-value__pieces">
             <span v-if="isDebtEstimated">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound(8, true) }}
           </div>
@@ -451,12 +451,12 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
-      modalInstance.$on('REPAY', value => {
-        console.log(value);
+      modalInstance.$on('REPAY', repayEvent => {
         const repayRequest = {
           asset: this.asset.symbol,
           decimals: this.asset.decimals,
-          amount: value.toString()
+          amount: repayEvent.repayValue.toString(),
+          isMax: repayEvent.isMax
         };
         this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
           this.$forceUpdate();

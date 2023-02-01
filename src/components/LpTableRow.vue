@@ -12,7 +12,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpBalances">
+        <template v-if="lpBalances && parseFloat(lpBalances[lpToken.symbol])">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
             {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
@@ -23,7 +23,7 @@
             </span>
           </div>
         </template>
-        <template v-if="!lpBalances || !lpBalances[lpToken.symbol]">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>

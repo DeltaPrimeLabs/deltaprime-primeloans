@@ -902,10 +902,9 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'repay');
 
       const repayAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Repaid').args.amount, config.ASSETS_CONFIG[repayRequest.asset].decimals);
-      console.log(repayAmount);
 
       const balanceAfterRepay = Number(state.assetBalances[repayRequest.asset]) - Number(repayAmount);
-      const debtAfterRepay = Number(state.debtsPerAsset[repayRequest.asset].debt) - Number(repayAmount);
+      const debtAfterRepay = repayRequest.isMax ? 0 : Number(state.debtsPerAsset[repayRequest.asset].debt) - Number(repayAmount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(repayRequest.asset, balanceAfterRepay, false, true);
