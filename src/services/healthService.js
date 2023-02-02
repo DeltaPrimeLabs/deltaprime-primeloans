@@ -44,18 +44,19 @@ export default class HealthService {
       }
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
-        farms.forEach(farm => {
+        if (symbol !== 'GLP') {
+          farms.forEach(farm => {
+            let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
-          let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
-
-          tokens.push({
-            price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
-            balance: parseFloat(farm.totalBalance),
-            borrowed: 0,
-            debtCoverage: farm.debtCoverage,
-            symbol: symbol
+            tokens.push({
+              price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
+              balance: parseFloat(farm.totalBalance),
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage,
+              symbol: symbol
+            });
           });
-        });
+        }
       }
 
       console.log(tokens);

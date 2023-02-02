@@ -296,13 +296,15 @@ export default {
           name: asset.name,
           logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
-        this.sourceAssetOptions.push(assetOption);
+        if (assetSymbol !== 'GLP') {
+          this.sourceAssetOptions.push(assetOption);
+        }
       });
     },
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = JSON.parse(JSON.stringify(this.sourceAssetOptions));
-      this.targetAssetOptions = this.targetAssetOptions.filter(option => option.symbol !== this.sourceAsset);
+      this.targetAssetOptions = this.targetAssetOptions.filter(option => option.symbol !== this.sourceAsset && option.symbol !== 'GLP');
     },
 
     setupSourceAsset() {

@@ -172,6 +172,8 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
+          //TODO: remove after GLP integration
+          disabled: this.asset.symbol === 'GLP',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -181,7 +183,8 @@ export default {
               {
                 key: 'BORROW',
                 name: 'Borrow',
-                disabled: this.borrowDisabled(),
+                //TODO: remove after GLP integration
+                disabled: this.borrowDisabled() || this.asset.symbol === 'GLP',
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
               : null,
@@ -196,7 +199,8 @@ export default {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
-          disabled: !this.hasSmartLoanContract,
+          //TODO: remove after GLP integration
+          disabled: !this.hasSmartLoanContract || this.asset.symbol === 'GLP',
           menuOptions: [
             {
               key: 'WITHDRAW',
@@ -218,7 +222,8 @@ export default {
               hoverIconSrc: 'src/assets/icons/swap_hover.svg',
             tooltip: 'Swap',
             iconButtonActionKey: 'SWAP',
-            disabled: !this.hasSmartLoanContract
+            //TODO: remove after GLP integration
+            disabled: !this.hasSmartLoanContract || this.asset.symbol === 'GLP'
         })
       } else {
         this.actionsConfig.push({
@@ -226,7 +231,8 @@ export default {
           hoverIconSrc: 'src/assets/icons/swap_hover.svg',
           tooltip: 'Mint/Redeem',
           iconButtonActionKey: 'GLP',
-          disabled: !this.hasSmartLoanContract
+          //TODO: remove after GLP integration
+          disabled: !this.hasSmartLoanContract || this.asset.symbol === 'GLP'
         })
       }
     },

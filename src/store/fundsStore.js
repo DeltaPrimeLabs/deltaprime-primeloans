@@ -150,7 +150,9 @@ export default {
           let asset = entry[1];
           let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
 
-          yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppretiation - 1) * asset.price;
+          if (assetAppretiation !== 1) {
+            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppretiation - 1) * asset.price;
+          }
         }
       }
 
@@ -298,7 +300,8 @@ export default {
 
       Object.values(config.ASSETS_CONFIG).forEach(
         asset => {
-          if (state.supportedAssets.includes(asset.symbol)) {
+          //TODO: remove afteer GLP integration
+          if (state.supportedAssets.includes(asset.symbol) || asset.symbol === 'GLP') {
             assets[asset.symbol] = asset;
           }
         }
@@ -436,10 +439,11 @@ export default {
           let symbol = fromBytes32(asset.name);
           if (config.ASSETS_CONFIG[symbol]) {
             balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
-          }
-          if (config.LP_ASSETS_CONFIG[symbol]) {
+          } else if (config.LP_ASSETS_CONFIG[symbol]) {
             lpBalances[symbol] = formatUnits(asset.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals);
           }
+          //TODO: remove after GLP integration
+          balances['GLP'] = 0;
         }
       );
 

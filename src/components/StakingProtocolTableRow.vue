@@ -133,7 +133,7 @@ export default {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons || this.asset.symbol === 'GLP';
     },
     isLP() {
       return this.asset.secondary != null;

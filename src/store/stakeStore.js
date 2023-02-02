@@ -187,6 +187,8 @@ export default {
           farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
           try {
             farm.currentApy = await farm.apy();
+            console.log('symbol: ', symbol)
+            console.log('apy: ', await farm.apy())
           } catch(e) {
             console.log('Error fetching farm APY');
           }
@@ -194,7 +196,8 @@ export default {
           if (farm.protocol === 'YIELD_YAK') {
             const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token]
             const decimals = token.decimals;
-            farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
+            //TODO: remove after GLP integration
+            farm.totalStaked = symbol === 'GLP' ? 0 : formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
 
             farm.rewards = farm.totalBalance * farm.price - farm.totalStaked * token.price;
           } else if (farm.protocol === 'VECTOR_FINANCE') {
