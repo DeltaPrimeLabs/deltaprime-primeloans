@@ -110,6 +110,7 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
+import YAK_ROUTER from "../../test/abis/YakRouter.json";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -208,15 +209,26 @@ export default {
               }
               : null
           ]
-        },
-        {
+        }
+      ];
+
+      if (this.asset.symbol !== 'GLP') {
+        this.actionsConfig.push({
+          iconSrc: 'src/assets/icons/swap.svg',
+              hoverIconSrc: 'src/assets/icons/swap_hover.svg',
+            tooltip: 'Swap',
+            iconButtonActionKey: 'SWAP',
+            disabled: !this.hasSmartLoanContract
+        })
+      } else {
+        this.actionsConfig.push({
           iconSrc: 'src/assets/icons/swap.svg',
           hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP',
+          tooltip: 'Mint/Redeem',
+          iconButtonActionKey: 'GLP',
           disabled: !this.hasSmartLoanContract
-        },
-      ];
+        })
+      }
     },
 
     toggleChart() {
@@ -254,6 +266,9 @@ export default {
           break;
         case 'SWAP':
           this.openSwapModal();
+          break;
+        case 'GLP':
+          this.openGlpModal();
           break;
         case 'WRAP':
           this.openWrapModal();
@@ -308,6 +323,8 @@ export default {
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.assets = this.assets;
+      modalInstance.sourceAssets = Object.keys(config.ASSETS_CONFIG).filter(symbol => symbol !== 'GLP');
+      modalInstance.targetAssets = Object.keys(config.ASSETS_CONFIG).filter(symbol => symbol !== 'GLP');
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -317,6 +334,21 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.queryMethod = async function(tknFrom, tknTo, amountIn) {
+        const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
+
+        const maxHops = 3
+        const gasPrice = ethers.utils.parseUnits('225', 'gwei')
+
+        return await yakRouter.findBestPathWithGas(
+            amountIn,
+            tknFrom,
+            tknTo,
+            maxHops,
+            gasPrice,
+            { gasLimit: 1e9 }
+        )
+      };
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapRequest = {
@@ -329,6 +361,58 @@ export default {
           this.handleTransactionError(error);
         }).then(() => {
         });
+      });
+    },
+
+    openGlpModal() {
+      const assetsForGlpMinting = ['AVAX', 'USDC', 'ETH', 'BTC'];
+      const defaultAsset = assetsForGlpMinting[0];
+      const modalInstance = this.openModal(SwapModal);
+      modalInstance.sourceAsset = defaultAsset;
+      modalInstance.sourceAssetBalance = this.assetBalances[defaultAsset];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.sourceAssets = assetsForGlpMinting;
+      modalInstance.targetAssets = ['GLP'];
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.targetAsset = 'GLP';
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      //TODO
+      modalInstance.queryMethod = () => {};
+
+      modalInstance.$on('SWAP', swapEvent => {
+        if (swapEvent.sourceAsset === 'GLP') {
+          const unstakeAndRedeemRequest = {
+            targetAsset: swapEvent.targetAsset,
+            targetAmount: swapEvent.targetAmount.toString(),
+            glpAmount: swapEvent.sourceAmount.toString()
+          };
+          this.handleTransaction(this.mintAndStakeGlp, {swapRequest: unstakeAndRedeemRequest}, () => {
+            this.scheduleHardRefresh();
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        } else {
+          const mintAndStakeRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            sourceAmount: swapEvent.sourceAmount.toString(),
+            glpAmount: swapEvent.targetAmount.toString()
+          };
+          this.handleTransaction(this.mintAndStakeGlp, {swapRequest: mintAndStakeRequest}, () => {
+            this.scheduleHardRefresh();
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
       });
     },
 
