@@ -904,6 +904,63 @@ export default {
       }, 30000);
     },
 
+    async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        ['GLP']
+      ]);
+
+      let sourceDecimals = config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(String(mintAndStakeGlpRequest.sourceAmount), sourceDecimals);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).mintAndStakeGlp(
+          config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset],
+          sourceAmount,
+          mintAndStakeGlpRequest.minUsdValue,
+          mintAndStakeGlpRequest.minGlp,
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'mint GLP');
+
+      //update balances
+    },
+
+    async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unstakeAndRedeemGlpRequest.targetAsset]
+      ]);
+
+      let targetDecimals = config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset].decimals;
+      let targetAmount = parseUnits(String(unstakeAndRedeemGlpRequest.targetAmount), targetDecimals);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndRedeemGlp(
+          config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset],
+          unstakeAndRedeemGlpRequest.glpAmount,
+          targetAmount,
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'mint GLP');
+
+      //update balances
+    },
+
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
       const provider = rootState.network.provider;
 

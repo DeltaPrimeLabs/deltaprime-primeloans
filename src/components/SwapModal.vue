@@ -10,6 +10,7 @@
       </div>
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
+                          :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
                           :max="sourceAssetBalance"
@@ -26,6 +27,7 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
+                          :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
                           :info="() => `~ $${(Number(targetAssetAmount) * targetAssetData.price).toFixed(2)}`"
                           :disabled="true"
@@ -148,8 +150,10 @@ export default {
 
   data() {
     return {
-      sourceAssetOptions: [],
-      targetAssetOptions: [],
+      sourceAssets: null,
+      targetAssets: null,
+      sourceAssetOptions: null,
+      targetAssetOptions: null,
       sourceAsset: null,
       targetAsset: null,
       sourceAssetData: null,
@@ -160,6 +164,7 @@ export default {
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
       userSlippage: 0,
+      queryMethod: null,
       lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
@@ -180,7 +185,6 @@ export default {
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
-      chosenDex: config.DEX_CONFIG[0],
       estimatedReceivedTokens: 0,
       estimatedNeededTokens: 0,
       receivedAccordingToOracle: 0,
@@ -192,9 +196,9 @@ export default {
   },
 
   mounted() {
-    this.setupSourceAssetOptions();
-    this.setupTargetAssetOptions();
     setTimeout(() => {
+      this.setupSourceAssetOptions();
+      this.setupTargetAssetOptions();
       this.setupSourceAsset();
       this.setupTargetAsset();
       this.setupValidators();
@@ -221,19 +225,7 @@ export default {
     },
 
     async query(tknFrom, tknTo, amountIn) {
-      const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
-
-      const maxHops = 3
-      const gasPrice = ethers.utils.parseUnits('225', 'gwei')
-
-      return await yakRouter.findBestPathWithGas(
-          amountIn,
-          tknFrom,
-          tknTo,
-          maxHops,
-          gasPrice,
-          { gasLimit: 1e9 }
-      )
+      return await this.queryMethod(tknFrom, tknTo, amountIn)
     },
 
     async chooseBestTrade(basedOnSource = true) {
@@ -289,7 +281,8 @@ export default {
       },
 
     setupSourceAssetOptions() {
-      Object.keys(config.ASSETS_CONFIG).forEach(assetSymbol => {
+      this.sourceAssetOptions = [];
+      this.sourceAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -301,24 +294,31 @@ export default {
     },
 
     setupTargetAssetOptions() {
-      this.targetAssetOptions = JSON.parse(JSON.stringify(this.sourceAssetOptions));
+      this.targetAssetOptions = [];
+      this.targetAssets.forEach(assetSymbol => {
+        const asset = config.ASSETS_CONFIG[assetSymbol];
+        const assetOption = {
+          symbol: assetSymbol,
+          name: asset.name,
+          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+        };
+        this.targetAssetOptions.push(assetOption);
+      });
+
       this.targetAssetOptions = this.targetAssetOptions.filter(option => option.symbol !== this.sourceAsset);
     },
 
     setupSourceAsset() {
-      this.$refs.sourceInput.setSelectedAsset(this.sourceAsset, true);
       this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
-        this.$refs.targetInput.setSelectedAsset(this.targetAsset, true);
         this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
       }
     },
 
     async sourceInputChange(changeEvent) {
-      console.log(changeEvent);
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
@@ -398,6 +398,10 @@ export default {
       this.targetAssetData = config.ASSETS_CONFIG[this.sourceAsset]
       this.sourceAsset = this.targetAsset;
       this.targetAsset = tempSource;
+
+      const tempSourceAssetsOptions = this.sourceAssetOptions;
+      this.sourceAssetOptions = this.targetAssetOptions;
+      this.targetAssetOptions = tempSourceAssetsOptions;
 
       this.setupSourceAsset();
       this.setupTargetAsset();
