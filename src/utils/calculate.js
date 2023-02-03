@@ -113,6 +113,7 @@ export async function yieldYakStaked(address) {
       smartLoan(id: "${address}") {
         YY_AAVE_AVAX
         YY_PTP_sAVAX
+        YY_GLP
         YY_PNG_AVAX_USDC_LP
         YY_PNG_AVAX_ETH_LP
         YY_TJ_AVAX_USDC_LP

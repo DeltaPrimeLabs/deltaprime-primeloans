@@ -2,7 +2,7 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Swap
+        {{`${targetAsset === 'GLP' || sourceAsset === 'GLP' ? 'Mint/Redeem' : 'Swap'}`}}
       </div>
       <div class="asset-info">
         Available:
@@ -109,7 +109,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Swap'"
+        <Button :label="`${targetAsset === 'GLP' ? 'Mint' : (sourceAsset === 'GLP' ? 'Redeem' : 'Swap')}`"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
@@ -129,7 +129,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import SimpleInput from "./SimpleInput";
 const ethers = require('ethers');
@@ -214,18 +213,34 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
-      this.$emit('SWAP', {
-        sourceAsset: this.sourceAsset,
-        targetAsset: this.targetAsset,
-        sourceAmount: sourceAssetAmount,
-        targetAmount: this.targetAssetAmount,
-        path: this.path,
-        adapters: this.adapters
-      });
+      if (this.targetAsset === 'GLP') {
+        this.$emit('MINT_GLP', {
+          sourceAsset: this.sourceAsset,
+          sourceAmount: sourceAssetAmount,
+          minGlp: this.targetAssetAmount,
+          minUsdValue: this.targetAssetAmount * this.assets['GLP'].price
+        });
+      } else if (this.sourceAsset === 'GLP') {
+        console.log('redeem')
+        this.$emit('REDEEM_GLP', {
+          glpAmount: sourceAssetAmount,
+          targetAsset: this.targetAsset,
+          targetAmount: this.targetAssetAmount
+        });
+      } else {
+        this.$emit('SWAP', {
+          sourceAsset: this.sourceAsset,
+          targetAsset: this.targetAsset,
+          sourceAmount: sourceAssetAmount,
+          targetAmount: this.targetAssetAmount,
+          path: this.path,
+          adapters: this.adapters
+        });
+      }
     },
 
-    async query(tknFrom, tknTo, amountIn) {
-      return await this.queryMethod(tknFrom, tknTo, amountIn)
+    async query(sourceAsset, targetAsset, amountIn) {
+      return await this.queryMethod(sourceAsset, targetAsset, amountIn)
     },
 
     async chooseBestTrade(basedOnSource = true) {
@@ -239,20 +254,24 @@ export default {
       let decimals = this.sourceAssetData.decimals;
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
-      const queryRes = await this.query(TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset], amountInWei);
+      const queryRes = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
 
-      this.path = queryRes.path;
-      this.adapters = queryRes.adapters;
-      const estimatedReceivedTokens = queryRes.amounts[queryRes.amounts.length - 1];
+      let estimated;
+      if (queryRes instanceof BigNumber) {
+        estimated = queryRes;
+      } else {
+        this.path = queryRes.path;
+        this.adapters = queryRes.adapters;
+        estimated = queryRes.amounts[queryRes.amounts.length - 1];
+      }
 
-      this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(this.targetAssetData.decimals)));
+      this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
       this.updateSlippageWithAmounts();
       this.calculateHealthAfterTransaction();
     },
 
     async updateAmountsWithSlippage() {
-      console.log('slippage');
       this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
       this.setSlippageWarning();

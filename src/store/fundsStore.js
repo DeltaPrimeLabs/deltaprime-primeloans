@@ -864,7 +864,7 @@ export default {
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(String(swapRequest.sourceAmount), sourceDecimals);
+      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
@@ -907,6 +907,7 @@ export default {
     async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
       const provider = rootState.network.provider;
 
+      console.log(mintAndStakeGlpRequest)
       const loanAssets = mergeArrays([(
           await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
@@ -917,11 +918,22 @@ export default {
       let sourceDecimals = config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals;
       let sourceAmount = parseUnits(String(mintAndStakeGlpRequest.sourceAmount), sourceDecimals);
 
+
+      let minUsdValue = parseUnits(String(mintAndStakeGlpRequest.minUsdValue), BigNumber.from('18'));
+      let minGlp = parseUnits(String(mintAndStakeGlpRequest.minGlp), BigNumber.from('18'));
+
+      console.log('sourceAmount')
+      console.log(sourceAmount)
+      console.log('minUsdValue')
+      console.log(mintAndStakeGlpRequest.minUsdValue)
+      console.log('minGlp')
+      console.log(mintAndStakeGlpRequest.minGlp)
+
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).mintAndStakeGlp(
-          config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset],
+          TOKEN_ADDRESSES[mintAndStakeGlpRequest.sourceAsset],
           sourceAmount,
-          mintAndStakeGlpRequest.minUsdValue,
-          mintAndStakeGlpRequest.minGlp,
+          minUsdValue,
+          minGlp,
           {gasLimit: 4000000}
       );
 
@@ -945,10 +957,11 @@ export default {
 
       let targetDecimals = config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset].decimals;
       let targetAmount = parseUnits(String(unstakeAndRedeemGlpRequest.targetAmount), targetDecimals);
+      let glpAmount = parseUnits(String(unstakeAndRedeemGlpRequest.glpAmount), BigNumber.from('18'));
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndRedeemGlp(
-          config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset],
-          unstakeAndRedeemGlpRequest.glpAmount,
+          TOKEN_ADDRESSES[unstakeAndRedeemGlpRequest.targetAsset],
+          glpAmount,
           targetAmount,
           {gasLimit: 4000000}
       );
@@ -956,7 +969,7 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'mint GLP');
+      let tx = await awaitConfirmation(transaction, provider, 'redeem GLP');
 
       //update balances
     },
