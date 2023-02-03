@@ -58,6 +58,8 @@ export default class HealthService {
         });
       }
 
+      console.log(tokens);
+
       const health = calculateHealth(tokens);
       return health >= 0 ? health : 0;
     }

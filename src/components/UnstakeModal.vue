@@ -47,7 +47,7 @@
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ asset.name }}</span>
+              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">&nbsp;{{ asset.name }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -118,12 +118,13 @@ export default {
     submit() {
       this.transactionOngoing = true;
       let unstakedPart = this.unstakeValue / this.staked;
-      const unstakeValue = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.unstakeValue;
-      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.receiptTokenBalance)
+      const unstakeValue = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
+      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.staked)
 
       const unstakeEvent = {
         receiptTokenUnstaked: unstakeValue,
-        underlyingTokenUnstaked: unstakedReceiptToken
+        underlyingTokenUnstaked: unstakedReceiptToken,
+        isMax: this.maxButtonUsed
       };
 
       this.$emit('UNSTAKE', unstakeEvent);

@@ -12,7 +12,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpBalances">
+        <template v-if="lpBalances && parseFloat(lpBalances[lpToken.symbol])">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
             {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
@@ -23,7 +23,7 @@
             </span>
           </div>
         </template>
-        <template v-if="!lpBalances || !lpBalances[lpToken.symbol]">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
@@ -49,7 +49,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="waitingForHardRefresh">
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -111,6 +111,7 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchProgressBarState();
     this.watchLpRefresh();
+    this.watchExternalAssetBalanceUpdate();
     await this.setupApr();
   },
 
@@ -124,7 +125,7 @@ export default {
       tvl: 0,
       lpTokenBalances: [],
       isLpBalanceEstimated: false,
-      waitingForHardRefresh: false,
+      disableAllButtons: false,
     };
   },
 
@@ -277,9 +278,6 @@ export default {
             isLP: true,
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-            this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(fundRequest.value);
-            this.isLpBalanceEstimated = true;
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -306,13 +304,10 @@ export default {
         const withdrawRequest = {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
-          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
+          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          isLP: true,
         };
-
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-          this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(withdrawRequest.value);
-          this.isLpBalanceEstimated = true;
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -339,13 +334,6 @@ export default {
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
           this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
-            const firstBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.firstAsset]) - Number(provideLiquidityRequest.firstAmount);
-            const secondBalanceAfterTransaction = Number(this.assetBalances[provideLiquidityRequest.secondAsset]) - Number(provideLiquidityRequest.secondAmount);
-            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstBalanceAfterTransaction, false);
-            this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondBalanceAfterTransaction, false);
-            this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) + Number(provideLiquidityRequest.addedLiquidity);
-            this.isLpBalanceEstimated = true;
-            this.scheduleHardRefresh();
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -374,13 +362,6 @@ export default {
           dex: this.lpToken.dex
         };
         this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
-          const firstBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.firstAsset]) + Number(removeLiquidityRequest.minFirstAmount);
-          const secondBalanceAfterTransaction = Number(this.assetBalances[removeLiquidityRequest.secondAsset]) + Number(removeLiquidityRequest.minSecondAmount);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstBalanceAfterTransaction, false);
-          this.assetBalancesExternalUpdateService.emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondBalanceAfterTransaction, false);
-          this.lpBalances[this.lpToken.symbol] = Number(this.lpBalances[this.lpToken.symbol]) - Number(removeLiquidityRequest.value);
-          this.isLpBalanceEstimated = true;
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -418,14 +399,14 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.isLpBalanceEstimated = false;
-        this.waitingForHardRefresh = false;
+        this.disableAllButtons = false;
         this.$forceUpdate();
       });
     },
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
-        this.waitingForHardRefresh = true;
+        this.disableAllButtons = true;
         this.$forceUpdate();
       });
     },
@@ -433,6 +414,16 @@ export default {
     watchLpRefresh() {
       this.lpService.observeRefreshLp().subscribe(async () => {
         await this.setupApr();
+      })
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
+        if (updateEvent.assetSymbol === this.lpToken.symbol) {
+          this.lpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
       })
     },
 
@@ -447,16 +438,20 @@ export default {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
           case 'MINING' : {
-            this.waitingForHardRefresh = true;
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
             break;
           }
           case 'ERROR' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
           }
           case 'CANCELLED' : {
-            this.waitingForHardRefresh = false;
+            this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
           }
@@ -471,7 +466,7 @@ export default {
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
-      this.waitingForHardRefresh = false;
+      this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
   },

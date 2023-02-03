@@ -1,5 +1,5 @@
 import AssetBalancesExternalUpdateService from '../services/assetBalancesExternalUpdateService';
-import TotalStakedExternalUpdateService from '../services/totalStakedExternalUpdateService';
+import StakedExternalUpdateService from '../services/stakedExternalUpdateService';
 import DataRefreshEventService from '../services/dataRefreshEventService';
 import ProgressBarService from '../services/progressBarService';
 import ModalService from '../services/modalService';
@@ -18,7 +18,7 @@ export default {
   state: {
     assetBalancesExternalUpdateService: new AssetBalancesExternalUpdateService(),
     assetDebtsExternalUpdateService: new AssetDebtsExternalUpdateService(),
-    totalStakedExternalUpdateService: new TotalStakedExternalUpdateService(),
+    stakedExternalUpdateService: new StakedExternalUpdateService(),
     dataRefreshEventService: new DataRefreshEventService(),
     progressBarService: new ProgressBarService(),
     modalService: new ModalService(),

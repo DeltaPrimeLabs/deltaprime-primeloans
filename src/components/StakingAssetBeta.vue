@@ -151,7 +151,7 @@ export default {
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'totalStakedExternalUpdateService', 'dataRefreshEventService', 'farmService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -193,13 +193,14 @@ export default {
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
-        const apy = await farm.currentApy;
+        const apy = farm.currentApy;
         if (apy > maxApy) {
           maxApy = apy;
         }
       }
+      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy) * assetAppreciation(this.asset.symbol) - 1);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
 
     },
 
@@ -227,7 +228,6 @@ export default {
 
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe((updateEvent) => {
-        console.log(updateEvent);
         if (updateEvent.assetSymbol === this.asset.symbol) {
           this.isAvailableEstimated = !updateEvent.isTrueData;
           if (updateEvent.isLP) {
@@ -242,12 +242,11 @@ export default {
     },
 
     watchExternalTotalStakedUpdate() {
-      this.totalStakedExternalUpdateService.totalStakedExternalUpdate$.subscribe((updateEvent) => {
+      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
-          this.isTotalStakedEstimated = true;
+          this.isTotalStakedEstimated = !updateEvent.isTrueData;
           if (updateEvent.action === 'STAKE') {
             this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
-
           } else if (updateEvent.action === 'UNSTAKE') {
             this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
           }
