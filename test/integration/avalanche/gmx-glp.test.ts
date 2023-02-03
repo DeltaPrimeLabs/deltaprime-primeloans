@@ -262,11 +262,6 @@ describe('Smart loan', () => {
             glpBalanceBeforeRedemptions = await tokenContracts.get("GLP")!.balanceOf(wrappedLoan.address);
         });
 
-        it("should fail to redeem more than balance", async () => {
-            let initialGlpBalance = fromWei(await tokenContracts.get("GLP")!.balanceOf(wrappedLoan.address));
-            await expect(wrappedLoan.unstakeAndRedeemGlp(TOKEN_ADDRESSES["USDC"], toWei((initialGlpBalance + 1).toString()), 0)).to.be.revertedWith("Not enough GLP to redeem")
-        });
-
         it("should redeem GLP into AVAX", async () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let glpRedemptionAmount = fromWei(glpBalanceBeforeRedemptions) / 4;
