@@ -111,13 +111,21 @@ export default {
     async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
+      console.log('unstakeRequest')
+      console.log(unstakeRequest)
+
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         unstakeRequest.rewardTokens,
-        unstakeRequest.asset,
+        unstakeRequest.assetSymbol,
         Object.keys(config.POOLS_CONFIG)
       ]);
+
+
+
+      console.log('loanAssets')
+      console.log(loanAssets)
 
       const unstakeTransaction = unstakeRequest.minUnderlyingTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
