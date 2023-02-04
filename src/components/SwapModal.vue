@@ -2,7 +2,7 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        {{`${targetAsset === 'GLP' || sourceAsset === 'GLP' ? 'Mint/Redeem' : 'Swap'}`}}
+        {{`${isMintable ? 'Mint/Redeem' : 'Swap'}`}}
       </div>
       <div class="asset-info">
         Available:
@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <div class="slippage-bar">
+      <div class="slippage-bar" v-if="!isMintable">
         <div class="slippage-info">
           <span class="slippage-label">Max. acceptable slippage:</span>
           <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
@@ -207,6 +207,9 @@ export default {
   },
 
   computed: {
+    isMintable() {
+      return this.sourceAsset === 'GLP' || this.targetAsset === 'GLP';
+    }
   },
 
   methods: {
@@ -282,7 +285,7 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = 0.1;
+      const SLIPPAGE_MARGIN = this.isMintable ? 1 : 0.1;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

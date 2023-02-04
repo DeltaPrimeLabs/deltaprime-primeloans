@@ -268,7 +268,7 @@ export default {
     async setApy() {
       if (!this.farm.currentApy) return 0;
       let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
-      this.apy = (1 + this.farm.currentApy + assetApr) * assetAppreciation(this.asset.symbol) - 1;
+      this.apy = (1 + this.farm.currentApy + assetApr) * assetAppreciation(this.asset.symbol, false) - 1;
 
       if (this.pools) {
         this.maxApy = calculateMaxApy(this.pools, this.apy);

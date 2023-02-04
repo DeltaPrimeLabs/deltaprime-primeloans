@@ -11,6 +11,9 @@
           <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
             Profit APY:&nbsp;{{ 0.072 | percent }}
           </div>
+          <div class="asset__loan" v-if="asset.symbol === 'GLP'">
+            Profit APY:&nbsp;{{ 0.19 | percent }}
+          </div>
         </div>
       </div>
 

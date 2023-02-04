@@ -19,4 +19,13 @@ export default class DataRefreshEventService {
   emitHardRefreshScheduledEvent() {
     this.hardRefreshScheduledEvent$.next(null);
   }
+
+  observeAssetBalancesDataRefresh() {
+    return this.assetBalancesDataRefreshEvent$.asObservable();
+  }
+
+  observeDebtsPerAssetDataRefresh() {
+    return this.debtsPerAssetDataRefreshEvent$.asObservable();
+  }
+
 }

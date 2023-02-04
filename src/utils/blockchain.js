@@ -45,9 +45,10 @@ export async function handleTransaction(fun, args, onSuccess, onFail) {
   }
 }
 
-export function assetAppreciation(symbol) {
+export function assetAppreciation(symbol, includeGlp = true) {
   if (symbol === 'sAVAX') return 1.072;
   if (symbol === 'TJ_AVAX_sAVAX_LP') return 1.036;
+  if (symbol === 'GLP' && includeGlp) return 1.19;
   return 1;
 }
 

@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract, getLog
+  wrapContract, getLog, assetAppreciation
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
@@ -137,87 +137,6 @@ export default {
     getCollateral(state) {
       return state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
     },
-
-    async getAccountApr(state, getters, rootState, commit){
-      let apr = 0;
-      let yearlyDebtInterest = 0;
-
-
-      let yearlyAssetInterest = 0
-      if (state.assets && state.assetBalances) {
-        for (let entry of Object.entries(state.assets)) {
-          let symbol = entry[0];
-          let asset = entry[1];
-          let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
-
-          yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppretiation - 1) * asset.price;
-        }
-      }
-
-      if (rootState.poolStore.pools && state.debtsPerAsset) {
-        Object.entries(state.debtsPerAsset).forEach(
-          ([symbol, debt]) => {
-            yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools[symbol].borrowingAPY * state.assets[symbol].price;
-          }
-        );
-
-        let yearlyLpInterest = 0;
-
-        if (state.lpAssets && state.lpBalances) {
-          for (let entry of Object.entries(state.lpAssets)) {
-            let symbol = entry[0]
-            let lpAsset = entry[1]
-
-            //TODO: take from API
-            let assetAppretiation = symbol.includes('sAVAX') ? 1 + 0.072 / 2 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + await lpAsset.apr()) * assetAppretiation) - 1) * lpAsset.price;
-          }
-        }
-
-        let yearlyFarmInterest = 0;
-
-        if (rootState.stakeStore.farms) {
-          for (let entry of Object.entries(rootState.stakeStore.farms)) {
-            let symbol = entry[0];
-            let farms = entry[1];
-
-            for (let farm of farms) {
-
-              let assetAppretiation;
-
-              if (symbol.includes('sAVAX')) {
-                if (symbol === 'sAVAX') {
-                  assetAppretiation = 1.072;
-                } else {
-                  assetAppretiation = 1 + 0.072 / 2;
-                }
-              } else {
-                assetAppretiation = 1;
-              }
-
-              let apy = 0;
-
-              try {
-                apy = await farm.apy();
-              } catch(e) {
-                console.log('apy')
-              }
-
-              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
-
-            }
-          }
-        }
-
-        const collateral = getters.getCollateral;
-
-        if (collateral) {
-          apr = (yearlyLpInterest + yearlyFarmInterest + yearlyAssetInterest - yearlyDebtInterest) / collateral;
-        }
-        console.log('APR:', apr);
-        return apr;
-      }
-    }
   },
 
   actions: {
@@ -492,9 +411,14 @@ export default {
 
         let yearlyAssetInterest = 0;
 
+        if (state.assets && state.assetBalances) {
+          for (let entry of Object.entries(state.assets)) {
+            let symbol = entry[0]
+            let asset = entry[1]
 
-        if (state.assetBalances) {
-          yearlyAssetInterest = state.assetBalances['sAVAX'] * state.assets['sAVAX'].price * 0.072;
+            //TODO: take from API
+            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppreciation(symbol) - 1) * asset.price;
+          }
         }
 
         let yearlyLpInterest = 0;
@@ -505,8 +429,8 @@ export default {
             let lpAsset = entry[1]
 
             //TODO: take from API
-            let assetAppretiation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppretiation) - 1) * lpAsset.price;
+            let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppreciation) - 1) * lpAsset.price;
           }
         }
 
@@ -540,6 +464,8 @@ export default {
         }
 
         commit('setAccountApr', apr);
+
+        rootState.serviceRegistry.aprService.emitRefreshApr();
       }
     },
 

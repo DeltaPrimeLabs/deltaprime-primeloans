@@ -200,7 +200,7 @@ export default {
       }
       let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol, false) - 1);
 
     },
 
