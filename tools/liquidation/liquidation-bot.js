@@ -78,7 +78,7 @@ async function getInsolventLoans() {
 export async function liquidateLoan(loanAddress, tokenManagerAddress) {
     let loan = await wrapLoan(loanAddress, wallet);
     let ratio = fromWei(await loan.getHealthRatio());
-    if (ratio < 0.99) {
+    if (ratio < 0.98) {
         let tokenManager = getTokenManager(tokenManagerAddress);
         let poolTokens = await tokenManager.getAllPoolAssets();
         let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;

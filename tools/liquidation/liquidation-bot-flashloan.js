@@ -42,7 +42,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
 
-    if (healthBeforeLiquidation < .99) {
+    if (healthBeforeLiquidation < 0.98) {
         let tokenManager = getTokenManager(tokenManagerAddress);
         let poolTokens = await tokenManager.getAllPoolAssets();
         let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));

@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../interfaces/facets/avalanche/IGLPRewarder.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
@@ -34,7 +34,8 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
 
         uint256 glpInitialBalance = glpToken.balanceOf(address(this));
-        require(tokenToMintWith.balanceOf(address(this)) >= _amount, "Not enough token to mint");
+
+        _amount = Math.min(tokenToMintWith.balanceOf(address(this)), _amount);
 
         tokenToMintWith.approve(GLP_MANAGER_ADDRESS, _amount);
 
@@ -75,7 +76,7 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
 
         uint256 redeemedTokenInitialBalance = redeemedToken.balanceOf(address(this));
-        require(glpToken.balanceOf(address(this)) >= _glpAmount, "Not enough GLP to redeem");
+        _glpAmount = Math.min(glpToken.balanceOf(address(this)), _glpAmount);
 
         uint256 redeemedAmount = glpRewarder.unstakeAndRedeemGlp(_tokenOut, _glpAmount, _minOut, address(this));
 

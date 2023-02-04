@@ -162,7 +162,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
     const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
 
-    if (healthBeforeLiquidation < .99) {
+    if (healthBeforeLiquidation < 0.98) {
         try {
             let liqStartTime = new Date();
             let flashLoanTx = await awaitConfirmation(flashLoan.executeFlashloan(
