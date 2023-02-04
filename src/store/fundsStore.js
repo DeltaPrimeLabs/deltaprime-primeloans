@@ -928,13 +928,6 @@ export default {
       let minUsdValue = parseUnits(String(mintAndStakeGlpRequest.minUsdValue), BigNumber.from('18'));
       let minGlp = parseUnits(String(mintAndStakeGlpRequest.minGlp), BigNumber.from('18'));
 
-      console.log('sourceAmount')
-      console.log(sourceAmount)
-      console.log('minUsdValue')
-      console.log(mintAndStakeGlpRequest.minUsdValue)
-      console.log('minGlp')
-      console.log(mintAndStakeGlpRequest.minGlp)
-
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).mintAndStakeGlp(
           TOKEN_ADDRESSES[mintAndStakeGlpRequest.sourceAsset],
           sourceAmount,
@@ -948,7 +941,24 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'mint GLP');
 
-      //update balances
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      const amountUsed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPMint').args.tokenToMintWithAmount, config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals);
+      const amountMinted = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPMint').args.glpOutputAmount, BigNumber.from("18"));
+
+      const sourceBalanceAfterMint = Number(state.assetBalances[mintAndStakeGlpRequest.sourceAsset]) - Number(amountUsed);
+      const glpBalanceAfterMint = Number(state.assetBalances['GLP']) + Number(amountMinted);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(mintAndStakeGlpRequest.sourceAsset, sourceBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
     },
 
     async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
@@ -977,7 +987,24 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'redeem GLP');
 
-      //update balances
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      const amountReceived = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPRedemption').args.redeemedTokenAmount, config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset].decimals);
+      const amountGlpRedeemed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPRedemption').args.glpRedeemedAmount, BigNumber.from("18"));
+
+      const targetBalanceAfterMint = Number(state.assetBalances[unstakeAndRedeemGlpRequest.targetAsset]) + Number(amountReceived);
+      const glpBalanceAfterMint = Number(state.assetBalances['GLP']) - Number(amountGlpRedeemed);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(unstakeAndRedeemGlpRequest.targetAsset, targetBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {

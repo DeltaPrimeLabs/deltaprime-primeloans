@@ -3,12 +3,18 @@ import {Subject} from 'rxjs';
 export default class DataRefreshEventService {
 
   assetBalancesDataRefreshEvent$ = new Subject();
+  assetBalancesDataRefresh$ = new Subject();
   debtsPerAssetDataRefreshEvent$ = new Subject();
   hardRefreshScheduledEvent$ = new Subject();
 
   emitAssetBalancesDataRefreshEvent(assetBalancesRefreshEvent) {
     console.log('emitAssetBalancesDataRefreshEvent');
     this.assetBalancesDataRefreshEvent$.next(assetBalancesRefreshEvent);
+  }
+
+  emitAssetBalancesDataRefresh() {
+    console.log('emitAssetBalancesDataRefreshEvent');
+    this.assetBalancesDataRefresh$.next(null);
   }
 
   emitDebtsPerAssetDataRefreshEvent(debtsPerAsset) {
@@ -21,7 +27,7 @@ export default class DataRefreshEventService {
   }
 
   observeAssetBalancesDataRefresh() {
-    return this.assetBalancesDataRefreshEvent$.asObservable();
+    return this.assetBalancesDataRefresh$.asObservable();
   }
 
   observeDebtsPerAssetDataRefresh() {
