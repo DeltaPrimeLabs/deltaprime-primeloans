@@ -14,7 +14,7 @@ import {
     getERC20Contract,
     getLiquidatorSigner2,
     getProvider,
-    getSignedDataPackagesResponse,
+    getSignedDataPackagesResponse, unstakeGlp,
     unstakeStakedPositions,
     unstakeYieldYak,
     unwindPangolinLPPositions,

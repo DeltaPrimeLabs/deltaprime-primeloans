@@ -9,7 +9,7 @@ import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeac
 import {ethers} from 'hardhat'
 import {
     awaitConfirmation,
-    getLiquidatorSigner,
+    getLiquidatorSigner, unstakeGlp,
     unstakeStakedPositions,
     unstakeYieldYak,
     unwindPangolinLPPositions,
