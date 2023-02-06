@@ -6,7 +6,6 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
-import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -37,9 +36,9 @@ import {
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
 } from "../../../typechain";
+import { IVectorFinanceCompounder__factory } from './../../../typechain/factories/IVectorFinanceCompounder__factory';
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
@@ -190,9 +189,9 @@ describe('Smart loan', () => {
         });
 
         it("should stake", async () => {
-           await testStake("vectorStakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('400', BigNumber.from("6")));
-           await testStake("vectorStakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('60'));
-           await testStake("vectorStakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('60'));
+            await testStake("vectorStakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('400', BigNumber.from("6")));
+            await testStake("vectorStakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('60'));
+            await testStake("vectorStakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('60'));
 
             await time.increase(time.duration.days(30));
         });
@@ -210,15 +209,16 @@ describe('Smart loan', () => {
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
             let stakingContract = await new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider);
+            let compounder = IVectorFinanceCompounder__factory.connect(await stakingContract.compounder(), provider);
 
-            let initialStakedBalance = await stakingContract.balance(wrappedLoan.address);
+            let initialStakedBalance = await compounder.userDepositToken(wrappedLoan.address);
 
             expect(initialStakedBalance).to.be.equal(0);
 
             await wrappedLoan[stakeMethod](amount);
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.equal(amount);
-            expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(amount);
+            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(amount, 1);
+            expect(await compounder.userDepositToken(wrappedLoan.address)).to.be.closeTo(amount, 1);
 
             expect(await wrappedLoan.getTotalValue()).to.be.closeTo(initialTotalValue, 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00001);
@@ -230,60 +230,18 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
 
             let stakingContract = await new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider);
+            let compounder = IVectorFinanceCompounder__factory.connect(await stakingContract.compounder(), provider);
 
-            let initialStakedBalance = await stakingContract.balance(wrappedLoan.address);
-
-            let rewardTokens = await getRewardTokens(stakingContract);
-            // convert from address to symbol
-            rewardTokens = rewardTokens.map((token) => getSymbol(token));
+            let initialStakedBalance = await compounder.userDepositToken(wrappedLoan.address);
 
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.equal(initialStakedBalance.sub(amount));
-            expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(initialStakedBalance.sub(amount));
+            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(initialStakedBalance.sub(amount), 1);
+            expect(await compounder.userDepositToken(wrappedLoan.address)).to.be.closeTo(initialStakedBalance.sub(amount), 1);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.001);
-
-            for(const rewardToken of rewardTokens){
-                let ownedAssets = await wrappedLoan.getAllOwnedAssets();
-                if(isRewardTokenSupported(rewardToken)){
-                    if((await tokenContracts.get(rewardToken)!.balanceOf(wrappedLoan.address)) > 0){
-                        expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.true;
-                        continue;
-                    }
-                }
-                expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.false;
-            }
-
-        }
-
-        async function getRewardTokens(stakingContract: Contract) {
-            let rewarder = await new ethers.Contract(await stakingContract.rewarder(), IVectorRewarderArtifact.abi, provider);
-            let rewardTokens = [];
-
-            let index = 0;
-            while(true){
-                try {
-                    rewardTokens.push(await rewarder.rewardTokens(index));
-                } catch (error) {
-                    break;
-                }
-                index++;
-            }
-            return rewardTokens;
-        }
-
-        function isRewardTokenSupported(rewardToken: string) {
-            let supported = false;
-            for(const asset of supportedAssets) {
-                if(fromBytes32(asset.asset) === rewardToken) {
-                    supported = true;
-                    break;
-                }
-            }
-            return supported;
         }
 
         it("should allow whitelisted accounts to unstake if insolvent", async () => {
@@ -311,14 +269,6 @@ describe('Smart loan', () => {
 
             await expect(nonOwnerWrappedLoan.vectorUnstakeUSDC1(parseUnits('2', BigNumber.from("6")), parseUnits('1', BigNumber.from("6")))).not.to.be.reverted;
         });
-
-        function getSymbol(address: string) {
-            return getKeyByValue(TOKEN_ADDRESSES, address);
-        }
-
-        function getKeyByValue(object: any, value: any) {
-            return Object.keys(object).find(key => object[key].toLowerCase() === value.toLowerCase());
-        }
     });
 });
 
