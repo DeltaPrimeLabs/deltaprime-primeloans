@@ -137,14 +137,12 @@ export default {
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
-    ...mapActions('stakeStore', ['stakeStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
         .subscribe(async ([provider, account]) => {
-          await this.fundsStoreSetup();
           await this.poolStoreSetup();
-          await this.stakeStoreSetup();
+          await this.fundsStoreSetup();
         });
     },
 

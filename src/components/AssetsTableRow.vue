@@ -5,8 +5,8 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="pools && pools[asset.symbol]">
-            Borrow&nbsp;APY:&nbsp;{{ pools[asset.symbol].borrowingAPY | percent }}
+          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol]">
+            Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
           <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
             Profit APY:&nbsp;{{ 0.072 | percent }}
@@ -132,6 +132,7 @@ export default {
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchProgressBarState();
+    this.setupPoolsApy();
   },
   data() {
     return {
@@ -141,6 +142,7 @@ export default {
       isBalanceEstimated: false,
       isDebtEstimated: false,
       disableAllButtons: false,
+      borrowApyPerPool: {}
     };
   },
   computed: {
@@ -148,7 +150,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -590,6 +592,14 @@ export default {
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
       this.isBalanceEstimated = false;
+    },
+
+    setupPoolsApy() {
+      this.poolService.observePools().subscribe(pools => {
+        pools.forEach(pool => {
+          this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+        });
+      });
     },
   },
   watch: {

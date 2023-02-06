@@ -14,7 +14,7 @@
             <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="pool.deposit">{{ pool.deposit * pool.asset.price | usd }}</span>
+            <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
           </div>
         </template>
         <template v-if="pool.deposit === 0">
@@ -32,7 +32,7 @@
           <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
         </div>
         <div class="double-value__usd">
-          <span v-if="pool.tvl">{{ pool.tvl * pool.asset.price | usd }}</span>
+          <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
         </div>
       </div>
 

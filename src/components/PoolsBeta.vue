@@ -16,7 +16,7 @@
                 <div class="header__cell actions">Actions</div>
               </div>
               <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in list" v-bind:key="pool.asset.symbol"
+                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
               </div>
             </div>
@@ -47,55 +47,36 @@ export default {
   },
   async mounted() {
     this.initPools();
+    this.watchPools();
 
     this.initStoresWhenProviderAndAccountCreated();
   },
 
   data() {
     return {
-      funds: config.ASSETS_CONFIG,
       totalTVL: 0,
       totalDeposit: 0,
       poolsList: null,
     };
   },
   computed: {
-    ...mapState('fundsStore', ['assets']),
-    ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['providerService', 'accountService']),
-    list() {
-      return (this.poolsList) ? this.poolsList.sort((a, b) => a > b) : [];
-    }
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService']),
   },
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
-    ...mapActions('fundsStore', ['fundsStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
         .subscribe(async ([provider, account]) => {
-          await this.fundsStoreSetup();
           await this.poolStoreSetup();
         });
-    },
-
-    setupPoolsList() {
-      setTimeout(() => {
-        this.poolsList = Object.values(this.pools);
-        this.setupTotalTVL();
-        this.setupTotalDeposit();
-      }, 100);
-    },
-
-    async updateFunds(funds) {
-      this.funds = funds;
     },
 
     setupTotalTVL() {
       let totalTVL = 0;
       this.poolsList.forEach(pool => {
-        totalTVL += pool.tvl * pool.asset.price;
+        totalTVL += pool.tvl * pool.assetPrice;
       });
       this.totalTVL = totalTVL;
     },
@@ -103,7 +84,7 @@ export default {
     setupTotalDeposit() {
       let totalDeposit = 0;
       this.poolsList.forEach(pool => {
-        totalDeposit += pool.deposit * pool.asset.price;
+        totalDeposit += pool.deposit * pool.assetPrice;
       });
       this.totalDeposit = totalDeposit;
       this.$forceUpdate();
@@ -119,25 +100,18 @@ export default {
         });
       });
       this.poolsList = pools;
-
     },
+
+    watchPools() {
+      this.poolService.observePools().subscribe(pools => {
+        this.poolsList = pools;
+        this.setupTotalTVL();
+        this.setupTotalDeposit();
+        this.$forceUpdate();
+      });
+    },
+
   },
-  watch: {
-    assets: {
-      handler(newFunds) {
-        this.updateFunds(newFunds);
-      },
-      immediate: true
-    },
-
-    pools: {
-      handler() {
-        setTimeout(() => {
-          this.setupPoolsList();
-        });
-      }
-    }
-  }
 };
 </script>
 

@@ -34,9 +34,6 @@ export default {
   },
   actions: {
 
-    async stakeStoreSetup({dispatch}) {
-    },
-
     //TODO: stakeRequest
     async stake({state, rootState, dispatch, commit}, {stakeRequest}) {
 

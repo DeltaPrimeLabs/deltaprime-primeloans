@@ -171,9 +171,11 @@ export default {
     },
 
     watchPools() {
-      combineLatest([this.poolService.observeRefreshPools(), this.priceService.observeRefreshPrices()])
+      combineLatest([this.poolService.observePools(), this.priceService.observeRefreshPrices()])
           .subscribe(async () => {
-            this.tvl = parseFloat(this.pools['AVAX'].tvl) * parseFloat(this.pools['AVAX'].asset.price) + parseFloat(this.pools['USDC'].tvl) * parseFloat(this.pools['USDC'].asset.price) + parseFloat(this.protocolCollateral);
+            const avaxPool = this.pools.find(pool => pool.asset.symbol === 'AVAX');
+            const usdcPool = this.pools.find(pool => pool.asset.symbol === 'USDC');
+            this.tvl = parseFloat(avaxPool.tvl) * parseFloat(avaxPool.asset.price) + parseFloat(usdcPool.tvl) * parseFloat(usdcPool.asset.price) + parseFloat(this.protocolCollateral);
           });
     },
 
