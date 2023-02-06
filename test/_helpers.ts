@@ -266,53 +266,53 @@ export const getProfitableLiquidationAmounts = function (
     for (let debt of debts) {
         if (!converged) {
             //repaying with added tokens balance
-        let asset = assets.find(el => el.name == debt.name)!;
-        let initialRepayAmount: number = repayAmounts.find(el => el.name == debt.name)!.amount;
-        let deliveredAmount = 0;
-        let initialDebt = debt.debt;
+            let asset = assets.find(el => el.name == debt.name)!;
+            let initialRepayAmount: number = repayAmounts.find(el => el.name == debt.name)!.amount;
+            let deliveredAmount = 0;
+            let initialDebt = debt.debt;
 
-        let changeInDeliveredAmount = initialDebt;
+            let changeInDeliveredAmount = initialDebt;
 
-        let price = prices.find((y: any) => y.dataFeedId == asset.name)!.value;
-        let useAllAmount = false;
-        let ratio = calculateHealthRatio(debts, assets, prices);
-        let sign = 1;
+            let price = prices.find((y: any) => y.dataFeedId == asset.name)!.value;
+            let useAllAmount = false;
+            let ratio = calculateHealthRatio(debts, assets, prices);
+            let sign = 1;
 
-        let i = 0;
-        while (changeInDeliveredAmount != 0 && !converged && !useAllAmount) {
-            deliveredAmount += changeInDeliveredAmount;
-            debt.debt = initialDebt - deliveredAmount;
+            let i = 0;
+            while (changeInDeliveredAmount != 0 && !converged && !useAllAmount) {
+                deliveredAmount += changeInDeliveredAmount;
+                debt.debt = initialDebt - deliveredAmount;
 
-            let repaidInUsd = deliveredAmount * price + repayAmounts.reduce((x, y) =>
-             x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
-            let bonusAmount = bonus * repaidInUsd;
+                let repaidInUsd = deliveredAmount * price + repayAmounts.reduce((x, y) =>
+                    x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
+                let bonusAmount = bonus * repaidInUsd;
 
-            let deliveredInUsd = deliveredAmount * price + deliveredAmounts.reduce((x: number, y: any) =>
-                x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
+                let deliveredInUsd = deliveredAmount * price + deliveredAmounts.reduce((x: number, y: any) =>
+                    x + y.amount * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
 
-            let updatedAssets: AssetBalanceLeverage[] = JSON.parse(JSON.stringify(assets));
-            let assetsValue = updatedAssets.reduce((x, y) => x + y.balance * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
+                let updatedAssets: AssetBalanceLeverage[] = JSON.parse(JSON.stringify(assets));
+                let assetsValue = updatedAssets.reduce((x, y) => x + y.balance * prices.find((z: any) => y.name == z.dataFeedId)!.value, 0);
 
-            let partToRepayToLiquidator = Math.min((deliveredInUsd + bonusAmount) / assetsValue, 1);
+                let partToRepayToLiquidator = Math.min((deliveredInUsd + bonusAmount) / assetsValue, 1);
 
-            updatedAssets.forEach(asset => asset.balance *= (1 - partToRepayToLiquidator));
+                updatedAssets.forEach(asset => asset.balance *= (1 - partToRepayToLiquidator));
 
-            ratio = calculateHealthRatio(debts, updatedAssets, prices);
+                ratio = calculateHealthRatio(debts, updatedAssets, prices);
 
-            // if ratio is higher than desired, we decrease the repayAmount
-            sign = (ratio > finalHealthRatio) ? -1 : 1;
-            changeInDeliveredAmount = sign * Math.abs(changeInDeliveredAmount) / 2;
+                // if ratio is higher than desired, we decrease the repayAmount
+                sign = (ratio > finalHealthRatio) ? -1 : 1;
+                changeInDeliveredAmount = sign * Math.abs(changeInDeliveredAmount) / 2;
 
-            if (i == 0 && ratio != 0 && ratio < finalHealthRatio) {
-                useAllAmount = true;
+                if (i == 0 && ratio != 0 && ratio < finalHealthRatio) {
+                    useAllAmount = true;
+                }
+
+                if (Math.abs(finalHealthRatio - ratio) < 0.0001) {
+                    converged = true;
+                }
+
+                i++;
             }
-
-            if (Math.abs(finalHealthRatio - ratio) < 0.0001) {
-                converged = true;
-            }
-
-            i++;
-        }
 
             //IMPORTANT:
             //approve a little more to account for the debt compounding
@@ -405,16 +405,16 @@ export const getRepayAmounts = function (
     let repayAmounts: Array<Repayment> = [];
     let leftToRepayInUsd = toRepayInUsd;
     debts.forEach(
-    (debt) => {
-        let price = prices.find((y: any) => y.dataFeedId == debt.name)!.value;
+        (debt) => {
+            let price = prices.find((y: any) => y.dataFeedId == debt.name)!.value;
 
-        let availableToRepayInUsd = debt.debt * price;
-        let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
-        leftToRepayInUsd -= repaidToPool;
+            let availableToRepayInUsd = debt.debt * price;
+            let repaidToPool = Math.min(availableToRepayInUsd, leftToRepayInUsd);
+            leftToRepayInUsd -= repaidToPool;
 
 
-        repayAmounts.push(new Repayment(debt.name, repaidToPool / price));
-    });
+            repayAmounts.push(new Repayment(debt.name, repaidToPool / price));
+        });
 
     //repayAmounts are measured in appropriate tokens (not USD)
     return repayAmounts;
@@ -438,15 +438,15 @@ export const getDeliveredAmounts = function (
 }
 
 export const deployPools = async function(
-   smartLoansFactory: Contract,
-   tokens: Array<PoolInitializationObject>,
-   tokenContracts: Map<string, Contract>,
-   poolContracts: Map<string, Contract>,
-   lendingPools: Array<PoolAsset>,
-   owner: SignerWithAddress | JsonRpcSigner,
-   depositor: SignerWithAddress | Wallet,
-   depositAmount: number = 1000,
-   chain: string = 'AVAX'
+    smartLoansFactory: Contract,
+    tokens: Array<PoolInitializationObject>,
+    tokenContracts: Map<string, Contract>,
+    poolContracts: Map<string, Contract>,
+    lendingPools: Array<PoolAsset>,
+    owner: SignerWithAddress | JsonRpcSigner,
+    depositor: SignerWithAddress | Wallet,
+    depositAmount: number = 1000,
+    chain: string = 'AVAX'
 ) {
     for (const token of tokens) {
         let {
@@ -592,50 +592,50 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     )
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
-            'canRepayDebtFully',
-            'isSolvent',
-            'isSolventWithPrices',
-            'getOwnedAssetsWithNativePrices',
-            'getTotalValueWithPrices',
-            'getHealthRatioWithPrices',
-            'getDebtAssets',
-            'getDebtAssetsPrices',
-            'getStakedPositionsPrices',
-            'getAllPricesForLiquidation',
-            'getDebt',
-            'getDebtWithPrices',
-            'getPrices',
-            'getTotalAssetsValue',
-            'getThresholdWeightedValue',
-            'getStakedValue',
-            'getTotalValue',
-            'getFullLoanStatus',
-            'getHealthRatio'
-        ],
-        hardhatConfig)
+                'canRepayDebtFully',
+                'isSolvent',
+                'isSolventWithPrices',
+                'getOwnedAssetsWithNativePrices',
+                'getTotalValueWithPrices',
+                'getHealthRatioWithPrices',
+                'getDebtAssets',
+                'getDebtAssetsPrices',
+                'getStakedPositionsPrices',
+                'getAllPricesForLiquidation',
+                'getDebt',
+                'getDebtWithPrices',
+                'getPrices',
+                'getTotalAssetsValue',
+                'getThresholdWeightedValue',
+                'getStakedValue',
+                'getTotalValue',
+                'getFullLoanStatus',
+                'getHealthRatio'
+            ],
+            hardhatConfig)
     } else {
         await deployFacet("SolvencyFacetProd", diamondAddress, [
-            'canRepayDebtFully',
-            'isSolvent',
-            'isSolventWithPrices',
-            'getOwnedAssetsWithNativePrices',
-            'getTotalValueWithPrices',
-            'getHealthRatioWithPrices',
-            'getDebtAssets',
-            'getDebtAssetsPrices',
-            'getStakedPositionsPrices',
-            'getAllPricesForLiquidation',
-            'getDebt',
-            'getDebtWithPrices',
-            'getPrices',
-            'getTotalAssetsValue',
-            'getThresholdWeightedValue',
-            'getStakedValue',
-            'getTotalValue',
-            'getFullLoanStatus',
-            'getHealthRatio'
-        ],
-        hardhatConfig)
+                'canRepayDebtFully',
+                'isSolvent',
+                'isSolventWithPrices',
+                'getOwnedAssetsWithNativePrices',
+                'getTotalValueWithPrices',
+                'getHealthRatioWithPrices',
+                'getDebtAssets',
+                'getDebtAssetsPrices',
+                'getStakedPositionsPrices',
+                'getAllPricesForLiquidation',
+                'getDebt',
+                'getDebtWithPrices',
+                'getPrices',
+                'getTotalAssetsValue',
+                'getThresholdWeightedValue',
+                'getStakedValue',
+                'getTotalValue',
+                'getFullLoanStatus',
+                'getHealthRatio'
+            ],
+            hardhatConfig)
     }
 
     if (chain == 'AVAX') {
@@ -665,6 +665,21 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ], hardhatConfig)
         // await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
         await deployFacet("VectorFinanceFacet", diamondAddress, [
+                'vectorStakeUSDC1Auto',
+                'vectorUnstakeUSDC1Auto',
+                'vectorUSDC1BalanceAuto',
+                'vectorStakeWAVAX1Auto',
+                'vectorUnstakeWAVAX1Auto',
+                'vectorWAVAX1BalanceAuto',
+                'vectorStakeSAVAX1Auto',
+                'vectorUnstakeSAVAX1Auto',
+                'vectorSAVAX1BalanceAuto',
+                'vectorMigrateUsdc',
+                'vectorMigrateAvax',
+                'vectorMigrateSAvax'
+            ],
+            hardhatConfig)
+        await deployFacet("VectorFinanceFacetOld", diamondAddress, [
                 'vectorStakeUSDC1',
                 'vectorUnstakeUSDC1',
                 'vectorUSDC1Balance',
@@ -979,3 +994,4 @@ export class StakedPosition {
         this.unstakeSelector = unstakeSelector;
     }
 }
+

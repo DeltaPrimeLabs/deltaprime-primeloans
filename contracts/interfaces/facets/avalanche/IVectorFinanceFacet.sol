@@ -1,21 +1,27 @@
 pragma solidity ^0.8.17;
 
 interface IVectorFinanceFacet {
-    function vectorStakeUSDC1(uint256 amount) external;
+    function vectorStakeUSDC1Auto(uint256 amount) external;
 
-    function vectorStakeWAVAX1(uint256 amount) external;
+    function vectorStakeWAVAX1Auto(uint256 amount) external;
 
-    function vectorStakeSAVAX1(uint256 amount) external;
+    function vectorStakeSAVAX1Auto(uint256 amount) external;
 
-    function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) external;
 
-    function vectorUnstakeWAVAX1(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) external;
 
-    function vectorUnstakeSAVAX1(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) external;
 
-    function vectorUSDC1Balance() external view returns(uint256);
+    function vectorUSDC1BalanceAuto() external view returns(uint256);
 
-    function vectorWAVAX1Balance() external view returns(uint256);
+    function vectorWAVAX1BalanceAuto() external view returns(uint256);
 
-    function vectorSAVAX1Balance() external view returns(uint256);
+    function vectorSAVAX1BalanceAuto() external view returns(uint256);
+
+    function vectorMigrateUsdc() external;
+
+    function vectorMigrateAvax() external;
+
+    function vectorMigrateSAvax() external;
 }
