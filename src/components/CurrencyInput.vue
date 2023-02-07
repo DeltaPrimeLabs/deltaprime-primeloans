@@ -4,17 +4,20 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
          @click="$refs.input.focus()">
       <span class="input">
-        <input  ref="input" v-model="internalValue" v-on:input="valueChange"
-               placeholder="0" min="0" maxlength="15" lang="en-US">
+        <input ref="input"
+               v-model="internalValue"
+               :disabled="disabled"
+               v-on:input="typeWatch"
+               placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
       <div class="input-extras-wrapper">
-        <div v-if="max" class="max-wrapper" v-on:click="setMax()">
+        <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
         </div>
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
-          <img class="logo" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}{{ symbolSecondary ? ' - ' + symbolSecondary : ''}}</span>
+          <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
+          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
       </div>
     </div>
@@ -34,9 +37,9 @@
       </span>
     </div>
     <div class="warning"
-         v-if="warning && !waiting && !ongoingErrorCheck">
+         v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
-        <img src="src/assets/icons/warning.svg"/>
+        <img src="src/assets/icons/error.svg"/>
         {{ warning }}
       </span>
     </div>
@@ -63,6 +66,7 @@ export default {
       type: Array, default: () => []
     },
     //TODO: make an array like in validators
+    typingTimeout: {type: Number, default: 0},
     info: {type: Function, default: null},
     defaultValue: null,
     waiting: false,
@@ -70,19 +74,21 @@ export default {
     denominationButtons: false,
     slippage: {type: Number, default: 0},
     embedded: false,
-    delayErrorCheckAfterValuePropagation: {type: Boolean, default: false}
+    delayErrorCheckAfterValuePropagation: {type: Boolean, default: false},
   },
   computed: {},
   data() {
     return {
       error: '',
       warning: '',
+      timer: 0,
       value: this.defaultValue,
       defaultValidators: [],
       asset: config.ASSETS_CONFIG[this.symbol],
       ongoingErrorCheck: false,
       usdDenominated: true,
       internalValue: this.defaultValue,
+      maxButtonUsed: false,
     };
   },
   created() {
@@ -104,6 +110,7 @@ export default {
   },
   methods: {
     async updateValue(value) {
+      console.log('updateValue');
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
 
@@ -122,7 +129,23 @@ export default {
 
       const hasError = this.error.length > 0;
 
-      this.$emit('newValue', {value: Number(value), error: hasError});
+      if (value !== this.max) {
+        this.maxButtonUsed = false;
+      }
+
+      this.$emit('newValue', {value: value, error: hasError, maxButtonUsed: this.maxButtonUsed});
+    },
+    typeWatch() {
+      this.$emit('ongoingTyping', {typing: true});
+
+      this.parseValue();
+      if (this.typingTimeout !== 0) {
+
+        clearTimeout(this.timer);
+        this.timer = setTimeout(this.emitValue, this.typingTimeout);
+      } else {
+        this.emitValue();
+      }
     },
     async checkWarnings(newValue) {
       this.warning = '';
@@ -154,21 +177,29 @@ export default {
       }
       return this.error;
     },
-    valueChange() {
-      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,8}$/);
+    parseValue() {
+      const match = this.internalValue.match(/^\d*[\.|\,]?\d{0,18}$/);
       if (match) {
-        this.value = Number(this.internalValue.replaceAll(',', '.'));
+        this.value = parseFloat(this.internalValue.replaceAll(',', '.'));
       } else {
         this.internalValue = this.internalValue.substring(0, this.internalValue.length - 1);
-        this.value = Number(this.internalValue.substring(0, this.internalValue.length - 1));
+        this.value = parseFloat(this.internalValue.substring(0, this.internalValue.length - 1));
         this.$forceUpdate();
       }
+    },
+
+    emitValue() {
+      this.$emit('ongoingTyping', {typing: false});
+
       this.$emit('inputChange', this.value);
     },
 
-    setValue(value) {
+    async setValue(value) {
       this.value = value;
       this.internalValue = String(value);
+      const checkErrorsResult = await this.checkErrors(this.value);
+      const hasError = checkErrorsResult !== '';
+      return {value: this.value, error: hasError};
     },
 
     setupDefaultValidators() {
@@ -182,17 +213,21 @@ export default {
       const wrongFormatValidator = {
         validate: (value) => {
           if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
-            return `Incorrect formatting. Please use only alphanumeric values.`;
+            return `Incorrect formatting.`;
           }
         }
-      }
+      };
       this.defaultValidators.push(positiveValidator, wrongFormatValidator);
     },
 
     setMax() {
       this.setValue(this.max);
-      this.checkErrors(this.value);
-      this.$emit('inputChange', this.value);
+      this.maxButtonUsed = true;
+      const hasError = this.error.length > 0;
+      this.checkErrors(this.max);
+      this.$forceUpdate();
+      this.$emit('newValue', {value: this.max, error: hasError, maxButtonUsed: this.maxButtonUsed});
+      this.$emit('inputChange', this.max);
     },
 
     setValueOfMax(maxValue) {
@@ -244,17 +279,6 @@ export default {
 
 .input {
   position: relative;
-
-  &:after {
-    content: ' ';
-    position: absolute;
-    width: 25px;
-    right: 0;
-    height: 100%;
-    top: 0;
-    background: linear-gradient(to right, rgba(244, 244, 255, 0), rgba(244, 244, 255, 0.95) 50%);
-    z-index: 1;
-  }
 }
 
 input {
@@ -266,6 +290,10 @@ input {
   padding-top: 0;
   padding-bottom: 0;
   max-width: 40%;
+
+  &:disabled {
+    opacity: 77%;
+  }
 
   @media screen and (min-width: $md) {
     padding-right: 5px;
@@ -325,6 +353,10 @@ input[type=number] {
   align-items: center;
 }
 
+.logo.secondary {
+  transform: translateX(-10px);
+}
+
 .max-wrapper {
   cursor: pointer;
   width: 35px;
@@ -369,7 +401,8 @@ img {
 }
 
 .warning {
-  color: #F5A200;
+  //color: #F5A200;
+  color: $red;
 }
 
 .error, .warning {

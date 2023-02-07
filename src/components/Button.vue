@@ -1,5 +1,5 @@
 <template>
-  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'waiting': '', 'purple']" @click="clicked()">
+  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']" @click="clicked()">
     <div class="btn-label">
       {{ label }}
     </div>

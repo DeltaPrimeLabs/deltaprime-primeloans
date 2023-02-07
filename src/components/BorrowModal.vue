@@ -9,15 +9,16 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool: </div>
-        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{ asset.symbol }}</span></div>
+        <div class="top-info__label">Available in pool:</div>
+        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{
+            asset.symbol
+          }}</span></div>
       </div>
 
       <CurrencyInput :symbol="asset.symbol"
                      :validators="validators"
                      v-on:inputChange="inputChange"
-                     v-on:newValue="currencyInputChange"
-                     :max="maxBorrow">
+                     v-on:newValue="currencyInputChange">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -25,32 +26,39 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction === 0}">
-              Health Ratio:
-            </div>
-            <div class="summary__value">
-              <span class="summary__value--error" v-if="healthAfterTransaction === 0">
-                {{ 0 | percent }}
-              </span>
-              <span v-if="healthAfterTransaction > 0">
+            <div>
+              <div class="summary__label" v-bind:class="{'summary__label--error': healthAfterTransaction === 0}">
+                Health:
+              </div>
+              <div class="summary__value">
+              <span class="summary__value--error"
+                    v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
                 {{ healthAfterTransaction | percent }}
               </span>
+                <span v-else>
+                {{ healthAfterTransaction | percent }}
+              </span>
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Balance:
-            </div>
-            <div class="summary__value">
-              {{ Number(assetBalance) + Number(value) | smartRound }} {{ asset.symbol }}
+            <div>
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{ Number(assetBalance) + Number(value) | smartRound }} {{ asset.symbol }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError" :waiting="transactionOngoing"></Button>
+        <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError"
+                :waiting="transactionOngoing"></Button>
       </div>
     </Modal>
   </div>
@@ -63,7 +71,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth} from "../utils/calculate";
+import {calculateHealth} from '../utils/calculate';
 
 export default {
   name: 'BorrowModal',
@@ -77,11 +85,16 @@ export default {
 
   props: {
     asset: {},
+    assets: {},
+    assetBalances: {},
+    farms: {},
+    debtsPerAsset: {},
     assetBalance: Number,
     debt: Number,
     thresholdWeightedValue: Number,
     loanAPY: Number,
-    poolTVL: Number
+    poolTVL: Number,
+    maxUtilisation: Number
   },
 
   data() {
@@ -89,10 +102,9 @@ export default {
       value: 0,
       healthAfterTransaction: 0,
       validators: [],
-      currencyInputError: false,
+      currencyInputError: true,
       transactionOngoing: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
-      MAX_POOL_UTILISATION: config.MAX_POOL_UTILISATION,
       maxBorrow: 0,
     };
   },
@@ -112,7 +124,7 @@ export default {
     },
 
     inputChange(change) {
-      this.value = change;
+      this.value = Number(change);
       this.calculateHealthAfterTransaction();
     },
 
@@ -121,24 +133,56 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      let value = this.value ? this.value : 0;
-        this.healthAfterTransaction = calculateHealth(this.debt + value * this.asset.price,
-            this.thresholdWeightedValue + value * this.asset.price * this.asset.maxLeverage);
+      let addedBorrow = this.value ? this.value : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.asset.symbol) {
+          borrowed += addedBorrow;
+          balance += addedBorrow;
+        }
+
+        tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.lpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.totalBalance),
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage
+          });
+        });
+      }
+
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
 
     setupValidators() {
       this.validators = [
         {
           validate: (value) => {
-            if (this.healthAfterTransaction === 0) {
+            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
               return `Health should be higher than 0%`;
             }
           },
         },
         {
           validate: (value) => {
-            if (this.value > this.MAX_POOL_UTILISATION * this.poolTVL) {
-              return `Cannot borrow more than 95% of pool TVL`;
+            if (this.value > this.maxUtilisation * this.poolTVL) {
+              return `You can borrow up to ${this.maxUtilisation * 100}% of this pool's TVL`;
             }
           }
         }
@@ -148,7 +192,7 @@ export default {
     calculateMaxBorrow() {
       const MIN_HEALTH = 0.0182;
       const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
-      const denominator = this.asset.price - (this.asset.price * this.asset.maxLeverage) + (MIN_HEALTH * this.asset.price * this.asset.maxLeverage);
+      const denominator = this.asset.price - (this.asset.price * this.asset.debtCoverage) + (MIN_HEALTH * this.asset.price * this.asset.debtCoverage);
       this.maxBorrow = numerator / denominator;
     },
   }

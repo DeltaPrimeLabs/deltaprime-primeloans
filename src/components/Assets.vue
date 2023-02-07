@@ -5,7 +5,9 @@
     <!--      <Checkbox :label="'Show only my assets'"></Checkbox>-->
     <!--    </div>-->
     <div class="funds">
-      <!--      <NameValueBadgeBeta :name="'Total value'">{{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}</NameValueBadgeBeta>-->
+      <NameValueBadgeBeta class="total-value" :name="'Total value'">
+        {{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}
+      </NameValueBadgeBeta>
       <div class="funds-table" v-if="funds">
         <TableHeader :config="fundsTableHeaderConfig"></TableHeader>
         <div class="funds-table__body">
@@ -27,9 +29,9 @@
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{ lpToken }}
         </LpTableRow>
-        <!--        <div class="paginator-container">-->
-        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-        <!--        </div>-->
+<!--        <div class="paginator-container">-->
+<!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
+<!--        </div>-->
       </div>
     </div>
   </div>
@@ -152,8 +154,8 @@ export default {
       if (funds) {
         Object.keys(funds).forEach((symbol, index) => {
           redstone.getHistoricalPrice(symbol, {
-            startDate: Date.now() - 3600 * 1000 * 24 * 7,
-            interval: 3600 * 1000,
+            startDate: Date.now() - 3600 * 1000 * 24,
+            interval: 600 * 1000,
             endDate: Date.now(),
             provider: 'redstone-avalanche'
           }).then(
@@ -201,26 +203,32 @@ export default {
             label: 'Asset',
             sortable: false,
             class: 'asset',
-            id: 'ASSET'
+            id: 'ASSET',
+            tooltip: `The asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
             label: 'Balance',
             sortable: false,
             class: 'balance',
-            id: 'BALANCE'
+            id: 'BALANCE',
+            tooltip: `The number and value of unstaked assets in your Prime Account.`
           },
           {
             label: 'Borrowed',
             sortable: false,
             class: 'loan',
-            id: 'LOAN'
+            id: 'LOAN',
+            tooltip: `The amount/value of tokens borrowed. Shows a '-' if tokens can't be borrowed.<br>
+                      In order to withdraw to your wallet, the number in "balance" needs to be equal or higher than the number in "borrowed".<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#borrowed' target='_blank'>More information</a>.`
           },
           {
-            label: 'Impact',
+            label: 'Power',
             sortable: false,
             class: 'impact',
             id: 'IMPACT',
-            tooltip: 'impact tooltip'
+            tooltip: `How much you can borrow against this asset`,
           },
           {
             label: 'Trend (24h)',
@@ -240,7 +248,8 @@ export default {
           {
             label: 'Actions',
             class: 'actions',
-            id: 'ACTIONS'
+            id: 'ACTIONS',
+            tooltip: `The different actions you can perform with this asset. <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>More information</a>`
           },
         ]
       };
@@ -248,39 +257,55 @@ export default {
 
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% 1fr 20% 1fr 76px 102px',
+        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 80px 22px',
         cells: [
           {
             label: 'LP Token',
             sortable: false,
             class: 'token',
-            id: 'TOKEN'
+            id: 'TOKEN',
+            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
             label: 'Balance',
             sortable: false,
             class: 'balance',
-            id: 'BALANCE'
+            id: 'BALANCE',
+            tooltip: `The number and value of unstaked assets in your Prime Account.`
           },
           {
             label: 'TVL',
             sortable: false,
             class: 'balance',
-            id: 'tvl'
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
-            label: 'APR',
+            label: 'Min. APR',
             sortable: false,
             class: 'apr',
-            id: 'APR'
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes 7.2% sAVAX price appreciation if the pool includes that asset.`
           },
           {
-            label: ''
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
           },
           {
             label: 'Actions',
             class: 'actions',
-            id: 'ACTIONS'
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
           },
         ]
       };
@@ -290,7 +315,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'LINK', 'sAVAX'],
+          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
           key: 'asset'
         },
         {
@@ -334,7 +359,11 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 35px;
+    margin-top: 23px;
+
+    .total-value {
+      margin-bottom: 57px;
+    }
 
     .funds-table {
       display: flex;

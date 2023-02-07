@@ -1,6 +1,7 @@
-import {awaitConfirmation, erc20ABI} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
 import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
+import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
 
 
@@ -44,71 +45,67 @@ export default {
     },
 
     async setupPools({rootState, commit}) {
-      const provider = rootState.network.provider;
-      const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
-      const pools = {};
-      poolsFromConfig.forEach(poolAsset => {
-        const poolContract = new ethers.Contract(config.POOLS_CONFIG[poolAsset].address, POOL.abi, provider.getSigner());
-        Promise.all([
-          poolContract.totalSupply(),
-          poolContract.balanceOf(rootState.network.account),
-          poolContract.getDepositRate(),
-          poolContract.getBorrowingRate(),
-          poolContract.totalBorrowed()
-        ]).then(poolDetails => {
-          const pool = {
-            asset: config.ASSETS_CONFIG[poolAsset],
-            contract: poolContract,
-            tvl: formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals),
-            deposit: formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals),
-            apy: fromWei(poolDetails[2]),
-            borrowingAPY: fromWei(poolDetails[3]),
-            totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
-            interest: 1.23456
-          };
-          pools[poolAsset] = pool;
+      const poolService = rootState.serviceRegistry.poolService;
+      poolService.setupPools(rootState.network.provider, rootState.network.account)
+        .subscribe(pools => {
+          poolService.emitPools(pools);
+          commit('setPools', pools);
         });
-      });
-      setTimeout(() => {
-        commit('setPools', pools);
-      }, 1000);
     },
 
     async deposit({state, rootState, commit, dispatch}, {depositRequest}) {
       const provider = rootState.network.provider;
 
       const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
+      const decimals = config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals;
+      const poolContract = state.pools.find(pool => pool.asset.symbol === depositRequest.assetSymbol).contract;
+      const wallet = rootState.network.account;
+
+      if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
+        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account, true))) return;
+      }
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
-        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+        depositTransaction = await poolContract
           .connect(provider.getSigner())
-          .depositNativeToken({value: parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals)});
+          .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});
       } else {
-        await tokenContract.connect(provider.getSigner())
-          .approve(state.pools[depositRequest.assetSymbol].contract.address,
-            parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
-        depositTransaction = await state.pools[depositRequest.assetSymbol].contract
+        const allowance = formatUnits(await tokenContract.allowance(rootState.network.account, poolContract.address), decimals);
+
+        if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
+          let approveTransaction = await tokenContract.connect(provider.getSigner())
+            .approve(poolContract.address,
+              parseUnits(String(depositRequest.amount), decimals));
+
+          await awaitConfirmation(approveTransaction, provider, 'approve');
+        }
+
+        depositTransaction = await poolContract
           .connect(provider.getSigner())
-          .deposit(parseUnits(String(depositRequest.amount), config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals));
+          .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       await awaitConfirmation(depositTransaction, provider, 'deposit');
       setTimeout(() => {
-        dispatch('setupPools');
         dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
+
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 30000);
     },
 
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
       let withdrawTransaction;
+      const pool = state.pools.find(pool => pool.asset.symbol === withdrawRequest.assetSymbol);
       if (withdrawRequest.withdrawNativeToken) {
-        withdrawTransaction = await state.pools[withdrawRequest.assetSymbol].contract.connect(provider.getSigner())
+        withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdrawNativeToken(
             parseUnits(String(withdrawRequest.amount),
               config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
       } else {
-        withdrawTransaction = await state.pools[withdrawRequest.assetSymbol].contract.connect(provider.getSigner())
+        withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdraw(
             parseUnits(String(withdrawRequest.amount),
               config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
@@ -116,9 +113,12 @@ export default {
       await awaitConfirmation(withdrawTransaction, provider, 'deposit');
 
       setTimeout(() => {
-        dispatch('setupPools');
         dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
+
+      setTimeout(() => {
+        dispatch('setupPools');
+      }, 30000);
     },
   }
 };

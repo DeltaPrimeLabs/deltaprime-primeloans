@@ -19,7 +19,7 @@
   margin-bottom: 63px;
 }
 
-.modal-top-info {
+.modal-top-info, .modal-top-desc {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -27,6 +27,11 @@
   color: $steel-gray;
   margin-top: 36px;
   margin-bottom: 10px;
+
+  a {
+    text-decoration: none;
+    color: $steel-gray;
+  }
 
   .top-info__label {
     margin-right: 5px;
@@ -51,8 +56,12 @@
   }
 }
 
+.modal-top-desc {
+  flex-direction: column;
+}
+
 .transaction-summary-wrapper {
-  margin-top: 30px;
+  margin-top: 50px;
 }
 
 .button-wrapper {

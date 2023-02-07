@@ -2,22 +2,34 @@
   <div id="modal" v-if="lpToken" class="provide-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Provide Liquidity
+        Create LP token
       </div>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{firstAssetBalance}}</div>
+        <span class="top-info__currency">
+          {{firstAsset.symbol}}
+        </span>
+      </div>
       <CurrencyInput ref="firstInput"
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
-                     :validators="firstInputValidators"
-                     :max="Number(firstAssetBalance)">
+                     :validators="firstInputValidators">
       </CurrencyInput>
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{secondAssetBalance}}</div>
+        <span class="top-info__currency">
+          {{secondAsset.symbol}}
+        </span>
+      </div>
       <CurrencyInput ref="secondInput"
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
-                     :validators="secondInputValidators"
-                     :max="Number(secondAssetBalance)">
+                     :validators="secondInputValidators">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -25,6 +37,7 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__value__pair">
               <div class="summary__label">
@@ -58,7 +71,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Provide liquidity'"
+        <Button :label="'Create LP token'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError">
@@ -75,9 +88,12 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
-import config from "../config";
-import {erc20ABI} from "../utils/blockchain";
-import {fromWei} from "../utils/calculate";
+import config from '../config';
+import erc20ABI from '../../test/abis/ERC20.json';
+import {fromWei} from '../utils/calculate';
+import {formatUnits} from "ethers/lib/utils";
+import {BigNumber} from "ethers";
+
 const ethers = require('ethers');
 
 
@@ -107,7 +123,7 @@ export default {
       secondInputValidators: [],
       addedLiquidity: 0,
       transactionOngoing: false,
-      firstInputError: false,
+      firstInputError: true,
       secondInputError: false,
     };
   },
@@ -130,14 +146,20 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('PROVIDE_LIQUIDITY',
-          { firstAsset: this.firstAsset, secondAsset: this.secondAsset, firstAmount: this.firstAmount, secondAmount: this.secondAmount });
+      const provideLiquidityEvent = {
+        firstAsset: this.firstAsset,
+        secondAsset: this.secondAsset,
+        firstAmount: this.firstAmount,
+        secondAmount: this.secondAmount,
+        addedLiquidity: this.addedLiquidity
+      };
+      this.$emit('PROVIDE_LIQUIDITY', provideLiquidityEvent);
     },
 
     async firstInputChange(change) {
       this.firstAmount = change;
       this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
-      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(15): 0);
+      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
@@ -146,7 +168,7 @@ export default {
     async secondInputChange(change) {
       this.secondAmount = change;
       this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
-      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(15) : 0);
+      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(this.firstAsset.decimals) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
@@ -158,11 +180,11 @@ export default {
       const secondToken = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());
 
       const totalSupply = fromWei(await lpToken.totalSupply());
-      const firstTokenBalance = fromWei(await firstToken.balanceOf(this.lpToken.address));
-      const secondTokenBalance = fromWei(await secondToken.balanceOf(this.lpToken.address));
+      const firstTokenBalance = formatUnits(await firstToken.balanceOf(this.lpToken.address), BigNumber.from(this.firstAsset.decimals));
+      const secondTokenBalance = formatUnits(await secondToken.balanceOf(this.lpToken.address), BigNumber.from(this.secondAsset.decimals));
 
-      this.addedLiquidity = Math.min(this.firstAmount * totalSupply / firstTokenBalance,
-          this.secondAmount * totalSupply / secondTokenBalance);
+      this.addedLiquidity = (Math.min(this.firstAmount * totalSupply / firstTokenBalance,
+        this.secondAmount * totalSupply / secondTokenBalance)).toFixed(18);
     },
 
     setupValidators() {

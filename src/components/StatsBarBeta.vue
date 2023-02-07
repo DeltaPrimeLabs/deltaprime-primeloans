@@ -2,22 +2,34 @@
   <div class="stats-bar-beta-component">
     <div class="stats-bar">
       <stats-bar-element-beta
-        :label="'Total value'"
-        :value="totalValue ? totalValue : 0 | usd" :info-tooltip="'total value'">
+        :label="'Borrowed'"
+        :value="debt ? debt : 0 | usd"
+        :info-tooltip="`The value of your borrowed assets.`
+      ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
-      <div class="health-loader-container" v-if="noSmartLoan === null">
+      <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
         <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
       </div>
-      <stats-bar-element-beta v-if="noSmartLoan !== null && health != null" :label="'Health'" :value="health | percent">
-        <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+      <stats-bar-element-beta
+          v-if="noSmartLoan !== null && health != null && !healthLoading"
+          :label="'Health'"
+          :value="health | percent"
+          :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
+          ">
+        <div class="bar-gauge-container">
+          <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+        </div>
       </stats-bar-element-beta>
 
       <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
       <div class="stats-bar__divider"></div>
 
-      <stats-bar-element-beta :label="'Borrowed'" :value="debt ? debt : 0 | usd">
+      <stats-bar-element-beta
+          :label="'Collateral'"
+          :value="collateral ? collateral : 0 | usd"
+          :info-tooltip="`The total value of all your assets, minus the value of your borrowed assets. <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#borrowed' target='_blank'>More information</a>.`">
       </stats-bar-element-beta>
     </div>
   </div>
@@ -35,8 +47,10 @@ export default {
   props: {
     totalValue: null,
     debt: null,
+    collateral: null,
     health: null,
     noSmartLoan: null,
+    healthLoading: false,
   },
   computed: {
   }
@@ -88,6 +102,11 @@ export default {
       border-width: 0 0 0 2px;
       border-image-source: linear-gradient(to bottom, #dfe0ff 41%, #ffe1c2 58%, #ffd3e0 77%);
       border-image-slice: 1;
+    }
+
+    .bar-gauge-container {
+      margin-top: 9px;
+      margin-right: 10px;
     }
   }
 }

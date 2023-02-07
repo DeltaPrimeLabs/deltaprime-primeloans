@@ -3,7 +3,7 @@
     <div class="container">
       <div class="main-content">
         <Block :bordered="true">
-          <div class="title">Lend tokens</div>
+          <div class="title">Deposit</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
@@ -11,7 +11,6 @@
                 <div class="header__cell asset">Asset</div>
                 <div class="header__cell deposit">Deposit</div>
                 <div class="header__cell apy">APY</div>
-                <div class="header__cell interest">Interest</div>
                 <div class="header__cell tvl">Pool size</div>
                 <div></div>
                 <div class="header__cell actions">Actions</div>
@@ -37,6 +36,7 @@ import PoolsTableRowBeta from './PoolsTableRowBeta';
 import redstone from 'redstone-api';
 import {fromWei} from '../utils/calculate';
 import {mapActions, mapState} from 'vuex';
+import {combineLatest} from 'rxjs';
 
 export default {
   name: 'PoolsBeta',
@@ -47,50 +47,36 @@ export default {
   },
   async mounted() {
     this.initPools();
-    if (window.provider) {
-      await this.fundsStoreSetup();
-      await this.poolStoreSetup();
-    } else {
-      setTimeout(async () => {
-        await this.fundsStoreSetup();
-        await this.poolStoreSetup();
-      }, 1000);
+    this.watchPools();
 
-    }
+    this.initStoresWhenProviderAndAccountCreated();
   },
 
   data() {
     return {
-      funds: config.ASSETS_CONFIG,
       totalTVL: 0,
       totalDeposit: 0,
       poolsList: null,
     };
   },
   computed: {
-    ...mapState('fundsStore', ['assets']),
-    ...mapState('poolStore', ['pools']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService']),
   },
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup']),
-    ...mapActions('fundsStore', ['fundsStoreSetup']),
-    setupPoolsList() {
-      setTimeout(() => {
-        this.poolsList = Object.values(this.pools);
-        this.setupTotalTVL();
-        this.setupTotalDeposit();
-      }, 100);
-    },
 
-    async updateFunds(funds) {
-      this.funds = funds;
+    initStoresWhenProviderAndAccountCreated() {
+      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+        .subscribe(async ([provider, account]) => {
+          await this.poolStoreSetup();
+        });
     },
 
     setupTotalTVL() {
       let totalTVL = 0;
       this.poolsList.forEach(pool => {
-        totalTVL += pool.tvl * pool.asset.price;
+        totalTVL += pool.tvl * pool.assetPrice;
       });
       this.totalTVL = totalTVL;
     },
@@ -98,7 +84,7 @@ export default {
     setupTotalDeposit() {
       let totalDeposit = 0;
       this.poolsList.forEach(pool => {
-        totalDeposit += pool.deposit * pool.asset.price;
+        totalDeposit += pool.deposit * pool.assetPrice;
       });
       this.totalDeposit = totalDeposit;
       this.$forceUpdate();
@@ -114,25 +100,18 @@ export default {
         });
       });
       this.poolsList = pools;
-
     },
+
+    watchPools() {
+      this.poolService.observePools().subscribe(pools => {
+        this.poolsList = pools;
+        this.setupTotalTVL();
+        this.setupTotalDeposit();
+        this.$forceUpdate();
+      });
+    },
+
   },
-  watch: {
-    assets: {
-      handler(newFunds) {
-        this.updateFunds(newFunds);
-      },
-      immediate: true
-    },
-
-    pools: {
-      handler() {
-        setTimeout(() => {
-          this.setupPoolsList();
-        });
-      }
-    }
-  }
 };
 </script>
 
@@ -163,7 +142,7 @@ export default {
 
         .pools-table__header {
           display: grid;
-          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 102px;
+          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
           border-style: solid;
           border-width: 0 0 2px 0;
           border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);

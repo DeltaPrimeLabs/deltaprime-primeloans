@@ -2,13 +2,15 @@
   <div v-if="asset" id="modal" class="withdraw-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Withdraw
+        Withdraw collateral
       </div>
-
+      <div class="modal-top-desc">
+        You can withdraw only if you have enough debt tokens to repay all borrows. <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">
-          {{ assetBalance | smartRound }}
+          {{ isLP ? formatTokenBalance(assetBalance, 10, true) : formatTokenBalance(assetBalance) }}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
@@ -19,13 +21,11 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="withdrawValueChange"
-                     :max="maxWithdraw"
                      :validators="validators">
       </CurrencyInput>
       <CurrencyInput v-else
                      :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
-                     :max="maxWithdraw"
                      :validators="validators">
       </CurrencyInput>
 
@@ -34,29 +34,34 @@
           <div class="summary__title">
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label"
-                 v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
-              Health Ratio:
-            </div>
-            <div class="summary__value">
+            <div>
+              <div class="summary__label"
+                   v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
+                Health:
+              </div>
+              <div class="summary__value">
               <span class="summary__value--error" v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
                 {{ healthAfterTransaction | percent }}
               </span>
-              <span v-if="healthAfterTransaction >= MIN_ALLOWED_HEALTH">
+                <span v-if="healthAfterTransaction >= MIN_ALLOWED_HEALTH">
                 {{ healthAfterTransaction | percent }}
               </span>
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Balance:
-            </div>
-            <div class="summary__value">
-              {{
-                (Number(assetBalance) - Number(withdrawValue)) > 0 ? (Number(assetBalance) - Number(withdrawValue)) : 0 | smartRound
-              }}
-              {{ isLP ? asset.primary + '-' + asset.secondary : asset.name }}
+            <div>
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{
+                  (Number(assetBalance) - Number(withdrawValue)) > 0 ? (Number(assetBalance) - Number(withdrawValue)) : 0 | smartRound
+                }}
+                {{ isLP ? asset.primary + '-' + asset.secondary : asset.name }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -101,7 +106,12 @@ export default {
   props: {
     asset: {},
     health: {},
-    assetBalance: {},
+    assetBalances: {},
+    assets: {},
+    farms: {},
+    debtsPerAsset: {},
+    lpAssets: {},
+    lpBalances: {},
   },
 
   data() {
@@ -109,7 +119,7 @@ export default {
       withdrawValue: 0,
       healthAfterTransaction: 0,
       validators: [],
-      currencyInputError: false,
+      currencyInputError: true,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       selectedWithdrawAsset: 'AVAX',
       isLP: false,
@@ -161,9 +171,42 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      let withdrawValue = this.withdrawValue ? this.withdrawValue : 0;
-      this.healthAfterTransaction = calculateHealth(this.debt + withdrawValue * this.asset.price,
-        this.thresholdWeightedValue + withdrawValue * this.asset.price * this.asset.maxLeverage);
+      let withdrawn = this.withdrawValue ? this.withdrawValue : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        let balance = parseFloat(this.lpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.totalBalance),
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage
+          });
+        });
+      }
+
+      this.healthAfterTransaction = calculateHealth(tokens);
+
       this.$forceUpdate();
     },
 
@@ -186,16 +229,35 @@ export default {
               return `Withdraw amount exceeds balance`;
             }
           }
+        },
+        {
+          validate: (value) => {
+            let canRepayAllDebts = Object.values(this.debtsPerAsset).every(
+                debt => {
+                  let balance = parseFloat(this.assetBalances[debt.asset]);
+                  if (debt.asset === this.asset.symbol) {
+                    balance -= value;
+                  }
+                  return parseFloat(debt.debt) <= balance;
+                }
+            );
+
+            if (!canRepayAllDebts) {
+              return 'Missing AVAX/USDC in portfolio. Please make sure you can repay your debt before withdrawing.'
+            }
+          }
         }
       ];
     },
 
     calculateMaxWithdraw() {
-      const MIN_HEALTH = 0.0182;
-      const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
-      const denominator = this.asset.price - (this.asset.price * this.asset.maxLeverage) + (MIN_HEALTH * this.asset.price * this.asset.maxLeverage);
-      const maxWithdrawLimitedByHealth = numerator / denominator;
-      this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
+      //TODO: we should check it and use correct formula
+      // const MIN_HEALTH = 0.0182;
+      // const numerator = -this.debt + this.thresholdWeightedValue - MIN_HEALTH;
+      // const denominator = this.asset.price - (this.asset.price * this.asset.debtCoverage) + (MIN_HEALTH * this.asset.price * this.asset.debtCoverage);
+      // const maxWithdrawLimitedByHealth = numerator / denominator;
+      // this.maxWithdraw = Math.min(maxWithdrawLimitedByHealth, this.assetBalance);
+      this.maxWithdraw = this.assetBalance;
     },
   }
 };

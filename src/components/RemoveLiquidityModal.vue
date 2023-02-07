@@ -2,14 +2,21 @@
   <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Remove Liquidity
+        Unwind LP token
+      </div>
+
+      <div class="modal-top-info">
+        <div class="top-info__label">Available:</div>
+        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, 10, true)}}</div>
+        <span class="top-info__currency">
+          {{lpToken.name}}
+        </span>
       </div>
 
       <CurrencyInput :symbol="lpToken.primary"
                      :symbol-secondary="lpToken.secondary"
                      v-on:newValue="inputChange"
-                     :validators="validators"
-                     :max="lpTokenBalance.toFixed(18)">
+                     :validators="validators">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -17,6 +24,7 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
             <div class="summary__value__pair">
               <div class="summary__label">
@@ -49,7 +57,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Remove liquidity'"
+        <Button :label="'Unwind LP token'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
                 :disabled="currencyInputError">
@@ -67,7 +75,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {erc20ABI} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/ERC20.json';
 import {parseUnits, formatUnits} from 'ethers/lib/utils';
 
 const ethers = require('ethers');
@@ -97,7 +105,7 @@ export default {
       minReceivedFirst: 0,
       minReceivedSecond: 0,
       transactionOngoing: false,
-      currencyInputError: false,
+      currencyInputError: true,
     };
   },
 
@@ -129,14 +137,13 @@ export default {
       const minReceivedAmounts = await this.calculateReceivedAmounts(this.amount);
       this.$emit('REMOVE_LIQUIDITY', {
         asset: this.lpToken.symbol,
-        amount: this.amount.toFixed(lpTokenDecimals),
+        amount: Number(this.amount).toFixed(lpTokenDecimals),
         minReceivedFirst: minReceivedAmounts.minReceivedFirst,
         minReceivedSecond: minReceivedAmounts.minReceivedSecond
       });
     },
 
     async inputChange(event) {
-      console.log(event);
       this.amount = event.value;
       this.currencyInputError = event.error;
       this.$forceUpdate();
@@ -179,14 +186,16 @@ export default {
 
         this.$forceUpdate();
 
+        console.log('calculateReceivedAmounts')
+        console.log(lpRemoved)
         const firstAmount =
-          parseUnits(lpRemoved.toFixed(18), lpTokenDecimals)
+          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
             .mul(firstTokenBalance)
             .div(totalSupply)
             .mul((1 - slippage) * 1000)
             .div(1000);
         const secondAmount =
-          parseUnits(lpRemoved.toFixed(18), lpTokenDecimals)
+          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
             .mul(secondTokenBalance)
             .div(totalSupply)
             .mul((1 - slippage) * 1000)

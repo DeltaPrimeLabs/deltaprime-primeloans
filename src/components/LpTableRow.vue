@@ -11,31 +11,36 @@
         </div>
       </div>
 
-      <div class="table__cell">
-      </div>
-
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpBalances">
+        <template v-if="lpBalances && parseFloat(lpBalances[lpToken.symbol])">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => lpBalances[lpToken.symbol] != null"
-                         :value="formatTokenBalance(lpBalances[lpToken.symbol], 10, true)"></LoadedValue>
+            <span v-if="isLpBalanceEstimated">~</span>
+            {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
           </div>
           <div class="double-value__usd">
-            <span v-if="lpBalances[lpToken.symbol]">{{ lpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+            <span v-if="lpBalances[lpToken.symbol]">
+              {{ lpBalances[lpToken.symbol] * lpToken.price | usd }}
+            </span>
           </div>
         </template>
-        <template v-if="!lpBalances || !lpBalances[lpToken.symbol]">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ tvl | usd }}
+        {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell">
-        {{ lpToken.apr | percent }}
+      <div class="table__cell table__cell--double-value apr">
+        {{ apr | percent }}
       </div>
+
+      <div class="table__cell table__cell--double-value max-apr">
+        {{ maxApr | percent }}
+      </div>
+
+      <div class="table__cell"></div>
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
@@ -43,7 +48,8 @@
           v-for="(actionConfig, index) of actionsConfig"
           v-bind:key="index"
           :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -68,17 +74,19 @@ import Chart from './Chart';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
-import AddFromWalletModal from "./AddFromWalletModal";
-import config from "../config";
-import {mapActions, mapState} from "vuex";
-import ProvideLiquidityModal from "./ProvideLiquidityModal";
-import RemoveLiquidityModal from "./RemoveLiquidityModal";
-import WithdrawModal from "./WithdrawModal";
+import AddFromWalletModal from './AddFromWalletModal';
+import config from '../config';
+import {mapActions, mapState} from 'vuex';
+import ProvideLiquidityModal from './ProvideLiquidityModal';
+import RemoveLiquidityModal from './RemoveLiquidityModal';
+import WithdrawModal from './WithdrawModal';
+
 const ethers = require('ethers');
-import {erc20ABI} from "../utils/blockchain";
-import {fromWei} from "../utils/calculate";
+import {assetAppreciation} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/ERC20.json';
+import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from "ethers/lib/utils";
+import {formatUnits, parseUnits} from 'ethers/lib/utils';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -99,6 +107,12 @@ export default {
 
   async mounted() {
     this.setupActionsConfiguration();
+    this.watchAssetBalancesDataRefreshEvent();
+    this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarState();
+    this.watchLpRefresh();
+    this.watchExternalAssetBalanceUpdate();
+    await this.setupApr();
   },
 
   data() {
@@ -107,16 +121,27 @@ export default {
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
-      tvl: 0
+      apr: 0,
+      tvl: 0,
+      lpTokenBalances: [],
+      isLpBalanceEstimated: false,
+      disableAllButtons: false,
     };
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets']),
+    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets', 'debtsPerAsset', 'lpAssets', 'lpBalances']),
+    ...mapState('stakeStore', ['farms']),
+    ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'lpService']),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
+
+    maxApr() {
+      return calculateMaxApy(this.pools, this.apr);
     }
   },
 
@@ -130,7 +155,7 @@ export default {
     },
     provider: {
       async handler(provider) {
-        if (provider){
+        if (provider) {
           await this.setupPoolBalance();
         }
       }
@@ -141,6 +166,15 @@ export default {
           this.setupTvl();
         }
       },
+      immediate: true
+    },
+    lpBalances: {
+      handler(lpBalances) {
+        if (lpBalances) {
+          this.lpTokenBalances = lpBalances;
+        }
+      },
+      immediate: true
     },
   },
 
@@ -150,36 +184,44 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Add / Provide',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
+          tooltip: 'Deposit / Create',
+          disabled: !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add from wallet'
+              name: 'Deposit collateral'
             },
             {
               key: 'PROVIDE_LIQUIDITY',
-              name: 'Add liquidity',
+              name: 'Create LP token',
               disabled: !this.hasSmartLoanContract,
-              disabledInfo: 'To provide liquidity, you need to add some funds from you wallet first'
+              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             },
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: 'Withdraw / Remove',
-          disabled: !this.hasSmartLoanContract,
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
+          tooltip: 'Withdraw / Unwind',
+          disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw'
+              name: 'Withdraw collateral'
             },
             {
               key: 'REMOVE_LIQUIDITY',
-              name: 'Remove liquidity'
+              name: 'Unwind LP token'
             }
           ]
         },
       ];
+    },
+
+    async setupApr() {
+      if (!this.lpToken.currentApr) return;
+      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
     },
 
     toggleChart() {
@@ -195,6 +237,7 @@ export default {
     },
 
     actionClick(key) {
+      console.log(key);
       switch (key) {
         case 'ADD_FROM_WALLET':
           this.openAddFromWalletModal();
@@ -215,22 +258,32 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
+      modalInstance.assetBalance = this.lpBalances && this.lpBalances[this.lpToken.symbol] ? this.lpBalances[this.lpToken.symbol] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = true;
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
-              const fundRequest = {
-                value: addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION),
-                asset: this.lpToken.symbol,
-                assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-              };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
-                this.closeModal();
-              });
-          }
+          const fundRequest = {
+            value: addFromWalletEvent.value.toString(),
+            asset: this.lpToken.symbol,
+            assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+            isLP: true,
+          };
+          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
       });
     },
 
@@ -239,17 +292,26 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
-          value: withdrawEvent.value.toFixed(config.DECIMALS_PRECISION),
+          value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
-          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals
-        }
-
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
-          this.closeModal();
+          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          isLP: true,
+        };
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
         });
       });
     },
@@ -266,12 +328,16 @@ export default {
             symbol: this.lpToken.symbol,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: provideLiquidityEvent.firstAmount.toFixed(config.DECIMALS_PRECISION),
-            secondAmount: provideLiquidityEvent.secondAmount.toFixed(config.DECIMALS_PRECISION),
-            dex: this.lpToken.dex
-        };
-          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}).then(() => {
-            this.closeModal();
+            firstAmount: provideLiquidityEvent.firstAmount.toString(),
+            secondAmount: provideLiquidityEvent.secondAmount.toString(),
+            dex: this.lpToken.dex,
+            addedLiquidity: provideLiquidityEvent.addedLiquidity,
+          };
+          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
           });
         }
       });
@@ -290,14 +356,16 @@ export default {
           symbol: this.lpToken.symbol,
           firstAsset: this.lpToken.primary,
           secondAsset: this.lpToken.secondary,
-          minFirstAmount: removeEvent.minReceivedFirst.toFixed(config.DECIMALS_PRECISION),
-          minSecondAmount: removeEvent.minReceivedSecond.toFixed(config.DECIMALS_PRECISION),
+          minFirstAmount: removeEvent.minReceivedFirst.toString(),
+          minSecondAmount: removeEvent.minReceivedSecond.toString(),
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
-        }
-
-        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}).then(() => {
-          this.closeModal();
+        };
+        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
         });
       });
     },
@@ -319,12 +387,87 @@ export default {
         let valueOfSecond = formatUnits(await secondTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].secondary) * config.ASSETS_CONFIG[this.lpToken.secondary].price;
 
         this.tvl = valueOfFirst + valueOfSecond;
+        this.lpToken.tvl = valueOfFirst + valueOfSecond;
       }
     },
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, true);
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.isLpBalanceEstimated = false;
+        this.disableAllButtons = false;
+        this.$forceUpdate();
+      });
+    },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.disableAllButtons = true;
+        this.$forceUpdate();
+      });
+    },
+
+    watchLpRefresh() {
+      this.lpService.observeRefreshLp().subscribe(async () => {
+        await this.setupApr();
+      })
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
+        if (updateEvent.assetSymbol === this.lpToken.symbol) {
+          this.lpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
+      })
+    },
+
+    scheduleHardRefresh() {
+      setTimeout(() => {
+        this.progressBarService.emitProgressBarInProgressState();
+        this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+      }, 3000)
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
+            break;
+          }
+          case 'ERROR' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            break;
+          }
+        }
+      })
+    },
+
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
     },
   },
 };
@@ -343,7 +486,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 20% 1fr 20% 1fr 76px 102px;
+    grid-template-columns: 20% repeat(2, 1fr) 15% 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -381,8 +524,12 @@ export default {
         align-items: flex-end;
       }
 
-      &.loan {
+      &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.max-apr {
+        font-weight: 600;
       }
 
       &.trend {

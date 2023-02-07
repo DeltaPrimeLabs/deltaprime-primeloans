@@ -18,27 +18,35 @@
                 {{ asset.name }}
               </div>
               <div class="asset__dex" v-if="asset.dex">
-                by {{ asset.dex }}
+                from {{ asset.dex }}
               </div>
             </div>
           </div>
         </div>
 
         <div class="header__cell cell__staked">
+        </div>
+
+        <div class="header__cell cell__available">
+          <div class="header__cell__label">
+            Available:
+          </div>
+          <div class="header__cell__value">
+            <span v-if="isAvailableEstimated">~</span>{{ formatTokenBalance(available, 10, true) }}
+          </div>
+        </div>
+
+        <div class="header__cell cell__staked">
           <div class="header__cell__label">Staked:</div>
-          <div class="header__cell__value">{{ totalStaked | smartRound }}</div>
+          <div class="header__cell__value">
+            <span v-if="isTotalStakedEstimated">~</span>{{ formatTokenBalance(totalStaked, 10, true) }}
+          </div>
         </div>
 
         <div class="header__cell cell__max-apy">
           <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value">{{ maxStakingApy | percent }}</div>
+          <div class="header__cell__value">{{ maxLeveragedApy | percent }}</div>
         </div>
-
-        <div class="header__cell cell__available">
-          <div class="header__cell__label">Available:</div>
-          <div class="header__cell__value">{{ formatTokenBalance(balance, 10, true) }}</div>
-        </div>
-
 
         <div class="header__cell cell__protocols">
           <div class="header__cell__label">Protocols:</div>
@@ -48,9 +56,11 @@
           </div>
         </div>
 
-        <div class="header__cell">
-          <img class="chevron" v-bind:class="{'expanded': tableBodyExpanded}"
+        <div class="header__cell cell__action" v-bind:class="{'expanded': tableBodyExpanded}">
+          <img class="chevron"
                src="src/assets/icons/chevron-down.svg">
+          <img class="chevron chevron--hover"
+               src="src/assets/icons/chevron-down_hover.svg">
         </div>
       </div>
 
@@ -59,10 +69,28 @@
         <div class="options__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
-            <div class="table__header__cell">Staked</div>
-            <div class="table__header__cell">APY</div>
-            <div class="table__header__cell">Daily interest</div>
-            <div class="table__header__cell">Total interest</div>
+            <div class="table__header__cell">Staked&nbsp;
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
+            <div class="table__header__cell">Rewards</div>
+            <div class="table__header__cell">Min. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
+            <div class="table__header__cell">Max. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
             <div class="table__header__cell">Actions</div>
           </div>
           <div class="table__body">
@@ -70,7 +98,7 @@
                                      v-bind:key="index"
                                      :farm="farm"
                                      :asset="asset"
-                                     v-on:balanceChange="balanceChange">
+                                     v-on:stakedChange="stakedChange">
             </StakingProtocolTableRow>
           </div>
         </div>
@@ -85,6 +113,8 @@ import StakingProtocolTableRow from './StakingProtocolTableRow';
 import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
+import {calculateMaxApy} from "../utils/calculate";
+import {assetAppreciation} from "../utils/blockchain";
 
 
 export default {
@@ -100,25 +130,30 @@ export default {
       tableBodyExpanded: false,
       bodyHasCollapsed: true,
       stakingHeaderRoundBottom: false,
-      maxStakingApy: 0,
+      maxLeveragedApy: 0,
       totalStaked: 0,
+      available: 0,
       availableFarms: [],
       protocolConfig: null,
+      isTotalStakedEstimated: false,
+      isAvailableEstimated: false,
+      assetBalances: {},
+      lpBalances: {}
     };
   },
   mounted() {
     this.setupAvailableProtocols();
-    this.setupMaxStakingApy();
-    this.setupTotalStaked();
+    this.watchExternalAssetBalanceUpdate();
+    this.watchExternalTotalStakedUpdate();
+    this.watchAssetBalancesDataRefreshEvent();
+    this.watchFarmRefreshEvent();
   },
-
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'assetBalances', 'lpBalances']),
+    ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
+    ...mapState('poolStore', ['pools']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
-    },
-    balance() {
-      return this.asset ? (this.asset.secondary ? this.lpBalances && this.lpBalances[this.assetSymbol] : this.assetBalances && this.assetBalances[this.assetSymbol]) : 0;
     },
     calculateStakingProtocolsHeight() {
       const headerHeight = 53;
@@ -129,12 +164,11 @@ export default {
       }
     },
 
-    getTotalStaked() {
-      let total = 0;
-      this.availableFarms.forEach(protocol => {
-        total += protocol.totalStaked;
-      });
-      return total;
+    maxApyTooltip() {
+      return `The APY if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this farm.`;
+    },
+    minApyTooltip() {
+      return `The APY of the farm.`;
     }
   },
 
@@ -155,24 +189,28 @@ export default {
       }
     },
 
-    setupMaxStakingApy() {
-      this.availableFarms.forEach(async protocol => {
-        const apy = await protocol.apy();
-        if (apy > this.maxStakingApy) {
-          this.maxStakingApy = apy;
+    async setupMaxStakingApy() {
+      let maxApy = 0;
+
+      for (let farm of this.availableFarms) {
+        const apy = farm.currentApy;
+        if (apy > maxApy) {
+          maxApy = apy;
         }
-      });
+      }
+      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
+
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
+
     },
 
-    setupTotalStaked() {
-      if (this.smartLoanContract) {
-        const totalStakedPromises = this.availableFarms.map(farm => farm.staked(this.smartLoanContract.address));
-        Promise.all(totalStakedPromises).then((allResults) => {
-          this.totalStaked = 0;
-          allResults.forEach(result => {
-            this.totalStaked += Number(result);
-          })
-        });
+    setupAvailable() {
+      if (this.asset && !this.noSmartLoan) {
+        if (this.asset.secondary) {
+          this.available = this.lpBalances && this.lpBalances[this.assetSymbol];
+        } else {
+          this.available = this.assetBalances && this.assetBalances[this.assetSymbol];
+        }
       }
     },
 
@@ -184,15 +222,67 @@ export default {
       return config.PROTOCOLS_CONFIG[protocol.protocol].logo;
     },
 
-    balanceChange() {
-      this.setupTotalStaked();
+    stakedChange() {
+      this.isTotalStakedEstimated = false;
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.isAvailableEstimated = !updateEvent.isTrueData;
+          if (updateEvent.isLP) {
+            this.lpBalances[this.asset.symbol] = updateEvent.balance;
+          } else {
+            this.assetBalances[this.asset.symbol] = updateEvent.balance;
+          }
+          this.setupAvailable();
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchExternalTotalStakedUpdate() {
+      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.isTotalStakedEstimated = !updateEvent.isTrueData;
+          if (updateEvent.action === 'STAKE') {
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+          } else if (updateEvent.action === 'UNSTAKE') {
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+          }
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe((refreshEvent) => {
+        this.assetBalances = refreshEvent.assetBalances;
+        this.lpBalances = refreshEvent.lpBalances;
+        this.isAvailableEstimated = false;
+        this.setupAvailable();
+        this.$forceUpdate();
+      });
+    },
+
+    watchFarmRefreshEvent() {
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+      })
     },
   },
   watch: {
-    smartLoanContract: {
-      handler(smartLoanContract) {
-        if (this) {
-          this.setupTotalStaked();
+    noSmartLoan: {
+      handler(noSmartLoan) {
+        if (noSmartLoan === false) {
+          this.setupAvailable();
+        }
+      },
+    },
+    pools: {
+      async handler(pools) {
+        if (pools) {
+          await this.setupMaxStakingApy();
         }
       },
     }
@@ -219,7 +309,7 @@ export default {
     .staking-asset__header {
       cursor: pointer;
       display: grid;
-      grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
+      grid-template-columns: 22% 1fr 195px 210px 170px 180px 80px;
       height: 60px;
       padding: 0 24px;
       background-color: $delta-off-white;
@@ -248,6 +338,7 @@ export default {
         }
 
         .header__cell__label {
+          display: flex;
           color: $dark-gray;
           font-weight: 500;
           margin-right: 5px;
@@ -255,6 +346,16 @@ export default {
 
         .header__cell__value {
           font-weight: 500;
+        }
+
+        &.cell__max-apy {
+          .header__cell__value {
+            font-weight: 600;
+          }
+        }
+
+        &.cell__available {
+          width: 230px;
         }
 
         .asset {
@@ -301,11 +402,27 @@ export default {
           }
         }
 
-        .chevron {
-          transition: transform 300ms ease-in-out;
+        &.cell__action {
+          .chevron {
+            transition: transform 200ms ease-in-out;
+          }
 
-          &.expanded {
+          .chevron--hover {
+            display: none;
+          }
+
+          &.expanded .chevron {
             transform: rotate(-180deg);
+          }
+
+          &:hover {
+            .chevron {
+              display: none;
+            }
+
+            .chevron--hover {
+              display: flex;
+            }
           }
         }
       }
@@ -326,7 +443,7 @@ export default {
 
         .table__header {
           display: grid;
-          grid-template-columns: 16% 1fr 170px 1fr 180px 120px;
+          grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {
@@ -339,6 +456,10 @@ export default {
 
             &.asset {
               justify-content: flex-start;
+            }
+
+            .info__icon__wrapper {
+              transform: translate(3px, -1px);
             }
           }
         }

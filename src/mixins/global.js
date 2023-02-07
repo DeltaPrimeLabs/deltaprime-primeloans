@@ -1,12 +1,8 @@
 import {mapState} from 'vuex';
 import config from "@/config";
-import ethers, {Contract} from "ethers";
-import EXCHANGETUP from '@artifacts/contracts/proxies/tup/avalanche/PangolinIntermediaryTUP.sol/PangolinIntermediaryTUP.json';
-import EXCHANGE from '@artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json'
-import {acceptableSlippage, formatUnits, parseUnits} from "../utils/calculate";
-import {erc20ABI, handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
+import {formatUnits} from "../utils/calculate";
+import {handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
 import Vue from 'vue';
-import addresses from '../../common/addresses/avax/token_addresses.json';
 
 export default {
   methods: {
@@ -30,7 +26,7 @@ export default {
       return parseInt(hex, 16);
     },
 
-    formatTokenBalance(value, precision = 5, toFixed = false) {
+      formatTokenBalance(value, precision = 5, toFixed = false) {
       const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
       const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
@@ -60,50 +56,6 @@ export default {
     async handleError(e) {
       if (isPausedError(e)) this.$store.commit('fundsStore/setProtocolPaused', true)
       if (isOracleError(e)) this.$store.commit('fundsStore/setOracleError', true)
-    },
-    async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
-      if (amount > 0) {
-        const exchange = new Contract(EXCHANGETUP.address, EXCHANGE.abi, provider.getSigner());
-
-        const expectedAvax = amount * this.usdToAVAX(price);
-
-        let checkedAvax =
-          await exchange.getEstimatedAVAXForERC20Token(parseUnits((amount).toString(), tokenDecimals), tokenAddress);
-
-        checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
-
-        let slippage = 0;
-
-        if (checkedAvax > expectedAvax) {
-          slippage = (checkedAvax - expectedAvax) / expectedAvax;
-        }
-
-        return slippage;
-      } else {
-        return 0;
-      }
-    },
-    async calculateSlippageForSell(symbol, price, tokenDecimals, tokenAddress, amount) {
-      if (amount > 0) {
-        const exchange = new Contract(EXCHANGETUP.address, EXCHANGE.abi, provider.getSigner());
-
-        const expectedAvax = amount * this.usdToAVAX(price);
-
-        let checkedAvax =
-          await this.handleCall(exchange.getEstimatedAVAXFromERC20Token, [parseUnits((amount).toString(), tokenDecimals), tokenAddress]);
-
-        checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
-
-        let slippage = 0;
-
-        if (checkedAvax < expectedAvax) {
-          slippage = (expectedAvax - checkedAvax) / expectedAvax;
-        }
-
-        return slippage;
-      } else {
-        return 0;
-      }
     },
     acceptableSlippage(slippage) {
       return acceptableSlippage(slippage);
@@ -148,7 +100,7 @@ export default {
       } else {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
       }
-      return Number(walletAssetBalance);
+      return walletAssetBalance;
     },
   },
   computed: {

@@ -1,10 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Nft from "@/pages/Nft";
-import BorrowNft from "@/components/BorrowNft";
-import DepositNft from "@/components/DepositNft";
 import PrimeAccount from '../pages/PrimeAccount';
 import PoolsBeta from '../components/PoolsBeta';
+import ProtocolStats from '../components/ProtocolStats';
 
 
 Vue.use(Router)
@@ -13,8 +11,8 @@ Vue.use(Router)
 export default new Router({
   routes: [
     {
-      path: '/pool-beta',
-      name: 'Pools Beta',
+      path: '/pools',
+      name: 'Pools',
       component: PoolsBeta
     },
     {
@@ -33,19 +31,9 @@ export default new Router({
       ]
     },
     {
-      path: '/nft',
-      name: 'Nft',
-      component: Nft,
-      children: [
-        {
-          path: 'list',
-          component: BorrowNft
-        },
-        {
-          path: 'deposit',
-          component: DepositNft
-        },
-      ],
+      path: '/protocol',
+      name: 'Protocol',
+      component: ProtocolStats
     },
     {
       path: '*',

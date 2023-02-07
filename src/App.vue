@@ -1,8 +1,12 @@
 <template>
   <div class="page-content">
+<!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
       You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
+    </Banner>
+    <Banner v-if="showConnectBanner">
+      You are not connected to Metamask. <a @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
@@ -16,18 +20,21 @@
       The protocol is paused because of an upgrade.
     </Banner>
     <Banner v-if="oracleError">
-      Oracle error.
+      The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <div class="top-bar">
-      <router-link to="/">
-        <img src="src/assets/icons/deltaprime.svg" class="logo">
-      </router-link>
-      <Navbar></Navbar>
-      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
-      <Wallet class="wallet" v-else/>
+    <div class="content">
+      <div class="top-bar">
+        <a href="https://deltaprime.io/">
+          <img src="src/assets/icons/deltaprime.svg" class="logo">
+        </a>
+        <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
+        <Wallet class="wallet"/>
+      </div>
+      <router-view></router-view>
+      <ProgressBar></ProgressBar>
     </div>
-    <router-view></router-view>
   </div>
+
 </template>
 
 
@@ -40,9 +47,13 @@ import config from '@/config';
 
 const ethereum = window.ethereum;
 import Vue from 'vue';
+import Button from './components/Button';
+import ProgressBar from './components/ProgressBar';
 
 export default {
   components: {
+    ProgressBar,
+    Button,
     Navbar,
     Wallet,
     Banner
@@ -51,11 +62,14 @@ export default {
     return {
       showNetworkBanner: false,
       showMetamaskBanner: false,
+      showConnectBanner: false,
       highGasPrice: false,
       gasPriceIntervalId: null
     };
   },
   async created() {
+    await this.initNetwork();
+
     if (!ethereum) {
       this.showMetamaskBanner = true;
       return;
@@ -67,7 +81,12 @@ export default {
     }
 
     await this.metamaskChecks();
-    await this.initNetwork();
+
+    if (!this.provider || !this.account) {
+      this.showConnectBanner = true;
+      return;
+    }
+
     this.initGasPrices();
   },
 
@@ -77,10 +96,12 @@ export default {
         this.closeModal();
       }
     });
+    this.watchCloseModal();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
-    ...mapState('fundsStore', ['protocolPaused', 'oracleError'])
+    ...mapState('fundsStore', ['protocolPaused', 'oracleError']),
+    ...mapState('serviceRegistry', ['modalService']),
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
@@ -121,7 +142,7 @@ export default {
               walletParams = {
                 chainName: 'Avalanche Mainnet C-Chain',
                 chainId: this.toHex(config.chainId),
-                rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+                rpcUrls: ['https://rpc.ankr.com/avalanche'],
                 nativeCurrency: {
                   name: 'AVAX',
                   symbol: 'AVAX',
@@ -170,7 +191,14 @@ export default {
       const blockchainData = await resp.json();
 
       this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
-    }
+    },
+
+    watchCloseModal() {
+      this.modalService.watchCloseModal().subscribe(() => {
+        this.closeModal();
+      })
+    },
+
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
@@ -199,11 +227,21 @@ a {
   background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
 }
 
+.content {
+  position: relative;
+}
+
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0 35px 0;
+  padding: 20px 0 68px 0;
+
+  .account-apr-widget-wrapper {
+    position: absolute;
+    top: 0;
+    left: calc(50% - 111px);
+  }
 }
 
 .logo {

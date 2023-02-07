@@ -4,18 +4,19 @@
       <div class="modal__title">
         Deposit
       </div>
-
+      <div class="modal-top-desc">
+        <b>It will require accepting several consecutive Metamask transactions.</b>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> AVAX</span></div>
+        <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{ symbol }}</span></div>
       </div>
 
       <CurrencyInput v-on:newValue="depositValueChange"
                      :symbol="assetSymbol"
-                     :max="Number(available)"
                      :validators="validators">
       </CurrencyInput>
 
@@ -30,19 +31,22 @@
             </div>
             Values after confirmation:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Deposit:
-            </div>
-            <div class="summary__value">
-              {{ Number(deposit) + Number(depositValue) | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+            <div>
+              <div class="summary__label">
+                Deposit:
+              </div>
+              <div class="summary__value">
+                {{ Number(deposit) + Number(depositValue) | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
+              </div>
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -65,6 +69,9 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
+import ethers from "ethers";
+import addresses from "../../common/addresses/avax/token_addresses.json";
+import erc20ABI from '../../test/abis/ERC20.json';
 
 export default {
   name: 'DepositModal',
@@ -78,7 +85,8 @@ export default {
 
   props: {
     apy: null,
-    available: null,
+    walletAssetBalance: null,
+    accountBalance: null,
     deposit: 0,
     assetSymbol: null,
   },
@@ -104,6 +112,14 @@ export default {
     getModalHeight() {
       return this.assetSymbol === 'AVAX' ? '561px' : null;
     },
+
+    available() {
+      return (this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX') ? this.accountBalance : this.walletAssetBalance;
+    },
+
+    symbol() {
+      return this.assetSymbol === 'AVAX' ? this.selectedDepositAsset : this.assetSymbol;
+    }
   },
 
   methods: {

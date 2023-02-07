@@ -18,6 +18,7 @@
 import StakingAssetBeta from './StakingAssetBeta';
 import config from '../config';
 import AssetFilter from './AssetFilter';
+import {mapActions} from "vuex";
 
 export default {
   name: 'Farm',
@@ -45,6 +46,7 @@ export default {
     };
   },
   methods: {
+    ...mapActions('stakeStore', ['updateStakedBalances']),
     setFilter(filter) {
       this.selectedAssets = filter.asset;
     },

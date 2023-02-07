@@ -13,7 +13,8 @@
           <img v-if="index === selectedIndex" :src="tab.imgActive">
           <img v-if="index !== selectedIndex" :src="tab.imgNotActive">
         </div>
-        <img v-if="index !== tabs.length - 1" src="src/assets/icons/slash.svg" class="slash">
+        <img v-if="index !== tabs.length - 1 && !arrow" src="src/assets/icons/arrow.svg" class="arrow">
+        <img v-if="index !== tabs.length - 1 && arrow" src="src/assets/icons/arrow.svg" class="arrow">
       </li>
     </ul>
     <slot></slot>
@@ -30,6 +31,7 @@ export default {
       type: Number,
       default: 0
     },
+    arrow: false
   },
   data () {
     return {
@@ -106,6 +108,7 @@ export default {
 
   .tab-icon {
     cursor: pointer;
+    margin-left: -10px;
   }
 
   .tab-selected .tab-button {
@@ -135,4 +138,14 @@ export default {
       height: 50px;
     }
   }
+
+.arrow:not(.md-image) {
+  align-self: center;
+  width: 25px;
+  margin-left: 10px;
+
+  @media screen and (min-width: $md) {
+    width: 30px;
+  }
+}
 </style>

@@ -33,14 +33,15 @@ export default {
       await dispatch('updateBalance');
       await dispatch('updateAvaxPrice');
     },
-    async initProvider({ commit }) {
+    async initProvider({ commit, rootState }) {
       await ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       window.provider = provider;
 
-      commit('setProvider', provider);
+      await commit('setProvider', provider);
+      rootState.serviceRegistry.providerService.emitProviderCreated();
     },
-    async initAccount({ commit, state }) {
+    async initAccount({ commit, state, rootState }) {
       if (state.account) {
         return state.account;
       }
@@ -51,6 +52,7 @@ export default {
       if (accounts.length > 0) {
         const mainAccount = accounts[0];
         commit('setAccount', mainAccount);
+        rootState.serviceRegistry.accountService.emitAccountLoaded();
       } else {
         Vue.$toast.error("No accounts available");
       }

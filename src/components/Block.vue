@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-radius: 25px;
+  border-radius: 35px;
   box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
   padding: 1.5rem;
 
@@ -37,7 +37,7 @@
 .block-wrapper.bordered {
   position: relative;
   background-clip: padding-box;
-  border-radius: 21px;
+  border-radius: 35px;
 }
 
 .block-wrapper.bordered::after {
@@ -49,7 +49,7 @@
   background-image: linear-gradient(143deg, #c9cbff 26%, #ffd8b1 60%, #fcb7cc 91%);
   content: '';
   z-index: -1;
-  border-radius: 25px;
+  border-radius: 38px;
 }
 
 </style>

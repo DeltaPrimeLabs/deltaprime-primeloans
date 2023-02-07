@@ -2,35 +2,32 @@
   <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Add from wallet
+        Deposit collateral
       </div>
-      <div class="modal-top-info" v-if="noSmartLoan">This transaction will deploy your Prime Account and load your
-        funds.<br/>
-        It might take a while and requires more gas, but you need to do it only once.<br/>
-        When it's done, you can explore the power of undercollateralized loans.
+      <div class="modal-top-desc" v-if="noSmartLoan">
+        <div>
+          This action will deploy your <b>Prime Account</b> and add your
+          collateral.
+          <br><br>
+        </div>
+        <div>
+          <b>It will require accepting Terms and <span v-if="isNativeAvax">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
+        </div>
       </div>
-      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset === 'AVAX'">You need to confirm 3
-        transactions in Metamask:<br/>
-        1. Convert AVAX<br/>
-        2. Approve WAVAX<br/>
-        3. Deploy the account<br/>
-      </div>
-      <div class="modal-top-info" v-if="noSmartLoan && selectedDepositAsset !== 'AVAX'">You need to confirm 2
-        transactions in Metamask:<br/>
-        1. Approve {{ asset.name }}<br/>
-        2. Deploy account<br/>
+      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
+        <b>This action requires two separate transactions to be approved.</b>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value" v-bind:class="{'available-balance--loading': !getAvailableAssetAmount && getAvailableAssetAmount !== 0}">
           <LoadedValue :check="() => getAvailableAssetAmount != null || Number.isNaN(getAvailableAssetAmount)"
-                       :value="formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
+                       :value="isLP ? formatTokenBalance(getAvailableAssetAmount, 10, true) : formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
           <div v-if="getAvailableAssetAmount != null">
             <span v-if="asset.name === 'AVAX'" class="top-info__currency">
               {{ selectedDepositAsset }}
             </span>
             <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
-              {{ asset.symbol }}
+              {{ isLP ? asset.name : asset.symbol }}
             </span>
           </div>
         </div>
@@ -42,14 +39,14 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="inputChange"
                      :validators="validators"
-                     :max="getAvailableAssetAmount">
+      >
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-if="!isLP"
                      :symbol="asset.symbol"
                      v-on:newValue="inputChange"
                      :validators="validators"
-                     :max="getAvailableAssetAmount">
+      >
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -57,22 +54,27 @@
           <div class="summary__title">
             Values after transaction:
           </div>
+          <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__label">
-              Health Ratio:
+            <div>
+              <div class="summary__label">
+                Health:
+              </div>
+              <div class="summary__value">
+                {{ healthAfterTransaction | percent }}
+              </div>
+              <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0"
+                            :slim="true"></BarGaugeBeta>
             </div>
-            <div class="summary__value">
-              {{ healthAfterTransaction | percent }}
-            </div>
-            <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction ? healthAfterTransaction : 0"
-                          :slim="true"></BarGaugeBeta>
             <div class="summary__divider"></div>
-            <div class="summary__label">
-              Balance:
-            </div>
-            <div class="summary__value">
-              {{ (Number(assetBalance) + Number(value)) | smartRound }}
-              {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+            <div>
+              <div class="summary__label">
+                Balance:
+              </div>
+              <div class="summary__value">
+                {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
+                {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+              </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -119,6 +121,12 @@ export default {
 
   props: {
     asset: {},
+    assets: {},
+    assetBalances: {},
+    debtsPerAsset: {},
+    lpAssets: {},
+    lpBalances: {},
+    farms: {},
     thresholdWeightedValue: Number,
     loan: Number,
     assetBalance: Number,
@@ -134,10 +142,10 @@ export default {
   data() {
     return {
       value: 0,
-      healthAfterTransaction: 0,
+      healthAfterTransaction: 1,
       validators: [],
       selectedDepositAsset: 'AVAX',
-      validationError: false,
+      validationError: true,
       availableAssetAmount: 0,
     };
   },
@@ -160,26 +168,26 @@ export default {
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      console.log('this.walletAssetBalance', this.walletAssetBalance);
-      if (this.asset.symbol === 'AVAX') {
-        if (this.selectedDepositAsset === 'AVAX') {
-          return this.walletNativeTokenBalance;
-        } else {
-          return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
-        }
+      if (this.isNativeAvax) {
+        return this.walletNativeTokenBalance;
       } else {
-        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : Number(this.walletAssetBalance);
+        console.log((!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance);
+        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
       }
     },
+
+    isNativeAvax() {
+      return this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX';
+    }
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
       if (this.asset.symbol === 'AVAX') {
-        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.selectedDepositAsset});
+        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
-        this.$emit('ADD_FROM_WALLET', {value: this.value, asset: this.asset});
+        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.asset});
       }
     },
 
@@ -190,11 +198,49 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      if (this.value) {
-        this.healthAfterTransaction = calculateHealth(this.loan, this.thresholdWeightedValue + this.value * this.asset.price * this.asset.maxLeverage);
-      } else {
-        this.healthAfterTransaction = this.health !== null ? this.health : 0;
+      console.log('calculateHealthAfterTransaction')
+      console.log(this.noSmartLoan)
+      if (this.noSmartLoan) this.healthAfterTransaction = 1;
+
+      let added = this.value ? this.value : 0;
+
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = (this.debtsPerAsset && this.debtsPerAsset[symbol]) ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.asset.symbol) {
+          balance += added;
+        }
+
+        tokens.push({ price: data.price, balance: balance ? balance : 0, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        if (this.lpBalances) {
+          let balance = parseFloat(this.lpBalances[symbol]);
+
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: parseFloat(farm.totalBalance) ? parseFloat(farm.totalBalance) : 0,
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage
+          });
+        });
+      }
+
+      console.log(tokens)
+
+      this.healthAfterTransaction = calculateHealth(tokens);
     },
 
     setupValidators() {
@@ -218,9 +264,9 @@ export default {
     setupAvailableAssetAmount() {
       if (this.asset.symbol === 'AVAX') {
         const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
-        this.availableAssetAmount = Number(balance);
+        this.availableAssetAmount = balance;
       } else {
-        this.availableAssetAmount = this.walletAssetBalance ? Number(this.walletAssetBalance) : null;
+        this.availableAssetAmount = this.walletAssetBalance ? this.walletAssetBalance : null;
       }
       this.$forceUpdate();
     },

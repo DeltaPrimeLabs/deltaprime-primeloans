@@ -5,7 +5,13 @@
                      class="currency-input"
                      :embedded="true"
                      :validators="validators"
+                     :warnings="warnings"
+                     :info="info"
+                     :disabled="disabled"
+                     :typingTimeout="typingTimeout"
+                     v-on:newValue="onCurrencyInputNewValue"
                      v-on:inputChange="currencyInputChange"
+                     v-on:ongoingTyping="ongoingTyping"
                      :max="max"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
@@ -48,8 +54,17 @@ export default {
   },
   props: {
     assetOptions: {},
-    validators: {},
     max: {},
+    validators: {
+      type: Array, default: () => []
+    },
+    warnings: {
+      type: Array, default: () => []
+    },
+    //TODO: make an array like in validators
+    info: {type: Function, default: null},
+    disabled: false,
+    typingTimeout: {type: Number, default: 0},
   },
   computed: {
     getDisplayedAssetOptions() {
@@ -64,6 +79,7 @@ export default {
       selectedAsset: null,
       searchPhrase: null,
       assetAmount: null,
+      maxButtonUsed: false,
     };
   },
   mounted() {
@@ -127,19 +143,32 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
+      console.log('currencyComboInput.currencyInputChange');
+      console.log(disableEmitValue);
       this.assetAmount = value;
       if (!disableEmitValue) {
+        console.log('emit value');
         this.emitValue();
       }
     },
 
+    onCurrencyInputNewValue(event) {
+      console.log(event);
+      this.maxButtonUsed = event.maxButtonUsed;
+    },
+
+    ongoingTyping(event) {
+      this.$emit('ongoingTyping', {typing: event.typing});
+    },
+
     async emitValue() {
       const error = await this.$refs.currencyInput.forceValidationCheck();
-      this.$emit('valueChange', {asset: this.selectedAsset.symbol, value: this.assetAmount, error: error});
+      this.$emit('valueChange',
+        {asset: this.selectedAsset.symbol, value: Number(this.assetAmount), error: error, maxButtonUsed: this.maxButtonUsed});
     },
 
     setCurrencyInputValue(value) {
-      this.$refs.currencyInput.setValue(value);
+      return this.$refs.currencyInput.setValue(value);
     },
 
   },

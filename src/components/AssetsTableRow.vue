@@ -5,30 +5,34 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="pools && pools[asset.symbol]">
-            Borrow&nbsp;APY:&nbsp;{{ pools[asset.symbol].borrowingAPY | percent }}
+          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol]">
+            Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
+          </div>
+          <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
+            Profit APY:&nbsp;{{ 0.072 | percent }}
           </div>
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="assetBalances && assetBalances[asset.symbol]">
+        <template v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
-            <LoadedValue :check="() => assetBalances[asset.symbol] != null"
-                         :value="formatTokenBalance(assetBalances[asset.symbol])"></LoadedValue>
+            <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
           </div>
         </template>
-        <template v-if="!(assetBalances && assetBalances[asset.symbol])">
+        <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && debtsPerAsset[asset.symbol].debt">
-          <div class="double-value__pieces">{{ debtsPerAsset[asset.symbol].debt | smartRound }}</div>
+        <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && parseFloat(debtsPerAsset[asset.symbol].debt)">
+          <div class="double-value__pieces">
+            <span v-if="isDebtEstimated">~</span>{{ debtsPerAsset[asset.symbol].debt | smartRound(8, true) }}
+          </div>
           <div class="double-value__usd">{{ debtsPerAsset[asset.symbol].debt * asset.price | usd }}</div>
         </template>
         <template v-else>
@@ -37,7 +41,7 @@
       </div>
 
       <div class="table__cell impact">
-        <span v-if="asset.maxLeverage > 0">5x</span>
+        <span v-if="asset.debtCoverage > 0">5x</span>
         <span v-else>0x</span>
       </div>
 
@@ -48,9 +52,9 @@
                           :line-width="2"
                           :width="60"
                           :height="25"
-                          :positive-change="asset.todayPriceChange > 0">
+                          :positive-change="todayPriceChange > 0">
           </SmallChartBeta>
-          <ColoredValueBeta v-if="asset.todayPriceChange" :value="asset.todayPriceChange" :formatting="'percent'"
+          <ColoredValueBeta v-if="todayPriceChange" :value="todayPriceChange" :formatting="'percent'"
                             :percentage-rounding-precision="2" :show-sign="true"></ColoredValueBeta>
         </div>
       </div>
@@ -65,9 +69,12 @@
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
+          :bubbleText="(asset.symbol === 'AVAX' && noSmartLoan && index === 0) ?
+           `To create your Prime Account, click on the <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button, and then click &quot;Deposit collateral&quot;` : ''"
           v-bind:key="index"
           :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -78,7 +85,7 @@
                :line-width="3"
                :min-y="asset.minPrice"
                :max-y="asset.maxPrice"
-               :positive-change="asset.todayPriceChange > 0">
+               :positive-change="todayPriceChange > 0">
         </Chart>
       </SmallBlock>
     </div>
@@ -94,8 +101,6 @@ import Chart from './Chart';
 import SmallBlock from './SmallBlock';
 import LoadedValue from './LoadedValue';
 import config from '../config';
-import redstone from 'redstone-api';
-import Vue from 'vue';
 import {mapActions, mapState} from 'vuex';
 import BorrowModal from './BorrowModal';
 import SwapModal from './SwapModal';
@@ -103,8 +108,8 @@ import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits} from '@/utils/calculate';
-import {erc20ABI} from '../utils/blockchain';
+import erc20ABI from '../../test/abis/ERC20.json';
+import WrapModal from './WrapModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -121,19 +126,31 @@ export default {
   },
   mounted() {
     this.setupActionsConfiguration();
-    this.setup24HourChange();
+    this.watchExternalAssetBalanceUpdate();
+    this.watchExternalAssetDebtUpdate();
+    this.watchAssetBalancesDataRefreshEvent();
+    this.watchDebtsPerAssetDataRefreshEvent();
+    this.watchHardRefreshScheduledEvent();
+    this.watchProgressBarState();
+    this.setupPoolsApy();
   },
   data() {
     return {
       actionsConfig: null,
       showChart: false,
       rowExpanded: false,
+      isBalanceEstimated: false,
+      isDebtEstimated: false,
+      disableAllButtons: false,
+      borrowApyPerPool: {}
     };
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset']),
+    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'noSmartLoan']),
+    ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -141,20 +158,25 @@ export default {
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
+
+    todayPriceChange() {
+      return this.asset.prices && (this.asset.prices[this.asset.prices.length - 1].y - this.asset.prices[0].y) / this.asset.prices[this.asset.prices.length - 1].y;
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken']),
+    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken', 'wrapNativeToken']),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Add / Borrow' : 'Add',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
-              name: 'Add from wallet'
+              name: 'Deposit collateral'
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
@@ -163,17 +185,23 @@ export default {
                 disabled: this.borrowDisabled(),
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
-              : null
+              : null,
+            {
+              key: 'WRAP',
+              name: 'Wrap native AVAX',
+              hidden: true,
+            }
           ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
           disabled: !this.hasSmartLoanContract,
           menuOptions: [
             {
               key: 'WITHDRAW',
-              name: 'Withdraw',
+              name: 'Withdraw collateral',
             },
             BORROWABLE_ASSETS.includes(this.asset.symbol) ?
               {
@@ -185,6 +213,7 @@ export default {
         },
         {
           iconSrc: 'src/assets/icons/swap.svg',
+          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
           tooltip: 'Swap',
           iconButtonActionKey: 'SWAP',
           disabled: !this.hasSmartLoanContract
@@ -211,16 +240,6 @@ export default {
       return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
     },
 
-    setup24HourChange() {
-      const date24HoursAgo = Date.now() - 1000 * 3600 * 24;
-      redstone.getHistoricalPrice(this.asset.symbol, {
-        date: date24HoursAgo,
-      }).then(price => {
-        const priceChange = this.asset.price - price.value;
-        Vue.set(this.asset, 'todayPriceChange', priceChange / this.asset.price);
-      });
-    },
-
     actionClick(key) {
       switch (key) {
         case 'BORROW':
@@ -238,6 +257,9 @@ export default {
         case 'SWAP':
           this.openSwapModal();
           break;
+        case 'WRAP':
+          this.openWrapModal();
+          break;
       }
     },
 
@@ -252,22 +274,34 @@ export default {
     },
 
     openBorrowModal() {
+      this.progressBarService.progressBarState$.next('SUCCESS');
       const pool = this.pools[this.asset.symbol];
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = this.loanAPY;
+      modalInstance.loanAPY = this.pools[this.asset.symbol].borrowingAPY;
+      modalInstance.maxUtilisation = this.pools[this.asset.symbol].maxUtilisation;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
-          amount: value.toFixed(config.DECIMALS_PRECISION)
+          amount: value.toString()
         };
-        this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}).then(() => {
-          this.closeModal();
-        });
+        this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        })
+          .then(() => {
+          });
       });
     },
 
@@ -275,18 +309,27 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.$on('SWAP', swapData => {
+      modalInstance.$on('SWAP', swapEvent => {
+        console.log(swapEvent);
         const swapRequest = {
-          ...swapData,
-          sourceAmount: swapData.sourceAmount.toFixed(config.DECIMALS_PRECISION)
+          ...swapEvent,
+          sourceAmount: swapEvent.sourceAmount.toString()
         };
-        this.handleTransaction(this.swap, {swapRequest: swapRequest}).then(() => {
-          this.closeModal();
+        this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
         });
       });
     },
@@ -294,37 +337,53 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       this.updateBalance().then(() => {
-        console.log('updated balance', this.accountBalance);
         modalInstance.setWalletNativeTokenBalance(this.accountBalance);
         this.$forceUpdate();
       });
 
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances && this.assetBalances[this.asset.symbol] ? this.assetBalances[this.asset.symbol] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
-          const value = addFromWalletEvent.value.toFixed(config.DECIMALS_PRECISION);
-          if (this.smartLoanContract.address === NULL_ADDRESS) {
-            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}).then(() => {
-              this.closeModal();
-            });
+          const value = addFromWalletEvent.value;
+          if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
+            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
+            }, (error) => {
+              this.handleTransactionError(error);
+            })
+              .then(() => {
+              });
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
-              this.handleTransaction(this.fundNativeToken, {value: value}).then(() => {
-                this.closeModal();
+              this.handleTransaction(this.fundNativeToken, {value: value}, () => {
+                this.$forceUpdate();
+              }, (error) => {
+                console.log(error);
+                this.handleTransactionError(error);
+              }).then(() => {
               });
             } else {
               const fundRequest = {
                 value: value,
                 asset: this.asset.symbol,
-                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+                isLP: false,
               };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}).then(() => {
-                this.closeModal();
+              this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+                this.$forceUpdate();
+              }, (error) => {
+                this.handleTransactionError(error);
+              }).then(() => {
               });
             }
           }
@@ -336,30 +395,47 @@ export default {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
-        const value = withdrawEvent.value.toFixed(config.DECIMALS_PRECISION);
+        console.log(withdrawEvent);
+        const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
             value: value,
-            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+            isLP: false,
           };
-          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}).then(() => {
-            this.closeModal();
-          });
+          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          })
+            .then(() => {
+            });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
             value: value,
-            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+            assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+            isLP: false,
           };
-          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
-            this.closeModal();
-          });
+          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          })
+            .then(() => {
+            });
         }
       });
     },
@@ -367,24 +443,163 @@ export default {
     openRepayModal() {
       const modalInstance = this.openModal(RepayModal);
       modalInstance.asset = this.asset;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
-      modalInstance.$on('REPAY', value => {
+      modalInstance.$on('REPAY', repayEvent => {
         const repayRequest = {
           asset: this.asset.symbol,
-          amount: value.toFixed(config.DECIMALS_PRECISION)
+          decimals: this.asset.decimals,
+          amount: repayEvent.repayValue.toString(),
+          isMax: repayEvent.isMax
         };
-        this.handleTransaction(this.repay, {repayRequest: repayRequest}).then(() => {
-          this.closeModal();
+        this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        })
+          .then(() => {
+          });
+      });
+    },
+
+    async openWrapModal() {
+      const smartContractNativeTokenBalance = await this.getSmartLoanContractNativeTokenBalance();
+      const modalInstance = this.openModal(WrapModal);
+      modalInstance.asset = this.asset;
+      modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
+      modalInstance.nativeTokenBalance = smartContractNativeTokenBalance;
+
+      modalInstance.$on('WRAP', value => {
+        const wrapRequest = {
+          amount: value.toString(),
+          decimals: this.asset.decimals,
+        };
+        this.handleTransaction(this.wrapNativeToken, {wrapRequest: wrapRequest}, () => {
+          this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(wrapRequest.amount);
+          this.isBalanceEstimated = true;
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+
         });
       });
+
     },
 
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+    },
+
+    async getSmartLoanContractNativeTokenBalance() {
+      const balance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.smartLoanContract.address)));
+      return balance;
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.assetBalances[this.asset.symbol] = updateEvent.balance;
+          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchExternalAssetDebtUpdate() {
+      this.assetDebtsExternalUpdateService.observeExternalAssetDebtUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          this.debtsPerAsset[this.asset.symbol].debt = updateEvent.debt;
+          this.isDebtEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.isBalanceEstimated = false;
+        this.disableAllButtons = false;
+        this.progressBarService.emitProgressBarSuccessState();
+        this.$forceUpdate();
+      });
+    },
+
+    watchDebtsPerAssetDataRefreshEvent() {
+      this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
+        this.isDebtEstimated = false;
+        this.disableAllButtons = false;
+        this.progressBarService.emitProgressBarSuccessState();
+        this.$forceUpdate();
+      });
+    },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.disableAllButtons = true;
+        this.$forceUpdate();
+      });
+    },
+
+    scheduleHardRefresh() {
+      this.progressBarService.emitProgressBarInProgressState();
+      this.dataRefreshEventService.emitHardRefreshScheduledEvent();
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
+            break;
+          }
+          case 'ERROR' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            this.isDebtEstimated = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            this.isDebtEstimated = false;
+            break;
+          }
+        }
+      });
+    },
+
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
+      this.isBalanceEstimated = false;
+    },
+
+    setupPoolsApy() {
+      this.poolService.observePools().subscribe(pools => {
+        pools.forEach(pool => {
+          this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+        });
+      });
     },
   },
   watch: {
@@ -395,6 +610,7 @@ export default {
         }
       },
     },
+
     pools: {
       handler(pools) {
         this.setupActionsConfiguration();

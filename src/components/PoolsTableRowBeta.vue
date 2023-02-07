@@ -14,7 +14,7 @@
             <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="pool.deposit">{{ pool.deposit * pool.asset.price | usd }}</span>
+            <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
           </div>
         </template>
         <template v-if="pool.deposit === 0">
@@ -27,21 +27,12 @@
         </LoadedValue>
       </div>
 
-      <div class="table__cell table__cell--double-value interest">
-        <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.interest != null" :value="formatTokenBalance(pool.interest)"></LoadedValue>
-        </div>
-        <div class="double-value__usd">
-          <span v-if="pool.interest">{{ pool.interest * pool.asset.price | usd }}</span>
-        </div>
-      </div>
-
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
           <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
         </div>
         <div class="double-value__usd">
-          <span v-if="pool.tvl">{{ pool.tvl * pool.asset.price | usd }}</span>
+          <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
         </div>
       </div>
 
@@ -68,6 +59,9 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
+const ethers = require('ethers');
+import addresses from "../../common/addresses/avax/token_addresses.json";
+import erc20ABI from '../../test/abis/ERC20.json';
 
 
 export default {
@@ -88,7 +82,7 @@ export default {
   },
 
   computed: {
-    ...mapState('network', ['accountBalance'])
+    ...mapState('network', ['account', 'accountBalance', 'provider'])
   },
 
   methods: {
@@ -97,11 +91,13 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
+          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit',
           iconButtonActionKey: 'DEPOSIT'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
+          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
@@ -119,12 +115,18 @@ export default {
       }
     },
 
-    openDepositModal() {
+    async getWalletAssetBalance() {
+      const tokenContract = new ethers.Contract(addresses[this.pool.asset.symbol], erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.pool.asset.symbol, tokenContract, false);
+    },
+
+    async openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
       modalInstance.apy = this.pool.apy;
-      modalInstance.available = this.accountBalance;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
-      modalInstance.assetSymbol = this.pool.asset.name;
+      modalInstance.assetSymbol = this.pool.asset.symbol;
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
@@ -132,7 +134,12 @@ export default {
           depositNativeToken: depositEvent.depositNativeToken
         };
 
-        this.handleTransaction(this.deposit, {depositRequest: depositRequest}).then(() => {
+        this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
+          this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });
@@ -150,7 +157,12 @@ export default {
           amount: withdrawEvent.value,
           withdrawNativeToken: withdrawEvent.withdrawNativeToken,
         };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}).then(() => {
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
           this.closeModal();
         });
       });
@@ -169,7 +181,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 102px;
+    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
