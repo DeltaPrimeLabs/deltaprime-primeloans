@@ -5,6 +5,7 @@ export default class DataRefreshEventService {
   assetBalancesDataRefreshEvent$ = new Subject();
   assetBalancesDataRefresh$ = new Subject();
   debtsPerAssetDataRefreshEvent$ = new Subject();
+  fullLoanStatusRefresh$ = new Subject();
   hardRefreshScheduledEvent$ = new Subject();
 
   emitAssetBalancesDataRefreshEvent(assetBalancesRefreshEvent) {
@@ -22,6 +23,11 @@ export default class DataRefreshEventService {
     this.debtsPerAssetDataRefreshEvent$.next(debtsPerAsset);
   }
 
+  emitFullLoanStatusRefresh() {
+    console.log('emitFullLoanStatusRefresh');
+    this.fullLoanStatusRefresh$.next(null);
+  }
+
   emitHardRefreshScheduledEvent() {
     this.hardRefreshScheduledEvent$.next(null);
   }
@@ -32,6 +38,10 @@ export default class DataRefreshEventService {
 
   observeDebtsPerAssetDataRefresh() {
     return this.debtsPerAssetDataRefreshEvent$.asObservable();
+  }
+
+  observeFullLoanStatusRefresh() {
+    return this.fullLoanStatusRefresh$.asObservable();
   }
 
 }

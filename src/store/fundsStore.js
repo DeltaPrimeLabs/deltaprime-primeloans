@@ -365,6 +365,7 @@ export default {
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
+      dataRefreshNotificationService.emitAssetBalancesDataRefresh();
       dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
     },
 
@@ -381,7 +382,7 @@ export default {
       dataRefreshNotificationService.emitDebtsPerAssetDataRefreshEvent(debtsPerAsset);
     },
 
-    async getFullLoanStatus({state, commit}) {
+    async getFullLoanStatus({state, rootState, commit}) {
       const loanAssets = mergeArrays([
         (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
@@ -396,6 +397,7 @@ export default {
         health: fromWei(fullLoanStatusResponse[3]),
       };
       commit('setFullLoanStatus', fullLoanStatus);
+      rootState.serviceRegistry.dataRefreshEventService.emitFullLoanStatusRefresh();
     },
 
     async getAccountApr({state, getters, rootState, commit}){
