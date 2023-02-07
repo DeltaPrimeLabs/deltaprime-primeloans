@@ -2,7 +2,7 @@ import {awaitConfirmation, getLog, wrapContract} from '../utils/blockchain';
 import config from '../config';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
-import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../utils/calculate';
+import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakMaxUnstaked, yieldYakStaked} from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -208,7 +208,13 @@ export default {
             const decimals = token.decimals;
             farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
 
-            farm.rewards = farm.totalBalance * farm.price - farm.totalStaked * token.price;
+            console.log('-------------------')
+            console.log('token: ', farm.token)
+            const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+            console.log('maxUnstaked: ', maxUnstaked)
+            console.log('totalStaked: ', farm.totalStaked)
+            farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
+            console.log('farm.rewards: ', farm.rewards)
           } else if (farm.protocol === 'VECTOR_FINANCE') {
             farm.totalStaked = farm.totalBalance;
             farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);

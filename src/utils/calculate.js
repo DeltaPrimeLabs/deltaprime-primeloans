@@ -5,6 +5,8 @@ import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IYieldYak
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
@@ -170,6 +172,18 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
+  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
+  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
+  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+
+  console.log('yieldYakMaxUnstaked')
+  console.log('loanBalance: ', loanBalance)
+  console.log('totalSupply: ', totalSupply)
+  console.log('totalDeposits: ', totalDeposits)
+  return loanBalance / totalSupply * totalDeposits;
+}
 
 export async function getPangolinLpApr(url) {
   let apr;
