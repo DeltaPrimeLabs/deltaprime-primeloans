@@ -211,14 +211,13 @@ describe('Smart loan', () => {
             let stakingContract = await new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider);
             let compounder = IVectorFinanceCompounder__factory.connect(await stakingContract.compounder(), provider);
 
-            let initialStakedBalance = await compounder.userDepositToken(wrappedLoan.address);
-
+            let initialStakedBalance = await compounder.depositTracking(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
             await wrappedLoan[stakeMethod](amount);
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(amount, 1);
-            expect(await compounder.userDepositToken(wrappedLoan.address)).to.be.closeTo(amount, 1);
+            expect(await wrappedLoan[balanceMethod]()).to.be.eq(amount);
+            expect(await compounder.depositTracking(wrappedLoan.address)).to.be.eq(amount);
 
             expect(await wrappedLoan.getTotalValue()).to.be.closeTo(initialTotalValue, 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00001);
@@ -232,13 +231,13 @@ describe('Smart loan', () => {
             let stakingContract = await new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider);
             let compounder = IVectorFinanceCompounder__factory.connect(await stakingContract.compounder(), provider);
 
-            let initialStakedBalance = await compounder.userDepositToken(wrappedLoan.address);
+            let initialStakedBalance = await compounder.depositTracking(wrappedLoan.address);
 
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(initialStakedBalance.sub(amount), 1);
-            expect(await compounder.userDepositToken(wrappedLoan.address)).to.be.closeTo(initialStakedBalance.sub(amount), 1);
+            expect(await wrappedLoan[balanceMethod]()).to.be.eq(initialStakedBalance.sub(amount));
+            expect(await compounder.depositTracking(wrappedLoan.address)).to.be.eq(initialStakedBalance.sub(amount));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.001);

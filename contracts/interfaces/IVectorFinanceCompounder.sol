@@ -13,5 +13,5 @@ interface IVectorFinanceCompounder {
 
     function stakingToken() external view returns (address);
 
-    function userDepositToken(address user) external view returns (uint256);
+    function depositTracking(address) external view returns (uint256);
 }

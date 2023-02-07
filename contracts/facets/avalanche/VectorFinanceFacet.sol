@@ -46,7 +46,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetCompounder(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E);
-        _stakedBalance = compounder.userDepositToken(address(this));
+        _stakedBalance = compounder.depositTracking(address(this));
     }
 
     function vectorStakeWAVAX1(uint256 amount) public {
@@ -73,7 +73,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorWAVAX1Balance() public view returns(uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetCompounder(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
-        _stakedBalance = compounder.userDepositToken(address(this));
+        _stakedBalance = compounder.depositTracking(address(this));
     }
 
     function vectorStakeSAVAX1(uint256 amount) public {
@@ -100,7 +100,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorSAVAX1Balance() public view returns(uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetCompounder(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE);
-        _stakedBalance = compounder.userDepositToken(address(this));
+        _stakedBalance = compounder.depositTracking(address(this));
     }
 
     // INTERNAL FUNCTIONS
@@ -111,7 +111,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
         IVectorFinanceCompounder compounder = getAssetCompounder(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
-        uint256 initialReceiptTokenBalance = compounder.userDepositToken(address(this));
+        uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
         amount = Math.min(stakedToken.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot stake 0 tokens");
@@ -131,7 +131,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             position.symbol,
             address(compounder),
             amount,
-            compounder.userDepositToken(address(this)) - initialReceiptTokenBalance,
+            compounder.balanceOf(address(this)) - initialReceiptTokenBalance,
             block.timestamp
         );
     }
@@ -146,10 +146,11 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
         IVectorFinanceCompounder compounder = getAssetCompounder(position.asset);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
+        uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        amount = Math.min(compounder.userDepositToken(address(this)), amount);
+        amount = Math.min(compounder.depositTracking(address(this)), amount);
 
         uint256 balance = unstakedToken.balanceOf(address(this));
 
@@ -157,7 +158,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 newBalance = unstakedToken.balanceOf(address(this));
 
-        if (compounder.userDepositToken(address(this)) == 0) {
+        if (compounder.depositTracking(address(this)) == 0) {
             DiamondStorageLib.removeStakedPosition(position.identifier);
         }
         DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
@@ -167,7 +168,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             position.symbol,
             address(compounder),
             newBalance - balance,
-            amount,
+            initialReceiptTokenBalance - compounder.balanceOf(address(this)),
             block.timestamp
         );
 
