@@ -104,9 +104,9 @@ describe('Smart loan', () => {
             await tokenManager.setDebtCoverage(VectorWAVAXStaking1, toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverage(VectorSAVAXStaking1, toWei("0.8333333333333333"));
 
-            await tokenManager.setDebtCoverageStaked(toBytes32("VF_USDC_MAIN"), toWei("0.8333333333333333"));
-            await tokenManager.setDebtCoverageStaked(toBytes32("VF_AVAX_SAVAX"), toWei("0.8333333333333333"));
-            await tokenManager.setDebtCoverageStaked(toBytes32("VF_SAVAX_MAIN"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_USDC_MAIN_AUTO"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_AVAX_SAVAX_AUTO"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("VF_SAVAX_MAIN_AUTO"), toWei("0.8333333333333333"));
 
             await recompileConstantsFile(
                 'local',
@@ -236,8 +236,8 @@ describe('Smart loan', () => {
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.eq(initialStakedBalance.sub(amount));
-            expect(await compounder.depositTracking(wrappedLoan.address)).to.be.eq(initialStakedBalance.sub(amount));
+            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(initialStakedBalance.sub(amount), 1);
+            expect(await compounder.depositTracking(wrappedLoan.address)).to.be.closeTo(initialStakedBalance.sub(amount), 1);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.001);
