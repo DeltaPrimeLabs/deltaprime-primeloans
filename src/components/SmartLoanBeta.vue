@@ -1,7 +1,7 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="account-apr-widget-wrapper">
-      <AccountAprWidget :accountApr="accountApr" :no-smart-loan="noSmartLoanInternal"></AccountAprWidget>
+      <AccountAprWidget :accountApr="apr" :no-smart-loan="noSmartLoanInternal"></AccountAprWidget>
     </div>
     <div class="container">
       <StatsBarBeta
@@ -60,6 +60,7 @@ import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
 import {combineLatest, delay} from 'rxjs';
 import {fetchLiquidatedEvents} from "../utils/graph";
+import DataRefreshEventService from "../services/dataRefreshEventService";
 
 const ASSETS_PATH = 'assets';
 const FARMS_PATH = 'farms';
@@ -73,11 +74,11 @@ export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
+    ...mapState('fundsStore', ['assetBalances', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract', 'accountApr']),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService']),
+    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService', 'poolService', 'dataRefreshEventService', 'farmService']),
     ...mapState('network', ['account']),
-    ...mapGetters('fundsStore', ['getCollateral', 'getAccountApr']),
+    ...mapGetters('fundsStore', ['getCollateral']),
   },
   watch: {
     assetBalances: {
@@ -119,7 +120,7 @@ export default {
       noSmartLoanInternal: null,
       selectedTabIndex: 0,
       videoVisible: true,
-      accountApr: null,
+      apr: null,
       healthLoading: false,
       liquidationTimestamps: []
     };
@@ -129,13 +130,13 @@ export default {
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();
-    this.watchProgressBarState();
     this.setupVideoVisibility();
+    this.initAccountApr();
 
     this.initStoresWhenProviderAndAccountCreated();
   },
   methods: {
-    ...mapActions('fundsStore', ['fundsStoreSetup']),
+    ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
     ...mapActions('poolStore', ['poolStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
@@ -144,6 +145,19 @@ export default {
           await this.poolStoreSetup();
           await this.fundsStoreSetup();
         });
+    },
+
+    initAccountApr() {
+      combineLatest([
+          this.poolService.observeRefreshPools(),
+          this.farmService.observeRefreshFarm(),
+          this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
+          this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
+      ])
+          .subscribe(async ([provider, account]) => {
+            console.log('subscribe account apr')
+             await this.getAccountApr();
+          });
     },
 
     async assetBalancesChange(balances) {
@@ -241,30 +255,10 @@ export default {
     watchAprRefresh() {
       this.aprService.observeRefreshApr().subscribe(async() => {
         console.log('watchAprRefresh');
-        this.accountApr = null;
-        this.accountApr = await this.getAccountApr;
+        console.log(this.accountApr)
+        this.apr = this.accountApr;
       });
     },
-
-    watchProgressBarState() {
-      this.progressBarService.progressBarState$.subscribe(async (state) => {
-        switch (state) {
-          case 'MINING' : {
-            this.accountApr = null;
-            break;
-          }
-          case 'ERROR' : {
-            this.accountApr = await this.getAccountApr;
-            break;
-          }
-          case 'CANCELLED' : {
-            this.accountApr = await this.getAccountApr;
-            break;
-          }
-        }
-      });
-    },
-
 
     closeVideo() {
       this.videoVisible = false;

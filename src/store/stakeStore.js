@@ -100,6 +100,9 @@ export default {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
@@ -170,6 +173,10 @@ export default {
 
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalTotalStakedUpdate(unstakeRequest.assetSymbol, unstakedTokenAmount, 'UNSTAKE', true);
+
+
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {

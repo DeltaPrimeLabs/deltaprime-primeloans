@@ -2,9 +2,13 @@ import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManag
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {fromBytes32, getLiquidationAmounts, getLiquidationAmountsBasedOnLtv} from "../../test/_helpers";
+import {
+    fromBytes32,
+    getLiquidationAmounts,
+    getLiquidationAmountsBasedOnLtv, getRedstonePrices,
+    getTokensPricesMap
+} from "../../test/_helpers";
 import {ethers} from 'hardhat'
-import redstone from "redstone-api";
 import {
     awaitConfirmation,
     getERC20Contract,
@@ -42,6 +46,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
     //TODO: optimize to unstake only as much as needed
+    await unstakeGlp(loan, liquidator_wallet, provider);
+
     await unstakeStakedPositions(loan, provider);
 
     await unstakeYieldYak(loan, liquidator_wallet, provider);
@@ -52,8 +58,9 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
     let pricesArg = {}
+    let tokensPrices = await getTokensPricesMap(Object.keys(TOKEN_ADDRESSES), getRedstonePrices, []);
     for (const asset of await tokenManager.getAllPoolAssets()) {
-        pricesArg[fromBytes32(asset)] = (await redstone.getPrice(fromBytes32(asset), {provider: "redstone-avalanche-prod-node-3"})).value;
+        pricesArg[fromBytes32(asset)] = tokensPrices.get(fromBytes32(asset));
     }
 
     // const bonus = Math.abs(fromWei(await loan.getTotalValue()) - fromWei(await loan.getDebt())) < 0.1 ? 0 : maxBonus;

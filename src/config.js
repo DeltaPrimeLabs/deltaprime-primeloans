@@ -25,6 +25,7 @@ export default {
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0},
@@ -175,7 +176,27 @@ export default {
                 refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
-            }
+            },
+        ],
+        GLP: [
+            {
+                protocol: 'YIELD_YAK',
+                //TODO: check if it's a right APY
+                apy: () => yieldYakApy('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C'),
+                balance: async (address) => yieldYakBalance('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C', address),
+                stakingContractAddress: '0x9f637540149f922145c06e1aa3f38dcDc32Aff5C',
+                stakeMethod: 'stakeGLPYak',
+                unstakeMethod: 'unstakeGLPYak',
+                feedSymbol: 'YY_GLP',
+                token: 'GLP',
+                isTokenLp: false,
+                debtCoverage: 0.83333333333,
+                strategy: 'GMX',
+                rewardTokens: ['GLP'],
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
+            },
         ],
         PNG_AVAX_USDC_LP: [
             {

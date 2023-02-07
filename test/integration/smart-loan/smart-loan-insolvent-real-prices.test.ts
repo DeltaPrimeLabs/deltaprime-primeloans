@@ -1,19 +1,18 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import redstone from 'redstone-api';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-    Asset,
+    Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployAndInitExchangeContract,
     deployAndInitializeLendingPool, erc20ABI,
     formatUnits,
     fromBytes32, fromWei,
     getFixedGasSigners,
-    getLiquidationAmounts,
+    getLiquidationAmounts, getLiquidationAmountsBasedOnLtv, getRedstonePrices, getTokensPricesMap,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
@@ -308,8 +307,10 @@ describe('Smart loan - real prices', () => {
             QI_PRICE: number,
             ETH_PRICE: number,
             YY_AAVE_AVAX_PRICE: number,
+            GLP_PRICE: number,
             BTC_PRICE: number,
-            diamondAddress: any;
+            diamondAddress: any,
+            tokensPrices: Map<string, number>;
 
         before("deploy provider, exchange and pool", async () => {
             [owner, depositor, borrower1, borrower2, borrower3, borrower4, borrower5, borrower6, borrower7, borrower8, borrower9, borrower10, admin, liquidator] = await getFixedGasSigners(10000000);
@@ -343,6 +344,7 @@ describe('Smart loan - real prices', () => {
                 poolContracts[token.name] = poolContract;
                 tokenContracts[token.name] = tokenContract;
             }
+            tokenContracts['GLP'] = new ethers.Contract(TOKEN_ADDRESSES['GLP'], erc20ABI, provider);
             tokenContracts['USDT'] = new ethers.Contract(TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
             tokenContracts['PNG'] = new ethers.Contract(TOKEN_ADDRESSES['PNG'], erc20ABI, provider);
             tokenContracts['sAVAX'] = new ethers.Contract(TOKEN_ADDRESSES['sAVAX'], erc20ABI, provider);
@@ -351,17 +353,11 @@ describe('Smart loan - real prices', () => {
             tokenContracts['YY_AAVE_AVAX'] = new ethers.Contract(TOKEN_ADDRESSES['YY_AAVE_AVAX'], erc20ABI, provider);
 
 
-            supportedAssets = [
-                new Asset(toBytes32('AVAX'), TOKEN_ADDRESSES['AVAX']),
-                new Asset(toBytes32('sAVAX'), TOKEN_ADDRESSES['sAVAX']),
-                new Asset(toBytes32('USDC'), TOKEN_ADDRESSES['USDC']),
-                new Asset(toBytes32('USDT'), TOKEN_ADDRESSES['USDT']),
-                new Asset(toBytes32('PNG'), TOKEN_ADDRESSES['PNG']),
-                new Asset(toBytes32('QI'), TOKEN_ADDRESSES['QI']),
-                new Asset(toBytes32('ETH'), TOKEN_ADDRESSES['ETH']),
-                new Asset(toBytes32('BTC'), TOKEN_ADDRESSES['BTC']),
-                new Asset(toBytes32('YY_AAVE_AVAX'), TOKEN_ADDRESSES['YY_AAVE_AVAX']),
-            ];
+            let assetsList = ['AVAX', 'sAVAX', 'USDC', 'USDT', 'PNG', 'QI', 'ETH', 'BTC', 'YY_AAVE_AVAX', 'GLP']
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
 
             tokenManager = await deployContract(
                 owner,
@@ -384,15 +380,16 @@ describe('Smart loan - real prices', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            SAVAX_PRICE = (await redstone.getPrice('sAVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USDC_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
-            USDT_PRICE = (await redstone.getPrice('USDT', {provider: "redstone-avalanche-prod-1"})).value;
-            PNG_PRICE = (await redstone.getPrice('PNG', {provider: "redstone-avalanche-prod-1"})).value;
-            QI_PRICE = (await redstone.getPrice('QI', {provider: "redstone-avalanche-prod-1"})).value;
-            ETH_PRICE = (await redstone.getPrice('ETH', {provider: "redstone-avalanche-prod-1"})).value;
-            BTC_PRICE = (await redstone.getPrice('BTC', {provider: "redstone-avalanche-prod-1"})).value;
-            YY_AAVE_AVAX_PRICE = (await redstone.getPrice('YY_AAVE_AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            AVAX_PRICE = tokensPrices.get("AVAX")!;
+            SAVAX_PRICE = tokensPrices.get("sAVAX")!;
+            USDC_PRICE = tokensPrices.get("USDC")!;
+            USDT_PRICE = tokensPrices.get("USDT")!;
+            PNG_PRICE = tokensPrices.get("PNG")!;
+            QI_PRICE = tokensPrices.get("QI")!;
+            ETH_PRICE = tokensPrices.get("ETH")!;
+            BTC_PRICE = tokensPrices.get("BTC")!;
+            YY_AAVE_AVAX_PRICE = tokensPrices.get("YY_AAVE_AVAX")!;
+            GLP_PRICE = tokensPrices.get("GLP")!;
 
             //TODO: why do we mock prices? maybe we can use wrapLite?
             MOCK_PRICES = [
@@ -431,6 +428,10 @@ describe('Smart loan - real prices', () => {
                 {
                     dataFeedId: 'YY_AAVE_AVAX',
                     value: YY_AAVE_AVAX_PRICE
+                },
+                {
+                    dataFeedId: 'GLP',
+                    value: GLP_PRICE
                 }
             ];
 
@@ -525,6 +526,7 @@ describe('Smart loan - real prices', () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent', 'canRepayDebtFully']);
+            await replaceFacet('SmartLoanLiquidationFacetDebug', diamondAddress, ['liquidateLoan']);
             await diamondCut.unpause();
         });
 
@@ -550,7 +552,7 @@ describe('Smart loan - real prices', () => {
                                 {
                                     dataServiceId: "redstone-avalanche-prod",
                                     uniqueSignersCount: 3,
-                                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX"],
+                                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX", "GLP"],
                                     // @ts-ignore
                                     disablePayloadsDryRun: true
                                 },
@@ -623,6 +625,24 @@ describe('Smart loan - real prices', () => {
                                 }
                             }
 
+                            // Use when GLP will be transferable during the liquidation
+                            // if(testCase.mintGLPInUSDC) {
+                            //     const minGlpAmount = Number(testCase.mintGLPInUSDC * tokensPrices.get("USDC")! / tokensPrices.get("GLP")! * 98 / 100).toFixed();
+                            //
+                            //     await wrappedLoan.mintAndStakeGlp(
+                            //         TOKEN_ADDRESSES['USDC'],
+                            //         parseUnits(
+                            //             testCase.mintGLPInUSDC.toString(),
+                            //             BigNumber.from("6")
+                            //         ),
+                            //         0,
+                            //         parseUnits(
+                            //             minGlpAmount.toString(),
+                            //             BigNumber.from("6")
+                            //         ),
+                            //     )
+                            // }
+
                             if (testCase.stakeInUsd) {
                                 if (testCase.stakeInUsd.YAK) {
                                     //YAK AVAX
@@ -632,7 +652,6 @@ describe('Smart loan - real prices', () => {
                             }
 
                             let maxBonus = 0.05;
-
 
                             // const bonus = calculateBonus(
                             //     testCase.action,
@@ -645,6 +664,7 @@ describe('Smart loan - real prices', () => {
                             const bonus = maxBonus;
 
                             const weiDebts = (await wrappedLoan.getDebts());
+
                             const debts: any[] = [];
                             for (let debt of weiDebts) {
                                 let symbol = fromBytes32(debt.name);
@@ -659,6 +679,7 @@ describe('Smart loan - real prices', () => {
                             const balances: any[] = [];
 
                             const weiBalances = (await wrappedLoan.getAllAssetsBalances());
+
                             for (let balance of weiBalances) {
                                 let symbol = fromBytes32(balance.name);
                                 balances.push(
@@ -671,9 +692,9 @@ describe('Smart loan - real prices', () => {
                                 )
                             }
 
-                            let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
+                            let loanIsBankrupt = fromWei(await wrappedLoan.getTotalValue()) < fromWei(await wrappedLoan.getDebt());
 
-                            let {repayAmounts, deliveredAmounts} = getLiquidationAmounts(
+                            let {repayAmounts, deliveredAmounts} = getLiquidationAmountsBasedOnLtv(
                                 'LIQUIDATE',
                                 debts,
                                 balances,
@@ -687,7 +708,7 @@ describe('Smart loan - real prices', () => {
 
                             let performerBalanceBefore = await liquidatingAccountBalanceInUsd(testCase, performer.address);
 
-                            await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stakeInUsd, performer);
+                            await action(wrappedLoan, testCase.action, deliveredAmounts, repayAmounts, bonus, testCase.stakeInUsd, undefined, performer);
 
                             let performerBalanceAfter = await liquidatingAccountBalanceInUsd(testCase, performer.address);
 
@@ -732,6 +753,7 @@ describe('Smart loan - real prices', () => {
             repayAmounts: any[],
             bonus: number,
             stake: any,
+            glp: any,
             performer: any
         ) {
 
@@ -742,13 +764,14 @@ describe('Smart loan - real prices', () => {
             await diamondCut.unpause();
 
             const initialStakedYakTokensBalance = await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address);
+            const initialGLPTokensBalance = await tokenContracts['GLP'].balanceOf(performer.address);
 
             // @ts-ignore
             wrappedLoan = WrapperBuilder.wrap(loan.connect(performer)).usingDataService(
                 {
                     dataServiceId: "redstone-avalanche-prod",
                     uniqueSignersCount: 3,
-                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX"],
+                    dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX", "GLP"],
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
@@ -800,6 +823,9 @@ describe('Smart loan - real prices', () => {
             if (stake) {
                 expect(await tokenContracts['YY_AAVE_AVAX'].balanceOf(performer.address)).to.be.gt(initialStakedYakTokensBalance);
             }
+            if(glp){
+                expect(await tokenContracts['GLP'].balanceOf(performer.address)).to.be.gt(initialGLPTokensBalance);
+            }
         }
 
 
@@ -813,6 +839,7 @@ describe('Smart loan - real prices', () => {
             if (symbol == "ETH") return tokenContracts['ETH'];
             if (symbol == "BTC") return tokenContracts['BTC'];
             if (symbol == "YY_AAVE_AVAX") return tokenContracts['YY_AAVE_AVAX'];
+            if (symbol == "GLP") return tokenContracts['GLP'];
         }
 
         function getPrice(symbol: string) {
@@ -825,6 +852,7 @@ describe('Smart loan - real prices', () => {
             if (symbol == "ETH") return ETH_PRICE;
             if (symbol == "BTC") return BTC_PRICE;
             if (symbol == "YY_AAVE_AVAX") return YY_AAVE_AVAX_PRICE;
+            if (symbol == "GLP") return GLP_PRICE;
         }
 
         async function liquidatingAccountBalanceInUsd(testCase: any, account: string) {

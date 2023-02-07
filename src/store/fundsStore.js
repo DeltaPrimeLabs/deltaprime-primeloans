@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract, getLog
+  wrapContract, getLog, assetAppreciation
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
@@ -137,87 +137,6 @@ export default {
     getCollateral(state) {
       return state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
     },
-
-    async getAccountApr(state, getters, rootState, commit){
-      let apr = 0;
-      let yearlyDebtInterest = 0;
-
-
-      let yearlyAssetInterest = 0
-      if (state.assets && state.assetBalances) {
-        for (let entry of Object.entries(state.assets)) {
-          let symbol = entry[0];
-          let asset = entry[1];
-          let assetAppretiation = symbol === 'sAVAX' ? 1.072 : 1;
-
-          yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppretiation - 1) * asset.price;
-        }
-      }
-
-      if (rootState.poolStore.pools && state.debtsPerAsset) {
-        Object.entries(state.debtsPerAsset).forEach(
-          ([symbol, debt]) => {
-            yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools.find(pool => pool.asset.symbol === symbol).borrowingAPY * state.assets[symbol].price;
-          }
-        );
-
-        let yearlyLpInterest = 0;
-
-        if (state.lpAssets && state.lpBalances) {
-          for (let entry of Object.entries(state.lpAssets)) {
-            let symbol = entry[0]
-            let lpAsset = entry[1]
-
-            //TODO: take from API
-            let assetAppretiation = symbol.includes('sAVAX') ? 1 + 0.072 / 2 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + await lpAsset.apr()) * assetAppretiation) - 1) * lpAsset.price;
-          }
-        }
-
-        let yearlyFarmInterest = 0;
-
-        if (rootState.stakeStore.farms) {
-          for (let entry of Object.entries(rootState.stakeStore.farms)) {
-            let symbol = entry[0];
-            let farms = entry[1];
-
-            for (let farm of farms) {
-
-              let assetAppretiation;
-
-              if (symbol.includes('sAVAX')) {
-                if (symbol === 'sAVAX') {
-                  assetAppretiation = 1.072;
-                } else {
-                  assetAppretiation = 1 + 0.072 / 2;
-                }
-              } else {
-                assetAppretiation = 1;
-              }
-
-              let apy = 0;
-
-              try {
-                apy = await farm.apy();
-              } catch(e) {
-                console.log('apy')
-              }
-
-              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
-
-            }
-          }
-        }
-
-        const collateral = getters.getCollateral;
-
-        if (collateral) {
-          apr = (yearlyLpInterest + yearlyFarmInterest + yearlyAssetInterest - yearlyDebtInterest) / collateral;
-        }
-        console.log('APR:', apr);
-        return apr;
-      }
-    }
   },
 
   actions: {
@@ -492,9 +411,14 @@ export default {
 
         let yearlyAssetInterest = 0;
 
+        if (state.assets && state.assetBalances) {
+          for (let entry of Object.entries(state.assets)) {
+            let symbol = entry[0]
+            let asset = entry[1]
 
-        if (state.assetBalances) {
-          yearlyAssetInterest = state.assetBalances['sAVAX'] * state.assets['sAVAX'].price * 0.072;
+            //TODO: take from API
+            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppreciation(symbol) - 1) * asset.price;
+          }
         }
 
         let yearlyLpInterest = 0;
@@ -505,8 +429,8 @@ export default {
             let lpAsset = entry[1]
 
             //TODO: take from API
-            let assetAppretiation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppretiation) - 1) * lpAsset.price;
+            let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppreciation) - 1) * lpAsset.price;
           }
         }
 
@@ -540,6 +464,8 @@ export default {
         }
 
         commit('setAccountApr', apr);
+
+        rootState.serviceRegistry.aprService.emitRefreshApr();
       }
     },
 
@@ -939,8 +865,7 @@ export default {
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
-      console.log(sourceDecimals);
-      let sourceAmount = parseUnits(Number(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
@@ -983,6 +908,103 @@ export default {
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
+    },
+
+    async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
+      const provider = rootState.network.provider;
+
+      console.log(mintAndStakeGlpRequest)
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        ['GLP']
+      ]);
+
+      let sourceDecimals = config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(String(mintAndStakeGlpRequest.sourceAmount), sourceDecimals);
+
+
+      let minUsdValue = parseUnits(String(mintAndStakeGlpRequest.minUsdValue), BigNumber.from('18'));
+      let minGlp = parseUnits(String(mintAndStakeGlpRequest.minGlp), BigNumber.from('18'));
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).mintAndStakeGlp(
+          TOKEN_ADDRESSES[mintAndStakeGlpRequest.sourceAsset],
+          sourceAmount,
+          minUsdValue,
+          minGlp,
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'mint GLP');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      const amountUsed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPMint').args.tokenToMintWithAmount, config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals);
+      const amountMinted = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPMint').args.glpOutputAmount, BigNumber.from("18"));
+
+      const sourceBalanceAfterMint = Number(state.assetBalances[mintAndStakeGlpRequest.sourceAsset]) - Number(amountUsed);
+      const glpBalanceAfterMint = Number(state.assetBalances['GLP']) + Number(amountMinted);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(mintAndStakeGlpRequest.sourceAsset, sourceBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+    },
+
+    async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unstakeAndRedeemGlpRequest.targetAsset]
+      ]);
+
+      let targetDecimals = config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset].decimals;
+      let targetAmount = parseUnits(String(unstakeAndRedeemGlpRequest.targetAmount), targetDecimals);
+      let glpAmount = parseUnits(String(unstakeAndRedeemGlpRequest.glpAmount), BigNumber.from('18'));
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndRedeemGlp(
+          TOKEN_ADDRESSES[unstakeAndRedeemGlpRequest.targetAsset],
+          glpAmount,
+          targetAmount,
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'redeem GLP');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      const amountReceived = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPRedemption').args.redeemedTokenAmount, config.ASSETS_CONFIG[unstakeAndRedeemGlpRequest.targetAsset].decimals);
+      const amountGlpRedeemed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPRedemption').args.glpRedeemedAmount, BigNumber.from("18"));
+
+      const targetBalanceAfterMint = Number(state.assetBalances[unstakeAndRedeemGlpRequest.targetAsset]) + Number(amountReceived);
+      const glpBalanceAfterMint = Number(state.assetBalances['GLP']) - Number(amountGlpRedeemed);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(unstakeAndRedeemGlpRequest.targetAsset, targetBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
+
+      rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
