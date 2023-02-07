@@ -149,7 +149,7 @@ export default {
 
     initAccountApr() {
       combineLatest([
-          this.poolService.observeRefreshPools(),
+          this.poolService.observePools(),
           this.farmService.observeRefreshFarm(),
           this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
           this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
