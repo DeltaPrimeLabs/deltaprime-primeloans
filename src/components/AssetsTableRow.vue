@@ -295,7 +295,7 @@ export default {
 
     openBorrowModal() {
       this.progressBarService.progressBarState$.next('SUCCESS');
-      const pool = this.pools[this.asset.symbol];
+      const pool = this.pools.find(pool => pool.asset.symbol === this.asset.symbol);
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
       modalInstance.assets = this.assets;
@@ -308,8 +308,8 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = this.pools[this.asset.symbol].borrowingAPY;
-      modalInstance.maxUtilisation = this.pools[this.asset.symbol].maxUtilisation;
+      modalInstance.loanAPY = pool.borrowingAPY;
+      modalInstance.maxUtilisation = pool.maxUtilisation;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
