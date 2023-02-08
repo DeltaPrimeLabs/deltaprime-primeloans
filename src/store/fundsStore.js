@@ -251,7 +251,7 @@ export default {
       await redstone.getPrice(Object.keys(lpTokens)).then(prices => {
         Object.keys(lpTokens).forEach(async assetSymbol => {
           lpTokens[assetSymbol].price = prices[assetSymbol].value;
-          lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].apr();
+          lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].getApy();
           lpService.emitRefreshLp();
         });
       });
