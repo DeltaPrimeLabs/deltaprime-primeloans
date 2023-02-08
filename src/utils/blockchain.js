@@ -45,11 +45,8 @@ export async function handleTransaction(fun, args, onSuccess, onFail) {
   }
 }
 
-export function assetAppreciation(symbol, includeGlp = true) {
-  if (symbol === 'sAVAX') return 1.072;
-  if (symbol === 'TJ_AVAX_sAVAX_LP') return 1.036;
-  if (symbol === 'GLP' && includeGlp) return 1.19;
-  return 1;
+export async function glpApy() {
+  return (await (await fetch('https://api.multifarm.fi/jay_flamingo_random_6ix_vegas/get_asset_details/AVAX_Gmx_GLP')).json()).feeAPRHistory[0].value;
 }
 
 export async function awaitConfirmation(tx, provider, actionName) {

@@ -8,11 +8,8 @@
           <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol]">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
-          <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
-            Profit APY:&nbsp;{{ 0.072 | percent }}
-          </div>
-          <div class="asset__loan" v-if="asset.symbol === 'GLP'">
-            Profit APY:&nbsp;{{ 0.19 | percent }}
+          <div class="asset__loan" v-if="asset.apy">
+            Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
           </div>
         </div>
       </div>
@@ -137,6 +134,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
     this.setupPoolsApy();
   },
@@ -646,6 +644,12 @@ export default {
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.disableAllButtons = true;
+        this.$forceUpdate();
+      });
+    },
+
+    watchAssetApysRefreshScheduledEvent() {
+      this.dataRefreshEventService.assetApysDataRefresh$.subscribe(() => {
         this.$forceUpdate();
       });
     },

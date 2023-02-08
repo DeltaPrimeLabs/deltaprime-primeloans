@@ -33,7 +33,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value apr">
-        {{ apr | percent }}
+        {{ apr / 100 | percent }}
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -82,7 +82,6 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {assetAppreciation} from '../utils/blockchain';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
@@ -110,7 +109,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchProgressBarState();
-    this.watchLpRefresh();
+    this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
     await this.setupApr();
   },
@@ -141,7 +140,7 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.apr);
+      return calculateMaxApy(this.pools, this.apr / 100);
     }
   },
 
@@ -220,8 +219,8 @@ export default {
     },
 
     async setupApr() {
-      if (!this.lpToken.currentApr) return;
-      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
+      if (!this.lpToken.apy) return;
+      this.apr = this.lpToken.apy;
     },
 
     toggleChart() {
@@ -411,8 +410,8 @@ export default {
       });
     },
 
-    watchLpRefresh() {
-      this.lpService.observeRefreshLp().subscribe(async () => {
+    watchAssetApysRefresh() {
+      this.dataRefreshEventService.observeAssetApysDataRefresh().subscribe(async () => {
         await this.setupApr();
       })
     },

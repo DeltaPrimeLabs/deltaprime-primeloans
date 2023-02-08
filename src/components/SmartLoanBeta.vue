@@ -154,6 +154,7 @@ export default {
           this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
           this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
           this.dataRefreshEventService.observeFullLoanStatusRefresh(),
+          this.dataRefreshEventService.observeAssetApysDataRefresh(),
       ])
           .subscribe(async ([provider, account]) => {
             console.log('subscribe account apr')

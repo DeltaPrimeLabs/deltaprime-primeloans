@@ -71,7 +71,6 @@ import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
-import {assetAppreciation} from '../utils/blockchain';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -267,8 +266,14 @@ export default {
 
     async setApy() {
       if (!this.farm.currentApy) return 0;
-      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
-      this.apy = (1 + this.farm.currentApy + assetApr) * assetAppreciation(this.asset.symbol, false) - 1;
+      let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
+      console.log('setApy')
+      console.log('symbol: ', this.asset.symbol)
+      console.log('assetApr: ', assetApy)
+      console.log('this.farm.currentApy: ', this.farm.currentApy)
+
+
+      this.apy = this.isLp ? (1 + this.farm.currentApy + assetApy) - 1 : (1 + this.farm.currentApy) * (1 + assetApy) - 1;
 
       if (this.pools) {
         this.maxApy = calculateMaxApy(this.pools, this.apy);

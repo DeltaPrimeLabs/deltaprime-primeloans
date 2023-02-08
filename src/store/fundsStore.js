@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract, getLog, assetAppreciation
+  wrapContract, getLog
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
@@ -156,6 +156,7 @@ export default {
 
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
+        await dispatch('getAllAssetsApys');
         await dispatch('getAllAssetsBalances');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
@@ -181,6 +182,7 @@ export default {
         await dispatch('setupAssets');
         await dispatch('setupLpAssets');
         await dispatch('getAllAssetsBalances');
+        await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
         await dispatch('getFullLoanStatus');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
@@ -369,6 +371,35 @@ export default {
       dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
     },
 
+    async getAllAssetsApys({state, commit, rootState}) {
+      const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
+
+      let assets = state.assets;
+
+      for(let [symbol, asset] of Object.entries(assets)) {
+        if (asset.getApy && typeof asset.getApy === 'function') {
+          assets[symbol].apy = await asset.getApy();
+        }
+      }
+
+      commit('setAssets', assets);
+
+      let lpAssets = state.lpAssets;
+
+      for(let [symbol, lpAsset] of Object.entries(lpAssets)) {
+        if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
+          lpAssets[symbol].apy = await lpAsset.getApy();
+        }
+      }
+
+      commit('setLpAssets', lpAssets);
+
+      console.log('lpAssets')
+      console.log(lpAssets)
+
+      dataRefreshNotificationService.emitAssetApysDataRefresh();
+    },
+
     async getDebtsPerAsset({state, commit, rootState}) {
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const debtsPerAsset = {};
@@ -419,7 +450,8 @@ export default {
             let asset = entry[1]
 
             //TODO: take from API
-            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * (assetAppreciation(symbol) - 1) * asset.price;
+            const apy = asset.apy ? asset.apy / 100 : 0;
+            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
           }
         }
 
@@ -432,7 +464,7 @@ export default {
 
             //TODO: take from API
             let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.currentApr) * assetAppreciation) - 1) * lpAsset.price;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.apy) * assetAppreciation) - 1) * lpAsset.price;
           }
         }
 

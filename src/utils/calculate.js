@@ -178,10 +178,6 @@ export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
   const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
   const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
 
-  console.log('yieldYakMaxUnstaked')
-  console.log('loanBalance: ', loanBalance)
-  console.log('totalSupply: ', totalSupply)
-  console.log('totalDeposits: ', totalDeposits)
   return loanBalance / totalSupply * totalDeposits;
 }
 
@@ -192,7 +188,7 @@ export async function getPangolinLpApr(url) {
     const resp = await fetch(url);
     const json = await resp.json();
 
-    apr = json.swapFeeApr / 100;
+    apr = json.swapFeeApr;
   } else {
     apr = 0;
   }
@@ -200,7 +196,7 @@ export async function getPangolinLpApr(url) {
   return apr;
 }
 
-export async function getTraderJoeLpApr(lpAddress) {
+export async function getTraderJoeLpApr(lpAddress, assetAppreciation = 0) {
   let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
 
   const FEE_RATE = 0.0025;
@@ -269,7 +265,7 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const feesUSD = volumeUSD * FEE_RATE;
 
-  return feesUSD * 365 / reserveUSD;
+  return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
