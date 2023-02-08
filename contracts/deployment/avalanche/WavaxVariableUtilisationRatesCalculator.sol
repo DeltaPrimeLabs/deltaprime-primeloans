@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/IRatesCalculator.sol";
+import "hardhat/console.sol";
 
 /**
  * @title WavaxVariableUtilisationRatesCalculator
@@ -14,28 +15,28 @@ import "../../interfaces/IRatesCalculator.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
 contract WavaxVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-    uint256 public constant SLOPE_1 = 0.125e18;
+    uint256 public constant SLOPE_1 = 0.166666666666667e18;
     uint256 public constant OFFSET_1 = 0;
 
-    uint256 public constant BREAKPOINT_1 = 0.4e18;
+    uint256 public constant BREAKPOINT_1 = 0.6e18;
 
-    uint256 public constant SLOPE_2 = 0.2e18;
+    uint256 public constant SLOPE_2 = 0.5e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.03e18;
+    uint256 public constant OFFSET_2 = 0.2e18;
 
     uint256 public constant BREAKPOINT_2 = 0.8e18;
 
-    uint256 public constant SLOPE_3 = 0.7e18;
+    uint256 public constant SLOPE_3 = 1e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 0.43e18;
+    uint256 public constant OFFSET_3 = 0.6e18;
 
     // BREAKPOINT must be lower than 1e18
 
     uint256 public constant BREAKPOINT_3 = 0.9e18;
 
-    uint256 public constant SLOPE_4= 29e18;
+    uint256 public constant SLOPE_4= 28e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_4 = 25.9e18;
+    uint256 public constant OFFSET_4 = 24.9e18;
 
     uint256 public constant MAX_RATE = 3.1e18;
 
@@ -73,6 +74,7 @@ contract WavaxVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
         if (_totalLoans >= _totalDeposits) {
             return MAX_RATE * (1e18 - spread) / 1e18;
         } else {
+            console.log('spread: ', spread);
             uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
             return rate;
         }
