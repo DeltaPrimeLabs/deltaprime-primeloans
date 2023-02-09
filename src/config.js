@@ -123,7 +123,7 @@ export default {
         sAVAX: [
             {
                 protocol: 'YIELD_YAK',
-                apy: async () => yieldYakApy('0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557'),
+                apy: async () => yieldYakApy('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'),
                 balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakingContractAddress: '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977',
                 stakeMethod: 'stakeSAVAXYak',
