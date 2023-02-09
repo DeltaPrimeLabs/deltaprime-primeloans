@@ -177,6 +177,7 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
+          disabled: !this.hasSmartLoanContract && this.asset.symbol === 'GLP',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
