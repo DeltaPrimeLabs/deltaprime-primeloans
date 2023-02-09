@@ -1,5 +1,5 @@
 <template>
-  <div class="banner" v-if="bannerVisible">
+  <div class="banner" v-if="bannerVisible" :class="background">
     <div class="elements">
       <slot></slot>
     </div>
@@ -16,6 +16,10 @@
       closable: {
         type: Boolean,
         default: false,
+      },
+      background: {
+        type: Boolean,
+        default: '',
       }
     },
     data() {
@@ -40,14 +44,19 @@
   height: 60px;
   display: flex;
   background-color: #F4D35E;
+  font-weight: bold;
   width: 100%;
   justify-content: space-around;
   align-items: center;
   z-index: 2;
-  box-shadow: 0px 5px 19px 0px rgba(0, 0, 0, 0.2);
 
   a {
     cursor: pointer;
+  }
+
+  &.green {
+    background-color: $lime-green;
+    color: white;
   }
 
   .close-button {

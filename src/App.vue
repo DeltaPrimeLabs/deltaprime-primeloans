@@ -22,6 +22,9 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
+    <Banner v-if="showGlpBanner" background="green">
+      GLP integration is ready! Mint or deposit GLP and stake it on the Farms page.
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <a href="https://deltaprime.io/">
@@ -64,7 +67,8 @@ export default {
       showMetamaskBanner: false,
       showConnectBanner: false,
       highGasPrice: false,
-      gasPriceIntervalId: null
+      gasPriceIntervalId: null,
+      showGlpBanner: false
     };
   },
   async created() {
@@ -88,6 +92,10 @@ export default {
     }
 
     this.initGasPrices();
+
+    if (window.location.href.includes('prime-account')) {
+      this.showGlpBanner = true;
+    }
   },
 
   mounted() {
