@@ -538,10 +538,9 @@ export default {
       ]);
 
       const transaction = fundRequest.asset === 'GLP' ?
-          await (await wrapContract(state.smartLoanContract, loanAssets)).fundGlp(
-              toBytes32(fundRequest.asset),
+          await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
               amountInWei,
-              {gasLimit: 500000})
+              {gasLimit: 1000000})
           :
           await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
               toBytes32(fundRequest.asset),
@@ -629,9 +628,8 @@ export default {
       ]);
 
       const transaction = withdrawRequest.asset === 'GLP' ?
-        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGlp(
-            toBytes32(withdrawRequest.asset),
-          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
+          parseUnits(String(withdrawRequest.value)),
             {gasLimit: 3000000})
         :
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
