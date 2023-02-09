@@ -576,6 +576,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'repay',
             'fund',
             'fundGLP',
+            'withdrawGLP',
             'withdraw',
         ],
         hardhatConfig

@@ -11,6 +11,8 @@ interface IAssetsOperationsFacet {
 
     function withdraw(bytes32 _withdrawnAsset, uint256 _amount) external;
 
+    function withdrawGLP(uint256 _amount) external;
+
     event Funded(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
     event Withdrawn(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);

@@ -46,7 +46,7 @@ export default {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
       chainId: 1337,
-      accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
+      // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
