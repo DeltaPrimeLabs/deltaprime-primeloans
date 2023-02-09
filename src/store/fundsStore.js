@@ -519,7 +519,9 @@ export default {
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
-      const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
+
+      const tokenForApprove = fundRequest.asset === 'GLP' ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : tokenAddresses[fundRequest.asset];
+      const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
