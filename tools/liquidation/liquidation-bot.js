@@ -9,7 +9,7 @@ import SMART_LOAN_DIAMOND from '../../deployments/avalanche/SmartLoanDiamondBeac
 import {ethers} from 'hardhat'
 import {
     awaitConfirmation,
-    getLiquidatorSigner,
+    getLiquidatorSigner, unstakeGlp,
     unstakeStakedPositions,
     unstakeYieldYak,
     unwindPangolinLPPositions,
@@ -84,6 +84,8 @@ export async function liquidateLoan(loanAddress, tokenManagerAddress) {
         let maxBonus = (await loan.getMaxLiquidationBonus()).toNumber() / 1000;
 
         //TODO: optimize to unstake only as much as needed
+        await unstakeGlp(loan, liquidator_wallet, provider);
+
         await unstakeStakedPositions(loan, provider);
 
         await unstakeYieldYak(loan, liquidator_wallet, provider);

@@ -37,7 +37,6 @@ import {
 import {BigNumber, Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -277,7 +276,7 @@ describe('Smart loan', () => {
 
         it("should buy an LP token", async () => {
             const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
-            let AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            let AVAX_PRICE = tokensPrices.get('AVAX')!;
             let PNG_AVAX_USDC_LP = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], LPAbi, provider);
 
             let initialAvaxBalance = fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address));

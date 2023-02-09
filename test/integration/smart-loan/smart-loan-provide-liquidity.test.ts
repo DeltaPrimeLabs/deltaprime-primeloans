@@ -1,7 +1,6 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import redstone from 'redstone-api';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
@@ -12,7 +11,7 @@ import {
     deployAllFacets,
     deployAndInitializeLendingPool, erc20ABI, formatUnits, fromBytes32,
     fromWei,
-    getFixedGasSigners, LPAbi,
+    getFixedGasSigners, getRedstonePrices, getTokensPricesMap, LPAbi,
     PoolAsset,
     recompileConstantsFile,
     toBytes32,
@@ -83,8 +82,9 @@ describe('Smart loan', () => {
                 tokenContracts[token.name] = tokenContract;
             }
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
-            USD_PRICE = (await redstone.getPrice('USDC', {provider: "redstone-avalanche-prod-1"})).value;
+            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices, []);
+            AVAX_PRICE = tokensPrices.get('AVAX')!;
+            USD_PRICE = tokensPrices.get('USDC')!;
 
             tokenContracts['PNG_AVAX_USDC_LP'] = new ethers.Contract(TOKEN_ADDRESSES['PNG_AVAX_USDC_LP'], LPAbi, provider);
 
