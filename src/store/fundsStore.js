@@ -535,10 +535,16 @@ export default {
         [fundRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
-          toBytes32(fundRequest.asset),
-          amountInWei,
-          {gasLimit: 500000});
+      const transaction = fundRequest.asset === 'GLP' ?
+          await (await wrapContract(state.smartLoanContract, loanAssets)).fundGlp(
+              toBytes32(fundRequest.asset),
+              amountInWei,
+              {gasLimit: 500000})
+          :
+          await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
+              toBytes32(fundRequest.asset),
+              amountInWei,
+              {gasLimit: 500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -620,10 +626,16 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
-          toBytes32(withdrawRequest.asset),
-        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
-          {gasLimit: 3000000});
+      const transaction = withdrawRequest.asset === 'GLP' ?
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGlp(
+            toBytes32(withdrawRequest.asset),
+          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+            {gasLimit: 3000000})
+        :
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
+            toBytes32(withdrawRequest.asset),
+            parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+            {gasLimit: 3000000})
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
