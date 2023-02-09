@@ -204,8 +204,8 @@ export default {
         console.log(unstakeEvent);
         const unstakeRequest = {
           receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
+          minReceiptTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
           underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),
-          minUnderlyingTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
           assetSymbol: this.asset.symbol,
           feedSymbol: this.farm.feedSymbol,
           protocol: this.farm.protocol,
