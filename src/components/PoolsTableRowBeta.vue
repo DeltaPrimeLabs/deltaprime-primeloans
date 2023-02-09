@@ -217,7 +217,8 @@ export default {
       &.apy {
         align-items: center;
         justify-content: flex-end;
-        font-weight: 500;
+        font-weight: 600;
+        color: $lime-green;
       }
 
       &.interest {
