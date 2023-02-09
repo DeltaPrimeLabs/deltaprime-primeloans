@@ -22,7 +22,7 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="showGlpBanner" background="green">
+    <Banner v-if="showGlpBanner" background="green" :closable="true">
       GLP integration is ready! Mint or deposit GLP and stake it on the Farms page to get your Account APY back up.
     </Banner>
     <div class="content">

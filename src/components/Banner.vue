@@ -1,9 +1,9 @@
 <template>
-  <div class="banner" v-if="bannerVisible" :class="background">
+  <div class="banner" v-if="bannerVisible" :class="`${background + ' ' + 'font-' + fontColor}`">
     <div class="elements">
       <slot></slot>
     </div>
-    <img v-if="closable" v-on:click="closeBanner()" class="close-button" src="src/assets/icons/cross-black.svg">
+    <img v-if="closable" v-on:click="closeBanner()" class="close-button" :src="`src/assets/icons/cross-${fontColor}.svg`">
   </div>
 </template>
 
@@ -18,7 +18,7 @@
         default: false,
       },
       background: {
-        type: Boolean,
+        type: String,
         default: '',
       }
     },
@@ -30,6 +30,11 @@
     methods: {
       closeBanner() {
         this.bannerVisible = false;
+      }
+    },
+    computed: {
+      fontColor() {
+        return this.background === 'green' ? 'white' : 'black';
       }
     }
   }
@@ -56,6 +61,9 @@
 
   &.green {
     background-color: $lime-green;
+  }
+
+  &.font-white {
     color: white;
   }
 
