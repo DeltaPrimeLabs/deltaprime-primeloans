@@ -519,7 +519,9 @@ export default {
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
-      const fundToken = new ethers.Contract(tokenAddresses[fundRequest.asset], erc20ABI, provider.getSigner());
+
+      const tokenForApprove = fundRequest.asset === 'GLP' ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : tokenAddresses[fundRequest.asset];
+      const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
@@ -535,10 +537,16 @@ export default {
         [fundRequest.asset]
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
-          toBytes32(fundRequest.asset),
-          amountInWei,
-          {gasLimit: 500000});
+      const transaction = fundRequest.asset === 'GLP' ?
+          await (await wrapContract(state.smartLoanContract, loanAssets)).fundGlp(
+              toBytes32(fundRequest.asset),
+              amountInWei,
+              {gasLimit: 500000})
+          :
+          await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
+              toBytes32(fundRequest.asset),
+              amountInWei,
+              {gasLimit: 500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -620,10 +628,16 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
-          toBytes32(withdrawRequest.asset),
-        parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
-          {gasLimit: 3000000});
+      const transaction = withdrawRequest.asset === 'GLP' ?
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGlp(
+            toBytes32(withdrawRequest.asset),
+          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+            {gasLimit: 3000000})
+        :
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
+            toBytes32(withdrawRequest.asset),
+            parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
+            {gasLimit: 3000000})
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

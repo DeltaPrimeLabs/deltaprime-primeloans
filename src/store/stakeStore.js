@@ -127,14 +127,14 @@ export default {
       console.log('loanAssets')
       console.log(loanAssets)
 
-      const unstakeTransaction = unstakeRequest.minUnderlyingTokenUnstaked ?
+      const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-          parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          parseUnits(parseFloat(unstakeRequest.minUnderlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.minReceiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
           {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-            parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+            parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
             {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
