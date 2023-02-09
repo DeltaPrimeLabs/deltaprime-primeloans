@@ -64,7 +64,7 @@
                 Daily interest:
               </div>
               <div class="summary__value">
-                ≈ {{ calculateDailyInterest | smartRound(10, true) }} <div class="currency">{{ asset.name }}</div>
+                ≈ $ {{ calculateDailyInterest | smartRound(10, true) }}
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue));
+      return (this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue))) * this.asset.price;
     }
   },
 

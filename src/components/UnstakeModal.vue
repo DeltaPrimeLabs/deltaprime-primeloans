@@ -47,7 +47,7 @@
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">&nbsp;{{ asset.name }}</span>
+              $ {{ calculateDailyInterest | smartRound(8, true) }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -109,7 +109,7 @@ export default {
       if (staked <= 0) {
         return 0;
       } else {
-        return this.apy / 365 * staked;
+        return this.apy / 365 * staked * this.asset.price;
       }
     }
   },
