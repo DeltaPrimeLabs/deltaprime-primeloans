@@ -14,7 +14,7 @@ import {
     getERC20Contract,
     getLiquidatorSigner2,
     getProvider,
-    getSignedDataPackagesResponse,
+    getSignedDataPackagesResponse, unstakeGlp,
     unstakeStakedPositions,
     unstakeYieldYak,
     unwindPangolinLPPositions,
@@ -165,7 +165,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     if (healthBeforeLiquidation < 0.98) {
         try {
             let liqStartTime = new Date();
-            let flashLoanTx = await awaitConfirmation(flashLoan.executeFlashloan(
+            let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
                 {
                     assets: poolTokenAddresses,
                     amounts: amountsToRepayInWei,

@@ -106,8 +106,6 @@ describe('Smart loan', () => {
             );
 
             await deployAllFacets(diamondAddress)
-
-
         });
 
 
@@ -155,6 +153,27 @@ describe('Smart loan', () => {
             await wrappedLoan.fundGLP(glpBalanceAfterMint);
 
             expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(wrappedLoan.address)).to.be.equal(glpBalanceAfterMint);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(owner.address)).to.be.equal(0);
+        });
+
+        it("should withdraw from a loan", async () => {
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(wrappedLoan.address)).to.be.equal(glpBalanceAfterMint);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(owner.address)).to.be.equal(0);
+
+            await wrappedLoan.withdrawGLP(glpBalanceAfterMint);
+
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(wrappedLoan.address)).to.be.equal(0);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(owner.address)).to.be.equal(glpBalanceAfterMint);
+        });
+
+        it("should fund a loan back with GLP", async () => {
+            await tokenContracts.get('sGLP')!.connect(owner).approve(wrappedLoan.address, glpBalanceAfterMint);
+            await wrappedLoan.fundGLP(glpBalanceAfterMint);
+
+            expect(fromWei(await tokenContracts.get('MCKUSD')!.connect(owner).balanceOf(wrappedLoan.address))).to.be.equal(300);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(wrappedLoan.address)).to.be.equal(glpBalanceAfterMint);
+            expect(await tokenContracts.get('GLP')!.connect(owner).balanceOf(owner.address)).to.be.equal(0);
         });
 
         it("should return all supported assets addresses", async () => {
