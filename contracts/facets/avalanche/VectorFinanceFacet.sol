@@ -98,6 +98,11 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         unstakeToken(amount, minAmount, position);
     }
 
+    function vectorSAVAX1BalanceAuto() public view returns(uint256 _stakedBalance) {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
+        _stakedBalance = compounder.depositTracking(address(this));
+    }
+
     function vectorMigrateAll() public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
@@ -127,11 +132,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         totalMigrated += migrateStake(position, "VF_SAVAX_MAIN");
 
         require(totalMigrated > 0, "Cannot migrate 0 tokens");
-    }
-
-    function vectorSAVAX1BalanceAuto() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
-        _stakedBalance = compounder.depositTracking(address(this));
     }
 
     // INTERNAL FUNCTIONS
