@@ -1085,5 +1085,31 @@ export default {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
     },
+
+    async claimGLPFees({state, rootState, dispatch}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimGLpFees({gasLimit: 3000000});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      const tx = await awaitConfirmation(transaction, provider, 'claimGLPFees');
+      console.log(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim'));
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
   }
 };

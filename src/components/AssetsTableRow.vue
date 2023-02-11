@@ -169,14 +169,28 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken', 'wrapNativeToken', 'mintAndStakeGlp', 'unstakeAndRedeemGlp']),
+    ...mapActions('fundsStore',
+      [
+        'swap',
+        'fund',
+        'borrow',
+        'withdraw',
+        'withdrawNativeToken',
+        'repay',
+        'createAndFundLoan',
+        'fundNativeToken',
+        'wrapNativeToken',
+        'mintAndStakeGlp',
+        'unstakeAndRedeemGlp',
+        'claimGLPFees'
+      ]),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : this.asset.symbol === 'GLP' ? 'Deposit/Claim' : 'Deposit',
           disabled: !this.hasSmartLoanContract && this.asset.symbol === 'GLP',
           menuOptions: [
             {
@@ -191,11 +205,15 @@ export default {
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
               : null,
-            {
+            this.asset.symbol === 'AVAX' ? {
               key: 'WRAP',
               name: 'Wrap native AVAX',
               hidden: true,
-            }
+            } : null,
+            this.asset.symbol === 'GLP' ? {
+              key: 'CLAIM_GLP_FEES',
+              name: 'Claim GLP fees',
+            } : null,
           ]
         },
         {
@@ -278,6 +296,9 @@ export default {
           break;
         case 'WRAP':
           this.openWrapModal();
+          break;
+        case 'CLAIM_GLP_FEES':
+          this.claimGLPFeesAction();
           break;
       }
     },
@@ -588,10 +609,17 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         }).then(() => {
-
         });
       });
+    },
 
+    async claimGLPFeesAction() {
+      this.handleTransaction(this.claimGLPFees, () => {
+        this.$forceUpdate();
+      }, (error) => {
+        this.handleTransactionError(error);
+      }).then(() => {
+      });
     },
 
     async getWalletAssetBalance() {
@@ -688,7 +716,10 @@ export default {
     },
 
     handleTransactionError(error) {
-      if (error.code === 4001 || error.code === -32603) {
+      if (!error) {
+        return;
+      }
+      if (error && error.code && error.code === 4001 || error.code === -32603) {
         this.progressBarService.emitProgressBarCancelledState();
       } else {
         this.progressBarService.emitProgressBarErrorState();
