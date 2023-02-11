@@ -23,7 +23,7 @@
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
     <Banner v-if="showGlpBanner" background="green" :closable="true">
-      GLP integration is ready! Mint or deposit GLP and stake it on the Farms page to get your Account APY back up.
+      GLP is live! Deposit some AVAX first, to open up GLP deposits.
     </Banner>
     <div class="content">
       <div class="top-bar">
