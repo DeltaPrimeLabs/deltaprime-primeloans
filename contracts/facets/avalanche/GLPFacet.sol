@@ -5,6 +5,8 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../interfaces/facets/avalanche/IGLPRewarder.sol";
+import "../../interfaces/facets/avalanche/IRewardRouterV2.sol";
+import "../../interfaces/facets/avalanche/IRewardTracker.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
@@ -14,12 +16,35 @@ import "../../interfaces/ITokenManager.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    // Used to claim GLP fees
+    address private constant REWARD_ROUTER_ADDRESS = 0x82147C5A7E850eA4E28155DF107F2590fD4ba327;
     // Used to mint/redeem GLP
-    address private constant GLP_REWARDER_ADDRESS = 0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3;
+    address private constant GLP_REWARD_ROUTER_ADDRESS = 0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3;
     // Used to approve tokens to mint GLP with
     address private constant GLP_MANAGER_ADDRESS = 0xD152c7F25db7F4B95b7658323c5F33d176818EE4;
     // fsGLP
     address private constant GLP_TOKEN_ADDRESS = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
+
+    function claimGLpFees() external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+        IRewardRouterV2 rewardRouter = IRewardRouterV2(REWARD_ROUTER_ADDRESS);
+        IRewardTracker rewardTracker = IRewardTracker(rewardRouter.feeGlpTracker());
+
+        require(rewardTracker.claimable(address(this)) > 0, "There are no claimable fees");
+
+        IERC20Metadata wavaxToken = getERC20TokenInstance("AVAX", false);
+        uint256 initialWavaxBalance = wavaxToken.balanceOf(address(this));
+
+        rewardRouter.claimFees();
+
+        uint256 postClaimingWavaxBalance = wavaxToken.balanceOf(address(this));
+
+        // Add asset to ownedAssets
+        if ((initialWavaxBalance == 0) && (postClaimingWavaxBalance > 0)) {
+            DiamondStorageLib.addOwnedAsset("AVAX", address(wavaxToken));
+        }
+
+        emit GLPFeesClaim(msg.sender, postClaimingWavaxBalance-initialWavaxBalance, block.timestamp);
+    }
 
     function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -30,7 +55,7 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         IERC20Metadata tokenToMintWith = IERC20Metadata(_token);
         bytes32 tokenToMintWithSymbol = tokenManager.tokenAddressToSymbol(_token);
-        IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARDER_ADDRESS);
+        IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
         IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
 
         uint256 glpInitialBalance = glpToken.balanceOf(address(this));
@@ -72,7 +97,7 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         IERC20Metadata redeemedToken = IERC20Metadata(_tokenOut);
         bytes32 redeemedTokenSymbol = tokenManager.tokenAddressToSymbol(_tokenOut);
-        IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARDER_ADDRESS);
+        IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
         IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
 
         uint256 redeemedTokenInitialBalance = redeemedToken.balanceOf(address(this));
@@ -127,4 +152,12 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
   * @param timestamp time of the redemption
   **/
     event GLPRedemption(address indexed user, bytes32 indexed redeemedToken, uint256 glpRedeemedAmount, uint256 redeemedTokenAmount, uint256 timestamp);
+
+    /**
+    * @dev emitted after claiming GLP fees
+    * @param user the address of user claiming fees
+    * @param wavaxAmountClaimed amount of wavax fees that were claimed
+    * @param timestamp time of claiming the fees
+    **/
+    event GLPFeesClaim(address indexed user, uint256 wavaxAmountClaimed, uint256 timestamp);
 }
