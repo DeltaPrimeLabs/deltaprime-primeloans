@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: edb582f05f0fb0098ca7ee750c8fde8a8032d991;
+// Last deployed from commit: 01a6c6606673961fa6183b54b8b35220d47e99fc;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/IRatesCalculator.sol";
-import "hardhat/console.sol";
 
 /**
  * @title UsdcVariableUtilisationRatesCalculator
@@ -70,7 +69,6 @@ contract UsdcVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
         if (_totalLoans >= _totalDeposits) {
             return MAX_RATE * (1e18 - spread) / 1e18;
         } else {
-            console.log('spread: ', spread);
             uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
             return rate;
         }
