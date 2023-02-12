@@ -184,6 +184,7 @@ export default {
         'withdrawNativeToken',
         'repay',
         'createAndFundLoan',
+        'createLoanAndDeposit',
         'fundNativeToken',
         'wrapNativeToken',
         'mintAndStakeGlp',
@@ -197,7 +198,6 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : this.asset.symbol === 'GLP' ? 'Deposit/Claim' : 'Deposit',
-          disabled: !this.hasSmartLoanContract && this.asset.symbol === 'GLP',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -217,6 +217,7 @@ export default {
               hidden: true,
             } : null,
             this.asset.symbol === 'GLP' ? {
+              disabled: !this.hasSmartLoanContract,
               key: 'CLAIM_GLP_REWARDS',
               name: 'Claim GLP rewards',
             } : null,
@@ -482,13 +483,32 @@ export default {
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
+
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
-            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
-            }, (error) => {
-              this.handleTransactionError(error);
-            })
-              .then(() => {
-              });
+            if (this.asset.symbol === 'GLP') {
+              const request = {
+                value: value,
+                asset: this.asset.symbol,
+                assetAddress: '0xaE64d55a6f09E4263421737397D1fdFA71896a69',
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+              };
+
+              this.handleTransaction(this.createLoanAndDeposit, { request: request }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
+            } else {
+              this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  })
+            }
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {

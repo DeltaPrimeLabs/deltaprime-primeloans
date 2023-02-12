@@ -300,6 +300,50 @@ export default {
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
 
+    async createLoanAndDeposit({state, rootState}, {request}) {
+      const provider = rootState.network.provider;
+      const amountInWei = parseUnits(request.value.toString(), request.assetDecimals);
+
+      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+
+      const transaction = await (await wrapContract(state.smartLoanFactoryContract)).createLoan({gasLimit: 8000000});
+
+      let tx = await awaitConfirmation(transaction, provider, 'create loan');
+
+      const smartLoanAddress = getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+
+      const fundToken = new ethers.Contract(request.assetAddress, erc20ABI, provider.getSigner());
+
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanAddress), request.assetDecimals);
+
+      if (parseFloat(allowance) < parseFloat(request.value)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei);
+
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
+
+      const fundTx = request.asset === 'GLP' ?
+          await state.smartLoanContract.fundGLP(
+              amountInWei,
+              {gasLimit: 1000000})
+          :
+          await state.smartLoanContract.fund(
+              toBytes32(request.asset),
+              amountInWei,
+              {gasLimit: 500000});
+
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      await awaitConfirmation(fundTx, provider, 'deposit');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+    },
+
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
       const provider = rootState.network.provider;
 
@@ -335,6 +379,12 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(transaction, provider, 'create Prime Account');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
       setTimeout(async () => {
