@@ -15,7 +15,8 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
+        <template
+          v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
             <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
@@ -110,9 +111,14 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
-import YAK_ROUTER from "../../test/abis/YakRouter.json";
+import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from "../utils/calculate";
+import {formatUnits, parseUnits} from '../utils/calculate';
+import GLP_REWARD_ROUTER
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
+import GLP_REWARD_TRACKER
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
+import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -182,7 +188,7 @@ export default {
         'wrapNativeToken',
         'mintAndStakeGlp',
         'unstakeAndRedeemGlp',
-        'claimGLPFees'
+        'claimGLPRewards'
       ]),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
@@ -211,8 +217,8 @@ export default {
               hidden: true,
             } : null,
             this.asset.symbol === 'GLP' ? {
-              key: 'CLAIM_GLP_FEES',
-              name: 'Claim GLP fees',
+              key: 'CLAIM_GLP_REWARDS',
+              name: 'Claim GLP rewards',
             } : null,
           ]
         },
@@ -239,11 +245,11 @@ export default {
       if (this.asset.symbol !== 'GLP') {
         this.actionsConfig.push({
           iconSrc: 'src/assets/icons/swap.svg',
-              hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-            tooltip: 'Swap',
-            iconButtonActionKey: 'SWAP',
-            disabled: !this.hasSmartLoanContract
-        })
+          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
+          tooltip: 'Swap',
+          iconButtonActionKey: 'SWAP',
+          disabled: !this.hasSmartLoanContract
+        });
       } else {
         this.actionsConfig.push({
           iconSrc: 'src/assets/icons/swap.svg',
@@ -251,7 +257,7 @@ export default {
           tooltip: 'Mint/Redeem',
           iconButtonActionKey: 'GLP',
           disabled: !this.hasSmartLoanContract
-        })
+        });
       }
     },
 
@@ -297,8 +303,8 @@ export default {
         case 'WRAP':
           this.openWrapModal();
           break;
-        case 'CLAIM_GLP_FEES':
-          this.claimGLPFeesAction();
+        case 'CLAIM_GLP_REWARDS':
+          this.claimGLPRewardsAction();
           break;
       }
     },
@@ -361,22 +367,22 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.queryMethod = async function(sourceAsset, targetAsset, amountIn) {
+      modalInstance.queryMethod = async function (sourceAsset, targetAsset, amountIn) {
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
         const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
 
-        const maxHops = 3
-        const gasPrice = ethers.utils.parseUnits('225', 'gwei')
+        const maxHops = 3;
+        const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
         return await yakRouter.findBestPathWithGas(
-            amountIn,
-            tknFrom,
-            tknTo,
-            maxHops,
-            gasPrice,
-            { gasLimit: 1e9 }
-        )
+          amountIn,
+          tknFrom,
+          tknTo,
+          maxHops,
+          gasPrice,
+          {gasLimit: 1e9}
+        );
       };
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
@@ -436,22 +442,22 @@ export default {
       });
 
       modalInstance.$on('REDEEM_GLP', redeemEvent => {
-        console.log('redeemEvent')
-        console.log(redeemEvent)
-        console.log('redeemEvent.targetAsset: ', redeemEvent.targetAsset)
+        console.log('redeemEvent');
+        console.log(redeemEvent);
+        console.log('redeemEvent.targetAsset: ', redeemEvent.targetAsset);
         const unstakeAndRedeemGlpRequest = {
-            targetAsset: redeemEvent.targetAsset,
-            targetAmount: redeemEvent.targetAmount.toString(),
-            glpAmount: redeemEvent.glpAmount.toString()
-          };
-          this.handleTransaction(this.unstakeAndRedeemGlp, {unstakeAndRedeemGlpRequest: unstakeAndRedeemGlpRequest}, () => {
-            this.scheduleHardRefresh();
-            this.$forceUpdate();
-          }, (error) => {
-            this.handleTransactionError(error);
-          }).then(() => {
-          });
+          targetAsset: redeemEvent.targetAsset,
+          targetAmount: redeemEvent.targetAmount.toString(),
+          glpAmount: redeemEvent.glpAmount.toString()
+        };
+        this.handleTransaction(this.unstakeAndRedeemGlp, {unstakeAndRedeemGlpRequest: unstakeAndRedeemGlpRequest}, () => {
+          this.scheduleHardRefresh();
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
         });
+      });
     },
 
     async openAddFromWalletModal() {
@@ -613,12 +619,23 @@ export default {
       });
     },
 
-    async claimGLPFeesAction() {
-      this.handleTransaction(this.claimGLPFees, () => {
-        this.$forceUpdate();
-      }, (error) => {
-        this.handleTransactionError(error);
-      }).then(() => {
+    async claimGLPRewardsAction() {
+      const glpRewardRouterContract = new ethers.Contract(config.glpRewardsRouterAddress, GLP_REWARD_ROUTER.abi, this.provider.getSigner());
+      const feeGLPTrackerAddress = await glpRewardRouterContract.feeGlpTracker();
+      const feeGLPTrackedContract = new ethers.Contract(feeGLPTrackerAddress, GLP_REWARD_TRACKER.abi, this.provider.getSigner());
+      const rewards = formatUnits(await feeGLPTrackedContract.claimable(this.smartLoanContract.address), config.ASSETS_CONFIG.AVAX.decimals);
+      const modalInstance = this.openModal(ClaimGLPRewardsModal);
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.glpRewardsToClaim = rewards;
+      modalInstance.glpRewardsAsset = 'AVAX';
+
+      modalInstance.$on('CLAIM', () => {
+        this.handleTransaction(this.claimGLPRewards, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
       });
     },
 

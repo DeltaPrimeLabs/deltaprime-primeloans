@@ -1086,7 +1086,7 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async claimGLPFees({state, rootState, dispatch}) {
+    async claimGLPRewards({state, rootState, dispatch}) {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1099,10 +1099,11 @@ export default {
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
 
-      const tx = await awaitConfirmation(transaction, provider, 'claimGLPFees');
+      const tx = await awaitConfirmation(transaction, provider, 'claimGLPRewards');
       console.log(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim'));
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
