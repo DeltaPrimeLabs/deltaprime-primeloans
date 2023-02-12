@@ -322,12 +322,14 @@ export default {
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
+      const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
+
       const fundTx = request.asset === 'GLP' ?
-          await state.smartLoanContract.fundGLP(
+          await smartLoanContract.fundGLP(
               amountInWei,
               {gasLimit: 1000000})
           :
-          await state.smartLoanContract.fund(
+          await smartLoanContract.fund(
               toBytes32(request.asset),
               amountInWei,
               {gasLimit: 500000});
@@ -336,12 +338,19 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(fundTx, provider, 'deposit');
+      tx = await awaitConfirmation(fundTx, provider, 'deposit');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      const depositedAmount = getLog(tx, SMART_LOAN.abi, 'Funded').args.amount;
+      const decimals = config.ASSETS_CONFIG[request.asset].decimals;
+
+      const amount = formatUnits(depositedAmount, BigNumber.from(decimals));
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(request.asset, amount, false, true);
     },
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
