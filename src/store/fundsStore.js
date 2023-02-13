@@ -550,15 +550,15 @@ export default {
               if (symbol.includes('sAVAX')) assetAppretiation =  1.036;
               if (symbol === 'sAVAX') assetAppretiation =  1.072;
 
-              let apy = 0;
+              let farmApy = 0;
 
-              apy = farm.currentApy;
+              farmApy = farm.currentApy;
 
               let asset = rootState.fundsStore.assets[symbol] ? rootState.fundsStore.assets[symbol] : rootState.fundsStore.lpAssets[symbol];
               let assetApy = (asset.apy && symbol !== 'GLP') ? asset.apy / 100 : 0;
 
-              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + assetApy + apy) * assetAppretiation) - 1) * farm.price;
-
+              const cumulativeApy = farm.isTokenLp ? (((1 + assetApy + farmApy) * assetAppretiation) - 1) : (1 + assetApy) * (1 + farmApy) - 1;
+              yearlyFarmInterest += parseFloat(farm.totalBalance) * cumulativeApy * farm.price;
             }
           }
         }
