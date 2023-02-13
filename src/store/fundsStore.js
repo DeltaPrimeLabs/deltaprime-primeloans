@@ -1165,6 +1165,13 @@ export default {
 
       const tx = await awaitConfirmation(transaction, provider, 'claimGLPRewards');
       console.log(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim'));
+      const wavaxClaimed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim').args.wavaxAmountClaimed, config.ASSETS_CONFIG.AVAX.decimals);
+      console.log(wavaxClaimed);
+      const balanceAfterClaimed = Number(state.assetBalances['AVAX']) + Number(wavaxClaimed);
+      console.log(balanceAfterClaimed);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('AVAX', balanceAfterClaimed, false, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       rootState.serviceRegistry.modalService.closeModal();
