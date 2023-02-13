@@ -213,22 +213,10 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IVectorFinanceCompounder compounder = poolHelper.compounder();
-        IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
 
         migrated = poolHelper.balance(address(this));
         if (migrated > 0) {
-            uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
-
-            uint256 balance = stakedToken.balanceOf(address(this));
-
-            poolHelper.withdraw(migrated, 0);
-
-            uint256 newBalance = stakedToken.balanceOf(address(this));
-            uint256 stakeAmount = newBalance - balance;
-            require(stakeAmount > 0, "Cannot migrate 0 tokens");
-
-            stakedToken.approve(address(compounder), stakeAmount);
-            compounder.deposit(stakeAmount);
+            compounder.migrateAllUserDepositsFromManual();
 
             DiamondStorageLib.removeStakedPosition(oldIdentifier);
 
@@ -238,9 +226,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 msg.sender,
                 position.symbol,
                 address(compounder),
-                stakeAmount,
                 migrated,
-                compounder.balanceOf(address(this)) - initialReceiptTokenBalance,
                 block.timestamp
             );
         }
@@ -287,10 +273,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         * @param user the address executing staking
         * @param asset the asset that was staked
         * @param vault address of receipt token
-        * @param depositTokenAmount how much of deposit token was migrated
-        * @param oldReceiptTokenAmount how much of old receipt token was unstaked
-        * @param newReceiptTokenAmount how much of new receipt token was received
+        * @param migratedAmount how much of receipt token was migrated
         * @param timestamp of staking
     **/
-    event Migrated(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 oldReceiptTokenAmount, uint256 newReceiptTokenAmount, uint256 timestamp);
+    event Migrated(address indexed user, bytes32 indexed asset, address indexed vault, uint256 migratedAmount, uint256 timestamp);
 }
