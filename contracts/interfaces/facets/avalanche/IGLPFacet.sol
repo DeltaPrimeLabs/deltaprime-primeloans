@@ -9,5 +9,7 @@ interface IGLPFacet {
 
     event GLPMint(address indexed user, bytes32 indexed tokenToMintWith, uint256 tokenToMintWithAmount, uint256 glpOutputAmount, uint256 timestamp);
 
+    event GLPFeesClaim(address indexed user, uint256 wavaxAmountClaimed, uint256 timestamp);
+
     event GLPRedemption(address indexed user, bytes32 indexed redeemedToken, uint256 glpRedeemedAmount, uint256 redeemedTokenAmount, uint256 timestamp);
 }
