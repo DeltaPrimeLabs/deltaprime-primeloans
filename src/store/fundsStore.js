@@ -531,7 +531,9 @@ export default {
 
             //TODO: take from API
             let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + lpAsset.apy) * assetAppreciation) - 1) * lpAsset.price;
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + apy) * assetAppreciation) - 1) * lpAsset.price;
           }
         }
 
@@ -552,7 +554,10 @@ export default {
 
               apy = farm.currentApy;
 
-              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + apy) * assetAppretiation) - 1) * farm.price;
+              let asset = rootState.fundsStore.assets[symbol] ? rootState.fundsStore.assets[symbol] : rootState.fundsStore.lpAssets[symbol];
+              let assetApy = (asset.apy && symbol !== 'GLP') ? asset.apy / 100 : 0;
+
+              yearlyFarmInterest += parseFloat(farm.totalBalance) * (((1 + assetApy + apy) * assetAppretiation) - 1) * farm.price;
 
             }
           }
