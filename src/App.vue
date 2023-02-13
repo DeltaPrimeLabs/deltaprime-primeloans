@@ -25,6 +25,9 @@
     <Banner v-if="showGlpBanner" background="green" :closable="true">
       GLP is live! Deposit some AVAX first, to open up GLP deposits.
     </Banner>
+    <Banner v-if="showDepositBanner" background="green" :closable="true">
+      Prime GLP amplification incoming! Expect interest rates to increase significantly over the course of the next 7 days, starting from this Thursday.
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <a href="https://deltaprime.io/">
@@ -68,7 +71,8 @@ export default {
       showConnectBanner: false,
       highGasPrice: false,
       gasPriceIntervalId: null,
-      showGlpBanner: false
+      showGlpBanner: false,
+      showDepositBanner: false
     };
   },
   async created() {
@@ -95,6 +99,10 @@ export default {
 
     if (window.location.href.includes('prime-account')) {
       this.showGlpBanner = true;
+    }
+
+    if (window.location.href.includes('pools')) {
+      this.showDepositBanner = true;
     }
   },
 
