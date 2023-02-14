@@ -19,22 +19,22 @@ contract UsdcVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
     uint256 public constant BREAKPOINT_1 = 0.6e18;
 
-    uint256 public constant SLOPE_2 = 0.4e18;
+    uint256 public constant SLOPE_2 = 1e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.14e18;
+    uint256 public constant OFFSET_2 = 0.5e18;
 
-    uint256 public constant BREAKPOINT_2 = 0.85e18;
+    uint256 public constant BREAKPOINT_2 = 0.8e18;
 
     uint256 public constant SLOPE_3 = 2e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 1.5e18;
+    uint256 public constant OFFSET_3 = 1.3e18;
 
     // BREAKPOINT must be lower than 1e18
     uint256 public constant BREAKPOINT_3 = 0.9e18;
 
-    uint256 public constant SLOPE_4 = 6e18;
+    uint256 public constant SLOPE_4 = 4e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_4 = 5.1e18;
+    uint256 public constant OFFSET_4 = 3.1e18;
 
     uint256 public constant MAX_RATE = 0.9e18;
 
