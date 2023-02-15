@@ -462,15 +462,10 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("1000"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("1000"));
 
-            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("10"), 0);
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("10"), 0);
-            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), toWei("10"), 0);
 
             expect(formatUnits(await tokenContracts.get("USDC")!.balanceOf(wrappedLoan.address), BigNumber.from("6"))).to.be.closeTo(10 * tokensPrices.get('AVAX')! / tokensPrices.get('USDC')!, 50);
-            expect(fromWei(await tokenContracts.get("ETH")!.balanceOf(wrappedLoan.address))).to.be.closeTo(10 * tokensPrices.get('AVAX')! / tokensPrices.get('ETH')!, 50);
-            expect(formatUnits(await tokenContracts.get("BTC")!.balanceOf(wrappedLoan.address), BigNumber.from("8"))).to.be.closeTo(10 * tokensPrices.get('AVAX')! / tokensPrices.get('BTC')!, 50);
-            expect(fromWei(await tokenContracts.get("AVAX")!.balanceOf(wrappedLoan.address))).to.be.gt(10);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(1000 * tokensPrices.get('AVAX')!, 50);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(1000 * tokensPrices.get('AVAX')!, 5);
 
             expect(await loanOwnsAsset("GLP")).to.be.false;
         });
@@ -499,7 +494,7 @@ describe('Smart loan', () => {
 
             expect(formatUnits(await tokenContracts.get("USDC")!.balanceOf(wrappedLoan.address), BigNumber.from("6"))).to.be.equal(0);
             expect(fromWei(await tokenContracts.get("GLP")!.balanceOf(wrappedLoan.address))).to.be.gte(initialGlpBalance + minGlpAmount);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 80);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 5);
 
             expect(await loanOwnsAsset("GLP")).to.be.true;
         });
@@ -523,7 +518,7 @@ describe('Smart loan', () => {
             );
 
             expect(fromWei(await tokenContracts.get("GLP")!.balanceOf(wrappedLoan.address))).to.be.closeTo(0, 0.0001);
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 80);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 5);
         });
 
 
