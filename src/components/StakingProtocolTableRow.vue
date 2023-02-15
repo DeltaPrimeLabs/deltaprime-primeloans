@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <div class="table__cell">
+      <div class="table__cell rewards__cell">
         <div class="reward__icons">
           <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens"
                :src="logoSrc(token)">
@@ -38,6 +38,10 @@
             {{ rewards | usd }}
           </div>
         </div>
+        <img v-if="farm.rewardsInfo"
+             class="info__icon"
+             src="src/assets/icons/info.svg"
+             v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}">
       </div>
 
       <div class="table__cell">
@@ -366,6 +370,12 @@ export default {
 
       &.farm-cell {
         justify-content: flex-start;
+      }
+
+      &.rewards__cell {
+        .info__icon {
+          margin-left: 5px;
+        }
       }
 
       .farm {
