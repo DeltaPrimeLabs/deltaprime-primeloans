@@ -82,6 +82,11 @@ export default {
         {
           text: 'Degen, activated!',
           min: 0.5,
+          max: 1
+        },
+        {
+          text: 'GLP fee Hoardooor',
+          min: 1,
           max: 999999
         },
       ];
