@@ -13,6 +13,7 @@
                      v-on:inputChange="currencyInputChange"
                      v-on:ongoingTyping="ongoingTyping"
                      :max="max"
+                     :info-icon-message="infoIconMessage"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>
@@ -56,6 +57,7 @@ export default {
     assetOptions: {},
     defaultAsset: null,
     max: {},
+    infoIconMessage: null,
     validators: {
       type: Array, default: () => []
     },
@@ -205,6 +207,10 @@ export default {
 
     .currency-input {
       width: 386px;
+    }
+
+    .info__icon.message {
+      width: 22px;
     }
 
     .divider {
