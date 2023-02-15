@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
@@ -215,6 +216,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
         if(_amount == 0) revert ZeroDepositAmount();
+
+        _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
         _accumulateDepositInterest(msg.sender);
 
