@@ -44,13 +44,18 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     let poolTokens = await tokenManager.getAllPoolAssets();
     let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
 
+    const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
+
+    if (healthBeforeLiquidation < 0.98) {
+
 
     //TODO: optimize to unstake only as much as needed
+
+    await unstakeYieldYak(loan, liquidator_wallet, provider);
+
     await unstakeGlp(loan, liquidator_wallet, provider);
 
     await unstakeStakedPositions(loan, provider);
-
-    await unstakeYieldYak(loan, liquidator_wallet, provider);
 
     await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
@@ -160,9 +165,6 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     const redstonePayload = protocol.RedstonePayload.prepare(
         signedDataPackages, unsignedMetadata);
 
-    const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
-
-    if (healthBeforeLiquidation < 0.98) {
         try {
             let liqStartTime = new Date();
             let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
