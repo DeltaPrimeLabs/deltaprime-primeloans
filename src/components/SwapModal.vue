@@ -2,7 +2,7 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        {{`${isMintable ? 'Mint/Redeem' : 'Swap'}`}}
+        Swap
       </div>
       <div class="asset-info">
         Available:
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <div class="slippage-bar" v-if="!isMintable">
+      <div class="slippage-bar">
         <div class="slippage-info">
           <span class="slippage-label">Max. acceptable slippage:</span>
           <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
@@ -130,7 +130,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
-import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import SimpleInput from "./SimpleInput";
 const ethers = require('ethers');
 
@@ -208,9 +207,6 @@ export default {
   },
 
   computed: {
-    isMintable() {
-      return this.sourceAsset === 'GLP' || this.targetAsset === 'GLP';
-    }
   },
 
   methods: {
@@ -286,7 +282,7 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = this.isMintable ? 0.5 : 0.1;
+      const SLIPPAGE_MARGIN = 0.1;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

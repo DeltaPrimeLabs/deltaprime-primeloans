@@ -299,6 +299,8 @@ export default {
         ],
     },
     yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
+    yakWrapRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
+    yieldYakGlpWrapperAddress: '0xe663d083b849d1f22ef2778339ec58175f547608',
     glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,

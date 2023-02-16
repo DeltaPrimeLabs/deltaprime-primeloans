@@ -111,7 +111,10 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
-import YAK_ROUTER from '../../test/abis/YakRouter.json';
+import YAK_ROUTER
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYakRouter.sol/IYieldYakRouter.json';
+import YAK_WRAP_ROUTER
+  from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
@@ -243,23 +246,14 @@ export default {
         }
       ];
 
-      if (this.asset.symbol !== 'GLP') {
-        this.actionsConfig.push({
-          iconSrc: 'src/assets/icons/swap.svg',
-          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP',
-          disabled: !this.hasSmartLoanContract
-        });
-      } else {
-        this.actionsConfig.push({
-          iconSrc: 'src/assets/icons/swap.svg',
-          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-          tooltip: 'Mint/Redeem',
-          iconButtonActionKey: 'GLP',
-          disabled: !this.hasSmartLoanContract
-        });
-      }
+      this.actionsConfig.push({
+        iconSrc: 'src/assets/icons/swap.svg',
+        hoverIconSrc: 'src/assets/icons/swap_hover.svg',
+        tooltip: 'Swap',
+        iconButtonActionKey: 'SWAP',
+        disabled: !this.hasSmartLoanContract
+      });
+
     },
 
     toggleChart() {
@@ -281,6 +275,53 @@ export default {
       return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
     },
 
+    swapQueryMethod() {
+        return async (sourceAsset, targetAsset, amountIn) => {
+          const tknFrom = TOKEN_ADDRESSES[sourceAsset];
+          const tknTo = TOKEN_ADDRESSES[targetAsset];
+
+          if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
+            const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
+
+            const maxHops = 3;
+            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+            return await yakRouter.findBestPathWithGas(
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
+            );
+          } else {
+            const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER, provider.getSigner());
+
+            const maxHops = 2;
+            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+            return tknTo === 'GLP'
+            ?
+            await yakWrapRouter.findBestPathAndWrap(
+              amountIn,
+              tknFrom,
+              config.yieldYakGlpWrapperAddress,
+              maxHops,
+              gasPrice,
+              {gasLimit: 1e9})
+            :
+            await yakWrapRouter.unwrapAndFindBestPath(
+                amountIn,
+                tknTo,
+                config.yieldYakGlpWrapperAddress,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9});
+
+        }
+      }
+    },
+
     actionClick(key) {
       switch (key) {
         case 'BORROW':
@@ -297,9 +338,6 @@ export default {
           break;
         case 'SWAP':
           this.openSwapModal();
-          break;
-        case 'GLP':
-          this.openGlpModal();
           break;
         case 'WRAP':
           this.openWrapModal();
@@ -357,8 +395,8 @@ export default {
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = Object.keys(config.ASSETS_CONFIG).filter(symbol => symbol !== 'GLP');
-      modalInstance.targetAssets = Object.keys(config.ASSETS_CONFIG).filter(symbol => symbol !== 'GLP');
+      modalInstance.sourceAssets = Object.keys(config.ASSETS_CONFIG);
+      modalInstance.targetAssets = Object.keys(config.ASSETS_CONFIG);
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -368,23 +406,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.queryMethod = async function (sourceAsset, targetAsset, amountIn) {
-        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
-        const tknTo = TOKEN_ADDRESSES[targetAsset];
-        const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
-
-        const maxHops = 3;
-        const gasPrice = ethers.utils.parseUnits('225', 'gwei');
-
-        return await yakRouter.findBestPathWithGas(
-          amountIn,
-          tknFrom,
-          tknTo,
-          maxHops,
-          gasPrice,
-          {gasLimit: 1e9}
-        );
-      };
+      modalInstance.queryMethod = this.swapQueryMethod();
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapRequest = {
@@ -392,67 +414,6 @@ export default {
           sourceAmount: swapEvent.sourceAmount.toString()
         };
         this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
-        });
-      });
-    },
-
-    openGlpModal() {
-      const assetsForGlpMinting = ['AVAX', 'USDC', 'ETH', 'BTC'];
-      const defaultAsset = assetsForGlpMinting[0];
-      const modalInstance = this.openModal(SwapModal);
-      modalInstance.sourceAsset = defaultAsset;
-      modalInstance.sourceAssetBalance = this.assetBalances[defaultAsset];
-      modalInstance.assets = this.assets;
-      modalInstance.assetBalances = this.assetBalances;
-      modalInstance.debtsPerAsset = this.debtsPerAsset;
-      modalInstance.sourceAssets = assetsForGlpMinting;
-      modalInstance.targetAssets = ['GLP'];
-      modalInstance.lpAssets = this.lpAssets;
-      modalInstance.lpBalances = this.lpBalances;
-      modalInstance.farms = this.farms;
-      modalInstance.targetAsset = 'GLP';
-      modalInstance.debt = this.fullLoanStatus.debt;
-      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
-      modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.queryMethod = async (sourceAsset, targetAsset, amountInWei) => {
-        const amountIn = parseFloat(formatUnits(amountInWei, this.assets[sourceAsset].decimals));
-        const estimated = amountIn * this.assets[sourceAsset].price / this.assets[targetAsset].price;
-
-        const targetDecimals = this.assets[targetAsset].decimals;
-        return Promise.resolve(parseUnits(estimated.toFixed(targetDecimals), targetDecimals));
-      };
-
-      modalInstance.$on('MINT_GLP', mintEvent => {
-        const mintAndStakeRequest = {
-          sourceAsset: mintEvent.sourceAsset,
-          sourceAmount: mintEvent.sourceAmount.toString(),
-          minGlp: mintEvent.minGlp.toString(),
-          minUsdValue: mintEvent.minUsdValue.toString()
-        };
-        this.handleTransaction(this.mintAndStakeGlp, {mintAndStakeGlpRequest: mintAndStakeRequest}, () => {
-          this.scheduleHardRefresh();
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
-        });
-      });
-
-      modalInstance.$on('REDEEM_GLP', redeemEvent => {
-        console.log('redeemEvent');
-        console.log(redeemEvent);
-        console.log('redeemEvent.targetAsset: ', redeemEvent.targetAsset);
-        const unstakeAndRedeemGlpRequest = {
-          targetAsset: redeemEvent.targetAsset,
-          targetAmount: redeemEvent.targetAmount.toString(),
-          glpAmount: redeemEvent.glpAmount.toString()
-        };
-        this.handleTransaction(this.unstakeAndRedeemGlp, {unstakeAndRedeemGlpRequest: unstakeAndRedeemGlpRequest}, () => {
-          this.scheduleHardRefresh();
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
