@@ -29,6 +29,14 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function getInitialTokensDetails(address _soldTokenAddress, address _boughtTokenAddress) internal returns (SwapTokensDetails memory){
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
+        if (_boughtTokenAddress == 0xaE64d55a6f09E4263421737397D1fdFA71896a69) {
+            _boughtTokenAddress = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
+        }
+
+        if (_soldTokenAddress == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+            _soldTokenAddress = 0xaE64d55a6f09E4263421737397D1fdFA71896a69;
+        }
+
         bytes32 _tokenSoldSymbol = tokenManager.tokenAddressToSymbol(_soldTokenAddress);
         bytes32 _tokenBoughtSymbol = tokenManager.tokenAddressToSymbol(_boughtTokenAddress);
 
