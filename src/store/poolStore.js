@@ -76,7 +76,7 @@ export default {
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(poolContract.address,
-              parseUnits(String(depositRequest.amount), decimals));
+              parseUnits(String(depositRequest.amount), decimals), { gasLimit: 100_000 });
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
