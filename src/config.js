@@ -169,7 +169,7 @@ export default {
                 stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                info: 'Depositing into Platypus\' main pool has been temporarily disabled. Read more in our <a href="https://discord.com/invite/9bwsnsHEzD" target="_blank">discord</a>.',
                 minAmount: 0.8,
                 token: 'USDC',
                 isTokenLp: false,
