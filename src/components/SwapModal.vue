@@ -110,7 +110,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="`${targetAsset === 'GLP' ? 'Mint' : (sourceAsset === 'GLP' ? 'Redeem' : 'Swap')}`"
+        <Button label="Swap"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
@@ -213,30 +213,14 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
-      if (this.targetAsset === 'GLP') {
-        this.$emit('MINT_GLP', {
-          sourceAsset: this.sourceAsset,
-          sourceAmount: sourceAssetAmount,
-          minGlp: this.targetAssetAmount,
-          minUsdValue: this.targetAssetAmount * this.assets['GLP'].price
-        });
-      } else if (this.sourceAsset === 'GLP') {
-        console.log('redeem')
-        this.$emit('REDEEM_GLP', {
-          glpAmount: sourceAssetAmount,
-          targetAsset: this.targetAsset,
-          targetAmount: this.targetAssetAmount
-        });
-      } else {
-        this.$emit('SWAP', {
-          sourceAsset: this.sourceAsset,
-          targetAsset: this.targetAsset,
-          sourceAmount: sourceAssetAmount,
-          targetAmount: this.targetAssetAmount,
-          path: this.path,
-          adapters: this.adapters
-        });
-      }
+      this.$emit('SWAP', {
+        sourceAsset: this.sourceAsset,
+        targetAsset: this.targetAsset,
+        sourceAmount: sourceAssetAmount,
+        targetAmount: this.targetAssetAmount,
+        path: this.path,
+        adapters: this.adapters
+      });
     },
 
     async query(sourceAsset, targetAsset, amountIn) {

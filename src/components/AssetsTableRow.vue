@@ -111,8 +111,8 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
-import YAK_ROUTER
-  from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYakRouter.sol/IYieldYakRouter.json';
+import YAK_ROUTER_ABI
+  from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
@@ -122,6 +122,7 @@ import GLP_REWARD_ROUTER
 import GLP_REWARD_TRACKER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
 import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
+import {BigNumber} from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -281,7 +282,7 @@ export default {
           const tknTo = TOKEN_ADDRESSES[targetAsset];
 
           if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
-            const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
+            const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
             const maxHops = 3;
             const gasPrice = ethers.utils.parseUnits('225', 'gwei');
@@ -295,28 +296,26 @@ export default {
                 {gasLimit: 1e9}
             );
           } else {
-            const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER, provider.getSigner());
+            const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
 
             const maxHops = 2;
             const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
-            return tknTo === 'GLP'
+            return targetAsset === 'GLP'
             ?
             await yakWrapRouter.findBestPathAndWrap(
               amountIn,
               tknFrom,
               config.yieldYakGlpWrapperAddress,
               maxHops,
-              gasPrice,
-              {gasLimit: 1e9})
+              gasPrice)
             :
             await yakWrapRouter.unwrapAndFindBestPath(
                 amountIn,
                 tknTo,
                 config.yieldYakGlpWrapperAddress,
                 maxHops,
-                gasPrice,
-                {gasLimit: 1e9});
+                gasPrice);
 
         }
       }
