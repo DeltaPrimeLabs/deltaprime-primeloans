@@ -210,7 +210,12 @@ export async function unstakeStakedPositions(loan, provider){
             let balanceMethod = loan.interface.getFunction(stakedPosition.balanceSelector);
             let unstakeMethod = loan.interface.getFunction(stakedPosition.unstakeSelector);
 
-            await awaitConfirmation(await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {gasLimit: 8_000_000, gasPrice: 100_000_000_000}), provider, 'UnstakeStakedPostisions', 60_000);
+            if(fromBytes32(stakedPosition.symbol) !== "USDC") {
+                await awaitConfirmation(await loan[unstakeMethod.name](await loan[balanceMethod.name](), toWei("0"), {
+                    gasLimit: 8_000_000,
+                    gasPrice: 100_000_000_000
+                }), provider, 'UnstakeStakedPostisions', 60_000);
+            }
         }
     } catch (e) {
         console.log(`StakedPositions-Error: ${e}`);
