@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/IRatesCalculator.sol";
-
+import "hardhat/console.sol";
 /**
  * @title WavaxVariableUtilisationRatesCalculator
  * @dev Contract which calculates the interest rates based on pool utilisation.
@@ -114,6 +114,7 @@ contract WavaxVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
      * @param _spread spread defined by user
      **/
     function setSpread(uint256 _spread) external onlyOwner {
+        console.log(_spread);
         require(_spread < 1e18, "Spread must be smaller than 1e18");
         spread = _spread;
         emit SpreadChanged(msg.sender, _spread, block.timestamp);
