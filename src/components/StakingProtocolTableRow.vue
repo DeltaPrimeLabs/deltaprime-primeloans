@@ -332,7 +332,7 @@ export default {
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
-          disabled: this.farm.protocol === 'VECTOR_FINANCE' && this.farm.token === 'USDC',
+          disabled: this.farm.protocol === 'VECTOR_FINANCE',
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
