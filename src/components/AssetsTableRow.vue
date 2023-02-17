@@ -369,8 +369,8 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = async function (sourceAsset, targetAsset, amountIn) {
-        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
-        const tknTo = TOKEN_ADDRESSES[targetAsset];
+        const sourceToken = TOKEN_ADDRESSES[sourceAsset];
+        const targetToken = TOKEN_ADDRESSES[targetAsset];
         const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
 
         const maxHops = 3;
@@ -378,8 +378,8 @@ export default {
 
         return await yakRouter.findBestPathWithGas(
           amountIn,
-          tknFrom,
-          tknTo,
+          sourceToken,
+          targetToken,
           maxHops,
           gasPrice,
           {gasLimit: 1e9}
@@ -501,7 +501,7 @@ export default {
                     this.handleTransactionError(error);
                   });
             } else {
-              this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
+              this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value, isLP: false}, () => {
                     this.scheduleHardRefresh();
                     this.$forceUpdate();
                   },

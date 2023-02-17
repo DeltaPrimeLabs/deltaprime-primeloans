@@ -300,7 +300,7 @@ export default {
       await awaitConfirmation(transaction, provider, 'createLoan');
     },
 
-    async createLoanAndDeposit({state, rootState}, {request}) {
+    async createLoanAndDeposit({state, rootState, commit}, {request}) {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(request.value.toString(), request.assetDecimals);
 
@@ -351,9 +351,12 @@ export default {
       const amount = formatUnits(depositedAmount, BigNumber.from(decimals));
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(request.asset, amount, false, true);
+
+      await commit('setSingleAssetBalance', {asset: request.asset, balance: amount});
+      commit('setNoSmartLoan', false);
     },
 
-    async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value}) {
+    async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value, isLP}) {
       const provider = rootState.network.provider;
 
       if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
@@ -384,10 +387,21 @@ export default {
 
       const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 1000000});
 
+
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      await awaitConfirmation(transaction, provider, 'create Prime Account');
+      const tx = await awaitConfirmation(transaction, provider, 'create Prime Account');
+
+      console.log(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated'));
+      const fundAmount = formatUnits(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.collateralAmount, decimals);
+      console.log('fundAmount', fundAmount);
+
+      await commit('setSingleAssetBalance', {asset: asset.symbol, balance: fundAmount});
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(asset, fundAmount, isLP, true);
+
+      commit('setNoSmartLoan', false);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
