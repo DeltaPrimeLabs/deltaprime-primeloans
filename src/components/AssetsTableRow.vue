@@ -146,6 +146,7 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
+    this.watchHealthRefresh();
     this.setupPoolsApy();
   },
   data() {
@@ -156,6 +157,7 @@ export default {
       isBalanceEstimated: false,
       isDebtEstimated: false,
       disableAllButtons: false,
+      healthLoading: true,
       borrowApyPerPool: {}
     };
   },
@@ -164,7 +166,7 @@ export default {
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService', 'healthService']),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -252,9 +254,8 @@ export default {
         hoverIconSrc: 'src/assets/icons/swap_hover.svg',
         tooltip: 'Swap',
         iconButtonActionKey: 'SWAP',
-        disabled: !this.hasSmartLoanContract
+        disabled: true
       });
-
     },
 
     toggleChart() {
@@ -287,36 +288,47 @@ export default {
             const maxHops = 3;
             const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
-            return await yakRouter.findBestPathWithGas(
-                amountIn,
-                tknFrom,
-                tknTo,
-                maxHops,
-                gasPrice,
-                {gasLimit: 1e9}
-            );
+            try {
+              return await yakRouter.findBestPathWithGas(
+                  amountIn,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e9}
+              );
+            } catch (e) {
+              this.handleTransactionError(e);
+            }
           } else {
             const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
 
             const maxHops = 2;
             const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
-            return targetAsset === 'GLP'
-            ?
-            await yakWrapRouter.findBestPathAndWrap(
-              amountIn,
-              tknFrom,
-              config.yieldYakGlpWrapperAddress,
-              maxHops,
-              gasPrice)
-            :
-            await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
-
+            if (targetAsset === 'GLP') {
+              try {
+                return await yakWrapRouter.findBestPathAndWrap(
+                    amountIn,
+                    tknFrom,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice)
+              } catch (e) {
+                this.handleTransactionError(e);
+              }
+            } else {
+              try {
+                return await yakWrapRouter.unwrapAndFindBestPath(
+                    amountIn,
+                    tknTo,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice);
+              } catch (e) {
+                this.handleTransactionError(e);
+              }
+            }
         }
       }
     },
@@ -678,6 +690,20 @@ export default {
       this.dataRefreshEventService.assetApysDataRefresh$.subscribe(() => {
         this.$forceUpdate();
       });
+    },
+
+    watchHealthRefresh() {
+      this.healthService.observeRefreshHealth().subscribe(async () => {
+        if (!this.noSmartLoan) {
+          this.actionsConfig.pop();
+          this.actionsConfig.push({
+            iconSrc: 'src/assets/icons/swap.svg',
+            hoverIconSrc: 'src/assets/icons/swap_hover.svg',
+            tooltip: 'Swap',
+            iconButtonActionKey: 'SWAP'
+          });
+        }
+      })
     },
 
     scheduleHardRefresh() {

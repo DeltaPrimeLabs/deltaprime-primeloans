@@ -241,18 +241,20 @@ export default {
       const queryRes = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
 
       let estimated;
-      if (queryRes instanceof BigNumber) {
-        estimated = queryRes;
-      } else {
-        this.path = queryRes.path;
-        this.adapters = queryRes.adapters;
-        estimated = queryRes.amounts[queryRes.amounts.length - 1];
+      if (queryRes) {
+        if (queryRes instanceof BigNumber) {
+          estimated = queryRes;
+        } else {
+          this.path = queryRes.path;
+          this.adapters = queryRes.adapters;
+          estimated = queryRes.amounts[queryRes.amounts.length - 1];
+        }
+
+        this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+
+        this.updateSlippageWithAmounts();
+        this.calculateHealthAfterTransaction();
       }
-
-      this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
-
-      this.updateSlippageWithAmounts();
-      this.calculateHealthAfterTransaction();
     },
 
     async updateAmountsWithSlippage() {
