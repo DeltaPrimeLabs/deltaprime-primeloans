@@ -26,7 +26,8 @@ async function getAllLoans() {
 
 async function wrapLoanIsSolvent(loanAddress) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
-    let isSolvent = Boolean(fromWei(await loan.getHealthRatio()) >= 0.98);
+    let isSolvent = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance())) > fromWei(await loan.getDebt());
+    // let isSolvent = Boolean(fromWei(await loan.getHealthRatio()) >= 0.98);
     return isSolvent;
 }
 

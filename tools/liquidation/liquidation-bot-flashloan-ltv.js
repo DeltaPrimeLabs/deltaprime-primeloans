@@ -99,7 +99,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             });
     }
 
-    let loanIsBankrupt = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance)) < fromWei(await loan.getDebt());
+    let loanIsBankrupt = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance())) < fromWei(await loan.getDebt());
 
     if(!loanIsBankrupt){
         let prices = (await loan.getAllAssetsPrices()).map(el => {
