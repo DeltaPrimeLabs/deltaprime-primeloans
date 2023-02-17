@@ -60,7 +60,7 @@ export default {
       // max is inclusive, min is not
       this.possibleComments = [
         {
-          text: 'One of these should moon, right?',
+          text: 'Steady lads…',
           min: -999999,
           max: -0.5
         },
