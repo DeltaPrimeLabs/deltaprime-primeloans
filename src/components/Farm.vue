@@ -67,14 +67,11 @@ export default {
       });
     },
   },
-
-
-
-  watch: {}
 };
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables";
 
 .stake-beta-component {
   width: 100%;

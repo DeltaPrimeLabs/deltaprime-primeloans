@@ -1,5 +1,10 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
+
+    <div class="protocol-banner" v-if="farm.protocol === 'VECTOR_FINANCE'">Deposits into platypus pools have been temporarily disabled. Read more in our
+      <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">discord</a>.
+    </div>
+
     <div class="table__row">
       <div class="table__cell farm-cell">
         <div class="farm">
@@ -251,7 +256,7 @@ export default {
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         await this.setApy();
-      })
+      });
     },
 
     watchExternalStakedPerFarm() {
@@ -271,10 +276,10 @@ export default {
     async setApy() {
       if (!this.farm.currentApy) return 0;
       let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
-      console.log('setApy')
-      console.log('symbol: ', this.asset.symbol)
-      console.log('assetApr: ', assetApy)
-      console.log('this.farm.currentApy: ', this.farm.currentApy)
+      console.log('setApy');
+      console.log('symbol: ', this.asset.symbol);
+      console.log('assetApr: ', assetApy);
+      console.log('this.farm.currentApy: ', this.farm.currentApy);
 
 
       this.apy = this.isLp ? (1 + this.farm.currentApy + assetApy) - 1 : (1 + this.farm.currentApy) * (1 + assetApy) - 1;
@@ -350,15 +355,28 @@ export default {
 @import "~@/styles/variables";
 
 .staking-farm-table-row-component {
+  border-style: solid;
+  border-width: 2px 0 0 0;
+  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+  border-image-slice: 1;
+
+  .protocol-banner {
+    color: $orange;
+    font-weight: 500;
+    font-size: $font-size-xxs;
+    margin-top: 5px;
+    margin-bottom: -10px;
+
+    .banner__link {
+      color: $orange;
+      font-weight: 600;
+    }
+  }
 
   .table__row {
     display: grid;
     grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
     height: 60px;
-    border-style: solid;
-    border-width: 2px 0 0 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-    border-image-slice: 1;
     padding: 0 6px;
 
     .table__cell {

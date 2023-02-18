@@ -158,8 +158,16 @@ export default {
       const headerHeight = 53;
       if (this.availableFarms) {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
+        let heightOfRows = 0;
+        Object.values(this.availableFarms).forEach(farm => {
+          if (farm.protocol === 'VECTOR_FINANCE') {
+            heightOfRows += 75;
+          } else {
+            heightOfRows += 60;
+          }
+        })
 
-        return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+        return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;
       }
     },
 
