@@ -56,3 +56,4 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 }
 
 module.exports.tags = ['avalanche'];
+module.exports.deployLinearIndex = deployLinearIndex;
