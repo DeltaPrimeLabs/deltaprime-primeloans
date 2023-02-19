@@ -269,9 +269,11 @@ export default {
 .pools {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
 
   .block-wrapper {
     width: 48%;
+    margin-bottom: 20px;
 
     .title {
       margin-bottom: 20px;
