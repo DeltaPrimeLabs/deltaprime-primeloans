@@ -519,7 +519,10 @@ export default {
       if (rootState.poolStore.pools && state.debtsPerAsset) {
         Object.entries(state.debtsPerAsset).forEach(
             ([symbol, debt]) => {
-              yearlyDebtInterest += parseFloat(debt.debt) * rootState.poolStore.pools.find(pool => pool.asset.symbol === symbol).borrowingAPY * state.assets[symbol].price;
+              const pool = rootState.poolStore.pools.find(pool => pool.asset.symbol === symbol);
+              if (pool) {
+                yearlyDebtInterest += parseFloat(debt.debt) * pool.borrowingAPY * state.assets[symbol].price;
+              }
             }
         );
 
