@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 5bae95ca244e96444fe80078195944f6637e72d8;
+// Last deployed from commit: 2f6b0fb53889a8741a3d7f78a2d5d05ad7a0c76d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
@@ -215,6 +216,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function deposit(uint256 _amount) public virtual nonReentrant {
         if(_amount == 0) revert ZeroDepositAmount();
+
+        _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
         _accumulateDepositInterest(msg.sender);
 

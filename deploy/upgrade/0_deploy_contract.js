@@ -9,8 +9,8 @@ module.exports = async ({
     const {deployer} = await getNamedAccounts();
 
     // IMPORTANT: Update contract's name and path accordingly before using the 0_deploy_contract.js script
-    embedCommitHash('SmartLoanLimitedCollateral', './contracts/upgraded');
-    const contractName = 'SmartLoanLimitedCollateral';
+    embedCommitHash('UsdcVariableUtilisationRatesCalculator', './contracts/deployment/avalanche');
+    const contractName = 'UsdcVariableUtilisationRatesCalculator';
     let result = await deploy(contractName, {
         from: deployer,
         gasLimit: 8000000
