@@ -1,7 +1,8 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
 
-    <div class="protocol-banner" v-if="farm.protocol === 'VECTOR_FINANCE'">Deposits into platypus pools have been temporarily disabled. Read more in our
+    <div class="protocol-banner" v-if="farm.protocol === 'VECTOR_FINANCE' && asset.symbol === 'USDC'">
+      Deposits into platypus pools have been temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">discord</a>.
     </div>
 
@@ -337,7 +338,7 @@ export default {
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
-          disabled: this.farm.protocol === 'VECTOR_FINANCE',
+          disabled: this.farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC',
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',

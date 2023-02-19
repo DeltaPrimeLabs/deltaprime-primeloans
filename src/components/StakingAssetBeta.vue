@@ -160,7 +160,7 @@ export default {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
-          if (farm.protocol === 'VECTOR_FINANCE') {
+          if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 75;
           } else {
             heightOfRows += 60;
