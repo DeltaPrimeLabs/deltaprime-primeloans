@@ -61,6 +61,7 @@
     "replace-in-file": "^6.3.5",
     "rxjs": "^7.6.0",
     "solidity-docgen": "^0.3.13",
+    "sqlite": "^4.1.2",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "style-loader": "^3.3.1",
