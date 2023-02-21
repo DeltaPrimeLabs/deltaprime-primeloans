@@ -44,13 +44,18 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
     let poolTokens = await tokenManager.getAllPoolAssets();
     let poolTokenAddresses = await Promise.all(poolTokens.map(el => tokenManager.getAssetAddress(el, true)));
 
+    const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
+
+    if (healthBeforeLiquidation < 0.98) {
+
 
     //TODO: optimize to unstake only as much as needed
-    await unstakeGlp(loan, liquidator_wallet, provider);
-
-    await unstakeStakedPositions(loan, provider);
 
     await unstakeYieldYak(loan, liquidator_wallet, provider);
+
+    await unstakeGlp(loan, liquidator_wallet, provider);
+
+    // await unstakeStakedPositions(loan, provider);
 
     await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
@@ -94,75 +99,73 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             });
     }
 
-    let loanIsBankrupt = fromWei(await loan.getTotalValue()) < fromWei(await loan.getDebt());
+    let loanIsBankrupt = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance())) < fromWei(await loan.getDebt());
 
-    let prices = (await loan.getAllAssetsPrices()).map(el => {
-        return {
-            dataFeedId: fromBytes32(el.name),
-            value: formatUnits(el.price, 8)
+    if(!loanIsBankrupt){
+        let prices = (await loan.getAllAssetsPrices()).map(el => {
+            return {
+                dataFeedId: fromBytes32(el.name),
+                value: formatUnits(el.price, 8)
+            }
+        });
+
+        let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
+            getLiquidationAmountsBasedOnLtv(
+                'LIQUIDATE',
+                debts,
+                balances,
+                prices,
+                4.1,
+                bonus,
+                loanIsBankrupt
+            )
+            :
+            getLiquidationAmounts(
+                'LIQUIDATE',
+                debts,
+                balances,
+                prices,
+                1.04,
+                bonus,
+                loanIsBankrupt
+            );
+
+        let amountsToRepayInWei = [];
+
+        for (const repayment of repayAmounts) {
+            let tokenContract = await getERC20Contract(addresses[repayment.name], liquidator_wallet);
+            let decimals = await tokenContract.decimals();
+            amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
         }
-    });
 
-    let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
-     getLiquidationAmountsBasedOnLtv(
-        'LIQUIDATE',
-        debts,
-        balances,
-        prices,
-        4.1,
-        bonus,
-        loanIsBankrupt
-    )
-    :
-    getLiquidationAmounts(
-        'LIQUIDATE',
-        debts,
-        balances,
-        prices,
-        1.04,
-        bonus,
-        loanIsBankrupt
-    );
-
-    let amountsToRepayInWei = [];
-
-    for (const repayment of repayAmounts) {
-        let tokenContract = await getERC20Contract(addresses[repayment.name], liquidator_wallet);
-        let decimals = await tokenContract.decimals();
-        amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
-    }
-
-    for (const allowance of deliveredAmounts) {
-        let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
-        let decimals = await tokenContract.decimals();
-        let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
-        await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
-    }
-
-    const bonusInWei = (bonus * 1000).toFixed(0);
-
-    let flashLoan = wrapContractProd(new ethers.Contract(flashLoanAddress, LIQUIDATION_FLASHLOAN.abi, liquidator_wallet));
-
-    const parseDataPackagesResponse = (
-        dataPackagesResponse
-    ) => {
-        const signedDataPackages = [];
-        for (const dpForDataFeed of Object.values(dataPackagesResponse)) {
-            signedDataPackages.push(...dpForDataFeed);
+        for (const allowance of deliveredAmounts) {
+            let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
+            let decimals = await tokenContract.decimals();
+            let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
+            await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
         }
-        return signedDataPackages;
-    };
 
-    const signedDataPackagesResponse = await getSignedDataPackagesResponse();
+        const bonusInWei = (bonus * 1000).toFixed(0);
 
-    const signedDataPackages = parseDataPackagesResponse(signedDataPackagesResponse);
-    const unsignedMetadata = "manual-payload";
-    const redstonePayload = protocol.RedstonePayload.prepare(
-        signedDataPackages, unsignedMetadata);
+        let flashLoan = wrapContractProd(new ethers.Contract(flashLoanAddress, LIQUIDATION_FLASHLOAN.abi, liquidator_wallet));
 
-    const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
+        const parseDataPackagesResponse = (
+            dataPackagesResponse
+        ) => {
+            const signedDataPackages = [];
+            for (const dpForDataFeed of Object.values(dataPackagesResponse)) {
+                signedDataPackages.push(...dpForDataFeed);
+            }
+            return signedDataPackages;
+        };
 
-    if (healthBeforeLiquidation < 0.98) {
+        const signedDataPackagesResponse = await getSignedDataPackagesResponse();
+
+        const signedDataPackages = parseDataPackagesResponse(signedDataPackagesResponse);
+        const unsignedMetadata = "manual-payload";
+        const redstonePayload = protocol.RedstonePayload.prepare(
+            signedDataPackages, unsignedMetadata);
+
         try {
             let liqStartTime = new Date();
             let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
@@ -179,10 +182,10 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                     gasLimit: 8_000_000,
                     gasPrice: 100_000_000_000
                 }
-            ),
-            provider,
-            'flash loan liquidation',
-            60_000);
+                ),
+                provider,
+                'flash loan liquidation',
+                60_000);
 
             console.log(`[${liqStartTime.toLocaleTimeString()}] Waiting for flashLoanTx: ${flashLoanTx.hash}`);
 
@@ -191,6 +194,9 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
         } catch (error) {
             console.log(error)
         }
+    }
+
+
     } else {
         console.log('Loan on the edge of solvency, aborting liquidation.')
     }

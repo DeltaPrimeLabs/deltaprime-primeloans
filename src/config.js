@@ -2,12 +2,14 @@ import addresses from '../common/addresses/avax/token_addresses.json';
 import {
     getPangolinLpApr, getTraderJoeLpApr,
     vectorFinanceApy,
-    vectorFinanceBalance, vectorFinanceRewards,
+    vectorFinanceBalance,
     yieldYakApy,
-    yieldYakBalance, yieldYakRewards, yieldYakStaked
+    yieldYakBalance
 } from "./utils/calculate";
 import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
+import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
+import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
 import TRADERJOE_INTERMEDIARY_TUP from '@contracts/TraderJoeIntermediaryTUP.json';
 import {glpApy} from "./utils/blockchain";
@@ -41,6 +43,14 @@ export default {
         USDC: {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
+        },
+        BTC: {
+            address: BTC_POOL_TUP.address,
+            tokenAddress: addresses.BTC
+        },
+        ETH: {
+            address: ETH_POOL_TUP.address,
+            tokenAddress: addresses.ETH
         }
     },
     LP_ASSETS_CONFIG: {
@@ -173,7 +183,7 @@ export default {
                 minAmount: 0.8,
                 token: 'USDC',
                 isTokenLp: false,
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
                 refreshDelay: 60000,

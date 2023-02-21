@@ -27,6 +27,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
+        _amount = Math.min(_amount, token.balanceOf(msg.sender));
+
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         if (token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
@@ -45,6 +47,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     **/
     function fundGLP(uint256 _amount) public virtual {
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+        _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
         if (stakedGlpToken.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset("GLP", address(stakedGlpToken));

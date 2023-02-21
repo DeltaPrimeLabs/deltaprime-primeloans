@@ -10,6 +10,7 @@ require('console-stamp')(console, {
 import LOAN_FACTORYTUP from "../../deployments/avalanche/SmartLoansFactoryTUP.json";
 import LOAN_FACTORY from "../../deployments/avalanche/SmartLoansFactory.json";
 import {getLiquidatorSigner, wrapLoan} from "./utlis";
+import {fromWei} from "../../test/_helpers";
 
 const https = require('https');
 const args = require('yargs').argv;
@@ -28,7 +29,7 @@ async function getAllLoans() {
 
 async function wrapLoanIsSolvent(loanAddress) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
-    let isSolvent = await loan.isSolvent();
+    let isSolvent = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance())) > fromWei(await loan.getDebt());
     return isSolvent;
 }
 
