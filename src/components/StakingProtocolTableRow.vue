@@ -1,7 +1,7 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
 
-    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits into Platypus main pool have been temporarily disabled. Read more in our
+    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits and withdrawals from Platypus main pool have been temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
 
@@ -343,7 +343,8 @@ export default {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Unstake',
-          iconButtonActionKey: 'UNSTAKE'
+          iconButtonActionKey: 'UNSTAKE',
+          disabled: this.farm.token === 'USDC'
         },
       ];
     },
