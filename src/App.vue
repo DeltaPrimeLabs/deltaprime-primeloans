@@ -23,10 +23,10 @@
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
     <Banner v-if="showGlpBanner" background="green" :closable="true">
-      GLP is live! Deposit some AVAX first, to open up GLP deposits.
+      Interest rate model update incoming: Interest rates will drop severely in the coming hours.
     </Banner>
     <Banner v-if="showDepositBanner" background="green" :closable="true">
-      Prime GLP amplification incoming! Expect interest rates to increase significantly over the course of the next 7 days, starting from this Thursday.
+      Interest rates are temporarily lowered to normal levels. New integrations will come soon!
     </Banner>
     <div class="content">
       <div class="top-bar">
