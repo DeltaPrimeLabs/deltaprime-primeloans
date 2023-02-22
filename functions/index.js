@@ -44,6 +44,7 @@ exports.scheduledFunction = functions
         const batchTime = new Date().getTime();
         const db = admin.firestore();
         const batch = writeBatch(db);
+
         let actions = loanAddresses.map(async loanAddress => {                
             let loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
             loanContract = wrap(loanContract);
