@@ -6014,7 +6014,7 @@ cbor@^5.0.2, cbor@^5.1.0:
     bignumber.js "^9.0.1"
     nofilter "^1.0.4"
 
-ccxt@1.95.43, ccxt@^1.60.81, ccxt@^1.84.60:
+ccxt@^1.60.81, ccxt@^1.84.60:
   version "1.95.43"
   resolved "https://registry.yarnpkg.com/ccxt/-/ccxt-1.95.43.tgz#fb151dac3c71d6772047afc5736de8641b9fb55f"
   integrity sha512-LKu1ECf56mmCGY8vlpoZrgQ1DQ8A+uc01mza/1vvgZ+q4Azrp2XXYjKXsGSDvbR47xziEGY6S1QxFoQwAE4k/w==
@@ -17494,7 +17494,7 @@ sqlite@^4.0.22:
   resolved "https://registry.yarnpkg.com/sqlite/-/sqlite-4.0.23.tgz#ada09028b38e91883db08ac465d841e814d1bb00"
   integrity sha512-dSdmSkrdIhUL7xP/fiEMfFuAo4dxb0afag3rK8T4Y9lYxE3g3fXT0J8H9qSFvmcKxnM0zEA8yvLbpdWQ8mom3g==
 
-sqlite@^4.0.23, sqlite@^4.1.2:
+sqlite@^4.0.23:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/sqlite/-/sqlite-4.1.2.tgz#35643893dc1cec118c835cbab9ddbd283ffaba7d"
   integrity sha512-FlBG51gHbux5vPjwnoqFEghNGvnTMTbHyiI09U3qFTQs9AtWuwd4i++6+WCusCXKrVdIDLzfdGekrolr3m4U4A==
