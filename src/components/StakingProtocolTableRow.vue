@@ -99,6 +99,7 @@ export default {
     this.setupActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchHealth();
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
@@ -114,7 +115,8 @@ export default {
       disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
-      actionsConfig: {}
+      actionsConfig: {},
+      healthLoaded: false,
     };
   },
   watch: {
@@ -136,12 +138,19 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('fundsStore', ['smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'stakedExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'farmService',
+      'healthService'
+    ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons || !this.healthLoaded;
     },
     isLP() {
       return this.asset.secondary != null;
@@ -238,6 +247,12 @@ export default {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.disableAllButtons = true;
         this.$forceUpdate();
+      });
+    },
+
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
       });
     },
 

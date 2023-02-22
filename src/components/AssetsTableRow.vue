@@ -75,7 +75,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+          :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -140,6 +140,7 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchHealth();
     this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
     this.setupPoolsApy();
@@ -152,15 +153,33 @@ export default {
       isBalanceEstimated: false,
       isDebtEstimated: false,
       disableAllButtons: false,
-      borrowApyPerPool: {}
+      borrowApyPerPool: {},
+      healthLoaded: false,
     };
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'noSmartLoan']),
+    ...mapState('fundsStore', [
+      'smartLoanContract',
+      'health',
+      'assetBalances',
+      'fullLoanStatus',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'noSmartLoan'
+    ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'assetDebtsExternalUpdateService',
+      'poolService',
+      'healthService'
+    ]),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -691,6 +710,7 @@ export default {
 
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        console.log('assetBalancesRefreshed');
         this.isBalanceEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -700,6 +720,7 @@ export default {
 
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
+        console.log('debtsPerAssetRefreshed');
         this.isDebtEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -709,8 +730,15 @@ export default {
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        console.log('DISABLE ALL BUTTONS');
         this.disableAllButtons = true;
         this.$forceUpdate();
+      });
+    },
+
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
       });
     },
 

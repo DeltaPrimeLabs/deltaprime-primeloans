@@ -3,6 +3,7 @@ import {calculateHealth} from '../utils/calculate';
 
 export default class HealthService {
   refreshHealth$ = new Subject();
+  health$ = new Subject();
 
   emitRefreshHealth() {
     this.refreshHealth$.next(null);
@@ -10,6 +11,10 @@ export default class HealthService {
 
   observeRefreshHealth() {
     return this.refreshHealth$.asObservable();
+  }
+
+  observeHealth() {
+    return this.health$.asObservable();
   }
 
   async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, stakeStoreFarms) {
@@ -61,9 +66,11 @@ export default class HealthService {
       console.log(tokens);
 
       const health = calculateHealth(tokens);
+      this.health$.next(health >= 0 ? health : 0);
       return health >= 0 ? health : 0;
     }
 
+    this.health$.next(1);
     return 1;
   }
 };

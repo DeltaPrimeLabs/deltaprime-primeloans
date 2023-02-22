@@ -49,7 +49,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+          :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -108,6 +108,7 @@ export default {
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchHealth();
     this.watchProgressBarState();
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
@@ -125,15 +126,32 @@ export default {
       lpTokenBalances: [],
       isLpBalanceEstimated: false,
       disableAllButtons: false,
+      healthLoaded: false,
     };
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets', 'debtsPerAsset', 'lpAssets', 'lpBalances']),
+    ...mapState('fundsStore', [
+      'health',
+      'lpBalances',
+      'smartLoanContract',
+      'fullLoanStatus',
+      'assetBalances',
+      'assets',
+      'debtsPerAsset',
+      'lpAssets',
+      'lpBalances'
+    ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'lpService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'lpService',
+      'healthService'
+    ]),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
@@ -407,6 +425,12 @@ export default {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
         this.disableAllButtons = true;
         this.$forceUpdate();
+      });
+    },
+
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
       });
     },
 
