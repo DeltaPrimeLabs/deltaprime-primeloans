@@ -409,7 +409,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -578,7 +586,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -752,7 +768,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -928,7 +952,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -1116,7 +1148,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
@@ -1288,7 +1328,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, true);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, true, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
