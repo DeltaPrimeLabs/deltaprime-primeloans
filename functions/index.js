@@ -1,7 +1,14 @@
 //FIRESTORE config
 const functions = require("firebase-functions");
 const admin = require('firebase-admin');
-admin.initializeApp();
+const {initializeApp} = require("firebase-admin/app");
+const token = require("fs").readFileSync("private-function", 'utf8')
+const {getAuth} = require("firebase-admin/auth");
+const {signInWithCustomToken} = require("firebase/auth");
+
+
+initializeApp();
+const auth = getAuth();
 
 
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
@@ -37,14 +44,15 @@ function wrap(contract) {
 
 exports.scheduledFunction = functions
     .runWith({timeoutSeconds: 120, memory: "1GB"})
-    .pubsub.schedule('* * * * *')    
+    .pubsub.schedule('* * * * *')
     .onRun(async (context) => {
         functions.logger.info("Getting loans");
         let loanAddresses = await factory.getAllLoans();
         const batchTime = new Date().getTime();
         const db = admin.firestore();
+
         const batch = writeBatch(db);
-        let actions = loanAddresses.map(async loanAddress => {                
+        let actions = loanAddresses.map(async loanAddress => {
             let loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
             loanContract = wrap(loanContract);
             let status = await loanContract.getFullLoanStatus();
@@ -56,7 +64,7 @@ exports.scheduledFunction = functions
                 collateral:  fromWei(status[0]) - fromWei(status[1]),
                 health: fromWei(status[3])
             };
-            batch.collection('loans').doc(loanAddress).set(loan);            
+            batch.collection('loans').doc(loanAddress).set(loan);
         });
     await Promise.all(actions);
     const res = await batch.commit();
