@@ -1336,7 +1336,7 @@ describe('Test liquidator with a flashloan', () => {
                     adapters: queryRes.adapters,
                 }
             ];
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, true, offers);
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers, true);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
