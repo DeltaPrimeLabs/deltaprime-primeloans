@@ -42,7 +42,7 @@
             <div class="summary__divider"></div>
             <div>
               <div class="summary__label">
-                Loan:
+                Borrowed:
               </div>
               <div class="summary__value">
                 {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}

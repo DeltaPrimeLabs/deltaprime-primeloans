@@ -22,9 +22,6 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="showGlpBanner" background="green" :closable="true">
-      Interest rate model update incoming: Interest rates will drop severely in the coming hours.
-    </Banner>
     <Banner v-if="showDepositBanner" background="green" :closable="true">
       Interest rates are temporarily lowered to normal levels. New integrations will come soon!
     </Banner>
