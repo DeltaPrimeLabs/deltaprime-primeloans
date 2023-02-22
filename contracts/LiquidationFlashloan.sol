@@ -30,6 +30,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address liquidator;
     address tokenManager;
     uint256 bonus;
+    IYieldYakRouter.FormattedOffer[] offers;
   }
 
   struct FlashLoanArgs {
@@ -41,15 +42,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address liquidator;
     address loanAddress;
     address tokenManager;
+    IYieldYakRouter.FormattedOffer[] offers;
   }
-
-  struct YieldYakOffer {
-    uint256[2] amounts;
-    address[] adapters;
-    address[] path;
-  }
-
-  mapping(address => mapping(address => YieldYakOffer)) yieldYakOffers;
 
   constructor(
     address _addressProvider,
@@ -66,14 +60,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256 amount
   ) external onlyOwner {
     tokenAddress.safeTransfer(recipient, amount);
-  }
-
-  function setYieldYakOffer(
-    address surplus,
-    address deficit,
-    YieldYakOffer calldata offer
-  ) external onlyOwner {
-    yieldYakOffers[surplus][deficit] = offer;
   }
 
   // ---- Extract calldata arguments ----
@@ -121,15 +107,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     bytes calldata _params
   ) public override returns (bool) {
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
-    address[] memory supportedTokens = ITokenManager(lep.tokenManager)
-      .getSupportedTokensAddresses();
-
-    AssetAmount[] memory assetSurplus = new AssetAmount[](
-      supportedTokens.length
-    );
-    AssetAmount[] memory assetDeficit = new AssetAmount[](
-      supportedTokens.length
-    );
 
     // Use calldata instead of memory in order to avoid the "Stack Too deep" CompileError
     address[] calldata assets = getAssets();
@@ -140,6 +117,144 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       IERC20(assets[i]).approve(lep.loan, 0);
       IERC20(assets[i]).approve(lep.loan, amounts[i]);
     }
+
+    (
+      AssetAmount[] memory assetSurplus,
+      AssetAmount[] memory assetDeficit
+    ) = getSurplusDeficitAssets(_params, lep, assets, amounts, premiums);
+
+    // Swap to negate deficits
+    for (uint32 i = 0; i < assetDeficit.length; i++) {
+      if (assetDeficit[i].amount != 0) {
+        for (uint32 j = 0; j < assetSurplus.length; j++) {
+          if (assetSurplus[j].amount != 0) {
+            for (uint32 k = 0; k < lep.offers.length; ++k) {
+              IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
+              if (
+                offer.path[0] == assetSurplus[j].asset &&
+                offer.path[offer.path.length - 1] == assetDeficit[i].asset
+              ) {
+                (
+                  bool shouldBreak,
+                  uint256 remainDeficitAmount
+                ) = swapToNegateDeficits(
+                    assetDeficit[i],
+                    assetSurplus[j],
+                    offer
+                  );
+                if (shouldBreak) {
+                  address(assetDeficit[i].asset).safeTransfer(
+                    lep.liquidator,
+                    remainDeficitAmount
+                  );
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Send remaining tokens (bonus) to initiator
+    for (uint32 i = 0; i < assetSurplus.length; i++) {
+      if (assetSurplus[i].amount != 0) {
+        address(assetSurplus[i].asset).safeTransfer(
+          lep.liquidator,
+          assetSurplus[i].amount
+        );
+      }
+    }
+
+    // Approve AAVE POOL
+    for (uint32 i = 0; i < assets.length; i++) {
+      IERC20(assets[i]).approve(address(POOL), 0);
+      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
+    }
+
+    return true;
+  }
+
+  function executeFlashloan(
+    FlashLoanArgs calldata _args
+  ) public onlyWhitelistedLiquidators {
+    bytes memory encoded = abi.encode(_args.offers);
+    bytes memory enrichedParams = bytes.concat(
+      abi.encodePacked(_args.loanAddress),
+      abi.encodePacked(_args.liquidator),
+      abi.encodePacked(_args.tokenManager),
+      abi.encodePacked(_args.bonus),
+      abi.encodePacked(encoded.length),
+      encoded,
+      _args.params
+    );
+
+    IPool(address(POOL)).flashLoan(
+      address(this),
+      _args.assets,
+      _args.amounts,
+      _args.interestRateModes,
+      address(this),
+      enrichedParams,
+      0
+    );
+  }
+
+  function getLiqEnrichedParams(
+    bytes memory _enrichedParams
+  ) internal pure returns (LiqEnrichedParams memory) {
+    address _loan;
+    address _liquidator;
+    address _tokenManager;
+    uint256 _bonus;
+    uint256 length;
+    IYieldYakRouter.FormattedOffer[] memory _offers;
+    assembly {
+      // Read 32 bytes from _enrichedParams ptr + 32 bytes offset, shift right 12 bytes
+      _loan := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x20)))
+      // Read 32 bytes from _enrichedParams ptr + 52 bytes offset, shift right 12 bytes
+      _liquidator := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x34)))
+      // Read 32 bytes from _enrichedParams ptr + 72 bytes offset, shift right 12 bytes
+      _tokenManager := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x48)))
+      // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
+      _bonus := mload(add(_enrichedParams, 0x5c))
+      // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
+      length := mload(add(_enrichedParams, 0x7c))
+    }
+    bytes memory encoded = new bytes(length);
+    for (uint256 i = 0; i < length; ++i) {
+      // Read length bytes from _enrichedParams + 124 bytes offset
+      encoded[i] = _enrichedParams[124 + i];
+    }
+    _offers = abi.decode(encoded, (IYieldYakRouter.FormattedOffer[]));
+    return
+      LiqEnrichedParams({
+        loan: _loan,
+        liquidator: _liquidator,
+        tokenManager: _tokenManager,
+        bonus: _bonus,
+        offers: _offers
+      });
+  }
+
+  function getSurplusDeficitAssets(
+    bytes calldata _params,
+    LiqEnrichedParams memory lep,
+    address[] calldata assets,
+    uint256[] calldata amounts,
+    uint256[] calldata premiums
+  )
+    internal
+    returns (
+      AssetAmount[] memory assetSurplus,
+      AssetAmount[] memory assetDeficit
+    )
+  {
+    address[] memory supportedTokens = ITokenManager(lep.tokenManager)
+      .getSupportedTokensAddresses();
+
+    assetSurplus = new AssetAmount[](supportedTokens.length);
+    assetDeficit = new AssetAmount[](supportedTokens.length);
 
     // Liquidate loan
     {
@@ -181,105 +296,20 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
         assetSurplus[i] = AssetAmount(supportedTokens[i], balance);
       }
     }
-
-    // Swap to negate deficits
-    for (uint32 i = 0; i < assetDeficit.length; i++) {
-      if (assetDeficit[i].amount != 0) {
-        for (uint32 j = 0; j < assetSurplus.length; j++) {
-          if (assetSurplus[j].amount != 0) {
-            (
-              bool shouldBreak,
-              uint256 remainDeficitAmount
-            ) = swapToNegateDeficits(assetDeficit[i], assetSurplus[j]);
-            if (shouldBreak) {
-              address(assetDeficit[i].asset).safeTransfer(
-                lep.liquidator,
-                remainDeficitAmount
-              );
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    // Send remaining tokens (bonus) to initiator
-    for (uint32 i = 0; i < assetSurplus.length; i++) {
-      if (assetSurplus[i].amount != 0) {
-        address(assetSurplus[i].asset).safeTransfer(
-          lep.liquidator,
-          assetSurplus[i].amount
-        );
-      }
-    }
-
-    // Approve AAVE POOL
-    for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(address(POOL), 0);
-      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
-    }
-
-    return true;
-  }
-
-  function executeFlashloan(
-    FlashLoanArgs calldata _args
-  ) public onlyWhitelistedLiquidators {
-    bytes memory enrichedParams = bytes.concat(
-      abi.encodePacked(_args.loanAddress),
-      abi.encodePacked(_args.liquidator),
-      abi.encodePacked(_args.tokenManager),
-      abi.encodePacked(_args.bonus),
-      _args.params
-    );
-
-    IPool(address(POOL)).flashLoan(
-      address(this),
-      _args.assets,
-      _args.amounts,
-      _args.interestRateModes,
-      address(this),
-      enrichedParams,
-      0
-    );
-  }
-
-  function getLiqEnrichedParams(
-    bytes memory _enrichedParams
-  ) internal pure returns (LiqEnrichedParams memory) {
-    address _loan;
-    address _liquidator;
-    address _tokenManager;
-    uint256 _bonus;
-    assembly {
-      // Read 32 bytes from _enrichedParams ptr + 32 bytes offset, shift right 12 bytes
-      _loan := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x20)))
-      // Read 32 bytes from _enrichedParams ptr + 52 bytes offset, shift right 12 bytes
-      _liquidator := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x34)))
-      // Read 32 bytes from _enrichedParams ptr + 72 bytes offset, shift right 12 bytes
-      _tokenManager := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x48)))
-      // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
-      _bonus := mload(add(_enrichedParams, 0x5c))
-    }
-    return
-      LiqEnrichedParams({
-        loan: _loan,
-        liquidator: _liquidator,
-        tokenManager: _tokenManager,
-        bonus: _bonus
-      });
   }
 
   function swapToNegateDeficits(
     AssetAmount memory _deficit,
-    AssetAmount memory _surplus
+    AssetAmount memory _surplus,
+    IYieldYakRouter.FormattedOffer memory _offer
   ) private returns (bool shouldBreak, uint256 remainDeficitAmount) {
-    YieldYakOffer memory offer = yieldYakOffers[_surplus.asset][_deficit.asset];
-    require(offer.amounts[0] > 0, "YieldYak path, adapter is not initialized");
+    require(_offer.amounts[0] > 0, "YieldYak path, adapter is not initialized");
 
-    uint256 expectedBuyTokenReturned = (offer.amounts[1] *
+    uint256 expectedBuyTokenReturned = (_offer.amounts[
+      _offer.amounts.length - 1
+    ] *
       _surplus.amount *
-      98) / (offer.amounts[0] * 100);
+      98) / (_offer.amounts[0] * 100);
 
     uint256 amountIn = expectedBuyTokenReturned > _deficit.amount
       ? (_surplus.amount * _deficit.amount) / expectedBuyTokenReturned
@@ -294,8 +324,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
       amountIn: amountIn,
       amountOut: 0,
-      path: offer.path,
-      adapters: offer.adapters
+      path: _offer.path,
+      adapters: _offer.adapters
     });
 
     IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);

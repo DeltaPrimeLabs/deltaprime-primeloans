@@ -39,7 +39,7 @@ function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, liquidator_wallet);
 }
 
-export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, ltvBasedCalculation = false) {
+export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerAddress, offers, ltvBasedCalculation = false) {
     let loan = await wrapLoan(loanAddress, liquidator_wallet);
     const healthBeforeLiquidation = fromWei(await loan.getHealthRatio());
 
@@ -176,7 +176,8 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                         bonus: bonusInWei,
                         liquidator: liquidator_wallet.address,
                         loanAddress: loanAddress,
-                        tokenManager: tokenManager.address
+                        tokenManager: tokenManager.address,
+                        offers,
                     }, {
                         gasLimit: 8_000_000,
                         gasPrice: 100_000_000_000

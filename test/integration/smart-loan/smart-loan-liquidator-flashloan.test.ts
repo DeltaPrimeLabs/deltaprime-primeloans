@@ -77,7 +77,7 @@ describe('Test liquidator with a flashloan', () => {
     });
 
 
-    describe.only('A loan with debt and repayment', () => {
+    describe('A loan with debt and repayment', () => {
         let exchange: TraderJoeIntermediary,
             smartLoansFactory: SmartLoansFactory,
             loan: Contract,
@@ -170,13 +170,6 @@ describe('Test liquidator with a flashloan', () => {
                 wavaxTokenAddress,
                 diamondAddress
             ) as LiquidationFlashloan;
-
-            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], toWei("10"));
-            await liquidationFlashloan.connect(owner).setYieldYakOffer(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], {
-                amounts: [toWei("10"), queryRes.amounts[queryRes.amounts.length-1]],
-                path: queryRes.path,
-                adapters: queryRes.adapters,
-            });
         });
 
         it("should check onlyOwner methods", async () => {
@@ -250,7 +243,15 @@ describe('Test liquidator with a flashloan', () => {
         });
 
         it("liquidate loan", async () => {
-            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address);
+            const queryRes = await query(TOKEN_ADDRESSES['USDC'], TOKEN_ADDRESSES['AVAX'], BigNumber.from("10000000000"));
+            const offers = [
+                {
+                    amounts: queryRes.amounts,
+                    path: queryRes.path,
+                    adapters: queryRes.adapters,
+                }
+            ];
+            await liquidateLoan(wrappedLoan.address, liquidationFlashloan.address, tokenManager.address, offers);
 
             expect(await wrappedLoan.isSolvent()).to.be.true;
         });
