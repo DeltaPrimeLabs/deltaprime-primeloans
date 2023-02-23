@@ -2,7 +2,7 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        {{`${isMintable ? 'Mint/Redeem' : 'Swap'}`}}
+        Swap
       </div>
       <div class="asset-info">
         Available:
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <div class="slippage-bar" v-if="!isMintable">
+      <div class="slippage-bar">
         <div class="slippage-info">
           <span class="slippage-label">Max. acceptable slippage:</span>
           <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
@@ -110,7 +110,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="`${targetAsset === 'GLP' ? 'Mint' : (sourceAsset === 'GLP' ? 'Redeem' : 'Swap')}`"
+        <Button label="Swap"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
@@ -130,7 +130,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
-import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import SimpleInput from "./SimpleInput";
 const ethers = require('ethers');
 
@@ -208,39 +207,20 @@ export default {
   },
 
   computed: {
-    isMintable() {
-      return this.sourceAsset === 'GLP' || this.targetAsset === 'GLP';
-    }
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
       const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
-      if (this.targetAsset === 'GLP') {
-        this.$emit('MINT_GLP', {
-          sourceAsset: this.sourceAsset,
-          sourceAmount: sourceAssetAmount,
-          minGlp: this.targetAssetAmount,
-          minUsdValue: this.targetAssetAmount * this.assets['GLP'].price
-        });
-      } else if (this.sourceAsset === 'GLP') {
-        console.log('redeem')
-        this.$emit('REDEEM_GLP', {
-          glpAmount: sourceAssetAmount,
-          targetAsset: this.targetAsset,
-          targetAmount: this.targetAssetAmount
-        });
-      } else {
-        this.$emit('SWAP', {
-          sourceAsset: this.sourceAsset,
-          targetAsset: this.targetAsset,
-          sourceAmount: sourceAssetAmount,
-          targetAmount: this.targetAssetAmount,
-          path: this.path,
-          adapters: this.adapters
-        });
-      }
+      this.$emit('SWAP', {
+        sourceAsset: this.sourceAsset,
+        targetAsset: this.targetAsset,
+        sourceAmount: sourceAssetAmount,
+        targetAmount: this.targetAssetAmount,
+        path: this.path,
+        adapters: this.adapters
+      });
     },
 
     async query(sourceAsset, targetAsset, amountIn) {
@@ -261,18 +241,20 @@ export default {
       const queryRes = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
 
       let estimated;
-      if (queryRes instanceof BigNumber) {
-        estimated = queryRes;
-      } else {
-        this.path = queryRes.path;
-        this.adapters = queryRes.adapters;
-        estimated = queryRes.amounts[queryRes.amounts.length - 1];
+      if (queryRes) {
+        if (queryRes instanceof BigNumber) {
+          estimated = queryRes;
+        } else {
+          this.path = queryRes.path;
+          this.adapters = queryRes.adapters;
+          estimated = queryRes.amounts[queryRes.amounts.length - 1];
+        }
+
+        this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+
+        this.updateSlippageWithAmounts();
+        this.calculateHealthAfterTransaction();
       }
-
-      this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
-
-      this.updateSlippageWithAmounts();
-      this.calculateHealthAfterTransaction();
     },
 
     async updateAmountsWithSlippage() {
@@ -286,7 +268,7 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = this.isMintable ? 1 : 0.1;
+      const SLIPPAGE_MARGIN = 0.1;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

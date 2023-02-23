@@ -1,5 +1,5 @@
 <template>
-  <div class="currency-combo-input-component" v-if="displayedOptions && displayedOptions.length > 0">
+  <div class="currency-combo-input-component" v-if="displayedOptions">
     <div class="combo-input">
       <CurrencyInput ref="currencyInput"
                      class="currency-input"
