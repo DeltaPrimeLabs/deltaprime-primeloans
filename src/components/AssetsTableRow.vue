@@ -147,7 +147,6 @@ export default {
     this.watchHealth();
     this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
-    this.watchHealthRefresh();
     this.setupPoolsApy();
   },
   data() {
@@ -717,20 +716,6 @@ export default {
       this.dataRefreshEventService.assetApysDataRefresh$.subscribe(() => {
         this.$forceUpdate();
       });
-    },
-
-    watchHealthRefresh() {
-      this.healthService.observeRefreshHealth().subscribe(async () => {
-        if (!this.noSmartLoan) {
-          this.actionsConfig.pop();
-          this.actionsConfig.push({
-            iconSrc: 'src/assets/icons/swap.svg',
-            hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-            tooltip: 'Swap',
-            iconButtonActionKey: 'SWAP'
-          });
-        }
-      })
     },
 
     scheduleHardRefresh() {
