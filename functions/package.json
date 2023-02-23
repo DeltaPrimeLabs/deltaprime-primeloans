@@ -13,7 +13,7 @@
   },
   "main": "index.js",
   "dependencies": {
-    "@redstone-finance/evm-connector": "^0.0.18",
+    "@redstone-finance/evm-connector": "^0.0.19",
     "ethers": "^5.7.2",
     "firebase-admin": "^10.0.2",
     "firebase-functions": "^4.2.1"
