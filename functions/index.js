@@ -46,13 +46,13 @@ exports.scheduledFunction = functions
 
     const db = getFirestore();
     const loanAddresses = await factory.getAllLoans();
+    const batchTime = new Date().getTime();
 
     await Promise.all(
       loanAddresses.map(async (address) => {
         const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
         const wrappedContract = wrap(loanContract);
         const status = await wrappedContract.getFullLoanStatus();
-        const batchTime = new Date().getTime();
 
         const loan = {
           time: batchTime,
