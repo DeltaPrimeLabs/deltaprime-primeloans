@@ -40,7 +40,7 @@
                 {{ firstAsset.symbol }} balance:
               </div>
               <div class="summary__value">
-                {{ formatTokenBalance(firstBalance + minReceivedFirst) }}
+                {{ formatTokenBalance(firstBalance + minReceivedFirst, 10, true) }}
               </div>
             </div>
             <div class="summary__divider divider--long"></div>
@@ -49,7 +49,7 @@
                 {{ secondAsset.symbol }} balance:
               </div>
               <div class="summary__value">
-                {{ formatTokenBalance(secondBalance + minReceivedSecond) }}
+                {{ formatTokenBalance(secondBalance + minReceivedSecond, 10, true) }}
               </div>
             </div>
           </div>

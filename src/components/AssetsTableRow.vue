@@ -271,7 +271,7 @@ export default {
         hoverIconSrc: 'src/assets/icons/swap_hover.svg',
         tooltip: 'Swap',
         iconButtonActionKey: 'SWAP',
-        disabled: true
+        disabled: false,
       });
     },
 

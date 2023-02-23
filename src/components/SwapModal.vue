@@ -6,7 +6,7 @@
       </div>
       <div class="asset-info">
         Available:
-        <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound }}</span>
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound(10, true) }}</span>
       </div>
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
