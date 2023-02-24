@@ -78,7 +78,7 @@
                 <div>{{parseFloat(loan.totalValue).toFixed(2)}}</div>
                 <div>{{parseFloat(loan.debt).toFixed(2)}}</div>
                 <div>{{parseFloat(loan.collateral).toFixed(2)}}</div>
-                <div>{{loan.solvent}}</div>
+                <div>{{loan.solvent ? "Yes" : "No"}}</div>
               </div>
             </div>
           </Block>
@@ -225,7 +225,8 @@ export default {
           health: doc.data().health,
           debt: doc.data().debt,
           collateral: doc.data().collateral,
-          totalValue: doc.data().total         
+          totalValue: doc.data().total,
+          solvent: doc.data().solvent,
         });
         this.protocolCollateral += doc.data().collateral;
         this.totalBorrowed += doc.data().debt; 
