@@ -60,7 +60,8 @@ exports.scheduledFunction = functions
           total: fromWei(status[0]),
           debt: fromWei(status[1]),
           collateral: fromWei(status[0]) - fromWei(status[1]),
-          health: fromWei(status[3])
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18
         };
 
         await db.collection('loans').doc(address).set(loan);
