@@ -14,7 +14,7 @@
         <img class="text-overlay__icon" src="src/assets/icons/tick-white.svg">
       </div>
       <div v-if="state === 'ERROR'" class="text-overlay__text text-overlay__error">
-        Transaction Failed
+        Transaction Failed <span v-if="additionalInfo"> - {{additionalInfo}}</span>
         <img class="text-overlay__icon" src="src/assets/icons/x-white.svg">
       </div>
       <div v-if="state === 'CANCELLED'" class="text-overlay__text text-overlay__cancelled">
@@ -40,6 +40,7 @@ export default {
       error: false,
       state: 'IN_PROGRESS',
       duration: 0,
+      additionalInfo: null,
     };
   },
   computed: {
@@ -61,10 +62,11 @@ export default {
     },
 
     watchProgressBarState() {
-      this.progressBarService.progressBarState$.subscribe((state) => {
-        this.state = state;
+      this.progressBarService.progressBarState$.subscribe((stateChangeEvent) => {
+        this.state = stateChangeEvent.state;
+        this.additionalInfo = stateChangeEvent.additionalInfo;
         if (this.progressBarVisible) {
-          if (state === 'SUCCESS' || state === 'ERROR' || state === 'CANCELLED') {
+          if (this.state === 'SUCCESS' || this.state === 'ERROR' || this.state === 'CANCELLED') {
             timer(3000).subscribe(() => {
               this.progressBarVisible = false;
             });
