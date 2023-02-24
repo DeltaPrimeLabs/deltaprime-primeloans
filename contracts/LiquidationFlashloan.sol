@@ -218,7 +218,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       _tokenManager := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x48)))
       // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
       _bonus := mload(add(_enrichedParams, 0x5c))
-      // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
+      // Read 32 bytes from _enrichedParams ptr + 124 bytes offset
       length := mload(add(_enrichedParams, 0x7c))
     }
     bytes memory encoded = new bytes(length);
