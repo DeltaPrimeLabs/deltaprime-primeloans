@@ -7,7 +7,7 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{firstAssetBalance}}</div>
+        <div class="top-info__value"> {{firstAssetBalance | smartRound(10, true)}}</div>
         <span class="top-info__currency">
           {{firstAsset.symbol}}
         </span>
@@ -20,7 +20,7 @@
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{secondAssetBalance}}</div>
+        <div class="top-info__value"> {{secondAssetBalance | smartRound(10, true)}}</div>
         <span class="top-info__currency">
           {{secondAsset.symbol}}
         </span>

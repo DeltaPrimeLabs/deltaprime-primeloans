@@ -5,17 +5,18 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol]">
+          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
-          <div class="asset__loan" v-if="asset.symbol === 'sAVAX'">
-            Profit APY:&nbsp;{{ 0.072 | percent }}
+          <div class="asset__loan" v-if="asset.apy">
+            Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
           </div>
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
+        <template
+          v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
             <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
@@ -74,7 +75,7 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+          :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -110,10 +111,22 @@ import RepayModal from './RepayModal';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
+import YAK_ROUTER_ABI
+  from '../../test/abis/YakRouter.json';
+import YAK_WRAP_ROUTER
+  from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import {formatUnits, parseUnits} from '../utils/calculate';
+import GLP_REWARD_ROUTER
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
+import GLP_REWARD_TRACKER
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
+import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
+import {BigNumber} from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const BORROWABLE_ASSETS = ['AVAX', 'USDC'];
+const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'BTC', 'ETH'];
 
 const ethers = require('ethers');
 
@@ -131,6 +144,8 @@ export default {
     this.watchAssetBalancesDataRefreshEvent();
     this.watchDebtsPerAssetDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchHealth();
+    this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
     this.setupPoolsApy();
   },
@@ -142,15 +157,33 @@ export default {
       isBalanceEstimated: false,
       isDebtEstimated: false,
       disableAllButtons: false,
-      borrowApyPerPool: {}
+      borrowApyPerPool: {},
+      healthLoaded: false,
     };
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'health', 'assetBalances', 'fullLoanStatus', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'noSmartLoan']),
+    ...mapState('fundsStore', [
+      'smartLoanContract',
+      'health',
+      'assetBalances',
+      'fullLoanStatus',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'noSmartLoan'
+    ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'assetDebtsExternalUpdateService', 'poolService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'assetDebtsExternalUpdateService',
+      'poolService',
+      'healthService'
+    ]),
 
     loanValue() {
       return this.formatTokenBalance(this.debt);
@@ -165,14 +198,29 @@ export default {
     }
   },
   methods: {
-    ...mapActions('fundsStore', ['swap', 'fund', 'borrow', 'withdraw', 'withdrawNativeToken', 'repay', 'createAndFundLoan', 'fundNativeToken', 'wrapNativeToken']),
+    ...mapActions('fundsStore',
+      [
+        'swap',
+        'fund',
+        'borrow',
+        'withdraw',
+        'withdrawNativeToken',
+        'repay',
+        'createAndFundLoan',
+        'createLoanAndDeposit',
+        'fundNativeToken',
+        'wrapNativeToken',
+        'mintAndStakeGlp',
+        'unstakeAndRedeemGlp',
+        'claimGLPRewards'
+      ]),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : 'Deposit',
+          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : this.asset.symbol === 'GLP' ? 'Deposit/Claim' : 'Deposit',
           menuOptions: [
             {
               key: 'ADD_FROM_WALLET',
@@ -186,11 +234,16 @@ export default {
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               }
               : null,
-            {
+            this.asset.symbol === 'AVAX' ? {
               key: 'WRAP',
               name: 'Wrap native AVAX',
               hidden: true,
-            }
+            } : null,
+            this.asset.symbol === 'GLP' ? {
+              disabled: !this.hasSmartLoanContract,
+              key: 'CLAIM_GLP_REWARDS',
+              name: 'Claim GLP rewards',
+            } : null,
           ]
         },
         {
@@ -210,15 +263,16 @@ export default {
               }
               : null
           ]
-        },
-        {
-          iconSrc: 'src/assets/icons/swap.svg',
-          hoverIconSrc: 'src/assets/icons/swap_hover.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP',
-          disabled: !this.hasSmartLoanContract
-        },
+        }
       ];
+
+      this.actionsConfig.push({
+        iconSrc: 'src/assets/icons/swap.svg',
+        hoverIconSrc: 'src/assets/icons/swap_hover.svg',
+        tooltip: 'Swap',
+        iconButtonActionKey: 'SWAP',
+        disabled: false,
+      });
     },
 
     toggleChart() {
@@ -238,6 +292,62 @@ export default {
       const precisionMultiplierExponent = 5 - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
       return balance !== null ? String(Math.round(balance * precisionMultiplier) / precisionMultiplier) : '';
+    },
+
+    swapQueryMethod() {
+        return async (sourceAsset, targetAsset, amountIn) => {
+          const tknFrom = TOKEN_ADDRESSES[sourceAsset];
+          const tknTo = TOKEN_ADDRESSES[targetAsset];
+
+          if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
+            const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
+
+            const maxHops = 3;
+            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+            try {
+              return await yakRouter.findBestPathWithGas(
+                  amountIn,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e9}
+              );
+            } catch (e) {
+              this.handleTransactionError(e);
+            }
+          } else {
+            const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
+
+            const maxHops = 2;
+            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+            if (targetAsset === 'GLP') {
+              try {
+                return await yakWrapRouter.findBestPathAndWrap(
+                    amountIn,
+                    tknFrom,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice)
+              } catch (e) {
+                this.handleTransactionError(e);
+              }
+            } else {
+              try {
+                return await yakWrapRouter.unwrapAndFindBestPath(
+                    amountIn,
+                    tknTo,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice);
+              } catch (e) {
+                this.handleTransactionError(e);
+              }
+            }
+        }
+      }
     },
 
     actionClick(key) {
@@ -260,6 +370,9 @@ export default {
         case 'WRAP':
           this.openWrapModal();
           break;
+        case 'CLAIM_GLP_REWARDS':
+          this.claimGLPRewardsAction();
+          break;
       }
     },
 
@@ -275,7 +388,7 @@ export default {
 
     openBorrowModal() {
       this.progressBarService.progressBarState$.next('SUCCESS');
-      const pool = this.pools[this.asset.symbol];
+      const pool = this.pools.find(pool => pool.asset.symbol === this.asset.symbol);
       const modalInstance = this.openModal(BorrowModal);
       modalInstance.asset = this.asset;
       modalInstance.assets = this.assets;
@@ -288,8 +401,8 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue;
       modalInstance.poolTVL = Number(pool.tvl) - Number(pool.totalBorrowed);
-      modalInstance.loanAPY = this.pools[this.asset.symbol].borrowingAPY;
-      modalInstance.maxUtilisation = this.pools[this.asset.symbol].maxUtilisation;
+      modalInstance.loanAPY = pool.borrowingAPY;
+      modalInstance.maxUtilisation = pool.maxUtilisation;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
@@ -310,6 +423,8 @@ export default {
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.assets = this.assets;
+      modalInstance.sourceAssets = Object.keys(config.ASSETS_CONFIG);
+      modalInstance.targetAssets = Object.keys(config.ASSETS_CONFIG);
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -319,6 +434,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.queryMethod = this.swapQueryMethod();
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapRequest = {
@@ -356,13 +472,32 @@ export default {
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
+
           if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
-            this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value}, () => {
-            }, (error) => {
-              this.handleTransactionError(error);
-            })
-              .then(() => {
-              });
+            if (this.asset.symbol === 'GLP') {
+              const request = {
+                value: value,
+                asset: this.asset.symbol,
+                assetAddress: '0xaE64d55a6f09E4263421737397D1fdFA71896a69',
+                assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
+              };
+
+              this.handleTransaction(this.createLoanAndDeposit, { request: request }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
+            } else {
+              this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value, isLP: false}, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  })
+            }
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
@@ -489,10 +624,28 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         }).then(() => {
-
         });
       });
+    },
 
+    async claimGLPRewardsAction() {
+      const glpRewardRouterContract = new ethers.Contract(config.glpRewardsRouterAddress, GLP_REWARD_ROUTER.abi, this.provider.getSigner());
+      const feeGLPTrackerAddress = await glpRewardRouterContract.feeGlpTracker();
+      const feeGLPTrackedContract = new ethers.Contract(feeGLPTrackerAddress, GLP_REWARD_TRACKER.abi, this.provider.getSigner());
+      const rewards = formatUnits(await feeGLPTrackedContract.claimable(this.smartLoanContract.address), config.ASSETS_CONFIG.AVAX.decimals);
+      const modalInstance = this.openModal(ClaimGLPRewardsModal);
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.glpRewardsToClaim = rewards;
+      modalInstance.glpRewardsAsset = 'AVAX';
+
+      modalInstance.$on('CLAIM', () => {
+        this.handleTransaction(this.claimGLPRewards, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
+      });
     },
 
     async getWalletAssetBalance() {
@@ -527,6 +680,7 @@ export default {
 
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        console.log('assetBalancesRefreshed');
         this.isBalanceEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -536,6 +690,7 @@ export default {
 
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
+        console.log('debtsPerAssetRefreshed');
         this.isDebtEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -545,7 +700,20 @@ export default {
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        console.log('DISABLE ALL BUTTONS');
         this.disableAllButtons = true;
+        this.$forceUpdate();
+      });
+    },
+
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
+      });
+    },
+
+    watchAssetApysRefreshScheduledEvent() {
+      this.dataRefreshEventService.assetApysDataRefresh$.subscribe(() => {
         this.$forceUpdate();
       });
     },
@@ -583,7 +751,10 @@ export default {
     },
 
     handleTransactionError(error) {
-      if (error.code === 4001 || error.code === -32603) {
+      if (!error) {
+        return;
+      }
+      if (error && error.code && error.code === 4001 || error.code === -32603) {
         this.progressBarService.emitProgressBarCancelledState();
       } else {
         this.progressBarService.emitProgressBarErrorState();

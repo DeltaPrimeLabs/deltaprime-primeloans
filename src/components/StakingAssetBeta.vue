@@ -114,7 +114,6 @@ import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import {calculateMaxApy} from "../utils/calculate";
-import {assetAppreciation} from "../utils/blockchain";
 
 
 export default {
@@ -159,8 +158,16 @@ export default {
       const headerHeight = 53;
       if (this.availableFarms) {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
+        let heightOfRows = 0;
+        Object.values(this.availableFarms).forEach(farm => {
+          if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
+            heightOfRows += 75;
+          } else {
+            heightOfRows += 60;
+          }
+        })
 
-        return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+        return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;
       }
     },
 
@@ -190,6 +197,7 @@ export default {
     },
 
     async setupMaxStakingApy() {
+      console.log('setupMaxStakingApy')
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
@@ -198,9 +206,9 @@ export default {
           maxApy = apy;
         }
       }
-      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
+      let assetApr = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) - 1);
 
     },
 
@@ -268,6 +276,7 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+        await this.setupMaxStakingApy();
       })
     },
   },
@@ -276,13 +285,6 @@ export default {
       handler(noSmartLoan) {
         if (noSmartLoan === false) {
           this.setupAvailable();
-        }
-      },
-    },
-    pools: {
-      async handler(pools) {
-        if (pools) {
-          await this.setupMaxStakingApy();
         }
       },
     }

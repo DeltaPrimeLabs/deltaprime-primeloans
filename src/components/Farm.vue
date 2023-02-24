@@ -54,7 +54,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'ETH', 'sAVAX'],
+          options: ['AVAX', 'USDC', 'ETH', 'sAVAX', 'GLP'],
           key: 'asset'
         },
       ];
@@ -67,14 +67,11 @@ export default {
       });
     },
   },
-
-
-
-  watch: {}
 };
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables";
 
 .stake-beta-component {
   width: 100%;

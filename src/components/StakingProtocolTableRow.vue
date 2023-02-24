@@ -1,5 +1,10 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
+
+    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits and withdrawals from Platypus main pool have been temporarily disabled. Read more in our
+      <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
+    </div>
+
     <div class="table__row">
       <div class="table__cell farm-cell">
         <div class="farm">
@@ -28,7 +33,7 @@
         </div>
       </div>
 
-      <div class="table__cell">
+      <div class="table__cell rewards__cell">
         <div class="reward__icons">
           <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens"
                :src="logoSrc(token)">
@@ -38,6 +43,10 @@
             {{ rewards | usd }}
           </div>
         </div>
+        <img v-if="farm.rewardsInfo"
+             class="info__icon"
+             src="src/assets/icons/info.svg"
+             v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}">
       </div>
 
       <div class="table__cell">
@@ -71,7 +80,6 @@ import UnstakeModal from './UnstakeModal';
 import {mapState, mapActions} from 'vuex';
 import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
-import {assetAppreciation} from '../utils/blockchain';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -91,6 +99,7 @@ export default {
     this.setupActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
+    this.watchHealth();
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
@@ -106,7 +115,8 @@ export default {
       disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
-      actionsConfig: {}
+      actionsConfig: {},
+      healthLoaded: false,
     };
   },
   watch: {
@@ -128,12 +138,19 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('fundsStore', ['smartLoanContract']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'farmService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'stakedExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'farmService',
+      'healthService'
+    ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons || !this.healthLoaded;
     },
     isLP() {
       return this.asset.secondary != null;
@@ -205,8 +222,8 @@ export default {
         console.log(unstakeEvent);
         const unstakeRequest = {
           receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
+          minReceiptTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
           underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),
-          minUnderlyingTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
           assetSymbol: this.asset.symbol,
           feedSymbol: this.farm.feedSymbol,
           protocol: this.farm.protocol,
@@ -233,6 +250,12 @@ export default {
       });
     },
 
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
+      });
+    },
+
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe((refreshEvent) => {
         this.assetBalances = refreshEvent.assetBalances;
@@ -248,7 +271,7 @@ export default {
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         await this.setApy();
-      })
+      });
     },
 
     watchExternalStakedPerFarm() {
@@ -267,8 +290,14 @@ export default {
 
     async setApy() {
       if (!this.farm.currentApy) return 0;
-      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
-      this.apy = (1 + this.farm.currentApy + assetApr) * assetAppreciation(this.asset.symbol) - 1;
+      let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
+      console.log('setApy');
+      console.log('symbol: ', this.asset.symbol);
+      console.log('assetApr: ', assetApy);
+      console.log('this.farm.currentApy: ', this.farm.currentApy);
+
+
+      this.apy = this.isLp ? (1 + this.farm.currentApy + assetApy) - 1 : (1 + this.farm.currentApy) * (1 + assetApy) - 1;
 
       if (this.pools) {
         this.maxApy = calculateMaxApy(this.pools, this.apy);
@@ -322,13 +351,15 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
-          iconButtonActionKey: 'STAKE'
+          iconButtonActionKey: 'STAKE',
+          disabled: this.farm.token === 'USDC',
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Unstake',
-          iconButtonActionKey: 'UNSTAKE'
+          iconButtonActionKey: 'UNSTAKE',
+          disabled: this.farm.token === 'USDC'
         },
       ];
     },
@@ -340,15 +371,28 @@ export default {
 @import "~@/styles/variables";
 
 .staking-farm-table-row-component {
+  border-style: solid;
+  border-width: 2px 0 0 0;
+  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+  border-image-slice: 1;
+
+  .protocol-banner {
+    color: $orange;
+    font-weight: 500;
+    font-size: $font-size-xxs;
+    margin-top: 5px;
+    margin-bottom: -10px;
+
+    .banner__link {
+      color: $orange;
+      font-weight: 600;
+    }
+  }
 
   .table__row {
     display: grid;
     grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
     height: 60px;
-    border-style: solid;
-    border-width: 2px 0 0 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-    border-image-slice: 1;
     padding: 0 6px;
 
     .table__cell {
@@ -361,6 +405,12 @@ export default {
 
       &.farm-cell {
         justify-content: flex-start;
+      }
+
+      &.rewards__cell {
+        .info__icon {
+          margin-left: 5px;
+        }
       }
 
       .farm {

@@ -1,5 +1,5 @@
 <template>
-  <div class="currency-combo-input-component" v-if="displayedOptions && displayedOptions.length > 0">
+  <div class="currency-combo-input-component" v-if="displayedOptions">
     <div class="combo-input">
       <CurrencyInput ref="currencyInput"
                      class="currency-input"
@@ -13,6 +13,7 @@
                      v-on:inputChange="currencyInputChange"
                      v-on:ongoingTyping="ongoingTyping"
                      :max="max"
+                     :info-icon-message="infoIconMessage"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>
@@ -21,7 +22,7 @@
           <img class="selected-asset__icon" :src="selectedAsset.logo">
           <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
-        <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()">
+        <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1">
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div class="select-dropdown">
           <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
@@ -54,7 +55,9 @@ export default {
   },
   props: {
     assetOptions: {},
+    defaultAsset: null,
     max: {},
+    infoIconMessage: null,
     validators: {
       type: Array, default: () => []
     },
@@ -107,6 +110,7 @@ export default {
 
     setupDisplayedAssetOptions() {
       this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
+      this.setSelectedAsset(this.defaultAsset, true);
     },
 
     searchOptions(searchPhrase) {
@@ -203,6 +207,10 @@ export default {
 
     .currency-input {
       width: 386px;
+    }
+
+    .info__icon.message {
+      width: 22px;
     }
 
     .divider {

@@ -47,7 +47,7 @@
               Daily interest ≈
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">&nbsp;{{ asset.name }}</span>
+              $ {{ calculateDailyInterest | smartRound(8, true) }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -109,7 +109,7 @@ export default {
       if (staked <= 0) {
         return 0;
       } else {
-        return this.apy / 365 * staked;
+        return this.apy / 365 * staked * this.asset.price;
       }
     }
   },
@@ -118,12 +118,11 @@ export default {
     submit() {
       this.transactionOngoing = true;
       let unstakedPart = this.unstakeValue / this.staked;
-      const unstakeValue = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
-      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.staked)
+      const unstakedReceiptToken = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
 
       const unstakeEvent = {
-        receiptTokenUnstaked: unstakeValue,
-        underlyingTokenUnstaked: unstakedReceiptToken,
+        receiptTokenUnstaked: unstakedReceiptToken,
+        underlyingTokenUnstaked: this.unstakeValue,
         isMax: this.maxButtonUsed
       };
 

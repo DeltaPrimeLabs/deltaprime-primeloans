@@ -2,7 +2,7 @@ import {awaitConfirmation, getLog, wrapContract} from '../utils/blockchain';
 import config from '../config';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
-import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakStaked} from '../utils/calculate';
+import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakMaxUnstaked, yieldYakStaked} from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -100,6 +100,9 @@ export default {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
@@ -124,14 +127,14 @@ export default {
       console.log('loanAssets')
       console.log(loanAssets)
 
-      const unstakeTransaction = unstakeRequest.minUnderlyingTokenUnstaked ?
+      const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-          parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          parseUnits(parseFloat(unstakeRequest.minUnderlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          parseUnits(parseFloat(unstakeRequest.minReceiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
           {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-            parseUnits(parseFloat(unstakeRequest.underlyingTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+            parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
             {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -171,6 +174,10 @@ export default {
       rootState.serviceRegistry.stakedExternalUpdateService
         .emitExternalTotalStakedUpdate(unstakeRequest.assetSymbol, unstakedTokenAmount, 'UNSTAKE', true);
 
+
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
@@ -201,7 +208,13 @@ export default {
             const decimals = token.decimals;
             farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
 
-            farm.rewards = farm.totalBalance * farm.price - farm.totalStaked * token.price;
+            console.log('-------------------')
+            console.log('token: ', farm.token)
+            const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+            console.log('maxUnstaked: ', maxUnstaked)
+            console.log('totalStaked: ', farm.totalStaked)
+            farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
+            console.log('farm.rewards: ', farm.rewards)
           } else if (farm.protocol === 'VECTOR_FINANCE') {
             farm.totalStaked = farm.totalBalance;
             farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);

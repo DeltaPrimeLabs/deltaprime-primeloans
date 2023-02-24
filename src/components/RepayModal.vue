@@ -7,10 +7,10 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound}}</div>
+        <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound(10, true)}}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Debt:</div>
-        <div class="top-info__value"> {{assetDebt | smartRound}}</div>
+        <div class="top-info__value"> {{assetDebt | smartRound(10, true)}}</div>
         <span class="top-info__currency">
           {{asset.symbol}}
         </span>
@@ -42,10 +42,10 @@
             <div class="summary__divider"></div>
             <div>
               <div class="summary__label">
-                Loan:
+                Borrowed:
               </div>
               <div class="summary__value">
-                {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}
+                {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound(10, true) }} {{ asset.symbol }}
               </div>
             </div>
           </div>

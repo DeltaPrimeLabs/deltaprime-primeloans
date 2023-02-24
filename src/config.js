@@ -2,14 +2,17 @@ import addresses from '../common/addresses/avax/token_addresses.json';
 import {
     getPangolinLpApr, getTraderJoeLpApr,
     vectorFinanceApy,
-    vectorFinanceBalance, vectorFinanceRewards,
+    vectorFinanceBalance,
     yieldYakApy,
-    yieldYakBalance, yieldYakRewards, yieldYakStaked
+    yieldYakBalance
 } from "./utils/calculate";
 import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
+import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
+import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
 import TRADERJOE_INTERMEDIARY_TUP from '@contracts/TraderJoeIntermediaryTUP.json';
+import {glpApy} from "./utils/blockchain";
 
 export default {
     MAX_COLLATERAL: 500,
@@ -25,8 +28,9 @@ export default {
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, getApy: glpApy, swappableAssets: ['BTC', 'ETH', 'USDC']},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
-      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333},
+      "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 7.2},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0},
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0},
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0},
@@ -39,17 +43,25 @@ export default {
         USDC: {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
+        },
+        BTC: {
+            address: BTC_POOL_TUP.address,
+            tokenAddress: addresses.BTC
+        },
+        ETH: {
+            address: ETH_POOL_TUP.address,
+            tokenAddress: addresses.ETH
         }
     },
     LP_ASSETS_CONFIG: {
-        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333, apr: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/55')},
-        "PNG_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333, apr: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/113')},
-        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333, apr: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/9')},
-        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333, apr: () => getTraderJoeLpApr(addresses.TJ_AVAX_USDC_LP)},
-        "TJ_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333, apr: () => getTraderJoeLpApr(addresses.TJ_AVAX_USDT_LP)},
-        "TJ_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333, apr: () => getTraderJoeLpApr(addresses.TJ_AVAX_ETH_LP)},
-        "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333, apr: () => getTraderJoeLpApr(addresses.TJ_AVAX_BTC_LP)},
-        "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333, apr: () => getTraderJoeLpApr(addresses.TJ_AVAX_sAVAX_LP)},
+        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333, getApy: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/55')},
+        "PNG_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333, getApy: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/113')},
+        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333, getApy: () => getPangolinLpApr('https://api.pangolin.exchange/pangolin/apr2/9')},
+        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333, getApy: () => getTraderJoeLpApr(addresses.TJ_AVAX_USDC_LP)},
+        "TJ_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333, getApy: () => getTraderJoeLpApr(addresses.TJ_AVAX_USDT_LP)},
+        "TJ_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333, getApy: () => getTraderJoeLpApr(addresses.TJ_AVAX_ETH_LP)},
+        "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333, getApy: () => getTraderJoeLpApr(addresses.TJ_AVAX_BTC_LP)},
+        "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333, getApy: () => getTraderJoeLpApr(addresses.TJ_AVAX_sAVAX_LP, 3.6)},
     },
     DEX_CONFIG: {
         'Pangolin': {
@@ -92,6 +104,7 @@ export default {
                 token: 'AVAX',
                 isTokenLp: false,
                 info: 'Repeatedly lends and borrows AVAX on Aave to optimize rewards.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['AVAX'],
                 strategy: 'AAVE',
@@ -121,7 +134,7 @@ export default {
         sAVAX: [
             {
                 protocol: 'YIELD_YAK',
-                apy: async () => yieldYakApy('0xd0F41b1C9338eB9d374c83cC76b684ba3BB71557'),
+                apy: async () => yieldYakApy('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'),
                 balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakingContractAddress: '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977',
                 stakeMethod: 'stakeSAVAXYak',
@@ -130,6 +143,7 @@ export default {
                 token: 'sAVAX',
                 isTokenLp: false,
                 info: 'Uses Yield Yak strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
@@ -165,17 +179,38 @@ export default {
                 stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
                 stakeMethod: 'vectorStakeUSDC1',
                 unstakeMethod: 'vectorUnstakeUSDC1',
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                info: 'Depositing into Platypus\' main pool has been temporarily disabled. Read more in our <a href="https://discord.com/invite/9bwsnsHEzD" target="_blank">discord</a>.',
                 minAmount: 0.8,
                 token: 'USDC',
                 isTokenLp: false,
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
                 refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
-            }
+            },
+        ],
+        GLP: [
+            {
+                protocol: 'YIELD_YAK',
+                //TODO: check if it's a right APY
+                apy: () => yieldYakApy('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C'),
+                balance: async (address) => yieldYakBalance('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C', address),
+                stakingContractAddress: '0x9f637540149f922145c06e1aa3f38dcDc32Aff5C',
+                stakeMethod: 'stakeGLPYak',
+                unstakeMethod: 'unstakeGLPYak',
+                feedSymbol: 'YY_GLP',
+                token: 'GLP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                isTokenLp: false,
+                debtCoverage: 0.83333333333,
+                strategy: 'GMX',
+                rewardTokens: ['GLP'],
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
+            },
         ],
         PNG_AVAX_USDC_LP: [
             {
@@ -187,6 +222,7 @@ export default {
                 unstakeMethod: 'unstakePNGAVAXUSDCYak',
                 feedSymbol: 'YY_PNG_AVAX_USDC_LP',
                 token: 'PNG_AVAX_USDC_LP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
@@ -205,6 +241,7 @@ export default {
                 unstakeMethod: 'unstakePNGAVAXETHYak',
                 feedSymbol: 'YY_PNG_AVAX_ETH_LP',
                 token: 'PNG_AVAX_ETH_LP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
@@ -223,6 +260,7 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXUSDCYak',
                 feedSymbol: 'YY_TJ_AVAX_USDC_LP',
                 token: 'TJ_AVAX_USDC_LP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
@@ -241,6 +279,7 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXETHYak',
                 feedSymbol: 'YY_TJ_AVAX_ETH_LP',
                 token: 'TJ_AVAX_ETH_LP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
@@ -259,6 +298,7 @@ export default {
                 unstakeMethod: 'unstakeTJAVAXSAVAXYak',
                 feedSymbol: 'YY_TJ_AVAX_sAVAX_LP',
                 token: 'TJ_AVAX_sAVAX_LP',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
@@ -269,6 +309,9 @@ export default {
         ],
     },
     yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
+    yakWrapRouterAddress: '0x44f4737C3Bb4E5C1401AE421Bd34F135E0BB8394',
+    yieldYakGlpWrapperAddress: '0xe663d083b849d1f22ef2778339ec58175f547608',
+    glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",

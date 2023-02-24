@@ -22,6 +22,9 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
+    <Banner v-if="showDepositBanner" background="green" :closable="true">
+      Interest rates are temporarily lowered to normal levels. New integrations will come soon!
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <a href="https://deltaprime.io/">
@@ -64,7 +67,9 @@ export default {
       showMetamaskBanner: false,
       showConnectBanner: false,
       highGasPrice: false,
-      gasPriceIntervalId: null
+      gasPriceIntervalId: null,
+      showGlpBanner: false,
+      showDepositBanner: false
     };
   },
   async created() {
@@ -88,6 +93,14 @@ export default {
     }
 
     this.initGasPrices();
+
+    if (window.location.href.includes('prime-account')) {
+      this.showGlpBanner = true;
+    }
+
+    if (window.location.href.includes('pools')) {
+      this.showDepositBanner = true;
+    }
   },
 
   mounted() {

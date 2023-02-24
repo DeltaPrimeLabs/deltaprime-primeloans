@@ -14,6 +14,11 @@
         <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
         </div>
+        <div v-if="infoIconMessage">
+          <img class="info__icon message"
+               src="src/assets/icons/info.svg"
+               v-tooltip="{content: infoIconMessage, classes: 'info-tooltip long', placement: 'right'}">
+        </div>
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
@@ -56,6 +61,7 @@ export default {
   props: {
     price: {type: Number},
     max: {default: null},
+    infoIconMessage: {default: null},
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
     flexDirection: {type: String, default: 'column'},
@@ -274,6 +280,11 @@ export default {
   .input-extras-wrapper {
     display: flex;
     align-items: center;
+
+    .info__icon.message {
+      height: 22px;
+      width: 22px;
+    }
   }
 }
 

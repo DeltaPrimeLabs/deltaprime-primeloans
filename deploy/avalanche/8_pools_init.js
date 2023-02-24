@@ -42,3 +42,4 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
 }
 
 module.exports.tags = ['avalanche'];
+module.exports.initPool = initPool;

@@ -5,6 +5,8 @@ import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IYieldYak
+  from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
@@ -113,6 +115,7 @@ export async function yieldYakStaked(address) {
       smartLoan(id: "${address}") {
         YY_AAVE_AVAX
         YY_PTP_sAVAX
+        YY_GLP
         YY_PNG_AVAX_USDC_LP
         YY_PNG_AVAX_ETH_LP
         YY_TJ_AVAX_USDC_LP
@@ -169,6 +172,14 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
+  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
+  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
+  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+
+  return loanBalance / totalSupply * totalDeposits;
+}
 
 export async function getPangolinLpApr(url) {
   let apr;
@@ -177,7 +188,7 @@ export async function getPangolinLpApr(url) {
     const resp = await fetch(url);
     const json = await resp.json();
 
-    apr = json.swapFeeApr / 100;
+    apr = json.swapFeeApr;
   } else {
     apr = 0;
   }
@@ -185,7 +196,7 @@ export async function getPangolinLpApr(url) {
   return apr;
 }
 
-export async function getTraderJoeLpApr(lpAddress) {
+export async function getTraderJoeLpApr(lpAddress, assetAppreciation = 0) {
   let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
 
   const FEE_RATE = 0.0025;
@@ -254,7 +265,7 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const feesUSD = volumeUSD * FEE_RATE;
 
-  return feesUSD * 365 / reserveUSD;
+  return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));

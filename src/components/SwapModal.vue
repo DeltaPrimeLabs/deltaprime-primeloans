@@ -6,10 +6,11 @@
       </div>
       <div class="asset-info">
         Available:
-        <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound }}</span>
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{ Number(sourceAssetBalance) | smartRound(10, true) }}</span>
       </div>
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
+                          :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
                           :max="sourceAssetBalance"
@@ -26,9 +27,11 @@
 
       <CurrencyComboInput ref="targetInput"
                           :asset-options="targetAssetOptions"
+                          :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
                           :info="() => `~ $${(Number(targetAssetAmount) * targetAssetData.price).toFixed(2)}`"
                           :disabled="true"
+                          info-icon-message="Minimum received amount"
                           :validators="targetValidators">
       </CurrencyComboInput>
       <div class="target-asset-info">
@@ -107,7 +110,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Swap'"
+        <Button label="Swap"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
@@ -127,8 +130,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import YAK_ROUTER from '../../test/abis/YakRouter.json';
 import SimpleInput from "./SimpleInput";
 const ethers = require('ethers');
 
@@ -148,8 +149,10 @@ export default {
 
   data() {
     return {
-      sourceAssetOptions: [],
-      targetAssetOptions: [],
+      sourceAssets: null,
+      targetAssets: null,
+      sourceAssetOptions: null,
+      targetAssetOptions: null,
       sourceAsset: null,
       targetAsset: null,
       sourceAssetData: null,
@@ -160,6 +163,7 @@ export default {
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
       userSlippage: 0,
+      queryMethod: null,
       lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
@@ -180,7 +184,6 @@ export default {
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
-      chosenDex: config.DEX_CONFIG[0],
       estimatedReceivedTokens: 0,
       estimatedNeededTokens: 0,
       receivedAccordingToOracle: 0,
@@ -192,9 +195,9 @@ export default {
   },
 
   mounted() {
-    this.setupSourceAssetOptions();
-    this.setupTargetAssetOptions();
     setTimeout(() => {
+      this.setupSourceAssetOptions();
+      this.setupTargetAssetOptions();
       this.setupSourceAsset();
       this.setupTargetAsset();
       this.setupValidators();
@@ -220,20 +223,8 @@ export default {
       });
     },
 
-    async query(tknFrom, tknTo, amountIn) {
-      const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER, provider.getSigner());
-
-      const maxHops = 3
-      const gasPrice = ethers.utils.parseUnits('225', 'gwei')
-
-      return await yakRouter.findBestPathWithGas(
-          amountIn,
-          tknFrom,
-          tknTo,
-          maxHops,
-          gasPrice,
-          { gasLimit: 1e9 }
-      )
+    async query(sourceAsset, targetAsset, amountIn) {
+      return await this.queryMethod(sourceAsset, targetAsset, amountIn)
     },
 
     async chooseBestTrade(basedOnSource = true) {
@@ -247,20 +238,26 @@ export default {
       let decimals = this.sourceAssetData.decimals;
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
-      const queryRes = await this.query(TOKEN_ADDRESSES[this.sourceAsset], TOKEN_ADDRESSES[this.targetAsset], amountInWei);
+      const queryRes = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
 
-      this.path = queryRes.path;
-      this.adapters = queryRes.adapters;
-      const estimatedReceivedTokens = queryRes.amounts[queryRes.amounts.length - 1];
+      let estimated;
+      if (queryRes) {
+        if (queryRes instanceof BigNumber) {
+          estimated = queryRes;
+        } else {
+          this.path = queryRes.path;
+          this.adapters = queryRes.adapters;
+          estimated = queryRes.amounts[queryRes.amounts.length - 1];
+        }
 
-      this.estimatedReceivedTokens = parseFloat(formatUnits(estimatedReceivedTokens, BigNumber.from(this.targetAssetData.decimals)));
+        this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
-      this.updateSlippageWithAmounts();
-      this.calculateHealthAfterTransaction();
+        this.updateSlippageWithAmounts();
+        this.calculateHealthAfterTransaction();
+      }
     },
 
     async updateAmountsWithSlippage() {
-      console.log('slippage');
       this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
       this.setSlippageWarning();
@@ -289,7 +286,8 @@ export default {
       },
 
     setupSourceAssetOptions() {
-      Object.keys(config.ASSETS_CONFIG).forEach(assetSymbol => {
+      this.sourceAssetOptions = [];
+      this.sourceAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -301,24 +299,31 @@ export default {
     },
 
     setupTargetAssetOptions() {
-      this.targetAssetOptions = JSON.parse(JSON.stringify(this.sourceAssetOptions));
+      this.targetAssetOptions = [];
+      this.targetAssets.forEach(assetSymbol => {
+        const asset = config.ASSETS_CONFIG[assetSymbol];
+        const assetOption = {
+          symbol: assetSymbol,
+          name: asset.name,
+          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+        };
+        this.targetAssetOptions.push(assetOption);
+      });
+
       this.targetAssetOptions = this.targetAssetOptions.filter(option => option.symbol !== this.sourceAsset);
     },
 
     setupSourceAsset() {
-      this.$refs.sourceInput.setSelectedAsset(this.sourceAsset, true);
       this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
-        this.$refs.targetInput.setSelectedAsset(this.targetAsset, true);
         this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
       }
     },
 
     async sourceInputChange(changeEvent) {
-      console.log(changeEvent);
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
@@ -398,6 +403,10 @@ export default {
       this.targetAssetData = config.ASSETS_CONFIG[this.sourceAsset]
       this.sourceAsset = this.targetAsset;
       this.targetAsset = tempSource;
+
+      const tempSourceAssetsOptions = this.sourceAssetOptions;
+      this.sourceAssetOptions = this.targetAssetOptions;
+      this.targetAssetOptions = tempSourceAssetsOptions;
 
       this.setupSourceAsset();
       this.setupTargetAsset();

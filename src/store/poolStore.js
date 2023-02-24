@@ -76,7 +76,7 @@ export default {
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(poolContract.address,
-              parseUnits(String(depositRequest.amount), decimals));
+              parseUnits(String(depositRequest.amount), decimals), { gasLimit: 100000 });
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
@@ -102,8 +102,7 @@ export default {
       if (withdrawRequest.withdrawNativeToken) {
         withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdrawNativeToken(
-            parseUnits(String(withdrawRequest.amount),
-              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+            parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals), {gasLimit: 300000});
       } else {
         withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdraw(
