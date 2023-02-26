@@ -351,6 +351,8 @@ export default {
       const amount = formatUnits(depositedAmount, BigNumber.from(decimals));
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(request.asset, amount, false, true);
+      const depositAmountUSD = Number(amount) * state.assets[request.asset].price;
+      rootState.serviceRegistry.collateralService.emitCollateral(depositAmountUSD);
 
       await commit('setSingleAssetBalance', {asset: request.asset, balance: amount});
       commit('setNoSmartLoan', false);
@@ -395,11 +397,13 @@ export default {
 
       console.log(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated'));
       const fundAmount = formatUnits(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.collateralAmount, decimals);
+      const fundAmountUSD = Number(fundAmount) * state.assets[asset.symbol].price;
       console.log('fundAmount', fundAmount);
 
       await commit('setSingleAssetBalance', {asset: asset.symbol, balance: fundAmount});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(asset, fundAmount, isLP, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(fundAmountUSD);
 
       commit('setNoSmartLoan', false);
 
@@ -508,8 +512,13 @@ export default {
         thresholdWeightedValue: fromWei(fullLoanStatusResponse[2]),
         health: fromWei(fullLoanStatusResponse[3]),
       };
+
+      const collateral = fullLoanStatus.totalValue - fullLoanStatus.debt;
+
       commit('setFullLoanStatus', fullLoanStatus);
       rootState.serviceRegistry.dataRefreshEventService.emitFullLoanStatusRefresh();
+      rootState.serviceRegistry.collateralService.emitCollateral(collateral);
+      rootState.serviceRegistry.debtService.emitDebt(fullLoanStatus.debt);
     },
 
     async getAccountApr({state, getters, rootState, commit}){
@@ -634,12 +643,15 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
       const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.assetDecimals);
+      const depositAmountUSD = Number(depositAmount) * state.assets[fundRequest.asset].price;
+      const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt + depositAmountUSD;
       const assetBalanceBeforeDeposit = fundRequest.isLP ? state.lpBalances[fundRequest.asset] : state.assetBalances[fundRequest.asset];
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
       await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
+      rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
       console.log(depositAmount);
 
@@ -677,6 +689,8 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'fund');
       console.log(getLog(tx, SMART_LOAN.abi, 'DepositNative'));
       const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'DepositNative').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
+      const depositAmountUSD = Number(depositAmount) * state.assets['AVAX'].price;
+      const collateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt + depositAmountUSD;
       const assetBalanceAfterDeposit = Number(state.assetBalances['AVAX']) + Number(depositAmount);
       console.log(depositAmount);
       console.log(assetBalanceAfterDeposit);
@@ -684,6 +698,7 @@ export default {
       await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterDeposit});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterDeposit, false, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(collateralAfterTransaction);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -724,12 +739,16 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.assetDecimals);
+      const withdrawAmountUSD = Number(withdrawAmount) * state.assets[withdrawRequest.asset].price;
       const assetBalanceBeforeWithdraw = withdrawRequest.isLP ? state.lpBalances[withdrawRequest.asset] : state.assetBalances[withdrawRequest.asset];
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
+      const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
+
 
       await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
       console.log(withdrawAmount);
 
@@ -760,12 +779,17 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
       console.log(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw'));
       const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
+      const withdrawAmountUSD = Number(withdrawAmount) * state.assets['AVAX'].price;
+
       const assetBalanceAfterWithdraw = Number(state.assetBalances['AVAX']) - Number(withdrawAmount);
       console.log('assetBalanceAfterWithdraw', assetBalanceAfterWithdraw);
+      const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
 
       await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterWithdraw});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterWithdraw, false, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
+
 
       console.log(assetBalanceAfterWithdraw);
 
@@ -923,11 +947,14 @@ export default {
       console.log(borrowedAmount);
       const balanceAfterTransaction = Number(state.assetBalances[borrowRequest.asset]) + Number(borrowedAmount);
       const debtAfterTransaction = Number(state.debtsPerAsset[borrowRequest.asset].debt) + Number(borrowedAmount);
+      const borrowedAmountUSD = Number(borrowedAmount) * Number(state.assets[borrowRequest.asset].price);
+      const totalDebtAfterTransaction = Number(state.fullLoanStatus.debt) + borrowedAmountUSD;
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(borrowRequest.asset, balanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetDebtsExternalUpdateService
         .emitExternalAssetDebtUpdate(borrowRequest.asset, debtAfterTransaction, true);
+      rootState.serviceRegistry.debtService.emitDebt(totalDebtAfterTransaction);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -963,14 +990,17 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'repay');
 
       const repayAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Repaid').args.amount, config.ASSETS_CONFIG[repayRequest.asset].decimals);
+      const repayAmountUSD = Number(repayAmount) * Number(state.assets[repayRequest.asset].price);
 
       const balanceAfterRepay = Number(state.assetBalances[repayRequest.asset]) - Number(repayAmount);
       const debtAfterRepay = repayRequest.isMax ? 0 : Number(state.debtsPerAsset[repayRequest.asset].debt) - Number(repayAmount);
+      const totalDebtAfterRepay = Number(state.fullLoanStatus.debt - repayAmountUSD);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(repayRequest.asset, balanceAfterRepay, false, true);
       rootState.serviceRegistry.assetDebtsExternalUpdateService
         .emitExternalAssetDebtUpdate(repayRequest.asset, debtAfterRepay, true);
+      rootState.serviceRegistry.debtService.emitDebt(totalDebtAfterRepay);
 
       commit('setSingleAssetBalance', {asset: repayRequest.asset, balance: balanceAfterRepay});
       commit('setSingleAssetDebt', {asset: repayRequest.asset, debt: debtAfterRepay});
