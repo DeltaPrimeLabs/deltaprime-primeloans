@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{
+        <div class="top-info__value">{{ availableInPool | smartRound }}<span class="top-info__currency"> {{
             asset.symbol
           }}</span></div>
       </div>
@@ -93,6 +93,8 @@ export default {
     debt: Number,
     thresholdWeightedValue: Number,
     loanAPY: Number,
+    availableInPool: Number,
+    totalBorrowedFromPool: Number,
     poolTVL: Number,
     maxUtilisation: Number
   },
@@ -181,7 +183,7 @@ export default {
         },
         {
           validate: (value) => {
-            if (this.value > this.maxUtilisation * this.poolTVL) {
+            if (this.totalBorrowedFromPool + this.value > this.maxUtilisation * this.poolTVL) {
               return `You can borrow up to ${this.maxUtilisation * 100}% of this pool's TVL`;
             }
           }
