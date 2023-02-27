@@ -19,7 +19,7 @@
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
                      :validators="validators"
-                     :max="assetDebt"
+                     :max="calculateMaxRepay"
       >
       </CurrencyInput>
 
@@ -72,8 +72,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import {calculateHealth} from "../utils/calculate";
 import config from '../config';
 
-const MAX_REPAYMENT_OF_DEBT = 1.000001;
-
 export default {
   name: 'WithdrawModal',
   components: {
@@ -118,10 +116,9 @@ export default {
   },
 
   computed: {
-    //because the debt is continously compounding, we have to allow repaying a little more to allow users to fully
-    //repay their debts
-    maxRepaymentOfDebt() {
-      return MAX_REPAYMENT_OF_DEBT;
+    calculateMaxRepay() {
+      const assetBalance = this.assetBalances[this.asset.symbol];
+      return this.assetDebt > assetBalance ? assetBalance : this.assetDebt;
     },
   },
 
@@ -175,13 +172,6 @@ export default {
 
     setupValidators() {
       this.validators = [
-        // {
-        //   validate: (value) => {
-        //     if (value > this.assetDebt * this.maxRepaymentOfDebt) {
-        //       return `Repay value exceeds debt`;
-        //     }
-        //   }
-        // },
         {
           validate: (value) => {
             if (value > this.assetBalances[this.asset.symbol]) {

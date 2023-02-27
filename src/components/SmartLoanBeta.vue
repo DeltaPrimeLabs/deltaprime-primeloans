@@ -5,7 +5,7 @@
     </div>
     <div class="container">
       <StatsBarBeta
-        :collateral="noSmartLoanInternal ? 0 : getCollateral"
+        :collateral="noSmartLoanInternal ? 0 : collateral"
         :debt="noSmartLoanInternal ? 0 : debt"
         :health="noSmartLoanInternal ? 1 : health"
         :noSmartLoan="noSmartLoanInternal"
@@ -74,11 +74,31 @@ export default {
   name: 'SmartLoanBeta',
   components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract', 'accountApr']),
+    ...mapState('fundsStore', [
+      'assetBalances',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'fullLoanStatus',
+      'noSmartLoan',
+      'smartLoanContract',
+      'accountApr'
+    ]),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService', 'poolService', 'dataRefreshEventService', 'farmService']),
+    ...mapState('serviceRegistry', [
+      'healthService',
+      'aprService',
+      'progressBarService',
+      'providerService',
+      'accountService',
+      'poolService',
+      'dataRefreshEventService',
+      'farmService',
+      'collateralService',
+      'debtService'
+    ]),
     ...mapState('network', ['account']),
-    ...mapGetters('fundsStore', ['getCollateral']),
   },
   watch: {
     assetBalances: {
@@ -122,7 +142,8 @@ export default {
       videoVisible: true,
       apr: null,
       healthLoading: false,
-      liquidationTimestamps: []
+      liquidationTimestamps: [],
+      collateral: null,
     };
   },
 
@@ -130,6 +151,8 @@ export default {
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();
+    this.watchCollateral();
+    this.watchDebt();
     this.setupVideoVisibility();
     this.initAccountApr();
 
@@ -186,7 +209,6 @@ export default {
     updateLoanStatus(fullLoanStatus) {
       if (fullLoanStatus) {
         this.totalValue = fullLoanStatus.totalValue;
-        this.debt = fullLoanStatus.debt;
       }
       this.$forceUpdate();
     },
@@ -260,6 +282,18 @@ export default {
         console.log(this.accountApr)
         this.apr = this.accountApr;
       });
+    },
+
+    watchCollateral() {
+      this.collateralService.observeCollateral().subscribe(collateral => {
+        this.collateral = collateral;
+      })
+    },
+
+    watchDebt() {
+      this.debtService.observeDebt().subscribe(debt => {
+        this.debt = debt;
+      })
     },
 
     closeVideo() {
