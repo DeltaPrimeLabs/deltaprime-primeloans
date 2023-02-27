@@ -756,7 +756,7 @@ export default {
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
-          this.progressBarService.emitProgressBarErrorState('Insufficient output amount');
+          this.progressBarService.emitProgressBarErrorState('Insufficient slippage');
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }
