@@ -755,7 +755,11 @@ export default {
         return;
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
-        this.progressBarService.emitProgressBarCancelledState();
+        if (error.message.toLowerCase().includes('insufficient output amount')) {
+          this.progressBarService.emitProgressBarErrorState('Insufficient output amount');
+        } else {
+          this.progressBarService.emitProgressBarCancelledState();
+        }
       } else {
         this.progressBarService.emitProgressBarErrorState();
       }
