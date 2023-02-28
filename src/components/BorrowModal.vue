@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{ availableInPool | smartRound }}<span class="top-info__currency"> {{
+        <div class="top-info__value">{{ this.maxUtilisation * this.poolTVL | smartRound }}<span class="top-info__currency"> {{
             asset.symbol
           }}</span></div>
       </div>
