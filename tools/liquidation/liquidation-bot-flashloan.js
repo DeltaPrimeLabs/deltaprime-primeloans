@@ -240,6 +240,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
             try {
                 let liqStartTime = new Date();
+                const gasPrice = await provider.getGasPrice()
                 let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
                     {
                         assets: poolTokenAddresses,
@@ -253,7 +254,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                         offers,
                     }, {
                         gasLimit: 8_000_000,
-                        gasPrice: 100_000_000_000
+                        gasPrice: gasPrice.mul(15).div(10)
                     }
                     ),
                     provider,
