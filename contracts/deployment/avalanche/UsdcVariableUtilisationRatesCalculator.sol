@@ -14,29 +14,29 @@ import "../../interfaces/IRatesCalculator.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
 contract UsdcVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-    uint256 public constant SLOPE_1 = 0.416666666666667e18;
+    uint256 public constant SLOPE_1 = 0.166666666666667e18;
     uint256 public constant OFFSET_1 = 0;
 
     uint256 public constant BREAKPOINT_1 = 0.6e18;
 
-    uint256 public constant SLOPE_2 = 1.25e18;
+    uint256 public constant SLOPE_2 = 0.25e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.5e18;
+    uint256 public constant OFFSET_2 = 0.05e18;
 
     uint256 public constant BREAKPOINT_2 = 0.8e18;
 
-    uint256 public constant SLOPE_3 = 1.5e18;
+    uint256 public constant SLOPE_3 = 1e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 0.7e18;
+    uint256 public constant OFFSET_3 = 0.65e18;
 
     // BREAKPOINT must be lower than 1e18
     uint256 public constant BREAKPOINT_3 = 0.9e18;
 
-    uint256 public constant SLOPE_4 = 8.5e18;
+    uint256 public constant SLOPE_4 = 6.5e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_4 = 7e18;
+    uint256 public constant OFFSET_4 = 5.6e18;
 
-    uint256 public constant MAX_RATE = 1.5e18;
+    uint256 public constant MAX_RATE = 0.9e18;
 
     //residual spread to account for arithmetic inaccuracies in calculation of deposit rate. Does not result in any meaningful
     //profit generation
