@@ -639,6 +639,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig)
     }
 
+    await deployFacet("HealthMeterFacet", diamondAddress, ['getHealthMeter'], hardhatConfig);
+
     if (chain == 'AVAX') {
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)

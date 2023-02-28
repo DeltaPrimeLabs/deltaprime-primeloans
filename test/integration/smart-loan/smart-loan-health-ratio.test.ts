@@ -109,36 +109,42 @@ describe('Smart loan', () => {
 
         it("should check debt equal to 0", async () => {
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
             expect(await wrappedLoan.isSolvent()).to.be.true;
 
             await tokenContracts.get('MCKUSD')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
             await wrappedLoan.fund(toBytes32("MCKUSD"), toWei("100"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
         });
 
         it("should check debt greater than 0 and lesser than totalValue", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("25"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.000001);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
         });
 
         it("should check health ratio above 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("474"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1.000334, 0.000001);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
         });
 
         it("should check health ratio equals to 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(1, 0.00001);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
         });
 
         it("should check health ratio below 1", async () => {
             await wrappedLoan.borrow(toBytes32("MCKUSD"), toWei("1"));
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(0.999667, 0.000001);
+            console.log(parseInt((await wrappedLoan.getHealthMeter()).toString()));
         });
     });
 });
