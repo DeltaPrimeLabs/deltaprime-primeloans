@@ -6,7 +6,9 @@ import {
     fromBytes32,
     getLiquidationAmounts,
     getLiquidationAmountsBasedOnLtv, getRedstonePrices,
-    getTokensPricesMap
+    getTokensPricesMap,
+    toWei,
+    yakRouterAbi,
 } from "../../test/_helpers";
 import {ethers} from 'hardhat'
 import {
@@ -34,6 +36,26 @@ const protocol = require("redstone-protocol");
 let liquidator_wallet = getLiquidatorSigner(network);
 let provider = getProvider(network);
 
+const yakRouterAddress = '0xC4729E56b831d74bBc18797e0e17A295fA77488c';
+
+const yakRouter = new ethers.Contract(
+    yakRouterAddress,
+    yakRouterAbi,
+    provider
+);
+
+async function query(tknFrom, tknTo, amountIn) {
+    const maxHops = 2
+    const gasPrice = await provider.getGasPrice()
+    return await yakRouter.findBestPathWithGas(
+        amountIn,
+        tknFrom,
+        tknTo,
+        maxHops,
+        gasPrice.mul(15).div(10),
+        { gasLimit: 1e9 }
+    )
+}
 
 function getTokenManager(tokenManagerAddress) {
     return new ethers.Contract(tokenManagerAddress, TOKEN_MANAGER.abi, liquidator_wallet);
@@ -107,6 +129,10 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                     value: formatUnits(el.price, 8)
                 }
             });
+            const pricesMap = {};
+            for (const price of prices) {
+                pricesMap[price.dataFeedId] = price.value;
+            }
 
             let {repayAmounts, deliveredAmounts} = ltvBasedCalculation ?
                 getLiquidationAmountsBasedOnLtv(
@@ -137,14 +163,61 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                 amountsToRepayInWei.push(parseUnits((Number(repayment.amount).toFixed(decimals) ?? 0).toString(), decimals));
             }
 
-            for (const allowance of deliveredAmounts) {
-                let tokenContract = await getERC20Contract(addresses[allowance.name], liquidator_wallet);
-                let decimals = await tokenContract.decimals();
-                let delivered = parseUnits((Number(1.001 * allowance.amount).toFixed(decimals) ?? 0).toString(), decimals);
-                await tokenContract.connect(liquidator_wallet).approve(loan.address, delivered, {gasLimit: 8000000, gasPrice: 100_000_000_000});
-            }
-
             const bonusInWei = (bonus * 1000).toFixed(0);
+
+            const remainAssets = [];
+            let totalInUSD = 0;
+            for (let i = 0; i < balances.length; i++) {
+                const totalBalance = balances[i].balance + (deliveredAmounts.find((da) => da.name == balances[i].name)?.amount || 0);
+                totalInUSD += totalBalance * prices[i].value;
+                const remainBalance = totalBalance - (repayAmounts[i]?.amount || 0);
+                if (remainBalance > 0) {
+                    remainAssets.push({
+                        name: balances[i].name,
+                        balance: remainBalance,
+                    });
+                }
+            }
+            let suppliedInUSD = 0;
+            for (const deliveredAmount of deliveredAmounts) {
+                suppliedInUSD += deliveredAmount.amount * pricesMap[deliveredAmount.name];
+            }
+            const remainInUSD = totalInUSD - suppliedInUSD;
+            const partToReturn = suppliedInUSD * (1 + bonus) / remainInUSD;
+
+            const surplusAssets = remainAssets.map(asset => ({
+                name: asset.name,
+                balance: asset.balance * partToReturn,
+            }));
+
+            const offers = [];
+            let i = 0;
+            for (const deliveredAmount of deliveredAmounts) {
+                let expectedReturnInUSD = deliveredAmount.amount * pricesMap[deliveredAmount.name];
+                while (expectedReturnInUSD > 0) {
+                    const surplusAmountNeeded = Math.min(expectedReturnInUSD / pricesMap[surplusAssets[i].name], surplusAssets[i].balance);
+                    let tokenContract = await getERC20Contract(addresses[surplusAssets[i].name], liquidator_wallet);
+                    let decimals = await tokenContract.decimals();
+                    let amount = parseUnits((surplusAmountNeeded.toFixed(decimals) ?? 0).toString(), decimals);
+
+                    const queryRes = await query(
+                        TOKEN_ADDRESSES[surplusAssets[i].name],
+                        TOKEN_ADDRESSES[deliveredAmount.name],
+                        amount
+                    );
+                    offers.push({
+                        amounts: queryRes.amounts,
+                        path: queryRes.path,
+                        adapters: queryRes.adapters,
+                    });
+
+                    surplusAssets[i].balance -= surplusAmountNeeded;
+                    expectedReturnInUSD -= surplusAmountNeeded * pricesMap[surplusAssets[i].name];
+                    if (surplusAssets[i].balance == 0) {
+                        i++;
+                    }
+                }
+            }
 
             let flashLoan = wrapContractProd(new ethers.Contract(flashLoanAddress, LIQUIDATION_FLASHLOAN.abi, liquidator_wallet));
 
@@ -167,6 +240,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
             try {
                 let liqStartTime = new Date();
+                const gasPrice = await provider.getGasPrice()
                 let flashLoanTx = await awaitConfirmation(await flashLoan.executeFlashloan(
                     {
                         assets: poolTokenAddresses,
@@ -176,10 +250,11 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
                         bonus: bonusInWei,
                         liquidator: liquidator_wallet.address,
                         loanAddress: loanAddress,
-                        tokenManager: tokenManager.address
+                        tokenManager: tokenManager.address,
+                        offers,
                     }, {
                         gasLimit: 8_000_000,
-                        gasPrice: 100_000_000_000
+                        gasPrice: gasPrice.mul(15).div(10)
                     }
                     ),
                     provider,
