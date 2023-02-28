@@ -46,13 +46,13 @@ const yakRouter = new ethers.Contract(
 
 async function query(tknFrom, tknTo, amountIn) {
     const maxHops = 2
-    const gasPrice = ethers.utils.parseUnits('225', 'gwei')
+    const gasPrice = await provider.getGasPrice()
     return await yakRouter.findBestPathWithGas(
         amountIn,
         tknFrom,
         tknTo,
         maxHops,
-        gasPrice,
+        gasPrice.mul(15).div(10),
         { gasLimit: 1e9 }
     )
 }

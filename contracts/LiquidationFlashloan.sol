@@ -121,7 +121,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     (
       AssetAmount[] memory assetSurplus,
       AssetAmount[] memory assetDeficit
-    ) = getSurplusDeficitAssets(_params, lep, assets, amounts, premiums);
+    ) = liquidateLoanAndGetSurplusDeficitAssets(_params, lep, assets, amounts, premiums);
 
     // Swap to negate deficits
     for (uint32 i = 0; i < assetDeficit.length; i++) {
@@ -237,7 +237,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       });
   }
 
-  function getSurplusDeficitAssets(
+  function liquidateLoanAndGetSurplusDeficitAssets(
     bytes calldata _params,
     LiqEnrichedParams memory lep,
     address[] calldata assets,
