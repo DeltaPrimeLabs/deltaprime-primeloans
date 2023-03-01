@@ -10,6 +10,12 @@ interface IYieldYakRouter {
         address[] adapters;
     }
 
+    struct FormattedOffer {
+        uint256[] amounts;
+        address[] adapters;
+        address[] path;
+    }
+
     function swapNoSplit(
         Trade calldata _trade,
         address _to,

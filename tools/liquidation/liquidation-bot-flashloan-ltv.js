@@ -22,6 +22,7 @@ import {
     wrapContractProd,
     wrapLoan
 } from "./utlis";
+import {BigNumber} from "ethers";
 
 const args = require('yargs').argv;
 const network = args.network ? args.network : 'localhost';
@@ -55,7 +56,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
     await unstakeGlp(loan, liquidator_wallet, provider);
 
-    // await unstakeStakedPositions(loan, provider);
+    await unstakeStakedPositions(loan, provider);
 
     await unwindPangolinLPPositions(loan, liquidator_wallet, provider);
 
@@ -99,7 +100,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
             });
     }
 
-    let loanIsBankrupt = (fromWei(await loan.getTotalValue()) - fromWei(await loan.vectorUSDC1Balance())) < fromWei(await loan.getDebt());
+    let loanIsBankrupt = (fromWei(await loan.getTotalValue()) - formatUnits(await loan.vectorUSDC1Balance(), BigNumber.from("6"))) < fromWei(await loan.getDebt());
 
     if(!loanIsBankrupt){
         let prices = (await loan.getAllAssetsPrices()).map(el => {
