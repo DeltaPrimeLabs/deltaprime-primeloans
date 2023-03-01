@@ -10,7 +10,7 @@ import "../Pool.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract HealthMeterFacet is AvalancheDataServiceConsumerBase {
+contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
     struct AssetPrice {
         bytes32 asset;
         uint256 price;
@@ -22,24 +22,6 @@ contract HealthMeterFacet is AvalancheDataServiceConsumerBase {
     function _getDebtAssets() internal view returns(bytes32[] memory result) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         result = tokenManager.getAllPoolAssets();
-    }
-
-    /**
-      * Returns an array of Asset/Price structs of debt (borrowable) assets.
-      * @dev This function uses the redstone-evm-connector
-    **/
-    function _getDebtAssetsPrices() internal view returns(AssetPrice[] memory result) {
-        bytes32[] memory debtAssets = _getDebtAssets();
-
-        uint256[] memory debtAssetsPrices = getOracleNumericValuesFromTxMsg(debtAssets);
-        result = new AssetPrice[](debtAssetsPrices.length);
-
-        for(uint i; i<debtAssetsPrices.length; i++){
-            result[i] = AssetPrice({
-                asset: debtAssets[i],
-                price: debtAssetsPrices[i]
-            });
-        }
     }
 
     /**
@@ -89,7 +71,6 @@ contract HealthMeterFacet is AvalancheDataServiceConsumerBase {
      */
     function getHealthMeter() public view returns (uint256) {
         AssetPrice[] memory ownedAssetsPrices = _getOwnedAssetsWithNativePrices();
-        AssetPrice[] memory debtAssetsPrices = _getDebtAssetsPrices();
 
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -103,24 +84,12 @@ contract HealthMeterFacet is AvalancheDataServiceConsumerBase {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
             uint256 _balance = token.balanceOf(address(this));
             uint256 _borrowed = pool.getBorrowed(address(this));
-            if (_balance >= _borrowed) {
-                weightedCollateral = weightedCollateral + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            } else {
-                weightedCollateral = weightedCollateral + (ownedAssetsPrices[i].price * (_borrowed - _balance) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            }
+            weightedCollateral = weightedCollateral + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
         }
 
-        for (uint256 i = 0; i < debtAssetsPrices.length; i++) {
-            if (!DiamondStorageLib.hasAsset(debtAssetsPrices[i].asset)) {
-                Pool pool = Pool(tokenManager.getPoolAddress(debtAssetsPrices[i].asset));
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(debtAssetsPrices[i].asset, true));
-                weightedCollateral = weightedCollateral - (debtAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-                weightedBorrowed = weightedBorrowed + (debtAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-                borrowed = borrowed + (debtAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
-            }
-        }
-
-        uint256 multiplier = 1000;
+        uint256 multiplier = 10000;
 
         if (borrowed == 0) return multiplier;
 
