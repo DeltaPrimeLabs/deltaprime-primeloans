@@ -18,7 +18,7 @@
       <CurrencyInput v-on:newValue="depositValueChange"
                      :symbol="assetSymbol"
                      :validators="validators"
-                     :max="assetSymbol === 'AVAX' ? null : walletAssetBalance">
+                     :max="assetSymbol === 'AVAX' && selectedDepositAsset === 'AVAX' ? null : walletAssetBalance">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">

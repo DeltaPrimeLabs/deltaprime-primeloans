@@ -39,6 +39,7 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="inputChange"
                      :validators="validators"
+                     :max="getAvailableAssetAmount"
       >
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
@@ -46,6 +47,7 @@
                      :symbol="asset.symbol"
                      v-on:newValue="inputChange"
                      :validators="validators"
+                     :max="asset.symbol === 'AVAX' && selectedDepositAsset === 'AVAX' ? null : getAvailableAssetAmount"
       >
       </CurrencyInput>
 
