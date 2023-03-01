@@ -89,7 +89,7 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
             borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
         }
 
-        uint256 multiplier = 10000;
+        uint256 multiplier = 100 * 1e18; // 18 decimal points
 
         if (borrowed == 0) return multiplier;
 
