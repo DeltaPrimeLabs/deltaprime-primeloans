@@ -197,18 +197,18 @@ export default {
       const loansCol = collection(fireStore, 'loans');
       
       //Get latest update time
-      let max = null;
-      const maxQ = query(loansCol, orderBy("time", "desc"), limit(1));
-      const querySnapshot = await getDocs(maxQ);
+      let maxTime = null;
+      const maxTimeQuery = query(loansCol, orderBy("time", "desc"), limit(1));
+      const querySnapshot = await getDocs(maxTimeQuery);
       querySnapshot.forEach((doc) => {
-        max = doc.data().time;
+        maxTime = doc.data().time;
         console.log('time: ', doc.data().time)
       });
-      console.log("Max timestamp: " + max);
+      console.log("Max timestamp: " + maxTime);
 
       //Get loans
-      const loansQ = query(loansCol, orderBy("health", "asc"));
-      const loansQuerySnapshot = await getDocs(loansQ);
+      const loansQuery = query(loansCol, orderBy("health", "asc"));
+      const loansQuerySnapshot = await getDocs(loansQuery);
       this.protocolCollateral = 0;
       this.totalBorrowed = 0;
       loansQuerySnapshot.forEach((doc) => {
@@ -224,7 +224,7 @@ export default {
         this.totalBorrowed += doc.data().debt; 
       });
       console.log("Loans fetched: " + this.loans.length);
-      console.log("Last updated: " + new Date(max).toTimeString());
+      console.log("Last updated: " + new Date(maxTime).toTimeString());
     },
 
     async setupLoans() {
