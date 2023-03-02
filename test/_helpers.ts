@@ -1,5 +1,5 @@
 import {ethers, network, waffle} from "hardhat";
-import {BigNumber, Contract, Wallet} from "ethers";
+import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
@@ -52,7 +52,7 @@ const {provider} = waffle;
 const {deployContract} = waffle;
 
 export const toWei = ethers.utils.parseUnits;
-export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
+export const formatUnits = (val: BigNumber, decimalPlaces: BigNumberish) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
 export const fromWei = (val: BigNumber) => parseFloat(ethers.utils.formatEther(val));
 export const fromWeiS = (val: BigNumber) => ethers.utils.formatEther(val);
 export const toBytes32 = ethers.utils.formatBytes32String;
@@ -637,6 +637,12 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getHealthRatio'
         ],
         hardhatConfig)
+    }
+
+    if (mock) {
+        await deployFacet("HealthMeterFacetMock", diamondAddress, ['getHealthMeter'], hardhatConfig);
+    } else {
+        await deployFacet("HealthMeterFacetProd", diamondAddress, ['getHealthMeter'], hardhatConfig);
     }
 
     if (chain == 'AVAX') {
