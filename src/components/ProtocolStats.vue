@@ -103,16 +103,8 @@ import {fromWei} from "../utils/calculate";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
 import {combineLatest} from 'rxjs';
-
 // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyByOwbJLGxjKkAdHzD4cTaDVj7eGeACeec",
-  authDomain: "delta-prime-db.firebaseapp.com",
-  projectId: "delta-prime-db",
-  storageBucket: "delta-prime-db.appspot.com",
-  messagingSenderId: "499112502554",
-  appId: "1:499112502554:web:5d89f34de8f958bf5df8a3"
-};
+import firebaseConfig from '../../.secrets/firebaseConfig.json';
 
 // Initialize Firebase
 const fireStore = getFirestore(initializeApp(firebaseConfig));
@@ -205,24 +197,24 @@ export default {
       const loansCol = collection(fireStore, 'loans');
       
       //Get latest update time
-      let max = null;
-      const maxQ = query(loansCol, orderBy("time", "desc"), limit(1));
-      const querySnapshot = await getDocs(maxQ);
+      let maxTime = null;
+      const maxTimeQuery = query(loansCol, orderBy("time", "desc"), limit(1));
+      const querySnapshot = await getDocs(maxTimeQuery);
       querySnapshot.forEach((doc) => {
-        max = doc.data().time;
+        maxTime = doc.data().time;
         console.log('time: ', doc.data().time)
       });
-      console.log("Max timestamp: " + max);
+      console.log("Max timestamp: " + maxTime);
 
       //Get loans
-      const loansQ = query(loansCol, where("time", "==", max), orderBy("health", "asc"));
-      const loansQuerySnapshot = await getDocs(loansQ);
+      const loansQuery = query(loansCol, orderBy("health", "asc"));
+      const loansQuerySnapshot = await getDocs(loansQuery);
       this.protocolCollateral = 0;
       this.totalBorrowed = 0;
       loansQuerySnapshot.forEach((doc) => {
         this.loans.push({
           address: doc.data().address,
-          health: doc.data().health,
+          health: doc.data().health > 100000 ? Number('Infinity') : doc.data().health,
           debt: doc.data().debt,
           collateral: doc.data().collateral,
           totalValue: doc.data().total,
@@ -232,7 +224,7 @@ export default {
         this.totalBorrowed += doc.data().debt; 
       });
       console.log("Loans fetched: " + this.loans.length);
-      console.log("Last updated: " + new Date(max).toTimeString());
+      console.log("Last updated: " + new Date(maxTime).toTimeString());
     },
 
     async setupLoans() {
