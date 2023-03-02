@@ -75,9 +75,9 @@
               >
                 <div><a :href="`https://snowtrace.io/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
                 <div>{{parseFloat(loan.health).toFixed(3)}}</div>
-                <div>{{parseFloat(loan.totalValue).toFixed(2)}}</div>
-                <div>{{parseFloat(loan.debt).toFixed(2)}}</div>
-                <div>{{parseFloat(loan.collateral).toFixed(2)}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.totalValue).toFixed(2))}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.debt).toFixed(2))}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.collateral).toFixed(2))}}</div>
                 <div>{{loan.solvent ? "Yes" : "No"}}</div>
               </div>
             </div>
