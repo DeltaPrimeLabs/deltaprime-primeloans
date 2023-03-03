@@ -64,7 +64,10 @@ export default {
       commit('setAccountBalance', balance);
     },
     async updateAvaxPrice({ commit }) {
-      const avaxPrice = (await redstone.getPrice("AVAX", { provider: 'redstone-avalanche'})).value;
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      const avaxPrice = redstonePriceData['AVAX'][0].dataPoints[0].value;
       commit('setAvaxPrice', avaxPrice);
     }
   },

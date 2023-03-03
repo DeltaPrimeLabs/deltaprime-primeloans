@@ -19,7 +19,7 @@ export default class PoolService {
     return this.refreshPools$.asObservable();
   }
 
-  setupPools(provider, account) {
+  setupPools(provider, account, redstonePriceData) {
     const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
 
     return combineLatest(
@@ -31,14 +31,13 @@ export default class PoolService {
           poolContract.getDepositRate(),
           poolContract.getBorrowingRate(),
           poolContract.totalBorrowed(),
-          poolContract.getMaxPoolUtilisationForBorrowing(),
-          redstone.getPrice(poolAsset)
+          poolContract.getMaxPoolUtilisationForBorrowing()
         ]).pipe(map(poolDetails => {
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
           const apy = fromWei(poolDetails[2]);
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
-            assetPrice: poolDetails[6].value,
+            assetPrice: redstonePriceData[poolAsset][0].dataPoints[0].value,
             contract: poolContract,
             tvl: formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals),
             deposit: deposit,

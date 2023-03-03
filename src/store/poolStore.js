@@ -46,7 +46,11 @@ export default {
 
     async setupPools({rootState, commit}) {
       const poolService = rootState.serviceRegistry.poolService;
-      poolService.setupPools(rootState.network.provider, rootState.network.account)
+
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData)
         .subscribe(pools => {
           poolService.emitPools(pools);
           commit('setPools', pools);
