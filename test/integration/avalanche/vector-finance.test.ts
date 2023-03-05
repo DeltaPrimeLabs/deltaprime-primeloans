@@ -261,7 +261,9 @@ describe('Smart loan', () => {
             let normalSAVAX1Balance = await wrappedLoan.vectorSAVAX1Balance();
             let initialSAVAX1Balance = await wrappedLoan.vectorSAVAX1BalanceAuto();
 
-            await wrappedLoan.vectorMigrateAll();
+            await wrappedLoan.vectorMigrateUsdc();
+            await wrappedLoan.vectorMigrateAvax();
+            await wrappedLoan.vectorMigrateSAvax();
 
             expect(await wrappedLoan.vectorUSDC1BalanceAuto()).to.be.eq(initialUSDC1Balance);
             expect(await wrappedLoan.vectorWAVAX1Balance()).to.be.eq(0);
@@ -434,4 +436,5 @@ describe('Smart loan', () => {
         }
     });
 });
+
 

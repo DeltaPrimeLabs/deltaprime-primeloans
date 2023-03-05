@@ -24,114 +24,116 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorStakeUSDC1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol: "USDC",
-            identifier: "VF_USDC_MAIN_AUTO",
-            balanceSelector: this.vectorUSDC1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeUSDC1Auto.selector
+            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            symbol : "USDC",
+            identifier : "VF_USDC_MAIN_AUTO",
+            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
         stakeToken(amount, position);
     }
 
     function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol: "USDC",
-            identifier: "VF_USDC_MAIN_AUTO",
-            balanceSelector: this.vectorUSDC1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeUSDC1Auto.selector
+            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            symbol : "USDC",
+            identifier : "VF_USDC_MAIN_AUTO",
+            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorUSDC1BalanceAuto() public view returns(uint256 _stakedBalance) {
+    function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E).compounder();
         _stakedBalance = compounder.depositTracking(address(this));
     }
 
     function vectorStakeWAVAX1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
-            symbol: "AVAX",
-            identifier: "VF_AVAX_SAVAX_AUTO",
-            balanceSelector: this.vectorWAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeWAVAX1Auto.selector
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
         stakeToken(amount, position);
     }
 
     function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
-            symbol: "AVAX",
-            identifier: "VF_AVAX_SAVAX_AUTO",
-            balanceSelector: this.vectorWAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeWAVAX1Auto.selector
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorWAVAX1BalanceAuto() public view returns(uint256 _stakedBalance) {
+    function vectorWAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).compounder();
         _stakedBalance = compounder.depositTracking(address(this));
     }
 
     function vectorStakeSAVAX1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
-            symbol: "sAVAX",
-            identifier: "VF_SAVAX_MAIN_AUTO",
-            balanceSelector: this.vectorSAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeSAVAX1Auto.selector
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
         stakeToken(amount, position);
     }
 
     function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
-            symbol: "sAVAX",
-            identifier: "VF_SAVAX_MAIN_AUTO",
-            balanceSelector: this.vectorSAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeSAVAX1Auto.selector
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorSAVAX1BalanceAuto() public view returns(uint256 _stakedBalance) {
+    function vectorSAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
         _stakedBalance = compounder.depositTracking(address(this));
     }
 
-    function vectorMigrateAll() public {
+    function vectorMigrateUsdc() public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol: "USDC",
-            identifier: "VF_USDC_MAIN_AUTO",
-            balanceSelector: this.vectorUSDC1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeUSDC1Auto.selector
+            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            symbol : "USDC",
+            identifier : "VF_USDC_MAIN_AUTO",
+            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
-        uint256 totalMigrated = migrateStake(position, "VF_USDC_MAIN");
+        require(migrateStake(position, "VF_USDC_MAIN") > 0, "Cannot migrate 0 tokens");
+    }
 
+    function vectorMigrateAvax() public {
         position = IStakingPositions.StakedPosition({
-            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
-            symbol: "AVAX",
-            identifier: "VF_AVAX_SAVAX_AUTO",
-            balanceSelector: this.vectorWAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeWAVAX1Auto.selector
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
-        totalMigrated += migrateStake(position, "VF_AVAX_SAVAX");
+        require(migrateStake(position, "VF_AVAX_SAVAX") > 0, "Cannot migrate 0 tokens");
+    }
 
+    function vectorMigrateSAvax() public {
         position = IStakingPositions.StakedPosition({
-            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
-            symbol: "sAVAX",
-            identifier: "VF_SAVAX_MAIN_AUTO",
-            balanceSelector: this.vectorSAVAX1BalanceAuto.selector,
-            unstakeSelector: this.vectorUnstakeSAVAX1Auto.selector
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
-        totalMigrated += migrateStake(position, "VF_SAVAX_MAIN");
-
-        require(totalMigrated > 0, "Cannot migrate 0 tokens");
+        require(migrateStake(position, "VF_SAVAX_MAIN") > 0, "Cannot migrate 0 tokens");
     }
 
     // INTERNAL FUNCTIONS
@@ -139,7 +141,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
+    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
@@ -210,7 +212,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @notice Withdraws all previous balance from the pool helper, and deposits into the compounder.
      */
     function migrateStake(IStakingPositions.StakedPosition memory position, bytes32 oldIdentifier) internal
-    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
+    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IVectorFinanceCompounder compounder = poolHelper.compounder();
 
@@ -232,7 +234,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
     }
 
-    function getAssetPoolHelper(address asset) internal view returns(IVectorFinanceStaking){
+    function getAssetPoolHelper(address asset) internal view returns (IVectorFinanceStaking){
         IVectorFinanceMainStaking mainStaking = IVectorFinanceMainStaking(VectorMainStaking);
         return IVectorFinanceStaking(mainStaking.getPoolInfo(asset).helper);
     }
