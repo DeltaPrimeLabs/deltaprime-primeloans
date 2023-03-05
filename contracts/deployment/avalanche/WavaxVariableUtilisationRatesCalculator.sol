@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2f6b0fb53889a8741a3d7f78a2d5d05ad7a0c76d;
+// Last deployed from commit: 2acdb552b47bad8d3e496bb9f359d0c91d204633;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,28 +14,28 @@ import "../../interfaces/IRatesCalculator.sol";
  * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
  **/
 contract WavaxVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
-    uint256 public constant SLOPE_1 = 0.166666666666667e18;
+    uint256 public constant SLOPE_1 = 0.141666666666667e18;
     uint256 public constant OFFSET_1 = 0;
 
     uint256 public constant BREAKPOINT_1 = 0.6e18;
 
-    uint256 public constant SLOPE_2 = 0.5e18;
+    uint256 public constant SLOPE_2 = 0.235e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_2 = 0.2e18;
+    uint256 public constant OFFSET_2 = 0.056e18;
 
     uint256 public constant BREAKPOINT_2 = 0.8e18;
 
-    uint256 public constant SLOPE_3 = 1e18;
+    uint256 public constant SLOPE_3 = 0.98e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_3 = 0.6e18;
+    uint256 public constant OFFSET_3 = 0.652e18;
 
     // BREAKPOINT must be lower than 1e18
 
     uint256 public constant BREAKPOINT_3 = 0.9e18;
 
-    uint256 public constant SLOPE_4= 28e18;
+    uint256 public constant SLOPE_4= 28.7e18;
     //negative, hence minus in calculations
-    uint256 public constant OFFSET_4 = 24.9e18;
+    uint256 public constant OFFSET_4 = 25.6e18;
 
     uint256 public constant MAX_RATE = 3.1e18;
 
