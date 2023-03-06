@@ -184,9 +184,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
         toAssetPool.borrow(borrowAmount);
 
-        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
-        uint256 beforeBalance = fromToken.balanceOf(address(this));
-
         {
             // swap toAsset to fromAsset
             IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
@@ -205,7 +202,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             router.swapNoSplit(trade, address(this), 0);
         }
 
-        _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)) - beforeBalance);
+        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+        _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)));
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
         fromAssetPool.repay(_repayAmount);
