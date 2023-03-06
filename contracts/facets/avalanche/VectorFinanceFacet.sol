@@ -115,7 +115,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorMigrateAvax() public {
-        position = IStakingPositions.StakedPosition({
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
             symbol : "AVAX",
             identifier : "VF_AVAX_SAVAX_AUTO",
@@ -126,7 +126,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorMigrateSAvax() public {
-        position = IStakingPositions.StakedPosition({
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
             symbol : "sAVAX",
             identifier : "VF_SAVAX_MAIN_AUTO",

@@ -248,6 +248,8 @@ describe('Smart loan', () => {
 
         it("should unstake all in normal way", async () => {
             await testUnstakeNormal("vectorUnstakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('50', BigNumber.from("6")));
+            await testUnstakeNormal("vectorUntakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('30'));
+            await testUnstakeNormal("vectorUntakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('30'));
         });
 
         it("should migrate", async () => {
