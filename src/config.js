@@ -128,6 +128,26 @@ export default {
                 strategy: 'Platypus',
                 refreshDelay: 60000,
                 gasStake: 8000000,
+                gasUnstake: 8000000,
+                showMigrateButton: true,
+            },
+            {
+                protocol: 'VECTOR_FINANCE',
+                autoCompounding: true,
+                apy: async () => vectorFinanceApy('AVAX'),
+                balance: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
+                stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
+                stakeMethod: 'vectorStakeWAVAX1',
+                unstakeMethod: 'vectorUnstakeWAVAX1',
+                minAmount: 0.8,
+                token: 'AVAX',
+                isTokenLp: false,
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
                 gasUnstake: 8000000
             }
         ],
@@ -168,6 +188,25 @@ export default {
                 refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000
+            },
+            {
+                protocol: 'VECTOR_FINANCE',
+                autoCompounding: true,
+                apy: () => vectorFinanceApy('SAVAX'),
+                balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
+                stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
+                stakeMethod: 'vectorStakeSAVAX1',
+                unstakeMethod: 'vectorUnstakeSAVAX1',
+                minAmount: 0.8,
+                token: 'sAVAX',
+                isTokenLp: false,
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
             }
         ],
         USDC: [
@@ -194,6 +233,7 @@ export default {
         GLP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 //TODO: check if it's a right APY
                 apy: () => yieldYakApy('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C'),
                 balance: async (address) => yieldYakBalance('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C', address),
