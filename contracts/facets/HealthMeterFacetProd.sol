@@ -75,7 +75,9 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256 weightedCollateral = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+        uint256 weightedCollateral;
+        uint256 weightedCollateralPlus = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+        uint256 weightedCollateralMinus = 0;
         uint256 weightedBorrowed = 0;
         uint256 borrowed = 0;
 
@@ -84,9 +86,16 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
             uint256 _balance = token.balanceOf(address(this));
             uint256 _borrowed = pool.getBorrowed(address(this));
-            weightedCollateral = weightedCollateral + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            if (_balance > _borrowed) {
+                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            } else {
+                weightedCollateralMinus = weightedCollateralMinus + (ownedAssetsPrices[i].price * (_borrowed - _balance) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            }
             weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
+        }
+        if (weightedCollateralPlus > weightedCollateralMinus) {
+            weightedCollateral = weightedCollateralPlus - weightedCollateralMinus;
         }
 
         uint256 multiplier = 100 * 1e18; // 18 decimal points
