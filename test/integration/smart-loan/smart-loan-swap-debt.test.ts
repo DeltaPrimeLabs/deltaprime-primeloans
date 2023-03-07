@@ -241,20 +241,22 @@ describe("Smart loan", () => {
                     amountSwapped,
                     usdcDeposited
                 );
+            const usdcPool = poolContracts.get("USDC");
             await tokenContracts
                 .get("USDC")!
                 .connect(depositor)
-                .approve(poolContracts.get("USDC")!.address, usdcDeposited);
-            await poolContracts
-                .get("USDC")!
-                .connect(depositor)
-                .deposit(usdcDeposited);
+                .approve(usdcPool?.address, usdcDeposited);
+            await usdcPool!.connect(depositor).deposit(usdcDeposited);
 
-            await wrappedLoan.borrow(
-                toBytes32("USDC"),
-                parseUnits("400", BigNumber.from("6"))
+            const borrowAmount = parseUnits("400", BigNumber.from("6"));
+            await wrappedLoan.borrow(toBytes32("USDC"), borrowAmount);
+
+            expect(await usdcPool?.getBorrowed(wrappedLoan.address)).to.be.eq(
+                borrowAmount
             );
-
+            expect(await poolContracts.get("AVAX")?.getBorrowed(wrappedLoan.address)).to.be.eq(
+                0
+            );
             expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400, 0.02);
         });
 
@@ -285,7 +287,7 @@ describe("Smart loan", () => {
 
         it("should swap debt", async () => {
             let AVAX_PRICE = tokensPrices.get("AVAX")!;
-            let debtAmount = parseUnits("400", BigNumber.from("6"));
+            let debtAmount = parseUnits("400.1", BigNumber.from("6"));
             let amount = toWei(((400 * 1.01) / AVAX_PRICE).toFixed(18));
             const queryRes = await query(
                 TOKEN_ADDRESSES["AVAX"],
@@ -300,7 +302,13 @@ describe("Smart loan", () => {
                 queryRes.adapters
             );
 
-            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400, 0.02);
+            expect(await poolContracts.get("USDC")?.getBorrowed(wrappedLoan.address)).to.be.eq(
+                0
+            );
+            expect(await poolContracts.get("AVAX")?.getBorrowed(wrappedLoan.address)).to.be.closeTo(
+                amount, amount.div(100)
+            );
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400 * 1.01, 0.02);
         });
     });
 });

@@ -172,13 +172,21 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
         _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
 
+        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
+        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+
         uint256 borrowAmount;
         {
-            bytes32[] memory symbols = new bytes32[](2);
-            symbols[0] = _fromAsset;
-            symbols[1] = _toAsset;
-            uint256[] memory prices = getPrices(symbols);
-            borrowAmount = _repayAmount * prices[0] * 101 / prices[1] / 100;
+            {
+                bytes32[] memory symbols = new bytes32[](2);
+                symbols[0] = _fromAsset;
+                symbols[1] = _toAsset;
+                uint256[] memory prices = getPrices(symbols);
+                borrowAmount = _repayAmount * prices[0] * 101 / prices[1] / 100;
+            }
+            {
+                borrowAmount = (borrowAmount * 10 ** toToken.decimals()) / 10 ** fromToken.decimals();
+            }
         }
 
         Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
@@ -186,7 +194,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         {
             // swap toAsset to fromAsset
-            IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
             address(toToken).safeApprove(YY_ROUTER, 0);
             address(toToken).safeApprove(YY_ROUTER, borrowAmount);
 
@@ -202,7 +209,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             router.swapNoSplit(trade, address(this), 0);
         }
 
-        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
         _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)));
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
