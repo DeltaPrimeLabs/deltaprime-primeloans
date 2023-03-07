@@ -373,6 +373,19 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /**
+     * Returns full pool status
+     */
+    function getFullPoolStatus() public view returns (uint256[5] memory) {
+        return [
+            totalSupply(),
+            getDepositRate(),
+            getBorrowingRate(),
+            totalBorrowed(),
+            getMaxPoolUtilisationForBorrowing()
+        ];
+    }
+
+    /**
      * Recovers the surplus funds resultant from difference between deposit and borrowing rates
      **/
     function recoverSurplus(uint256 amount, address account) public onlyOwner nonReentrant {
