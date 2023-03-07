@@ -128,6 +128,7 @@ export default {
       loanAddresses: [],
       loans: [],
       liquidators: [],
+      poolTvl: 0,
       tvl: 0
     };
   },
@@ -147,6 +148,9 @@ export default {
         }
       }
     },
+    protocolCollateral(collateral) {
+      this.tvl = this.poolTvl + collateral;
+    }
   },
 
   methods: {
@@ -169,11 +173,10 @@ export default {
             const usdcPool = this.pools.find(pool => pool.asset.symbol === 'USDC');
             const btcPool = this.pools.find(pool => pool.asset.symbol === 'BTC');
             const ethPool = this.pools.find(pool => pool.asset.symbol === 'ETH');
-            this.tvl = parseFloat(avaxPool.tvl) * parseFloat(avaxPool.asset.price)
+            this.poolTvl = parseFloat(avaxPool.tvl) * parseFloat(avaxPool.asset.price)
                 + parseFloat(usdcPool.tvl) * parseFloat(usdcPool.asset.price)
                 + parseFloat(btcPool.tvl) * parseFloat(btcPool.asset.price)
                 + parseFloat(ethPool.tvl) * parseFloat(ethPool.asset.price)
-                + parseFloat(this.protocolCollateral);
           });
     },
 
