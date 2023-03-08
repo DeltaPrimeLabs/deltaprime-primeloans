@@ -19,8 +19,6 @@ interface IVectorFinanceFacet {
 
     function vectorSAVAX1BalanceAuto() external view returns(uint256);
 
-    function vectorMigrateUsdc() external;
-
     function vectorMigrateAvax() external;
 
     function vectorMigrateSAvax() external;

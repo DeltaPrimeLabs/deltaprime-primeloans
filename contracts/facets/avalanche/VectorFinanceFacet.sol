@@ -103,17 +103,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakedBalance = compounder.depositTracking(address(this));
     }
 
-    function vectorMigrateUsdc() public {
-        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol : "USDC",
-            identifier : "VF_USDC_MAIN_AUTO",
-            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
-            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
-        });
-        require(migrateStake(position, "VF_USDC_MAIN") > 0, "Cannot migrate 0 tokens");
-    }
-
     function vectorMigrateAvax() public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
