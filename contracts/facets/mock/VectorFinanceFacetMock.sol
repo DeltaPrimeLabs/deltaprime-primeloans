@@ -24,7 +24,7 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorStakeUSDC1(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            asset: 0x06f01502327De1c37076Bea4689a7e44279155e9,
             symbol: "USDC",
             identifier: "VF_USDC_MAIN",
             balanceSelector: this.vectorUSDC1Balance.selector,
@@ -35,7 +35,7 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            asset: 0x06f01502327De1c37076Bea4689a7e44279155e9,
             symbol: "USDC",
             identifier: "VF_USDC_MAIN",
             balanceSelector: this.vectorUSDC1Balance.selector,
@@ -45,7 +45,7 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E));
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9));
         _stakedBalance = stakingContract.balance(address(this));
     }
 
