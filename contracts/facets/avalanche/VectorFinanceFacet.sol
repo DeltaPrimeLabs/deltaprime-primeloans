@@ -24,7 +24,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorStakeUSDC1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            asset : 0x06f01502327De1c37076Bea4689a7e44279155e9,
             symbol : "USDC",
             identifier : "VF_USDC_MAIN_AUTO",
             balanceSelector : this.vectorUSDC1BalanceAuto.selector,
@@ -35,7 +35,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset : 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
+            asset : 0x06f01502327De1c37076Bea4689a7e44279155e9,
             symbol : "USDC",
             identifier : "VF_USDC_MAIN_AUTO",
             balanceSelector : this.vectorUSDC1BalanceAuto.selector,
@@ -45,7 +45,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E).compounder();
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9).compounder();
         _stakedBalance = compounder.depositTracking(address(this));
     }
 

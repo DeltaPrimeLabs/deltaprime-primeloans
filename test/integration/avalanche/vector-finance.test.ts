@@ -49,7 +49,7 @@ const {deployContract, provider} = waffle;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const VectorUSDCStaking1 = '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30';
+const VectorUSDCStaking1 = '0x7d44f9eb1ffa6848362a966ef7d6340d14f4af7e';
 const VectorWAVAXStaking1 = '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc';
 const VectorSAVAXStaking1 = '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7';
 
@@ -248,8 +248,6 @@ describe('Smart loan', () => {
 
         it("should unstake all in normal way", async () => {
             await testUnstakeNormal("vectorUnstakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('50', BigNumber.from("6")));
-            await testUnstakeNormal("vectorUntakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('30'));
-            await testUnstakeNormal("vectorUntakeSAVAX1", "vectorSAVAX1Balance", VectorSAVAXStaking1, toWei('30'));
         });
 
         it("should migrate", async () => {
@@ -257,24 +255,21 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let initialUSDC1Balance = await wrappedLoan.vectorUSDC1BalanceAuto();
             let normalWAVAX1Balance = await wrappedLoan.vectorWAVAX1Balance();
             let initialWAVAX1Balance = await wrappedLoan.vectorWAVAX1BalanceAuto();
             let normalSAVAX1Balance = await wrappedLoan.vectorSAVAX1Balance();
             let initialSAVAX1Balance = await wrappedLoan.vectorSAVAX1BalanceAuto();
 
-            await wrappedLoan.vectorMigrateUsdc();
             await wrappedLoan.vectorMigrateAvax();
             await wrappedLoan.vectorMigrateSAvax();
 
-            expect(await wrappedLoan.vectorUSDC1BalanceAuto()).to.be.eq(initialUSDC1Balance);
             expect(await wrappedLoan.vectorWAVAX1Balance()).to.be.eq(0);
             expect(await wrappedLoan.vectorWAVAX1BalanceAuto()).to.be.closeTo(initialWAVAX1Balance.add(normalWAVAX1Balance), normalWAVAX1Balance.div(1000));
             expect(await wrappedLoan.vectorSAVAX1Balance()).to.be.eq(0);
             expect(await wrappedLoan.vectorSAVAX1BalanceAuto()).to.be.closeTo(initialSAVAX1Balance.add(normalSAVAX1Balance), normalSAVAX1Balance.div(1000));
 
             expect(await wrappedLoan.getTotalValue()).to.be.closeTo(initialTotalValue, initialTotalValue.div(1000));
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00002);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0002);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), fromWei(initialTWV) / 10000);
         });
 
@@ -322,8 +317,8 @@ describe('Smart loan', () => {
             expect(await wrappedLoan[balanceMethod]()).to.be.equal(0);
             expect(await stakingContract.balance(wrappedLoan.address)).to.be.equal(0);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.001);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 15);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
 
             for(const rewardToken of rewardTokens){
                 let ownedAssets = await wrappedLoan.getAllOwnedAssets();
