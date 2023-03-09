@@ -61,7 +61,7 @@
 
       <div class="table__cell">
         <div class="actions">
-          <FlatButton v-if="farm.showMigrateButton" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate</FlatButton>
+          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate</FlatButton>
           <IconButtonMenuBeta
             class="action"
             v-for="(actionConfig, index) of actionsConfig"
@@ -85,6 +85,7 @@ import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import FlatButton from './FlatButton';
+import MigrateModal from './MigrateModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -161,7 +162,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('stakeStore', ['stake', 'unstake']),
+    ...mapActions('stakeStore', ['stake', 'unstake', 'migrateToAutoCompoundingPool']),
 
     actionClick(key) {
       switch (key) {
@@ -370,7 +371,26 @@ export default {
 
     migrateButtonClick() {
       console.log('migrate button click');
-    },
+      const modalInstance = this.openModal(MigrateModal);
+      console.log(this.protocol.name);
+      console.log(this.rewards);
+      modalInstance.protocol = this.protocol.name;
+      modalInstance.rewards = this.rewards;
+      modalInstance.farmBalance = this.underlyingTokenStaked;
+      modalInstance.tokenSymbol = this.farm.token;
+
+      const migrateRequest = {
+        migrateMethod: this.farm.migrateMethod
+      }
+
+      modalInstance.$on('MIGRATE', () => {
+        this.handleTransaction(this.migrateToAutoCompoundingPool, {migrateRequest: migrateRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        });
+      });
+    }
   }
 };
 </script>

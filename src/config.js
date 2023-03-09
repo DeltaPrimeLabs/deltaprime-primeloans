@@ -120,6 +120,7 @@ export default {
                 stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
+                migrateMethod: 'vectorMigrateAvax',
                 minAmount: 0.8,
                 token: 'AVAX',
                 isTokenLp: false,
@@ -130,7 +131,6 @@ export default {
                 refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000,
-                showMigrateButton: true,
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -180,6 +180,7 @@ export default {
                 stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
+                migrateMethod: 'vectorMigrateSAvax',
                 minAmount: 0.8,
                 token: 'sAVAX',
                 isTokenLp: false,
@@ -190,7 +191,6 @@ export default {
                 refreshDelay: 60000,
                 gasStake: 8000000,
                 gasUnstake: 8000000,
-                showMigrateButton: true,
             },
             {
                 protocol: 'VECTOR_FINANCE',

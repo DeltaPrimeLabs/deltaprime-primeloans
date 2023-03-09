@@ -187,6 +187,24 @@ export default {
       }, unstakeRequest.refreshDelay);
     },
 
+    async migrateToAutoCompoundingPool({rootState, state, commit}, {migrateRequest}) {
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+      const loanAssets = mergeArrays([(
+        await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const migrateTransaction = await (await wrapContract(smartLoanContract, loanAssets))[migrateRequest.migrateMethod]();
+
+      let tx = await awaitConfirmation(migrateTransaction, provider, 'migrate');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+    },
+
     async updateStakedBalances({rootState, state, commit}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
@@ -203,7 +221,7 @@ export default {
               (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
               Object.keys(config.POOLS_CONFIG)
             ]);
-            farm.tokenBalance = await (await wrapContract(smartLoanContract, loanAssets))['balanceMethod']();
+            farm.tokenBalance = await (await wrapContract(smartLoanContract, loanAssets))[farm.balanceMethod]();
             console.log('auto compound balance', farm.tokenBalance);
           } else {
             farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
