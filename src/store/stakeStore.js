@@ -111,8 +111,8 @@ export default {
     async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      console.log('unstakeRequest')
-      console.log(unstakeRequest)
+      console.log('unstakeRequest');
+      console.log(unstakeRequest);
 
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -123,9 +123,8 @@ export default {
       ]);
 
 
-
-      console.log('loanAssets')
-      console.log(loanAssets)
+      console.log('loanAssets');
+      console.log(loanAssets);
 
       const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
@@ -134,8 +133,8 @@ export default {
           {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-            parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-            {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
+          parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
+          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -189,6 +188,8 @@ export default {
     },
 
     async updateStakedBalances({rootState, state, commit}) {
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
       const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
@@ -196,25 +197,35 @@ export default {
 
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
-          farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
+          if (farm.balanceMethod) {
+            const loanAssets = mergeArrays([(
+              await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+              (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+              Object.keys(config.POOLS_CONFIG)
+            ]);
+            farm.tokenBalance = await (await wrapContract(smartLoanContract, loanAssets))['balanceMethod']();
+            console.log('auto compound balance', farm.tokenBalance);
+          } else {
+            farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
+          }
           try {
             farm.currentApy = await farm.apy();
-          } catch(e) {
+          } catch (e) {
             console.log('Error fetching farm APY');
           }
 
           if (farm.protocol === 'YIELD_YAK') {
-            const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token]
+            const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token];
             const decimals = token.decimals;
             farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
 
-            console.log('-------------------')
-            console.log('token: ', farm.token)
+            console.log('-------------------');
+            console.log('token: ', farm.token);
             const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
-            console.log('maxUnstaked: ', maxUnstaked)
-            console.log('totalStaked: ', farm.totalStaked)
+            console.log('maxUnstaked: ', maxUnstaked);
+            console.log('totalStaked: ', farm.totalStaked);
             farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
-            console.log('farm.rewards: ', farm.rewards)
+            console.log('farm.rewards: ', farm.rewards);
           } else if (farm.protocol === 'VECTOR_FINANCE') {
             farm.totalStaked = farm.totalBalance;
             farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
@@ -237,9 +248,9 @@ export default {
       let farms = state.farms;
       for (const [symbol, tokenFarms] of Object.entries(farms)) {
         const asset = rootState.fundsStore.assets[symbol] ?
-            rootState.fundsStore.assets[symbol]
-            :
-            rootState.fundsStore.lpAssets[symbol];
+          rootState.fundsStore.assets[symbol]
+          :
+          rootState.fundsStore.lpAssets[symbol];
 
         if (asset) {
           for (let farm of tokenFarms) {
