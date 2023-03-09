@@ -15,11 +15,11 @@ export default class StakedExternalUpdateService {
     });
   }
 
-  emitExternalStakedBalancesPerFarmUpdate(assetSymbol, protocol, stakedBalance, receiptTokenBalance) {
-    console.log('emitting total staked per farm update: ', assetSymbol, protocol, stakedBalance, receiptTokenBalance);
+  emitExternalStakedBalancesPerFarmUpdate(assetSymbol, protocolIdentifier, stakedBalance, receiptTokenBalance) {
+    console.log('emitting total staked per farm update: ', assetSymbol, protocolIdentifier, stakedBalance, receiptTokenBalance);
     this.stakedPerFarmExternalUpdate$.next({
       assetSymbol: assetSymbol,
-      protocol: protocol,
+      protocolIdentifier: protocolIdentifier,
       stakedBalance: stakedBalance,
       receiptTokenBalance: receiptTokenBalance,
     });

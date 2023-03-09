@@ -61,7 +61,8 @@
 
       <div class="table__cell">
         <div class="actions">
-          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate</FlatButton>
+          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate
+          </FlatButton>
           <IconButtonMenuBeta
             class="action"
             v-for="(actionConfig, index) of actionsConfig"
@@ -195,6 +196,7 @@ export default {
           feedSymbol: this.farm.feedSymbol,
           assetSymbol: this.asset.symbol,
           protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
           amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals,
@@ -232,6 +234,7 @@ export default {
           assetSymbol: this.asset.symbol,
           feedSymbol: this.farm.feedSymbol,
           protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
@@ -272,7 +275,9 @@ export default {
 
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
+        // normal token staked
         this.balance = this.farm.totalBalance;
+        // receipt token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         await this.setApy();
@@ -281,7 +286,9 @@ export default {
 
     watchExternalStakedPerFarm() {
       this.stakedExternalUpdateService.observeExternalStakedBalancesPerFarmUpdate().subscribe(stakedBalancesPerFarmUpdate => {
-        if (this.asset.symbol === stakedBalancesPerFarmUpdate.assetSymbol && this.farm.protocol === stakedBalancesPerFarmUpdate.protocol) {
+        console.log(this.farm.protocolIdentifier);
+        if (this.farm.protocolIdentifier === stakedBalancesPerFarmUpdate.protocolIdentifier) {
+          console.log('found farm', this.farm.protocolIdentifier);
           this.receiptTokenBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.farm.totalBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.underlyingTokenStaked = stakedBalancesPerFarmUpdate.stakedBalance;
@@ -380,11 +387,15 @@ export default {
       modalInstance.tokenSymbol = this.farm.token;
 
       const migrateRequest = {
-        migrateMethod: this.farm.migrateMethod
-      }
+        migrateMethod: this.farm.migrateMethod,
+        decimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+        assetSymbol: this.asset.symbol,
+        protocolIdentifier: this.farm.protocolIdentifier
+      };
 
       modalInstance.$on('MIGRATE', () => {
         this.handleTransaction(this.migrateToAutoCompoundingPool, {migrateRequest: migrateRequest}, () => {
+          this.rewards = 0;
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
