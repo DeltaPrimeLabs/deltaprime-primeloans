@@ -675,7 +675,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'vectorStakeSAVAX1Auto',
                 'vectorUnstakeSAVAX1Auto',
                 'vectorSAVAX1BalanceAuto',
-                'vectorMigrateUsdc',
                 'vectorMigrateAvax',
                 'vectorMigrateSAvax'
             ],

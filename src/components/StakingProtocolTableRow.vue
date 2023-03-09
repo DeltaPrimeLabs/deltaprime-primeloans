@@ -61,7 +61,7 @@
 
       <div class="table__cell">
         <div class="actions">
-          <FlatButton :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate</FlatButton>
+          <FlatButton v-if="farm.showMigrateButton" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate</FlatButton>
           <IconButtonMenuBeta
             class="action"
             v-for="(actionConfig, index) of actionsConfig"
