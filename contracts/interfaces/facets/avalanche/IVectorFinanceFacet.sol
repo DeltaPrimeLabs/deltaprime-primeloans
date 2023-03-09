@@ -22,4 +22,14 @@ interface IVectorFinanceFacet {
     function vectorMigrateAvax() external;
 
     function vectorMigrateSAvax() external;
+
+    /**
+        * @dev emitted when user stakes an asset
+        * @param user the address executing staking
+        * @param asset the asset that was staked
+        * @param vault address of receipt token
+        * @param migratedAmount how much of receipt token was migrated
+        * @param timestamp of staking
+    **/
+    event Migrated(address indexed user, bytes32 indexed asset, address indexed vault, uint256 migratedAmount, uint256 timestamp);
 }
