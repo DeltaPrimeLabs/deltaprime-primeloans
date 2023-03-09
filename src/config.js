@@ -95,6 +95,7 @@ export default {
         AVAX: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: async () => yieldYakApy('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95'),
                 balance: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakingContractAddress: '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95',
@@ -137,8 +138,8 @@ export default {
                 apy: async () => vectorFinanceApy('AVAX'),
                 balance: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
                 stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
-                stakeMethod: 'vectorStakeWAVAX1',
-                unstakeMethod: 'vectorUnstakeWAVAX1',
+                stakeMethod: 'vectorStakeWAVAX1Auto',
+                unstakeMethod: 'vectorUnstakeWAVAX1Auto',
                 minAmount: 0.8,
                 token: 'AVAX',
                 isTokenLp: false,
@@ -154,6 +155,7 @@ export default {
         sAVAX: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: async () => yieldYakApy('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'),
                 balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakingContractAddress: '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977',
@@ -187,7 +189,8 @@ export default {
                 strategy: 'Platypus',
                 refreshDelay: 60000,
                 gasStake: 8000000,
-                gasUnstake: 8000000
+                gasUnstake: 8000000,
+                showMigrateButton: true,
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -255,6 +258,7 @@ export default {
         PNG_AVAX_USDC_LP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656'),
                 balance: (address) => yieldYakBalance('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656', address),
                 stakingContractAddress: '0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656',
@@ -274,6 +278,7 @@ export default {
         PNG_AVAX_ETH_LP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xFCD2050E213cC54db2c9c99632AC870574FbC261'),
                 balance: (address) => yieldYakBalance('0xFCD2050E213cC54db2c9c99632AC870574FbC261', address),
                 stakingContractAddress: '0xFCD2050E213cC54db2c9c99632AC870574FbC261',
@@ -293,6 +298,7 @@ export default {
         TJ_AVAX_USDC_LP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC'),
                 balance: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakingContractAddress: '0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC',
@@ -312,6 +318,7 @@ export default {
         TJ_AVAX_ETH_LP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0x5219558ee591b030E075892acc41334A1694fd8A'),
                 balance: (address) => yieldYakBalance('0x5219558ee591b030E075892acc41334A1694fd8A', address),
                 stakingContractAddress: '0x5219558ee591b030E075892acc41334A1694fd8A',
@@ -331,6 +338,7 @@ export default {
         TJ_AVAX_sAVAX_LP: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56'),
                 balance: (address) => yieldYakBalance('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56', address),
                 stakingContractAddress: '0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56',
