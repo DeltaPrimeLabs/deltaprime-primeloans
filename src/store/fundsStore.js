@@ -225,13 +225,13 @@ export default {
         }
       );
 
-      await redstone.getPrice(Object.keys(assets)).then(prices => {
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
         Object.keys(assets).forEach(assetSymbol => {
-          assets[assetSymbol].price = prices[assetSymbol].value;
+            assets[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
         });
-      });
       commit('setAssets', assets);
-      console.log('set assets')
 
       rootState.serviceRegistry.priceService.emitRefreshPrices();
     },
@@ -248,13 +248,15 @@ export default {
         }
       );
 
-      await redstone.getPrice(Object.keys(lpTokens)).then(prices => {
-        Object.keys(lpTokens).forEach(async assetSymbol => {
-          lpTokens[assetSymbol].price = prices[assetSymbol].value;
-          lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].getApy();
-          lpService.emitRefreshLp();
-        });
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].getApy();
+        lpService.emitRefreshLp();
       });
+
       commit('setLpAssets', lpTokens);
     },
 
