@@ -2,10 +2,13 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
+import "./IVectorFinanceCompounder.sol";
 import "./IVectorRewarder.sol";
 
 interface IVectorFinanceStaking {
     function balance(address account) external view returns (uint256);
+
+    function compounder() external view returns (IVectorFinanceCompounder);
 
     function withdraw(uint256 amount, uint256 minAmount) external;
 

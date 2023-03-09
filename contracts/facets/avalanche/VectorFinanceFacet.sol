@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: bdee015765a0dd3731205df659aae576d57dd473;
+// Last deployed from commit: b3c868b6e0064e1f95c0918de156437d0ec26c80;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -22,85 +22,107 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // PUBLIC FUNCTIONS
 
-    function vectorStakeUSDC1(uint256 amount) public {
+    function vectorStakeUSDC1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol: "USDC",
-            identifier: "VF_USDC_MAIN",
-            balanceSelector: this.vectorUSDC1Balance.selector,
-            unstakeSelector: this.vectorUnstakeUSDC1.selector
+            asset : 0x06f01502327De1c37076Bea4689a7e44279155e9,
+            symbol : "USDC",
+            identifier : "VF_USDC_MAIN_AUTO",
+            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
-            symbol: "USDC",
-            identifier: "VF_USDC_MAIN",
-            balanceSelector: this.vectorUSDC1Balance.selector,
-            unstakeSelector: this.vectorUnstakeUSDC1.selector
+            asset : 0x06f01502327De1c37076Bea4689a7e44279155e9,
+            symbol : "USDC",
+            identifier : "VF_USDC_MAIN_AUTO",
+            balanceSelector : this.vectorUSDC1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E));
-        _stakedBalance = stakingContract.balance(address(this));
+    function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9).compounder();
+        _stakedBalance = compounder.depositTracking(address(this));
     }
 
-    function vectorStakeWAVAX1(uint256 amount) public {
+    function vectorStakeWAVAX1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
-            symbol: "AVAX",
-            identifier: "VF_AVAX_SAVAX",
-            balanceSelector: this.vectorWAVAX1Balance.selector,
-            unstakeSelector: this.vectorUnstakeWAVAX1.selector
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeWAVAX1(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
-            symbol: "AVAX",
-            identifier: "VF_AVAX_SAVAX",
-            balanceSelector: this.vectorWAVAX1Balance.selector,
-            unstakeSelector: this.vectorUnstakeWAVAX1.selector
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorWAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7));
-        _stakedBalance = stakingContract.balance(address(this));
+    function vectorWAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).compounder();
+        _stakedBalance = compounder.depositTracking(address(this));
     }
 
-    function vectorStakeSAVAX1(uint256 amount) public {
+    function vectorStakeSAVAX1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
-            symbol: "sAVAX",
-            identifier: "VF_SAVAX_MAIN",
-            balanceSelector: this.vectorSAVAX1Balance.selector,
-            unstakeSelector: this.vectorUnstakeSAVAX1.selector
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeSAVAX1(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
-            symbol: "sAVAX",
-            identifier: "VF_SAVAX_MAIN",
-            balanceSelector: this.vectorSAVAX1Balance.selector,
-            unstakeSelector: this.vectorUnstakeSAVAX1.selector
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
     }
 
-    function vectorSAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE));
-        _stakedBalance = stakingContract.balance(address(this));
+    function vectorSAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
+        _stakedBalance = compounder.depositTracking(address(this));
+    }
+
+    function vectorMigrateAvax() public {
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
+            symbol : "AVAX",
+            identifier : "VF_AVAX_SAVAX_AUTO",
+            balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
+        });
+        require(migrateStake(position, "VF_AVAX_SAVAX") > 0, "Cannot migrate 0 tokens");
+    }
+
+    function vectorMigrateSAvax() public {
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
+            symbol : "sAVAX",
+            identifier : "VF_SAVAX_MAIN_AUTO",
+            balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
+        });
+        require(migrateStake(position, "VF_SAVAX_MAIN") > 0, "Cannot migrate 0 tokens");
     }
 
     // INTERNAL FUNCTIONS
@@ -108,17 +130,17 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * @dev This function uses the redstone-evm-connector
     **/
     function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
-        IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
+    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
-        uint256 initialReceiptTokenBalance = poolHelper.balance(address(this));
+        uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
         amount = Math.min(stakedToken.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot stake 0 tokens");
 
-        stakedToken.approve(VectorMainStaking, amount);
+        stakedToken.approve(address(compounder), amount);
 
-        poolHelper.deposit(amount);
+        compounder.deposit(amount);
 
         DiamondStorageLib.addStakedPosition(position);
 
@@ -129,9 +151,9 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit Staked(
             msg.sender,
             position.symbol,
-            address(poolHelper),
+            address(compounder),
             amount,
-            poolHelper.balance(address(this)) - initialReceiptTokenBalance,
+            compounder.balanceOf(address(this)) - initialReceiptTokenBalance,
             block.timestamp
         );
     }
@@ -144,20 +166,21 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     **/
     function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
     onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
-        IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
+        uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        amount = Math.min(poolHelper.balance(address(this)), amount);
+        amount = Math.min(compounder.depositTracking(address(this)), amount);
 
         uint256 balance = unstakedToken.balanceOf(address(this));
 
-        poolHelper.withdraw(amount, minAmount);
+        compounder.withdraw(amount, minAmount);
 
         uint256 newBalance = unstakedToken.balanceOf(address(this));
 
-        if (poolHelper.balance(address(this)) == 0) {
+        if (compounder.depositTracking(address(this)) == 0) {
             DiamondStorageLib.removeStakedPosition(position.identifier);
         }
         DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
@@ -165,44 +188,42 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit Unstaked(
             msg.sender,
             position.symbol,
-            address(poolHelper),
+            address(compounder),
             newBalance - balance,
-            amount,
+            initialReceiptTokenBalance - compounder.balanceOf(address(this)),
             block.timestamp
         );
-
-        _handleRewards(poolHelper);
 
         return newBalance - balance;
     }
 
-    function _handleRewards(IVectorFinanceStaking stakingContract) internal {
-        IVectorRewarder rewarder = stakingContract.rewarder();
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        uint256 index;
+    /**
+     * @notice Withdraws all previous balance from the pool helper, and deposits into the compounder.
+     */
+    function migrateStake(IStakingPositions.StakedPosition memory position, bytes32 oldIdentifier) internal
+    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
+        IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
+        IVectorFinanceCompounder compounder = poolHelper.compounder();
 
-        // We do not want to revert in case of unsupported rewardTokens in order not to block the unstaking/liquidation process
-        while(true) {
-            // No access to the length of rewardTokens[]. Need to iterate until indexOutOfRange
-            (bool success, bytes memory result) = address(rewarder).call(abi.encodeWithSignature("rewardTokens(uint256)", index));
-            if(!success) {
-                break;
-            }
-            address rewardToken = abi.decode(result, (address));
-            bytes32 rewardTokenSymbol = tokenManager.tokenAddressToSymbol(rewardToken);
-            if(rewardTokenSymbol == "") {
-                emit UnsupportedRewardToken(msg.sender, rewardToken, block.timestamp);
-                index += 1;
-                continue;
-            }
-            if(IERC20(rewardToken).balanceOf(address(this)) > 0) {
-                DiamondStorageLib.addOwnedAsset(rewardTokenSymbol, rewardToken);
-            }
-            index += 1;
+        migrated = poolHelper.balance(address(this));
+        if (migrated > 0) {
+            compounder.migrateAllUserDepositsFromManual();
+
+            DiamondStorageLib.removeStakedPosition(oldIdentifier);
+
+            DiamondStorageLib.addStakedPosition(position);
+
+            emit Migrated(
+                msg.sender,
+                position.symbol,
+                address(compounder),
+                migrated,
+                block.timestamp
+            );
         }
     }
 
-    function getAssetPoolHelper(address asset) internal view returns(IVectorFinanceStaking){
+    function getAssetPoolHelper(address asset) internal view returns (IVectorFinanceStaking){
         IVectorFinanceMainStaking mainStaking = IVectorFinanceMainStaking(VectorMainStaking);
         return IVectorFinanceStaking(mainStaking.getPoolInfo(asset).helper);
     }
@@ -239,10 +260,12 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
-        * @dev emitted when user collects rewards in tokens that are not supported
-        * @param user the address collecting rewards
-        * @param asset reward token that was collected
-        * @param timestamp of collecting rewards
+        * @dev emitted when user stakes an asset
+        * @param user the address executing staking
+        * @param asset the asset that was staked
+        * @param vault address of receipt token
+        * @param migratedAmount how much of receipt token was migrated
+        * @param timestamp of staking
     **/
-    event UnsupportedRewardToken(address indexed user, address indexed asset, uint256 timestamp);
+    event Migrated(address indexed user, bytes32 indexed asset, address indexed vault, uint256 migratedAmount, uint256 timestamp);
 }
