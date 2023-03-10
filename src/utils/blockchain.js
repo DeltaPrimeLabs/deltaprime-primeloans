@@ -26,10 +26,14 @@ export const wrapContract = async function wrapContract(contract, assets) {
 
 export async function handleTransaction(fun, args, onSuccess, onFail) {
   try {
-    const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
-    if (tx) {
-      await provider.waitForTransaction(tx.hash);
-    }
+    const isExpectedToFail = Array.isArray(args) ? await fun(...args) : await fun(args);
+
+    console.log(isExpectedToFail);
+    if (isExpectedToFail) return isExpectedToFail;
+
+    // if (tx) {
+    //   await provider.waitForTransaction(tx.hash);
+    // }
 
     if (onSuccess) {
       console.log('BLOCKCHAIN.js onSuccess');
@@ -127,7 +131,7 @@ export function isPausedError(e) {
 
 export function isOracleError(e) {
   const ORACLE_ERROR = '0x2b13aef500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003';
-  return e.data && e.data.data && e.data.data.includes(ORACLE_ERROR);
+  return e.data && e.data.data && e.data.data.message.includes(ORACLE_ERROR);
 }
 
 export async function signMessage(provider, message, wallet, depositor = false) {

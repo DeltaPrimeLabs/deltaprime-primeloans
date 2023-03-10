@@ -669,7 +669,7 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
+    async fundNativeToken({state, rootState, commit, dispatch}, {value, isCallStatic}) {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -678,6 +678,17 @@ export default {
         Object.keys(config.POOLS_CONFIG),
         [config.nativeToken]
       ]);
+
+      console.log(isCallStatic);
+      if (isCallStatic) {
+        console.log('calling function through callStatic...')
+        const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.depositNativeToken({
+          value: toWei(String(value)),
+          gasLimit: 20000
+        });
+        console.log(tx);
+        if (tx.length != 0) return true;
+      }
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
@@ -1019,7 +1030,7 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async swap({state, rootState, commit, dispatch}, {swapRequest}) {
+    async swap({state, rootState, commit, dispatch}, {swapRequest, isCallStatic}) {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1030,10 +1041,24 @@ export default {
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      let sourceAmount = parseUnits(parseFloat('0').toFixed(sourceDecimals), sourceDecimals);
 
       let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
       let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
+
+      console.log(isCallStatic);
+      if (isCallStatic) {
+        console.log('calling function through callStatic...')
+        const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.yakSwap(
+          sourceAmount,
+          targetAmount,
+          swapRequest.path,
+          swapRequest.adapters,
+          {gasLimit: 4000000}
+        );
+        console.log(tx);
+        if (tx.length != 0) return true;
+      }
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).yakSwap(
         sourceAmount,

@@ -159,6 +159,7 @@ export default {
       disableAllButtons: false,
       borrowApyPerPool: {},
       healthLoaded: false,
+      isStaticCalled: null,
     };
   },
   computed: {
@@ -443,11 +444,22 @@ export default {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
-        this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+        this.handleTransaction(this.swap, {
+          swapRequest: swapRequest,
+          isCallStatic: !this.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          // the transaction is expected to fail
+          if (isExpectedToFail) {
+            this.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            this.isStaticCalled = false;
+          }
         });
       });
     },
@@ -502,12 +514,23 @@ export default {
             }
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
-              this.handleTransaction(this.fundNativeToken, {value: value}, () => {
+              this.handleTransaction(this.fundNativeToken, {
+                value: value,
+                isCallStatic: !this.isStaticCalled,
+              }, () => {
                 this.$forceUpdate();
               }, (error) => {
                 console.log(error);
                 this.handleTransactionError(error);
-              }).then(() => {
+              }).then((isExpectedToFail) => {
+                // the transaction is expected to fail
+                if (isExpectedToFail) {
+                  this.isStaticCalled = true;
+                  modalInstance.transactionOngoing = false;
+                } else {
+                  console.log("transaction finished.")
+                  this.isStaticCalled = false;
+                }
               });
             } else {
               const fundRequest = {
