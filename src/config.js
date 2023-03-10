@@ -255,7 +255,7 @@ export default {
                 minAmount: 0.8,
                 token: 'USDC',
                 isTokenLp: false,
-                debtCoverage: 0,
+                debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
                 refreshDelay: 60000,
