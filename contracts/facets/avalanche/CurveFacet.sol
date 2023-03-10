@@ -23,21 +23,21 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     bytes32 private constant CURVE_TOKEN_SYMBOL = "crvUSDBTCETH";
 
     // Tokens
-    address private constant DAI_TOKEN = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
-    address private constant USDCE_TOKEN = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
-    address private constant USDT_TOKEN = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
-    address private constant WBTC_TOKEN = 0x50b7545627a5162F82A992c33b87aDc75187B218;
+    address private constant DAIe_TOKEN = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
+    address private constant USDCe_TOKEN = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
+    address private constant USDTe_TOKEN = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
+    address private constant WBTCe_TOKEN = 0x50b7545627a5162F82A992c33b87aDc75187B218;
     address private constant ETH_TOKEN = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
 
     /**
      * Stakes DAI.e in Curve atricrypto pool
      * @param amount amount of DAI.e to be staked
      **/
-    function stakeDAIYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+    function stakeDAICurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         _stakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 0,
-            tokenAddress: DAI_TOKEN,
-            tokenSymbol: "DAI",
+            tokenAddress: DAIe_TOKEN,
+            tokenSymbol: "DAIe",
             amount: amount
         }));
     }
@@ -46,11 +46,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes DAI.e from Curve atricrypto pool
      * @param amount amount of DAI.e to be unstaked
      **/
-    function unstakeDAIYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
-        _stakeTokenCurve(ICurvePool.CurveStakingDetails({
+    function unstakeDAICurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+        _unstakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 0,
-            tokenAddress: DAI_TOKEN,
-            tokenSymbol: "DAI",
+            tokenAddress: DAIe_TOKEN,
+            tokenSymbol: "DAIe",
             amount: amount
         }));
     }
@@ -59,11 +59,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes USDC.e in Curve atricrypto pool
      * @param amount amount of USDC.e to be staked
      **/
-    function stakeUSDCEYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+    function stakeUSDCCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         _stakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 1,
-            tokenAddress: USDCE_TOKEN,
-            tokenSymbol: "USDCE",
+            tokenAddress: USDCe_TOKEN,
+            tokenSymbol: "USDCe",
             amount: amount
         }));
     }
@@ -72,11 +72,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes USDC.e from Curve atricrypto pool
      * @param amount amount of USDC.e to be unstaked
      **/
-    function unstakeUSDCEYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
-        _stakeTokenCurve(ICurvePool.CurveStakingDetails({
+    function unstakeUSDCCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+        _unstakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 1,
-            tokenAddress: USDCE_TOKEN,
-            tokenSymbol: "USDCE",
+            tokenAddress: USDCe_TOKEN,
+            tokenSymbol: "USDCe",
             amount: amount
         }));
     }
@@ -85,11 +85,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes USDT.e in Curve atricrypto pool
      * @param amount amount of USDT.e to be staked
      **/
-    function stakeUSDTYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+    function stakeUSDTCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         _stakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 2,
-            tokenAddress: USDT_TOKEN,
-            tokenSymbol: "USDT",
+            tokenAddress: USDTe_TOKEN,
+            tokenSymbol: "USDTe",
             amount: amount
         }));
     }
@@ -98,11 +98,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes USDT.e from Curve atricrypto pool
      * @param amount amount of USDT.e to be unstaked
      **/
-    function unstakeUSDTYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
-        _stakeTokenCurve(ICurvePool.CurveStakingDetails({
+    function unstakeUSDTCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+        _unstakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 2,
-            tokenAddress: USDT_TOKEN,
-            tokenSymbol: "USDT",
+            tokenAddress: USDTe_TOKEN,
+            tokenSymbol: "USDTe",
             amount: amount
         }));
     }
@@ -111,11 +111,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes WBTC.e in Curve atricrypto pool
      * @param amount amount of WBTC.e to be staked
      **/
-    function stakeWBTCYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+    function stakeWBTCCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         _stakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 3,
-            tokenAddress: WBTC_TOKEN,
-            tokenSymbol: "WBTC",
+            tokenAddress: WBTCe_TOKEN,
+            tokenSymbol: "WBTCe",
             amount: amount
         }));
     }
@@ -124,11 +124,11 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes WBTC.e from Curve atricrypto pool
      * @param amount amount of WBTC.e to be unstaked
      **/
-    function unstakeWBTCYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
-        _stakeTokenCurve(ICurvePool.CurveStakingDetails({
+    function unstakeWBTCCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+        _unstakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 3,
-            tokenAddress: WBTC_TOKEN,
-            tokenSymbol: "WBTC",
+            tokenAddress: WBTCe_TOKEN,
+            tokenSymbol: "WBTCe",
             amount: amount
         }));
     }
@@ -137,7 +137,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes WETH.e in Curve atricrypto pool
      * @param amount amount of WETH.e to be staked
      **/
-    function stakeETHYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+    function stakeETHCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         _stakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 4,
             tokenAddress: ETH_TOKEN,
@@ -150,8 +150,8 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes WETH.e from Curve atricrypto pool
      * @param amount amount of WETH.e to be unstaked
      **/
-    function unstakeETHYak(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
-        _stakeTokenCurve(ICurvePool.CurveStakingDetails({
+    function unstakeETHCurve(uint256 amount) external nonReentrant onlyOwner remainsSolvent {
+        _unstakeTokenCurve(ICurvePool.CurveStakingDetails({
             tokenIndex: 4,
             tokenAddress: ETH_TOKEN,
             tokenSymbol: "ETH",
@@ -206,7 +206,9 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, stakingDetails.tokenIndex);
         stakingDetails.amount = Math.min(maxWithdrawAmount, stakingDetails.amount);
 
-        pool.remove_liquidity_one_coin(curveTokenBalance * stakingDetails.amount / maxWithdrawAmount, stakingDetails.tokenIndex, 0);
+        uint256 burnAmount = curveTokenBalance * stakingDetails.amount / maxWithdrawAmount;
+        curveToken.approve(CURVE_POOL_ADDRESS, burnAmount);
+        pool.remove_liquidity_one_coin(burnAmount, stakingDetails.tokenIndex, 0);
 
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(stakingDetails.tokenSymbol, stakingDetails.tokenAddress);
