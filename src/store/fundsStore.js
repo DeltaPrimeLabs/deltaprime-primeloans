@@ -684,7 +684,7 @@ export default {
         console.log('calling function through callStatic...')
         const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.depositNativeToken({
           value: toWei(String(value)),
-          gasLimit: 20000
+          gasLimit: 500000
         });
         console.log(tx);
         if (tx.length != 0) return true;
