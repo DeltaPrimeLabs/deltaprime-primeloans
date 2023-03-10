@@ -242,6 +242,26 @@ export default {
                 gasStake: 8000000,
                 gasUnstake: 8000000
             },
+            {
+                protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_USDC_MAIN_AUTO',
+                autoCompounding: true,
+                //TODO: check if it's a right APY
+                apy: () => vectorFinanceApy('USDC'),
+                stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
+                stakeMethod: 'vectorStakeUSDC1Auto',
+                unstakeMethod: 'vectorUnstakeUSDC1Auto',
+                balanceMethod: 'vectorUSDC1BalanceAuto',
+                minAmount: 0.8,
+                token: 'USDC',
+                isTokenLp: false,
+                debtCoverage: 0,
+                rewardTokens: ['PTP'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
+            },
         ],
         GLP: [
             {

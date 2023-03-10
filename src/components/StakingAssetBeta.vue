@@ -220,7 +220,7 @@ export default {
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
-            heightOfRows += 75;
+            heightOfRows += 88;
           } else {
             heightOfRows += 62;
           }
