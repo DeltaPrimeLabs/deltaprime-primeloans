@@ -61,7 +61,7 @@
 
       <div class="table__cell">
         <div class="actions">
-          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate
+          <FlatButton v-if="farm.migrateMethod" :tooltip="'Migrates assets from the manual pool to the autocompounding pool'" v-on:buttonClick="migrateButtonClick()">Migrate
           </FlatButton>
           <IconButtonMenuBeta
             class="action"
