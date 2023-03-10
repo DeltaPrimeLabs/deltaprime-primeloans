@@ -149,6 +149,11 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   let totalEarned = 0;
 
   let iterate = true;
+
+  //TODO: get prices from store
+  const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+  const redstonePriceData = await redstonePriceDataRequest.json();
+
   while (iterate) {
     try {
       let tokenAddress = await rewarderContract.rewardTokens(i);
@@ -157,9 +162,8 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
       let earned = formatUnits(await rewarderContract.earned(loanAddress, tokenAddress), await tokenContract.decimals());
 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
-
-      //TODO: get prices from store
-      let price = (await redstone.getPrice(token[0])).value;
+      
+      let price = redstonePriceData[token[0]][0].dataPoints[0].value;
 
       totalEarned += price * earned;
     } catch (e) {

@@ -95,6 +95,8 @@ export default {
         AVAX: [
             {
                 protocol: 'YIELD_YAK',
+                autoCompounding: true,
+                protocolIdentifier: 'YY_AAVE_AVAX',
                 apy: async () => yieldYakApy('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95'),
                 balance: async (address) => yieldYakBalance('0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95', address),
                 stakingContractAddress: '0xaAc0F2d0630d1D09ab2B5A400412a4840B866d95',
@@ -114,15 +116,38 @@ export default {
             },
             {
                 protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_AVAX_SAVAX',
                 apy: async () => vectorFinanceApy('AVAX'),
                 balance: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
                 stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
                 stakeMethod: 'vectorStakeWAVAX1',
                 unstakeMethod: 'vectorUnstakeWAVAX1',
+                migrateMethod: 'vectorMigrateAvax',
+                migrateToProtocolIdentifier: 'VF_AVAX_SAVAX_AUTO',
                 minAmount: 0.8,
                 token: 'AVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000,
+            },
+            {
+                protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_AVAX_SAVAX_AUTO',
+                autoCompounding: true,
+                apy: async () => vectorFinanceApy('AVAX'),
+                stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
+                balanceMethod: 'vectorWAVAX1BalanceAuto',
+                stakeMethod: 'vectorStakeWAVAX1Auto',
+                unstakeMethod: 'vectorUnstakeWAVAX1Auto',
+                minAmount: 0.8,
+                token: 'AVAX',
+                isTokenLp: false,
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
@@ -134,9 +159,11 @@ export default {
         sAVAX: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_PTP_sAVAX',
+                autoCompounding: true,
                 apy: async () => yieldYakApy('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'),
-                balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakingContractAddress: '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977',
+                balanceMethod: 'vectorSAVAX1BalanceAuto',
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
                 feedSymbol: 'YY_PTP_sAVAX',
@@ -153,15 +180,39 @@ export default {
             },
             {
                 protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_SAVAX_MAIN',
                 apy: () => vectorFinanceApy('SAVAX'),
                 balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
                 stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
                 stakeMethod: 'vectorStakeSAVAX1',
                 unstakeMethod: 'vectorUnstakeSAVAX1',
+                migrateMethod: 'vectorMigrateSAvax',
+                migrateToProtocolIdentifier: 'VF_SAVAX_MAIN_AUTO',
                 minAmount: 0.8,
                 token: 'sAVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['PTP', 'QI'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000,
+            },
+            {
+                protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_SAVAX_MAIN_AUTO',
+                autoCompounding: true,
+                apy: () => vectorFinanceApy('SAVAX'),
+                balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
+                stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
+                stakeMethod: 'vectorStakeSAVAX1Auto',
+                unstakeMethod: 'vectorUnstakeSAVAX1Auto',
+                balanceMethod: 'vectorSAVAX1BalanceAuto',
+                minAmount: 0.8,
+                token: 'sAVAX',
+                isTokenLp: false,
+                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
@@ -173,6 +224,7 @@ export default {
         USDC: [
             {
                 protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_USDC_MAIN',
                 //TODO: check if it's a right APY
                 apy: () => vectorFinanceApy('USDC'),
                 balance: (address) => vectorFinanceBalance('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
@@ -194,6 +246,8 @@ export default {
         GLP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_GLP',
+                autoCompounding: true,
                 //TODO: check if it's a right APY
                 apy: () => yieldYakApy('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C'),
                 balance: async (address) => yieldYakBalance('0x9f637540149f922145c06e1aa3f38dcDc32Aff5C', address),
@@ -215,6 +269,8 @@ export default {
         PNG_AVAX_USDC_LP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_PNG_AVAX_USDC_LP',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656'),
                 balance: (address) => yieldYakBalance('0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656', address),
                 stakingContractAddress: '0xC0cd58661b68e10b49D3Bec4bC5E44e7A7c20656',
@@ -234,6 +290,8 @@ export default {
         PNG_AVAX_ETH_LP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_PNG_AVAX_ETH_LP',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xFCD2050E213cC54db2c9c99632AC870574FbC261'),
                 balance: (address) => yieldYakBalance('0xFCD2050E213cC54db2c9c99632AC870574FbC261', address),
                 stakingContractAddress: '0xFCD2050E213cC54db2c9c99632AC870574FbC261',
@@ -253,6 +311,8 @@ export default {
         TJ_AVAX_USDC_LP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_TJ_AVAX_USDC_LP',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC'),
                 balance: (address) => yieldYakBalance('0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC', address),
                 stakingContractAddress: '0xDEf94a13fF31FB6363f1e03bF18fe0F59Db83BBC',
@@ -272,6 +332,8 @@ export default {
         TJ_AVAX_ETH_LP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_TJ_AVAX_ETH_LP',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0x5219558ee591b030E075892acc41334A1694fd8A'),
                 balance: (address) => yieldYakBalance('0x5219558ee591b030E075892acc41334A1694fd8A', address),
                 stakingContractAddress: '0x5219558ee591b030E075892acc41334A1694fd8A',
@@ -291,6 +353,8 @@ export default {
         TJ_AVAX_sAVAX_LP: [
             {
                 protocol: 'YIELD_YAK',
+                protocolIdentifier: 'YY_TJ_AVAX_sAVAX_LP',
+                autoCompounding: true,
                 apy: () => yieldYakApy('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56'),
                 balance: (address) => yieldYakBalance('0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56', address),
                 stakingContractAddress: '0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56',

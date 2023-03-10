@@ -1,7 +1,8 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
 
-    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits and withdrawals from Platypus main pool have been temporarily disabled. Read more in our
+    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits and withdrawals from Platypus main pool have been
+      temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
 
@@ -34,19 +35,20 @@
       </div>
 
       <div class="table__cell rewards__cell">
-        <div class="reward__icons">
-          <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens"
-               :src="logoSrc(token)">
-        </div>
-        <div class="double-value">
-          <div class="double-value__pieces">
-            {{ rewards | usd }}
+        <div class="rewards__wrapper" v-if="!farm.autoCompounding">
+          <div class="reward__icons">
+            <img class="reward__asset__icon" v-if="farm.rewardTokens" v-for="token of farm.rewardTokens"
+                 :src="logoSrc(token)">
           </div>
-        </div>
-        <img v-if="farm.rewardsInfo"
-             class="info__icon"
-             src="src/assets/icons/info.svg"
-             v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}">
+          <div class="double-value">
+            <div class="double-value__pieces">
+              {{ rewards | usd }}
+            </div>
+          </div>
+          <img v-if="farm.rewardsInfo"
+               class="info__icon"
+               src="src/assets/icons/info.svg"
+               v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"></div>
       </div>
 
       <div class="table__cell">
@@ -59,6 +61,8 @@
 
       <div class="table__cell">
         <div class="actions">
+          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate
+          </FlatButton>
           <IconButtonMenuBeta
             class="action"
             v-for="(actionConfig, index) of actionsConfig"
@@ -81,12 +85,14 @@ import {mapState, mapActions} from 'vuex';
 import config from '../config';
 import {calculateMaxApy} from '../utils/calculate';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
+import FlatButton from './FlatButton';
+import MigrateModal from './MigrateModal';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'StakingProtocolTableRow',
-  components: {IconButtonMenuBeta},
+  components: {FlatButton, IconButtonMenuBeta},
   props: {
     farm: {
       required: true,
@@ -157,7 +163,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('stakeStore', ['stake', 'unstake']),
+    ...mapActions('stakeStore', ['stake', 'unstake', 'migrateToAutoCompoundingPool']),
 
     actionClick(key) {
       switch (key) {
@@ -190,6 +196,7 @@ export default {
           feedSymbol: this.farm.feedSymbol,
           assetSymbol: this.asset.symbol,
           protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
           amount: stakeValue.toString(),
           method: this.farm.stakeMethod,
           decimals: this.asset.decimals,
@@ -227,6 +234,7 @@ export default {
           assetSymbol: this.asset.symbol,
           feedSymbol: this.farm.feedSymbol,
           protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
           method: this.farm.unstakeMethod,
           decimals: this.asset.decimals,
           gas: this.farm.gasUnstake,
@@ -267,7 +275,9 @@ export default {
 
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
+        // normal token staked
         this.balance = this.farm.totalBalance;
+        // receipt token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         await this.setApy();
@@ -276,7 +286,9 @@ export default {
 
     watchExternalStakedPerFarm() {
       this.stakedExternalUpdateService.observeExternalStakedBalancesPerFarmUpdate().subscribe(stakedBalancesPerFarmUpdate => {
-        if (this.asset.symbol === stakedBalancesPerFarmUpdate.assetSymbol && this.farm.protocol === stakedBalancesPerFarmUpdate.protocol) {
+        console.log(this.farm.protocolIdentifier);
+        if (this.farm.protocolIdentifier === stakedBalancesPerFarmUpdate.protocolIdentifier) {
+          console.log('found farm', this.farm.protocolIdentifier);
           this.receiptTokenBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.farm.totalBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.underlyingTokenStaked = stakedBalancesPerFarmUpdate.stakedBalance;
@@ -363,6 +375,33 @@ export default {
         },
       ];
     },
+
+    migrateButtonClick() {
+      console.log('migrate button click');
+      const modalInstance = this.openModal(MigrateModal);
+      console.log(this.protocol.name);
+      console.log(this.rewards);
+      modalInstance.protocol = this.protocol.name;
+      modalInstance.rewards = this.rewards;
+      modalInstance.farmBalance = this.underlyingTokenStaked;
+      modalInstance.tokenSymbol = this.farm.token;
+
+      const migrateRequest = {
+        migrateMethod: this.farm.migrateMethod,
+        decimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
+        assetSymbol: this.asset.symbol,
+        protocolIdentifier: this.farm.protocolIdentifier
+      };
+
+      modalInstance.$on('MIGRATE', () => {
+        this.handleTransaction(this.migrateToAutoCompoundingPool, {migrateRequest: migrateRequest}, () => {
+          this.rewards = 0;
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        });
+      });
+    }
   }
 };
 </script>
@@ -391,7 +430,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
+    grid-template-columns: 23% 1fr 170px 170px 160px 190px 22px;
     height: 60px;
     padding: 0 6px;
 
@@ -408,8 +447,16 @@ export default {
       }
 
       &.rewards__cell {
-        .info__icon {
-          margin-left: 5px;
+
+        .rewards__wrapper {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-end;
+
+          .info__icon {
+            margin-left: 5px;
+          }
         }
       }
 

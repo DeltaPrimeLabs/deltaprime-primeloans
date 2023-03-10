@@ -66,7 +66,62 @@
 
       <div class="staking-protocols" v-bind:class="{'expanded': tableBodyExpanded}"
            :style="{height: calculateStakingProtocolsHeight}">
-        <div class="options__table">
+
+        <div v-if="autoCompoundingFarms.length > 0" class="compounding__divider">
+          <span class="divider__title">Auto-compounding</span>
+          <img class="info__icon"
+               src="src/assets/icons/info.svg"
+               v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+        </div>
+
+        <div v-if="autoCompoundingFarms.length > 0" class="protocols__table">
+          <div class="table__header">
+            <div class="table__header__cell asset">Asset & protocol</div>
+            <div class="table__header__cell">Staked&nbsp;
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
+            <div class="table__header__cell"></div>
+            <div class="table__header__cell">Min. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
+            <div class="table__header__cell">Max. APY
+              <div class="info__icon__wrapper">
+                <img class="info__icon"
+                     src="src/assets/icons/info.svg"
+                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+              </div>
+            </div>
+            <div class="table__header__cell">Actions</div>
+          </div>
+
+          <div class="table__body">
+            <StakingProtocolTableRow v-for="(farm, index) in autoCompoundingFarms"
+                                     v-bind:key="index"
+                                     :farm="farm"
+                                     :asset="asset"
+                                     v-on:stakedChange="stakedChange">
+            </StakingProtocolTableRow>
+          </div>
+
+        </div>
+
+
+        <div v-if="normalFarms.length > 0" class="compounding__divider">
+          <span class="divider__title">No auto-compounding</span>
+          <img class="info__icon"
+               src="src/assets/icons/info.svg"
+               v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+        </div>
+
+        <div class="protocols__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked&nbsp;
@@ -93,14 +148,16 @@
             </div>
             <div class="table__header__cell">Actions</div>
           </div>
+
           <div class="table__body">
-            <StakingProtocolTableRow v-for="(farm, index) in availableFarms"
+            <StakingProtocolTableRow v-for="(farm, index) in normalFarms"
                                      v-bind:key="index"
                                      :farm="farm"
                                      :asset="asset"
                                      v-on:stakedChange="stakedChange">
             </StakingProtocolTableRow>
           </div>
+
         </div>
       </div>
 
@@ -113,7 +170,7 @@ import StakingProtocolTableRow from './StakingProtocolTableRow';
 import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
-import {calculateMaxApy} from "../utils/calculate";
+import {calculateMaxApy} from '../utils/calculate';
 
 
 export default {
@@ -137,7 +194,9 @@ export default {
       isTotalStakedEstimated: false,
       isAvailableEstimated: false,
       assetBalances: {},
-      lpBalances: {}
+      lpBalances: {},
+      autoCompoundingFarms: [],
+      normalFarms: []
     };
   },
   mounted() {
@@ -163,9 +222,10 @@ export default {
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 75;
           } else {
-            heightOfRows += 60;
+            heightOfRows += 62;
           }
-        })
+          heightOfRows += 40;
+        });
 
         return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;
       }
@@ -197,7 +257,7 @@ export default {
     },
 
     async setupMaxStakingApy() {
-      console.log('setupMaxStakingApy')
+      console.log('setupMaxStakingApy');
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
@@ -224,6 +284,9 @@ export default {
 
     setupAvailableProtocols() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.assetSymbol];
+      console.log(this.availableFarms);
+      this.autoCompoundingFarms = this.availableFarms.filter(farm => farm.autoCompounding);
+      this.normalFarms = this.availableFarms.filter(farm => !farm.autoCompounding);
     },
 
     protocolLogo(protocol) {
@@ -277,7 +340,7 @@ export default {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
         await this.setupMaxStakingApy();
-      })
+      });
     },
   },
   watch: {
@@ -433,19 +496,45 @@ export default {
     .staking-protocols {
       height: 0;
       overflow-y: hidden;
-      border-radius: 32px;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
       transition: height 200ms ease-in-out;
 
       &.expanded {
         height: 233px;
       }
 
-      .options__table {
+      .compounding__divider {
+        background-color: #f5f4ff;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: 32px;
+        padding-left: 26px;
+        border-bottom: 2px solid $delta-light;
+
+        &:not(:first-child) {
+          border-top: 2px solid $delta-light;
+
+        }
+
+        .divider__title {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          font-size: $font-size-sm;
+          font-weight: 500;
+          color: $royal-blue;
+          margin-right: 6px;
+        }
+      }
+
+      .protocols__table {
         padding: 24px 20px 0 20px;
 
         .table__header {
           display: grid;
-          grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
+          grid-template-columns: 23% 1fr 170px 170px 160px 190px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {

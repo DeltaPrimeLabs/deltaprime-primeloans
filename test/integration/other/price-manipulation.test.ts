@@ -76,7 +76,10 @@ describe('Price manipulation test', () => {
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            AVAX_PRICE = (await redstone.getPrice('AVAX', {provider: "redstone-avalanche-prod-1"})).value;
+            const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+            const redstonePriceData = await redstonePriceDataRequest.json();
+
+            AVAX_PRICE = redstonePriceData['AVAX'][0].dataPoints[0].value;
 
             await sut.initialize(pangolinRouterAddress, tokenManager.address, [
                 TOKEN_ADDRESSES['AVAX'],

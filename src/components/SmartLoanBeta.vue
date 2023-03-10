@@ -191,12 +191,15 @@ export default {
         let yesterdayValue = 0;
         const assets = config.ASSETS_CONFIG;
         const assetSymbols = Object.keys(assets);
-        const todayPrices = await redstone.getPrice(assetSymbols);
+
+        const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+        const redstonePriceData = await redstonePriceDataRequest.json();
+
         const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24});
         assetSymbols.forEach((symbol, index) => {
           if (balances[index]) {
             const balance = formatUnits(balances[index].balance, config.ASSETS_CONFIG[symbol].decimals);
-            todayValue += balance * todayPrices[symbol].value;
+            todayValue += balance * redstonePriceData[symbol][0].dataPoints[0].value;
             yesterdayValue += balance * yesterdayPrices[symbol].value;
           }
         });
