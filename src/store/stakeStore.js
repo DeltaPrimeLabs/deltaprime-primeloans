@@ -294,12 +294,13 @@ export default {
 
           if (farm.protocol === 'YIELD_YAK') {
             const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token];
-            const decimals = token.decimals;
-            farm.totalStaked = formatUnits(stakedInYieldYak[farm.feedSymbol], decimals);
 
             console.log('-------------------');
             console.log('token: ', farm.token);
             const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+
+            farm.totalStaked = maxUnstaked;
+
             console.log('maxUnstaked: ', maxUnstaked);
             console.log('totalStaked: ', farm.totalStaked);
             farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
