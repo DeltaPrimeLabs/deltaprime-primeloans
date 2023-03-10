@@ -300,7 +300,6 @@ export default {
             const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
 
             farm.totalStaked = maxUnstaked;
-            farm.totalBalance = maxUnstaked;
 
             console.log('maxUnstaked: ', maxUnstaked);
             console.log('totalStaked: ', farm.totalStaked);
