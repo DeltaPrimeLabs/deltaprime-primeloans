@@ -247,7 +247,7 @@ export default {
                 protocolIdentifier: 'VF_USDC_MAIN_AUTO',
                 autoCompounding: true,
                 //TODO: check if it's a right APY
-                apy: () => vectorFinanceApy('USDC'),
+                apy: () => 0.108,
                 stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
                 stakeMethod: 'vectorStakeUSDC1Auto',
                 unstakeMethod: 'vectorUnstakeUSDC1Auto',
