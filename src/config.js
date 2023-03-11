@@ -8,6 +8,7 @@ import {
 } from "./utils/calculate";
 import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
+import USDT_POOL_TUP from '@contracts/UsdtPoolTUP.json';
 import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
 import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
@@ -43,6 +44,10 @@ export default {
         USDC: {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
+        },
+        USDT: {
+            address: USDT_POOL_TUP.address,
+            tokenAddress: addresses.USDT
         },
         BTC: {
             address: BTC_POOL_TUP.address,
