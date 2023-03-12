@@ -16,7 +16,7 @@
                 <div class="header__cell actions">Actions</div>
               </div>
               <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in poolsList" v-if="pool.asset.symbol !== 'USDT'" v-bind:key="pool.asset.symbol"
+                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
               </div>
             </div>
