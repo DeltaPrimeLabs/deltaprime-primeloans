@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b934f34e5f8d1a9bdde2f563e2dabcadcc46c5f1;
+// Last deployed from commit: 0d6b0d874bf1be5244f980277602b5fbf6f205e1;
 pragma solidity 0.8.17;
 
 import "./UsdtPool.sol";
