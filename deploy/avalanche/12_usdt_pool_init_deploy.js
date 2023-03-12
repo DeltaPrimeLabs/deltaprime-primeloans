@@ -8,7 +8,7 @@ import verifyContract from "../../tools/scripts/verify-contract";
 import {deployLinearIndex} from "./7_linear_indices";
 import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
 import {initPool} from "./8_pools_init";
-import {pool} from "../../test/_helpers";
+import {pool, toBytes32} from "../../test/_helpers";
 
 module.exports = async ({
   getNamedAccounts,
@@ -24,10 +24,10 @@ module.exports = async ({
   embedCommitHash('UsdtPoolTUP', './contracts/proxies/tup/avalanche');
 
   await deployPool(deploy, deployer, admin, 'UsdtPool', 'UsdtPoolFactory', 'UsdtPoolTUP');
-  
+
   embedCommitHash('UsdtBorrowIndex', './contracts/deployment/avalanche');
   embedCommitHash('UsdtDepositIndex', './contracts/deployment/avalanche');
-  
+
   await deployLinearIndex("UsdtBorrowIndex", "UsdtPoolTUP", deploy, deployer, admin);
   await deployLinearIndex("UsdtDepositIndex", "UsdtPoolTUP", deploy, deployer, admin);
 
@@ -49,11 +49,18 @@ module.exports = async ({
 
   const usdtPoolTUP = await ethers.getContract("UsdtPoolTUP");
 
+  let oldLendingPools = [
+    toBytes32("USDT")
+  ];
+
   let newLendingPools = [
     pool("USDT", usdtPoolTUP.address)
   ];
 
+  await tokenManager.removePoolAssets(oldLendingPools);
+  console.log('Removed old pool USDT')
   await tokenManager.addPoolAssets(newLendingPools);
+  console.log(`Added new USDT pool ${usdtPoolTUP.address}`);
 };
 
 async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
