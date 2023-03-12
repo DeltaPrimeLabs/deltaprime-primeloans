@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2f6b0fb53889a8741a3d7f78a2d5d05ad7a0c76d;
+// Last deployed from commit: 0d6b0d874bf1be5244f980277602b5fbf6f205e1;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -370,6 +370,19 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function getBorrowingRate() public view returns (uint256) {
         return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply());
+    }
+
+    /**
+     * Returns full pool status
+     */
+    function getFullPoolStatus() public view returns (uint256[5] memory) {
+        return [
+            totalSupply(),
+            getDepositRate(),
+            getBorrowingRate(),
+            totalBorrowed(),
+            getMaxPoolUtilisationForBorrowing()
+        ];
     }
 
     /**

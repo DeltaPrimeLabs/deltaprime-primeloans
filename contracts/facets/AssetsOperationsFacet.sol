@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 1deeca6c1ae5859a08de6e6e30738ca03b3bd165;
+// Last deployed from commit: d511a90d3722e4a323de89435179465e006f8335;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "../interfaces/facets/avalanche/IYieldYakRouter.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -16,6 +17,8 @@ import "../lib/local/DeploymentConstants.sol";
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
+
+    address private constant YY_ROUTER = 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -153,6 +156,72 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    /**
+     * Swap existing debt to another debt
+    * @dev This function uses the redstone-evm-connector
+     * @param _fromAsset existing debt asset
+     * @param _toAsset new debt asset
+     * @param _repayAmount debt repay amount
+     * @param _path yield yak swap path
+     * @param _adapters yield yak swap adapters
+     */
+    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, address[] calldata _path, address[] calldata _adapters) external onlyOwner remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
+        _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
+
+        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
+        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+
+        uint256 borrowAmount;
+        {
+            {
+                bytes32[] memory symbols = new bytes32[](2);
+                symbols[0] = _fromAsset;
+                symbols[1] = _toAsset;
+                uint256[] memory prices = getPrices(symbols);
+                borrowAmount = _repayAmount * prices[0] * 101 / prices[1] / 100;
+            }
+            {
+                borrowAmount = (borrowAmount * 10 ** toToken.decimals()) / 10 ** fromToken.decimals();
+            }
+        }
+
+        Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
+        toAssetPool.borrow(borrowAmount);
+
+        {
+            // swap toAsset to fromAsset
+            address(toToken).safeApprove(YY_ROUTER, 0);
+            address(toToken).safeApprove(YY_ROUTER, borrowAmount);
+
+            IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+
+            IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
+                amountIn: borrowAmount,
+                amountOut: 0,
+                path: _path,
+                adapters: _adapters
+            });
+
+            router.swapNoSplit(trade, address(this), 0);
+        }
+
+        _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)));
+        address(fromToken).safeApprove(address(fromAssetPool), 0);
+        address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
+        fromAssetPool.repay(_repayAmount);
+
+        if (fromToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(_fromAsset, address(fromToken));
+        } else {
+            DiamondStorageLib.removeOwnedAsset(_fromAsset);
+        }
+
+        emit Borrowed(msg.sender, _toAsset, borrowAmount, block.timestamp);
+        emit Repaid(msg.sender, _fromAsset, _repayAmount, block.timestamp);
     }
 
     /* ======= VIEW FUNCTIONS ======*/
