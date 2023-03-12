@@ -22,9 +22,9 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="showDepositBanner" background="green" :closable="true">
+<!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
       Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
-    </Banner>
+    </Banner>-->
     <div class="content">
       <div class="top-bar">
         <a href="https://deltaprime.io/">
