@@ -5,7 +5,7 @@
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
-          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
+          <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined && asset.symbol !== 'USDT'">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
           <div class="asset__loan" v-if="asset.apy">
@@ -126,7 +126,7 @@ import {BigNumber} from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
+const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'BTC', 'ETH'];
 
 const ethers = require('ethers');
 
