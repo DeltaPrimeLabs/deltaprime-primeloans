@@ -7,14 +7,7 @@
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
-              <div class="pools-table__header">
-                <div class="header__cell asset">Asset</div>
-                <div class="header__cell deposit">Deposit</div>
-                <div class="header__cell apy">APY</div>
-                <div class="header__cell tvl">Pool size</div>
-                <div></div>
-                <div class="header__cell actions">Actions</div>
-              </div>
+              <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
               <div class="pools-table__body">
                 <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
                                    :pool="pool"></PoolsTableRowBeta>
@@ -33,8 +26,7 @@ import config from '../config';
 import Block from './Block';
 import NameValueBadgeBeta from './NameValueBadgeBeta';
 import PoolsTableRowBeta from './PoolsTableRowBeta';
-import redstone from 'redstone-api';
-import {fromWei} from '../utils/calculate';
+import TableHeader from './TableHeader';
 import {mapActions, mapState} from 'vuex';
 import {combineLatest} from 'rxjs';
 
@@ -43,12 +35,13 @@ export default {
   components: {
     PoolsTableRowBeta,
     Block,
-    NameValueBadgeBeta
+    NameValueBadgeBeta,
+    TableHeader
   },
   async mounted() {
+    this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();
-
     this.initStoresWhenProviderAndAccountCreated();
   },
 
@@ -57,6 +50,7 @@ export default {
       totalTVL: 0,
       totalDeposit: 0,
       poolsList: null,
+      poolsTableHeaderConfig: null,
     };
   },
   computed: {
@@ -111,6 +105,49 @@ export default {
       });
     },
 
+    setupPoolsTableHeaderConfig() {
+      this.poolsTableHeaderConfig = {
+        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 76px 22px',
+        cells: [
+          {
+            label: 'Asset',
+            sortable: false,
+            class: 'asset',
+            id: 'ASSET',
+            tooltip: `The asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Deposit',
+            sortable: false,
+            class: 'deposit',
+            id: 'DEPOSIT',
+          },
+          {
+            label: 'APY',
+            sortable: false,
+            class: 'apy',
+            id: 'APY',
+          },
+          {
+            label: 'Pool size',
+            sortable: false,
+            class: 'tvl',
+            id: 'TVL',
+          },
+          {
+            label: ''
+          },
+          {
+            label: 'Actions',
+            sortable: false,
+            class: 'actions',
+            id: 'ACTIONS'
+          },
+        ]
+      };
+    },
+
   },
 };
 </script>
@@ -139,49 +176,6 @@ export default {
 
       .pools-table {
         width: 100%;
-
-        .pools-table__header {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
-          border-style: solid;
-          border-width: 0 0 2px 0;
-          border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-          border-image-slice: 1;
-          padding: 0 0 9px 6px;
-
-          .header__cell {
-            display: flex;
-            flex-direction: row;
-            font-size: $font-size-xsm;
-            color: $dark-gray;
-            font-weight: 500;
-
-            &.asset {
-            }
-
-            &.deposit {
-              justify-content: flex-end;
-            }
-
-            &.apy {
-              justify-content: flex-end;
-            }
-
-            &.interest {
-              justify-content: center;
-              margin-left: 40px;
-            }
-
-            &.tvl {
-              justify-content: flex-end;
-            }
-
-            &.actions {
-              justify-content: flex-end;
-            }
-
-          }
-        }
 
         .loader-container {
           display: flex;
