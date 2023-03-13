@@ -319,7 +319,7 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanAddress), request.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(request.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei);
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei, { gasLimit: 100000 });
 
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
@@ -383,7 +383,7 @@ export default {
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
       if (parseFloat(allowance) < parseFloat(value)) {
-        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, { gasLimit: 100000 });
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
@@ -618,7 +618,7 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, { gasLimit: 100000 });
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 

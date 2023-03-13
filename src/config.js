@@ -8,6 +8,7 @@ import {
 } from "./utils/calculate";
 import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
 import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
+import USDT_POOL_TUP from '@contracts/UsdtPoolTUP.json';
 import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
 import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
@@ -28,8 +29,8 @@ export default {
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
-      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, getApy: glpApy, swappableAssets: ['BTC', 'ETH', 'USDC']},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, getApy: () => 15.33, swappableAssets: ['BTC', 'ETH', 'USDC']},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 7.2},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0},
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0},
@@ -43,6 +44,10 @@ export default {
         USDC: {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
+        },
+        USDT: {
+            address: USDT_POOL_TUP.address,
+            tokenAddress: addresses.USDT
         },
         BTC: {
             address: BTC_POOL_TUP.address,
@@ -139,7 +144,7 @@ export default {
                 protocol: 'VECTOR_FINANCE',
                 protocolIdentifier: 'VF_AVAX_SAVAX_AUTO',
                 autoCompounding: true,
-                apy: async () => vectorFinanceApy('AVAX'),
+                apy: () => 0.071,
                 stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
                 balanceMethod: 'vectorWAVAX1BalanceAuto',
                 stakeMethod: 'vectorStakeWAVAX1Auto',
@@ -162,8 +167,8 @@ export default {
                 protocolIdentifier: 'YY_PTP_sAVAX',
                 autoCompounding: true,
                 apy: async () => yieldYakApy('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'),
+                balance: async (address) => yieldYakBalance('0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977', address),
                 stakingContractAddress: '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977',
-                balanceMethod: 'vectorSAVAX1BalanceAuto',
                 stakeMethod: 'stakeSAVAXYak',
                 unstakeMethod: 'unstakeSAVAXYak',
                 feedSymbol: 'YY_PTP_sAVAX',
@@ -203,7 +208,7 @@ export default {
                 protocol: 'VECTOR_FINANCE',
                 protocolIdentifier: 'VF_SAVAX_MAIN_AUTO',
                 autoCompounding: true,
-                apy: () => vectorFinanceApy('SAVAX'),
+                apy: () => 0.053,
                 balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
                 stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
                 stakeMethod: 'vectorStakeSAVAX1Auto',
@@ -236,6 +241,26 @@ export default {
                 token: 'USDC',
                 isTokenLp: false,
                 debtCoverage: 0,
+                rewardTokens: ['PTP'],
+                strategy: 'Platypus',
+                refreshDelay: 60000,
+                gasStake: 8000000,
+                gasUnstake: 8000000
+            },
+            {
+                protocol: 'VECTOR_FINANCE',
+                protocolIdentifier: 'VF_USDC_MAIN_AUTO',
+                autoCompounding: true,
+                //TODO: check if it's a right APY
+                apy: () => 0.158,
+                stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
+                stakeMethod: 'vectorStakeUSDC1Auto',
+                unstakeMethod: 'vectorUnstakeUSDC1Auto',
+                balanceMethod: 'vectorUSDC1BalanceAuto',
+                minAmount: 0.8,
+                token: 'USDC',
+                isTokenLp: false,
+                debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
                 refreshDelay: 60000,

@@ -1,7 +1,7 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
 
-    <div class="protocol-banner" v-if="farm.token === 'USDC'">Deposits and withdrawals from Platypus main pool have been
+    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'VF_USDC_MAIN'">Deposits and withdrawals from Platypus main pool have been
       temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
@@ -61,7 +61,7 @@
 
       <div class="table__cell">
         <div class="actions">
-          <FlatButton v-if="farm.migrateMethod" :tooltip="'123'" v-on:buttonClick="migrateButtonClick()">Migrate
+          <FlatButton v-if="farm.migrateMethod" :tooltip="'Migrates assets from the manual pool to the autocompounding pool'" v-on:buttonClick="migrateButtonClick()">Migrate
           </FlatButton>
           <IconButtonMenuBeta
             class="action"
@@ -364,14 +364,14 @@ export default {
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
-          disabled: this.farm.token === 'USDC',
+          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
           hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Unstake',
           iconButtonActionKey: 'UNSTAKE',
-          disabled: this.farm.token === 'USDC'
+          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
         },
       ];
     },

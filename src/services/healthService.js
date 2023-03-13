@@ -50,6 +50,7 @@ export default class HealthService {
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
         farms.forEach(farm => {
+          console.log(farm.protocolIdentifier, farm.totalBalance);
 
           let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 

@@ -71,7 +71,7 @@
           <span class="divider__title">Auto-compounding</span>
           <img class="info__icon"
                src="src/assets/icons/info.svg"
-               v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+               v-tooltip="{content: 'These farms automatically swap your reward token for the deposited token and restakes it.', classes: 'info-tooltip long', placement: 'top'}">
         </div>
 
         <div v-if="autoCompoundingFarms.length > 0" class="protocols__table">
@@ -118,7 +118,7 @@
           <span class="divider__title">No auto-compounding</span>
           <img class="info__icon"
                src="src/assets/icons/info.svg"
-               v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+               v-tooltip="{content: 'These farms require manual claiming of rewards by (un)staking part of the farmed assets.', classes: 'info-tooltip long', placement: 'top'}">
         </div>
 
         <div class="protocols__table">
@@ -220,7 +220,7 @@ export default {
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
-            heightOfRows += 75;
+            heightOfRows += 88;
           } else {
             heightOfRows += 62;
           }
