@@ -93,6 +93,27 @@ export default {
       justify-content: flex-end;
     }
 
+    &.deposit {
+      justify-content: flex-end;
+    }
+
+    &.apy {
+      justify-content: flex-end;
+    }
+
+    &.interest {
+      justify-content: center;
+      margin-left: 40px;
+    }
+
+    &.tvl {
+      justify-content: flex-end;
+    }
+
+    &.actions {
+      justify-content: flex-end;
+    }
+
     .info__icon {
       width: 16px;
       height: 16px;
