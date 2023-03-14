@@ -56,6 +56,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Borrow'" v-on:click="submit()" :disabled="currencyInputError"
                 :waiting="transactionOngoing"></Button>
@@ -72,6 +76,7 @@ import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth} from '../utils/calculate';
+import Notification from './Notification';
 
 export default {
   name: 'BorrowModal',
@@ -80,7 +85,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    BarGaugeBeta
+    BarGaugeBeta,
+    Notification
   },
 
   props: {

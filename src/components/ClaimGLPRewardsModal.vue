@@ -33,6 +33,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Claim'" v-on:click="submit()"
                 :waiting="transactionOngoing"></Button>
@@ -45,6 +49,7 @@
 import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import Button from './Button';
+import Notification from './Notification';
 
 export default {
   name: 'ClaimGLPRewardsModal',
@@ -52,6 +57,7 @@ export default {
     Button,
     TransactionResultSummaryBeta,
     Modal,
+    Notification,
   },
 
   props: {

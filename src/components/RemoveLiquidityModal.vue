@@ -56,6 +56,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Unwind LP token'"
                 v-on:click="submit()"
@@ -74,6 +78,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
+import Notification from './Notification';
 import config from '../config';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {parseUnits, formatUnits} from 'ethers/lib/utils';
@@ -88,7 +93,8 @@ export default {
     TransactionResultSummaryBeta,
     Modal,
     BarGaugeBeta,
-    Toggle
+    Toggle,
+    Notification,
   },
 
   props: {

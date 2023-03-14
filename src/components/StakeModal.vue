@@ -71,6 +71,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Stake'"
                 v-on:click="submit()"
@@ -87,6 +91,7 @@ import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
+import Notification from './Notification';
 import config from '../config';
 
 export default {
@@ -95,7 +100,8 @@ export default {
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
-    Modal
+    Modal,
+    Notification,
   },
 
   props: {

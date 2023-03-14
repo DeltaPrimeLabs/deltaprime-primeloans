@@ -86,6 +86,10 @@
         <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Add funds'"
                 v-on:click="submit()"
@@ -107,6 +111,7 @@ import BarGaugeBeta from './BarGaugeBeta';
 import {mapState} from 'vuex';
 import {calculateHealth} from '../utils/calculate';
 import LoadedValue from './LoadedValue';
+import Notification from './Notification';
 
 
 export default {
@@ -118,7 +123,8 @@ export default {
     TransactionResultSummaryBeta,
     Modal,
     BarGaugeBeta,
-    Toggle
+    Toggle,
+    Notification,
   },
 
   props: {
@@ -138,7 +144,8 @@ export default {
       default: null,
     },
     noSmartLoan: false,
-    transactionOngoing: false
+    transactionOngoing: false,
+    isExpectedToFail: false,
   },
 
   data() {

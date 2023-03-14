@@ -53,6 +53,10 @@
         <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Withdraw'" v-on:click="submit()" :waiting="transactionOngoing"></Button>
       </div>
@@ -66,6 +70,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
+import Notification from './Notification';
 
 
 export default {
@@ -75,7 +80,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    Toggle
+    Toggle,
+    Notification,
   },
 
   props: {

@@ -52,6 +52,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button :label="'Repay'"
                 v-on:click="submit()"
@@ -71,6 +75,7 @@ import Button from './Button';
 import BarGaugeBeta from './BarGaugeBeta';
 import {calculateHealth} from "../utils/calculate";
 import config from '../config';
+import Notification from './Notification';
 
 export default {
   name: 'WithdrawModal',
@@ -79,7 +84,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    BarGaugeBeta
+    BarGaugeBeta,
+    Notification,
   },
 
   props: {

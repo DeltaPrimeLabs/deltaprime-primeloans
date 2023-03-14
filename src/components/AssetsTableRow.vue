@@ -406,6 +406,7 @@ export default {
       modalInstance.loanAPY = pool.borrowingAPY;
       modalInstance.maxUtilisation = pool.maxUtilisation;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
@@ -422,9 +423,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail 
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -448,6 +451,7 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = this.swapQueryMethod();
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapRequest = {
@@ -466,9 +470,11 @@ export default {
           if (isExpectedToFail) {
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -494,6 +500,7 @@ export default {
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
@@ -519,9 +526,11 @@ export default {
                 if (isExpectedToFail) { // the transaction is expected to fail
                   modalInstance.isStaticCalled = true;
                   modalInstance.transactionOngoing = false;
+                  modalInstance.isExpectedToFail = true;
                 } else {
                   console.log("transaction finished.")
                   modalInstance.isStaticCalled = false;
+                  modalInstance.isExpectedToFail = false;
                 }
               });
             } else {
@@ -539,9 +548,11 @@ export default {
                 if (isExpectedToFail) { // the transaction is expected to fail
                   modalInstance.isStaticCalled = true;
                   modalInstance.transactionOngoing = false;
+                  modalInstance.isExpectedToFail = true;
                 } else {
                   console.log("transaction finished.")
                   modalInstance.isStaticCalled = false;
+                  modalInstance.isExpectedToFail = false;
                 }
               });
             }
@@ -559,9 +570,11 @@ export default {
                 if (isExpectedToFail) { // the transaction is expected to fail
                   modalInstance.isStaticCalled = true;
                   modalInstance.transactionOngoing = false;
+                  modalInstance.isExpectedToFail = true;
                 } else {
                   console.log("transaction finished.")
                   modalInstance.isStaticCalled = false;
+                  modalInstance.isExpectedToFail = false;
                 }
               });
             } else {
@@ -582,9 +595,11 @@ export default {
                 if (isExpectedToFail) { // the transaction is expected to fail
                   modalInstance.isStaticCalled = true;
                   modalInstance.transactionOngoing = false;
+                  modalInstance.isExpectedToFail = true;
                 } else {
                   console.log("transaction finished.")
                   modalInstance.isStaticCalled = false;
+                  modalInstance.isExpectedToFail = false;
                 }
               });
             }
@@ -607,6 +622,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         console.log(withdrawEvent);
@@ -629,9 +645,11 @@ export default {
             if (isExpectedToFail) { // the transaction is expected to fail
               modalInstance.isStaticCalled = true;
               modalInstance.transactionOngoing = false;
+              modalInstance.isExpectedToFail = true;
             } else {
               console.log("transaction finished.")
               modalInstance.isStaticCalled = false;
+              modalInstance.isExpectedToFail = false;
             }
           });
         } else {
@@ -652,9 +670,11 @@ export default {
             if (isExpectedToFail) { // the transaction is expected to fail
               modalInstance.isStaticCalled = true;
               modalInstance.transactionOngoing = false;
+              modalInstance.isExpectedToFail = true;
             } else {
               console.log("transaction finished.")
               modalInstance.isStaticCalled = false;
+              modalInstance.isExpectedToFail = false;
             }
           });
         }
@@ -675,6 +695,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('REPAY', repayEvent => {
         const repayRequest = {
           asset: this.asset.symbol,
@@ -693,9 +714,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -708,6 +731,7 @@ export default {
       modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.nativeTokenBalance = smartContractNativeTokenBalance;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
 
       modalInstance.$on('WRAP', value => {
         const wrapRequest = {
@@ -727,9 +751,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -745,6 +771,7 @@ export default {
       modalInstance.glpRewardsToClaim = rewards;
       modalInstance.glpRewardsAsset = 'AVAX';
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
 
       modalInstance.$on('CLAIM', () => {
         this.handleTransaction(this.claimGLPRewards, {
@@ -757,9 +784,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });

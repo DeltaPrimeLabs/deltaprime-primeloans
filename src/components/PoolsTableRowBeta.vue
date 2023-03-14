@@ -128,6 +128,7 @@ export default {
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
@@ -148,9 +149,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -163,6 +166,7 @@ export default {
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           assetSymbol: this.pool.asset.symbol,
@@ -182,9 +186,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });

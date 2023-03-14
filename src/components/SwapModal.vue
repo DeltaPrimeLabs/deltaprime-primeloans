@@ -109,6 +109,10 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Notification v-if="isExpectedToFail">
+        The transaction is expected to fail. It is expected to be expensive but fail, and is not recommended. You can try anyway.
+      </Notification>
+
       <div class="button-wrapper">
         <Button label="Swap"
                 v-on:click="submit()"
@@ -131,6 +135,7 @@ import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from "ethers";
 import SimpleInput from "./SimpleInput";
+import Notification from './Notification';
 const ethers = require('ethers');
 
 export default {
@@ -142,7 +147,8 @@ export default {
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
-    BarGaugeBeta
+    BarGaugeBeta,
+    Notification,
   },
 
   props: {},

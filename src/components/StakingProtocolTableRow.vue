@@ -192,6 +192,7 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('STAKE', (stakeValue) => {
         console.log(stakeValue);
         const stakeRequest = {
@@ -218,9 +219,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -239,6 +242,7 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('UNSTAKE', unstakeEvent => {
         console.log(unstakeEvent);
         const unstakeRequest = {
@@ -268,9 +272,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -410,6 +416,8 @@ export default {
       modalInstance.rewards = this.rewards;
       modalInstance.farmBalance = this.underlyingTokenStaked;
       modalInstance.tokenSymbol = this.farm.token;
+      modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
 
       const migrateRequest = {
         migrateMethod: this.farm.migrateMethod,
@@ -419,11 +427,24 @@ export default {
       };
 
       modalInstance.$on('MIGRATE', () => {
-        this.handleTransaction(this.migrateToAutoCompoundingPool, { migrateRequest: migrateRequest }, () => {
+        this.handleTransaction(this.migrateToAutoCompoundingPool, {
+          migrateRequest: migrateRequest,
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.rewards = 0;
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail 
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
+          }
         });
       });
     }

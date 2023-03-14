@@ -287,6 +287,7 @@ export default {
       modalInstance.isLP = true;
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const fundRequest = {
@@ -306,9 +307,11 @@ export default {
             if (isExpectedToFail) { // the transaction is expected to fail
               modalInstance.isStaticCalled = true;
               modalInstance.transactionOngoing = false;
+              modalInstance.isExpectedToFail = true;
             } else {
               console.log("transaction finished.")
               modalInstance.isStaticCalled = false;
+              modalInstance.isExpectedToFail = false;
             }
           });
         }
@@ -329,6 +332,7 @@ export default {
       modalInstance.health = this.health;
       modalInstance.isLP = true;
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           value: withdrawEvent.value.toString(),
@@ -347,9 +351,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });
@@ -362,6 +368,7 @@ export default {
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
@@ -384,9 +391,11 @@ export default {
             if (isExpectedToFail) { // the transaction is expected to fail
               modalInstance.isStaticCalled = true;
               modalInstance.transactionOngoing = false;
+              modalInstance.isExpectedToFail = true;
             } else {
               console.log("transaction finished.")
               modalInstance.isStaticCalled = false;
+              modalInstance.isExpectedToFail = false;
             }
           });
         }
@@ -401,6 +410,7 @@ export default {
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           value: removeEvent.amount,
@@ -423,9 +433,11 @@ export default {
           if (isExpectedToFail) { // the transaction is expected to fail
             modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
           } else {
             console.log("transaction finished.")
             modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
           }
         });
       });

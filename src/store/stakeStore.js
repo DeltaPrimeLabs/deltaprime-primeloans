@@ -222,13 +222,24 @@ export default {
       }, unstakeRequest.refreshDelay);
     },
 
-    async migrateToAutoCompoundingPool({ rootState, state, commit }, { migrateRequest }) {
+    async migrateToAutoCompoundingPool({ rootState, state, commit }, { migrateRequest, isCallStatic }) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
       (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
       Object.keys(config.POOLS_CONFIG)
       ]);
+
+      try {
+        if (isCallStatic) {
+          console.log('calling function through callStatic...')
+          const tx = await (await wrapContract(smartLoanContract, loanAssets)).callStatic[migrateRequest.migrateMethod]();
+          console.log(tx);
+          if (tx.code || tx.errorName || tx.errorSignature) return true;
+        }
+      } catch (error) {
+        console.log("callStatic to migrate error: ", error);
+      }
 
       const migrateTransaction = await (await wrapContract(smartLoanContract, loanAssets))[migrateRequest.migrateMethod]();
 
