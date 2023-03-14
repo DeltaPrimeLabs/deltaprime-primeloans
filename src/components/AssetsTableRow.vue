@@ -1,5 +1,5 @@
 <template>
-  <div class="fund-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="fund-table-row-component" :class="{ 'expanded': rowExpanded }">
     <div class="table__row" v-if="asset">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
@@ -102,7 +102,7 @@ import Chart from './Chart';
 import SmallBlock from './SmallBlock';
 import LoadedValue from './LoadedValue';
 import config from '../config';
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import BorrowModal from './BorrowModal';
 import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
@@ -116,13 +116,13 @@ import YAK_ROUTER_ABI
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from '../utils/calculate';
+import { formatUnits, parseUnits } from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
 import GLP_REWARD_TRACKER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
 import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
-import {BigNumber} from "ethers";
+import { BigNumber } from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -133,7 +133,7 @@ const ethers = require('ethers');
 
 export default {
   name: 'AssetsTableRow',
-  components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
+  components: { LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta },
   props: {
     asset: {},
   },
@@ -159,7 +159,6 @@ export default {
       disableAllButtons: false,
       borrowApyPerPool: {},
       healthLoaded: false,
-      isStaticCalled: null,
     };
   },
   computed: {
@@ -296,57 +295,57 @@ export default {
     },
 
     swapQueryMethod() {
-        return async (sourceAsset, targetAsset, amountIn) => {
-          const tknFrom = TOKEN_ADDRESSES[sourceAsset];
-          const tknTo = TOKEN_ADDRESSES[targetAsset];
+      return async (sourceAsset, targetAsset, amountIn) => {
+        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
+        const tknTo = TOKEN_ADDRESSES[targetAsset];
 
-          if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
-            const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
+        if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
+          const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
-            const maxHops = 3;
-            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const maxHops = 3;
+          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
+          try {
+            return await yakRouter.findBestPathWithGas(
+              amountIn,
+              tknFrom,
+              tknTo,
+              maxHops,
+              gasPrice,
+              { gasLimit: 1e9 }
+            );
+          } catch (e) {
+            this.handleTransactionError(e);
+          }
+        } else {
+          const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
+
+          const maxHops = 2;
+          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+          if (targetAsset === 'GLP') {
             try {
-              return await yakRouter.findBestPathWithGas(
-                  amountIn,
-                  tknFrom,
-                  tknTo,
-                  maxHops,
-                  gasPrice,
-                  {gasLimit: 1e9}
-              );
+              return await yakWrapRouter.findBestPathAndWrap(
+                amountIn,
+                tknFrom,
+                config.yieldYakGlpWrapperAddress,
+                maxHops,
+                gasPrice)
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
-            const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
-
-            const maxHops = 2;
-            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
-
-            if (targetAsset === 'GLP') {
-              try {
-                return await yakWrapRouter.findBestPathAndWrap(
-                    amountIn,
-                    tknFrom,
-                    config.yieldYakGlpWrapperAddress,
-                    maxHops,
-                    gasPrice)
-              } catch (e) {
-                this.handleTransactionError(e);
-              }
-            } else {
-              try {
-                return await yakWrapRouter.unwrapAndFindBestPath(
-                    amountIn,
-                    tknTo,
-                    config.yieldYakGlpWrapperAddress,
-                    maxHops,
-                    gasPrice);
-              } catch (e) {
-                this.handleTransactionError(e);
-              }
+            try {
+              return await yakWrapRouter.unwrapAndFindBestPath(
+                amountIn,
+                tknTo,
+                config.yieldYakGlpWrapperAddress,
+                maxHops,
+                gasPrice);
+            } catch (e) {
+              this.handleTransactionError(e);
             }
+          }
         }
       }
     },
@@ -406,18 +405,28 @@ export default {
       modalInstance.totalBorrowedFromPool = Number(pool.totalBorrowed);
       modalInstance.loanAPY = pool.borrowingAPY;
       modalInstance.maxUtilisation = pool.maxUtilisation;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('BORROW', value => {
         const borrowRequest = {
           asset: this.asset.symbol,
           amount: value.toString()
         };
-        this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
+        this.handleTransaction(this.borrow, {
+          borrowRequest: borrowRequest,
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        })
-          .then(() => {
-          });
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail 
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
+        });
       });
     },
 
@@ -438,6 +447,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = this.swapQueryMethod();
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapRequest = {
@@ -446,7 +456,7 @@ export default {
         };
         this.handleTransaction(this.swap, {
           swapRequest: swapRequest,
-          isCallStatic: !this.isStaticCalled,
+          isCallStatic: !modalInstance.isStaticCalled,
         }, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -454,11 +464,11 @@ export default {
         }).then((isExpectedToFail) => {
           // the transaction is expected to fail
           if (isExpectedToFail) {
-            this.isStaticCalled = true;
+            modalInstance.isStaticCalled = true;
             modalInstance.transactionOngoing = false;
           } else {
             console.log("transaction finished.")
-            this.isStaticCalled = false;
+            modalInstance.isStaticCalled = false;
           }
         });
       });
@@ -483,6 +493,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.noSmartLoan = this.noSmartLoan;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
@@ -496,40 +507,61 @@ export default {
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals
               };
 
-              this.handleTransaction(this.createLoanAndDeposit, { request: request }, () => {
-                    this.scheduleHardRefresh();
-                    this.$forceUpdate();
-                  },
-                  (error) => {
-                    this.handleTransactionError(error);
-                  });
+              this.handleTransaction(this.createLoanAndDeposit, {
+                request: request,
+                isCallStatic: !modalInstance.isStaticCalled,
+              }, () => {
+                this.scheduleHardRefresh();
+                this.$forceUpdate();
+              }, (error) => {
+                this.handleTransactionError(error);
+              }).then((isExpectedToFail) => {
+                if (isExpectedToFail) { // the transaction is expected to fail
+                  modalInstance.isStaticCalled = true;
+                  modalInstance.transactionOngoing = false;
+                } else {
+                  console.log("transaction finished.")
+                  modalInstance.isStaticCalled = false;
+                }
+              });
             } else {
-              this.handleTransaction(this.createAndFundLoan, {asset: addFromWalletEvent.asset, value: value, isLP: false}, () => {
-                    this.scheduleHardRefresh();
-                    this.$forceUpdate();
-                  },
-                  (error) => {
-                    this.handleTransactionError(error);
-                  })
+              this.handleTransaction(this.createAndFundLoan, {
+                asset: addFromWalletEvent.asset,
+                value: value,
+                isLP: false,
+                isCallStatic: !modalInstance.isStaticCalled,
+              }, () => {
+                this.scheduleHardRefresh();
+                this.$forceUpdate();
+              }, (error) => {
+                this.handleTransactionError(error);
+              }).then((isExpectedToFail) => {
+                if (isExpectedToFail) { // the transaction is expected to fail
+                  modalInstance.isStaticCalled = true;
+                  modalInstance.transactionOngoing = false;
+                } else {
+                  console.log("transaction finished.")
+                  modalInstance.isStaticCalled = false;
+                }
+              });
             }
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
               this.handleTransaction(this.fundNativeToken, {
                 value: value,
-                isCallStatic: !this.isStaticCalled,
+                isCallStatic: !modalInstance.isStaticCalled,
               }, () => {
                 this.$forceUpdate();
               }, (error) => {
                 console.log(error);
                 this.handleTransactionError(error);
               }).then((isExpectedToFail) => {
-                // the transaction is expected to fail
-                if (isExpectedToFail) {
-                  this.isStaticCalled = true;
+                if (isExpectedToFail) { // the transaction is expected to fail
+                  modalInstance.isStaticCalled = true;
                   modalInstance.transactionOngoing = false;
                 } else {
                   console.log("transaction finished.")
-                  this.isStaticCalled = false;
+                  modalInstance.isStaticCalled = false;
                 }
               });
             } else {
@@ -539,11 +571,21 @@ export default {
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
                 isLP: false,
               };
-              this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+              this.handleTransaction(this.fund, {
+                fundRequest: fundRequest,
+                isCallStatic: !modalInstance.isStaticCalled,
+              }, () => {
                 this.$forceUpdate();
               }, (error) => {
                 this.handleTransactionError(error);
-              }).then(() => {
+              }).then((isExpectedToFail) => {
+                if (isExpectedToFail) { // the transaction is expected to fail
+                  modalInstance.isStaticCalled = true;
+                  modalInstance.transactionOngoing = false;
+                } else {
+                  console.log("transaction finished.")
+                  modalInstance.isStaticCalled = false;
+                }
               });
             }
           }
@@ -564,6 +606,7 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.isStaticCalled = false;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         console.log(withdrawEvent);
@@ -575,13 +618,22 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
             isLP: false,
           };
-          this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
+          this.handleTransaction(this.withdrawNativeToken, {
+            withdrawRequest: withdrawRequest,
+            isCallStatic: !modalInstance.isStaticCalled,
+          }, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
-          })
-            .then(() => {
-            });
+          }).then((isExpectedToFail) => {
+            if (isExpectedToFail) { // the transaction is expected to fail
+              modalInstance.isStaticCalled = true;
+              modalInstance.transactionOngoing = false;
+            } else {
+              console.log("transaction finished.")
+              modalInstance.isStaticCalled = false;
+            }
+          });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
@@ -589,13 +641,22 @@ export default {
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
             isLP: false,
           };
-          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.handleTransaction(this.withdraw, {
+            withdrawRequest: withdrawRequest,
+            isCallStatic: !modalInstance.isStaticCalled,
+          }, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
-          })
-            .then(() => {
-            });
+          }).then((isExpectedToFail) => {
+            if (isExpectedToFail) { // the transaction is expected to fail
+              modalInstance.isStaticCalled = true;
+              modalInstance.transactionOngoing = false;
+            } else {
+              console.log("transaction finished.")
+              modalInstance.isStaticCalled = false;
+            }
+          });
         }
       });
     },
@@ -613,6 +674,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.assetDebt = Number(this.debtsPerAsset[this.asset.symbol].debt);
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('REPAY', repayEvent => {
         const repayRequest = {
           asset: this.asset.symbol,
@@ -620,13 +682,22 @@ export default {
           amount: repayEvent.repayValue.toString(),
           isMax: repayEvent.isMax
         };
-        this.handleTransaction(this.repay, {repayRequest: repayRequest}, () => {
+        this.handleTransaction(this.repay, {
+          repayRequest: repayRequest,
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        })
-          .then(() => {
-          });
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
+        });
       });
     },
 
@@ -636,19 +707,30 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.assetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.nativeTokenBalance = smartContractNativeTokenBalance;
+      modalInstance.isStaticCalled = false;
 
       modalInstance.$on('WRAP', value => {
         const wrapRequest = {
           amount: value.toString(),
           decimals: this.asset.decimals,
         };
-        this.handleTransaction(this.wrapNativeToken, {wrapRequest: wrapRequest}, () => {
+        this.handleTransaction(this.wrapNativeToken, {
+          wrapRequest: wrapRequest,
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.assetBalances[this.asset.symbol] = Number(this.assetBalances[this.asset.symbol]) + Number(wrapRequest.amount);
           this.isBalanceEstimated = true;
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -662,13 +744,23 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.glpRewardsToClaim = rewards;
       modalInstance.glpRewardsAsset = 'AVAX';
+      modalInstance.isStaticCalled = false;
 
       modalInstance.$on('CLAIM', () => {
-        this.handleTransaction(this.claimGLPRewards, () => {
+        this.handleTransaction(this.claimGLPRewards, {
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -751,7 +843,7 @@ export default {
     watchProgressBarState() {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
-          case 'MINING' : {
+          case 'MINING': {
             this.disableAllButtons = true;
             break;
           }
@@ -759,13 +851,13 @@ export default {
             this.disableAllButtons = false;
             break;
           }
-          case 'ERROR' : {
+          case 'ERROR': {
             this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             this.isDebtEstimated = false;
             break;
           }
-          case 'CANCELLED' : {
+          case 'CANCELLED': {
             this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             this.isDebtEstimated = false;
@@ -954,5 +1046,4 @@ export default {
     }
   }
 }
-
 </style>

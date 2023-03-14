@@ -25,11 +25,12 @@ export const wrapContract = async function wrapContract(contract, assets) {
 };
 
 export async function handleTransaction(fun, args, onSuccess, onFail) {
-  try {
-    const isExpectedToFail = Array.isArray(args) ? await fun(...args) : await fun(args);
+  let isExpectedToFail;
 
-    console.log(isExpectedToFail);
-    if (isExpectedToFail) return isExpectedToFail;
+  try {
+    isExpectedToFail = Array.isArray(args) ? await fun(...args) : await fun(args);
+
+    if (isExpectedToFail) return true;
 
     // if (tx) {
     //   await provider.waitForTransaction(tx.hash);

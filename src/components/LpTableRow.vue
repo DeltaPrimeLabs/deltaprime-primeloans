@@ -1,5 +1,5 @@
 <template>
-  <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="lp-table-row-component" :class="{ 'expanded': rowExpanded }">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
@@ -76,16 +76,16 @@ import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
 import AddFromWalletModal from './AddFromWalletModal';
 import config from '../config';
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import ProvideLiquidityModal from './ProvideLiquidityModal';
 import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
-import {calculateMaxApy, fromWei} from '../utils/calculate';
+import { calculateMaxApy, fromWei } from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
-import {formatUnits, parseUnits} from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -286,6 +286,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = true;
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const fundRequest = {
@@ -294,11 +295,21 @@ export default {
             assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
             isLP: true,
           };
-          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+          this.handleTransaction(this.fund, {
+            fundRequest: fundRequest,
+            isCallStatice: !modalInstance.isStaticCalled,
+          }, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
-          }).then(() => {
+          }).then((isExpectedToFail) => {
+            if (isExpectedToFail) { // the transaction is expected to fail
+              modalInstance.isStaticCalled = true;
+              modalInstance.transactionOngoing = false;
+            } else {
+              console.log("transaction finished.")
+              modalInstance.isStaticCalled = false;
+            }
           });
         }
       });
@@ -317,6 +328,7 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = true;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           value: withdrawEvent.value.toString(),
@@ -324,11 +336,21 @@ export default {
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           isLP: true,
         };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+        this.handleTransaction(this.withdraw, {
+          withdrawRequest: withdrawRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -339,6 +361,7 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
@@ -350,11 +373,21 @@ export default {
             dex: this.lpToken.dex,
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
-          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
+          this.handleTransaction(this.provideLiquidity, {
+            provideLiquidityRequest: provideLiquidityRequest,
+            isCallStatice: !modalInstance.isStaticCalled,
+          }, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
-          }).then(() => {
+          }).then((isExpectedToFail) => {
+            if (isExpectedToFail) { // the transaction is expected to fail
+              modalInstance.isStaticCalled = true;
+              modalInstance.transactionOngoing = false;
+            } else {
+              console.log("transaction finished.")
+              modalInstance.isStaticCalled = false;
+            }
           });
         }
       });
@@ -367,6 +400,7 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           value: removeEvent.amount,
@@ -378,11 +412,21 @@ export default {
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
         };
-        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+        this.handleTransaction(this.removeLiquidity, {
+          removeLiquidityRequest: removeLiquidityRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -460,7 +504,7 @@ export default {
     watchProgressBarState() {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
-          case 'MINING' : {
+          case 'MINING': {
             this.disableAllButtons = true;
             break;
           }
@@ -468,12 +512,12 @@ export default {
             this.disableAllButtons = false;
             break;
           }
-          case 'ERROR' : {
+          case 'ERROR': {
             this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
           }
-          case 'CANCELLED' : {
+          case 'CANCELLED': {
             this.disableAllButtons = false;
             this.isBalanceEstimated = false;
             break;
@@ -547,7 +591,9 @@ export default {
         align-items: flex-end;
       }
 
-      &.loan, &.apr, &.max-apr {
+      &.loan,
+      &.apr,
+      &.max-apr {
         align-items: flex-end;
       }
 
@@ -627,5 +673,4 @@ export default {
     }
   }
 }
-
 </style>

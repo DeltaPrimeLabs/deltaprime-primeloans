@@ -57,7 +57,7 @@
 import LoadedValue from './LoadedValue';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
 const ethers = require('ethers');
 import addresses from "../../common/addresses/avax/token_addresses.json";
@@ -66,7 +66,7 @@ import erc20ABI from '../../test/abis/ERC20.json';
 
 export default {
   name: 'PoolsTableRowBeta',
-  components: {LoadedValue, IconButtonMenuBeta},
+  components: { LoadedValue, IconButtonMenuBeta },
   props: {
     pool: {}
   },
@@ -127,6 +127,7 @@ export default {
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
@@ -134,13 +135,23 @@ export default {
           depositNativeToken: depositEvent.depositNativeToken
         };
 
-        this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
+        this.handleTransaction(this.deposit, {
+          depositRequest: depositRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
           this.$forceUpdate();
         }, () => {
 
-        }).then(() => {
+        }).then((isExpectedToFail) => {
           this.closeModal();
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -151,19 +162,30 @@ export default {
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.name;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           assetSymbol: this.pool.asset.symbol,
           amount: withdrawEvent.value,
           withdrawNativeToken: withdrawEvent.withdrawNativeToken,
         };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+        this.handleTransaction(this.withdraw, {
+          withdrawRequest: withdrawRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
           this.$forceUpdate();
         }, () => {
 
-        }).then(() => {
+        }).then((isExpectedToFail) => {
           this.closeModal();
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -277,5 +299,4 @@ export default {
   }
 
 }
-
 </style>

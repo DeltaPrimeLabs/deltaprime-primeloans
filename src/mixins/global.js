@@ -47,7 +47,7 @@ export default {
 
     async handleTransaction(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);
-      await handleTransaction(fun, args, onSuccess, onFail);
+      return await handleTransaction(fun, args, onSuccess, onFail);
     },
     async handleCall(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);

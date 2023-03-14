@@ -49,6 +49,7 @@
                class="info__icon"
                src="src/assets/icons/info.svg"
                v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"></div>
+        </div>
       </div>
 
       <div class="table__cell">
@@ -81,9 +82,9 @@
 <script>
 import StakeModal from './StakeModal';
 import UnstakeModal from './UnstakeModal';
-import {mapState, mapActions} from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import config from '../config';
-import {calculateMaxApy} from '../utils/calculate';
+import { calculateMaxApy } from '../utils/calculate';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import FlatButton from './FlatButton';
 import MigrateModal from './MigrateModal';
@@ -92,7 +93,7 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'StakingProtocolTableRow',
-  components: {FlatButton, IconButtonMenuBeta},
+  components: { FlatButton, IconButtonMenuBeta },
   props: {
     farm: {
       required: true,
@@ -190,6 +191,7 @@ export default {
       modalInstance.asset = this.asset;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('STAKE', (stakeValue) => {
         console.log(stakeValue);
         const stakeRequest = {
@@ -205,10 +207,21 @@ export default {
           isLP: this.isLP,
         };
         console.log(stakeRequest);
-        this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
+        this.handleTransaction(this.stake, {
+          stakeRequest: stakeRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -225,6 +238,7 @@ export default {
       modalInstance.receiptTokenBalance = this.farm.totalBalance;
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
+      modalInstance.isStaticCalled = false;
       modalInstance.$on('UNSTAKE', unstakeEvent => {
         console.log(unstakeEvent);
         const unstakeRequest = {
@@ -243,10 +257,21 @@ export default {
           isLP: this.isLP,
           isMax: unstakeEvent.isMax
         };
-        this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
+        this.handleTransaction(this.unstake, {
+          unstakeRequest: unstakeRequest,
+          isCallStatice: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
+        }).then((isExpectedToFail) => {
+          if (isExpectedToFail) { // the transaction is expected to fail
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+          }
         });
       });
     },
@@ -324,7 +349,7 @@ export default {
     watchProgressBarState() {
       this.progressBarService.progressBarState$.subscribe((state) => {
         switch (state) {
-          case 'MINING' : {
+          case 'MINING': {
             this.disableAllButtons = true;
             break;
           }
@@ -332,12 +357,12 @@ export default {
             this.disableAllButtons = false;
             break;
           }
-          case 'ERROR' : {
+          case 'ERROR': {
             this.isStakedBalanceEstimated = false;
             this.disableAllButtons = false;
             break;
           }
-          case 'CANCELLED' : {
+          case 'CANCELLED': {
             this.isStakedBalanceEstimated = false;
             this.disableAllButtons = false;
             break;
@@ -394,7 +419,7 @@ export default {
       };
 
       modalInstance.$on('MIGRATE', () => {
-        this.handleTransaction(this.migrateToAutoCompoundingPool, {migrateRequest: migrateRequest}, () => {
+        this.handleTransaction(this.migrateToAutoCompoundingPool, { migrateRequest: migrateRequest }, () => {
           this.rewards = 0;
           this.$forceUpdate();
         }, (error) => {
