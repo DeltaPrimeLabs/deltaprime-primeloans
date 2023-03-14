@@ -1123,19 +1123,19 @@ export default {
       Object.keys(config.POOLS_CONFIG)
       ]);
 
-      // try {
-      //   if (isCallStatic) {
-      //     console.log('calling function through callStatic...')
-      //     const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.repay(
-      //       toBytes32(repayRequest.asset),
-      //       parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)),
-      //       { gasLimit: 3000000 });
-      //     console.log(tx);
-      //     if (tx.code || tx.errorName || tx.errorSignature) return true;
-      //   }
-      // } catch (error) {
-      //   console.log("callStatic to repay error: ", error);
-      // }
+      try {
+        if (isCallStatic) {
+          console.log('calling function through callStatic...')
+          const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.repay(
+            toBytes32(repayRequest.asset),
+            parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)),
+            { gasLimit: 3000000 });
+          console.log(tx);
+          if (tx.code || tx.errorName || tx.errorSignature) return true;
+        }
+      } catch (error) {
+        console.log("callStatic to repay error: ", error);
+      }
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(
         toBytes32(repayRequest.asset),
