@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b3c868b6e0064e1f95c0918de156437d0ec26c80;
+// Last deployed from commit: 8ad447f9ada2bb446dab83c25c9452e317a6f575;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -28,7 +28,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUnstakeUSDC1(uint256 amount, uint256 minAmount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
-            asset: 0x06f01502327De1c37076Bea4689a7e44279155e9,
+            asset: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,
             symbol: "USDC",
             identifier: "VF_USDC_MAIN",
             balanceSelector: this.vectorUSDC1Balance.selector,
@@ -38,7 +38,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9));
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E));
         _stakedBalance = stakingContract.balance(address(this));
     }
 
