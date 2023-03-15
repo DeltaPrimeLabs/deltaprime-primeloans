@@ -16,7 +16,8 @@
     "@redstone-finance/evm-connector": "^0.0.19",
     "ethers": "^5.7.2",
     "firebase-admin": "^10.0.2",
-    "firebase-functions": "^4.2.1"
+    "firebase-functions": "^4.2.1",
+    "node-fetch": "^2.6.9"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0"

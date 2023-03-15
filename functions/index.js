@@ -2,6 +2,8 @@
 const functions = require("firebase-functions");
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const fetch = require("node-fetch");
+
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
 initializeApp({
@@ -17,7 +19,16 @@ const FACTORY = require(`./SmartLoansFactory.json`);
 const LOAN = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
+const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
 
+// Tokens list to get APY for from Vector Finance
+const tokensForApy = [
+  'AVAX',
+  'SAVAX',
+  'USDC',
+  'USDT',
+  'AVAX_SAVAX'
+]
 
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
@@ -73,6 +84,37 @@ exports.scheduledFunction = functions
     return null;
   });
 
+exports.apyCollector = functions
+  .runWith({ timeoutSeconds: 120, memory: "1GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting APYs");
 
+    const db = getFirestore();
+    const fetchTime = new Date().getTime();
 
+    fetch(VECTOR_APY_URL)
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (!data["Staking"]) functions.logger.info('APYs not available from Vector.');
+        const vectorApys = data['Staking'];
+        for (const token of tokensForApy) {
+          if (Object.keys(vectorApys).includes(token)) {
+            const token_apy = {
+              nonAuto: vectorApys[token].total,
+              auto: 0,
+              fetchTime,
+            };
+            console.log(token_apy)
+            await db.collection('vectorApys').doc(token).set(token_apy);
+          }
+        }
+      })
+      .catch((error) => {
+        functions.logger.info(`Fetching APY from Vector failed. Error: ${error}`);
+      });
 
+    functions.logger.info(`Fetching APY from Vector finished.`);
+
+    return null;
+  });
