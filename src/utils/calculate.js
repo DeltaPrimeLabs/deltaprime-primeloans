@@ -7,6 +7,7 @@ import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import IYieldYak
   from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
@@ -177,6 +178,16 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 }
 
 export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
+  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
+  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
+  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+
+  return loanBalance / totalSupply * totalDeposits;
+}
+
+export async function vectorFinanceMaxUnstaked(stakingContractAddress, loanAddress) {
+  // Using IYIeldYak.abi for VectorFinance is correct
   const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
   const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
   const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));

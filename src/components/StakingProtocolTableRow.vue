@@ -275,9 +275,9 @@ export default {
 
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
-        // normal token staked
-        this.balance = this.farm.totalBalance;
         // receipt token staked
+        this.balance = this.farm.totalBalance;
+        // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         await this.setApy();

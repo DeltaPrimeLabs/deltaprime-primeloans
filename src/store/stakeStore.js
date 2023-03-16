@@ -2,7 +2,14 @@ import {awaitConfirmation, getLog, wrapContract} from '../utils/blockchain';
 import config from '../config';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import {BigNumber} from 'ethers';
-import {fromWei, mergeArrays, vectorFinanceRewards, yieldYakMaxUnstaked, yieldYakStaked} from '../utils/calculate';
+import {
+  fromWei,
+  mergeArrays,
+  vectorFinanceMaxUnstaked,
+  vectorFinanceRewards,
+  yieldYakMaxUnstaked,
+  yieldYakStaked
+} from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -282,7 +289,6 @@ export default {
               Object.keys(config.POOLS_CONFIG)
             ]);
             farm.totalBalance = formatUnits(await (await wrapContract(smartLoanContract, loanAssets))[farm.balanceMethod](), config.ASSETS_CONFIG[symbol].decimals);
-            console.log('auto compound balance', farm.totalBalance);
           } else {
             farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
           }
@@ -306,8 +312,13 @@ export default {
             farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
             console.log('farm.rewards: ', farm.rewards);
           } else if (farm.protocol === 'VECTOR_FINANCE') {
-            farm.totalStaked = farm.totalBalance;
-            farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+            if (farm.autoCompounding) {
+              const maxUnstaked = await vectorFinanceMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+              farm.totalStaked = maxUnstaked;
+            } else {
+              farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+              farm.totalStaked = farm.totalBalance;
+            }
           }
         }
       }
