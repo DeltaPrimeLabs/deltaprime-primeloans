@@ -35,7 +35,7 @@
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
             <span v-if="isStakedBalanceEstimated">~</span>{{
-              isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked, 20, true)
+              isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked)
             }}
           </div>
           <div class="double-value__usd">{{ underlyingTokenStaked * asset.price | usd }}</div>
