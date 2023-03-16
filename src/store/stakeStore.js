@@ -313,7 +313,8 @@ export default {
             console.log('farm.rewards: ', farm.rewards);
           } else if (farm.protocol === 'VECTOR_FINANCE') {
             if (farm.autoCompounding) {
-              const maxUnstaked = await vectorFinanceMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+              const maxUnstaked = await vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
+              console.warn(farm.protocolIdentifier, maxUnstaked);
               farm.totalStaked = maxUnstaked;
             } else {
               farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
