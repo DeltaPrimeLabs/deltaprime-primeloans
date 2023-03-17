@@ -3,7 +3,7 @@ const functions = require("firebase-functions");
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const fetch = require("node-fetch");
-
+const yieldYakConfig = require('./yieldYakApy.json');
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
 initializeApp({
@@ -20,15 +20,16 @@ const LOAN = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
 const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
+const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
-// Tokens list to get APY for from Vector Finance
-const tokensForApy = [
-  'AVAX',
-  'SAVAX',
-  'USDC',
-  'USDT',
-  'AVAX_SAVAX'
-]
+// matching token ids of Vector Finance
+const tokensForApy = {
+  AVAX: 'AVAX',
+  sAVAX: 'SAVAX',
+  USDC: 'USDC',
+  USDT: 'USDT',
+  GLP: 'GLP',
+};
 
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
@@ -88,33 +89,75 @@ exports.apyCollector = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
-    functions.logger.info("Getting APYs");
+    functions.logger.info("Getting APRs");
 
     const db = getFirestore();
     const fetchTime = new Date().getTime();
+    const apys = {};
+    const urls = [
+      VECTOR_APY_URL,
+      YIELDYAK_APY_URL
+    ]
 
-    fetch(VECTOR_APY_URL)
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data["Staking"]) functions.logger.info('APYs not available from Vector.');
-        const vectorApys = data['Staking'];
-        for (const token of tokensForApy) {
-          if (Object.keys(vectorApys).includes(token)) {
-            const token_apy = {
-              nonAuto: vectorApys[token].total,
-              auto: 0,
+    try {
+
+      Promise.all(urls.map(url => 
+        fetch(url).then(resp => resp.json())
+      )).then(async ([vectorAprs, yieldYakApys]) => {
+
+        if (!vectorAprs["Staking"]) functions.logger.info('APRs not available from Vector.');
+        const stakingAprs = vectorAprs['Staking'];
+
+        for (const [token, vfToken] of Object.entries(tokensForApy)) {
+          if (Object.keys(stakingAprs).includes(vfToken)) {
+            const weeklyApy = (1 + parseFloat(stakingAprs[vfToken].total) / 100 / 52) ** 52 - 1;
+            console.log(weeklyApy);
+            const apy = {
+              manual: {
+                apr: stakingAprs[vfToken].total,
+                apy: weeklyApy
+              },
+              auto: {},
               fetchTime,
             };
-            console.log(token_apy)
-            await db.collection('vectorApys').doc(token).set(token_apy);
+            if (token in apys) {
+              apys[token]['VECTOR_FINANCE'] = apy;
+            } else {
+              apys[token] = {
+                VECTOR_FINANCE: apy
+              }
+            }
           }
         }
-      })
-      .catch((error) => {
-        functions.logger.info(`Fetching APY from Vector failed. Error: ${error}`);
+
+        for (const [token, farms] of Object.entries(yieldYakConfig)) {
+          for (const farm of farms) {
+            const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
+            const apy = {
+              [farm.autoCompounding ? 'auto' : 'manual']: {
+                apy: yieldApy
+              }
+            }
+            if (token in apys) {
+              apys[token]['YIELD_YAK'] = apy;
+            } else {
+              apys[token] = {
+                YIELD_YAK: apy
+              }
+            }
+          }
+        }
+    
+        for (const [token, apyData] of Object.entries(apys)) {
+          await db.collection('apys').doc(token).set(apyData);
+        }
+    
+        functions.logger.info(`Fetching APYs from Vector finished.`);
       });
 
-    functions.logger.info(`Fetching APY from Vector finished.`);
+    } catch (error) {
+      functions.logger.info(`Fetching APY from Vector failed. Error: ${error}`);
+    }
 
     return null;
   });

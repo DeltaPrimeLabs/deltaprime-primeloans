@@ -280,7 +280,7 @@ export default {
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
-        await this.setApy();
+        this.setApy();
       });
     },
 
@@ -300,7 +300,7 @@ export default {
       });
     },
 
-    async setApy() {
+    setApy() {
       if (!this.farm.currentApy) return 0;
       let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
       console.log('setApy');
