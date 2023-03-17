@@ -186,14 +186,11 @@ export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
   return loanBalance / totalSupply * totalDeposits;
 }
 
-export async function vectorFinanceMaxUnstaked(stakingContractAddress, loanAddress) {
-  // Using IYIeldYak.abi for VectorFinance is correct
-  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
-  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
-  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
-
-  return loanBalance / totalSupply * totalDeposits;
+export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
+  const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
+  const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
+  const stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  return stakedBalance;
 }
 
 export async function getPangolinLpApr(url) {
