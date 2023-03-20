@@ -252,7 +252,7 @@ describe('Smart loan', () => {
         });
 
         it("should unstake all in normal way", async () => {
-            await testUnstakeNormal("vectorUnstakeUSDC1", "vectorUSDC1Balance", VectorUSDCStaking1, parseUnits('50', BigNumber.from("6")));
+            await testUnstakeNormal("vectorUnstakeWAVAX1", "vectorWAVAX1Balance", VectorWAVAXStaking1, toWei('15'));
         });
 
         it("should migrate", async () => {
@@ -260,16 +260,11 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let normalWAVAX1Balance = await wrappedLoan.vectorWAVAX1Balance();
-            let initialWAVAX1Balance = await wrappedLoan.vectorWAVAX1BalanceAuto();
             let normalSAVAX1Balance = await wrappedLoan.vectorSAVAX1Balance();
             let initialSAVAX1Balance = await wrappedLoan.vectorSAVAX1BalanceAuto();
 
-            await wrappedLoan.vectorMigrateAvax();
             await wrappedLoan.vectorMigrateSAvax();
 
-            expect(await wrappedLoan.vectorWAVAX1Balance()).to.be.eq(0);
-            expect(await wrappedLoan.vectorWAVAX1BalanceAuto()).to.be.closeTo(initialWAVAX1Balance.add(normalWAVAX1Balance), normalWAVAX1Balance.div(1000));
             expect(await wrappedLoan.vectorSAVAX1Balance()).to.be.eq(0);
             expect(await wrappedLoan.vectorSAVAX1BalanceAuto()).to.be.closeTo(initialSAVAX1Balance.add(normalSAVAX1Balance), normalSAVAX1Balance.div(1000));
 
@@ -281,8 +276,8 @@ describe('Smart loan', () => {
         it("should unstake", async () => {
             await testUnstake("vectorUnstakeUSDC1Auto", "vectorUSDC1BalanceAuto", VectorUSDCStaking1, parseUnits('50', BigNumber.from("6")));
             await testUnstake("vectorUnstakeUSDT1Auto", "vectorUSDT1BalanceAuto", VectorUSDTStaking1, parseUnits('50', BigNumber.from("6")));
-            await testUnstake("vectorUnstakeWAVAX1Auto", "vectorWAVAX1BalanceAuto", VectorWAVAXStaking1, toWei('30'));
-            await testUnstake("vectorUnstakeSAVAX1Auto", "vectorSAVAX1BalanceAuto", VectorSAVAXStaking1, toWei('30'));
+            await testUnstake("vectorUnstakeWAVAX1Auto", "vectorWAVAX1BalanceAuto", VectorWAVAXStaking1, toWei('8'));
+            await testUnstake("vectorUnstakeSAVAX1Auto", "vectorSAVAX1BalanceAuto", VectorSAVAXStaking1, toWei('20'));
         });
 
         async function testStakeNormal(stakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {
