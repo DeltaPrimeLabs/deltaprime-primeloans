@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8ad447f9ada2bb446dab83c25c9452e317a6f575;
+// Last deployed from commit: 3b625a1b173395a815494045d4d55e4d5427371e;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -38,7 +38,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E));
+        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(0xE5011Ab29612531727406d35cd9BcCE34fAEdC30);
         _stakedBalance = stakingContract.balance(address(this));
     }
 
