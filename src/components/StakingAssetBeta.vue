@@ -434,6 +434,7 @@ export default {
           .asset__icon {
             width: 22px;
             height: 22px;
+            opacity: var(--asset-table-row__icon-opacity);
 
             &.asset__icon--double {
               margin-right: 20px;

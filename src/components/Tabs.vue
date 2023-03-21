@@ -95,7 +95,7 @@ export default {
 
   .tab-button {
     display: inline-block;
-    color: #7d7d7d;
+    color: var(--tabs__tab-button-color);
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     border-radius: 10px;
@@ -113,7 +113,7 @@ export default {
 
   .tab-selected .tab-button {
     font-weight: bold;
-    color: black;
+    color: var(--tabs__tab-button-color--selected);
   }
 
   li {
@@ -122,7 +122,7 @@ export default {
 
   li:not(.tab-selected):hover {
     .tab-button {
-      color: black;
+      color: var(--tabs__tab-button-color--hover);
     }
   }
 

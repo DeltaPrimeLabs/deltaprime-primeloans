@@ -64,7 +64,7 @@ export default {
       align-items: center;
       font-size: $font-size-sm;
       font-weight: 500;
-      color: $dark-gray;
+      color: var(--stats-bar-element-beta__stat-label-color);
 
       .stat__info {
         display: flex;

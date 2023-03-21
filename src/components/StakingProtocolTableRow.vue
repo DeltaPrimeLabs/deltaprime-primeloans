@@ -373,14 +373,12 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
           disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Unstake',
           iconButtonActionKey: 'UNSTAKE',
           disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'

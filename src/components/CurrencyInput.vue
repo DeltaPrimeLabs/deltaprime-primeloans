@@ -263,8 +263,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-  background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
+  box-shadow: var(--currency-input__box-shadow);
+  background-image: var(--currency-input__background);
   height: 60px;
   border-radius: 15px;
   padding-left: 15px;
@@ -293,6 +293,7 @@ export default {
 }
 
 input {
+  color: var(--currency-input__input-color);
   background: transparent;
   border: none;
   font-family: Montserrat;
@@ -330,7 +331,7 @@ input[type=number] {
 }
 
 .converted {
-  color: #696969;
+  color: var(--currency-input__converted-color);
   margin-right: 15px;
   white-space: nowrap;
   text-align: right;

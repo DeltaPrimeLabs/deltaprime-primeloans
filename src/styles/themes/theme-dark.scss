@@ -1,0 +1,115 @@
+@import "src/styles/colors";
+:root.theme--dark {
+  --default-text-color: #{$mist-blue};
+  // region App
+  --app-page-content__background: linear-gradient(140deg, #{$deep-navy} 11%, #{$washed-navy} 49%, #{$eggplant} 89%);
+  --app-page-content__background--opacity: 1;
+  // endregion
+
+  // region AccountAprWidget
+  --account-apr-widget-component__background: #{$space}80;
+  --account-apr-widget-component__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
+  --account-apr-widget-component__widget-title-color: #{$storm-blue};
+  --account-apr-widget-component__no-smart-loan-dash-color: #{$washed-blue};
+  --account-apr-widget-component__widget-comment-color: #{$washed-blue};
+  // endregion
+
+  // region Wallet
+  --wallet-a-color: #{$storm-blue};
+  --wallet-separator-color: #{$washed-space};
+  // endregion
+
+  // region StatsBarBeta
+  --stats-bar-beta__background: #{$space}80;
+  --stats-bar-beta__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
+  --stats-bar-beta__divider-background: linear-gradient(to bottom, #{$fuchsia} 19%, #{$pale-plum} 95%);
+  // endregion
+
+  // region StatsBarElementBeta
+  --stats-bar-element-beta__stat-label-color: #{$storm-blue};
+  // endregion
+
+  // region Block
+  --block__background-color: #{$space};
+  --block__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
+  --block__border-image: linear-gradient(144deg, #{$deep-fuchsia} 14%, #{$plum} 56%, #{$dark-teal} 98%);
+  // endregion
+
+  // region BarGaugeBeta
+  --bar__background-color: #{$cloud-navy};
+  --bar__box-shadow: inset 0 1px 3px 0 #{$washed-fuchsia};
+  --bar__value-background-image: linear-gradient(to left, #{$deep-blue} 9%, #{$deep-lilac} 83%);
+  // endregion
+
+  // region NameValueBadgeBeta
+  --name-value-badge-beta__background: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --name-value-badge-beta__content-background: var(--block__background-color);
+  // endregion
+
+  // region TableHeader
+  --table-header__border-color: #{$deep-space};
+  --table-header__background-color: #{$shallow-space};
+  --table-header__cell-color: #{$storm-blue};
+  // endregion
+
+  // region IconButtonMenuBeta
+  --icon-button-menu-beta__icon-color--default: #{$pale-lilac};
+  --icon-button-menu-beta__icon-color-hover--default: #{$violet-smoke}; // TODO to change
+  --icon-button-menu-beta__menu-background-color: #{$mist-navy};
+  --icon-button-menu-beta__menu-border-color: #{$washed-space};
+  --icon-button-menu-beta__menu-box-shadow: 2px 2px 8px 0 #{$dark-space}CC;
+  --icon-button-menu-beta__menu-color: #{$cloud-blue};
+  --icon-button-menu-beta__menu-color--hover: #{$violet-mist}; // TODO to change
+  // endregion
+
+  // region AssetsTableRow / LpTableRow / PoolsTableRow
+  --asset-table-row__icon-opacity: 0.95;
+  --asset-table-row__border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --asset-table-row__asset-loan-color: #{$washed-blue};
+  --asset-table-row__double-value-color: #{$washed-blue};
+  --asset-table-row__no-value-dash-color: #{$washed-blue};
+  --asset-table-row__apy-color: #{$pale-green};
+  // endregion
+
+  // region SmallChartBeta
+  --small-chart-beta__line-color--positive: #{$pale-green};
+  --small-chart-beta__line-color--negative: #{$pale-red};
+  // endregion
+
+  // region AssetFilter
+  --asset-filter__filter-separator-color: #{$washed-space};
+  --asset-filter__filter-option-background-color: #{$cloud-blue};
+  --asset-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$dark-space}E5;
+  // endregion
+
+  // region DexFilter
+  --dex-filter__filter-option-background-color: #{$cloud-blue};
+  --dex-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$dark-space}E5;
+  // endregion
+
+  // region Tabs
+  --tabs__tab-button-color: #{$washed-blue};
+  --tabs__tab-button-color--hover: #{$mist-blue}; // TODO to change
+  --tabs__tab-button-color--selected: #{$mist-blue};
+  // endregion
+
+  // region Modal
+  --modal__background-color: #{$space};
+  --modal__border: linear-gradient(145deg, #{$deep-fuchsia} 13%, #{$plum} 56%, #{$dark-teal} 98%);
+  --modal__box-shadow: 4px 4px 20px 0 #{$dark-space}66;
+  --modal__top-info-color: #{$storm-blue};
+  --modal__top-info-divider-color: #{$mist-space};
+  // endregion
+
+  // region CurrencyInput
+  --currency-input__background: linear-gradient(to right, #{$deep-navy} 9%, #{$deep-teal} 50%, #{$eggplant} 92%);
+  --currency-input__box-shadow: inset 3px 3px 8px 0 #{$dark-space}7f;
+  --currency-input__converted-color: #{$storm-blue};
+  --currency-input__input-color: #{$mist-blue};
+  // endregion
+
+  // region filters
+  --filters__filter-label-color: #{$washed-blue};
+  --filters__clear-text-color: #{$pale-lilac};
+  // endregion
+}

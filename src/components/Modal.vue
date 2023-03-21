@@ -55,8 +55,8 @@ export default {
         position: absolute;
         width: 750px;
         border-radius: 21px;
-        box-shadow: 4px 4px 20px 0 rgba(155, 130, 255, 0.15);
-        background-color: white;
+        box-shadow: var(--modal__box-shadow);
+        background-color: var(--modal__background-color);
         padding: 60px 100px;
 
         &::after {
@@ -65,7 +65,7 @@ export default {
           bottom: -4px;
           left: -4px;
           right: -4px;
-          background-image: linear-gradient(143deg, #c9cbff 26%, #ffd8b1 60%, #fcb7cc 91%);
+          background-image: var(--modal__border);
           content: '';
           z-index: -1;
           border-radius: 25px;

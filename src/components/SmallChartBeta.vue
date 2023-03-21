@@ -38,7 +38,8 @@ export default {
           {
             fill: false,
             data: this.dataPoints,
-            borderColor: this.positiveChange ? '#00bf68' : '#f64254',
+            borderColor: getComputedStyle(document.getElementsByClassName('page-content')[0])
+                .getPropertyValue(this.positiveChange ? '--small-chart-beta__line-color--positive' : '--small-chart-beta__line-color--negative'),
             borderWidth: this.lineWidth,
             pointRadius: 0
           }

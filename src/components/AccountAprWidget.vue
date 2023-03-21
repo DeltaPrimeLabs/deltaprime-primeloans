@@ -119,15 +119,15 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--account-apr-widget-component__box-shadow);
+  background-color: var(--account-apr-widget-component__background);
   border-bottom-left-radius: 35px;
   border-bottom-right-radius: 35px;
 
   .apr-widget__title {
     font-size: $font-size-sm;
     font-weight: 500;
-    color: $dark-gray;
+    color: var(--account-apr-widget-component__widget-title-color);
     margin-bottom: 4px;
   }
 
@@ -144,7 +144,7 @@ export default {
 
   .apr-widget__comment {
     font-size: $font-size-xsm;
-    color: $steel-gray;
+    color: var(--account-apr-widget-component__widget-comment-color);
   }
 
   .info__icon {

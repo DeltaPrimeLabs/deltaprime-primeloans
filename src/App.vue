@@ -1,6 +1,6 @@
 <template>
   <div class="page-content">
-<!--    <button v-on:click="testClick()">test</button>-->
+    <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
       You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
@@ -30,6 +30,7 @@
         <a href="https://deltaprime.io/">
           <img src="src/assets/icons/deltaprime.svg" class="logo">
         </a>
+        <button @click="toggleTheme()">switch mode</button>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
       </div>
@@ -69,10 +70,13 @@ export default {
       highGasPrice: false,
       gasPriceIntervalId: null,
       showGlpBanner: false,
-      showDepositBanner: false
+      showDepositBanner: false,
+      darkMode: false,
     };
   },
   async created() {
+    this.darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
     await this.initNetwork();
 
     if (!ethereum) {
@@ -119,6 +123,11 @@ export default {
   methods: {
     ...mapActions('network', ['initNetwork']),
     ...mapActions('nft', ['initNfts']),
+    toggleTheme() {
+      this.darkMode = !this.darkMode;
+      document.documentElement.classList.remove(this.darkMode ? 'theme--light' : 'theme--dark')
+      document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
+    },
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
@@ -219,6 +228,15 @@ export default {
 };
 </script>
 
+
+<style lang="scss">
+@import "~@/styles/themes/theme-dark";
+@import "~@/styles/themes/theme-light";
+
+html {
+  color: var(--default-text-color)
+}
+</style>
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
@@ -230,14 +248,12 @@ a {
   content: ' ';
   display: block;
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.08;
+  opacity: var(--app-page-content__background--opacity);
   z-index: -1;
-
-  background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
+  background-image: var(--app-page-content__background);
 }
 
 .content {

@@ -4,13 +4,9 @@
     <Bubble v-if="bubbleText">
       <div v-html="bubbleText"></div>
     </Bubble>
-    <div id="icon-button-container" class="icon-button-container" v-on:click="iconButtonClick($event)">
-      <img id="icon-button" class="icon-button"
-           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
-           :src="config.iconSrc">
-      <img id="icon-button--hover" class="icon-button--hover"
-           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
-           :src="config.hoverIconSrc">
+    <div ref="icon" id="icon-button-container" class="icon-button"
+         v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
+         v-on:click="iconButtonClick($event)">
     </div>
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
       <div class="menu__option"
@@ -56,6 +52,7 @@ export default {
     document.addEventListener('icon-menu-open', () => {
       this.menuOpen = false;
     }, false);
+    this.$refs.icon.style.webkitMaskImage = `url(${this.config.iconSrc})`;
   },
   data() {
     return {
@@ -119,35 +116,23 @@ export default {
 .icon-button-menu-component {
   position: relative;
 
-  .icon-button-container {
+  .icon-button {
+    height: 26px;
+    width: 26px;
+    cursor: pointer;
+    mask-size: cover;
+    -webkit-mask-size: cover;
+    background: var(--icon-button-menu-beta__icon-color--default);
 
     &:hover {
-      .icon-button:not(.icon-button--disabled) {
-        display: none;
-      }
-
-      .icon-button--hover:not(.icon-button--disabled) {
-        display: block;
-      }
+      background: var(--icon-button-menu-beta__icon-color-hover--default);
     }
 
-    .icon-button {
-      height: 26px;
-      width: 26px;
-      cursor: pointer;
-
-      &.icon-button--disabled {
-        opacity: 0.5;
-        filter: grayscale(1);
-        cursor: default;
-      }
-    }
-
-    .icon-button--hover {
-      display: none;
-      height: 26px;
-      width: 26px;
-      cursor: pointer;
+    &.icon-button--disabled {
+      opacity: 0.5;
+      filter: grayscale(1);
+      cursor: default;
+      pointer-events: none;
     }
   }
 
@@ -158,9 +143,9 @@ export default {
     z-index: 1;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 2px 8px 0 rgba(175, 171, 255, 0.5);
-    border: solid 2px $delta-secondary;
-    background-color: white;
+    box-shadow: var(--icon-button-menu-beta__menu-box-shadow);
+    border: solid 2px var(--icon-button-menu-beta__menu-border-color);
+    background-color: var(--icon-button-menu-beta__menu-background-color);
     padding: 10px 18px;
     border-radius: 10px;
 
@@ -170,9 +155,9 @@ export default {
       top: 14px;
       width: 12px;
       height: 12px;
-      border-left: solid 2px $delta-secondary;
-      border-bottom: solid 2px $delta-secondary;
-      background-color: white;
+      border-left: solid 2px var(--icon-button-menu-beta__menu-border-color);
+      border-bottom: solid 2px var(--icon-button-menu-beta__menu-border-color);
+      background-color: var(--icon-button-menu-beta__menu-background-color);
       transform: rotate(45deg);
       content: '';
     }
@@ -181,7 +166,7 @@ export default {
       display: flex;
       flex-direction: row;
       white-space: nowrap;
-      color: $dark-gray;
+      color: var(--icon-button-menu-beta__menu-color);
       font-weight: 600;
       cursor: pointer;
 
@@ -190,22 +175,14 @@ export default {
       }
 
       &:hover {
-        color: $dark-gray;
-      }
-
-      .option__text {
-        &:hover {
-          color: $black;
+        .option__text:not(.option__text--disabled) {
+          color: var(--icon-button-menu-beta__menu-color--hover);
         }
       }
 
       .option__text--disabled {
         opacity: 0.5;
         cursor: default;
-
-        &:hover {
-          color: $dark-gray;
-        }
       }
 
       .option__info__wrapper {

@@ -52,8 +52,8 @@ export default {
 .table__header {
   display: grid;
   border-radius: 30px;
-  border: solid 2px $violet-smoke;
-  background-color: $violet-mist;
+  border: solid 2px var(--table-header__border-color);
+  background-color: var(--table-header__background-color);
   height: 34px;
   padding-left: 17px;
   margin-bottom: 5px;
@@ -63,7 +63,7 @@ export default {
     flex-direction: row;
     align-items: center;
     font-size: $font-size-xsm;
-    color: $dark-gray;
+    color: var(--table-header__cell-color);
     font-weight: 500;
 
     &.asset {

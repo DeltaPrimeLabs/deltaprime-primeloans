@@ -1,0 +1,116 @@
+@import "src/styles/variables";
+
+:root.theme--light {
+  --default-text-color: #{$black};
+  // region App
+  --app-page-content__background: linear-gradient(152deg, #{$steel-blue} 23%, #{$tiger-orange} 65%, #{$raspberry} 96%);
+  --app-page-content__background--opacity: 0.08;
+  // endregion
+
+  // region AccountAprWidget
+  --account-apr-widget-component__background: #{$white}4c;
+  --account-apr-widget-component__box-shadow: 7px 7px 30px 0 #{$delta-steel}80;
+  --account-apr-widget-component__widget-title-color: #{$dark-gray};
+  --account-apr-widget-component__no-smart-loan-dash-color: #{$dark-gray};
+  --account-apr-widget-component__widget-comment-color: #{$dark-gray};
+  // endregion
+
+  // region Wallet
+  --wallet-a-color: #{$steel-gray};
+  --wallet-separator-color: #{$smoke-gray};
+  // endregion
+
+  // region StatsBarBeta
+  --stats-bar-beta__background: #{$white}4c;
+  --stats-bar-beta__box-shadow: 7px 7px 30px 0 #{$delta-steel}80;
+  --stats-bar-beta__divider-background: linear-gradient(to bottom, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
+  // endregion
+
+  // region StatsBarElementBeta
+  --stats-bar-element-beta__stat-label-color: #{$dark-gray};
+  // endregion
+
+  // region Block
+  --block__background-color: #{$white};
+  --block__box-shadow: 7px 7px 30px 0 #{$delta-steel}7f;
+  --block__border-image: linear-gradient(143deg, #{$delta-washed} 26%, #{$washed-orange} 60%, #{$washed-raspberry} 91%);
+  // endregion
+
+  // region BarGaugeBeta
+  --bar__background-color: #{$delta-steel}33;
+  --bar__box-shadow: inset 0 1px 3px 0 #{$delta-steel}B2;
+  --bar__value-background-image: linear-gradient(to right, #{$delta-cloudy} 17%, #{$washed-lilac} 91%);
+  // endregion
+
+  // region NameValueBadgeBeta
+  --name-value-badge-beta__background: linear-gradient(117deg, #{$delta-pale} 39%, #{$pale-orange} 62%, #{$pale-raspberry} 82%);
+  --name-value-badge-beta__content-background: var(--block__background-color);
+  // endregion
+
+  // region TableHeader
+  --table-header__border-color: #{$violet-smoke};
+  --table-header__background-color: #{$violet-mist};
+  --table-header__cell-color: #{$dark-gray};
+  // endregion
+
+  // region IconButtonMenuBeta
+  --icon-button-menu-beta__icon-color--default: #{$delta-accent};
+  --icon-button-menu-beta__icon-color-hover--default: #{$persian-blue};
+  --icon-button-menu-beta__menu-background-color: #{$white};
+  --icon-button-menu-beta__menu-border-color: #{$delta-secondary};
+  --icon-button-menu-beta__menu-box-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
+  --icon-button-menu-beta__menu-color: #{$dark-gray};
+  --icon-button-menu-beta__menu-color--hover: #{$black};
+  // endregion
+
+  // region AssetsTableRow / LpTableRow / PoolsTableRow
+  --asset-table-row__icon-opacity: 1;
+  --asset-table-row__border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  --asset-table-row__asset-loan-color: #{$medium-gray};
+  --asset-table-row__double-value-color: #{$medium-gray};
+  --asset-table-row__no-value-dash-color: #{$medium-gray};
+  --asset-table-row__apy-color: #{$lime-green};
+  // endregion
+
+  // region SmallChartBeta
+  --small-chart-beta__line-color--positive: #{$lime-green};
+  --small-chart-beta__line-color--negative: #{$red};
+  // endregion
+
+  // region AssetFilter
+  --asset-filter__filter-separator-color: #{$smoke-gray};
+  --asset-filter__filter-option-background-color: #{$white};
+  --asset-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$delta-steel}E5;
+  // endregion
+
+  // region DexFilter
+  --dex-filter__filter-option-background-color: #{$white};
+  --dex-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$delta-steel}E5;
+  // endregion
+
+  // region Tabs
+  --tabs__tab-button-color: #{$steel-gray};
+  --tabs__tab-button-color--hover: #{$black};
+  --tabs__tab-button-color--selected: #{$black};
+  // endregion
+
+  // region Modal
+  --modal__background-color: #{$white};
+  --modal__border: linear-gradient(143deg, #{$delta-washed} 26%, #{$washed-orange} 60%, #{$washed-raspberry} 91%);
+  --modal__box-shadow: 4px 4px 20px 0 #{$cloud-lilac}26;
+  --modal__top-info-color: #{$steel-gray};
+  --modal__top-info-divider-color: #{$smoke-gray};
+  // endregion
+
+  // region CurrencyInput
+  --currency-input__background: linear-gradient(114deg, #{$delta-deep}14 39%, #{$mist-orange}14 62%, #{$raspberry}14 81%);
+  --currency-input__box-shadow: inset 3px 3px 8px #{$delta-steel}7f;
+  --currency-input__converted-color: #{$dark-gray};
+  --currency-input__input-color: #{$black};
+  // endregion
+
+  // region filters
+  --filters__filter-label-color: #{$medium-gray};
+  --filters__clear-text-color: #{$delta-accent};
+  // endregion
+}
