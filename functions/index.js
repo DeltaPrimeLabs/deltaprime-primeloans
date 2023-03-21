@@ -3,6 +3,7 @@ const functions = require("firebase-functions");
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const fetch = require("node-fetch");
+const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -23,13 +24,6 @@ const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app
 const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
 // matching token ids of Vector Finance
-const tokensForApy = {
-  AVAX: 'AVAX',
-  sAVAX: 'SAVAX',
-  USDC: 'USDC',
-  USDT: 'USDT',
-  GLP: 'GLP',
-};
 
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
@@ -108,46 +102,35 @@ exports.apyCollector = functions
         if (!vectorAprs["Staking"]) functions.logger.info('APRs not available from Vector.');
         const stakingAprs = vectorAprs['Staking'];
 
-        for (const [token, vfToken] of Object.entries(tokensForApy)) {
-          if (Object.keys(stakingAprs).includes(vfToken)) {
-            const weeklyApy = (1 + parseFloat(stakingAprs[vfToken].total) / 100 / 52) ** 52 - 1;
-            console.log(weeklyApy);
-            const apy = {
-              manual: {
-                apr: stakingAprs[vfToken].total,
-                apy: weeklyApy
-              },
-              auto: {},
-              fetchTime,
-            };
+        for (const [token, farm] of Object.entries(vectorApyConfig)) {
+          if (Object.keys(stakingAprs).includes(farm.vectorId)) {
+            // manual weekly APY
+            const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
+            const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
+
             if (token in apys) {
-              apys[token]['VECTOR_FINANCE'] = apy;
+              apys[token][farm.protocolIdentifier] = weeklyApy;
             } else {
               apys[token] = {
-                VECTOR_FINANCE: apy
-              }
+                [farm.protocolIdentifier]: weeklyApy
+              };
             }
           }
         }
 
-        for (const [token, farms] of Object.entries(yieldYakConfig)) {
-          for (const farm of farms) {
-            const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
-            const apy = {
-              [farm.autoCompounding ? 'auto' : 'manual']: {
-                apy: yieldApy
-              }
-            }
-            if (token in apys) {
-              apys[token]['YIELD_YAK'] = apy;
-            } else {
-              apys[token] = {
-                YIELD_YAK: apy
-              }
-            }
+        for (const [token, farm] of Object.entries(yieldYakConfig)) {
+          const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
+
+          if (token in apys) {
+            apys[token][farm.protocolIdentifier] = yieldApy;
+          } else {
+            apys[token] = {
+              [farm.protocolIdentifier]: yieldApy
+            };
           }
         }
-    
+
+        console.log(apys);
         for (const [token, apyData] of Object.entries(apys)) {
           await db.collection('apys').doc(token).set(apyData);
         }

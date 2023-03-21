@@ -306,11 +306,9 @@ export default {
           }
           try {
             // if apy exists in db we use it, otherwise call api directly
-            if (apys[farm.token] &&
-              apys[farm.token][farm.protocol] &&
-              apys[farm.token][farm.protocol][farm.autoCompounding ? 'auto' : 'manual'].apy
+            if (apys[farm.token] && apys[farm.token][farm.protocolIdentifier]
             ) {
-              farm.currentApy = apys[farm.token][farm.protocol][farm.autoCompounding ? 'auto' : 'manual'].apy;
+              farm.currentApy = apys[farm.token][farm.protocolIdentifier];
               console.log(farm.token, farm.protocol, farm.currentApy);
             } else {
               farm.currentApy = await farm.apy();
