@@ -133,7 +133,7 @@ export default {
     loan: Number,
     assetBalance: Number,
     isLP: false,
-    walletAssetBalance: {},
+    walletAssetBalance: {}, // this prop is string, we need to convert when it's being used in calculation
     walletNativeTokenBalance: {
       default: null,
     },
@@ -173,8 +173,9 @@ export default {
       if (this.isNativeAvax) {
         return this.walletNativeTokenBalance;
       } else {
-        console.log((!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance);
-        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
+        const walletAssetBalance = parseFloat(this.walletAssetBalance);
+        console.log((!walletAssetBalance && walletAssetBalance !== 0) ? null : walletAssetBalance);
+        return (!walletAssetBalance && walletAssetBalance !== 0) ? null : walletAssetBalance;
       }
     },
 
@@ -187,9 +188,9 @@ export default {
     submit() {
       this.transactionOngoing = true;
       if (this.asset.symbol === 'AVAX') {
-        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
+        this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
-        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.asset});
+        this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.asset});
       }
     },
 
