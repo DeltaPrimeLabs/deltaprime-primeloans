@@ -3,6 +3,7 @@ const functions = require("firebase-functions");
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const fetch = require("node-fetch");
+const puppeteer = require("puppeteer");
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
@@ -79,7 +80,7 @@ exports.scheduledFunction = functions
     return null;
   });
 
-exports.apyCollector = functions
+exports.apyAggregator = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
@@ -93,15 +94,32 @@ exports.apyCollector = functions
       YIELDYAK_APY_URL
     ]
 
+    // parse GLP APR from GMX website
+    const URL = "https://gmx.io/";
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    // go to the gmx webpage
+    await page.goto(URL);
+
+    const glpApy = await page.evaluate(() => {
+      // select the elements with relevant class
+      const items = document.querySelectorAll(".Home-token-card-option-apr");
+
+      // parse APR of GLP on Avalanche
+      return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    });
+    console.log(glpApy);
+
     try {
 
-      Promise.all(urls.map(url => 
+      Promise.all(urls.map(url =>
         fetch(url).then(resp => resp.json())
       )).then(async ([vectorAprs, yieldYakApys]) => {
 
         if (!vectorAprs["Staking"]) functions.logger.info('APRs not available from Vector.');
         const stakingAprs = vectorAprs['Staking'];
 
+        // fetching Vector APYs
         for (const [token, farm] of Object.entries(vectorApyConfig)) {
           if (Object.keys(stakingAprs).includes(farm.vectorId)) {
             // manual weekly APY
@@ -118,6 +136,7 @@ exports.apyCollector = functions
           }
         }
 
+        // fetching YieldYak APYs
         for (const [token, farm] of Object.entries(yieldYakConfig)) {
           const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
 
@@ -130,16 +149,27 @@ exports.apyCollector = functions
           }
         }
 
+        if ('GLP' in apys) {
+          apys['GLP']['apy'] = glpApy;
+        } else {
+          apys['GLP'] = {
+            apy: glpApy
+          };
+        }
+
+        await browser.close();
+
         console.log(apys);
+        // write apys to db
         for (const [token, apyData] of Object.entries(apys)) {
           await db.collection('apys').doc(token).set(apyData);
         }
-    
-        functions.logger.info(`Fetching APYs from Vector finished.`);
+
+        functions.logger.info(`Fetching APYs finished.`);
       });
 
     } catch (error) {
-      functions.logger.info(`Fetching APY from Vector failed. Error: ${error}`);
+      functions.logger.info(`Fetching APYs failed. Error: ${error}`);
     }
 
     return null;

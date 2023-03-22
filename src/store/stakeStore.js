@@ -2,9 +2,6 @@ import { awaitConfirmation, getLog, wrapContract } from '../utils/blockchain';
 import config from '../config';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { BigNumber } from 'ethers';
-const { initializeApp } = require('firebase/app');
-import { getFirestore, collection, query, getDocs } from 'firebase/firestore/lite';
-import firebaseConfig from '../../.secrets/firebaseConfig.json';
 import {
   fromWei,
   mergeArrays,
@@ -17,8 +14,6 @@ import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterfa
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
-
-const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
   namespaced: true,
@@ -285,12 +280,11 @@ export default {
 
       const stakedInYieldYak = await yieldYakStaked(rootState.fundsStore.smartLoanContract.address);
 
-      // get apys from db
-      const apys = {};
-      const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
-      apysQuerySnapshot.forEach((doc) => {
-        apys[doc.id] = doc.data();
-      });
+      const apys = rootState.fundsStore.apys;
+      // const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
+      // apysQuerySnapshot.forEach((doc) => {
+      //   apys[doc.id] = doc.data();
+      // });
 
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {

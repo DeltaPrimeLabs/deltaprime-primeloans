@@ -17,7 +17,8 @@
     "ethers": "^5.7.2",
     "firebase-admin": "^10.0.2",
     "firebase-functions": "^4.2.1",
-    "node-fetch": "^2.6.9"
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0"

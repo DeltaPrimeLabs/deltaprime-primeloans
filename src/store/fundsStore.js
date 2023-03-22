@@ -15,6 +15,9 @@ import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber, utils} from 'ethers';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, query, getDocs } from 'firebase/firestore/lite';
+import firebaseConfig from '../../.secrets/firebaseConfig.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
@@ -36,6 +39,8 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 const HARD_REFRESH_DELAY = 60000;
+
+const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
   namespaced: true,
@@ -60,10 +65,15 @@ export default {
     protocolPaused: false,
     oracleError: false,
     debtsPerAsset: null,
+    apys: null,
   },
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
       state.smartLoanContract = smartLoanContract;
+    },
+
+    setApys(state, apys) {
+      state.apys = apys;
     },
 
     setAssets(state, assets) {
@@ -145,6 +155,7 @@ export default {
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
+      await dispatch('setupApys');
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
@@ -179,6 +190,7 @@ export default {
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
         }
+        await dispatch('setupApys');
         await dispatch('setupAssets');
         await dispatch('setupLpAssets');
         await dispatch('getAllAssetsBalances');
@@ -209,6 +221,17 @@ export default {
       const supported = whiteListedTokenAddresses.map(address => Object.keys(tokenAddresses).find(symbol => tokenAddresses[symbol].toLowerCase() === address.toLowerCase()));
 
       commit('setSupportedAssets', supported);
+    },
+
+    async setupApys({commit}) {
+      const apys = {};
+      const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
+
+      apysQuerySnapshot.forEach((doc) => {
+        apys[doc.id] = doc.data();
+      });
+
+      commit('setApys', apys);
     },
 
     async setupAssets({state, commit, rootState}) {
@@ -454,11 +477,16 @@ export default {
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       let assets = state.assets;
+      const apys = state.apys;
 
       for(let [symbol, asset] of Object.entries(assets)) {
         if (asset.getApy && typeof asset.getApy === 'function') {
           try {
-            assets[symbol].apy = await asset.getApy();
+            if (apys[symbol] && apys[symbol].apy) {
+              assets[symbol].apy = apys[symbol].apy;
+            } else {
+              assets[symbol].apy = await asset.getApy();
+            }
           } catch (e) {
             console.log(`Error fetching ${symbol} APY`);
           }
@@ -472,7 +500,11 @@ export default {
       for(let [symbol, lpAsset] of Object.entries(lpAssets)) {
         if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
           try {
-            lpAssets[symbol].apy = await lpAsset.getApy();
+            if (apys[symbol] && apys[symbol].apy) {
+              lpAssets[symbol].apy = apys[symbol].apy;
+            } else {
+              lpAssets[symbol].apy = await lpAsset.getApy();
+            }
           } catch (e) {
             console.log(`Error fetching ${symbol} APY`);
           }
