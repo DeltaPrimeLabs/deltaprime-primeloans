@@ -40,6 +40,7 @@ contract VestingDistributor {
      * Add vesting participant (msg.sender)
      **/
     function startVesting(uint256 amount, uint256 time) public {
+        if (time > 2_592_000) revert InvalidVestingTime();
         if (pool.balanceOf(msg.sender) < amount) revert InsufficientPoolBalance();
         if (locked[msg.sender] > 0 || unvestingTime[msg.sender] > 0) revert AlreadyLocked();
 
@@ -78,9 +79,10 @@ contract VestingDistributor {
      **/
     function availableToWithdraw(address account) public view returns (uint256) {
         if (locked[account] == 0 || unvestingTime[account] == 0) revert UserNotLocked();
-        if (unlockTimestamp[account] == 0 || unlockTimestamp[account] < block.timestamp) revert UserLocked();
+        if (unlockTimestamp[account] == 0) revert UserLocked();
 
         uint256 timeFromUnlock = block.timestamp - unlockTimestamp[account];
+        if (timeFromUnlock > unvestingTime[account]) timeFromUnlock = unvestingTime[account];
         uint256 initialUnlock = 86400 * locked[account] / unvestingTime[account]; // 1D / vesting days * locked amount
 
         return initialUnlock + timeFromUnlock * (locked[account] - initialUnlock) / unvestingTime[account];
@@ -94,36 +96,43 @@ contract VestingDistributor {
     //TODO: run periodically by bots
     function distributeRewards() public {
         if (block.timestamp < lastUpdated + updateInterval) revert DistributeTooEarly();
+        lastUpdated = block.timestamp;
 
         uint256 rewards = pool.balanceOf(address(this));
 
-        for (uint i = 0; i < participants.length; i++) {
+        for (uint256 i = 0; i < participants.length; i++) {
             //TODO: right now we distribute rewards even when someone start withdrawing. The rewards should depend on the amount which is still locked.
             uint256 participantReward = rewards * (locked[participants[i]] - withdrawn[msg.sender]) * multiplier[participants[i]] / 1e18 / totalLockedMultiplied;
 
             pool.transfer(participants[i], participantReward);
         }
     }
-    
+
     //TODO: run periodically by bots
     function updateParticipants() public {
-        for (uint i = 0; i < participants.length; i++) {
-            if (unlockTimestamp[participants[i]] > 0 && block.timestamp > unvestingTime[participants[i]]) {
-                totalLockedMultiplied -= locked[participants[i]] * multiplier[participants[i]] / 1e18;
+        uint256 length = participants.length;
+        for (uint256 i = 0; i < length;) {
+            address participant = participants[i];
+            if (unlockTimestamp[participant] > 0 && (block.timestamp - unlockTimestamp[participant]) > unvestingTime[participant]) {
+                totalLockedMultiplied -= locked[participant] * multiplier[participant] / 1e18;
 
-                unvestingTime[participants[i]] = 0;
-                locked[participants[i]] = 0;
+                unvestingTime[participant] = 0;
+                locked[participant] = 0;
 
-                delete participants[i];
+                participants[i] = participants[participants.length - 1];
+                participants.pop();
+                --length;
+            } else {
+                ++i;
             }
         }
     }
 
     function updateWithdrawn(uint256 amount) public onlyPool {
-       withdrawn[msg.sender] -= amount;
+        withdrawn[msg.sender] += amount;
     }
 
-    function getMultiplier(uint256 time) public returns (uint256){
+    function getMultiplier(uint256 time) public pure returns (uint256){
         if (time > 2_592_000) return 1.5e18; // min. 30 days
         if (time > 1_728_000) return 1.25e18; // min. 20 days
         if (time > 864_000) return 1.1e18; // min. 10 days
@@ -137,6 +146,9 @@ contract VestingDistributor {
 
     // Already participates in vesting
     error AlreadyLocked();
+
+    // Vesting time is out of range
+    error InvalidVestingTime();
 
     // Insufficient user balance of pool's tokens
     error InsufficientPoolBalance();
