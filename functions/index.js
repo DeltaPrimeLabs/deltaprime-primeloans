@@ -24,7 +24,7 @@ const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
 const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
 const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
-// matching token ids of Vector Finance
+const db = getFirestore();
 
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
@@ -51,7 +51,6 @@ exports.scheduledFunction = functions
   .onRun(async (context) => {
     functions.logger.info("Getting loans");
 
-    const db = getFirestore();
     const loanAddresses = await factory.getAllLoans();
     const batchTime = new Date().getTime();
 
@@ -80,35 +79,49 @@ exports.scheduledFunction = functions
     return null;
   });
 
-exports.apyAggregator = functions
+exports.gmxScraper = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
+  .firestore
+  .document('apys/GLP')
+  .onWrite(async (change, context) => {
+    // parse GLP APR from GMX website
+    const URL = "https://gmx.io/";
+    const browser = await puppeteer.launch();
+
+    try {
+      const page = await browser.newPage();
+      // go to the gmx webpage
+      await page.goto(URL);
+
+      const glpApy = await page.evaluate(() => {
+        // select the elements with relevant class
+        const items = document.querySelectorAll(".Home-token-card-option-apr");
+
+        // parse APR of GLP on Avalanche
+        return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+      });
+      console.log(glpApy);
+
+      return change.after.ref.set({
+        apy: glpApy
+      }, {merge: true});
+    } catch(error) {
+      console.log(error);
+      await browser.close();
+    }
+  });
+
+exports.apyAggregator = functions
+  .runWith({ timeoutSeconds: 120 })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting APRs");
 
-    const db = getFirestore();
-    const fetchTime = new Date().getTime();
     const apys = {};
     const urls = [
       VECTOR_APY_URL,
       YIELDYAK_APY_URL
     ]
-
-    // parse GLP APR from GMX website
-    const URL = "https://gmx.io/";
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    // go to the gmx webpage
-    await page.goto(URL);
-
-    const glpApy = await page.evaluate(() => {
-      // select the elements with relevant class
-      const items = document.querySelectorAll(".Home-token-card-option-apr");
-
-      // parse APR of GLP on Avalanche
-      return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
-    });
-    console.log(glpApy);
 
     try {
 
@@ -149,15 +162,13 @@ exports.apyAggregator = functions
           }
         }
 
-        if ('GLP' in apys) {
-          apys['GLP']['apy'] = glpApy;
-        } else {
-          apys['GLP'] = {
-            apy: glpApy
-          };
-        }
-
-        await browser.close();
+        // if ('GLP' in apys) {
+        //   apys['GLP']['apy'] = glpApy;
+        // } else {
+        //   apys['GLP'] = {
+        //     apy: glpApy
+        //   };
+        // }
 
         console.log(apys);
         // write apys to db
