@@ -13,6 +13,7 @@ contract VestingDistributor {
 
     Pool pool;
     IERC20Metadata poolToken;
+    address keeper;
 
     uint256 totalLockedMultiplied;
     address[] participants;
@@ -33,9 +34,15 @@ contract VestingDistributor {
         _;
     }
 
-    constructor(address poolAddress) {
+    modifier onlyKeeper() {
+        require(msg.sender == keeper, "Unauthorized: onlyKeeper");
+        _;
+    }
+
+    constructor(address poolAddress, address keeperAddress) {
         pool = Pool(poolAddress);
         poolToken = IERC20Metadata(pool.tokenAddress());
+        keeper = keeperAddress;
         lastUpdated = block.timestamp;
     }
 
@@ -97,7 +104,7 @@ contract VestingDistributor {
      * @dev _totalDeposits total value of deposits
      **/
     //TODO: run periodically by bots
-    function distributeRewards(uint256 fromIndex, uint256 toIndex) public {
+    function distributeRewards(uint256 fromIndex, uint256 toIndex) public onlyKeeper {
         if (block.timestamp < lastUpdated + updateInterval) revert DistributeTooEarly();
         // lastUpdated = block.timestamp;
 
@@ -129,7 +136,7 @@ contract VestingDistributor {
     }
 
     //TODO: run periodically by bots
-    function updateParticipants(uint256 fromIndex, uint256 toIndex) public {
+    function updateParticipants(uint256 fromIndex, uint256 toIndex) public onlyKeeper {
         (fromIndex, toIndex) = fromIndex < toIndex ? (fromIndex, toIndex) : (toIndex, fromIndex);
         toIndex = toIndex < participants.length ? toIndex : participants.length - 1;
         for (uint256 i = fromIndex; i <= toIndex;) {
