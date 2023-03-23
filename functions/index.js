@@ -46,7 +46,7 @@ function wrap(contract) {
 }
 
 exports.scheduledFunction = functions
-  .runWith({ timeoutSeconds: 120, memory: "1GB" })
+  .runWith({ timeoutSeconds: 300, memory: "1GB" })
   .pubsub.schedule('* * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting loans");
@@ -79,43 +79,52 @@ exports.scheduledFunction = functions
     return null;
   });
 
+const getGlpApr = async () => {
+  functions.logger.info("parsing APR from GMX website");
+  // parse GLP APR from GMX website
+  const URL = "https://gmx.io/";
+  let browser;
+  let glpApy;
+  browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // go to the gmx webpage
+  await page.goto(URL);
+
+  glpApy = await page.evaluate(() => {
+    // select the elements with relevant class
+    const items = document.querySelectorAll(".Home-token-card-option-apr");
+
+    // parse APR of GLP on Avalanche
+    return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+  });
+
+  await browser.close();
+
+  return glpApy;
+};
+
 exports.gmxScraper = functions
-  .runWith({ timeoutSeconds: 120, memory: "1GB" })
-  .firestore
-  .document('apys/GLP')
-  .onWrite(async (change, context) => {
-    // parse GLP APR from GMX website
-    const URL = "https://gmx.io/";
-    const browser = await puppeteer.launch();
-
-    try {
-      const page = await browser.newPage();
-      // go to the gmx webpage
-      await page.goto(URL);
-
-      const glpApy = await page.evaluate(() => {
-        // select the elements with relevant class
-        const items = document.querySelectorAll(".Home-token-card-option-apr");
-
-        // parse APR of GLP on Avalanche
-        return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getGlpApr()
+      .then(async (glpApy) => {
+        console.log(glpApy);
+        if (glpApy) {
+          await db.collection('apys').doc('GLP').set({
+            apy: glpApy
+          }, { merge: true });
+          functions.logger.info("GLP APY updated.");
+        }
       });
-      console.log(glpApy);
-
-      return change.after.ref.set({
-        apy: glpApy
-      }, {merge: true});
-    } catch(error) {
-      console.log(error);
-      await browser.close();
-    }
   });
 
 exports.apyAggregator = functions
-  .runWith({ timeoutSeconds: 120 })
+  .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
-    functions.logger.info("Getting APRs");
+    functions.logger.info("Getting APRs.");
 
     const apys = {};
     const urls = [
@@ -173,7 +182,7 @@ exports.apyAggregator = functions
         console.log(apys);
         // write apys to db
         for (const [token, apyData] of Object.entries(apys)) {
-          await db.collection('apys').doc(token).set(apyData);
+          await db.collection('apys').doc(token).set(apyData, { merge: true });
         }
 
         functions.logger.info(`Fetching APYs finished.`);
