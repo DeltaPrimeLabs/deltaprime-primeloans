@@ -21,6 +21,9 @@ contract VestingDistributor {
     mapping(address => uint256) public unvestingTime;
     mapping(address => uint256) public unlockTimestamp;
     mapping(address => uint256) public multiplier;
+    mapping(uint256 => uint256) rewardAmount;
+    mapping(uint256 => mapping(address => bool)) rewardDistributed;
+    mapping(uint256 => uint256) numRewardDistributed;
 
     uint256 lastUpdated;
     uint256 updateInterval = 21600;
@@ -94,17 +97,34 @@ contract VestingDistributor {
      * @dev _totalDeposits total value of deposits
      **/
     //TODO: run periodically by bots
-    function distributeRewards() public {
+    function distributeRewards(uint256 fromIndex, uint256 toIndex) public {
         if (block.timestamp < lastUpdated + updateInterval) revert DistributeTooEarly();
-        lastUpdated = block.timestamp;
+        // lastUpdated = block.timestamp;
 
-        uint256 rewards = pool.balanceOf(address(this));
+        (fromIndex, toIndex) = fromIndex < toIndex ? (fromIndex, toIndex) : (toIndex, fromIndex);
+        toIndex = toIndex < participants.length ? toIndex : participants.length - 1;
 
-        for (uint256 i = 0; i < participants.length; i++) {
+        if (rewardAmount[lastUpdated] == 0) {
+            rewardAmount[lastUpdated] = pool.balanceOf(address(this));
+        }
+        uint256 rewards = rewardAmount[lastUpdated];
+
+        for (uint256 i = fromIndex; i <= toIndex; i++) {
+            address participant = participants[i];
+            if (rewardDistributed[lastUpdated][participant]) {
+                continue;
+            }
+
             //TODO: right now we distribute rewards even when someone start withdrawing. The rewards should depend on the amount which is still locked.
-            uint256 participantReward = rewards * (locked[participants[i]] - withdrawn[msg.sender]) * multiplier[participants[i]] / 1e18 / totalLockedMultiplied;
+            uint256 participantReward = rewards * (locked[participant] - withdrawn[msg.sender]) * multiplier[participant] / 1e18 / totalLockedMultiplied;
 
-            pool.transfer(participants[i], participantReward);
+            pool.transfer(participant, participantReward);
+
+            rewardDistributed[lastUpdated][participant] = true;
+            ++numRewardDistributed[lastUpdated];
+            if (numRewardDistributed[lastUpdated] == participants.length) {
+                lastUpdated = block.timestamp;
+            }
         }
     }
 
