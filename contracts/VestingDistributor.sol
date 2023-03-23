@@ -109,9 +109,10 @@ contract VestingDistributor {
     }
 
     //TODO: run periodically by bots
-    function updateParticipants() public {
-        uint256 length = participants.length;
-        for (uint256 i = 0; i < length;) {
+    function updateParticipants(uint256 fromIndex, uint256 toIndex) public {
+        (fromIndex, toIndex) = fromIndex < toIndex ? (fromIndex, toIndex) : (toIndex, fromIndex);
+        toIndex = toIndex < participants.length ? toIndex : participants.length - 1;
+        for (uint256 i = fromIndex; i <= toIndex;) {
             address participant = participants[i];
             if (unlockTimestamp[participant] > 0 && (block.timestamp - unlockTimestamp[participant]) > unvestingTime[participant]) {
                 totalLockedMultiplied -= locked[participant] * multiplier[participant] / 1e18;
@@ -121,7 +122,7 @@ contract VestingDistributor {
 
                 participants[i] = participants[participants.length - 1];
                 participants.pop();
-                --length;
+                --toIndex;
             } else {
                 ++i;
             }
