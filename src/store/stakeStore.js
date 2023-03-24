@@ -281,10 +281,6 @@ export default {
       const stakedInYieldYak = await yieldYakStaked(rootState.fundsStore.smartLoanContract.address);
 
       const apys = rootState.fundsStore.apys;
-      // const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
-      // apysQuerySnapshot.forEach((doc) => {
-      //   apys[doc.id] = doc.data();
-      // });
 
       for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
         for (let farm of tokenFarms) {
