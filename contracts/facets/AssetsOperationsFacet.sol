@@ -167,7 +167,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _path yield yak swap path
      * @param _adapters yield yak swap adapters
      */
-    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, address[] calldata _path, address[] calldata _adapters) external onlyOwner remainsSolvent {
+    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, address[] calldata _path, address[] calldata _adapters) external onlyOwner remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
         _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
