@@ -171,14 +171,6 @@ exports.apyAggregator = functions
           }
         }
 
-        // if ('GLP' in apys) {
-        //   apys['GLP']['apy'] = glpApy;
-        // } else {
-        //   apys['GLP'] = {
-        //     apy: glpApy
-        //   };
-        // }
-
         console.log(apys);
         // write apys to db
         for (const [token, apyData] of Object.entries(apys)) {
