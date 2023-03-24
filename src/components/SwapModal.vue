@@ -148,7 +148,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button label="Swap"
+        <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
