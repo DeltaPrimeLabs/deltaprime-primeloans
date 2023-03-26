@@ -161,13 +161,15 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /**
      * Swap existing debt to another debt
     * @dev This function uses the redstone-evm-connector
+    * @dev _repayAmount and __borrowAmount can be used to control the slippage.
      * @param _fromAsset existing debt asset
      * @param _toAsset new debt asset
      * @param _repayAmount debt repay amount
+     * @param __borrowAmount debt borrow amount
      * @param _path yield yak swap path
      * @param _adapters yield yak swap adapters
      */
-    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, address[] calldata _path, address[] calldata _adapters) external onlyOwner remainsSolvent nonReentrant {
+    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, address[] calldata _path, address[] calldata _adapters) external onlyOwner remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
         _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
@@ -175,41 +177,26 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
         IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
 
-        uint256 borrowAmount;
-        {
-            {
-                bytes32[] memory symbols = new bytes32[](2);
-                symbols[0] = _fromAsset;
-                symbols[1] = _toAsset;
-                uint256[] memory prices = getPrices(symbols);
-                borrowAmount = _repayAmount * prices[0] * 101 / prices[1] / 100;
-            }
-            {
-                borrowAmount = (borrowAmount * 10 ** toToken.decimals()) / 10 ** fromToken.decimals();
-            }
-        }
-
         Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
-        toAssetPool.borrow(borrowAmount);
+        toAssetPool.borrow(_borrowAmount);
 
         {
             // swap toAsset to fromAsset
             address(toToken).safeApprove(YY_ROUTER, 0);
-            address(toToken).safeApprove(YY_ROUTER, borrowAmount);
+            address(toToken).safeApprove(YY_ROUTER, _borrowAmount);
 
             IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
 
             IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
-                amountIn: borrowAmount,
-                amountOut: 0,
+                amountIn: _borrowAmount,
+                amountOut: _repayAmount,
                 path: _path,
                 adapters: _adapters
             });
 
             router.swapNoSplit(trade, address(this), 0);
         }
-
-        _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)));
+        
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
         fromAssetPool.repay(_repayAmount);
@@ -220,7 +207,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(_fromAsset);
         }
 
-        emit Borrowed(msg.sender, _toAsset, borrowAmount, block.timestamp);
+        emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+        emit Borrowed(msg.sender, _toAsset, _borrowAmount, block.timestamp);
         emit Repaid(msg.sender, _fromAsset, _repayAmount, block.timestamp);
     }
 
@@ -243,6 +231,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     /* ========== EVENTS ========== */
+
+    /**
+     * @dev emitted after a debt swap
+     * @param user the address which performed the debt swap
+     * @param fromToken token that was repaid
+     * @param toToken token that was borrowed
+     * @param repayAmount the amount of fromToken that was repaid
+     * @param _borrowAmount the amount of toToken that was borrowed
+     * @param timestamp time of debt swap
+     **/
+    event DebtSwap(address indexed user, address indexed fromToken, address indexed toToken, uint256 repayAmount, uint256 borrowedAmount, uint256 timestmap);
 
     /**
      * @dev emitted after a loan is funded
