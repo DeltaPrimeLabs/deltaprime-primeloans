@@ -165,7 +165,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _fromAsset existing debt asset
      * @param _toAsset new debt asset
      * @param _repayAmount debt repay amount
-     * @param __borrowAmount debt borrow amount
+     * @param _borrowAmount debt borrow amount
      * @param _path yield yak swap path
      * @param _adapters yield yak swap adapters
      */
@@ -238,10 +238,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param fromToken token that was repaid
      * @param toToken token that was borrowed
      * @param repayAmount the amount of fromToken that was repaid
-     * @param _borrowAmount the amount of toToken that was borrowed
+     * @param borrowAmount the amount of toToken that was borrowed
      * @param timestamp time of debt swap
      **/
-    event DebtSwap(address indexed user, address indexed fromToken, address indexed toToken, uint256 repayAmount, uint256 borrowedAmount, uint256 timestmap);
+    event DebtSwap(address indexed user, address indexed fromToken, address indexed toToken, uint256 repayAmount, uint256 borrowAmount, uint256 timestamp);
 
     /**
      * @dev emitted after a loan is funded

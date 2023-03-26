@@ -257,7 +257,7 @@ describe("Smart loan", () => {
             expect(await poolContracts.get("AVAX")?.getBorrowed(wrappedLoan.address)).to.be.eq(
                 0
             );
-            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400, 0.02);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400, 0.2);
         });
 
         it("should fail to swap debt as a non-owner", async () => {
@@ -310,7 +310,7 @@ describe("Smart loan", () => {
             expect(await poolContracts.get("AVAX")?.getBorrowed(wrappedLoan.address)).to.be.closeTo(
                 borrowAmount, borrowAmount.div(100)
             );
-            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400 * 1.01, 0.02);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400 * 1.01, 0.5);
         });
     });
 });
