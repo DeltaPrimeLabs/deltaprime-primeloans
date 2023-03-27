@@ -13,7 +13,7 @@ interface IAssetsOperationsFacet {
 
     function withdrawGLP(uint256 _amount) external;
 
-    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, address[] calldata _path, address[] calldata _adapters) external;
+    function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, address[] calldata _path, address[] calldata _adapters) external;
 
     event Funded(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 

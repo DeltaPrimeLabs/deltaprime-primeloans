@@ -49,6 +49,33 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakedBalance = compounder.depositTracking(address(this));
     }
 
+    function vectorStakeUSDT1Auto(uint256 amount) public {
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset : 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774,
+            symbol : "USDT",
+            identifier : "VF_USDT_MAIN_AUTO",
+            balanceSelector : this.vectorUSDT1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDT1Auto.selector
+        });
+        stakeToken(amount, position);
+    }
+
+    function vectorUnstakeUSDT1Auto(uint256 amount, uint256 minAmount) public {
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset : 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774,
+            symbol : "USDT",
+            identifier : "VF_USDT_MAIN_AUTO",
+            balanceSelector : this.vectorUSDT1BalanceAuto.selector,
+            unstakeSelector : this.vectorUnstakeUSDT1Auto.selector
+        });
+        unstakeToken(amount, minAmount, position);
+    }
+
+    function vectorUSDT1BalanceAuto() public view returns (uint256 _stakedBalance) {
+        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774).compounder();
+        _stakedBalance = compounder.depositTracking(address(this));
+    }
+
     function vectorStakeWAVAX1Auto(uint256 amount) public {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
