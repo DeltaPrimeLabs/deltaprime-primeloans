@@ -430,7 +430,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         uint256 availableUnvested = _deposited[account] - vestingDistributor.locked(account);
         if (amount > availableUnvested) {
-            vestingDistributor.updateWithdrawn(amount - availableUnvested);
+            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
         }
 
         // verified in "require" above
