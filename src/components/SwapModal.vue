@@ -312,7 +312,11 @@ export default {
     },
 
     async updateAmountsWithSlippage() {
-      this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
+      if (!this.swapDebtMode) {
+        this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
+      } else {
+        this.targetAssetAmount = this.receivedAccordingToOracle * (1 + this.userSlippage / 100);
+      }
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
       this.setSlippageWarning();
     },
@@ -329,7 +333,7 @@ export default {
 
       console.log('dexSlippage', dexSlippage);
 
-      const SLIPPAGE_MARGIN = 0.1;
+      const SLIPPAGE_MARGIN = this.swapDebtMode ? 0.2 : 0.1;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

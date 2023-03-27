@@ -1125,8 +1125,11 @@ export default {
       let sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
       let sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
+      console.log(swapDebtRequest.targetAmount);
       let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
-      let targetAmount = parseUnits(swapDebtRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
+      console.log(targetDecimals);
+      let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      console.log(targetAmount);
 
       console.log('swapDebtRequest.sourceAsset', swapDebtRequest.sourceAsset);
       console.log('swapDebtRequest.targetAsset', swapDebtRequest.targetAsset);
@@ -1141,6 +1144,7 @@ export default {
         toBytes32(swapDebtRequest.sourceAsset),
         toBytes32(swapDebtRequest.targetAsset),
         sourceAmount,
+        targetAmount,
         reversedSwapPath,
         swapDebtRequest.adapters,
         {gasLimit: 4000000}

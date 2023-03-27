@@ -523,8 +523,6 @@ export default {
       });
     },
 
-    // ___________________________________________________________
-
     openDebtSwapModal() {
       console.log(BORROWABLE_ASSETS);
       console.log(this.debtsPerAsset);
