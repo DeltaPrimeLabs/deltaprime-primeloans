@@ -7,6 +7,7 @@ import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import IYieldYak
   from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
@@ -183,6 +184,13 @@ export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
   const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
 
   return loanBalance / totalSupply * totalDeposits;
+}
+
+export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
+  const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
+  const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
+  const stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  return stakedBalance;
 }
 
 export async function getPangolinLpApr(url) {

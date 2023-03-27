@@ -15,11 +15,14 @@ import { formatUnits, fromWei, parseUnits, toWei } from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
 import { BigNumber, utils } from 'ethers';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, query, getDocs } from 'firebase/firestore/lite';
+import firebaseConfig from '../../.secrets/firebaseConfig.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import { mergeArrays, removePaddedTrailingZeros } from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
-import router from '@/router'
+import router from '@/router';
 
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
@@ -36,6 +39,8 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 const HARD_REFRESH_DELAY = 60000;
+
+const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
   namespaced: true,
@@ -60,10 +65,15 @@ export default {
     protocolPaused: false,
     oracleError: false,
     debtsPerAsset: null,
+    apys: null,
   },
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
       state.smartLoanContract = smartLoanContract;
+    },
+
+    setApys(state, apys) {
+      state.apys = apys;
     },
 
     setAssets(state, assets) {
@@ -145,6 +155,7 @@ export default {
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
+      await dispatch('setupApys');
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
       await dispatch('stakeStore/updateStakedPrices', null, { root: true });
@@ -179,6 +190,7 @@ export default {
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
         }
+        await dispatch('setupApys');
         await dispatch('setupAssets');
         await dispatch('setupLpAssets');
         await dispatch('getAllAssetsBalances');
@@ -211,7 +223,18 @@ export default {
       commit('setSupportedAssets', supported);
     },
 
-    async setupAssets({ state, commit, rootState }) {
+    async setupApys({commit}) {
+      const apys = {};
+      const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
+
+      apysQuerySnapshot.forEach((doc) => {
+        apys[doc.id] = doc.data();
+      });
+
+      commit('setApys', apys);
+    },
+
+    async setupAssets({state, commit, rootState}) {
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
       let assets = {};
@@ -330,7 +353,7 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanAddress), request.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(request.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei, { gasLimit: 100000 });
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei, {gasLimit: 100000});
 
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
@@ -394,7 +417,7 @@ export default {
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
       if (parseFloat(allowance) < parseFloat(value)) {
-        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, { gasLimit: 100000 });
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, {gasLimit: 100000});
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
@@ -476,11 +499,16 @@ export default {
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       let assets = state.assets;
+      const apys = state.apys;
 
       for (let [symbol, asset] of Object.entries(assets)) {
         if (asset.getApy && typeof asset.getApy === 'function') {
           try {
-            assets[symbol].apy = await asset.getApy();
+            if (apys[symbol] && apys[symbol].apy) {
+              assets[symbol].apy = apys[symbol].apy;
+            } else {
+              assets[symbol].apy = await asset.getApy();
+            }
           } catch (e) {
             console.log(`Error fetching ${symbol} APY`);
           }
@@ -494,7 +522,11 @@ export default {
       for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
         if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
           try {
-            lpAssets[symbol].apy = await lpAsset.getApy();
+            if (apys[symbol] && apys[symbol].apy) {
+              lpAssets[symbol].apy = apys[symbol].apy;
+            } else {
+              lpAssets[symbol].apy = await lpAsset.getApy();
+            }
           } catch (e) {
             console.log(`Error fetching ${symbol} APY`);
           }
@@ -503,8 +535,8 @@ export default {
 
       commit('setLpAssets', lpAssets);
 
-      console.log('lpAssets')
-      console.log(lpAssets)
+      console.log('lpAssets');
+      console.log(lpAssets);
 
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
@@ -563,8 +595,8 @@ export default {
 
         if (state.assets && state.assetBalances) {
           for (let entry of Object.entries(state.assets)) {
-            let symbol = entry[0]
-            let asset = entry[1]
+            let symbol = entry[0];
+            let asset = entry[1];
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
@@ -576,8 +608,8 @@ export default {
 
         if (state.lpAssets && state.lpBalances) {
           for (let entry of Object.entries(state.lpAssets)) {
-            let symbol = entry[0]
-            let lpAsset = entry[1]
+            let symbol = entry[0];
+            let lpAsset = entry[1];
 
             //TODO: take from API
             let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
@@ -640,7 +672,7 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, { gasLimit: 100000 });
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
@@ -1253,14 +1285,93 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async mintAndStakeGlp({ state, rootState, commit, dispatch }, { mintAndStakeGlpRequest }) {
+    async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
+      console.log(state.debtsPerAsset[swapDebtRequest.sourceAsset]);
+      console.log(state.debtsPerAsset[swapDebtRequest.targetAsset]);
+      console.log(swapDebtRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      ['GLP']
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [swapDebtRequest.targetAsset]
+      ]);
+
+      let sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      console.log(swapDebtRequest.targetAmount);
+      let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
+      console.log(targetDecimals);
+      let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      console.log(targetAmount);
+
+      console.log('swapDebtRequest.sourceAsset', swapDebtRequest.sourceAsset);
+      console.log('swapDebtRequest.targetAsset', swapDebtRequest.targetAsset);
+      console.log('parseUnits(swapDebtRequest.sourceAmount)', parseUnits(swapDebtRequest.sourceAmount));
+      console.log('swapDebtRequest.path', swapDebtRequest.path);
+      console.log('swapDebtRequest.adapters', swapDebtRequest.adapters);
+
+      const reversedSwapPath = [...swapDebtRequest.path].reverse();
+      console.log(reversedSwapPath);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
+        toBytes32(swapDebtRequest.sourceAsset),
+        toBytes32(swapDebtRequest.targetAsset),
+        sourceAmount,
+        targetAmount,
+        reversedSwapPath,
+        swapDebtRequest.adapters,
+        {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'swap');
+
+      console.log(getLog(tx, SMART_LOAN.abi, 'Borrowed'));
+      console.log(getLog(tx, SMART_LOAN.abi, 'Repaid'));
+
+      const amountDebtSwappedTo = formatUnits(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount, config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals);
+      console.log('amountDebtSwappedTo', amountDebtSwappedTo);
+      const amountDebtSwappedFrom = formatUnits(getLog(tx, SMART_LOAN.abi, 'Repaid').args.amount, config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals);
+      console.log('amountDebtSwappedFrom', amountDebtSwappedFrom);
+
+      const sourceDebtAfterTransaction = Number(state.debtsPerAsset[swapDebtRequest.sourceAsset].debt) - Number(amountDebtSwappedFrom);
+      const targetDebtAfterTransaction = Number(state.debtsPerAsset[swapDebtRequest.targetAsset].debt) + Number(amountDebtSwappedTo);
+
+      rootState.serviceRegistry.assetDebtsExternalUpdateService
+        .emitExternalAssetDebtUpdate(swapDebtRequest.sourceAsset, sourceDebtAfterTransaction, true);
+      rootState.serviceRegistry.assetDebtsExternalUpdateService
+        .emitExternalAssetDebtUpdate(swapDebtRequest.targetAsset, targetDebtAfterTransaction, true);
+
+      const borrowedAmountUSD = Number(amountDebtSwappedTo) * Number(state.assets[swapDebtRequest.targetAsset].price);
+      const repaidAmountUSD = Number(amountDebtSwappedFrom) * Number(state.assets[swapDebtRequest.sourceAsset].price);
+
+      const totalDebtAfterTransaction = Number(state.fullLoanStatus.debt) + borrowedAmountUSD - repaidAmountUSD;
+
+      rootState.serviceRegistry.debtService.emitDebt(totalDebtAfterTransaction);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
+    async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        ['GLP']
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[mintAndStakeGlpRequest.sourceAsset].decimals;
@@ -1308,9 +1419,9 @@ export default {
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [unstakeAndRedeemGlpRequest.targetAsset]
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unstakeAndRedeemGlpRequest.targetAsset]
       ]);
 
       const weiDecimals = BigNumber.from('18');

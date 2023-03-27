@@ -6,6 +6,14 @@
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
 
+    <div class="protocol-banner"
+         v-if="farm.protocolIdentifier === 'VF_AVAX_SAVAX_AUTO' ||
+          farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO' ||
+           farm.protocolIdentifier === 'VF_USDC_MAIN_AUTO'">
+      Vector APYs are hardcoded while the API is updated. This will be updated soon. For the accurate APY, see
+      <a class="banner__link" href="https://vectorfinance.io/pools" target="_blank">here</a>.
+    </div>
+
     <div class="table__row">
       <div class="table__cell farm-cell">
         <div class="farm">
@@ -230,6 +238,7 @@ export default {
     },
 
     openUnstakeModal() {
+      console.log(this.farm);
       if (this.disabled) {
         return;
       }
@@ -306,12 +315,12 @@ export default {
 
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
-        // normal token staked
-        this.balance = this.farm.totalBalance;
         // receipt token staked
+        this.balance = this.farm.totalBalance;
+        // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
-        await this.setApy();
+        this.setApy();
       });
     },
 
@@ -331,8 +340,9 @@ export default {
       });
     },
 
-    async setApy() {
+    setApy() {
       if (!this.farm.currentApy) return 0;
+
       let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
       console.log('setApy');
       console.log('symbol: ', this.asset.symbol);
