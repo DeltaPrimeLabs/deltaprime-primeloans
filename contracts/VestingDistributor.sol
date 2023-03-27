@@ -125,7 +125,7 @@ contract VestingDistributor {
             }
 
             //TODO: right now we distribute rewards even when someone start withdrawing. The rewards should depend on the amount which is still locked.
-            uint256 participantReward = rewards * (locked[participant] - withdrawn[msg.sender]) * multiplier[participant] / 1e18 / totalLockedMultiplied;
+            uint256 participantReward = rewards * (locked[participant] - withdrawn[participant]) * multiplier[participant] / 1e18 / totalLockedMultiplied;
 
             pool.transfer(participant, participantReward);
 
@@ -158,8 +158,8 @@ contract VestingDistributor {
         }
     }
 
-    function updateWithdrawn(uint256 amount) public onlyPool {
-        withdrawn[msg.sender] += amount;
+    function updateWithdrawn(address account, uint256 amount) public onlyPool {
+        withdrawn[account] += amount;
     }
 
     function getMultiplier(uint256 time) public pure returns (uint256){
