@@ -29,6 +29,9 @@ contract VestingDistributor {
     uint256 lastUpdated;
     uint256 updateInterval = 21600;
 
+    uint256 public constant ONE_DAY = 24 * 3600; // 24 hours * 3600 seconds
+    uint256 public constant MAX_VESTING_TIME = 30 * ONE_DAY; // 30 days * 24 hours * 3600 seconds
+
     modifier onlyPool() {
         require(msg.sender == address(pool), "Unauthorized: onlyPool");
         _;
@@ -50,7 +53,7 @@ contract VestingDistributor {
      * Add vesting participant (msg.sender)
      **/
     function startVesting(uint256 amount, uint256 time) public {
-        if (time > 2_592_000) revert InvalidVestingTime();
+        if (time > MAX_VESTING_TIME) revert InvalidVestingTime();
         if (pool.balanceOf(msg.sender) < amount) revert InsufficientPoolBalance();
         if (locked[msg.sender] > 0 || unvestingTime[msg.sender] > 0) revert AlreadyLocked();
 
@@ -106,7 +109,6 @@ contract VestingDistributor {
     //TODO: run periodically by bots
     function distributeRewards(uint256 fromIndex, uint256 toIndex) public onlyKeeper {
         if (block.timestamp < lastUpdated + updateInterval) revert DistributeTooEarly();
-        // lastUpdated = block.timestamp;
 
         (fromIndex, toIndex) = fromIndex < toIndex ? (fromIndex, toIndex) : (toIndex, fromIndex);
         toIndex = toIndex < participants.length ? toIndex : participants.length - 1;
@@ -161,9 +163,36 @@ contract VestingDistributor {
     }
 
     function getMultiplier(uint256 time) public pure returns (uint256){
-        if (time > 2_592_000) return 1.5e18; // min. 30 days
-        if (time > 1_728_000) return 1.25e18; // min. 20 days
-        if (time > 864_000) return 1.1e18; // min. 10 days
+        if (time >= 30 * ONE_DAY) return 2e18; // min. 30 days
+        if (time >= 29 * ONE_DAY) return 1.99e18; // min. 29 days
+        if (time >= 28 * ONE_DAY) return 1.98e18; // min. 28 days
+        if (time >= 27 * ONE_DAY) return 1.97e18; // min. 27 days
+        if (time >= 26 * ONE_DAY) return 1.96e18; // min. 26 days
+        if (time >= 25 * ONE_DAY) return 1.948e18; // min. 25 days
+        if (time >= 24 * ONE_DAY) return 1.936e18; // min. 24 days
+        if (time >= 23 * ONE_DAY) return 1.924e18; // min. 23 days
+        if (time >= 22 * ONE_DAY) return 1.912e18; // min. 22 days
+        if (time >= 21 * ONE_DAY) return 1.9e18; // min. 21 days
+        if (time >= 20 * ONE_DAY) return 1.885e18; // min. 20 days
+        if (time >= 19 * ONE_DAY) return 1.871e18; // min. 19 days
+        if (time >= 18 * ONE_DAY) return 1.856e18; // min. 18 days
+        if (time >= 17 * ONE_DAY) return 1.841e18; // min. 17 days
+        if (time >= 16 * ONE_DAY) return 1.824e18; // min. 16 days
+        if (time >= 15 * ONE_DAY) return 1.806e18; // min. 15 days
+        if (time >= 14 * ONE_DAY) return 1.788e18; // min. 14 days
+        if (time >= 13 * ONE_DAY) return 1.768e18; // min. 13 days
+        if (time >= 12 * ONE_DAY) return 1.746e18; // min. 12 days
+        if (time >= 11 * ONE_DAY) return 1.723e18; // min. 11 days
+        if (time >= 10 * ONE_DAY) return 1.698e18; // min. 10 days
+        if (time >= 9 * ONE_DAY) return 1.67e18; // min. 9 days
+        if (time >= 8 * ONE_DAY) return 1.64e18; // min. 8 days
+        if (time >= 7 * ONE_DAY) return 1.605e18; // min. 7 days
+        if (time >= 6 * ONE_DAY) return 1.566e18; // min. 6 days
+        if (time >= 5 * ONE_DAY) return 1.521e18; // min. 5 days
+        if (time >= 4 * ONE_DAY) return 1.468e18; // min. 4 days
+        if (time >= 3 * ONE_DAY) return 1.4e18; // min. 3 days
+        if (time >= 2 * ONE_DAY) return 1.32e18; // min. 2 days
+        if (time >= 1 * ONE_DAY) return 1.2e18; // min. 1 day
 
         return 1;
     }
