@@ -290,9 +290,6 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
-      console.log('queryResponse', queryResponse);
-
-      console.log(queryResponse.amounts.map(amount => formatUnits(amount, 18)));
 
       let estimated;
       if (queryResponse) {
@@ -304,13 +301,7 @@ export default {
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
         }
 
-        console.log(queryResponse.path.map(path => Object.entries(TOKEN_ADDRESSES).find(token => token[1].toUpperCase() === path.toUpperCase())));
-
-        console.log('this.targetAssetData', this.targetAssetData);
-        console.log('estimated', estimated);
-
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
-        console.log('this.estimatedReceivedTokens', this.estimatedReceivedTokens);
 
         this.updateSlippageWithAmounts();
         this.calculateHealthAfterTransaction();
@@ -330,16 +321,9 @@ export default {
     async updateSlippageWithAmounts() {
       let dexSlippage = 0;
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
-      console.log('this.receivedAccordingToOracle', this.receivedAccordingToOracle);
-      console.log('this.estimatedNeededTokens', this.estimatedNeededTokens);
-      console.log('this.sourceAssetData.price', this.sourceAssetData.price);
-      console.log('this.sourceAssetData.price', this.sourceAssetData.price);
-      console.log('this.estimatedReceivedTokens', this.estimatedReceivedTokens);
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      console.log('dexSlippage', dexSlippage);
-
-      const SLIPPAGE_MARGIN = this.swapDebtMode ? 0.2 : 0.1;
+      const SLIPPAGE_MARGIN = this.swapDebtMode ? 0.15 : 0.1;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

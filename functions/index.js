@@ -83,15 +83,19 @@ const getGlpApr = async () => {
   functions.logger.info("parsing APR from GMX website");
   // parse GLP APR from GMX website
   const URL = "https://gmx.io/";
-  let browser;
-  let glpApy;
-  browser = await puppeteer.launch();
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
-  // go to the gmx webpage
+  // navigate gmx website and wait till fully load
   await page.goto(URL);
+  const glpApySelector = "div.Home-token-card-option-apr";
+  await page.mainFrame().waitForFunction(
+    selector => !!document.querySelector(selector).innerText,
+    {},
+    glpApySelector
+  )
 
-  glpApy = await page.evaluate(() => {
+  const glpApy = await page.evaluate(() => {
     // select the elements with relevant class
     const items = document.querySelectorAll(".Home-token-card-option-apr");
 
@@ -99,9 +103,12 @@ const getGlpApr = async () => {
     return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
   });
 
-  await browser.close();
+  console.log(glpApy);
+  await db.collection('apys').doc('GLP').set({
+    apy: glpApy
+  }, { merge: true });
 
-  return glpApy;
+  await browser.close();
 };
 
 exports.gmxScraper = functions
@@ -109,14 +116,56 @@ exports.gmxScraper = functions
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
     return getGlpApr()
-      .then(async (glpApy) => {
-        console.log(glpApy);
-        if (glpApy) {
-          await db.collection('apys').doc('GLP').set({
-            apy: glpApy
-          }, { merge: true });
-          functions.logger.info("GLP APY updated.");
-        }
+      .then(() => {
+        functions.logger.info("GLP APY updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping GLP APY failed. Error: ${err}`);
+      });
+  });
+
+const getUsdtAutoApr = async () => {
+  functions.logger.info("parsing APR from Vector Finance website");
+  // parsing USDT Auto APY from Vector Finance pools page
+  const URL = "https://vectorfinance.io/pools";
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // navigate pools page and wait till javascript fully load.
+  await page.goto(URL);
+  const vtxPriceSelector = "div.price-and-gas div[title='VTX']";
+  await page.mainFrame().waitForFunction(
+    selector => !!document.querySelector(selector).innerText,
+    {},
+    vtxPriceSelector
+  )
+
+  const usdtApy = await page.evaluate(() => {
+    // select the pools with relevant class and find USDT record
+    const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
+    const usdtPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdtauto"));
+    const columns = usdtPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
+
+    // parse APR of GLP on Avalanche
+    return parseFloat(columns[2].innerText.split('%')[0].trim());
+  });
+
+  console.log(usdtApy / 100);
+  await db.collection('apys').doc('USDT').set({
+    VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
+  }, { merge: true });
+
+  await browser.close();
+}
+
+exports.vectorScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getUsdtAutoApr()
+      .then(() => {
+        functions.logger.info("USDT APY updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping USDT APY from VectorFinance failed. Error: ${err}`);
       });
   });
 
