@@ -572,17 +572,32 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = this.swapDebtQueryMethod();
+      modalInstance.isStaticCalled = false;
+      modalInstance.isExpectedToFail = false;
       modalInstance.$on('SWAP', swapEvent => {
         console.log(swapEvent);
         const swapDebtRequest = {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
-        this.handleTransaction(this.swapDebt, {swapDebtRequest: swapDebtRequest}, () => {
+        this.handleTransaction(this.swapDebt, {
+          swapDebtRequest: swapDebtRequest,
+          isCallStatic: !modalInstance.isStaticCalled,
+        }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
-        }).then(() => {
+        }).then((isExpectedToFail) => {
+          // the transaction is expected to fail
+          if (isExpectedToFail) {
+            modalInstance.isStaticCalled = true;
+            modalInstance.transactionOngoing = false;
+            modalInstance.isExpectedToFail = true;
+          } else {
+            console.log("transaction finished.")
+            modalInstance.isStaticCalled = false;
+            modalInstance.isExpectedToFail = false;
+          }
         });
       });
     },

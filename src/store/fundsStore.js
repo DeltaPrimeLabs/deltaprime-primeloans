@@ -1285,7 +1285,7 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
+    async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest, isCallStatic}) {
       console.log(state.debtsPerAsset[swapDebtRequest.sourceAsset]);
       console.log(state.debtsPerAsset[swapDebtRequest.targetAsset]);
       console.log(swapDebtRequest);
@@ -1315,6 +1315,25 @@ export default {
 
       const reversedSwapPath = [...swapDebtRequest.path].reverse();
       console.log(reversedSwapPath);
+
+      try {
+        if (isCallStatic) {
+          console.log('calling function through callStatic...')
+          const tx = await (await wrapContract(state.smartLoanContract, loanAssets)).callStatic.swapDebt(
+            toBytes32(swapDebtRequest.sourceAsset),
+            toBytes32(swapDebtRequest.targetAsset),
+            sourceAmount,
+            targetAmount,
+            reversedSwapPath,
+            swapDebtRequest.adapters,
+            {gasLimit: 4000000}
+          );
+          console.log(tx);
+          if (tx.code || tx.errorName || tx.errorSignature) return true;
+        }
+      } catch (error) {
+        console.log("callStaic to swap Error: ", error);
+      }
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
         toBytes32(swapDebtRequest.sourceAsset),
