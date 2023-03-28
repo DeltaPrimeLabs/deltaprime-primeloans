@@ -32,16 +32,19 @@ describe('Pool with variable utilisation interest rates', () => {
         let sut: Pool,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
-            depositorVested: SignerWithAddress,
+            depositorVested1: SignerWithAddress,
+            depositorVested2: SignerWithAddress,
+            depositorVested3: SignerWithAddress,
+            keeper: SignerWithAddress,
             mockToken: Contract,
             vestingDistributor: Contract,
             MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
         before("Deploy Pool contract", async () => {
-            [owner, depositor, depositorVested] = await getFixedGasSigners(10000000);
+            [owner, depositor, depositorVested1, depositorVested2, depositorVested3, keeper] = await getFixedGasSigners(10000000);
             sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-            mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, depositorVested.address, owner.address]])) as MockToken;
+            mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, depositorVested1.address, depositorVested2.address, depositorVested3.address, owner.address]])) as MockToken;
 
             MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
 
@@ -63,20 +66,26 @@ describe('Pool with variable utilisation interest rates', () => {
                 0
             );
 
-            vestingDistributor = (await deployContract(owner, VestingDistributorArtifact, [sut.address])) as VestingDistributor;
+            vestingDistributor = (await deployContract(owner, VestingDistributorArtifact, [sut.address, keeper.address])) as VestingDistributor;
 
             await sut.setVestingDistributor(vestingDistributor.address);
 
             await mockToken.connect(depositor).approve(sut.address, toWei("1.0"));
             await sut.connect(depositor).deposit(toWei("1.0"));
 
-            await mockToken.connect(depositorVested).approve(sut.address, toWei("1.0"));
-            await sut.connect(depositorVested).deposit(toWei("1.0"));
+            await mockToken.connect(depositorVested1).approve(sut.address, toWei("1.0"));
+            await sut.connect(depositorVested1).deposit(toWei("1.0"));
+
+            await mockToken.connect(depositorVested2).approve(sut.address, toWei("1.0"));
+            await sut.connect(depositorVested2).deposit(toWei("1.0"));
+
+            await mockToken.connect(depositorVested3).approve(sut.address, toWei("1.0"));
+            await sut.connect(depositorVested3).deposit(toWei("1.0"));
         });
 
         it("should borrow", async () => {
             await sut.borrow(toWei("1.0"));
-            expect(await mockToken.balanceOf(sut.address)).to.be.equal(toWei("1", "ether"));
+            expect(await mockToken.balanceOf(sut.address)).to.be.equal(toWei("3", "ether"));
 
             let borrowed = fromWei(await sut.getBorrowed(owner.address));
             expect(borrowed).to.be.closeTo(1.000000, 0.000001);
@@ -89,20 +98,29 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(borrowed).to.be.closeTo(1.00002054, 0.0000001);
 
             let deposited1 = fromWei(await sut.balanceOf(depositor.address));
-            let deposited2 = fromWei(await sut.balanceOf(depositorVested.address));
+            let deposited2 = fromWei(await sut.balanceOf(depositorVested1.address));
+            let deposited3 = fromWei(await sut.balanceOf(depositorVested2.address));
+            let deposited4 = fromWei(await sut.balanceOf(depositorVested3.address));
 
-            expect(deposited1).to.be.closeTo(1.000008219, 0.0000001);
-            expect(deposited2).to.be.closeTo(1.000008219, 0.0000001);
+            expect(deposited1).to.be.closeTo(1.000004109, 0.0000001);
+            expect(deposited2).to.be.closeTo(1.000004109, 0.0000001);
+            expect(deposited3).to.be.closeTo(1.000004109, 0.0000001);
+            expect(deposited4).to.be.closeTo(1.000004109, 0.0000001);
         });
 
-        it("should vest for the second depositor", async () => {
-            let deposited2 = await sut.balanceOf(depositorVested.address);
+        it("should vest for the 2nd, 3rd, 4th depositors", async () => {
+            let deposited1 = await sut.balanceOf(depositorVested1.address);
+            await vestingDistributor.connect(depositorVested1).startVesting(deposited1, 864_000); // 10 days
 
-            await vestingDistributor.connect(depositorVested).startVesting(deposited2, 1_728_000); //20 days
+            let deposited2 = await sut.balanceOf(depositorVested2.address);
+            await vestingDistributor.connect(depositorVested2).startVesting(deposited2, 1_296_000); // 15 days
+
+            let deposited3 = await sut.balanceOf(depositorVested3.address);
+            await vestingDistributor.connect(depositorVested3).startVesting(deposited3, 1_728_000); // 20 days
         });
 
-        it("should distribute 50% of surplus as rewards after a year", async () => {
-            await time.increase(time.duration.years(1));
+        it("should distribute 50% of surplus as rewards after 12 days", async () => {
+            await time.increase(time.duration.days(12));
 
             let poolBalance = fromWei(await mockToken.balanceOf(sut.address));
             let totalBorrowed = fromWei(await sut.totalBorrowed());
@@ -123,16 +141,28 @@ describe('Pool with variable utilisation interest rates', () => {
 
             await sut.connect(owner).transfer(vestingDistributor.address, vestingRewardsWei);
 
-            await vestingDistributor.connect(owner).distributeRewards();
+            await expect(vestingDistributor.connect(owner).distributeRewards(0, 3)).to.be.revertedWith("Unauthorized: onlyKeeper");
+            await vestingDistributor.connect(keeper).distributeRewards(0, 1);
+            await vestingDistributor.connect(keeper).distributeRewards(2, 3);
         });
 
         it("should check rewards for depositors", async () => {
 
             let deposited1 = fromWei(await sut.balanceOf(depositor.address));
-            let deposited2 = fromWei(await sut.balanceOf(depositorVested.address));
+            let deposited2 = fromWei(await sut.balanceOf(depositorVested1.address));
+            let deposited3 = fromWei(await sut.balanceOf(depositorVested2.address));
+            let deposited4 = fromWei(await sut.balanceOf(depositorVested3.address));
 
-            expect(deposited1).to.be.closeTo( 1.01200821, 0.0000001);
-            expect(deposited2).to.be.closeTo( 1.015010276, 0.0000001);
+            expect(deposited1).to.be.closeTo( 1.00020137, 0.0000001);
+            expect(deposited2).to.be.closeTo( 1.00023309, 0.0000001);
+            expect(deposited3).to.be.closeTo( 1.00023511, 0.0000001);
+            expect(deposited4).to.be.closeTo( 1.00023659, 0.0000001);
+        });
+
+        it("should update participants", async () => {
+            await expect(vestingDistributor.connect(owner).updateParticipants(0, 3)).to.be.revertedWith("Unauthorized: onlyKeeper");
+
+            await vestingDistributor.connect(keeper).updateParticipants(0, 3);
         });
     });
 });
