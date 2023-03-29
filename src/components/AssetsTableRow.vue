@@ -871,13 +871,13 @@ export default {
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
-          this.progressBarService.emitProgressBarErrorState('Insufficient slippage');
+          this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }
       } else {
         if (error.includes('Failed to swap')) {
-          this.progressBarService.emitProgressBarErrorState('Try to increase slippage');
+          this.progressBarService.emitProgressBarErrorState('Slippage might be too low.');
           return;
         }
         this.progressBarService.emitProgressBarErrorState();
