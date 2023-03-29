@@ -56,7 +56,7 @@
           <img v-if="farm.rewardsInfo"
                class="info__icon"
                src="src/assets/icons/info.svg"
-               v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"></div>
+               v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}">
         </div>
       </div>
 

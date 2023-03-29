@@ -223,7 +223,7 @@ export default {
       commit('setSupportedAssets', supported);
     },
 
-    async setupApys({commit}) {
+    async setupApys({ commit }) {
       const apys = {};
       const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
 
@@ -234,7 +234,7 @@ export default {
       commit('setApys', apys);
     },
 
-    async setupAssets({state, commit, rootState}) {
+    async setupAssets({ state, commit, rootState }) {
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
       let assets = {};
@@ -353,7 +353,7 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanAddress), request.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(request.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei, {gasLimit: 100000});
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanAddress, amountInWei, { gasLimit: 100000 });
 
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
@@ -417,7 +417,7 @@ export default {
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
       if (parseFloat(allowance) < parseFloat(value)) {
-        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, {gasLimit: 100000});
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, { gasLimit: 100000 });
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
@@ -672,15 +672,15 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, { gasLimit: 100000 });
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [fundRequest.asset]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [fundRequest.asset]
       ]);
 
       try {
@@ -747,11 +747,11 @@ export default {
     async fundNativeToken({ state, rootState, commit, dispatch }, { value, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [config.nativeToken]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [config.nativeToken]
       ]);
 
       try {
@@ -806,10 +806,10 @@ export default {
     async withdraw({ state, rootState, commit, dispatch }, { withdrawRequest, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       try {
@@ -873,10 +873,10 @@ export default {
     async withdrawNativeToken({ state, rootState, commit, dispatch }, { withdrawRequest, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       /*
@@ -935,11 +935,11 @@ export default {
 
       let minAmount = 0.9;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [provideLiquidityRequest.symbol]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [provideLiquidityRequest.symbol]
       ]);
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
@@ -1013,11 +1013,11 @@ export default {
       const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
       const lpTokenDecimals = config.LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
       ]);
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
@@ -1086,11 +1086,11 @@ export default {
       console.log(Number(state.debtsPerAsset[borrowRequest.asset].debt));
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [borrowRequest.asset]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [borrowRequest.asset]
       ]);
 
       /*
@@ -1149,10 +1149,10 @@ export default {
     async repay({ state, rootState, commit, dispatch }, { repayRequest, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       try {
@@ -1212,11 +1212,11 @@ export default {
     async swap({ state, rootState, commit, dispatch }, { swapRequest, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG),
-      [swapRequest.targetAsset]
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [swapRequest.targetAsset]
       ]);
 
       let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
@@ -1285,14 +1285,14 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest, isCallStatic}) {
+    async swapDebt({ state, rootState, commit, dispatch }, { swapDebtRequest, isCallStatic }) {
       console.log(state.debtsPerAsset[swapDebtRequest.sourceAsset]);
       console.log(state.debtsPerAsset[swapDebtRequest.targetAsset]);
       console.log(swapDebtRequest);
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [swapDebtRequest.targetAsset]
@@ -1326,7 +1326,7 @@ export default {
             targetAmount,
             reversedSwapPath,
             swapDebtRequest.adapters,
-            {gasLimit: 4000000}
+            { gasLimit: 4000000 }
           );
           console.log(tx);
           if (tx.code || tx.errorName || tx.errorSignature) return true;
@@ -1342,7 +1342,7 @@ export default {
         targetAmount,
         reversedSwapPath,
         swapDebtRequest.adapters,
-        {gasLimit: 4000000}
+        { gasLimit: 4000000 }
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1383,11 +1383,11 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
+    async mintAndStakeGlp({ state, rootState, commit, dispatch }, { mintAndStakeGlpRequest }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         ['GLP']
@@ -1436,8 +1436,8 @@ export default {
     async unstakeAndRedeemGlp({ state, rootState, commit, dispatch }, { unstakeAndRedeemGlpRequest }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [unstakeAndRedeemGlpRequest.targetAsset]
@@ -1483,10 +1483,10 @@ export default {
     async wrapNativeToken({ state, rootState, commit, dispatch }, { wrapRequest, isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       try {
@@ -1521,10 +1521,10 @@ export default {
     async claimGLPRewards({ state, rootState, dispatch }, { isCallStatic }) {
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       try {
