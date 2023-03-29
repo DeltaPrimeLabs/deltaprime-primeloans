@@ -22,4 +22,7 @@ interface IAssetsOperationsFacet {
     event Borrowed(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    event DebtSwap(address indexed user, address indexed fromToken, address indexed toToken, uint256 repayAmount, uint256 borrowAmount, uint256 timestamp);
+
 }
