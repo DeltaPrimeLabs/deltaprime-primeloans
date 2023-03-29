@@ -1155,12 +1155,11 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'swap');
 
-      console.log(getLog(tx, SMART_LOAN.abi, 'Borrowed'));
-      console.log(getLog(tx, SMART_LOAN.abi, 'Repaid'));
+      console.log(getLog(tx, SMART_LOAN.abi, 'DebtSwap'));
 
-      const amountDebtSwappedTo = formatUnits(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount, config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals);
+      const amountDebtSwappedTo = formatUnits(getLog(tx, SMART_LOAN.abi, 'DebtSwap').args.borrowAmount, config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals);
       console.log('amountDebtSwappedTo', amountDebtSwappedTo);
-      const amountDebtSwappedFrom = formatUnits(getLog(tx, SMART_LOAN.abi, 'Repaid').args.amount, config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals);
+      const amountDebtSwappedFrom = formatUnits(getLog(tx, SMART_LOAN.abi, 'DebtSwap').args.repayAmount, config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals);
       console.log('amountDebtSwappedFrom', amountDebtSwappedFrom);
 
       const sourceDebtAfterTransaction = Number(state.debtsPerAsset[swapDebtRequest.sourceAsset].debt) - Number(amountDebtSwappedFrom);
