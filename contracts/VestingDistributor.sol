@@ -16,7 +16,7 @@ contract VestingDistributor {
     address keeper;
 
     uint256 totalLockedMultiplied;
-    address[] participants;
+    address[] public participants;
     mapping(address => uint256) public locked;
     mapping(address => uint256) public withdrawn;
     mapping(address => uint256) public unvestingTime;
@@ -71,7 +71,7 @@ contract VestingDistributor {
     function increaseVesting(uint256 amount) public {
         if (locked[msg.sender] == 0 || unvestingTime[msg.sender] == 0) revert UserNotLocked();
         if (pool.balanceOf(msg.sender) < locked[msg.sender] + amount) revert InsufficientPoolBalance();
-        if (block.timestamp > unlockTimestamp[msg.sender]) revert TooLate();
+        if (unlockTimestamp[msg.sender] > 0) revert TooLate();
 
         locked[msg.sender] += amount;
 
