@@ -864,6 +864,8 @@ export default {
     },
 
     handleTransactionError(error) {
+      console.error('handleTransactionError');
+      console.error(error);
       if (!error) {
         return;
       }
@@ -874,6 +876,10 @@ export default {
           this.progressBarService.emitProgressBarCancelledState();
         }
       } else {
+        if (error.includes('Failed to swap')) {
+          this.progressBarService.emitProgressBarErrorState('Try to increase slippage');
+          return;
+        }
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
