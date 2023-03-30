@@ -12,6 +12,7 @@ cache
 deployments/local
 deployments/localhost
 tools/liquidation/.private*
+functions/delta-prime-db-firebase-adminsdk*
 
 .vercel
 .openzeppelin

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: d511a90d3722e4a323de89435179465e006f8335;
+// Last deployed from commit: df6ee60ba901a98a553b7dba554089edd38b6f12;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -82,7 +82,12 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         uint256 borrowed = 0;
 
         for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
-            Pool pool = Pool(tokenManager.getPoolAddress(ownedAssetsPrices[i].asset));
+            Pool pool;
+            try tokenManager.getPoolAddress(ownedAssetsPrices[i].asset) returns (address poolAddress) {
+                pool = Pool(poolAddress);
+            } catch {
+                continue;
+            }
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
             uint256 _balance = token.balanceOf(address(this));
             uint256 _borrowed = pool.getBorrowed(address(this));

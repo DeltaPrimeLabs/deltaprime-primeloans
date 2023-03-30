@@ -54,7 +54,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'ETH', 'sAVAX', 'GLP'],
+          options: ['AVAX', 'USDC', 'USDT', 'ETH', 'sAVAX', 'GLP'],
           key: 'asset'
         },
       ];
