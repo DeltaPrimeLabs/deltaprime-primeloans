@@ -331,7 +331,7 @@ export default {
         } else {
           const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
 
-          const maxHops = 3;
+          const maxHops = 2;
           const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
           if (targetAsset === 'GLP') {
@@ -1019,16 +1019,22 @@ export default {
     },
 
     handleTransactionError(error) {
+      console.error('handleTransactionError');
+      console.error(error);
       if (!error) {
         return;
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
-          this.progressBarService.emitProgressBarErrorState('Insufficient slippage');
+          this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }
       } else {
+        if (error.includes('Failed to swap')) {
+          this.progressBarService.emitProgressBarErrorState('Slippage might be too low.');
+          return;
+        }
         this.progressBarService.emitProgressBarErrorState();
       }
       this.closeModal();
