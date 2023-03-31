@@ -20,7 +20,7 @@ export default class HealthService {
   async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, stakeStoreFarms) {
     if (noSmartLoan) return 1;
 
-    const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+    const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
     const redstonePriceData = await redstonePriceDataRequest.json();
 
     if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
