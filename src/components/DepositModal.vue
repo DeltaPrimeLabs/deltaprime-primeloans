@@ -13,6 +13,9 @@
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{ symbol }}</span></div>
+        <div v-if="maxUtilisation" class="top-info__divider"></div>
+        <div v-if="maxUtilisation" class="top-info__label">Utilisation:</div>
+        <div v-if="maxUtilisation" class="top-info__value">{{ maxUtilisation | percent }}</div>
       </div>
 
       <CurrencyInput v-on:newValue="depositValueChange"
@@ -96,6 +99,7 @@ export default {
     accountBalance: null,
     deposit: 0,
     assetSymbol: null,
+    maxUtilisation: 0,
   },
 
   data() {

@@ -603,6 +603,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      const pool = this.pools.find(pool => pool.asset.symbol === this.asset.symbol);
       const modalInstance = this.openModal(AddFromWalletModal);
       this.updateBalance().then(() => {
         modalInstance.setWalletNativeTokenBalance(this.accountBalance);
@@ -621,6 +622,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.noSmartLoan = this.noSmartLoan;
+      modalInstance.maxUtilisation = pool.maxUtilisation;
       modalInstance.isStaticCalled = false;
       modalInstance.isExpectedToFail = false;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
