@@ -18,7 +18,8 @@
       <CurrencyInput :symbol="asset.symbol"
                      :validators="validators"
                      v-on:inputChange="inputChange"
-                     v-on:newValue="currencyInputChange">
+                     v-on:newValue="currencyInputChange"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -108,6 +109,7 @@ export default {
       transactionOngoing: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       maxBorrow: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -117,6 +119,17 @@ export default {
       this.setupValidators();
       this.calculateMaxBorrow();
     });
+  },
+  
+  computed: {
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    },
   },
 
   methods: {

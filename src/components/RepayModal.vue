@@ -20,6 +20,7 @@
                      v-on:newValue="repayValueChange"
                      :validators="validators"
                      :max="calculateMaxRepay"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
 
@@ -104,6 +105,7 @@ export default {
       validators: [],
       currencyInputError: true,
       maxButtonUsed: false,
+      valueAsset: "USDC",
     }
   },
 
@@ -119,6 +121,15 @@ export default {
     calculateMaxRepay() {
       const assetBalance = this.assetBalances[this.asset.symbol];
       return this.assetDebt > assetBalance ? assetBalance : this.assetDebt;
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.repayValue) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
     },
   },
 
