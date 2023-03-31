@@ -31,6 +31,9 @@
             </span>
           </div>
         </div>
+        <div v-if="maxUtilisation" class="top-info__divider"></div>
+        <div v-if="maxUtilisation" class="top-info__label">Utilisation:</div>
+        <div v-if="maxUtilisation" class="top-info__value">{{ maxUtilisation | percent }}</div>
       </div>
 
       <CurrencyInput ref="lpCurrencyInput"
@@ -138,7 +141,8 @@ export default {
       default: null,
     },
     noSmartLoan: false,
-    transactionOngoing: false
+    transactionOngoing: false,
+    maxUtilisation: null,
   },
 
   data() {

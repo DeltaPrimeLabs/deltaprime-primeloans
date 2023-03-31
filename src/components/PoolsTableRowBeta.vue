@@ -127,6 +127,7 @@ export default {
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
+      modalInstance.maxUtilisation = this.pool.maxUtilisation;
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
