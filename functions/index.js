@@ -123,9 +123,8 @@ exports.gmxScraper = functions
       });
   });
 
-const getUsdtAutoApr = async () => {
-  functions.logger.info("parsing APR from Vector Finance website");
-  // parsing USDT Auto APY from Vector Finance pools page
+const getApysFromVector = async () => {
+  functions.logger.info("parsing APYs from Vector Finance website");
   const URL = "https://vectorfinance.io/pools";
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -139,17 +138,32 @@ const getUsdtAutoApr = async () => {
     vtxPriceSelector
   )
 
-  const usdtApy = await page.evaluate(() => {
-    // select the pools with relevant class and find USDT record
+  functions.logger.info("parsing USDC and USDT APYs...");
+  const [usdcApy, usdtApy] = await page.evaluate(() => {
+    // select the pools with the class and find relevant records
     const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
-    const usdtPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdtauto"));
-    const columns = usdtPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
 
-    // parse APR of GLP on Avalanche
-    return parseFloat(columns[2].innerText.split('%')[0].trim());
+    // parsing USDC APY
+    const usdcPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdcautomainpool"));
+    const usdcColumns = usdcPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
+    const usdcApy = parseFloat(usdcColumns[2].innerText.split('%')[0].trim());
+
+    // parsing USDT APY
+    const usdtPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdtautomainpool"));
+    const usdtColumns = usdtPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
+    const usdtApy = parseFloat(usdtColumns[2].innerText.split('%')[0].trim());
+
+    return [usdcApy, usdtApy];
   });
 
-  console.log(usdtApy / 100);
+  console.log(usdcApy, usdtApy);
+
+  // update USDC APY in db
+  await db.collection('apys').doc('USDC').set({
+    VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
+  }, { merge: true });
+
+  // update USDT APY in db
   await db.collection('apys').doc('USDT').set({
     VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
   }, { merge: true });
@@ -161,9 +175,9 @@ exports.vectorScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
-    return getUsdtAutoApr()
+    return getApysFromVector()
       .then(() => {
-        functions.logger.info("USDT APY updated.");
+        functions.logger.info("APYs scrapped and updated.");
       }).catch((err) => {
         functions.logger.info(`Scraping USDT APY from VectorFinance failed. Error: ${err}`);
       });
