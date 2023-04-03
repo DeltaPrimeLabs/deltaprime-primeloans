@@ -4,7 +4,7 @@
       <div class="backdrop">
         <div class="modal">
           <div class="close-button-container">
-            <img class="close-button" src="../assets/icons/cross.svg" v-on:click="close()">
+            <DeltaIcon class="close-button-container__icon" :icon-src="'src/assets/icons/cross.svg'" :size="21" v-on:click.native="close()"></DeltaIcon>
           </div>
           <slot></slot>
         </div>
@@ -14,8 +14,11 @@
 </template>
 
 <script>
+import DeltaIcon from "./DeltaIcon.vue";
+
 export default {
   name: 'Modal',
+  components: {DeltaIcon},
   methods: {
     close() {
       this.closeModal();
@@ -81,9 +84,8 @@ export default {
         align-items: center;
         justify-content: flex-end;
 
-        .close-button {
-          width: 21px;
-          height: 21px;
+        .close-button-container__icon {
+          background: var(--modal__close-button-container-color);
           cursor: pointer;
         }
       }

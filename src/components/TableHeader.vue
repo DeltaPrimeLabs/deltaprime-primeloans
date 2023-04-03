@@ -5,9 +5,7 @@
            v-for="headerCell of config.cells"
            :class="headerCell.class">
         <span>{{ headerCell.label }}</span>
-        <img v-if="headerCell.tooltip" class="info__icon"
-             src="src/assets/icons/info.svg"
-             v-tooltip="{content: headerCell.tooltip, placement: 'top', classes: 'info-tooltip'}">
+        <InfoIcon v-if="headerCell.tooltip" class="info__icon" :tooltip="{content: headerCell.tooltip, placement: 'top', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
         <div v-if="headerCell.sortable" class="cell__sort" v-on:click="sortClick(headerCell)">
           <img v-if="sortBy !== headerCell.id" src="src/assets/icons/icon_order.svg">
           <img v-if="sortBy === headerCell.id" src="src/assets/icons/icon_order_active.svg" v-bind:class="{'sort-descending': !sortAscending}">
@@ -19,8 +17,11 @@
 
 <script>
 
+import InfoIcon from "./InfoIcon.vue";
+
 export default {
   name: 'TableHeader',
+  components: {InfoIcon},
   props: {
     config: null,
     sortBy: null,
@@ -115,8 +116,6 @@ export default {
     }
 
     .info__icon {
-      width: 16px;
-      height: 16px;
       margin-left: 5px;
     }
 

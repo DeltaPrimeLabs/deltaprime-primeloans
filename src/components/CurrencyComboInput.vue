@@ -22,7 +22,7 @@
           <img class="selected-asset__icon" :src="selectedAsset.logo">
           <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
-        <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1">
+        <DeltaIcon class="chevron" :icon-src="'src/assets/icons/chevron-down.svg'" :size="21" v-on:click.native="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1"></DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div class="select-dropdown">
           <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
@@ -47,10 +47,12 @@
 <script>
 import CurrencyInput from './CurrencyInput';
 import config from '../config';
+import DeltaIcon from "./DeltaIcon.vue";
 
 export default {
   name: 'CurrencyComboInput',
   components: {
+    DeltaIcon,
     CurrencyInput
   },
   props: {
@@ -200,8 +202,8 @@ export default {
     display: flex;
     flex-direction: row;
     align-items: center;
-    box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-    background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
+    box-shadow: var(--currency-combo-input__box-shadow);
+    background-image: var(--currency-combo-input__background);
     height: 60px;
     border-radius: 15px;
 
@@ -216,7 +218,7 @@ export default {
     .divider {
       width: 2px;
       height: 34px;
-      background-color: $light-violet;
+      background-color: var(--currency-combo-input__divider-color);
     }
 
     .select {
@@ -249,6 +251,7 @@ export default {
       }
 
       .chevron {
+        background: var(--currency-combo-input__chevron-color);
         cursor: pointer;
         transition: transform 200ms ease-in-out;
       }
@@ -288,7 +291,7 @@ export default {
           font-weight: 700;
           text-transform: uppercase;
           font-family: 'Montserrat', sans-serif;
-          border-bottom: 2px solid $smoke-gray;
+          border-bottom: var(--currency-combo-input__select-dropdown-input-border);
         }
 
         .dropdown__list {
@@ -314,13 +317,14 @@ export default {
             transition: background-color 50ms ease-in-out;
 
             &:hover {
-              background-color: $fog-gray;
+              background-color: var(--currency-combo-input__select-dropdown-option-background--hover);
             }
 
             .option__icon {
               width: 34px;
               height: 34px;
               margin-right: 10px;
+              opacity: var(--currency-combo-input__select-dropdown-option-icon-opacity);
             }
 
             .option__symbol {
@@ -332,7 +336,7 @@ export default {
 
             .option__name {
               font-size: $font-size-sm;
-              color: $medium-gray;
+              color: var(--currency-combo-input__select-dropdown-option-name-color);
             }
           }
         }
@@ -352,8 +356,8 @@ export default {
       &.has-background {
 
         .select-dropdown {
-          border-color: $delta-light;
-          background-color: white;
+          border-color: var(--currency-combo-input__select-dropdown-border-color);
+          background-color: var(--currency-combo-input__select-dropdown-background);
         }
       }
     }

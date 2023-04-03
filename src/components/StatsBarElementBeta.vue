@@ -4,9 +4,7 @@
       <div class="stat__label">
         {{ label }}
         <div v-if="infoTooltip" class="stat__info">
-          <img class="info__icon"
-               src="src/assets/icons/info.svg"
-               v-tooltip="{content: infoTooltip, classes: 'info-tooltip'}">
+          <InfoIcon :tooltip="{ content: infoTooltip }" :classes="'info-tooltip'"></InfoIcon>
         </div>
       </div>
       <div class="stat__content">
@@ -23,10 +21,11 @@
 
 <script>
 import LoadedValue from './LoadedValue';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'StatsBarElementBeta',
-  components: {LoadedValue},
+  components: {InfoIcon, LoadedValue},
   props: {
     label: {
       type: String,

@@ -7,7 +7,8 @@
              v-bind:key="option"
              v-bind:id="'option-' + option"
              v-bind:class="{'option--selected': option === selectedOption}"
-             v-on:click="clickOption(option)">{{ option }}</div>
+             v-on:click="clickOption(option)">{{ option }}
+        </div>
       </div>
       <div ref="pointer" class="pointer"></div>
       <div class="toggle__background"></div>
@@ -68,13 +69,27 @@ export default {
       height: 28px;
       margin: 0 80px 0 0;
       padding: 4px 10px;
-      box-shadow: 1px 1px 6px 0 rgba(117, 107, 237, 0.3);
+      box-shadow: var(--toggle__pointer-box-shadow);
       border-radius: 7px;
-      border: 1px solid $light-violet;
       backdrop-filter: contrast(200%) brightness(150%);
       z-index: 1;
       transition: all 100ms;
 
+      &:before {
+        content: '';
+        position: absolute;
+        border-radius: 7px;
+        inset: 0;
+        background: var(--toggle__pointer-border);
+      }
+
+      &:after {
+        content: '';
+        position: absolute;
+        border-radius: 6px;
+        inset: 1px;
+        background: var(--toggle__pointer-background);
+      }
     }
 
     .toggle__options {
@@ -82,7 +97,7 @@ export default {
       flex-direction: row;
       border-radius: 7px;
       font-size: $font-size-xsm;
-      color: $medium-gray;
+      color: var(--toggle__options-color);
       z-index: 2;
 
       .option {
@@ -90,12 +105,12 @@ export default {
         cursor: pointer;
 
         &.option--selected {
-          color: $persian-blue;
+          color: var(--toggle__options-color--selected);
           font-weight: 600;
         }
 
         &:hover {
-          color: $persian-blue;
+          color: var(--toggle__options-color--hover);
         }
       }
     }
@@ -106,8 +121,8 @@ export default {
       left: 0;
       width: 131.5px;
       height: 28px;
-      background-color: $mist-gray;
-      border: 1px solid $goose-gray;
+      background-color: var(--toggle__background);
+      border: var(--toggle__border);
       z-index: 0;
       border-radius: 7px;
     }

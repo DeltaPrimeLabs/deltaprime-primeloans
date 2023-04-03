@@ -22,15 +22,17 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-<!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
-      Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
-    </Banner>-->
+    <!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
+          Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
+        </Banner>-->
     <div class="content">
       <div class="top-bar">
-        <a href="https://deltaprime.io/">
-          <img src="src/assets/icons/deltaprime.svg" class="logo">
-        </a>
-        <button @click="toggleTheme()">switch mode</button>
+        <div class="top-bar__left-part">
+          <a href="https://deltaprime.io/">
+            <img src="src/assets/icons/deltaprime.svg" class="logo">
+          </a>
+          <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+        </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
       </div>
@@ -53,9 +55,11 @@ const ethereum = window.ethereum;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
+import ThemeToggle from "./components/ThemeToggle.vue";
 
 export default {
   components: {
+    ThemeToggle,
     ProgressBar,
     Button,
     Navbar,
@@ -75,8 +79,6 @@ export default {
     };
   },
   async created() {
-    this.darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
     await this.initNetwork();
 
     if (!ethereum) {
@@ -123,11 +125,6 @@ export default {
   methods: {
     ...mapActions('network', ['initNetwork']),
     ...mapActions('nft', ['initNfts']),
-    toggleTheme() {
-      this.darkMode = !this.darkMode;
-      document.documentElement.classList.remove(this.darkMode ? 'theme--light' : 'theme--dark')
-      document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
-    },
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
@@ -234,7 +231,20 @@ export default {
 @import "~@/styles/themes/theme-light";
 
 html {
-  color: var(--default-text-color)
+  color: var(--default-text-color);
+
+  ::placeholder {
+    color: var(--default-input-placeholder-color);
+    opacity: 1;
+  }
+
+  :-ms-input-placeholder {
+    color: var(--default-input-placeholder-color);
+  }
+
+  ::-ms-input-placeholder {
+    color: var(--default-input-placeholder-color);
+  }
 }
 </style>
 <style lang="scss" scoped>
@@ -303,5 +313,16 @@ a {
     font-weight: 500;
   }
 }
+
+.top-bar__left-part {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.top-bar__theme-toggle {
+  margin-left: 24px;
+}
+
 </style>
 

@@ -2,9 +2,7 @@
   <div class="account-apr-widget-component">
     <div class="apr-widget__title">
       Account APY
-      <img class="info__icon"
-           src="src/assets/icons/info.svg"
-           v-tooltip="{content: 'How much you annually yield on your collateral. This number includes any inherent asset price appreciation, and borrowing interest.', placement: 'top', classes: 'info-tooltip'}">
+      <InfoIcon class="info__icon" :tooltip="{content: 'How much you annually yield on your collateral. This number includes any inherent asset price appreciation, and borrowing interest.', placement: 'top', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
     </div>
     <div class="apr-widget__value">
       <ColoredValueBeta v-if="accountApr != null" :value="accountApr ? accountApr : 0" :formatting="'percent'"
@@ -25,10 +23,11 @@
 
 <script>
 import ColoredValueBeta from './ColoredValueBeta';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'AccountAprWidget',
-  components: {ColoredValueBeta},
+  components: {InfoIcon, ColoredValueBeta},
   props: {
     accountApr: 0,
     noSmartLoan: {}

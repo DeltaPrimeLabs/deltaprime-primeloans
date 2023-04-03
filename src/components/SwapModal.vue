@@ -35,8 +35,8 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button">
-        <img src="src/assets/icons/swap-arrow.svg" class="reverse-swap-icon" v-on:click="reverseSwap">
+      <div class="reverse-swap-button" v-on:click="reverseSwap">
+        <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
       <CurrencyComboInput ref="targetInput"
@@ -66,9 +66,10 @@
         <div class="slippage__divider"></div>
         DEX slippage: <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
         <div class="info__icon__wrapper">
-          <img class="info__icon"
-               src="src/assets/icons/info.svg"
-               v-tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}">
+          <InfoIcon
+              class="info__icon"
+              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+          ></InfoIcon>
         </div>
       </div>
       <div v-if="slippageWarning" class="slippage-warning">
@@ -170,12 +171,16 @@ import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import DeltaIcon from "./DeltaIcon.vue";
+import InfoIcon from "./InfoIcon.vue";
 
 const ethers = require('ethers');
 
 export default {
   name: 'SwapModal',
   components: {
+    InfoIcon,
+    DeltaIcon,
     SimpleInput,
     CurrencyComboInput,
     Button,
@@ -570,7 +575,7 @@ export default {
     flex-direction: row;
     justify-content: flex-end;
     font-size: $font-size-xsm;
-    color: $steel-gray;
+    color: var(--swap-modal__asset-info-color);
     padding-right: 8px;
 
     .asset-info__value {
@@ -584,7 +589,7 @@ export default {
     flex-direction: row;
     justify-content: flex-start;
     font-size: $font-size-xsm;
-    color: $steel-gray;
+    color: var(--swap-modal__usd-info-color);
     margin-top: 3px;
 
     .asset-info__value {
@@ -597,17 +602,22 @@ export default {
   }
 
   .reverse-swap-button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    position: relative;
     cursor: pointer;
-    margin-top: 40px;
+    margin: 14px auto;
+    height: 40px;
+    width: 40px;
+    border: var(--swap-modal__reverse-swap-button-border);
+    background: var(--swap-modal__reverse-swap-button-background);
+    box-shadow: var(--swap-modal__reverse-swap-button-box-shadow);
+    border-radius: 999px;
 
     .reverse-swap-icon {
-      width: 52px;
-      height: 52px;
-      margin: -6px 0 14px 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--swap-modal__reverse-swap-icon-color);
     }
   }
 }
@@ -615,7 +625,7 @@ export default {
 .received-amount {
   display: flex;
   font-size: 14px;
-  color: #7d7d7d;
+  color: var(--swap-modal__received-amount-color);
 }
 
 .target-asset-info {
@@ -624,13 +634,13 @@ export default {
 }
 
 .slippage-bar {
-  border-top: solid 2px #f0f0f0;
-  border-bottom: solid 2px #f0f0f0;
+  border-top: var(--swap-modal__slippage-bar-border);
+  border-bottom: var(--swap-modal__slippage-bar-border);
   margin-top: 26px;
   height: 42px;
   font-family: Montserrat;
   font-size: 16px;
-  color: #7d7d7d;
+  color: var(--swap-modal__slippage-bar-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -665,7 +675,7 @@ export default {
   .slippage__divider {
     width: 2px;
     height: 17px;
-    background-color: #f0f0f0;
+    background-color: var(--swap-modal__slippage-divider-color);
     margin: 0 10px;
   }
 }
@@ -675,7 +685,7 @@ export default {
 }
 
 .slippage-warning {
-  color: $red;
+  color: var(--swap-modal__slippage-warning-color);
   margin-top: 4px;
 
   img {

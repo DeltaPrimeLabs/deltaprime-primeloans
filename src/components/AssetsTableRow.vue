@@ -16,7 +16,7 @@
 
       <div class="table__cell table__cell--double-value balance">
         <template
-          v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
+            v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
             <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
@@ -67,15 +67,27 @@
       <div></div>
 
       <div class="table__cell actions">
+        <DeltaIcon class="action-button" v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded}"
+                   :icon-src="'src/assets/icons/plus.svg'" :size="26"
+                   v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
+                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
+        <DeltaIcon class="action-button" v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded}"
+                   :icon-src="'src/assets/icons/swap.svg'" :size="26"
+                   v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
+                   v-on:click.native="actionClick('SWAP')"></DeltaIcon>
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          v-for="(actionConfig, index) of actionsConfig"
-          :bubbleText="(asset.symbol === 'AVAX' && noSmartLoan && index === 0) ?
-           `To create your Prime Account, click on the <img src='src/assets/icons/plus-white.svg' style='transform: translateY(-1px)' /> button, and then click &quot;Deposit collateral&quot;` : ''"
-          v-bind:key="index"
-          :config="actionConfig"
-          v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || !healthLoaded">
+            class="actions__icon-button"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
+          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan && index === 0)" v-slot:bubble>
+            To create your Prime Account, click on the
+            <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
+                       :size="26"
+            ></DeltaIcon>
+            button, and then click &quot;Deposit collateral&quot;
+
+          </template>
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -123,6 +135,7 @@ import GLP_REWARD_TRACKER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
 import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
 import {BigNumber} from 'ethers';
+import DeltaIcon from './DeltaIcon.vue';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -133,7 +146,7 @@ const ethers = require('ethers');
 
 export default {
   name: 'AssetsTableRow',
-  components: {LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
+  components: {DeltaIcon, LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
   props: {
     asset: {},
   },
@@ -151,7 +164,7 @@ export default {
   },
   data() {
     return {
-      actionsConfig: null,
+      moreActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       isBalanceEstimated: false,
@@ -199,88 +212,62 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore',
-      [
-        'swap',
-        'swapDebt',
-        'fund',
-        'borrow',
-        'withdraw',
-        'withdrawNativeToken',
-        'repay',
-        'createAndFundLoan',
-        'createLoanAndDeposit',
-        'fundNativeToken',
-        'wrapNativeToken',
-        'mintAndStakeGlp',
-        'unstakeAndRedeemGlp',
-        'claimGLPRewards'
-      ]),
+        [
+          'swap',
+          'swapDebt',
+          'fund',
+          'borrow',
+          'withdraw',
+          'withdrawNativeToken',
+          'repay',
+          'createAndFundLoan',
+          'createLoanAndDeposit',
+          'fundNativeToken',
+          'wrapNativeToken',
+          'mintAndStakeGlp',
+          'unstakeAndRedeemGlp',
+          'claimGLPRewards'
+        ]),
     ...mapActions('network', ['updateBalance']),
     setupActionsConfiguration() {
-      this.actionsConfig = [
-        {
-          iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Deposit / Borrow' : this.asset.symbol === 'GLP' ? 'Deposit/Claim' : 'Deposit',
-          menuOptions: [
-            {
-              key: 'ADD_FROM_WALLET',
-              name: 'Deposit collateral'
-            },
-            BORROWABLE_ASSETS.includes(this.asset.symbol) ?
-              {
-                key: 'BORROW',
-                name: 'Borrow',
-                disabled: this.borrowDisabled(),
-                disabledInfo: 'To borrow, you need to add some funds from you wallet first'
-              }
-              : null,
-            this.asset.symbol === 'AVAX' ? {
-              key: 'WRAP',
-              name: 'Wrap native AVAX',
-              hidden: true,
-            } : null,
-            this.asset.symbol === 'GLP' ? {
-              disabled: !this.hasSmartLoanContract,
-              key: 'CLAIM_GLP_REWARDS',
-              name: 'Claim GLP rewards',
-            } : null,
-          ]
-        },
-        {
-          iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: BORROWABLE_ASSETS.includes(this.asset.symbol) ? 'Withdraw / Repay' : 'Withdraw',
-          disabled: !this.hasSmartLoanContract,
-          menuOptions: [
-            {
-              key: 'WITHDRAW',
-              name: 'Withdraw collateral',
-            },
-            BORROWABLE_ASSETS.includes(this.asset.symbol) ?
-              {
-                key: 'REPAY',
-                name: 'Repay',
-              }
-              : null
-          ]
-        },
-        {
-          iconSrc: 'src/assets/icons/swap.svg',
-          tooltip: 'Swap / Swap debt',
-          disabled: !this.hasSmartLoanContract,
-          menuOptions: [
-            {
-              key: 'SWAP',
-              name: 'Swap',
-            },
-            BORROWABLE_ASSETS.includes(this.asset.symbol) ?
-              {
-                key: 'SWAP_DEBT',
-                name: 'Swap debt',
-              }
-              : null
-          ]
-        }
-      ];
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+            ...(BORROWABLE_ASSETS.includes(this.asset.symbol) ?
+              [
+                {
+                  key: 'BORROW',
+                  name: 'Borrow',
+                  disabled: this.borrowDisabled(),
+                  disabledInfo: 'To borrow, you need to add some funds from you wallet first'
+                },
+                {
+                  key: 'REPAY',
+                  name: 'Repay',
+                },
+                {
+                  key: 'SWAP_DEBT',
+                  name: 'Swap debt',
+                }
+              ]
+              : []),
+          this.asset.symbol === 'AVAX' ? {
+            key: 'WRAP',
+            name: 'Wrap native AVAX',
+            hidden: true,
+          } : null,
+          this.asset.symbol === 'GLP' ? {
+            disabled: !this.hasSmartLoanContract,
+            key: 'CLAIM_GLP_REWARDS',
+            name: 'Claim GLP rewards',
+          } : null,
+          {
+            key: 'WITHDRAW',
+            name: 'Withdraw collateral',
+          },
+        ]
+      }
     },
 
     toggleChart() {
@@ -315,12 +302,12 @@ export default {
 
           try {
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -334,22 +321,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -371,12 +358,12 @@ export default {
 
           try {
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -390,22 +377,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -415,31 +402,34 @@ export default {
     },
 
     actionClick(key) {
-      switch (key) {
-        case 'BORROW':
-          this.openBorrowModal();
-          break;
-        case 'ADD_FROM_WALLET':
-          this.openAddFromWalletModal();
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'REPAY':
-          this.openRepayModal();
-          break;
-        case 'SWAP':
-          this.openSwapModal();
-          break;
-        case 'SWAP_DEBT':
-          this.openDebtSwapModal();
-          break;
-        case 'WRAP':
-          this.openWrapModal();
-          break;
-        case 'CLAIM_GLP_REWARDS':
-          this.claimGLPRewardsAction();
-          break;
+      if (!this.disableAllButtons && this.healthLoaded) {
+        console.log('actionclick');
+        switch (key) {
+          case 'BORROW':
+            this.openBorrowModal();
+            break;
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'REPAY':
+            this.openRepayModal();
+            break;
+          case 'SWAP':
+            this.openSwapModal();
+            break;
+          case 'SWAP_DEBT':
+            this.openDebtSwapModal();
+            break;
+          case 'WRAP':
+            this.openWrapModal();
+            break;
+          case 'CLAIM_GLP_REWARDS':
+            this.claimGLPRewardsAction();
+            break;
+        }
       }
     },
 
@@ -482,8 +472,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -589,24 +579,24 @@ export default {
               };
 
               this.handleTransaction(this.createLoanAndDeposit, {request: request}, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             } else {
               this.handleTransaction(this.createAndFundLoan, {
-                  asset: addFromWalletEvent.asset,
-                  value: value,
-                  isLP: false
-                }, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    asset: addFromWalletEvent.asset,
+                    value: value,
+                    isLP: false
+                  }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             }
           } else {
             if (addFromWalletEvent.asset === 'AVAX') {
@@ -665,8 +655,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
@@ -679,8 +669,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         }
       });
     },
@@ -710,8 +700,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -1044,6 +1034,25 @@ export default {
     .colored-value {
       font-weight: 500;
     }
+  }
+}
+
+.action-button {
+  cursor: pointer;
+  background: var(--icon-button-menu-beta__icon-color--default);
+
+  &:not(:last-child) {
+    margin-right: 12px;
+  }
+
+  &:hover {
+    background: var(--icon-button-menu-beta__icon-color-hover--default);
+  }
+
+  &.action-button--disabled {
+    background: var(--icon-button-menu-beta__icon-color--disabled);
+    cursor: default;
+    pointer-events: none;
   }
 }
 
