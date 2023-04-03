@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ apy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Deposit:</div>
-        <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">AVAX</span></div>
+        <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">{{ assetSymbol }}</span></div>
       </div>
 
       <CurrencyInput :symbol="assetSymbol" v-on:newValue="withdrawValueChange" ></CurrencyInput>
