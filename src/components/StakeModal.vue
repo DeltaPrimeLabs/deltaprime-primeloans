@@ -20,14 +20,16 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="available">
+                     :max="available"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="available">
+                     :max="available"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -114,6 +116,7 @@ export default {
       transactionOngoing: false,
       currencyInputError: true,
       maxButtonUsed: false,
+      valueAsset: "USDC",
     };
   },
 
@@ -123,7 +126,16 @@ export default {
   computed: {
     calculateDailyInterest() {
       return (this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue))) * this.asset.price;
-    }
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.stakeValue) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    },
   },
 
   methods: {
