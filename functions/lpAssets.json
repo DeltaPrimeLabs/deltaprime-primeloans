@@ -1,0 +1,35 @@
+{
+  "PNG_AVAX_USDC_LP": {
+    "dex": "Pangolin",
+    "url": "https://api.pangolin.exchange/pangolin/apr2/55"
+  },
+  "PNG_AVAX_USDT_LP": {
+    "dex": "Pangolin",
+    "url": "https://api.pangolin.exchange/pangolin/apr2/113"
+  },
+  "PNG_AVAX_ETH_LP": {
+    "dex": "Pangolin",
+    "url": "https://api.pangolin.exchange/pangolin/apr2/9"
+  },
+  "TJ_AVAX_USDC_LP": {
+    "dex": "TraderJoe",
+    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+  },
+  "TJ_AVAX_USDT_LP": {
+    "dex": "TraderJoe",
+    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+  },
+  "TJ_AVAX_ETH_LP": {
+    "dex": "TraderJoe",
+    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+  },
+  "TJ_AVAX_BTC_LP": {
+    "dex": "TraderJoe",
+    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+  },
+  "TJ_AVAX_sAVAX_LP": {
+    "dex": "TraderJoe",
+    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange",
+    "appreciation": 3.6
+  }
+}

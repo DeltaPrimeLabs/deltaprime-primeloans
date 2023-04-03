@@ -481,14 +481,9 @@ export default {
 
       for (let [symbol, asset] of Object.entries(assets)) {
         if (asset.getApy && typeof asset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              assets[symbol].apy = apys[symbol].apy;
-            } else {
-              assets[symbol].apy = await asset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
+          // we don't use getApy method anymore, but fetch APYs from db
+          if (apys[symbol] && apys[symbol].apy) {
+            assets[symbol].apy = apys[symbol].apy;
           }
         }
       }
@@ -499,14 +494,9 @@ export default {
 
       for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
         if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              lpAssets[symbol].apy = apys[symbol].apy;
-            } else {
-              lpAssets[symbol].apy = await lpAsset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
+          // we don't use getApy method anymore, but fetch APYs from db
+          if (apys[symbol] && apys[symbol].lp_apy) {
+            lpAssets[symbol].apy = apys[symbol].lp_apy;
           }
         }
       }

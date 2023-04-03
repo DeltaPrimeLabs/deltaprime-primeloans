@@ -4,8 +4,16 @@ const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const fetch = require("node-fetch");
 const puppeteer = require("puppeteer");
+const ApolloClient = require("apollo-client").ApolloClient;
+const createHttpLink = require("apollo-link-http").createHttpLink;
+const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
+const gql = require("graphql-tag");
+
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
+const tokenAddresses = require('./token_addresses.json');
+const lpAssets = require('./lpAssets.json');
+
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
 initializeApp({
@@ -183,12 +191,127 @@ exports.vectorScraper = functions
       });
   });
 
+const getPangolinLpApr = async (url) => {
+  let apr;
+
+  if (url) {
+    const resp = await fetch(url);
+    const json = await resp.json();
+
+    apr = json.swapFeeApr;
+  } else {
+    apr = 0;
+  }
+
+  return apr;
+}
+
+const getTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
+  let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
+
+  const FEE_RATE = 0.0025;
+
+  lpAddress = lpAddress.toLowerCase();
+
+  let aprDate = new Date();
+
+  const date = Math.round(aprDate.getTime() / 1000 - 32 * 3600);
+
+  const pairQuery = gql(`
+{
+  pairs(
+    first: 1
+    where: {id: "${lpAddress}"}
+  ) {
+    id
+    name
+    token0Price
+    token1Price
+    token0 {
+      id
+      symbol
+      decimals
+    }
+    token1 {
+      id
+      symbol
+      decimals
+    }
+    reserve0
+    reserve1
+    reserveUSD
+    volumeUSD
+    hourData(
+        first: 25
+        where: {date_gte: ${date}}
+        orderBy: date
+        orderDirection: desc
+      ) {
+        untrackedVolumeUSD
+        volumeUSD
+        date
+        volumeToken0
+        volumeToken1
+      }
+    timestamp
+    }
+  }
+`)
+
+  const httpLink = createHttpLink({
+    uri: tjSubgraphUrl,
+    fetch: fetch
+  });
+
+  const client = new ApolloClient({
+    link: httpLink,
+    cache: new InMemoryCache()
+  });
+
+  const response = await client.query({ query: pairQuery });
+
+  const hourData = response.data.pairs[0].hourData;
+  hourData.shift();
+
+  let volumeUSD = parseFloat(hourData.reduce((sum, data) => sum + parseFloat(data.volumeUSD), 0));
+  let reserveUSD = parseFloat(response.data.pairs[0].reserveUSD);
+
+
+
+  const feesUSD = volumeUSD * FEE_RATE;
+
+  return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
+}
+
 exports.apyAggregator = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
-    functions.logger.info("Getting APRs.");
+    functions.logger.info("Getting lp and farm APR/APYs.");
 
+    // fetching lp APYs
+    try {
+      for (const [asset, data] of Object.entries(lpAssets)) {
+        let apy;
+        if (data.dex === "Pangolin") {
+          apy = await getPangolinLpApr(data.url);
+        } else if (data.dex === "TraderJoe") {
+          apy = await getTraderJoeLpApr(tokenAddresses[asset], data.appreciation);
+        }
+
+        console.log(asset, apy);
+
+        await db.collection('apys').doc(asset).set({
+          lp_apy: apy
+        }, { merge: true });
+      }
+
+      functions.logger.info(`Fetching lp APYs finished.`);
+    } catch (error) {
+      functions.logger.info(`Fetching lp APYs failed. Error: ${error}`);
+    };
+
+    // fetching farm APYs
     const apys = {};
     const urls = [
       VECTOR_APY_URL,
@@ -240,11 +363,11 @@ exports.apyAggregator = functions
           await db.collection('apys').doc(token).set(apyData, { merge: true });
         }
 
-        functions.logger.info(`Fetching APYs finished.`);
+        functions.logger.info(`Fetching farm APYs finished.`);
       });
 
     } catch (error) {
-      functions.logger.info(`Fetching APYs failed. Error: ${error}`);
+      functions.logger.info(`Fetching farm APYs failed. Error: ${error}`);
     }
 
     return null;
