@@ -8,8 +8,7 @@
 
     <div class="protocol-banner"
          v-if="farm.protocolIdentifier === 'VF_AVAX_SAVAX_AUTO' ||
-          farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO' ||
-           farm.protocolIdentifier === 'VF_USDC_MAIN_AUTO'">
+          farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO'">
       Vector APYs are hardcoded while the API is updated. This will be updated soon. For the accurate APY, see
       <a class="banner__link" href="https://vectorfinance.io/pools" target="_blank">here</a>.
     </div>
