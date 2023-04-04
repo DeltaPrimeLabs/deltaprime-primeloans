@@ -146,36 +146,54 @@ const getApysFromVector = async () => {
     vtxPriceSelector
   )
 
-  functions.logger.info("parsing USDC and USDT APYs...");
-  const [usdcApy, usdtApy] = await page.evaluate(() => {
+  functions.logger.info("parsing auto compounding APYs...");
+  const [avaxApy, savaxApy, usdcApy, usdtApy] = await page.evaluate(() => {
+    const parseApyFromTable = (pools, keyword) => {
+      const assetPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith(keyword));
+      const assetColumns = assetPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
+      const assetApy = parseFloat(assetColumns[2].innerText.split('%')[0].trim());
+    
+      return assetApy;
+    }
+
     // select the pools with the class and find relevant records
     const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
 
-    // parsing USDC APY
-    const usdcPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdcautomainpool"));
-    const usdcColumns = usdcPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
-    const usdcApy = parseFloat(usdcColumns[2].innerText.split('%')[0].trim());
+    // parsing USDT main auto APY
+    const avaxApy = parseApyFromTable(pools, "avaxautopairedwithsavax");
 
-    // parsing USDT APY
-    const usdtPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith("usdtautomainpool"));
-    const usdtColumns = usdtPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
-    const usdtApy = parseFloat(usdtColumns[2].innerText.split('%')[0].trim());
+    // parsing USDT main auto APY
+    const savaxApy = parseApyFromTable(pools, "savaxautopairedwithavax");
 
-    return [usdcApy, usdtApy];
+    // parsing USDC main auto APY
+    const usdcApy = parseApyFromTable(pools, "usdcautomainpool");
+
+    // parsing USDT main auto APY
+    const usdtApy = parseApyFromTable(pools, "usdtautomainpool");
+
+    return [avaxApy, savaxApy, usdcApy, usdtApy];
   });
 
-  console.log(usdcApy, usdtApy);
+  console.log(avaxApy, savaxApy, usdcApy, usdtApy);
 
-  // update USDC APY in db
+  // update APYs in db
+  await db.collection('apys').doc('AVAX').set({
+    VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
+  }, { merge: true });
+
+  await db.collection('apys').doc('sAVAX').set({
+    VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
+  }, { merge: true });
+
   await db.collection('apys').doc('USDC').set({
     VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
   }, { merge: true });
 
-  // update USDT APY in db
   await db.collection('apys').doc('USDT').set({
     VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
   }, { merge: true });
 
+  // close browser
   await browser.close();
 }
 
