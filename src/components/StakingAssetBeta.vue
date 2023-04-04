@@ -222,7 +222,9 @@ export default {
           if (farm.protocol === 'VECTOR_FINANCE') {
             heightOfRows += 70;
             if (this.asset.symbol === 'USDC') {
-              heightOfRows += 26;
+              heightOfRows += 16;
+            } else if (this.asset.symbol === 'USDT') {
+              heightOfRows -= 16;
             }
           } else {
             heightOfRows += 62;

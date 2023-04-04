@@ -480,16 +480,9 @@ export default {
       const apys = state.apys;
 
       for (let [symbol, asset] of Object.entries(assets)) {
-        if (asset.getApy && typeof asset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              assets[symbol].apy = apys[symbol].apy;
-            } else {
-              assets[symbol].apy = await asset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
-          }
+          // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].apy) {
+          assets[symbol].apy = apys[symbol].apy;
         }
       }
 
@@ -498,16 +491,9 @@ export default {
       let lpAssets = state.lpAssets;
 
       for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
-        if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              lpAssets[symbol].apy = apys[symbol].apy;
-            } else {
-              lpAssets[symbol].apy = await lpAsset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
-          }
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].lp_apy) {
+          lpAssets[symbol].apy = apys[symbol].lp_apy;
         }
       }
 
@@ -569,6 +555,8 @@ export default {
           }
         );
 
+        console.log('yearlyDebtInterest:', yearlyDebtInterest);
+
         let yearlyAssetInterest = 0;
 
         if (state.assets && state.assetBalances) {
@@ -578,9 +566,12 @@ export default {
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
+            console.log(asset, asset.apy);
             yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
           }
         }
+
+        console.log('yearlyAssetInterest', yearlyAssetInterest);
 
         let yearlyLpInterest = 0;
 
@@ -597,6 +588,8 @@ export default {
           }
         }
 
+        console.log('yearlyLpInterest', yearlyLpInterest);
+
         let yearlyFarmInterest = 0;
 
         if (rootState.stakeStore.farms) {
@@ -612,7 +605,8 @@ export default {
 
               let farmApy = 0;
 
-              farmApy = farm.currentApy;
+              farmApy = farm.currentApy ? farm.currentApy : 0;
+              console.log(farm.protocolIdentifier, farmApy);
 
               let asset = rootState.fundsStore.assets[symbol] ? rootState.fundsStore.assets[symbol] : rootState.fundsStore.lpAssets[symbol];
               let assetApy = (asset.apy && symbol !== 'GLP') ? asset.apy / 100 : 0;
@@ -622,6 +616,8 @@ export default {
             }
           }
         }
+
+        console.log('yearlyFarmInterest', yearlyFarmInterest);
 
         const collateral = getters.getCollateral;
 
