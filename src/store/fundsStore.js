@@ -480,11 +480,9 @@ export default {
       const apys = state.apys;
 
       for (let [symbol, asset] of Object.entries(assets)) {
-        if (asset.getApy && typeof asset.getApy === 'function') {
           // we don't use getApy method anymore, but fetch APYs from db
-          if (apys[symbol] && apys[symbol].apy) {
-            assets[symbol].apy = apys[symbol].apy;
-          }
+        if (apys[symbol] && apys[symbol].apy) {
+          assets[symbol].apy = apys[symbol].apy;
         }
       }
 
@@ -493,11 +491,9 @@ export default {
       let lpAssets = state.lpAssets;
 
       for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
-        if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
-          // we don't use getApy method anymore, but fetch APYs from db
-          if (apys[symbol] && apys[symbol].lp_apy) {
-            lpAssets[symbol].apy = apys[symbol].lp_apy;
-          }
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].lp_apy) {
+          lpAssets[symbol].apy = apys[symbol].lp_apy;
         }
       }
 
