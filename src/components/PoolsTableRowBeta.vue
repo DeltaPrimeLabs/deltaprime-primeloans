@@ -36,6 +36,10 @@
         </div>
       </div>
 
+      <div class="table__cell utilisation">
+        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation | percent"></LoadedValue>
+      </div>
+
       <div></div>
 
       <div class="table__cell actions">
@@ -59,8 +63,9 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
+
 const ethers = require('ethers');
-import addresses from "../../common/addresses/avax/token_addresses.json";
+import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 
 
@@ -181,7 +186,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
+    grid-template-columns: repeat(3, 1fr) 20% 1fr 120px 76px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -229,6 +234,13 @@ export default {
       }
 
       &.tvl {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 500;
+      }
+
+      &.utilisation {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;

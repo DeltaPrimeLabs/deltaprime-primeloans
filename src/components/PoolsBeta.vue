@@ -107,7 +107,7 @@ export default {
 
     setupPoolsTableHeaderConfig() {
       this.poolsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 76px 22px',
+        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 120px 76px 22px',
         cells: [
           {
             label: 'Asset',
@@ -134,6 +134,12 @@ export default {
             sortable: false,
             class: 'tvl',
             id: 'TVL',
+          },
+          {
+            label: 'Utilisation',
+            sortable: false,
+            class: 'utilisation',
+            id: 'UTILISATION',
           },
           {
             label: ''
