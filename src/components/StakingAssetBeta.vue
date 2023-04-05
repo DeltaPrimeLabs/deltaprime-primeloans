@@ -219,17 +219,10 @@ export default {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
-          if (farm.protocol === 'VECTOR_FINANCE') {
-            heightOfRows += 70;
-            if (this.asset.symbol === 'USDC') {
-              heightOfRows += 16;
-            } else if (this.asset.symbol === 'USDT') {
-              heightOfRows -= 16;
-            }
-          } else {
-            heightOfRows += 62;
+          if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
+            heightOfRows += 26;
           }
-          heightOfRows += 40;
+          heightOfRows += 102;
         });
 
         return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;

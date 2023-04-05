@@ -6,13 +6,6 @@
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
 
-    <div class="protocol-banner"
-         v-if="farm.protocolIdentifier === 'VF_AVAX_SAVAX_AUTO' ||
-          farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO'">
-      Vector APYs are hardcoded while the API is updated. This will be updated soon. For the accurate APY, see
-      <a class="banner__link" href="https://vectorfinance.io/pools" target="_blank">here</a>.
-    </div>
-
     <div class="table__row">
       <div class="table__cell farm-cell">
         <div class="farm">
