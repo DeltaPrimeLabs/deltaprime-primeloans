@@ -2,15 +2,15 @@
   <div class="page-content">
 <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
-      You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the
+      You are connected to a wrong network. <a class="banner-link" @click="connectToProperChain"><b>Click here</b></a> to switch to the
       correct one.
     </Banner>
     <Banner v-if="showConnectBanner">
-      You are not connected to Metamask. <a @click="initNetwork"><b>Click here</b></a> to connect.
+      You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
-      <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
+      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
         plugin</b></a>.
     </Banner>
     <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showUpgradeBanner" :closable="true">
@@ -286,6 +286,11 @@ a {
   &:hover {
     font-weight: 500;
   }
+}
+
+.banner-link {
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
 
