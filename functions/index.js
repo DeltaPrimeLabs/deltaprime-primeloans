@@ -54,8 +54,8 @@ function wrap(contract) {
 }
 
 exports.scheduledFunction = functions
-  .runWith({ timeoutSeconds: 300, memory: "1GB" })
-  .pubsub.schedule('* * * * *')
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting loans");
 
@@ -112,9 +112,11 @@ const getGlpApr = async () => {
   });
 
   console.log(glpApy);
-  await db.collection('apys').doc('GLP').set({
-    apy: glpApy
-  }, { merge: true });
+  if (glpApy) {
+    await db.collection('apys').doc('GLP').set({
+      apy: glpApy
+    }, { merge: true });
+  }
 
   await browser.close();
 };
@@ -177,21 +179,23 @@ const getApysFromVector = async () => {
   console.log(avaxApy, savaxApy, usdcApy, usdtApy);
 
   // update APYs in db
-  await db.collection('apys').doc('AVAX').set({
-    VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
-  }, { merge: true });
+  if (avaxApy && savaxApy && usdcApy && usdtApy) {
+    await db.collection('apys').doc('AVAX').set({
+      VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
+    }, { merge: true });
 
-  await db.collection('apys').doc('sAVAX').set({
-    VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
-  }, { merge: true });
+    await db.collection('apys').doc('sAVAX').set({
+      VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
+    }, { merge: true });
 
-  await db.collection('apys').doc('USDC').set({
-    VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
-  }, { merge: true });
+    await db.collection('apys').doc('USDC').set({
+      VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
+    }, { merge: true });
 
-  await db.collection('apys').doc('USDT').set({
-    VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
-  }, { merge: true });
+    await db.collection('apys').doc('USDT').set({
+      VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
+    }, { merge: true });
+  }
 
   // close browser
   await browser.close();
@@ -205,7 +209,7 @@ exports.vectorScraper = functions
       .then(() => {
         functions.logger.info("APYs scrapped and updated.");
       }).catch((err) => {
-        functions.logger.info(`Scraping USDT APY from VectorFinance failed. Error: ${err}`);
+        functions.logger.info(`Scraping APYs from VectorFinance failed. Error: ${err}`);
       });
   });
 
