@@ -21,11 +21,4 @@ interface ICurvePool {
         uint256 i,
         uint256 _min_amount
     ) external;
-
-    struct CurveStakingDetails {
-        uint256 tokenIndex;
-        address tokenAddress;
-        bytes32 tokenSymbol;
-        uint256 amount;
-    }
 }

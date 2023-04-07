@@ -163,44 +163,12 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(167.5, 0.01);
         });
 
-        it("should fail to stake DAI as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeDAICurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        it("should fail to stake as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.stakeCurve([toWei("9999"), toWei("9999"), toWei("9999"), toWei("9999"), toWei("9999")])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should fail to unstake DAI as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeDAICurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to stake USDC as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeUSDCCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to unstake USDC as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeUSDCCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to stake USDT as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeUSDTCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to unstake USDT as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeUSDTCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to stake WBTC as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeWBTCCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to unstake WBTC as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeWBTCCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to stake ETH as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeETHCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
-
-        it("should fail to unstake ETH as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeETHCurve(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        it("should fail to unstake as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.unstakeOneTokenCurve(0, toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should stake DAI", async () => {
