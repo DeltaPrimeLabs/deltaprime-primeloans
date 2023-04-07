@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "./facets/avalanche/IYieldYakFacet.sol";
+import "./facets/avalanche/IGMDFacet.sol";
 import "./facets/avalanche/IYieldYakSwapFacet.sol";
 import "./facets/avalanche/IGLPFacet.sol";
 import "./facets/avalanche/IPangolinDEXFacet.sol";
@@ -20,6 +21,6 @@ import "./facets/avalanche/IVectorFinanceFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacetOld.sol";
 import "./facets/avalanche/IBeefyFinanceFacet.sol";
 
-interface SmartLoanGigaChadInterface is IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet {
+interface SmartLoanGigaChadInterface is IGMDFacet, IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet {
 
 }
