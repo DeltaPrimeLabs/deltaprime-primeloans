@@ -20,7 +20,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address private constant USDC_TOKEN = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
 
     // LPs
-    address private constant SH_AVAX_USDC = 0x668530302c6Ecc4eBe693ec877b79300AC72527C;
+    address private constant SH_AVAX_USDC_LP = 0x668530302c6Ecc4eBe693ec877b79300AC72527C;
 
     /**
      * Stakes AVAX/USDC in SteakHut AVAX/USDC pool
@@ -33,10 +33,10 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Address: AVAX_TOKEN,
             token1Address: USDC_TOKEN,
-            vaultAddress: SH_AVAX_USDC,
+            vaultAddress: SH_AVAX_USDC_LP,
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC",
+            vaultTokenSymbol: "SH_AVAX_USDC_LP",
             amount0Desired: amount0Desired,
             amount1Desired: amount1Desired,
             amount0Min: amount0Min,
@@ -54,10 +54,10 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Address: AVAX_TOKEN,
             token1Address: USDC_TOKEN,
-            vaultAddress: SH_AVAX_USDC,
+            vaultAddress: SH_AVAX_USDC_LP,
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC",
+            vaultTokenSymbol: "SH_AVAX_USDC_LP",
             liquidity: liquidity,
             amount0Min: amount0Min,
             amount1Min: amount1Min
@@ -104,7 +104,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     /**
-     * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token in the SteakHut pool
+     * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
     function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private recalculateAssetsExposure {
