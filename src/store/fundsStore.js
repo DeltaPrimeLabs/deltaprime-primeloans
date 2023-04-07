@@ -276,7 +276,6 @@ export default {
 
       Object.keys(lpTokens).forEach(async assetSymbol => {
         lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
-        lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].getApy();
         lpService.emitRefreshLp();
       });
 
