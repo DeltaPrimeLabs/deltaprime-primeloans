@@ -99,10 +99,6 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
-            await tokenManager.setDebtCoverage(SteakHutAvaxUsdcLP, toWei("0.8333333333333333"));
-
-            await tokenManager.setDebtCoverageStaked(toBytes32("SH_AVAX_USDC_LP"), toWei("0.8333333333333333"));
-
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
