@@ -179,19 +179,25 @@ const getApysFromVector = async () => {
   console.log(avaxApy, savaxApy, usdcApy, usdtApy);
 
   // update APYs in db
-  if (avaxApy && savaxApy && usdcApy && usdtApy) {
+  if (avaxApy) {
     await db.collection('apys').doc('AVAX').set({
       VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
+  }
 
+  if (savaxApy) {
     await db.collection('apys').doc('sAVAX').set({
       VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
+  }
 
+  if (usdcApy) {
     await db.collection('apys').doc('USDC').set({
       VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
     }, { merge: true });
+  }
 
+  if (usdtApy) {
     await db.collection('apys').doc('USDT').set({
       VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
     }, { merge: true });
