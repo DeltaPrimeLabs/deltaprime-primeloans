@@ -16,7 +16,7 @@ import "../../lib/local/DeploymentConstants.sol";
 
 contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
-     * Stakes AVAX/USDC in SteakHut AVAX/USDC pool
+     * Stakes in SteakHut AVAX/USDC pool
      * @param amount0Desired amount of AVAX to be staked
      * @param amount1Desired amount of USDC to be staked
      * @param amount0Min minimum amount of AVAX to be staked
@@ -35,7 +35,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     /**
-     * Unstakes DAI.e from SteakHut AVAX/USDC pool
+     * Unstakes from SteakHut AVAX/USDC pool
      * @param liquidity amount of shares to be unstaked
      * @param amount0Min minimum amount of AVAX to be unstaked
      * @param amount1Min minimum amount of USDC to be unstaked
