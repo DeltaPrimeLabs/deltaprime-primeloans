@@ -29,7 +29,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param amount0Min minimum amount of AVAX to be staked
      * @param amount1Min minimum amount of USDC to be staked
      **/
-    function stakeSteakHutAVAXUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwner remainsSolvent {
+    function stakeSteakHutAVAXUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Address: AVAX_TOKEN,
             token1Address: USDC_TOKEN,
@@ -50,7 +50,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param amount0Min minimum amount of AVAX to be unstaked
      * @param amount1Min minimum amount of USDC to be unstaked
      **/
-    function unstakeSteakHutAVAXUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwner remainsSolvent {
+    function unstakeSteakHutAVAXUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Address: AVAX_TOKEN,
             token1Address: USDC_TOKEN,
@@ -141,11 +141,6 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             vaultTokenBalance - newVaultTokenBalance,
             block.timestamp
         );
-    }
-
-    modifier onlyOwner() {
-        DiamondStorageLib.enforceIsContractOwner();
-        _;
     }
 
     /**
