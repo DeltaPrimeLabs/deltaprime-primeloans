@@ -16,8 +16,6 @@ interface ISteakHutPool {
         uint256 _shares
     ) external returns (uint256 amountX, uint256 amountY);
 
-    function getUnderlyingAssets(uint256 _shares) external view returns (uint256 totalX, uint256 totalY);
-
     // ---INTERFACE-----
     struct StakingDetails {
         bytes32 token0Symbol;
