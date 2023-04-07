@@ -15,13 +15,6 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
-    // Tokens
-    address private constant AVAX_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-    address private constant USDC_TOKEN = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
-
-    // LPs
-    address private constant SH_AVAX_USDC_LP = 0x668530302c6Ecc4eBe693ec877b79300AC72527C;
-
     /**
      * Stakes AVAX/USDC in SteakHut AVAX/USDC pool
      * @param amount0Desired amount of AVAX to be staked
@@ -31,9 +24,6 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      **/
     function stakeSteakHutAVAXUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
-            token0Address: AVAX_TOKEN,
-            token1Address: USDC_TOKEN,
-            vaultAddress: SH_AVAX_USDC_LP,
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
             vaultTokenSymbol: "SH_AVAX_USDC_LP",
@@ -52,9 +42,6 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      **/
     function unstakeSteakHutAVAXUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
-            token0Address: AVAX_TOKEN,
-            token1Address: USDC_TOKEN,
-            vaultAddress: SH_AVAX_USDC_LP,
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
             vaultTokenSymbol: "SH_AVAX_USDC_LP",
@@ -71,23 +58,28 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
     function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private recalculateAssetsExposure {
-        IERC20Metadata vaultToken = IERC20Metadata(stakingDetails.vaultAddress);
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
+        IERC20 vaultToken = IERC20(vaultAddress);
         uint256 initialVaultBalance = vaultToken.balanceOf(address(this));
 
-        stakingDetails.amount0Desired = Math.min(IERC20Metadata(stakingDetails.token0Address).balanceOf(address(this)), stakingDetails.amount0Desired);
-        stakingDetails.amount1Desired = Math.min(IERC20Metadata(stakingDetails.token1Address).balanceOf(address(this)), stakingDetails.amount1Desired);
+        IERC20 token0 = IERC20(tokenManager.getAssetAddress(stakingDetails.token0Symbol, false));
+        IERC20 token1 = IERC20(tokenManager.getAssetAddress(stakingDetails.token1Symbol, false));
+
+        stakingDetails.amount0Desired = Math.min(token0.balanceOf(address(this)), stakingDetails.amount0Desired);
+        stakingDetails.amount1Desired = Math.min(token1.balanceOf(address(this)), stakingDetails.amount1Desired);
         require(stakingDetails.amount0Desired > 0 && stakingDetails.amount1Desired > 0, "Cannot stake 0 tokens");
 
-        IERC20Metadata(stakingDetails.token0Address).approve(stakingDetails.vaultAddress, stakingDetails.amount0Desired);
-        IERC20Metadata(stakingDetails.token1Address).approve(stakingDetails.vaultAddress, stakingDetails.amount1Desired);
-        (, uint256 amount0Actual, uint256 amount1Actual) = ISteakHutPool(stakingDetails.vaultAddress).deposit(stakingDetails.amount0Desired, stakingDetails.amount1Desired, stakingDetails.amount0Min, stakingDetails.amount1Min);
+        token0.approve(vaultAddress, stakingDetails.amount0Desired);
+        token1.approve(vaultAddress, stakingDetails.amount1Desired);
+        (, uint256 amount0Actual, uint256 amount1Actual) = ISteakHutPool(vaultAddress).deposit(stakingDetails.amount0Desired, stakingDetails.amount1Desired, stakingDetails.amount0Min, stakingDetails.amount1Min);
 
         // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
-        if(IERC20(stakingDetails.token0Address).balanceOf(address(this)) == 0) {
+        DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, vaultAddress);
+        if(token0.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.token0Symbol);
         }
-        if(IERC20(stakingDetails.token1Address).balanceOf(address(this)) == 0) {
+        if(token1.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(stakingDetails.token1Symbol);
         }
 
@@ -95,7 +87,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             msg.sender,
             stakingDetails.token0Symbol,
             stakingDetails.token1Symbol,
-            stakingDetails.vaultAddress,
+            vaultAddress,
             amount0Actual,
             amount1Actual,
             vaultToken.balanceOf(address(this)) - initialVaultBalance,
@@ -108,10 +100,12 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
     function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private recalculateAssetsExposure {
-        ISteakHutPool pool = ISteakHutPool(unstakingDetails.vaultAddress);
-        IERC20Metadata vaultToken = IERC20Metadata(unstakingDetails.vaultAddress);
-        IERC20Metadata depositToken0 = IERC20Metadata(unstakingDetails.token0Address);
-        IERC20Metadata depositToken1 = IERC20Metadata(unstakingDetails.token1Address);
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
+        ISteakHutPool pool = ISteakHutPool(vaultAddress);
+        IERC20 vaultToken = IERC20(vaultAddress);
+        IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
+        IERC20 depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
         uint256 initialDepositTokenBalance0 = depositToken0.balanceOf(address(this));
         uint256 initialDepositTokenBalance1 = depositToken1.balanceOf(address(this));
         uint256 vaultTokenBalance = vaultToken.balanceOf(address(this));
@@ -124,8 +118,8 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         require(amount0Unstaked >= unstakingDetails.amount0Min && amount1Unstaked >= unstakingDetails.amount1Min, "Unstaked less tokens than expected");
 
         // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, unstakingDetails.token0Address);
-        DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, unstakingDetails.token1Address);
+        DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, address(depositToken0));
+        DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, address(depositToken1));
         uint256 newVaultTokenBalance = vaultToken.balanceOf(address(this));
         if(newVaultTokenBalance == 0) {
             DiamondStorageLib.removeOwnedAsset(unstakingDetails.vaultTokenSymbol);
@@ -135,7 +129,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             msg.sender,
             unstakingDetails.token0Symbol,
             unstakingDetails.token1Symbol,
-            unstakingDetails.vaultAddress,
+            vaultAddress,
             amount0Unstaked,
             amount1Unstaked,
             vaultTokenBalance - newVaultTokenBalance,

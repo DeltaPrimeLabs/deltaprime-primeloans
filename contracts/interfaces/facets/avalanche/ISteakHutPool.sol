@@ -20,9 +20,6 @@ interface ISteakHutPool {
 
     // ---INTERFACE-----
     struct StakingDetails {
-        address token0Address;
-        address token1Address;
-        address vaultAddress;
         bytes32 token0Symbol;
         bytes32 token1Symbol;
         bytes32 vaultTokenSymbol;
@@ -33,9 +30,6 @@ interface ISteakHutPool {
     }
 
     struct UnstakingDetails {
-        address token0Address;
-        address token1Address;
-        address vaultAddress;
         bytes32 token0Symbol;
         bytes32 token1Symbol;
         bytes32 vaultTokenSymbol;
