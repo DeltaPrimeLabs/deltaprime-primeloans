@@ -102,16 +102,14 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
-        ISteakHutPool pool = ISteakHutPool(vaultAddress);
-        IERC20 vaultToken = IERC20(vaultAddress);
         IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
         IERC20 depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
         uint256 initialDepositTokenBalance0 = depositToken0.balanceOf(address(this));
         uint256 initialDepositTokenBalance1 = depositToken1.balanceOf(address(this));
-        uint256 vaultTokenBalance = vaultToken.balanceOf(address(this));
-        unstakingDetails.liquidity = Math.min(vaultToken.balanceOf(address(this)), unstakingDetails.liquidity);
+        uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
+        unstakingDetails.liquidity = Math.min(IERC20(vaultAddress).balanceOf(address(this)), unstakingDetails.liquidity);
 
-        pool.withdraw(unstakingDetails.liquidity);
+        ISteakHutPool(vaultAddress).withdraw(unstakingDetails.liquidity);
 
         uint256 amount0Unstaked = depositToken0.balanceOf(address(this)) - initialDepositTokenBalance0;
         uint256 amount1Unstaked = depositToken1.balanceOf(address(this)) - initialDepositTokenBalance1;
@@ -120,7 +118,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, address(depositToken0));
         DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, address(depositToken1));
-        uint256 newVaultTokenBalance = vaultToken.balanceOf(address(this));
+        uint256 newVaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
         if(newVaultTokenBalance == 0) {
             DiamondStorageLib.removeOwnedAsset(unstakingDetails.vaultTokenSymbol);
         }
