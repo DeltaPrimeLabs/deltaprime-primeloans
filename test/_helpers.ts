@@ -7,6 +7,7 @@ import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json'
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
+import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import fetch from "node-fetch";
@@ -838,6 +839,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
                 break;
             case 'USDC':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
                 break;
         }
