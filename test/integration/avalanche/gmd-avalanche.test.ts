@@ -53,9 +53,9 @@ describe('Smart loan', () => {
             exchange: PangolinIntermediary,
             gmdVaultContract: Contract,
             gmdUSDCTokenContract: Contract,
-            gmdAVAXTokenContract: Contract,
-            gmdBTCTokenContract: Contract,
-            gmdETHTokenContract: Contract,
+            gmdWAVAXTokenContract: Contract,
+            gmdBTCbTokenContract: Contract,
+            gmdWETHeTokenContract: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -73,7 +73,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['USDC', 'AVAX', 'BTC', 'ETH', 'gmdUSDC', 'gmdAVAX', 'gmdBTC', 'gmdETH'];
+            let assetsList = ['USDC', 'AVAX', 'BTC', 'ETH', 'gmdUSDC', 'gmdWAVAX', 'gmdBTCb', 'gmdWETHe'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'USDC', airdropList: []},
                 {name: 'AVAX', airdropList: [depositor]},
@@ -88,7 +88,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
 
-            let gmdTokensList = ['gmdUSDC', 'gmdAVAX', 'gmdBTC', 'gmdETH'];
+            let gmdTokensList = ['gmdUSDC', 'gmdWAVAX', 'gmdBTCb', 'gmdWETHe'];
             let baseAssetsList = ['USDC', 'AVAX', 'BTC', 'ETH'];
 
             gmdVaultContract = await new ethers.Contract(gmdVaultAddress, GMDVaultABI, provider)

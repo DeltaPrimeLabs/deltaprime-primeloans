@@ -37,7 +37,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
             receiptToken: 0x13AF25f924056d4D4668705C33aB9b70D505050e,
             symbol : "AVAX",
-            identifier : "gmdAVAX",
+            identifier : "gmdWAVAX",
             amountStaked: amountStaked,
             minSharesOut: minSharesOut,
             pid: 1
@@ -50,7 +50,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
             asset : 0x152b9d0FdC40C096757F570A51E494bd4b943E50,
             receiptToken: 0x8fe3024351B9a51a3439183e940c2aF3994DD52F,
             symbol : "BTC",
-            identifier : "gmdBTC",
+            identifier : "gmdBTCb",
             amountStaked: amountStaked,
             minSharesOut: minSharesOut,
             pid: 2
@@ -63,7 +63,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
             asset : 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB,
             receiptToken: 0xE28c95e9EB0f6D16b05D265cAa4BcEE9E5C2e625,
             symbol : "ETH",
-            identifier : "gmdETH",
+            identifier : "gmdWETHe",
             amountStaked: amountStaked,
             minSharesOut: minSharesOut,
             pid: 3
@@ -91,7 +91,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
             receiptToken: 0x13AF25f924056d4D4668705C33aB9b70D505050e,
             symbol : "AVAX",
-            identifier : "gmdAVAX",
+            identifier : "gmdWAVAX",
             amountUnstaked: amountUnstaked,
             minTokenOut: minTokenOut,
             pid: 1
@@ -104,7 +104,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
             asset : 0x152b9d0FdC40C096757F570A51E494bd4b943E50,
             receiptToken: 0x8fe3024351B9a51a3439183e940c2aF3994DD52F,
             symbol : "BTC",
-            identifier : "gmdBTC",
+            identifier : "gmdBTCb",
             amountUnstaked: amountUnstaked,
             minTokenOut: minTokenOut,
             pid: 2
@@ -117,7 +117,7 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
         asset : 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB,
         receiptToken: 0xE28c95e9EB0f6D16b05D265cAa4BcEE9E5C2e625,
         symbol : "ETH",
-        identifier : "gmdETH",
+        identifier : "gmdWETHe",
         amountUnstaked: amountUnstaked,
         minTokenOut: minTokenOut,
         pid: 3
