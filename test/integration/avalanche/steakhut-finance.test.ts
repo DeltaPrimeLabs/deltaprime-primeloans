@@ -4,9 +4,6 @@ import {solidity} from "ethereum-waffle";
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import IVectorFinanceStakingArtifact
-    from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
-import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -16,7 +13,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    fromBytes32,
+    erc20ABI,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -24,7 +21,6 @@ import {
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
-    time,
     toBytes32,
     toWei
 } from "../../_helpers";
@@ -57,6 +53,7 @@ describe('Smart loan', () => {
 
     describe('A loan with SteakHut staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
+            steakhutAvaxUsdcLpToken: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -89,6 +86,8 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));
+
+            steakhutAvaxUsdcLpToken = await new ethers.Contract(SteakHutAvaxUsdcLP, erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,
@@ -172,6 +171,42 @@ describe('Smart loan', () => {
 
         it("should fail to unstake as a non-owner", async () => {
             await expect(nonOwnerWrappedLoan.unstakeSteakHutAVAXUSDC(toWei("9999"), 0, 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should stake AVAX/USDC", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await steakhutAvaxUsdcLpToken.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await expect(wrappedLoan.stakeSteakHutAVAXUSDC(0, 0, 0, 0)).to.be.revertedWith("Cannot stake 0 tokens");
+
+            await wrappedLoan.swapPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                toWei('20'),
+                0,
+            );
+            expect(await wrappedLoan.getBalance(toBytes32('USDC'))).to.be.gt(0);
+
+            // Should stake max if amount > balance
+            await wrappedLoan.stakeSteakHutAVAXUSDC(toWei("99999999"), toWei("99999999"), 0, 0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 40);
+        });
+
+        it("should unstake AVAX/USDC", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeSteakHutAVAXUSDC(toWei("99999999"), 0, 0);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 50);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 4);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
         });
     });
 });
