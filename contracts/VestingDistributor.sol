@@ -160,7 +160,7 @@ contract VestingDistributor {
         for (uint256 i = fromIndex; i <= toIndex;) {
             address participant = participants[i];
             if (unlockTimestamp[participant] > 0 && (block.timestamp - unlockTimestamp[participant]) > unvestingTime[participant]) {
-                totalLockedMultiplied -= locked[participant] * multiplier[participant] / 1e18;
+                totalLockedMultiplied -= (locked[participant] - withdrawn[participant]) * multiplier[participant] / 1e18;
 
                 unvestingTime[participant] = 0;
                 locked[participant] = 0;
@@ -176,6 +176,10 @@ contract VestingDistributor {
 
     function updateWithdrawn(address account, uint256 amount) public onlyPool {
         withdrawn[account] += amount;
+        if (withdrawn[account] > locked[account]) {
+            revert WithdrawMoreThanLocked();
+        }
+        totalLockedMultiplied -= amount * multiplier[account] / 1e18;
     }
 
     function getMultiplier(uint256 time) public pure returns (uint256){
@@ -232,5 +236,9 @@ contract VestingDistributor {
     // User funds are locked
     error UserLocked();
 
+    // Too late
     error TooLate();
+
+    // Withdraw amount is more than locked
+    error WithdrawMoreThanLocked();
 }
