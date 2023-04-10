@@ -721,6 +721,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
 
         await deployFacet("CurveFacet", diamondAddress, [
             'stakeCurve',
+            'unstakeCurve',
             'unstakeOneTokenCurve'
         ],
         hardhatConfig)

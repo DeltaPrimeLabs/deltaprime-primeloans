@@ -76,6 +76,48 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     /**
+     * Unstakes tokens from Curve atricrypto pool
+     * @param amount amount of token to be unstaked
+     **/
+    function unstakeCurve(uint256 amount, uint256[5] memory min_amounts) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+        ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
+        IERC20 curveToken = IERC20(curveTokenAddress);
+        uint256 curveTokenBalance = curveToken.balanceOf(address(this));
+        uint256[5] memory initialDepositTokenBalances;
+        for (uint256 i; i < 5; ++i) {
+            IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
+            initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+        }
+        amount = Math.min(curveTokenBalance, amount);
+
+        curveToken.approve(CURVE_POOL_ADDRESS, amount);
+        pool.remove_liquidity(amount, min_amounts);
+
+        // Add/remove owned tokens
+        uint256[5] memory unstakedAmounts;
+        for (uint256 i; i < 5; ++i) {
+            IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
+            unstakedAmounts[i] = depositToken.balanceOf(address(this)) - initialDepositTokenBalances[i];
+            DiamondStorageLib.addOwnedAsset(getTokenSymbol(i), address(depositToken));
+        }
+        uint256 newCurveTokenBalance = curveToken.balanceOf(address(this));
+        if(newCurveTokenBalance == 0) {
+            DiamondStorageLib.removeOwnedAsset(CURVE_TOKEN_SYMBOL);
+        }
+
+        emit Unstaked(
+            msg.sender,
+            getTokenSymbols(),
+            curveTokenAddress,
+            unstakedAmounts,
+            curveTokenBalance - newCurveTokenBalance,
+            block.timestamp
+        );
+    }
+
+    /**
      * Unstakes one token from Curve atricrypto pool
      * @param i index of token to be unstaked
      * @param amount amount of token to be unstaked
@@ -103,7 +145,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DiamondStorageLib.removeOwnedAsset(CURVE_TOKEN_SYMBOL);
         }
 
-        emit Unstaked(
+        emit UnstakedOneToken(
             msg.sender,
             getTokenSymbol(i),
             curveTokenAddress,
@@ -115,15 +157,18 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // INTERNAL FUNCTIONS
 
-    function getTokenSymbol(uint256 i) internal pure returns (bytes32) {
-        bytes32[5] memory tokenSymbols = [
+    function getTokenSymbols() internal pure returns (bytes32[5] memory tokenSymbols) {
+        tokenSymbols = [
             bytes32("DAIe"),
             bytes32("USDCe"),
             bytes32("USDTe"),
             bytes32("WBTCe"),
             bytes32("ETH")
         ];
-        return tokenSymbols[i];
+    }
+
+    function getTokenSymbol(uint256 i) internal pure returns (bytes32) {
+        return getTokenSymbols()[i];
     }
 
     // MODIFIERS
@@ -136,15 +181,26 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // EVENTS
 
     /**
-        * @dev emitted when user stakes an asset
+        * @dev emitted when user stakes assets
         * @param user the address executing staking
-        * @param assets the assets that was staked
+        * @param assets the assets that were staked
         * @param vault address of the vault token
         * @param depositTokenAmounts how much of deposit tokens was staked
         * @param receiptTokenAmount how much of receipt token was received
         * @param timestamp of staking
     **/
     event Staked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
+
+    /**
+        * @dev emitted when user unstakes assets
+        * @param user the address executing staking
+        * @param assets the assets that were unstaked
+        * @param vault address of the vault token
+        * @param depositTokenAmounts how much of deposit tokens was received
+        * @param receiptTokenAmount how much of receipt token was unstaked
+        * @param timestamp of unstaking
+    **/
+    event Unstaked(address indexed user, bytes32[5] assets, address indexed vault, uint256[5] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user unstakes an asset
@@ -155,5 +211,5 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         * @param receiptTokenAmount how much receipt token was unstaked
         * @param timestamp of unstaking
     **/
-    event Unstaked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
+    event UnstakedOneToken(address indexed user, bytes32 indexed asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 }
