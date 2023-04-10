@@ -12,6 +12,7 @@ import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
+import "./VestingDistributor.sol";
 
 
 /**
@@ -38,6 +39,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     IIndex public borrowIndex;
 
     address payable public tokenAddress;
+
+    VestingDistributor public vestingDistributor;
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
@@ -111,6 +114,19 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         borrowersRegistry = borrowersRegistry_;
         emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
+    }
+
+    /**
+     * Sets the new Pool Rewarder.
+     * The IPoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
+     * Only the owner of the Contract can execute this function.
+     * @dev _poolRewarder the address of PoolRewarder
+    **/
+    function setVestingDistributor(address _distributor) external onlyOwner {
+        if(!AddressUpgradeable.isContract(_distributor) && _distributor != address(0)) revert NotAContract(_distributor);
+        vestingDistributor = VestingDistributor(_distributor);
+
+        emit VestingDistributorChanged(_distributor, block.timestamp);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -410,6 +426,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     function _burn(address account, uint256 amount) internal {
         if(amount > _deposited[account]) revert BurnAmountExceedsBalance();
+        if(amount > _deposited[account] - (vestingDistributor.locked(account) - vestingDistributor.availableToWithdraw(account))) revert BurnAmountExceedsAvailableForUser();
+
+        uint256 availableUnvested = _deposited[account] - vestingDistributor.locked(account);
+        if (amount > availableUnvested) {
+            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
+        }
 
         // verified in "require" above
         unchecked {
@@ -524,6 +546,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     **/
     event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
 
+    /**
+    * @dev emitted after changing vesting distributor
+    * @param distributor an address of the newly set distributor
+    * @param timestamp of the distributor change
+    **/
+    event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
+
     /* ========== ERRORS ========== */
 
     // Only authorized accounts may borrow
@@ -575,6 +604,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // ERC20: burn amount exceeds current pool indexed balance
     error BurnAmountExceedsBalance();
+
+    // ERC20: burn amount exceeds current amount available (including vesting)
+    error BurnAmountExceedsAvailableForUser();
 
     // Trying to repay more than was borrowed
     error RepayingMoreThanWasBorrowed();

@@ -32,9 +32,8 @@ contract MockVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     // BREAKPOINT must be lower than 1e18
     uint256 public constant MAX_RATE = 0.75e18;
 
-    //residual spread to account for arithmetic inaccuracies in calculation of deposit rate. Does not result in any meaningful
-    //profit generation
-    uint256 public spread = 1e12;
+    //20% of spread goes to vesting participants
+    uint256 public spread = 2e17;
 
     /* ========== VIEW FUNCTIONS ========== */
 
