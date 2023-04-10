@@ -24,7 +24,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes tokens in Curve atricrypto pool
      * @param amounts amounts of tokens to be staked
      **/
-    function stakeCurve(uint256[5] memory amounts) external nonReentrant onlyOwnerOrInsolvent {
+    function stakeCurve(uint256[5] memory amounts) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         address curveTokenAddress = DeploymentConstants.getTokenManager().getAssetAddress(CURVE_TOKEN_SYMBOL, false);
@@ -80,7 +80,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param i index of token to be unstaked
      * @param amount amount of token to be unstaked
      **/
-    function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent {
+    function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         require(i < 5, "Invalid token index");
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -125,6 +125,15 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ];
         return tokenSymbols[i];
     }
+
+    // MODIFIERS
+
+    modifier onlyOwner() {
+        DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    // EVENTS
 
     /**
         * @dev emitted when user stakes an asset
