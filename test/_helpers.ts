@@ -719,6 +719,13 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig)
 
+        await deployFacet("CurveFacet", diamondAddress, [
+            'stakeCurve',
+            'unstakeCurve',
+            'unstakeOneTokenCurve'
+        ],
+        hardhatConfig)
+
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
