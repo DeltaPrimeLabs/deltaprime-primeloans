@@ -31,7 +31,7 @@ contract VestingDistributor {
     uint256 updateInterval = 6 hours;
 
     uint256 public constant ONE_DAY = 24 * 3600; // 24 hours * 3600 seconds
-    uint256 public constant MIM_VESTING_TIME = ONE_DAY; // 1 day * 24 hours * 3600 seconds
+    uint256 public constant MIN_VESTING_TIME = ONE_DAY; // 1 day * 24 hours * 3600 seconds
     uint256 public constant MAX_VESTING_TIME = 30 * ONE_DAY; // 30 days * 24 hours * 3600 seconds
 
     modifier onlyPool() {
@@ -69,7 +69,7 @@ contract VestingDistributor {
      * Add vesting participant (msg.sender)
      **/
     function startVesting(uint256 amount, uint256 time) public {
-        if (time < MIM_VESTING_TIME || time > MAX_VESTING_TIME) revert InvalidVestingTime();
+        if (time < MIN_VESTING_TIME || time > MAX_VESTING_TIME) revert InvalidVestingTime();
         if (pool.balanceOf(msg.sender) < amount) revert InsufficientPoolBalance();
         if (locked[msg.sender] > 0 || unvestingTime[msg.sender] > 0) revert AlreadyLocked();
 
@@ -112,7 +112,7 @@ contract VestingDistributor {
 
         uint256 timeFromUnlock = block.timestamp - unlockTimestamp[account];
         if (timeFromUnlock > unvestingTime[account]) timeFromUnlock = unvestingTime[account];
-        uint256 initialUnlock = ONE_DAY * locked[account] / unvestingTime[account]; // 1D / vesting days * locked amount
+        uint256 initialUnlock = ONE_DAY * locked[account] / (unvestingTime[account] + ONE_DAY); // 1D / vesting days * locked amount
 
         return initialUnlock + timeFromUnlock * (locked[account] - initialUnlock) / unvestingTime[account];
     }
@@ -164,6 +164,9 @@ contract VestingDistributor {
 
                 unvestingTime[participant] = 0;
                 locked[participant] = 0;
+                unlockTimestamp[participant] = 0;
+                withdrawn[participant] = 0;
+                multiplier[participant] = 0;
 
                 participants[i] = participants[participants.length - 1];
                 participants.pop();
