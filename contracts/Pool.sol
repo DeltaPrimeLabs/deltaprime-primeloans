@@ -214,28 +214,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual nonReentrant {
-        if(_amount == 0) revert ZeroDepositAmount();
-
-        _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
-
-        _accumulateDepositInterest(msg.sender);
-
-        if(totalSupplyCap != 0){
-            if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
-        }
-
-        _transferToPool(msg.sender, _amount);
-
-        _mint(msg.sender, _amount);
-        _deposited[address(this)] += _amount;
-        _updateRates();
-
-        if (address(poolRewarder) != address(0)) {
-            poolRewarder.stakeFor(_amount, msg.sender);
-        }
-
-        emit Deposit(msg.sender, _amount, block.timestamp);
+    function deposit(uint256 _amount) public virtual  {
+        depositOnBehalf(_amount, msg.sender);
     }
 
     /**
