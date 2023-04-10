@@ -14,6 +14,7 @@ contract VestingDistributor {
     Pool pool;
     IERC20Metadata poolToken;
     address keeper;
+    address pendingKeeper;
 
     uint256 totalLockedMultiplied;
     address[] public participants;
@@ -27,9 +28,10 @@ contract VestingDistributor {
     mapping(uint256 => uint256) numRewardDistributed;
 
     uint256 lastUpdated;
-    uint256 updateInterval = 21600;
+    uint256 updateInterval = 6 hours;
 
     uint256 public constant ONE_DAY = 24 * 3600; // 24 hours * 3600 seconds
+    uint256 public constant MIM_VESTING_TIME = ONE_DAY; // 1 day * 24 hours * 3600 seconds
     uint256 public constant MAX_VESTING_TIME = 30 * ONE_DAY; // 30 days * 24 hours * 3600 seconds
 
     modifier onlyPool() {
@@ -42,6 +44,11 @@ contract VestingDistributor {
         _;
     }
 
+    modifier onlyPendingKeeper() {
+        require(msg.sender == pendingKeeper, "Unauthorized: onlyPendingKeeper");
+        _;
+    }
+
     constructor(address poolAddress, address keeperAddress) {
         pool = Pool(poolAddress);
         poolToken = IERC20Metadata(pool.tokenAddress());
@@ -49,11 +56,20 @@ contract VestingDistributor {
         lastUpdated = block.timestamp;
     }
 
+    function transferKeeper(address keeperAddress) external onlyKeeper {
+        pendingKeeper = keeperAddress;
+    }
+
+    function acceptKeeper() external onlyPendingKeeper {
+        keeper = pendingKeeper;
+        pendingKeeper = address(0);
+    }
+
     /**
      * Add vesting participant (msg.sender)
      **/
     function startVesting(uint256 amount, uint256 time) public {
-        if (time > MAX_VESTING_TIME) revert InvalidVestingTime();
+        if (time < MIM_VESTING_TIME || time > MAX_VESTING_TIME) revert InvalidVestingTime();
         if (pool.balanceOf(msg.sender) < amount) revert InsufficientPoolBalance();
         if (locked[msg.sender] > 0 || unvestingTime[msg.sender] > 0) revert AlreadyLocked();
 
@@ -96,7 +112,7 @@ contract VestingDistributor {
 
         uint256 timeFromUnlock = block.timestamp - unlockTimestamp[account];
         if (timeFromUnlock > unvestingTime[account]) timeFromUnlock = unvestingTime[account];
-        uint256 initialUnlock = 86400 * locked[account] / unvestingTime[account]; // 1D / vesting days * locked amount
+        uint256 initialUnlock = ONE_DAY * locked[account] / unvestingTime[account]; // 1D / vesting days * locked amount
 
         return initialUnlock + timeFromUnlock * (locked[account] - initialUnlock) / unvestingTime[account];
     }
