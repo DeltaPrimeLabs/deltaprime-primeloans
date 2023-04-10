@@ -18,6 +18,8 @@ import addresses from "../common/addresses/avax/token_addresses.json";
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
 export const erc20ABI = require('./abis/ERC20.json');
+
+export const GMDVaultABI = require('./abis/GMDVaultAbi.json');
 export const LPAbi = require('./abis/LP.json');
 export const wavaxAbi = require('./abis/WAVAX.json');
 export const yakRouterAbi = require('./abis/YakRouter.json');
@@ -557,6 +559,21 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
+    "GMDFacet",
+        diamondAddress,
+        [
+            'gmdStakeUSDC',
+            'gmdStakeAVAX',
+            'gmdStakeBTCb',
+            'gmdStakeWETHe',
+            'gmdUnstakeUSDC',
+            'gmdUnstakeAVAX',
+            'gmdUnstakeBTCb',
+            'gmdUnstakeWETHe',
+        ],
+        hardhatConfig
+)
+    await deployFacet(
         "OwnershipFacet",
         diamondAddress,
         [
@@ -839,6 +856,9 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 break;
             case 'USDC':
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+            case 'BTC':
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
                 break;
         }
     } else if (chain === 'CELO') {
