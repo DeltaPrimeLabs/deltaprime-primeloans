@@ -22,7 +22,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param amount0Min minimum amount of AVAX to be staked
      * @param amount1Min minimum amount of USDC to be staked
      **/
-    function stakeSteakHutAVAXUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
+    function stakeSteakHutAVAXUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
@@ -40,7 +40,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param amount0Min minimum amount of AVAX to be unstaked
      * @param amount1Min minimum amount of USDC to be unstaked
      **/
-    function unstakeSteakHutAVAXUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external nonReentrant onlyOwnerOrInsolvent {
+    function unstakeSteakHutAVAXUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
@@ -57,7 +57,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
-    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
         IERC20 vaultToken = IERC20(vaultAddress);
@@ -99,7 +99,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
-    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private recalculateAssetsExposure {
+    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
         IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
@@ -134,6 +134,15 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             block.timestamp
         );
     }
+
+    // MODIFIERS
+
+    modifier onlyOwner() {
+        DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    // EVENTS
 
     /**
         * @dev emitted when user stakes an asset
