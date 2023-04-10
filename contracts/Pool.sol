@@ -230,12 +230,22 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual nonReentrant {
+    function deposit(uint256 _amount) public virtual  {
+        depositOnBehalf(_amount, msg.sender);
+    }
+
+    /**
+     * Deposits the amount on behalf of `_of` user.
+     * It updates `_of` user deposited balance, total deposited and rates
+     **/
+    function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant {
         if(_amount == 0) revert ZeroDepositAmount();
+        require(_of != address(0), "Address zero");
+        require(_of != address(this), "Cannot deposit on behalf of pool");
 
         _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
-        _accumulateDepositInterest(msg.sender);
+        _accumulateDepositInterest(_of);
 
         if(totalSupplyCap != 0){
             if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
@@ -243,15 +253,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _transferToPool(msg.sender, _amount);
 
-        _mint(msg.sender, _amount);
+        _mint(_of, _amount);
         _deposited[address(this)] += _amount;
         _updateRates();
 
         if (address(poolRewarder) != address(0)) {
-            poolRewarder.stakeFor(_amount, msg.sender);
+            poolRewarder.stakeFor(_amount, _of);
         }
 
-        emit Deposit(msg.sender, _amount, block.timestamp);
+        emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -339,6 +349,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     **/
     function getBorrowed(address _user) public view returns (uint256) {
         return borrowIndex.getIndexedValue(borrowed[_user], _user);
+    }
+
+    function name() public virtual pure returns(string memory _name){
+        _name = "";
+    }
+
+    function symbol() public virtual pure returns(string memory _symbol){
+        _symbol = "";
+    }
+
+    function decimals() public virtual pure returns(uint8 decimals){
+        decimals = 0;
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -492,6 +514,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @param timestamp of the deposit
      **/
     event Deposit(address indexed user, uint256 value, uint256 timestamp);
+
+    /**
+     * @dev emitted after the user deposits funds on behalf of other user
+     * @param user the address performing the deposit
+     * @param _of the address on behalf of which the deposit is being performed
+     * @param value the amount deposited
+     * @param timestamp of the deposit
+     **/
+    event DepositOnBehalfOf(address indexed user, address indexed _of, uint256 value, uint256 timestamp);
 
     /**
      * @dev emitted after the user withdraws funds
