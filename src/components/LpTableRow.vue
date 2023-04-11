@@ -49,6 +49,7 @@
                    v-tooltip="{content: 'Deposit', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
+            v-if="moreActionsConfig"
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"

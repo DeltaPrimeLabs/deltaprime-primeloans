@@ -9,6 +9,7 @@
 
 <script>
 import DeltaIcon from "./DeltaIcon.vue";
+import {mapState} from "vuex";
 
 export default {
   name: "ThemeToggle",
@@ -19,6 +20,7 @@ export default {
       document.documentElement.classList.remove(this.darkMode ? 'theme--light' : 'theme--dark')
       document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
       localStorage.setItem('VIEW_THEME', this.darkMode ? 'DARK' : 'LIGHT')
+      this.themeService.emitThemeChange();
     },
   },
   created() {
@@ -30,6 +32,11 @@ export default {
     }
     localStorage.setItem('VIEW_THEME', this.darkMode ? 'DARK' : 'LIGHT')
     document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
+  },
+  computed: {
+    ...mapState('serviceRegistry', [
+      'themeService'
+    ]),
   }
 }
 </script>

@@ -39,7 +39,7 @@ export default {
       flex-direction: row;
       font-size: 14px;
       font-weight: 500;
-      color: (--transaction-result-summary-beta__title-color);
+      color: var(--transaction-result-summary-beta__title-color);
       justify-content: space-around;
     }
 

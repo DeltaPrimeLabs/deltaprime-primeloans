@@ -25,7 +25,6 @@
   flex-direction: column;
   align-items: center;
   border-radius: 35px;
-  box-shadow: var(--block__box-shadow);
   padding: 1.5rem;
   background: var(--block__background-color);
 
@@ -50,6 +49,7 @@
   content: '';
   z-index: -1;
   border-radius: 38px;
+  box-shadow: var(--block__box-shadow);
 }
 
 </style>

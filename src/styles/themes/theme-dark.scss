@@ -84,10 +84,22 @@
   --small-chart-beta__line-color--negative: #{$pale-red};
   // endregion
 
+  // region Chart
+  --chart__line-color--positive: #{$pale-green};
+  --chart__line-color--negative: #{$pale-red};
+  --chart__tooltip-background: #{$pale-fuchsia};
+  --chart__tooltip-color: #{$mist-blue};
+  --chart__grid-lines-color: #{$washed-space};
+  --chart__scales-ticks-color: #{$washed-blue};
+  --chart__active-point-line-color: #{$light-navy};
+  --chart__active-point-point-color: #{$pale-fuchsia};
+  // endregion
+
   // region AssetFilter
   --asset-filter__filter-separator-color: #{$washed-space};
   --asset-filter__filter-option-background-color: #{$cloud-blue};
   --asset-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$dark-space}E5;
+  --asset-filter__clear-text-color: #{$pale-lilac};
   // endregion
 
   // region DexFilter
@@ -116,6 +128,9 @@
   --modal__top-info-color: #{$storm-blue};
   --modal__top-info-divider-color: #{$mist-space};
   --modal__close-button-container-color: #{$pale-lilac};
+  --modal__backdrop-backdrop-filter: blur(45px);
+  --modal__backdrop-background: #{$dark-space}4c;
+  --modal__pool-name-color: #{$mist-blue};
   // endregion
 
   // region CurrencyInput
@@ -192,7 +207,7 @@
   --transaction-result-summary-beta__values-color: #{$mist-blue};
   --transaction-result-summary-beta__label-color--error: #{$pale-red};
   --transaction-result-summary-beta__divider-background: #{$mist-space};
-  --transaction-result-summary-beta__divider-background--light: #{$washed-space}; // TODO to change
+  --transaction-result-summary-beta__divider-background--light: #{$mist-space};
   --transaction-result-summary-beta__value--error: #{$pale-red};
   // endregion
 
@@ -202,7 +217,7 @@
   --button__purple-background: linear-gradient(100deg, #{$shallow-fuchsia} -17%, #{$space-lilac} 37%, #{$dim-lilac} 80%);
   --button__purple-box-shadow: 4px 4px 6px 0 #{$dark-space}66;
   --button__purple-background--hover: linear-gradient(100deg, #{$delta-space} -17%, #{$awesome-lilac} 37%, #{$purple} 80%);
-  --button__purple-background--disabled: #{$mist-navy}; // TODO to change too low contrast
+  --button__purple-background--disabled: linear-gradient(#{$mist-navy} 0%, #{$mist-navy} 100%);
   // endregion
 
   // region Toggle
@@ -246,6 +261,27 @@
 
   // region InfoIcon
   --info-icon__background: linear-gradient(to bottom, #{$pale-purple} 10%, #{$pink} 50%, #{$aqua} 85%);
+  // endregion
+
+  // region ColoredValueBeta
+  --colored-value-beta__color--positive: #{$pale-green};
+  --colored-value-beta__color--negative: #{$pale-red};
+  // endregion
+
+  // region SmallBlock
+  --small-block__small-block-wrapper-background: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --small-block__small-block-wrapper-box-shadow: 7px 7px 30px 0 #{$dark-space}4c;
+  --small-block__small-block-background: #{$space};
+  --small-block__cross-color: #{$pale-lilac};
+  --small-block__cross-color--hover: #{$light-purple};
+  // endregion
+
+  // region Banner
+  --banner__banner-background: #{$brown};
+  --banner__banner-background--green: #{$pale-green};
+  --banner__banner-color: #{$off-white-blue};
+  --banner__banner-color--green: #{$deep-space};
+  --banner__banner-color--link: #{$off-white-blue};
   // endregion
 
   // region tooltip

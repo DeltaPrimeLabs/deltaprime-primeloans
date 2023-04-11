@@ -84,10 +84,22 @@
   --small-chart-beta__line-color--negative: #{$red};
   // endregion
 
+  // region Chart
+  --chart__line-color--positive: #{$lime-green};
+  --chart__line-color--negative: #{$red};
+  --chart__tooltip-background: #{$persian-blue};
+  --chart__tooltip-color: #{$white};
+  --chart__grid-lines-color: #{$black}19;
+  --chart__scales-ticks-color: #{$deep-gray};
+  --chart__active-point-line-color: #{$delta-primary};
+  --chart__active-point-point-color: #{$persian-blue};
+  // endregion
+
   // region AssetFilter
   --asset-filter__filter-separator-color: #{$smoke-gray};
   --asset-filter__filter-option-background-color: #{$white};
   --asset-filter__filter-option-box-shadow: 1px 2px 5px 0 #{$delta-steel}E5;
+  --asset-filter__clear-text-color: #{$delta-accent};
   // endregion
 
   // region DexFilter
@@ -116,6 +128,9 @@
   --modal__top-info-color: #{$steel-gray};
   --modal__top-info-divider-color: #{$smoke-gray};
   --modal__close-button-container-color: #{$delta-accent};
+  --modal__backdrop-backdrop-filter: blur(25px);
+  --modal__backdrop-background: transparent;
+  --modal__pool-name-color: #{$black};
   // endregion
 
   // region CurrencyInput TODO
@@ -246,6 +261,27 @@
 
   // region InfoIcon
   --info-icon__background: linear-gradient(9deg, #{$aqua-purple} -5%, #{$dark-pink} 30%, #{$light-raspberry} 60%, #{$cloud-orange} 111%);
+  // endregion
+
+  // region ColoredValueBeta
+  --colored-value-beta__color--positive: #{$lime-green};
+  --colored-value-beta__color--negative: #{$red};
+  // endregion
+
+  // region SmallBlock
+  --small-block__small-block-wrapper-background: linear-gradient(117deg, #{$delta-pale} 39%, #{$pale-orange} 62%, #{$pale-raspberry} 82%);
+  --small-block__small-block-wrapper-box-shadow: 4px 4px 14px 0 #{$delta-steel}3f;
+  --small-block__small-block-background: #{$white};
+  --small-block__cross-color: #{$delta-accent};
+  --small-block__cross-color--hover: #{$sea-blue};
+  // endregion
+
+  // region Banner
+  --banner__banner-background: #{$yellow};
+  --banner__banner-background--green: #{$lime-green};
+  --banner__banner-color: #{$black};
+  --banner__banner-color--green: #{$white};
+  --banner__banner-color--link: #{$black};
   // endregion
 
   // region tooltip

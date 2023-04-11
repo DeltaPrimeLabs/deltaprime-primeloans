@@ -51,14 +51,14 @@ export default {
       align-items: center;
       justify-content: center;
       height: 100%;
-      -webkit-backdrop-filter: blur(25px);
-      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: var(--modal__backdrop-backdrop-filter);
+      backdrop-filter: var(--modal__backdrop-backdrop-filter);
+      background-color: var(--modal__backdrop-background);
 
       .modal {
         position: absolute;
         width: 750px;
         border-radius: 21px;
-        box-shadow: var(--modal__box-shadow);
         background-color: var(--modal__background-color);
         padding: 60px 100px;
 
@@ -69,6 +69,7 @@ export default {
           left: -4px;
           right: -4px;
           background-image: var(--modal__border);
+          box-shadow: var(--modal__box-shadow);
           content: '';
           z-index: -1;
           border-radius: 25px;

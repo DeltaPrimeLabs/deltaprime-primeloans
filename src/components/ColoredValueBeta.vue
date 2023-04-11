@@ -52,11 +52,11 @@ export default {
 
 .colored-value {
   &.positive {
-    color: $lime-green;
+    color: var(--colored-value-beta__color--positive);
   }
 
   &.negative {
-    color: $red;
+    color: var(--colored-value-beta__color--negative);
   }
 
   .plus-sign {

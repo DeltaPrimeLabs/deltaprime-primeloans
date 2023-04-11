@@ -194,7 +194,7 @@ li:not(.tab-selected):hover {
   box-shadow: var(--tabs__highlight-box-shadow);
   width: 170px;
   border-radius: 999px;
-  transition: left 500ms ease-in-out, width 500ms ease-in-out;
+  transition: left 250ms ease-in-out, width 250ms ease-in-out;
 }
 
 </style>

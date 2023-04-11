@@ -68,25 +68,21 @@ export default {
   },
   methods: {
     iconButtonClick(event) {
-      if (this.config.menuOptions.length === 1) {
-        this.menuOptionClick(this.config.menuOptions[0])
-      } else {
-        this.showHiddenOptions = event.metaKey || event.altKey;
-        if (!this.config.disabled && !this.disabled) {
-          if (this.config.menuOptions) {
-            if (!this.menuOpen) {
-              this.emitGlobalCloseOfAllMenus();
-              this.stopObserveOutsideClick();
-            }
-            setTimeout(() => {
-              this.observeOutsideClick();
-            })
-            this.menuOpen = !this.menuOpen;
-          } else {
-            this.$emit('iconButtonClick', this.config.iconButtonActionKey);
+      this.showHiddenOptions = event.metaKey || event.altKey;
+      if (!this.config.disabled && !this.disabled) {
+        if (this.config.menuOptions) {
+          if (!this.menuOpen) {
             this.emitGlobalCloseOfAllMenus();
             this.stopObserveOutsideClick();
           }
+          setTimeout(() => {
+            this.observeOutsideClick();
+          })
+          this.menuOpen = !this.menuOpen;
+        } else {
+          this.$emit('iconButtonClick', this.config.iconButtonActionKey);
+          this.emitGlobalCloseOfAllMenus();
+          this.stopObserveOutsideClick();
         }
       }
     },
