@@ -730,6 +730,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("SteakHutFinanceFacet", diamondAddress, [
                 'stakeSteakHutAVAXUSDC',
                 'unstakeSteakHutAVAXUSDC',
+                'stakeSteakHutBTCAVAX',
+                'unstakeSteakHutBTCAVAX',
+                'stakeSteakHutUSDTeUSDT',
+                'unstakeSteakHutUSDTeUSDT',
             ],
             hardhatConfig)
     }
