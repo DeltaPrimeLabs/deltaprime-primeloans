@@ -13,10 +13,11 @@
           <div class="protocol__details">
             <div class="asset-name">
               {{ asset.name }}
-              <img v-if="farm.info"
-                   class="info__icon"
-                   src="src/assets/icons/info.svg"
-                   v-tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}">
+              <InfoIcon
+                  class="info__icon"
+                  v-if="farm.info"
+                  :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
+              ></InfoIcon>
             </div>
             <div class="by-farm">{{ protocol.name }} -> {{ farm.strategy }}</div>
           </div>
@@ -45,10 +46,12 @@
               {{ rewards | usd }}
             </div>
           </div>
-          <img v-if="farm.rewardsInfo"
-               class="info__icon"
-               src="src/assets/icons/info.svg"
-               v-tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"></div>
+          <InfoIcon
+              class="info__icon"
+              v-if="farm.rewardsInfo"
+              :tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"
+          ></InfoIcon>
+        </div>
       </div>
 
       <div class="table__cell">
@@ -87,12 +90,13 @@ import {calculateMaxApy} from '../utils/calculate';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import FlatButton from './FlatButton';
 import MigrateModal from './MigrateModal';
+import InfoIcon from "./InfoIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'StakingProtocolTableRow',
-  components: {FlatButton, IconButtonMenuBeta},
+  components: {InfoIcon, FlatButton, IconButtonMenuBeta},
   props: {
     farm: {
       required: true,
@@ -363,14 +367,12 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
           disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Unstake',
           iconButtonActionKey: 'UNSTAKE',
           disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
@@ -414,7 +416,7 @@ export default {
 .staking-farm-table-row-component {
   border-style: solid;
   border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+  border-image-source: var(--staking-protocol-table-row__border);
   border-image-slice: 1;
 
   .protocol-banner {
@@ -468,6 +470,7 @@ export default {
         align-items: center;
 
         .protocol__icon {
+          opacity: var(--staking-protocol-table-row__protocol-icon-opacity);
           height: 22px;
           width: 22px;
           border-radius: 50%;
@@ -490,7 +493,7 @@ export default {
           .by-farm {
             font-size: $font-size-xxs;
             font-weight: 500;
-            color: $medium-gray;
+            color: var(--staking-protocol-table-row__secondary-text-color);
             margin-top: -2px;
           }
         }
@@ -515,7 +518,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--staking-protocol-table-row__secondary-text-color);
         }
       }
 

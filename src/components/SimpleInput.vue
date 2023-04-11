@@ -194,7 +194,7 @@ export default {
   padding-left: 5px;
   padding-right: 5px;
   border-radius: 5px;
-  border: solid 1px #dadada;
+  border: var(--simple-input__wrapper-border);
   width: 100%;
 
   .input-extras-wrapper {
@@ -235,7 +235,7 @@ input[type=number] {
 }
 
 .converted {
-  color: #696969;
+  color: var(--simple-input__converted-color);
   margin-right: 15px;
   white-space: nowrap;
   text-align: right;
@@ -270,14 +270,14 @@ img {
 .error, .info, .warning {
   min-height: 30px;
   padding-top: 6px;
-  color: #7d7d7d;
+  color: var(--simple-input__error-info-warngin-color);
   font-size: 14px;
   width: 100%;
   text-align: start;
 }
 
 .warning {
-  color: #F5A200;
+  color: var(--simple-input__warning-color);
 }
 
 .error, .warning {
@@ -289,7 +289,7 @@ img {
 }
 
 .error {
-  color: $red;
+  color: var(--simple-input__error-color);
 }
 
 .denomination {

@@ -70,8 +70,8 @@ export default {
     width: 880px;
     height: 100px;
     border-radius: 50px;
-    box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: var(--stats-bar-beta__box-shadow);
+    background-color: var(--stats-bar-beta__background);
     font-weight: 500;
     display: flex;
     flex-direction: row;
@@ -95,13 +95,10 @@ export default {
     }
 
     .stats-bar__divider {
-      box-sizing: border-box;
       height: 60px;
       width: 2px;
-      border-style: solid;
-      border-width: 0 0 0 2px;
-      border-image-source: linear-gradient(to bottom, #dfe0ff 41%, #ffe1c2 58%, #ffd3e0 77%);
-      border-image-slice: 1;
+      background: var(--stats-bar-beta__divider-background);
+      border-radius: 1px;
     }
 
     .bar-gauge-container {

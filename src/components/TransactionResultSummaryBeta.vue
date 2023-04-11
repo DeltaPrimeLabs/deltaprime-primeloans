@@ -21,7 +21,7 @@ export default {
 @import "~@/styles/variables";
 
 .summary-wrapper {
-  background-image: linear-gradient(117deg, #dfe0ff 39%, #ffe1c2 62%, #ffd3e0 82%);
+  background-image: var(--transaction-result-summary-beta__border);
   border-radius: 15px;
   display: inline-block;
   padding: 2px;
@@ -31,7 +31,7 @@ export default {
     display: flex;
     flex-direction: column;
     border-radius: 13px;
-    background-color: white;
+    background-color: var(--transaction-result-summary-beta__background);
     padding: 1px 16px 1px 16px;
 
     .summary__title {
@@ -39,21 +39,21 @@ export default {
       flex-direction: row;
       font-size: 14px;
       font-weight: 500;
-      color: #acabe3;
+      color: var(--transaction-result-summary-beta__title-color);
       justify-content: space-around;
     }
 
     .summary__horizontal__divider {
       width: 518px;
       height: 2px;
-      background-color: #f0f0f0;
+      background-color: var(--transaction-result-summary-beta__horizontal-divider-background);
     }
 
     .summary__values {
       display: flex;
       flex-direction: row;
       justify-content: space-around;
-      color: $steel-gray;
+      color: var(--transaction-result-summary-beta__values-color);
       margin-top: 9px;
       margin-bottom: 6px;
 
@@ -76,7 +76,7 @@ export default {
         margin-right: 5px;
 
         &.summary__label--error {
-          color: $red;
+          color: var(--transaction-result-summary-beta__label-color--error);
           font-weight: 600;
         }
       }
@@ -84,7 +84,7 @@ export default {
       .summary__divider {
         width: 2px;
         height: 17px;
-        background-color: $smoke-gray;
+        background-color: var(--transaction-result-summary-beta__divider-background);
         margin: 0 10px;
 
         &.divider--long {
@@ -98,7 +98,7 @@ export default {
         }
 
         &.light {
-          background-color: #f0f0f0;
+          background-color: var(--transaction-result-summary-beta__divider-background--light);
         }
       }
 
@@ -107,7 +107,7 @@ export default {
         margin-right: 5px;
 
         .summary__value--error {
-          color: $red;
+          color: var(--transaction-result-summary-beta__value--error);
         }
       }
     }

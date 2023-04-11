@@ -29,7 +29,7 @@ export default {
 @import "~@/styles/variables";
 
 .name-value-badge {
-  background-image: linear-gradient(117deg, #dfe0ff 39%, #ffe1c2 62%, #ffd3e0 82%);
+  background-image: var(--name-value-badge-beta__background);
   border-radius: 25px;
   display: inline-block;
   height: 40px;
@@ -44,7 +44,7 @@ export default {
     width: 100%;
     padding: 0 20px;
     border-radius: 18px;
-    background: white;
+    background: var(--name-value-badge-beta__content-background);
     font-size: $font-size-md;
 
     .name {

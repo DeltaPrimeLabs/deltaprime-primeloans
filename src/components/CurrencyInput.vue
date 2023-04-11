@@ -15,9 +15,9 @@
           <div class="max">MAX</div>
         </div>
         <div v-if="infoIconMessage">
-          <img class="info__icon message"
-               src="src/assets/icons/info.svg"
-               v-tooltip="{content: infoIconMessage, classes: 'info-tooltip long', placement: 'right'}">
+          <InfoIcon
+              :size="22"
+              :tooltip="{content: infoIconMessage, classes: 'info-tooltip long', placement: 'right'}"></InfoIcon>
         </div>
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logoSrc(symbol)"/>
@@ -30,8 +30,8 @@
          v-if="!error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <div
-        v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
-        v-html="info(value)"></div>
+          v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
+          v-html="info(value)"></div>
     </div>
     <div class="error"
          v-if="error"
@@ -55,9 +55,11 @@
 <script>
 import config from '@/config';
 import {mapState} from 'vuex';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'CurrencyInput',
+  components: {InfoIcon},
   props: {
     price: {type: Number},
     max: {default: null},
@@ -263,8 +265,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-  background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
+  box-shadow: var(--currency-input__box-shadow);
+  background-image: var(--currency-input__background);
   height: 60px;
   border-radius: 15px;
   padding-left: 15px;
@@ -280,11 +282,6 @@ export default {
   .input-extras-wrapper {
     display: flex;
     align-items: center;
-
-    .info__icon.message {
-      height: 22px;
-      width: 22px;
-    }
   }
 }
 
@@ -293,6 +290,7 @@ export default {
 }
 
 input {
+  color: var(--currency-input__input-color);
   background: transparent;
   border: none;
   font-family: Montserrat;
@@ -330,7 +328,7 @@ input[type=number] {
 }
 
 .converted {
-  color: #696969;
+  color: var(--currency-input__converted-color);
   margin-right: 15px;
   white-space: nowrap;
   text-align: right;
@@ -376,18 +374,20 @@ input[type=number] {
 
 
   .max {
-    border: solid 1px #8986fe;
+    border: var(--currency-input__max-border);
     border-radius: 10px;
     width: 45px;
     height: 26px;
     font-weight: bold;
     line-height: 24px;
-    color: #8986fe;
+    color: var(--currency-input__max-color);
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--currency-input__max-background);
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.9);
+      color: var(--currency-input__max-color--hover);
+      background-color: var(--currency-input__max-background--hover);
+      border: var(--currency-input__max-border--hover);
     }
   }
 }
@@ -405,7 +405,7 @@ img {
 .error, .info, .warning {
   min-height: 30px;
   padding-top: 6px;
-  color: #7d7d7d;
+  color: var(--currency-input__error-info-warngin-color);
   font-size: 14px;
   width: 100%;
   text-align: start;
@@ -413,7 +413,7 @@ img {
 
 .warning {
   //color: #F5A200;
-  color: $red;
+  color: var(--currency-input__warning-color);
 }
 
 .error, .warning {
@@ -425,7 +425,7 @@ img {
 }
 
 .error {
-  color: $red;
+  color: var(--currency-input__error-color);
 }
 
 .denomination {

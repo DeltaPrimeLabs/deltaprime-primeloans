@@ -3,14 +3,17 @@
     <div class="elements">
       <slot></slot>
     </div>
-    <img v-if="closable" v-on:click="closeBanner()" class="close-button" :src="`src/assets/icons/cross-${fontColor}.svg`">
+    <DeltaIcon v-if="closable" class="close-button" v-on:click.native="closeBanner()" :icon-src="'src/assets/icons/cross.svg'" :size="21"></DeltaIcon>
   </div>
 </template>
 
 
 <script>
+  import DeltaIcon from "./DeltaIcon.vue";
+
   export default {
     name: 'Banner',
+    components: {DeltaIcon},
     props: {
       title: String,
       closable: {
@@ -46,10 +49,12 @@
 .banner {
   position: relative;
   top: 0;
-  height: 60px;
+  height: 50px;
   display: flex;
-  background-color: #F4D35E;
-  font-weight: bold;
+  background-color: var(--banner__banner-background);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
   width: 100%;
   justify-content: space-around;
   align-items: center;
@@ -57,20 +62,35 @@
 
   a {
     cursor: pointer;
+    color: var(--banner__banner-color--link);
+
+    b {
+      font-weight: 800 !important;
+    }
   }
 
   &.green {
-    background-color: $lime-green;
+    background-color: var(--banner__banner-background--green);
+    color: var(--banner__banner-color--green) !important;
+
+    .close-button {
+      background: var(--banner__banner-color--green);
+    }
+
+    a {
+      color: var(--banner__banner-color--green);
+    }
   }
 
   &.font-white {
-    color: white;
+    color: var(--banner__banner-color--font-white);
   }
 
   .close-button {
     position: absolute;
     right: 25px;
     cursor: pointer;
+    background: var(--banner__banner-color--link);
   }
 }
 </style>

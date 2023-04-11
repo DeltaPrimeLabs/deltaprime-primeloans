@@ -1,6 +1,8 @@
 <script>
   import Chart from 'chart.js'
   import { generateChart } from 'vue-chartjs'
+  import { getThemeVariable } from "../utils/style-themes";
+  import {mapState} from "vuex";
 
   Chart.defaults.LineWithLine = Chart.defaults.line;
   Chart.controllers.LineWithLine = Chart.controllers.line.extend({
@@ -21,17 +23,18 @@
          ctx.moveTo(x, topY);
          ctx.lineTo(x, bottomY);
          ctx.lineWidth = 1.5;
-         ctx.strokeStyle = '#b9b7ff';
+         ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
          ctx.stroke();
 
         // draw point
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.strokeStyle = '#6b70ed';
+        ctx.strokeStyle = getThemeVariable('--chart__active-point-point-color');
         ctx.lineWidth = 2.5;
-        ctx.stroke();
         ctx.closePath();
+        ctx.fillStyle = this.chart.config.data.datasets[0].borderColor;
         ctx.fill();
+        ctx.stroke();
 
         ctx.restore();
       }
@@ -68,28 +71,31 @@
       }
     },
     mounted() {
-      this.renderChart(this.chartData, this.options);
+      this.rerenderChart();
+      this.themeService.themeChange$.subscribe(() => {
+        this.rerenderChart();
+      })
     },
     computed: {
+      ...mapState('serviceRegistry', [
+        'themeService'
+      ]),
       minX() {
         return this.dataPoints[0].x;
       },
       maxX() {
         return this.dataPoints.slice(-1)[0].x;
       },
-      chartData() {
-        return {
-          datasets: [
-            {
-              fill: false,
-              steppedLine: this.stepped,
-              data: this.dataPoints,
-              borderColor: this.positiveChange ? '#00bf68' : '#f64254',
-              borderWidth: this.lineWidth
-            }
-          ]
-        };
+    },
+    watch: {
+      dataPoints() {
+        this.rerenderChart();
       },
+      options() {
+        this.rerenderChart();
+      }
+    },
+    methods: {
       options() {
         return {
           aspectRatio: this.isMobile ? 2 : 4,
@@ -125,7 +131,8 @@
                 maxRotation: 0,
                 minRotation: 0,
                 padding: 15,
-                fontFamily: 'Montserrat'
+                fontFamily: 'Montserrat',
+                fontColor: getThemeVariable('--chart__scales-ticks-color'),
               }
             }],
             yAxes: [{
@@ -135,7 +142,8 @@
                 borderDash: [8, 4],
                 drawOnChartArea: true,
                 tickMarkLength: 0,
-                drawBorder: false
+                drawBorder: false,
+                color: getThemeVariable('--chart__grid-lines-color'),
               },
               ticks: {
                 display: true,
@@ -144,6 +152,7 @@
                 max: this.maxY + 0.01 * this.maxY,
                 fontFamily: 'Montserrat',
                 padding: 10,
+                fontColor: getThemeVariable('--chart__scales-ticks-color'),
               }
             }]
           } ,
@@ -151,8 +160,10 @@
             enabled: true,
             intersect: false,
             mode: "index",
-            backgroundColor: '#6b70ed',
+            backgroundColor: getThemeVariable('--chart__tooltip-background'),
             titleFontFamily: 'Montserrat',
+            titleFontColor: getThemeVariable('--chart__tooltip-color'),
+            bodyFontColor: getThemeVariable('--chart__tooltip-color'),
             bodyFontFamily: 'Montserrat',
             displayColors: false,
             caretPadding: 6,
@@ -169,17 +180,23 @@
             }
           }
         }
-      }
-    },
-    watch: {
-      dataPoints() {
-        this.renderChart(this.chartData, this.options);
       },
-      options() {
-        this.renderChart(this.chartData, this.options);
+      chartData() {
+        return {
+          datasets: [
+            {
+              fill: false,
+              steppedLine: this.stepped,
+              data: this.dataPoints,
+              borderColor: getThemeVariable(this.positiveChange ? '--chart__line-color--positive' : '--chart__line-color--negative'),
+              borderWidth: this.lineWidth
+            }
+          ]
+        };
+      },
+      rerenderChart() {
+        this.renderChart(this.chartData(), this.options());
       }
-    },
-    methods: {
     }
   }
 </script>

@@ -1,5 +1,6 @@
 <template>
-  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']" @click="clicked()">
+  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']"
+          @click="clicked()">
     <div class="btn-label">
       {{ label }}
     </div>
@@ -9,21 +10,21 @@
 
 
 <script>
-  export default {
-    name: 'Button',
-    props: {
-      disabled: false,
-      waiting: false,
-      label: ''
-    },
-    methods: {
-      clicked() {
-        if (!(this.disabled || this.waiting)) {
-          this.$emit('click', true);
-        }
+export default {
+  name: 'Button',
+  props: {
+    disabled: false,
+    waiting: false,
+    label: ''
+  },
+  methods: {
+    clicked() {
+      if (!(this.disabled || this.waiting)) {
+        this.$emit('click', true);
       }
-    },
-  }
+    }
+  },
+}
 </script>
 
 <style lang="scss" scoped>
@@ -84,17 +85,19 @@
 }
 
 .purple {
-  color: #ffffff;
-  background-image: linear-gradient(104deg, #6267ea 6%, #8187fa 65%, #a695ff);
-  box-shadow: 5px 5px 8px 0 rgba(191, 188, 255, 0.5);
-}
+  color: var(--button__purple-color);
+  background-image: var(--button__purple-background);
+  box-shadow: var(--button__purple-box-shadow);
 
-.purple:hover {
-  background-image: linear-gradient(104deg, #94a3ff 6%, #ab95ff 65%, #bf9aff);
-}
+  &:hover {
+    background-image: var(--button__purple-background--hover);
+  }
 
-.purple.disabled {
-  background-image: linear-gradient(104deg, #d4d5ee 6%, #c0c2ec);
+  &.disabled {
+    color: var(--button__purple-color--disabled);
+    background-image: var(--button__purple-background--disabled);
+    box-shadow: none;
+  }
 }
 </style>
 

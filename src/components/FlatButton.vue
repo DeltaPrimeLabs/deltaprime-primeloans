@@ -1,16 +1,21 @@
 <template>
   <div class="flat-button-component" v-on:click="buttonClick()">
     <slot></slot>
-    <img v-if="tooltip"
-         class="info__icon"
-         src="src/assets/icons/info.svg"
-         v-tooltip="{content: tooltip, classes: 'info-tooltip long', placement: 'right'}">
+    <InfoIcon
+        v-if="tooltip"
+        class="info__icon"
+        :tooltip="{ content: tooltip, classes: 'info-tooltip long', placement: 'right' }"
+        :classes="'info-tooltip'"
+    ></InfoIcon>
   </div>
 </template>
 
 <script>
+import InfoIcon from "./InfoIcon.vue";
+
 export default {
   name: 'FlatButton',
+  components: {InfoIcon},
   props: {
     tooltip: null,
   },
@@ -34,17 +39,17 @@ export default {
   padding: 2px 8px;
   margin: 0 18px 0 5px;
   border-radius: 10px;
-  border: solid 1px $delta-accent;
+  border: solid 1px var(--flat-button__border-color);
   text-transform: uppercase;
   font-size: $font-size-xs;
-  color: $delta-tertiary;
+  color: var(--flat-button__color);
   font-weight: bold;
   cursor: pointer;
   user-select: none;
 
   &:hover {
-    background-color: $delta-light;
-    color: $persian-blue;
+    background-color: var(--flat-button__background-color--hover);
+    color: var(--flat-button__color--hover);
   }
 
   .info__icon {

@@ -22,14 +22,15 @@
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
-            <Tab :title="'Assets'"
-                 :img-active="'src/assets/icons/assets_on.svg'"
-                 :img-not-active="'src/assets/icons/assets_off.svg'">
+            <Tab ref="tab-1" :title="'Assets'"
+                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+            >
               <Assets></Assets>
             </Tab>
-            <Tab :title="'Farms'"
-                 :img-active="'src/assets/icons/plant_on.svg'"
-                 :img-not-active="'src/assets/icons/plant_off.svg'">
+            <Tab ref="tab-2" :title="'Farms'"
+                 :tab-icon="'src/assets/icons/plant_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'">
               <Farm></Farm>
             </Tab>
           </Tabs>
@@ -51,7 +52,6 @@ import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
 import Assets from './Assets';
-import InfoBubble from "@/components/InfoBubble.vue";
 import {mapActions, mapGetters, mapState} from 'vuex';
 import Farm from './Farm';
 import AccountAprWidget from './AccountAprWidget';
@@ -61,6 +61,7 @@ import {formatUnits} from 'ethers/lib/utils';
 import {combineLatest, delay} from 'rxjs';
 import {fetchLiquidatedEvents} from "../utils/graph";
 import DataRefreshEventService from "../services/dataRefreshEventService";
+import InfoBubble from "./InfoBubble.vue";
 
 const ASSETS_PATH = 'assets';
 const FARMS_PATH = 'farms';
@@ -72,7 +73,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
 
 export default {
   name: 'SmartLoanBeta',
-  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
+  components: {InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
   computed: {
     ...mapState('fundsStore', [
       'assetBalances',
