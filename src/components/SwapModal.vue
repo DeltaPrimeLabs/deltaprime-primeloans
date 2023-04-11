@@ -28,7 +28,7 @@
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
                           :max="swapDebtMode ? sourceAssetDebt : sourceAssetBalance"
-                          :info="() => `~ $${(Number(sourceAssetAmount) * sourceAssetData.price).toFixed(2)}`"
+                          :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
                           v-on:ongoingTyping="ongoingTyping"
@@ -43,7 +43,7 @@
                           :asset-options="targetAssetOptions"
                           :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
-                          :info="() => `~ $${(Number(targetAssetAmount) * targetAssetData.price).toFixed(2)}`"
+                          :info="() => targetAssetValue"
                           :disabled="true"
                           info-icon-message="Minimum received amount"
                           :validators="targetValidators">
@@ -238,6 +238,7 @@ export default {
       path: null,
       adapters: null,
       maxButtonUsed: false,
+      valueAsset: "USDC",
     };
   },
 
@@ -253,7 +254,25 @@ export default {
     });
   },
 
-  computed: {},
+  computed: {
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.sourceAssetAmount) * this.sourceAssetData.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX 
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    },
+
+    targetAssetValue() {
+      const targetAssetUsdPrice = Number(this.targetAssetAmount) * this.targetAssetData.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${targetAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX 
+      return `~ ${(targetAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    }
+  },
 
   methods: {
     submit() {

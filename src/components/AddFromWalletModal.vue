@@ -40,6 +40,7 @@
                      v-on:newValue="inputChange"
                      :validators="validators"
                      :max="getAvailableAssetAmount"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
@@ -48,6 +49,7 @@
                      v-on:newValue="inputChange"
                      :validators="validators"
                      :max="asset.symbol === 'AVAX' && selectedDepositAsset === 'AVAX' ? null : getAvailableAssetAmount"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
 
@@ -98,6 +100,7 @@
 </template>
 
 <script>
+import config from '../config';
 import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
@@ -149,6 +152,7 @@ export default {
       selectedDepositAsset: 'AVAX',
       validationError: true,
       availableAssetAmount: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -181,7 +185,17 @@ export default {
 
     isNativeAvax() {
       return this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX';
-    }
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    },
+
   },
 
   methods: {

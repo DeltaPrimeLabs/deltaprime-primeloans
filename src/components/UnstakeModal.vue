@@ -18,14 +18,16 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="staked"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="staked"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
 
@@ -96,6 +98,7 @@ export default {
       validators: [],
       transactionOngoing: false,
       currencyInputError: true,
+      valueAsset: "USDC",
     }
   },
 
@@ -111,7 +114,16 @@ export default {
       } else {
         return this.apy / 365 * staked * this.asset.price;
       }
-    }
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.unstakeValue) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+    },
   },
 
   methods: {

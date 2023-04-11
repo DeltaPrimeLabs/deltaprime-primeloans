@@ -21,12 +21,14 @@
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="withdrawValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput v-else
                      :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -127,6 +129,7 @@ export default {
       debt: 0,
       thresholdWeightedValue: 0,
       maxWithdraw: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -141,6 +144,15 @@ export default {
   computed: {
     getModalHeight() {
       return this.asset.symbol === 'AVAX' ? '561px' : null;
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.withdrawValue) * this.asset.price;
+      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
     },
   },
 
