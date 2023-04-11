@@ -181,7 +181,6 @@ export default {
           this.dataRefreshEventService.observeAssetApysDataRefresh(),
       ])
           .subscribe(async ([provider, account]) => {
-            console.log('subscribe account apr')
              await this.getAccountApr();
           });
     },
@@ -243,8 +242,6 @@ export default {
     },
 
     getLiquidatedEvents() {
-      console.log('getLiquidatedEvents')
-      // console.log(await fetchLiquidatedEvents(this.smartLoanContract.address).map(event => event.timestamp))
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
           events => {
             this.liquidationTimestamps = events.map(event => event.timestamp);
@@ -276,14 +273,11 @@ export default {
         );
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
-        console.log('healthCalculatedDirectly', healthCalculatedDirectly);
       })
     },
 
     watchAprRefresh() {
       this.aprService.observeRefreshApr().subscribe(async() => {
-        console.log('watchAprRefresh');
-        console.log(this.accountApr)
         this.apr = this.accountApr;
       });
     },

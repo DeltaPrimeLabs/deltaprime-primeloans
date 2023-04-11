@@ -118,7 +118,6 @@ export default {
   },
   methods: {
     async updateValue(value) {
-      console.log('updateValue');
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
 

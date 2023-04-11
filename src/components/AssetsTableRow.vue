@@ -496,7 +496,6 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = this.swapQueryMethod();
       modalInstance.$on('SWAP', swapEvent => {
-        console.log(swapEvent);
         const swapRequest = {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
@@ -511,8 +510,6 @@ export default {
     },
 
     openDebtSwapModal() {
-      console.log(BORROWABLE_ASSETS);
-      console.log(this.debtsPerAsset);
       const modalInstance = this.openModal(SwapModal);
       modalInstance.swapDebtMode = true;
       modalInstance.sourceAsset = this.asset.symbol;
@@ -532,7 +529,6 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethod = this.swapDebtQueryMethod();
       modalInstance.$on('SWAP', swapEvent => {
-        console.log(swapEvent);
         const swapDebtRequest = {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
@@ -603,7 +599,6 @@ export default {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.$forceUpdate();
               }, (error) => {
-                console.log(error);
                 this.handleTransactionError(error);
               }).then(() => {
               });
@@ -641,7 +636,6 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
-        console.log(withdrawEvent);
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         if (withdrawEvent.withdrawAsset === 'AVAX') {
           const withdrawRequest = {
@@ -780,7 +774,6 @@ export default {
 
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
-        console.log('assetBalancesRefreshed');
         this.isBalanceEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -790,7 +783,6 @@ export default {
 
     watchDebtsPerAssetDataRefreshEvent() {
       this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
-        console.log('debtsPerAssetRefreshed');
         this.isDebtEstimated = false;
         this.disableAllButtons = false;
         this.progressBarService.emitProgressBarSuccessState();
@@ -800,7 +792,6 @@ export default {
 
     watchHardRefreshScheduledEvent() {
       this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
-        console.log('DISABLE ALL BUTTONS');
         this.disableAllButtons = true;
         this.$forceUpdate();
       });

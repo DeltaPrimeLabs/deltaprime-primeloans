@@ -186,8 +186,6 @@ export default {
 
         this.$forceUpdate();
 
-        console.log('calculateReceivedAmounts')
-        console.log(lpRemoved)
         const firstAmount =
           parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
             .mul(firstTokenBalance)

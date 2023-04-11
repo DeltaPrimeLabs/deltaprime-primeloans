@@ -238,7 +238,6 @@ export default {
     },
 
     async setupMaxStakingApy() {
-      console.log('setupMaxStakingApy');
       let maxApy = 0;
 
       for (let farm of this.availableFarms) {
@@ -265,7 +264,6 @@ export default {
 
     setupAvailableProtocols() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.assetSymbol];
-      console.log(this.availableFarms);
       this.autoCompoundingFarms = this.availableFarms.filter(farm => farm.autoCompounding);
       this.normalFarms = this.availableFarms.filter(farm => !farm.autoCompounding);
     },

@@ -85,7 +85,6 @@ export default {
     },
 
     resetAll() {
-      console.log(this.filterValue);
       this.assetFilterGroups.forEach(group => {
         this.resetGroup(group);
       });

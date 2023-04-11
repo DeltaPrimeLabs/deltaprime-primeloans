@@ -124,7 +124,6 @@ export default {
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
-    ...mapActions('nft', ['initNfts']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 

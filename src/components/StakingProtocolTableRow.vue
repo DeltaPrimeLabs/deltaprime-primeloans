@@ -181,7 +181,6 @@ export default {
     },
 
     async openStakeModal() {
-      console.log(this.farm);
       if (this.disabled) {
         return;
       }
@@ -195,7 +194,6 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.$on('STAKE', (stakeValue) => {
-        console.log(stakeValue);
         const stakeRequest = {
           feedSymbol: this.farm.feedSymbol,
           assetSymbol: this.asset.symbol,
@@ -208,7 +206,6 @@ export default {
           refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
           isLP: this.isLP,
         };
-        console.log(stakeRequest);
         this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -218,7 +215,6 @@ export default {
     },
 
     openUnstakeModal() {
-      console.log(this.farm);
       if (this.disabled) {
         return;
       }
@@ -231,7 +227,6 @@ export default {
       modalInstance.protocol = this.protocol;
       modalInstance.isLP = this.isLP;
       modalInstance.$on('UNSTAKE', unstakeEvent => {
-        console.log(unstakeEvent);
         const unstakeRequest = {
           receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
           minReceiptTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
@@ -291,15 +286,11 @@ export default {
 
     watchExternalStakedPerFarm() {
       this.stakedExternalUpdateService.observeExternalStakedBalancesPerFarmUpdate().subscribe(stakedBalancesPerFarmUpdate => {
-        console.log(this.farm.protocolIdentifier);
         if (this.farm.protocolIdentifier === stakedBalancesPerFarmUpdate.protocolIdentifier) {
-          console.log('found farm', this.farm.protocolIdentifier);
           this.receiptTokenBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.farm.totalBalance = stakedBalancesPerFarmUpdate.receiptTokenBalance;
           this.underlyingTokenStaked = stakedBalancesPerFarmUpdate.stakedBalance;
           this.farm.totalStaked = stakedBalancesPerFarmUpdate.stakedBalance;
-          console.log('this.receiptTokenBalance', this.receiptTokenBalance);
-          console.log('this.farm.totalBalance', this.farm.totalBalance);
         }
         this.$forceUpdate();
       });
@@ -309,10 +300,6 @@ export default {
       if (!this.farm.currentApy) return 0;
 
       let assetApy = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
-      console.log('setApy');
-      console.log('symbol: ', this.asset.symbol);
-      console.log('assetApr: ', assetApy);
-      console.log('this.farm.currentApy: ', this.farm.currentApy);
 
 
       this.apy = this.isLp ? (1 + this.farm.currentApy + assetApy) - 1 : (1 + this.farm.currentApy) * (1 + assetApy) - 1;
@@ -381,10 +368,7 @@ export default {
     },
 
     migrateButtonClick() {
-      console.log('migrate button click');
       const modalInstance = this.openModal(MigrateModal);
-      console.log(this.protocol.name);
-      console.log(this.rewards);
       modalInstance.protocol = this.protocol.name;
       modalInstance.rewards = this.rewards;
       modalInstance.farmBalance = this.underlyingTokenStaked;

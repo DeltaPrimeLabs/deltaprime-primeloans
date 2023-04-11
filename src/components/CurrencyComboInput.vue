@@ -149,17 +149,13 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
-      console.log('currencyComboInput.currencyInputChange');
-      console.log(disableEmitValue);
       this.assetAmount = value;
       if (!disableEmitValue) {
-        console.log('emit value');
         this.emitValue();
       }
     },
 
     onCurrencyInputNewValue(event) {
-      console.log(event);
       this.maxButtonUsed = event.maxButtonUsed;
     },
 

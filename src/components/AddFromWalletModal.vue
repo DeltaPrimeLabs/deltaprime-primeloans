@@ -178,7 +178,6 @@ export default {
         return this.walletNativeTokenBalance;
       } else {
         const walletAssetBalance = parseFloat(this.walletAssetBalance);
-        console.log((!walletAssetBalance && walletAssetBalance !== 0) ? null : walletAssetBalance);
         return (!walletAssetBalance && walletAssetBalance !== 0) ? null : walletAssetBalance;
       }
     },
@@ -215,8 +214,6 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      console.log('calculateHealthAfterTransaction')
-      console.log(this.noSmartLoan)
       if (this.noSmartLoan) this.healthAfterTransaction = 1;
 
       let added = this.value ? this.value : 0;
@@ -254,8 +251,6 @@ export default {
           });
         });
       }
-
-      console.log(tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens);
     },
