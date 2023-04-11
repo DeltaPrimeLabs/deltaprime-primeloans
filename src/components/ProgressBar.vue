@@ -11,15 +11,15 @@
       <div v-if="state === 'IN_PROGRESS'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success
-        <img class="text-overlay__icon" src="src/assets/icons/tick-white.svg">
+        <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/tick-white.svg'" :size="20"></DeltaIcon>
       </div>
       <div v-if="state === 'ERROR'" class="text-overlay__text text-overlay__error">
         Transaction Failed <span v-if="additionalInfo">. {{additionalInfo}}</span>
-        <img class="text-overlay__icon" src="src/assets/icons/x-white.svg">
+        <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/x-white.svg'" :size="20"></DeltaIcon>
       </div>
       <div v-if="state === 'CANCELLED'" class="text-overlay__text text-overlay__cancelled">
         Transaction Cancelled
-        <img class="text-overlay__icon" src="src/assets/icons/x-white.svg">
+        <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/x-white.svg'" :size="20"></DeltaIcon>
       </div>
     </div>
   </div>
@@ -28,9 +28,11 @@
 <script>
 import {mapState} from 'vuex';
 import {delay, interval, startWith, timer} from 'rxjs';
+import DeltaIcon from "./DeltaIcon.vue";
 
 export default {
   name: 'ProgressBar',
+  components: {DeltaIcon},
   data() {
     return {
       value: 0,
@@ -107,18 +109,18 @@ export default {
     position: absolute;
     width: 100%;
     height: 100%;
-    background-image: linear-gradient(to right, #8b8bff 6%, #cd8eff 28%, #ff87bc 55%, #ffba99 104%), linear-gradient(to bottom, #6b70ed, #6b70ed);
+    background-image: var(--progress-bar__background);
 
     &.background--success {
-      background: $lime-green;
+      background: var(--progress-bar__background--success);
     }
 
     &.background--error {
-      background: $red;
+      background: var(--progress-bar__background--error);
     }
 
     &.background--cancelled {
-      background: $orange;
+      background: var(--progress-bar__background--cancelled);
     }
   }
 
@@ -128,7 +130,7 @@ export default {
     bottom: 0;
     width: 67%;
     height: 100%;
-    background-color: $pearl-gray;
+    background-color: var(--progress-bar__value-overlay-background);
 
     &.value-overlay__clock-running {
       width: 0;
@@ -153,15 +155,23 @@ export default {
 
       &.text-overlay__in-progress {
         border-radius: 54px;
-        background-color: rgba(255, 255, 255, 0.5);
-        color: $royal-blue;
+        background-color: var(--progress-bar__text-overlay-background);
+        color: var(--progress-bar__text-overlay-color);
         font-weight: 600;
         padding: 1px 10px;
+
+        .text-overlay__icon {
+          background: var(--progress-bar__text-overlay-color);
+        }
       }
 
       &.text-overlay__success, &.text-overlay__error, &.text-overlay__cancelled {
-        color: white;
+        color: var(--progress-bar__text-overlay-color--finished);
         font-weight: bold;
+
+        .text-overlay__icon {
+          background: var(--progress-bar__text-overlay-color--finished);
+        }
       }
     }
   }

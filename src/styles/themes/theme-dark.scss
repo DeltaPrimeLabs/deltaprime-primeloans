@@ -284,6 +284,17 @@
   --banner__banner-color--link: #{$off-white-blue};
   // endregion
 
+  // region ProgressBar
+  --progress-bar__background: linear-gradient(to right, #{$light-plum} 8%, #{$real-fuchsia} 52%, #{$light-teal} 87%);
+  --progress-bar__background--success: #{$pale-green};
+  --progress-bar__background--error: #{$pale-red};
+  --progress-bar__background--cancelled: #{$mist-orange};
+  --progress-bar__value-overlay-background: #{$void-space};
+  --progress-bar__text-overlay-background: #{$dark-space}7f;
+  --progress-bar__text-overlay-color: #{$washed-blue};
+  --progress-bar__text-overlay-color--finished: #{$deep-space};
+  // endregion
+
   // region tooltip
   --tooltip__box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
   --tooltip__border: solid 1px #{$washed-space};
