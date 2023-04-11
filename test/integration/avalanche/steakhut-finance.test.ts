@@ -44,7 +44,7 @@ const {deployContract, provider} = waffle;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
-const SteakHutAvaxUsdcLP = '0x668530302c6Ecc4eBe693ec877b79300AC72527C';
+const SteakHutAvaxUsdcLP = '0xdf35f3a364079fd49d71253a4d858889de484f4a';
 const SteakHutBtcAvaxLP = '0x536d7e7423e8fb799549caf574cfa12aae95ffcd';
 const SteakHutUsdteUsdtLP = '0x9f44e67ba256c18411bb041375e572e3dd11fa72';
 
@@ -91,7 +91,7 @@ describe('Smart loan', () => {
                 getRedstonePrices,
                 [
                     {symbol: 'USDTe', value: 1},
-                    {symbol: 'SH_AVAX_USDC_LP', value: 30},
+                    {symbol: 'SH_AVAX_USDC_LP', value: 37},
                     {symbol: 'SH_BTC_AVAX_LP', value: 40},
                     {symbol: 'SH_USDTe_USDT_LP', value: 2097091191466},
                 ]
