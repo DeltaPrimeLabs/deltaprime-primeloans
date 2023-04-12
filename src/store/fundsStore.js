@@ -180,7 +180,6 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
-      rootState.serviceRegistry.healthService.emitRefreshHealth();
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
