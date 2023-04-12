@@ -67,7 +67,8 @@
       <div></div>
 
       <div class="table__cell actions">
-        <DeltaIcon class="action-button" v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded}"
+        <DeltaIcon class="action-button"
+                   v-bind:class="{'action-button--disabled': (disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan))}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
@@ -80,7 +81,7 @@
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="disableAllButtons || !healthLoaded">
-          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan && index === 0)" v-slot:bubble>
+          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
             To create your Prime Account, click on the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
@@ -402,7 +403,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.disableAllButtons && this.healthLoaded || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         console.log('actionclick');
         switch (key) {
           case 'BORROW':
