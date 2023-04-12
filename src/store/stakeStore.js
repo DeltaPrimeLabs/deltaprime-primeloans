@@ -331,6 +331,7 @@ export default {
         farmService.emitRefreshFarm();
         commit('setFarms', farms);
         farmService.emitRefreshFarm();
+        farmService.emitFarms(farms);
         rootState.serviceRegistry.healthService.emitRefreshHealth();
       })
 
