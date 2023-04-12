@@ -435,6 +435,7 @@ export default {
       // TODO check on mainnet
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
+        rootState.serviceRegistry.healthService.emitRefreshHealth();
       }, 5000);
 
       setTimeout(async () => {
