@@ -3,7 +3,7 @@
 
     <div class="total-value-wrapper">
       <NameValueBadgeBeta class="total-value" :name="'Total value'">
-        {{ totalFarmedBalance | usd }}
+        {{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}
       </NameValueBadgeBeta>
     </div>
 
@@ -32,7 +32,7 @@ export default {
   name: 'Farm',
   components: {StakingAssetBeta, AssetFilter, NameValueBadgeBeta},
   computed: {
-    ...mapState('serviceRegistry', ['farmService']),
+    ...mapState('fundsStore', ['fullLoanStatus']),
     filteredStakedAssets() {
       return Object.entries(config.FARMED_TOKENS_CONFIG).filter(farm =>
           this.selectedAssets.includes(farm[0])
@@ -46,16 +46,12 @@ export default {
   },
   mounted() {
     this.setupAssetFilterGroups();
-    setTimeout(() => {
-      this.watchFarms();
-    })
   },
   data() {
     return {
       selectedAssets: [] = [],
       assetsFilterOptions: [] = [],
       assetFilterGroups: null,
-      totalFarmedBalance: 0,
     };
   },
   methods: {
@@ -78,20 +74,6 @@ export default {
         this.$refs.assetFilter.setupFilterValue();
         this.selectedAssets = this.assetFilterGroups[0].options;
       });
-    },
-
-    watchFarms() {
-      let totalBalance = 0;
-      this.farmService.observeFarms().subscribe(farms => {
-        console.log(farms);
-        console.log(Object.values(farms));
-        console.log(Object.values(farms).flat());
-        Object.values(farms).flat().forEach(farm => {
-          const token = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token] : config.LP_ASSETS_CONFIG[farm.token];
-          totalBalance += farm.totalStaked * token.price;
-        })
-        this.totalFarmedBalance = totalBalance;
-      })
     },
   },
 };
