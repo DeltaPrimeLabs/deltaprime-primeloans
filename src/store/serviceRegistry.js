@@ -14,6 +14,7 @@ import PriceService from "../services/priceService";
 import AssetDebtsExternalUpdateService from '../services/assetDebtsExternalUpdateService';
 import CollateralService from '../services/collateralService';
 import DebtService from '../services/debtService';
+import ThemeService from "../services/themeService";
 
 export default {
   namespaced: true,
@@ -34,5 +35,6 @@ export default {
     priceService: new PriceService(),
     collateralService: new CollateralService(),
     debtService: new DebtService(),
+    themeService: new ThemeService(),
   },
 };

@@ -141,7 +141,6 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      console.log(this.stakeValue);
       const stakeValue = this.maxButtonUsed ? parseFloat(this.stakeValue) * config.MAX_BUTTON_MULTIPLIER : parseFloat(this.stakeValue);
       this.$emit('STAKE', stakeValue.toFixed(this.asset.decimals));
     },

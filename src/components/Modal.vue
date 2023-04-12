@@ -4,7 +4,7 @@
       <div class="backdrop">
         <div class="modal">
           <div class="close-button-container">
-            <img class="close-button" src="../assets/icons/cross.svg" v-on:click="close()">
+            <DeltaIcon class="close-button-container__icon" :icon-src="'src/assets/icons/cross.svg'" :size="21" v-on:click.native="close()"></DeltaIcon>
           </div>
           <slot></slot>
         </div>
@@ -14,8 +14,11 @@
 </template>
 
 <script>
+import DeltaIcon from "./DeltaIcon.vue";
+
 export default {
   name: 'Modal',
+  components: {DeltaIcon},
   methods: {
     close() {
       this.closeModal();
@@ -48,15 +51,15 @@ export default {
       align-items: center;
       justify-content: center;
       height: 100%;
-      -webkit-backdrop-filter: blur(25px);
-      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: var(--modal__backdrop-backdrop-filter);
+      backdrop-filter: var(--modal__backdrop-backdrop-filter);
+      background-color: var(--modal__backdrop-background);
 
       .modal {
         position: absolute;
         width: 750px;
         border-radius: 21px;
-        box-shadow: 4px 4px 20px 0 rgba(155, 130, 255, 0.15);
-        background-color: white;
+        background-color: var(--modal__background-color);
         padding: 60px 100px;
 
         &::after {
@@ -65,7 +68,8 @@ export default {
           bottom: -4px;
           left: -4px;
           right: -4px;
-          background-image: linear-gradient(143deg, #c9cbff 26%, #ffd8b1 60%, #fcb7cc 91%);
+          background-image: var(--modal__border);
+          box-shadow: var(--modal__box-shadow);
           content: '';
           z-index: -1;
           border-radius: 25px;
@@ -81,9 +85,8 @@ export default {
         align-items: center;
         justify-content: flex-end;
 
-        .close-button {
-          width: 21px;
-          height: 21px;
+        .close-button-container__icon {
+          background: var(--modal__close-button-container-color);
           cursor: pointer;
         }
       }

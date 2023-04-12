@@ -11,6 +11,7 @@ import {
   yieldYakStaked
 } from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
+import {combineLatest, map, of, tap, from} from 'rxjs';
 
 const fromBytes32 = require('ethers').utils.parseBytes32String;
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
@@ -278,66 +279,63 @@ export default {
       const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
-      const stakedInYieldYak = await yieldYakStaked(rootState.fundsStore.smartLoanContract.address);
-
       const apys = rootState.fundsStore.apys;
 
-      for (const [symbol, tokenFarms] of Object.entries(config.FARMED_TOKENS_CONFIG)) {
-        for (let farm of tokenFarms) {
-          if (farm.balanceMethod) {
-            const loanAssets = mergeArrays([(
-              await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-            (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-            Object.keys(config.POOLS_CONFIG)
-            ]);
-            farm.totalBalance = formatUnits(await (await wrapContract(smartLoanContract, loanAssets))[farm.balanceMethod](), config.ASSETS_CONFIG[symbol].decimals);
-          } else {
-            farm.totalBalance = await farm.balance(rootState.fundsStore.smartLoanContract.address);
-          }
-          try {
-            // if apy exists in db we use it, otherwise call api directly
-            if (apys[farm.token] && apys[farm.token][farm.protocolIdentifier]
-            ) {
-              farm.currentApy = apys[farm.token][farm.protocolIdentifier];
-              console.log(farm.token, farm.protocol, farm.currentApy);
-            } else {
-              farm.currentApy = await farm.apy();
+      const loanAssets = mergeArrays([(
+        await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedSmartLoanContract = await wrapContract(smartLoanContract, loanAssets);
+      const smartLoanContractAddress = rootState.fundsStore.smartLoanContract.address;
+
+      combineLatest(
+        Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
+          return combineLatest(tokenFarms.map(farm => {
+            const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
+            return combineLatest([
+              of(farm.token),
+              of(farm.protocolIdentifier),
+              of(farm.protocol),
+              farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
+                .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))): farm.balance(smartLoanContractAddress),
+              of(apys[farm.token][farm.protocolIdentifier]),
+              farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress) :
+                farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
+                  vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
+            ])
+          }))
+        })
+      ).subscribe(farmsDataPerToken => {
+        const farmsDataPerFarm = farmsDataPerToken.flat();
+        
+        Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
+          tokenFarms.forEach(farm => {
+            const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
+            farm.totalBalance = farmData[3];
+            farm.currentApy = farmData[4];
+
+            if (farm.protocol === 'YIELD_YAK') {
+              farm.totalStaked = farmData[5];
+            } else if (farm.protocol === 'VECTOR_FINANCE') {
+              if (farm.autoCompounding) {
+                farm.totalStaked = farmData[5];
+              } else {
+                farm.rewards = farmData[5];
+                farm.totalStaked = farm.totalBalance;
+              }
             }
-          } catch (e) {
-            console.log('Error fetching farm APY');
-          }
+          })
+        })
+        farmService.emitRefreshFarm();
+        commit('setFarms', farms);
+        farmService.emitRefreshFarm();
+        farmService.emitFarms(farms);
+        rootState.serviceRegistry.healthService.emitRefreshHealth();
+      })
 
-          if (farm.protocol === 'YIELD_YAK') {
-            const token = farm.isTokenLp ? config.LP_ASSETS_CONFIG[farm.token] : config.ASSETS_CONFIG[farm.token];
 
-            console.log('-------------------');
-            console.log('token: ', farm.token);
-            const maxUnstaked = await yieldYakMaxUnstaked(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
-
-            farm.totalStaked = maxUnstaked;
-
-            console.log('maxUnstaked: ', maxUnstaked);
-            console.log('totalStaked: ', farm.totalStaked);
-            farm.rewards = token.price * (maxUnstaked - parseFloat(farm.totalStaked));
-            console.log('farm.rewards: ', farm.rewards);
-          } else if (farm.protocol === 'VECTOR_FINANCE') {
-            if (farm.autoCompounding) {
-              const maxUnstaked = await vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
-              console.warn(farm.protocolIdentifier, maxUnstaked);
-              farm.totalStaked = maxUnstaked;
-            } else {
-              farm.rewards = await vectorFinanceRewards(farm.stakingContractAddress, rootState.fundsStore.smartLoanContract.address);
-              farm.totalStaked = farm.totalBalance;
-            }
-          }
-        }
-      }
-
-      farmService.emitRefreshFarm();
-
-      commit('setFarms', farms);
-
-      farmService.emitRefreshFarm();
     },
 
     async updateStakedPrices({ state, rootState, commit }) {

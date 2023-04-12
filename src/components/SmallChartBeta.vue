@@ -1,6 +1,8 @@
 <script>
 
 import { Line } from 'vue-chartjs'
+import {getThemeVariable} from "../utils/style-themes";
+import {mapState} from "vuex";
 
 export default {
   name: 'SmallChartBeta',
@@ -23,22 +25,38 @@ export default {
     }
   },
   mounted () {
-    this.renderChart(this.chartData, this.options)
+    this.rerenderChart();
+    this.themeService.themeChange$.subscribe(() => {
+      this.rerenderChart();
+    })
   },
   computed: {
+    ...mapState('serviceRegistry', [
+      'themeService'
+    ]),
     minX() {
       return this.dataPoints[0].x;
     },
     maxX() {
       return this.dataPoints.slice(-1)[0].x;
     },
+  },
+  watch: {
+    dataPoints() {
+      this.rerenderChart();
+    },
+    options() {
+      this.rerenderChart();
+    }
+  },
+  methods: {
     chartData() {
       return {
         datasets: [
           {
             fill: false,
             data: this.dataPoints,
-            borderColor: this.positiveChange ? '#00bf68' : '#f64254',
+            borderColor: getThemeVariable(this.positiveChange ? '--small-chart-beta__line-color--positive' : '--small-chart-beta__line-color--negative'),
             borderWidth: this.lineWidth,
             pointRadius: 0
           }
@@ -89,16 +107,11 @@ export default {
           enabled: false
         }
       }
-    }
-  },
-  watch: {
-    dataPoints() {
-      this.renderChart(this.chartData, this.options);
     },
-    options() {
-      this.renderChart(this.chartData, this.options);
+    rerenderChart() {
+      this.renderChart(this.chartData(), this.options());
     }
-  },
+  }
 };
 </script>
 

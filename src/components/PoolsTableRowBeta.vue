@@ -96,13 +96,11 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit',
           iconButtonActionKey: 'DEPOSIT'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
@@ -190,7 +188,7 @@ export default {
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+    border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
 
@@ -204,6 +202,7 @@ export default {
         .asset__icon {
           width: 20px;
           height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__info {
@@ -223,7 +222,7 @@ export default {
         align-items: center;
         justify-content: flex-end;
         font-weight: 600;
-        color: $lime-green;
+        color: var(--asset-table-row__apy-color);
       }
 
       &.interest {
@@ -269,7 +268,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__double-value-color);
           font-weight: 500;
         }
 
@@ -283,7 +282,7 @@ export default {
       .no-value-dash {
         height: 1px;
         width: 15px;
-        background-color: $medium-gray;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }

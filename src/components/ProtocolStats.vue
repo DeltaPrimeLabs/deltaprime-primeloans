@@ -196,7 +196,6 @@ export default {
     },
 
     async fetchLoansFromFireBase() {
-      console.log("Getting loans stats");
       const loansCol = collection(fireStore, 'loans');
       
       //Get latest update time
@@ -205,9 +204,7 @@ export default {
       const querySnapshot = await getDocs(maxTimeQuery);
       querySnapshot.forEach((doc) => {
         maxTime = doc.data().time;
-        console.log('time: ', doc.data().time)
       });
-      console.log("Max timestamp: " + maxTime);
 
       //Get loans
       const loansQuery = query(loansCol, orderBy("health", "asc"));
@@ -226,8 +223,6 @@ export default {
         this.protocolCollateral += doc.data().collateral;
         this.totalBorrowed += doc.data().debt; 
       });
-      console.log("Loans fetched: " + this.loans.length);
-      console.log("Last updated: " + new Date(maxTime).toTimeString());
     },
 
     async setupLoans() {

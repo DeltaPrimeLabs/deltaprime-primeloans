@@ -1,9 +1,8 @@
 <template>
   <div class="page-content">
-<!--    <button v-on:click="testClick()">test</button>-->
+    <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
-      You are connected to a wrong network. <a class="banner-link" @click="connectToProperChain"><b>Click here</b></a> to switch to the
-      correct one.
+      You are connected to a wrong network. Please change to Avalanche C-Chain.
     </Banner>
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
@@ -22,14 +21,17 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-<!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
-      Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
-    </Banner>-->
+    <!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
+          Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
+        </Banner>-->
     <div class="content">
       <div class="top-bar">
-        <a href="https://deltaprime.io/">
-          <img src="src/assets/icons/deltaprime.svg" class="logo">
-        </a>
+        <div class="top-bar__left-part">
+          <a href="https://deltaprime.io/">
+            <img src="src/assets/icons/deltaprime.svg" class="logo">
+          </a>
+          <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+        </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
       </div>
@@ -52,9 +54,11 @@ const ethereum = window.ethereum;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
+import ThemeToggle from "./components/ThemeToggle.vue";
 
 export default {
   components: {
+    ThemeToggle,
     ProgressBar,
     Button,
     Navbar,
@@ -69,7 +73,8 @@ export default {
       highGasPrice: false,
       gasPriceIntervalId: null,
       showGlpBanner: false,
-      showDepositBanner: false
+      showDepositBanner: false,
+      darkMode: false,
     };
   },
   async created() {
@@ -118,7 +123,6 @@ export default {
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
-    ...mapActions('nft', ['initNfts']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
@@ -219,6 +223,28 @@ export default {
 };
 </script>
 
+
+<style lang="scss">
+@import "~@/styles/themes/theme-dark";
+@import "~@/styles/themes/theme-light";
+
+html {
+  color: var(--default-text-color);
+
+  ::placeholder {
+    color: var(--default-input-placeholder-color);
+    opacity: 1;
+  }
+
+  :-ms-input-placeholder {
+    color: var(--default-input-placeholder-color);
+  }
+
+  ::-ms-input-placeholder {
+    color: var(--default-input-placeholder-color);
+  }
+}
+</style>
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
@@ -230,14 +256,12 @@ a {
   content: ' ';
   display: block;
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.08;
+  opacity: var(--app-page-content__background--opacity);
   z-index: -1;
-
-  background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
+  background-image: var(--app-page-content__background);
 }
 
 .content {
@@ -292,5 +316,16 @@ a {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.top-bar__left-part {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.top-bar__theme-toggle {
+  margin-left: 24px;
+}
+
 </style>
 
