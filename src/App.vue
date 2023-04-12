@@ -2,8 +2,7 @@
   <div class="page-content">
     <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
-      You are connected to a wrong network. <a class="banner-link" @click="connectToProperChain"><b>Click here</b></a> to switch to the
-      correct one.
+      You are connected to a wrong network. Please change to Avalanche C-Chain.
     </Banner>
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
