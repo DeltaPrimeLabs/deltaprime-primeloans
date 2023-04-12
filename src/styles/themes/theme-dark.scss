@@ -67,6 +67,12 @@
   --icon-button-menu-beta__menu-option-border: 1px solid #{$deep-space};
   // endregion
 
+  // region IconButton
+  --icon-button__icon-color--default: #{$pale-lilac};
+  --icon-button__icon-color--disabled: #{$washed-space};
+  --icon-button__icon-color-hover--default: #{$light-purple};
+  // endregion
+
   // region AssetsTableRow / LpTableRow / PoolsTableRow
   --asset-table-row__icon-opacity: 0.95;
   --asset-table-row__border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);

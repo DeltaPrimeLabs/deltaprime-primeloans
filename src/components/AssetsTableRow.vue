@@ -67,28 +67,30 @@
       <div></div>
 
       <div class="table__cell actions">
-        <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': (disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan))}"
+        <IconButton class="action-button"
+                   :disabled="(disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan))"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
-                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
-        <DeltaIcon class="action-button" v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded}"
-                   :icon-src="'src/assets/icons/swap.svg'" :size="26"
-                   v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
-                   v-on:click.native="actionClick('SWAP')"></DeltaIcon>
-        <IconButtonMenuBeta
-            class="actions__icon-button"
-            :config="moreActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+                   v-on:click="actionClick('ADD_FROM_WALLET')">
           <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
             To create your Prime Account, click on the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
             ></DeltaIcon>
             button, and then click &quot;Deposit collateral&quot;
-
           </template>
+        </IconButton>
+        <IconButton :disabled="disableAllButtons || !healthLoaded"
+                    class="action-button"
+                    :icon-src="'src/assets/icons/swap.svg'" :size="26"
+                    v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
+                    v-on:click="actionClick('SWAP')">
+        </IconButton>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -137,6 +139,7 @@ import GLP_REWARD_TRACKER
 import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
 import {BigNumber} from 'ethers';
 import DeltaIcon from './DeltaIcon.vue';
+import IconButton from "./IconButton.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -147,7 +150,9 @@ const ethers = require('ethers');
 
 export default {
   name: 'AssetsTableRow',
-  components: {DeltaIcon, LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
+  components: {
+    IconButton,
+    DeltaIcon, LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta},
   props: {
     asset: {},
   },
@@ -1030,21 +1035,8 @@ export default {
 }
 
 .action-button {
-  cursor: pointer;
-  background: var(--icon-button-menu-beta__icon-color--default);
-
   &:not(:last-child) {
     margin-right: 12px;
-  }
-
-  &:hover {
-    background: var(--icon-button-menu-beta__icon-color-hover--default);
-  }
-
-  &.action-button--disabled {
-    background: var(--icon-button-menu-beta__icon-color--disabled);
-    cursor: default;
-    pointer-events: none;
   }
 }
 

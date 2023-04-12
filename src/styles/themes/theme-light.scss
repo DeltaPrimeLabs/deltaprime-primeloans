@@ -67,6 +67,12 @@
   --icon-button-menu-beta__menu-option-border: 1px solid #{$delta-light};
   // endregion
 
+  // region IconButton
+  --icon-button__icon-color--default: #{$delta-accent};
+  --icon-button__icon-color--disabled: #{$smoke-gray};
+  --icon-button__icon-color-hover--default: #{$persian-blue};
+  // endregion
+
   // region AssetsTableRow / LpTableRow / PoolsTableRow
   --asset-table-row__icon-opacity: 1;
   --asset-table-row__border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
