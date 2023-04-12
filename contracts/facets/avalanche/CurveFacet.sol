@@ -24,7 +24,20 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes tokens in Curve atricrypto pool
      * @param amounts amounts of tokens to be staked
      **/
-    function stakeCurve(uint256[5] memory amounts) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeCurve(uint256[5] memory amounts)
+        external
+        nonReentrant
+        onlyOwner
+        recalculateAssetsExposure(_getAssets6(
+            "DAIe",
+            "USDCe",
+            "USDTe",
+            "WBTCe",
+            "ETH",
+            CURVE_TOKEN_SYMBOL
+        ), _getPositions0())
+        remainsSolvent
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         address curveTokenAddress = DeploymentConstants.getTokenManager().getAssetAddress(CURVE_TOKEN_SYMBOL, false);
@@ -79,7 +92,19 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes tokens from Curve atricrypto pool
      * @param amount amount of token to be unstaked
      **/
-    function unstakeCurve(uint256 amount, uint256[5] memory min_amounts) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeCurve(uint256 amount, uint256[5] memory min_amounts)
+        external
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculateAssetsExposure(_getAssets6(
+            "DAIe",
+            "USDCe",
+            "USDTe",
+            "WBTCe",
+            "ETH",
+            CURVE_TOKEN_SYMBOL
+        ), _getPositions0())
+    {
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
@@ -122,26 +147,34 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param i index of token to be unstaked
      * @param amount amount of token to be unstaked
      **/
-    function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeOneTokenCurve(uint256 i, uint256 amount)
+        external
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculateAssetsExposure(_getAssets2(getTokenSymbol(i), CURVE_TOKEN_SYMBOL), _getPositions0())
+    {
         require(i < 5, "Invalid token index");
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
         IERC20 curveToken = IERC20(curveTokenAddress);
+        uint256 burnAmount;
+        {
+            uint256 curveTokenBalance = curveToken.balanceOf(address(this));
+            uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
+            amount = Math.min(maxWithdrawAmount, amount);
+            burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
+        }
+
         IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
         uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
-        uint256 curveTokenBalance = curveToken.balanceOf(address(this));
-        uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
-        amount = Math.min(maxWithdrawAmount, amount);
 
-        uint256 burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
         curveToken.approve(CURVE_POOL_ADDRESS, burnAmount);
         pool.remove_liquidity_one_coin(burnAmount, i, 0);
 
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(getTokenSymbol(i), address(depositToken));
-        uint256 newCurveTokenBalance = curveToken.balanceOf(address(this));
-        if(newCurveTokenBalance == 0) {
+        if(curveToken.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(CURVE_TOKEN_SYMBOL);
         }
 
@@ -150,7 +183,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             getTokenSymbol(i),
             curveTokenAddress,
             depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
-            curveTokenBalance - newCurveTokenBalance,
+            burnAmount,
             block.timestamp
         );
     }

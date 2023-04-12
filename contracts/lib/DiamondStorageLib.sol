@@ -175,6 +175,16 @@ library DiamondStorageLib {
         }
     }
 
+    function getStakedPosition(bytes32 identifier) internal view returns (IStakingPositions.StakedPosition memory) {
+        IStakingPositions.StakedPosition[] storage positions = stakedPositions();
+
+        for (uint256 i; i < positions.length; i++) {
+            if (positions[i].identifier == identifier) {
+                return positions[i];
+            }
+        }
+    }
+
     function removeStakedPosition(bytes32 identifier) internal {
         IStakingPositions.StakedPosition[] storage positions = stakedPositions();
 

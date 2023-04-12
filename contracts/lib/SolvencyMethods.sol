@@ -186,18 +186,18 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes AssetsExposureController.decreaseAssetsExposure()
-    function _resetPrimeAccountAssetsExposure() public {
+    function _resetPrimeAccountAssetsExposure(bytes32[] memory assets, IStakingPositions.StakedPosition[] memory positions) public {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
+            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector, assets, positions)
         );
     }
 
     // This function executes AssetsExposureController.increaseAssetsExposure()
-    function _setPrimeAccountAssetsExposure() public {
+    function _setPrimeAccountAssetsExposure(bytes32[] memory assets, IStakingPositions.StakedPosition[] memory positions) public {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector)
+            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector, assets, positions)
         );
     }
 
@@ -209,10 +209,70 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         return IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset, allowInactive));
     }
 
-    modifier recalculateAssetsExposure() {
-        _resetPrimeAccountAssetsExposure();
+    function _getAssets0() internal pure returns (bytes32[] memory) {}
+
+    function _getAssets1(bytes32 asset0) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](1);
+        assets[0] = asset0;
+    }
+
+    function _getAssets2(bytes32 asset0, bytes32 asset1) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](2);
+        assets[0] = asset0;
+        assets[1] = asset1;
+    }
+
+    function _getAssets3(bytes32 asset0, bytes32 asset1, bytes32 asset2) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](3);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+    }
+
+    function _getAssets4(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](4);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+    }
+
+    function _getAssets5(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3, bytes32 asset4) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](5);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+        assets[4] = asset4;
+    }
+
+    function _getAssets6(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3, bytes32 asset4, bytes32 asset5) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](6);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+        assets[4] = asset4;
+        assets[5] = asset5;
+    }
+
+    function _getPositions0() internal pure returns (IStakingPositions.StakedPosition[] memory positions) {}
+
+    function _getPositions1(IStakingPositions.StakedPosition memory position0) internal pure returns (IStakingPositions.StakedPosition[] memory positions) {
+        positions = new IStakingPositions.StakedPosition[](1);
+        positions[0] = position0;
+    }
+
+    function _getPositions2(IStakingPositions.StakedPosition memory position0, IStakingPositions.StakedPosition memory position1) internal pure returns (IStakingPositions.StakedPosition[] memory positions) {
+        positions = new IStakingPositions.StakedPosition[](2);
+        positions[0] = position0;
+        positions[1] = position1;
+    }
+
+    modifier recalculateAssetsExposure(bytes32[] memory assets, IStakingPositions.StakedPosition[] memory positions) {
+        _resetPrimeAccountAssetsExposure(assets, positions);
         _;
-        _setPrimeAccountAssetsExposure();
+        _setPrimeAccountAssetsExposure(assets, positions);
     }
 
     /**

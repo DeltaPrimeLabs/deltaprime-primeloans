@@ -55,7 +55,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be staked
     **/
-    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeAVAXYak(uint256 amount)
+        public
+        onlyOwner
+        nonReentrant
+        recalculateAssetsExposure(_getAssets2("AVAX", "YY_AAVE_AVAX"), _getPositions0())
+        remainsSolvent
+    {
         require(amount > 0, "Cannot stake 0 tokens");
         amount = Math.min(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)), amount);
         IERC20Metadata yrtToken = IERC20Metadata(YY_AAVE_AVAX);
@@ -193,7 +199,12 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeAVAXYak(uint256 amount)
+        public
+        onlyOwnerOrInsolvent
+        nonReentrant
+        recalculateAssetsExposure(_getAssets2("AVAX", "YY_AAVE_AVAX"), _getPositions0())
+    {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
         uint256 initialDepositTokenBalance = address(this).balance;
 
@@ -335,7 +346,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails)
+        private
+        recalculateAssetsExposure(_getAssets2(stakingDetails.tokenSymbol, stakingDetails.vaultTokenSymbol), _getPositions0())
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20Metadata yrtToken = IERC20Metadata(stakingDetails.vaultAddress);
         uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
@@ -369,7 +383,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails)
+        private
+        recalculateAssetsExposure(_getAssets2(stakingDetails.tokenSymbol, stakingDetails.vaultTokenSymbol), _getPositions0())
+    {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         IERC20Metadata depositToken = IERC20Metadata(stakingDetails.tokenAddress);
         uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));

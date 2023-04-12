@@ -107,8 +107,13 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
     * @dev This function uses the redstone-evm-connector
     **/
-    function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant  recalculateAssetsExposure remainsSolvent {
+    function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position)
+        internal
+        onlyOwner
+        nonReentrant
+        recalculateAssetsExposure(_getAssets1(position.symbol), _getPositions1(position))
+        remainsSolvent
+    {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = poolHelper.balance(address(this));
@@ -142,25 +147,36 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * if needed it has to be performed in a separate transaction to liquidation
     * @dev This function uses the redstone-evm-connector
     **/
-    function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
+    function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position)
+        internal
+        onlyOwnerOrInsolvent
+        recalculateAssetsExposure(_getAssets1(position.symbol), _getPositions1(position))
+        nonReentrant
+        returns (uint256 unstaked)
+    {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
-        IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
 
-        require(amount > 0, "Cannot unstake 0 tokens");
+        uint256 balance;
+        uint256 newBalance;
 
-        amount = Math.min(poolHelper.balance(address(this)), amount);
+        {
+            IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
 
-        uint256 balance = unstakedToken.balanceOf(address(this));
+            require(amount > 0, "Cannot unstake 0 tokens");
 
-        poolHelper.withdraw(amount, minAmount);
+            amount = Math.min(poolHelper.balance(address(this)), amount);
 
-        uint256 newBalance = unstakedToken.balanceOf(address(this));
+            balance = unstakedToken.balanceOf(address(this));
 
-        if (poolHelper.balance(address(this)) == 0) {
-            DiamondStorageLib.removeStakedPosition(position.identifier);
+            poolHelper.withdraw(amount, minAmount);
+
+            newBalance = unstakedToken.balanceOf(address(this));
+
+            if (poolHelper.balance(address(this)) == 0) {
+                DiamondStorageLib.removeStakedPosition(position.identifier);
+            }
+            DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
         }
-        DiamondStorageLib.addOwnedAsset(position.symbol, address(unstakedToken));
 
         emit Unstaked(
             msg.sender,

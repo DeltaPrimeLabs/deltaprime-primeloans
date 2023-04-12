@@ -57,11 +57,16 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
-    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails)
+        private
+        nonReentrant
+        onlyOwner
+        recalculateAssetsExposure(_getAssets3(stakingDetails.token0Symbol, stakingDetails.token1Symbol, stakingDetails.vaultTokenSymbol), _getPositions0())
+        remainsSolvent 
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
-        IERC20 vaultToken = IERC20(vaultAddress);
-        uint256 initialVaultBalance = vaultToken.balanceOf(address(this));
+        uint256 initialVaultBalance = IERC20(vaultAddress).balanceOf(address(this));
 
         IERC20 token0 = IERC20(tokenManager.getAssetAddress(stakingDetails.token0Symbol, false));
         IERC20 token1 = IERC20(tokenManager.getAssetAddress(stakingDetails.token1Symbol, false));
@@ -90,7 +95,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             vaultAddress,
             amount0Actual,
             amount1Actual,
-            vaultToken.balanceOf(address(this)) - initialVaultBalance,
+            IERC20(vaultAddress).balanceOf(address(this)) - initialVaultBalance,
             block.timestamp
         );
     }
@@ -99,11 +104,15 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
-    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails)
+        private
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculateAssetsExposure(_getAssets3(unstakingDetails.token0Symbol, unstakingDetails.token1Symbol, unstakingDetails.vaultTokenSymbol), _getPositions0())
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
         uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
-
         uint256 amount0Unstaked;
         uint256 amount1Unstaked;
         {

@@ -133,7 +133,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
     * @param config configuration for liquidation
     **/
-    function liquidate(LiquidationConfig memory config) internal recalculateAssetsExposure{
+    function liquidate(LiquidationConfig memory config)
+        internal
+        recalculateAssetsExposure(_getAssets0(), _getPositions0())
+    {
         SolvencyFacetProd.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
         
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
@@ -150,26 +153,31 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 suppliedInUSD;
         uint256 repaidInUSD;
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        uint256[] memory amountsToRepay = config.amountsToRepay;
+        bytes32[] memory assetsToRepay = config.assetsToRepay;
 
-        for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
+        for (uint256 i = 0; i < assetsToRepay.length; i++) {
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsToRepay[i], true));
 
             uint256 balance = token.balanceOf(address(this));
-            uint256 supplyAmount;
 
-            if (balance < config.amountsToRepay[i]) {
-                supplyAmount = config.amountsToRepay[i] - balance;
+            {
+                uint256 supplyAmount;
+
+                if (balance < amountsToRepay[i]) {
+                    supplyAmount = amountsToRepay[i] - balance;
+                }
+
+                if (supplyAmount > 0) {
+                    address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
+                    // supplyAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
+                    suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
+                }
             }
 
-            if (supplyAmount > 0) {
-                address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
-                // supplyAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
-                suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
-            }
+            Pool pool = Pool(tokenManager.getPoolAddress(assetsToRepay[i]));
 
-            Pool pool = Pool(tokenManager.getPoolAddress(config.assetsToRepay[i]));
-
-            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), config.amountsToRepay[i]);
+            uint256 repayAmount = Math.min(pool.getBorrowed(address(this)), amountsToRepay[i]);
 
             address(token).safeApprove(address(pool), 0);
             address(token).safeApprove(address(pool), repayAmount);
@@ -180,10 +188,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             pool.repay(repayAmount);
 
             if (token.balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(config.assetsToRepay[i]);
+                DiamondStorageLib.removeOwnedAsset(assetsToRepay[i]);
             }
 
-            emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
+            emit LiquidationRepay(msg.sender, assetsToRepay[i], repayAmount, block.timestamp);
         }
 
         bytes32[] memory assetsOwned = DeploymentConstants.getAllOwnedAssets();
@@ -193,27 +201,29 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         bonusInUSD = repaidInUSD * config.liquidationBonusPercent / DeploymentConstants.getPercentagePrecision();
 
-        //meaning returning all tokens
-        uint256 partToReturn = 10 ** 18; // 1
-        uint256 assetsValue = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
+        {
+            //meaning returning all tokens
+            uint256 partToReturn = 10 ** 18; // 1
+            uint256 assetsValue = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
-        if (!healingLoan && assetsValue >= suppliedInUSD + bonusInUSD) {
-            //in that scenario we calculate how big part of token to return
-            partToReturn = (suppliedInUSD + bonusInUSD) * 10 ** 18 / assetsValue;
-        }
-
-        if(partToReturn > 0){
-            // Native token transfer
-            if (address(this).balance > 0) {
-                payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
+            if (!healingLoan && assetsValue >= suppliedInUSD + bonusInUSD) {
+                //in that scenario we calculate how big part of token to return
+                partToReturn = (suppliedInUSD + bonusInUSD) * 10 ** 18 / assetsValue;
             }
 
-            for (uint256 i; i < assetsOwned.length; i++) {
-                IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
-                uint256 balance = token.balanceOf(address(this));
+            if(partToReturn > 0){
+                // Native token transfer
+                if (address(this).balance > 0) {
+                    payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
+                }
 
-                address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
-                emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
+                for (uint256 i; i < assetsOwned.length; i++) {
+                    IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
+                    uint256 balance = token.balanceOf(address(this));
+
+                    address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
+                    emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
+                }
             }
         }
 

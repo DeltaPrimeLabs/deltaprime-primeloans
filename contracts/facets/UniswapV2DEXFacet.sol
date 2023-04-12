@@ -52,7 +52,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure remainsSolvent returns (uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure(_getAssets2(_soldAsset, _boughtAsset), _getPositions0()) remainsSolvent returns (uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
@@ -84,7 +84,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin)
+        internal
+        recalculateAssetsExposure(_getAssets3(_assetA, _assetB, calculateLpTokenSymbol(_assetA, _assetB)), _getPositions0())
+        remainsSolvent
+    {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
@@ -94,13 +98,15 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
         address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
 
-        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
-
         address lpTokenAddress;
         uint liquidity;
 
-        (lpTokenAddress, amountA, amountB, liquidity)
-          = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
+        {
+            IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
+
+            (lpTokenAddress, amountA, amountB, liquidity)
+            = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
+        }
 
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
             bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
@@ -122,18 +128,27 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure onlyOwnerOrInsolvent{
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin)
+        internal
+        recalculateAssetsExposure(_getAssets3(_assetA, _assetB, calculateLpTokenSymbol(_assetA, _assetB)), _getPositions0())
+        onlyOwnerOrInsolvent
+    {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 
-        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
+        address lpTokenAddress;
+        uint amountA;
+        uint amountB;
+        {
+            IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
-        address lpTokenAddress = exchange.getPair(address(tokenA), address(tokenB));
-        liquidity = Math.min(liquidity, IERC20(lpTokenAddress).balanceOf(address(this)));
+            lpTokenAddress = exchange.getPair(address(tokenA), address(tokenB));
+            liquidity = Math.min(liquidity, IERC20(lpTokenAddress).balanceOf(address(this)));
 
-        lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
+            lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
 
-        (uint amountA, uint amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
+            (amountA, amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
+        }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {

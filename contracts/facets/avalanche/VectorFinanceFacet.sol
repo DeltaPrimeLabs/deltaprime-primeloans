@@ -156,8 +156,13 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
     * @dev This function uses the redstone-evm-connector
     **/
-    function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position)
+        internal
+        onlyOwner
+        nonReentrant
+        recalculateAssetsExposure(_getAssets1(position.symbol), _getPositions1(position))
+        remainsSolvent
+    {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
@@ -191,8 +196,13 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * if needed it has to be performed in a separate transaction to liquidation
     * @dev This function uses the redstone-evm-connector
     **/
-    function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
-    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
+    function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position)
+        internal
+        onlyOwnerOrInsolvent
+        recalculateAssetsExposure(_getAssets1(position.symbol), _getPositions1(position))
+        nonReentrant
+        returns (uint256 unstaked)
+    {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
@@ -227,8 +237,14 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
      * @notice Withdraws all previous balance from the pool helper, and deposits into the compounder.
      */
-    function migrateStake(IStakingPositions.StakedPosition memory position, bytes32 oldIdentifier) internal
-    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
+    function migrateStake(IStakingPositions.StakedPosition memory position, bytes32 oldIdentifier)
+        internal
+        onlyOwner
+        nonReentrant
+        recalculateAssetsExposure(_getAssets0(), _getPositions2(position, DiamondStorageLib.getStakedPosition(oldIdentifier)))
+        remainsSolvent
+        returns (uint256 migrated)
+    {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IVectorFinanceCompounder compounder = poolHelper.compounder();
 
