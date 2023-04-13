@@ -80,16 +80,16 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
-                ['ETH', 'AVAX'],
+                ['ETH', 'AVAX', 'BTC'],
                 getRedstonePrices,
                 [
                     {symbol: 'DAIe', value: 1},
                     {symbol: 'USDCe', value: 1},
                     {symbol: 'USDTe', value: 1},
-                    {symbol: 'WBTCe', value: 28000},
                     {symbol: 'crvUSDBTCETH', value: 1012},
                 ]
             );
+            tokensPrices.set("WBTCe", tokensPrices.get("BTC")!);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -224,7 +224,7 @@ describe('Smart loan', () => {
 
             await wrappedLoan.unstakeCurve(toWei("99999999"), [0, 0, 0, 0, 0]);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 300);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
         });

@@ -5,6 +5,7 @@ import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "hardhat-interface-generator";
+import "hardhat-gas-reporter";
 require('hardhat-deploy');
 
 const fs = require('fs');
