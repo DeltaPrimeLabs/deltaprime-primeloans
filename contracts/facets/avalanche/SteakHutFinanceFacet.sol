@@ -102,22 +102,29 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
-        IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
-        IERC20 depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
-        uint256 initialDepositTokenBalance0 = depositToken0.balanceOf(address(this));
-        uint256 initialDepositTokenBalance1 = depositToken1.balanceOf(address(this));
         uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
-        unstakingDetails.liquidity = Math.min(IERC20(vaultAddress).balanceOf(address(this)), unstakingDetails.liquidity);
 
-        ISteakHutPool(vaultAddress).withdraw(unstakingDetails.liquidity);
+        uint256 amount0Unstaked;
+        uint256 amount1Unstaked;
+        {
+            IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
+            IERC20 depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
+            {
+                uint256 initialDepositTokenBalance0 = depositToken0.balanceOf(address(this));
+                uint256 initialDepositTokenBalance1 = depositToken1.balanceOf(address(this));
+                unstakingDetails.liquidity = Math.min(IERC20(vaultAddress).balanceOf(address(this)), unstakingDetails.liquidity);
 
-        uint256 amount0Unstaked = depositToken0.balanceOf(address(this)) - initialDepositTokenBalance0;
-        uint256 amount1Unstaked = depositToken1.balanceOf(address(this)) - initialDepositTokenBalance1;
-        require(amount0Unstaked >= unstakingDetails.amount0Min && amount1Unstaked >= unstakingDetails.amount1Min, "Unstaked less tokens than expected");
+                ISteakHutPool(vaultAddress).withdraw(unstakingDetails.liquidity);
 
-        // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, address(depositToken0));
-        DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, address(depositToken1));
+                amount0Unstaked = depositToken0.balanceOf(address(this)) - initialDepositTokenBalance0;
+                amount1Unstaked = depositToken1.balanceOf(address(this)) - initialDepositTokenBalance1;
+                require(amount0Unstaked >= unstakingDetails.amount0Min && amount1Unstaked >= unstakingDetails.amount1Min, "Unstaked less tokens than expected");
+            }
+
+            // Add/remove owned tokens
+            DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, address(depositToken0));
+            DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, address(depositToken1));
+        }
         uint256 newVaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
         if(newVaultTokenBalance == 0) {
             DiamondStorageLib.removeOwnedAsset(unstakingDetails.vaultTokenSymbol);
