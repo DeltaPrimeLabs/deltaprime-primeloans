@@ -125,10 +125,14 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         require(i < 5, "Invalid token index");
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
+        address curveTokenAddress;
+        IERC20 depositToken;
+        {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
+            depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
+        }
         IERC20 curveToken = IERC20(curveTokenAddress);
-        IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
         uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
         uint256 curveTokenBalance = curveToken.balanceOf(address(this));
         uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);

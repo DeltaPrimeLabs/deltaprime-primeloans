@@ -185,19 +185,21 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    // This function executes AssetsExposureController.decreaseAssetsExposure()
-    function _resetPrimeAccountAssetsExposure() public {
-        proxyDelegateCalldata(
-            DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
+    function _resetPrimeAccountAssetsExposure() public returns (ITokenManager.Exposure[] memory exposures) {
+        exposures = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
+                abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
+            ),
+            (ITokenManager.Exposure[])
         );
     }
 
-    // This function executes AssetsExposureController.increaseAssetsExposure()
-    function _setPrimeAccountAssetsExposure() public {
+    // This function executes AssetsExposureController.decreaseAssetsExposure() / AssetsExposureController.increaseAssetsExposure()
+    function _setPrimeAccountAssetsExposure(ITokenManager.Exposure[] memory exposures) public {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
-            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector)
+            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector, exposures)
         );
     }
 
@@ -210,9 +212,9 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     modifier recalculateAssetsExposure() {
-        _resetPrimeAccountAssetsExposure();
+        ITokenManager.Exposure[] memory exposures = _resetPrimeAccountAssetsExposure();
         _;
-        _setPrimeAccountAssetsExposure();
+        _setPrimeAccountAssetsExposure(exposures);
     }
 
     /**

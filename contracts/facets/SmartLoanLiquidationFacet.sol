@@ -154,17 +154,19 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
 
-            uint256 balance = token.balanceOf(address(this));
-            uint256 supplyAmount;
+            {
+                uint256 balance = token.balanceOf(address(this));
+                uint256 supplyAmount;
 
-            if (balance < config.amountsToRepay[i]) {
-                supplyAmount = config.amountsToRepay[i] - balance;
-            }
+                if (balance < config.amountsToRepay[i]) {
+                    supplyAmount = config.amountsToRepay[i] - balance;
+                }
 
-            if (supplyAmount > 0) {
-                address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
-                // supplyAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
-                suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
+                if (supplyAmount > 0) {
+                    address(token).safeTransferFrom(msg.sender, address(this), supplyAmount);
+                    // supplyAmount is denominated in token.decimals(). Price is denominated in 1e8. To achieve 1e18 decimals we need to multiply by 1e10.
+                    suppliedInUSD += supplyAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
+                }
             }
 
             Pool pool = Pool(tokenManager.getPoolAddress(config.assetsToRepay[i]));

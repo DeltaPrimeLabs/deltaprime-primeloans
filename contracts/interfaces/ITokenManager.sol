@@ -10,6 +10,11 @@ interface ITokenManager {
         uint256 debtCoverage;
     }
 
+    struct Exposure {
+        bytes32 identifier;
+        uint256 decrease;
+    }
+
     function activateToken ( address token ) external;
     function addPoolAssets ( poolAsset[] memory poolAssets ) external;
     function addTokenAssets ( Asset[] memory tokenAssets ) external;
