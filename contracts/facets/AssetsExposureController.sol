@@ -11,16 +11,16 @@ import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsExposureController {
 
-    function resetPrimeAccountAssetsExposure() external view returns (ITokenManager.Exposure[] memory exposures) {
+    function resetPrimeAccountAssetsExposure() external view returns (ITokenManager.ExposureUpdate[] memory exposures) {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        exposures = new ITokenManager.Exposure[](ownedAssets.length + positions.length);
+        exposures = new ITokenManager.ExposureUpdate[](ownedAssets.length + positions.length);
 
         for(uint i=0; i<ownedAssets.length; i++){
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssets[i], true));
-            exposures[i] = ITokenManager.Exposure({
+            exposures[i] = ITokenManager.ExposureUpdate({
                 identifier: ownedAssets[i],
                 decrease: token.balanceOf(address(this)) * 1e18 / 10**token.decimals()
             });
@@ -30,7 +30,7 @@ contract AssetsExposureController {
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
                 uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
-                exposures[ownedAssets.length + i] = ITokenManager.Exposure({
+                exposures[ownedAssets.length + i] = ITokenManager.ExposureUpdate({
                     identifier: positions[i].identifier,
                     decrease: balance * 1e18 / 10**decimals
                 });
@@ -38,7 +38,7 @@ contract AssetsExposureController {
         }
     }
 
-    function setPrimeAccountAssetsExposure(ITokenManager.Exposure[] memory exposures) external {
+    function setPrimeAccountAssetsExposure(ITokenManager.ExposureUpdate[] memory exposures) external {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();

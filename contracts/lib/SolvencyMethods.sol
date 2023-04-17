@@ -185,18 +185,18 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    function _resetPrimeAccountAssetsExposure() public returns (ITokenManager.Exposure[] memory exposures) {
+    function _resetPrimeAccountAssetsExposure() public returns (ITokenManager.ExposureUpdate[] memory exposures) {
         exposures = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
                 abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
             ),
-            (ITokenManager.Exposure[])
+            (ITokenManager.ExposureUpdate[])
         );
     }
 
     // This function executes AssetsExposureController.decreaseAssetsExposure() / AssetsExposureController.increaseAssetsExposure()
-    function _setPrimeAccountAssetsExposure(ITokenManager.Exposure[] memory exposures) public {
+    function _setPrimeAccountAssetsExposure(ITokenManager.ExposureUpdate[] memory exposures) public {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
             abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector, exposures)
@@ -212,7 +212,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     modifier recalculateAssetsExposure() {
-        ITokenManager.Exposure[] memory exposures = _resetPrimeAccountAssetsExposure();
+        ITokenManager.ExposureUpdate[] memory exposures = _resetPrimeAccountAssetsExposure();
         _;
         _setPrimeAccountAssetsExposure(exposures);
     }

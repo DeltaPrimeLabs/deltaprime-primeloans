@@ -10,7 +10,7 @@ interface ITokenManager {
         uint256 debtCoverage;
     }
 
-    struct Exposure {
+    struct ExposureUpdate {
         bytes32 identifier;
         uint256 decrease;
     }
