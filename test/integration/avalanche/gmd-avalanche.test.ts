@@ -52,10 +52,6 @@ describe('Smart loan', () => {
         let smartLoansFactory: SmartLoansFactory,
             exchange: PangolinIntermediary,
             gmdVaultContract: Contract,
-            gmdUSDCTokenContract: Contract,
-            gmdWAVAXTokenContract: Contract,
-            gmdBTCbTokenContract: Contract,
-            gmdWETHeTokenContract: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -275,7 +271,7 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
         });
 
-        it("should not fail to unstake more than was initially staked but unstake all", async () => {
+        it("should not fail to unstake more than was initially staked but unstake all USDC", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
@@ -288,6 +284,255 @@ describe('Smart loan', () => {
             await wrappedLoan.gmdUnstakeUSDC(toWei("999999"), 0);
             expect(await GMDTokensContracts.get('gmdUSDC')!.balanceOf(wrappedLoan.address)).to.be.eq(0);
             expect(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address)).to.be.gt(initialUSDCBalance)
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        // Max vault cap reached
+        it("should stake WAVAX", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 5);
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address);
+            let initialAVAXBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.equal(0);
+            expect(initialAVAXBalance).to.be.gt(0);
+
+            let stakedAmount = 10;
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdWAVAX')!.totalSupply();
+            let expectedSharesReceived = BigNumber.from(stakedAmount.toString()).div(totalDeposits).mul(totalSupply)
+
+            // 0.5% deposit fee
+            await wrappedLoan.gmdStakeAVAX(parseUnits(stakedAmount.toString(), 6), expectedSharesReceived.mul("995").div("1000"));
+
+            let sharesAfterStaking = fromWei(await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address));
+            expect(formatUnits(initialAVAXBalance, 6) - formatUnits(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(10);
+            expect(toWei(sharesAfterStaking.toString())).to.be.gte(toWei(expectedSharesReceived.toString()))
+
+            // Should stake max if amount > balance
+            await wrappedLoan.gmdStakeAVAX(toWei("99999999"), 0);
+            expect(formatUnits(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(0);
+            expect(fromWei(await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address))).to.be.gt(sharesAfterStaking)
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 30);
+        });
+
+        it("should unstake WAVAX", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address);
+            let initialAVAXBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+            expect(initialAVAXBalance).to.be.eq(0);
+
+            let unstakedAmount = initialStakedBalance.div("2");
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdWAVAX')!.totalSupply();
+            let expectedUnstakedTokenReceived = fromWei(BigNumber.from(unstakedAmount.toString()).mul(totalDeposits).div(totalSupply)).toFixed(6)
+
+            await wrappedLoan.gmdUnstakeAVAX(unstakedAmount, parseUnits(expectedUnstakedTokenReceived.toString(), 6));
+
+            let sharesAfterUnstaking = await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address);
+            let tokenReceived = (await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address)).sub(initialAVAXBalance);
+
+            expect(formatUnits(tokenReceived, 6)).to.be.closeTo(Number(expectedUnstakedTokenReceived), 1);
+            expect(initialStakedBalance.sub(sharesAfterUnstaking)).to.be.eq(unstakedAmount);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        it("should not fail to unstake more than was initially staked but unstake all WAVAX", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address);
+            let initialAVAXBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+
+            await wrappedLoan.gmdUnstakeAVAX(toWei("999999"), 0);
+            expect(await GMDTokensContracts.get('gmdWAVAX')!.balanceOf(wrappedLoan.address)).to.be.eq(0);
+            expect(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address)).to.be.gt(initialAVAXBalance)
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        // Max vault cap reached
+        it("should stake gmdBTCb", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 5);
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address);
+            let initialBTCBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.equal(0);
+            expect(initialBTCBalance).to.be.gt(0);
+
+            let stakedAmount = 10;
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdBTCb')!.totalSupply();
+            let expectedSharesReceived = BigNumber.from(stakedAmount.toString()).div(totalDeposits).mul(totalSupply)
+
+            // 0.5% deposit fee
+            await wrappedLoan.gmdStakeBTCb(parseUnits(stakedAmount.toString(), 6), expectedSharesReceived.mul("995").div("1000"));
+
+            let sharesAfterStaking = fromWei(await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address));
+            expect(formatUnits(initialBTCBalance, 6) - formatUnits(await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(10);
+            expect(toWei(sharesAfterStaking.toString())).to.be.gte(toWei(expectedSharesReceived.toString()))
+
+            // Should stake max if amount > balance
+            await wrappedLoan.gmdStakeBTCb(toWei("99999999"), 0);
+            expect(formatUnits(await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(0);
+            expect(fromWei(await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address))).to.be.gt(sharesAfterStaking)
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 30);
+        });
+
+        it("should unstake gmdBTCb", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address);
+            let initialBTCBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+            expect(initialBTCBalance).to.be.eq(0);
+
+            let unstakedAmount = initialStakedBalance.div("2");
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdBTCb')!.totalSupply();
+            let expectedUnstakedTokenReceived = fromWei(BigNumber.from(unstakedAmount.toString()).mul(totalDeposits).div(totalSupply)).toFixed(6)
+
+            await wrappedLoan.gmdUnstakeBTCb(unstakedAmount, parseUnits(expectedUnstakedTokenReceived.toString(), 6));
+
+            let sharesAfterUnstaking = await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address);
+            let tokenReceived = (await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address)).sub(initialBTCBalance);
+
+            expect(formatUnits(tokenReceived, 6)).to.be.closeTo(Number(expectedUnstakedTokenReceived), 1);
+            expect(initialStakedBalance.sub(sharesAfterUnstaking)).to.be.eq(unstakedAmount);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        it("should not fail to unstake more than was initially staked but unstake all gmdBTCb", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address);
+            let initialBTCBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+
+            await wrappedLoan.gmdUnstakeBTC(toWei("999999"), 0);
+            expect(await GMDTokensContracts.get('gmdBTCb')!.balanceOf(wrappedLoan.address)).to.be.eq(0);
+            expect(await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address)).to.be.gt(initialBTCBalance)
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        // Max vault cap reached
+        it("should stake gmdWETHe", async () => {
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(200 * tokensPrices.get('AVAX')!, 5);
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address);
+            let initialETHBalance = await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.equal(0);
+            expect(initialETHBalance).to.be.gt(0);
+
+            let stakedAmount = 10;
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdWETHe')!.totalSupply();
+            let expectedSharesReceived = BigNumber.from(stakedAmount.toString()).div(totalDeposits).mul(totalSupply)
+
+            // 0.5% deposit fee
+            await wrappedLoan.gmdStakeWETHe(parseUnits(stakedAmount.toString(), 6), expectedSharesReceived.mul("995").div("1000"));
+
+            let sharesAfterStaking = fromWei(await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address));
+            expect(formatUnits(initialETHBalance, 6) - formatUnits(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(10);
+            expect(toWei(sharesAfterStaking.toString())).to.be.gte(toWei(expectedSharesReceived.toString()))
+
+            // Should stake max if amount > balance
+            await wrappedLoan.gmdStakeWETHe(toWei("99999999"), 0);
+            expect(formatUnits(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(0);
+            expect(fromWei(await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address))).to.be.gt(sharesAfterStaking)
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 2);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 30);
+        });
+
+        it("should unstake gmdWETHe", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address);
+            let initialETHBalance = await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+            expect(initialETHBalance).to.be.eq(0);
+
+            let unstakedAmount = initialStakedBalance.div("2");
+            let totalDeposits = (await gmdVaultContract.poolInfo(0)).totalStaked;
+            let totalSupply = await GMDTokensContracts.get('gmdWETHe')!.totalSupply();
+            let expectedUnstakedTokenReceived = fromWei(BigNumber.from(unstakedAmount.toString()).mul(totalDeposits).div(totalSupply)).toFixed(6)
+
+            await wrappedLoan.gmdUnstakeWETHe(unstakedAmount, parseUnits(expectedUnstakedTokenReceived.toString(), 6));
+
+            let sharesAfterUnstaking = await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address);
+            let tokenReceived = (await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address)).sub(initialETHBalance);
+
+            expect(formatUnits(tokenReceived, 6)).to.be.closeTo(Number(expectedUnstakedTokenReceived), 1);
+            expect(initialStakedBalance.sub(sharesAfterUnstaking)).to.be.eq(unstakedAmount);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV,  1);
+        });
+
+        it("should not fail to unstake more than was initially staked but unstake all gmdWETHe", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address);
+            let initialETHBalance = await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address);
+
+            expect(initialStakedBalance).to.be.gt(0);
+
+            await wrappedLoan.gmdUnstakeWETHe(toWei("999999"), 0);
+            expect(await GMDTokensContracts.get('gmdWETHe')!.balanceOf(wrappedLoan.address)).to.be.eq(0);
+            expect(await tokenContracts.get('ETH')!.balanceOf(wrappedLoan.address)).to.be.gt(initialETHBalance)
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
 
