@@ -53,15 +53,17 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     function getStakedPositionsPrices() public view returns(AssetPrice[] memory result) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
 
-        bytes32[] memory symbols = new bytes32[](positions.length);
-        for(uint256 i=0; i<positions.length; i++) {
+        uint256 positionsLength = positions.length;
+        bytes32[] memory symbols = new bytes32[](positionsLength);
+        for(uint256 i; i != positionsLength; ++i) {
             symbols[i] = positions[i].symbol;
         }
 
         uint256[] memory stakedPositionsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(symbols);
-        result = new AssetPrice[](stakedPositionsPrices.length);
+        uint256 stakedPositionsPricesLength = stakedPositionsPrices.length;
+        result = new AssetPrice[](stakedPositionsPricesLength);
 
-        for(uint i; i<stakedPositionsPrices.length; i++){
+        for(uint256 i; i != stakedPositionsPricesLength; ++i){
             result[i] = AssetPrice({
                 asset: symbols[i],
                 price: stakedPositionsPrices[i]
@@ -85,9 +87,10 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         bytes32[] memory debtAssets = getDebtAssets();
 
         uint256[] memory debtAssetsPrices = getOracleNumericValuesFromTxMsg(debtAssets);
-        result = new AssetPrice[](debtAssetsPrices.length);
+        uint256 debtAssetsPricesLength = debtAssetsPrices.length;
+        result = new AssetPrice[](debtAssetsPricesLength);
 
-        for(uint i; i<debtAssetsPrices.length; i++){
+        for(uint256 i; i != debtAssetsPricesLength; ++i){
             result[i] = AssetPrice({
                 asset: debtAssets[i],
                 price: debtAssetsPrices[i]
@@ -103,9 +106,10 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         bytes32[] memory assetsEnriched = getOwnedAssetsWithNative();
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
 
-        result = new AssetPrice[](assetsEnriched.length);
+        uint256 assetsEnrichedLength = assetsEnriched.length;
+        result = new AssetPrice[](assetsEnrichedLength);
 
-        for(uint i; i<assetsEnriched.length; i++){
+        for(uint256 i; i != assetsEnrichedLength; ++i){
             result[i] = AssetPrice({
                 asset: assetsEnriched[i],
                 price: prices[i]
@@ -118,8 +122,9 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     **/
     function getStakedAssets() internal view returns (bytes32[] memory result) {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
-        result = new bytes32[](positions.length);
-        for(uint i; i<positions.length; i++) {
+        uint256 positionLength = positions.length;
+        result = new bytes32[](positionLength);
+        for(uint256 i; i != positionLength; ++i) {
             result[i] = positions[i].symbol;
         }
     }
@@ -128,7 +133,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         require(numberOfItems <= source.length, "numberOfItems > target array length");
         require(offset + numberOfItems <= target.length, "offset + numberOfItems > target array length");
 
-        for(uint i; i<numberOfItems; i++){
+        for(uint256 i; i != numberOfItems; ++i) {
             target[i + offset] = source[i];
         }
     }
@@ -139,10 +144,11 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         require(offset + numberOfItems <= sourceAssets.length, "offset + numberOfItems > sourceAssets array length");
         require(offset + numberOfItems <= sourcePrices.length, "offset + numberOfItems > sourcePrices array length");
 
-        for(uint i; i<numberOfItems; i++){
+        for(uint256 i; i != numberOfItems; ++i) {
+            uint256 idx = i+offset;
             target[i] = AssetPrice({
-                asset: sourceAssets[i+offset],
-                price: sourcePrices[i+offset]
+                asset: sourceAssets[idx],
+                price: sourcePrices[idx]
             });
         }
     }
@@ -156,59 +162,64 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         bytes32[] memory ownedAssetsEnriched = getOwnedAssetsWithNative();
         bytes32[] memory debtAssets = getDebtAssets();
         bytes32[] memory stakedAssets = getStakedAssets();
+        uint256 ownedAssetsEnrichedLength = ownedAssetsEnriched.length;
+        uint256 debtAssetsLength = debtAssets.length;
+        uint256 stakedAssetsLength = stakedAssets.length;
+        uint256 assetsToRepayLength = assetsToRepay.length;
 
-        bytes32[] memory allAssetsSymbols = new bytes32[](ownedAssetsEnriched.length + debtAssets.length + stakedAssets.length + assetsToRepay.length);
+        bytes32[] memory allAssetsSymbols = new bytes32[](ownedAssetsEnrichedLength + debtAssetsLength + stakedAssetsLength + assetsToRepayLength);
         uint256 offset;
 
         // Populate allAssetsSymbols with owned assets symbols
-        copyToArray(allAssetsSymbols, ownedAssetsEnriched, offset, ownedAssetsEnriched.length);
-        offset += ownedAssetsEnriched.length;
+        copyToArray(allAssetsSymbols, ownedAssetsEnriched, offset, ownedAssetsEnrichedLength);
+        offset += ownedAssetsEnrichedLength;
 
         // Populate allAssetsSymbols with debt assets symbols
-        copyToArray(allAssetsSymbols, debtAssets, offset, debtAssets.length);
-        offset += debtAssets.length;
+        copyToArray(allAssetsSymbols, debtAssets, offset, debtAssetsLength);
+        offset += debtAssetsLength;
 
         // Populate allAssetsSymbols with staked assets symbols
-        copyToArray(allAssetsSymbols, stakedAssets, offset, stakedAssets.length);
-        offset += stakedAssets.length;
+        copyToArray(allAssetsSymbols, stakedAssets, offset, stakedAssetsLength);
+        offset += stakedAssetsLength;
 
         // Populate allAssetsSymbols with assets to repay symbols
-        copyToArray(allAssetsSymbols, assetsToRepay, offset, assetsToRepay.length);
+        copyToArray(allAssetsSymbols, assetsToRepay, offset, assetsToRepayLength);
 
         uint256[] memory allAssetsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(allAssetsSymbols);
 
         offset = 0;
 
         // Populate ownedAssetsPrices struct
-        AssetPrice[] memory ownedAssetsPrices = new AssetPrice[](ownedAssetsEnriched.length);
-        copyToAssetPriceArray(ownedAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, ownedAssetsEnriched.length);
-        offset += ownedAssetsEnriched.length;
+        AssetPrice[] memory ownedAssetsPrices = new AssetPrice[](ownedAssetsEnrichedLength);
+        copyToAssetPriceArray(ownedAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, ownedAssetsEnrichedLength);
+        offset += ownedAssetsEnrichedLength;
 
         // Populate debtAssetsPrices struct
-        AssetPrice[] memory debtAssetsPrices = new AssetPrice[](debtAssets.length);
-        copyToAssetPriceArray(debtAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, debtAssets.length);
+        AssetPrice[] memory debtAssetsPrices = new AssetPrice[](debtAssetsLength);
+        copyToAssetPriceArray(debtAssetsPrices, allAssetsSymbols, allAssetsPrices, offset, debtAssetsLength);
         offset += debtAssetsPrices.length;
 
         // Populate stakedPositionsPrices struct
-        AssetPrice[] memory stakedPositionsPrices = new AssetPrice[](stakedAssets.length);
-        copyToAssetPriceArray(stakedPositionsPrices, allAssetsSymbols, allAssetsPrices, offset, stakedAssets.length);
-        offset += stakedAssets.length;
+        AssetPrice[] memory stakedPositionsPrices = new AssetPrice[](stakedAssetsLength);
+        copyToAssetPriceArray(stakedPositionsPrices, allAssetsSymbols, allAssetsPrices, offset, stakedAssetsLength);
+        offset += stakedAssetsLength;
 
         // Populate assetsToRepayPrices struct
         // Stack too deep :F
-        AssetPrice[] memory assetsToRepayPrices = new AssetPrice[](assetsToRepay.length);
-        for(uint i=0; i<assetsToRepay.length; i++){
+        AssetPrice[] memory assetsToRepayPrices = new AssetPrice[](assetsToRepayLength);
+        for(uint256 i; i != assetsToRepayLength; ++i){
+            uint256 idx = i+offset;
             assetsToRepayPrices[i] = AssetPrice({
-            asset: allAssetsSymbols[i+offset],
-            price: allAssetsPrices[i+offset]
+                asset: allAssetsSymbols[idx],
+                price: allAssetsPrices[idx]
             });
         }
 
         result = CachedPrices({
-        ownedAssetsPrices: ownedAssetsPrices,
-        debtAssetsPrices: debtAssetsPrices,
-        stakedPositionsPrices: stakedPositionsPrices,
-        assetsToRepayPrices: assetsToRepayPrices
+            ownedAssetsPrices: ownedAssetsPrices,
+            debtAssetsPrices: debtAssetsPrices,
+            stakedPositionsPrices: stakedPositionsPrices,
+            assetsToRepayPrices: assetsToRepayPrices
         });
     }
 
@@ -217,7 +228,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory poolAssets = tokenManager.getAllPoolAssets();
 
-        for(uint i; i< poolAssets.length; i++) {
+        uint256 poolAssetsLength = poolAssets.length;
+        for(uint256 i; i != poolAssetsLength; ++i) {
             Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(poolAssets[i]));
             IERC20 token = IERC20(pool.tokenAddress());
             if(token.balanceOf(address(this)) < pool.getBorrowed(address(this))) {
@@ -252,13 +264,12 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
         uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
 
-        if (ownedAssetsPrices.length > 0) {
-
-            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            }
+        uint256 ownedAssetsPricesLength = ownedAssetsPrices.length;
+        for (uint256 i; i != ownedAssetsPricesLength; ++i) {
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+            weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
         }
+
         return weightedValueOfTokens;
     }
 
@@ -271,7 +282,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
         uint256 weightedValueOfStaked;
 
-        for (uint256 i; i < positions.length; i++) {
+        uint256 positionsLength = positions.length;
+        for (uint256 i; i != positionsLength; ++i) {
             require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
@@ -320,7 +332,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         uint256 debt;
 
-        for (uint256 i; i < debtAssetsPrices.length; i++) {
+        uint256 debtAssetsPricesLength = debtAssetsPrices.length;
+        for (uint256 i; i != debtAssetsPricesLength; ++i) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(debtAssetsPrices[i].asset, true));
 
             Pool pool = Pool(tokenManager.getPoolAddress(debtAssetsPrices[i].asset));
@@ -355,12 +368,13 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public view returns (uint256) {
-        if (ownedAssetsPrices.length > 0) {
+        uint256 ownedAssetsPricesLength = ownedAssetsPrices.length;
+        if (ownedAssetsPricesLength > 0) {
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
             uint256 total = address(this).balance * ownedAssetsPrices[0].price / 10 ** 8;
 
-            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+            for (uint256 i; i != ownedAssetsPricesLength; ++i) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
 
@@ -397,16 +411,16 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
         // If account already owns the native token the use ownedAssets.length; Otherwise add one element to account for additional native token.
-        uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssets.length : ownedAssets.length + 1;
+        uint256 ownedAssetsLength = ownedAssets.length;
+        uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssetsLength : ownedAssetsLength + 1;
         bytes32[] memory assetsWithNative = new bytes32[](numberOfAssets);
 
         uint256 lastUsedIndex;
         assetsWithNative[0] = nativeTokenSymbol; // First asset = NativeToken
 
-        for(uint i=0; i< ownedAssets.length; i++){
+        for(uint256 i; i != ownedAssetsLength; ++i){
             if(ownedAssets[i] != nativeTokenSymbol){
-                lastUsedIndex += 1;
-                assetsWithNative[lastUsedIndex] = ownedAssets[i];
+                assetsWithNative[++lastUsedIndex] = ownedAssets[i];
             }
         }
         return assetsWithNative;
@@ -421,7 +435,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
 
         uint256 usdValue;
 
-        for (uint256 i; i < positions.length; i++) {
+        uint256 positionsLength = positions.length;
+        for (uint256 i; i != positionsLength; ++i) {
             require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
