@@ -61,7 +61,8 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function whitelistLiquidators(address[] memory _liquidators) external onlyOwner {
         DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
 
-        for(uint i; i<_liquidators.length; i++){
+        uint256 liquidatorsLength = _liquidators.length;
+        for (uint256 i; i != liquidatorsLength; ++i) {
             ls.canLiquidate[_liquidators[i]] = true;
             emit LiquidatorWhitelisted(_liquidators[i], msg.sender, block.timestamp);
         }
@@ -69,7 +70,9 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     function delistLiquidators(address[] memory _liquidators) external onlyOwner {
         DiamondStorageLib.LiquidationStorage storage ls = DiamondStorageLib.liquidationStorage();
-        for(uint i; i<_liquidators.length; i++){
+
+        uint256 liquidatorsLength = _liquidators.length;
+        for (uint256 i; i != liquidatorsLength; ++i) {
             ls.canLiquidate[_liquidators[i]] = false;
             emit LiquidatorDelisted(_liquidators[i], msg.sender, block.timestamp);
         }
@@ -151,7 +154,8 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 repaidInUSD;
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        for (uint256 i = 0; i < config.assetsToRepay.length; i++) {
+        uint256 assetsToRepayLength = config.assetsToRepay.length;
+        for (uint256 i; i != assetsToRepayLength; ++i) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(config.assetsToRepay[i], true));
 
             {
@@ -210,7 +214,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 payable(msg.sender).safeTransferETH(address(this).balance * partToReturn / 10 ** 18);
             }
 
-            for (uint256 i; i < assetsOwned.length; i++) {
+            for (uint256 i; i < assetsOwned.length; ++i) {
                 IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
                 uint256 balance = token.balanceOf(address(this));
 

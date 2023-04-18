@@ -32,9 +32,10 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         bytes32[] memory assetsEnriched = _getOwnedAssetsWithNative();
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assetsEnriched);
 
-        result = new AssetPrice[](assetsEnriched.length);
+        uint256 assetsEnrichedLength = assetsEnriched.length;
+        result = new AssetPrice[](assetsEnrichedLength);
 
-        for(uint i; i<assetsEnriched.length; i++){
+        for (uint256 i; i != assetsEnrichedLength; ++i) {
             result[i] = AssetPrice({
                 asset: assetsEnriched[i],
                 price: prices[i]
@@ -50,16 +51,16 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
         // If account already owns the native token the use ownedAssets.length; Otherwise add one element to account for additional native token.
-        uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssets.length : ownedAssets.length + 1;
+        uint256 ownedAssetsLength = ownedAssets.length;
+        uint256 numberOfAssets = DiamondStorageLib.hasAsset(nativeTokenSymbol) ? ownedAssetsLength : ownedAssetsLength + 1;
         bytes32[] memory assetsWithNative = new bytes32[](numberOfAssets);
 
         uint256 lastUsedIndex;
         assetsWithNative[0] = nativeTokenSymbol; // First asset = NativeToken
 
-        for(uint i=0; i< ownedAssets.length; i++){
+        for (uint256 i; i != ownedAssetsLength; ++i) {
             if(ownedAssets[i] != nativeTokenSymbol){
-                lastUsedIndex += 1;
-                assetsWithNative[lastUsedIndex] = ownedAssets[i];
+                assetsWithNative[++lastUsedIndex] = ownedAssets[i];
             }
         }
         return assetsWithNative;
@@ -75,30 +76,43 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256 weightedCollateral;
         uint256 weightedCollateralPlus = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
         uint256 weightedCollateralMinus = 0;
         uint256 weightedBorrowed = 0;
         uint256 borrowed = 0;
 
-        for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
-            Pool pool;
-            try tokenManager.getPoolAddress(ownedAssetsPrices[i].asset) returns (address poolAddress) {
-                pool = Pool(poolAddress);
-            } catch {
-                continue;
+        uint256 ownedAssetsPricesLength = ownedAssetsPrices.length;
+        for (uint256 i; i != ownedAssetsPricesLength; ++i) {
+            uint256 _borrowed;
+            {
+                Pool pool;
+                try tokenManager.getPoolAddress(ownedAssetsPrices[i].asset) returns (address poolAddress) {
+                    pool = Pool(poolAddress);
+                } catch {
+                    continue;
+                }
+                _borrowed = pool.getBorrowed(address(this));
             }
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-            uint256 _balance = token.balanceOf(address(this));
-            uint256 _borrowed = pool.getBorrowed(address(this));
+
+            uint256 _balance;
+            uint256 debtCoverage;
+            uint8 decimals;
+            {
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+                _balance = token.balanceOf(address(this));
+                debtCoverage = tokenManager.debtCoverage(address(token));
+                decimals = token.decimals();
+            }
             if (_balance > _borrowed) {
-                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * (_balance - _borrowed) * debtCoverage / (10 ** decimals * 1e8));
             } else {
-                weightedCollateralMinus = weightedCollateralMinus + (ownedAssetsPrices[i].price * (_borrowed - _balance) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedCollateralMinus = weightedCollateralMinus + (ownedAssetsPrices[i].price * (_borrowed - _balance) * debtCoverage / (10 ** decimals * 1e8));
             }
-            weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
+            weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * _borrowed * debtCoverage / (10 ** decimals * 1e8));
+            borrowed = borrowed + (ownedAssetsPrices[i].price * _borrowed / 1e8);
         }
+
+        uint256 weightedCollateral;
         if (weightedCollateralPlus > weightedCollateralMinus) {
             weightedCollateral = weightedCollateralPlus - weightedCollateralMinus;
         }
