@@ -16,21 +16,23 @@ contract AssetsExposureController {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        exposures = new ITokenManager.ExposureUpdate[](ownedAssets.length + positions.length);
+        uint256 ownedAssetsLength = ownedAssets.length;
+        uint256 positionsLength = positions.length;
+        exposures = new ITokenManager.ExposureUpdate[](ownedAssetsLength + positionsLength);
 
-        for(uint i=0; i<ownedAssets.length; i++){
+        for (uint256 i; i != ownedAssetsLength; ++i) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssets[i], true));
             exposures[i] = ITokenManager.ExposureUpdate({
                 identifier: ownedAssets[i],
                 decrease: token.balanceOf(address(this)) * 1e18 / 10**token.decimals()
             });
         }
-        for(uint i=0; i<positions.length; i++){
+        for (uint256 i; i != positionsLength; ++i) {
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
                 uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
-                exposures[ownedAssets.length + i] = ITokenManager.ExposureUpdate({
+                exposures[ownedAssetsLength + i] = ITokenManager.ExposureUpdate({
                     identifier: positions[i].identifier,
                     decrease: balance * 1e18 / 10**decimals
                 });
@@ -43,11 +45,13 @@ contract AssetsExposureController {
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        for(uint i=0; i<ownedAssets.length; i++){
+        uint256 ownedAssetsLength = ownedAssets.length;
+        uint256 exposuresLength = exposures.length;
+        for (uint256 i; i != ownedAssetsLength; ++i) {
             bytes32 identifier = ownedAssets[i];
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(identifier, true));
             uint256 decrease;
-            for (uint j; j != exposures.length; ++j) {
+            for (uint256 j; j != exposuresLength; ++j) {
                 if (exposures[j].identifier == identifier) {
                     decrease = exposures[j].decrease;
                     break;
@@ -60,12 +64,13 @@ contract AssetsExposureController {
                 tokenManager.increaseProtocolExposure(identifier, increase - decrease);
             }
         }
-        for(uint i=0; i<positions.length; i++){
+        uint256 positionsLength = positions.length;
+        for (uint256 i; i != positionsLength; ++i) {
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
             if (success) {
                 bytes32 identifier = positions[i].identifier;
                 uint256 decrease;
-                for (uint j; j != exposures.length; ++j) {
+                for (uint256 j; j != exposuresLength; ++j) {
                     if (exposures[j].identifier == identifier) {
                         decrease = exposures[j].decrease;
                         break;
