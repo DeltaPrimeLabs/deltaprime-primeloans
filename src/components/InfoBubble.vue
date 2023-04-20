@@ -44,7 +44,12 @@ export default {
   justify-content: center;
   margin-bottom: 10px;
 
+  &:nth-child(2) {
+    margin-top: 40px;
+  }
+
   .info-bubble {
+    width: 576px;
     position: relative;
     mask-image: url("../assets/icons/bubble-body.svg");
     -webkit-mask-image: url("../assets/icons/bubble-body.svg");
@@ -52,14 +57,12 @@ export default {
     background: var(--info-bubble__info-bubble);
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 23px 30px 45px 29px;
     font-weight: 500;
     color: var(--info-bubble__color);
     line-height: 24px;
     font-size: 16px;
     background-size: cover;
-    min-height: 230px;
     -webkit-mask-position: center;
     -webkit-mask-repeat: no-repeat;
 
@@ -79,9 +82,14 @@ export default {
 
     .text {
       text-align: left;
+      z-index: 1;
     }
 
     .cross {
+      position: absolute;
+      right: 36px;
+      top: 20px;
+      z-index: 1;
       align-self: flex-start;
       cursor: pointer;
       content: url(../assets/icons/cross.svg);

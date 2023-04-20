@@ -11,7 +11,7 @@
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
+            <LoadedValue :check="() => pool.deposit != null" :value="pool.deposit | smartRound(5, false) | formatWithSpaces"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
@@ -29,7 +29,7 @@
 
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
+          <LoadedValue :check="() => pool.tvl != null" :value="pool.tvl | smartRound(5, false) | formatWithSpaces"></LoadedValue>
         </div>
         <div class="double-value__usd">
           <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
