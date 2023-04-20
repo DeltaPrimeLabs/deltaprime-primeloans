@@ -35,17 +35,20 @@ export default class PoolService {
         ]).pipe(map(poolDetails => {
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
           const apy = fromWei(poolDetails[2]);
+          const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
+          const tvl = formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals);
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
             assetPrice: redstonePriceData[poolAsset][0].dataPoints[0].value,
             contract: poolContract,
-            tvl: formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals),
+            tvl: tvl,
             deposit: deposit,
             apy: apy,
             borrowingAPY: fromWei(poolDetails[3]),
-            totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
+            totalBorrowed: totalBorrowed,
             interest: deposit * apy / 365,
-            maxUtilisation: fromWei(poolDetails[5])
+            maxUtilisation: fromWei(poolDetails[5]),
+            utilisation: totalBorrowed / tvl,
           };
           return pool;
         }))

@@ -74,4 +74,24 @@ export default function setupFilters() {
       return value !== null ? removePaddedTrailingZeros((Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision)) : '';
     }
   });
+
+  Vue.filter('formatWithSpaces', function (value) {
+    const integerPart = value.split('.')[0];
+    const decimalPart = value.split('.')[1];
+    let result = String(integerPart);
+    if (integerPart.length <= 3) {
+      return value;
+    } else {
+      const numberOfSpaces = Math.floor(integerPart.length / 3);
+      for (let i = 1; i <= numberOfSpaces; i++) {
+        const position = integerPart.length - (3 * i);
+        result = result.substring(0, position) + ' ' + result.substring(position);
+      }
+      if (decimalPart) {
+        return `${result}.${decimalPart}`;
+      } else {
+        return result;
+      }
+    }
+  });
 }

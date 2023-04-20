@@ -105,7 +105,6 @@ export default {
     },
 
     setSingleAssetBalance(state, assetBalanceChange) {
-      console.log('fundsStore.setSingleAssetBalance', assetBalanceChange.asset, assetBalanceChange.balance);
       state.assetBalances[assetBalanceChange.asset] = assetBalanceChange.balance;
     },
 
@@ -134,7 +133,6 @@ export default {
     },
 
     setSingleAssetDebt(state, assetDebtChange) {
-      console.log('fundsStore.setSingleAssetDebt', assetDebtChange.asset, assetDebtChange.debt);
       state.debtsPerAsset[assetDebtChange.asset].debt = assetDebtChange.debt;
     },
 
@@ -182,7 +180,6 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
-      rootState.serviceRegistry.healthService.emitRefreshHealth();
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
@@ -204,12 +201,12 @@ export default {
           await dispatch('getFullLoanStatus');
         }, 5000);
       } catch (error) {
-        // console.error(error);
-        // console.error('ERROR DURING UPDATE FUNDS');
-        // console.log('refreshing page in 5s');
-        // setTimeout(() => {
-        //   window.location.reload();
-        // }, 5000);
+        console.error(error);
+        console.error('ERROR DURING UPDATE FUNDS');
+        console.log('refreshing page in 5s');
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
       }
     },
 
@@ -276,7 +273,6 @@ export default {
 
       Object.keys(lpTokens).forEach(async assetSymbol => {
         lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
-        lpTokens[assetSymbol].currentApr = await lpTokens[assetSymbol].getApy();
         lpService.emitRefreshLp();
       });
 
@@ -420,10 +416,8 @@ export default {
 
       const tx = await awaitConfirmation(transaction, provider, 'create Prime Account');
 
-      console.log(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated'));
       const fundAmount = formatUnits(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.collateralAmount, decimals);
       const fundAmountUSD = Number(fundAmount) * state.assets[asset.symbol].price;
-      console.log('fundAmount', fundAmount);
 
       await commit('setSingleAssetBalance', {asset: asset.symbol, balance: fundAmount});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
@@ -441,11 +435,11 @@ export default {
       // TODO check on mainnet
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
+        rootState.serviceRegistry.healthService.emitRefreshHealth();
       }, 5000);
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-        console.log('update funds after loan creation finished');
       }, 30000);
     },
 
@@ -480,16 +474,9 @@ export default {
       const apys = state.apys;
 
       for (let [symbol, asset] of Object.entries(assets)) {
-        if (asset.getApy && typeof asset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              assets[symbol].apy = apys[symbol].apy;
-            } else {
-              assets[symbol].apy = await asset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
-          }
+          // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].apy) {
+          assets[symbol].apy = apys[symbol].apy;
         }
       }
 
@@ -498,16 +485,9 @@ export default {
       let lpAssets = state.lpAssets;
 
       for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
-        if (lpAsset.getApy && typeof lpAsset.getApy === 'function') {
-          try {
-            if (apys[symbol] && apys[symbol].apy) {
-              lpAssets[symbol].apy = apys[symbol].apy;
-            } else {
-              lpAssets[symbol].apy = await lpAsset.getApy();
-            }
-          } catch (e) {
-            console.log(`Error fetching ${symbol} APY`);
-          }
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].lp_apy) {
+          lpAssets[symbol].apy = apys[symbol].lp_apy;
         }
       }
 
@@ -578,6 +558,7 @@ export default {
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
+            console.log(asset, asset.apy);
             yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
           }
         }
@@ -612,7 +593,7 @@ export default {
 
               let farmApy = 0;
 
-              farmApy = farm.currentApy;
+              farmApy = farm.currentApy ? farm.currentApy : 0;
 
               let asset = rootState.fundsStore.assets[symbol] ? rootState.fundsStore.assets[symbol] : rootState.fundsStore.lpAssets[symbol];
               let assetApy = (asset.apy && symbol !== 'GLP') ? asset.apy / 100 : 0;
@@ -687,7 +668,6 @@ export default {
         .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
-      console.log(depositAmount);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -721,13 +701,10 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
       let tx = await awaitConfirmation(transaction, provider, 'fund');
-      console.log(getLog(tx, SMART_LOAN.abi, 'DepositNative'));
       const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'DepositNative').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
       const depositAmountUSD = Number(depositAmount) * state.assets['AVAX'].price;
       const collateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt + depositAmountUSD;
       const assetBalanceAfterDeposit = Number(state.assetBalances['AVAX']) + Number(depositAmount);
-      console.log(depositAmount);
-      console.log(assetBalanceAfterDeposit);
 
       await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterDeposit});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
@@ -784,8 +761,6 @@ export default {
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
-      console.log(withdrawAmount);
-
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
@@ -811,12 +786,10 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
-      console.log(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw'));
       const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
       const withdrawAmountUSD = Number(withdrawAmount) * state.assets['AVAX'].price;
 
       const assetBalanceAfterWithdraw = Number(state.assetBalances['AVAX']) - Number(withdrawAmount);
-      console.log('assetBalanceAfterWithdraw', assetBalanceAfterWithdraw);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
 
       await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterWithdraw});
@@ -824,8 +797,6 @@ export default {
         .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterWithdraw, false, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
-
-      console.log(assetBalanceAfterWithdraw);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -838,7 +809,6 @@ export default {
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
-      console.log(provideLiquidityRequest);
       const provider = rootState.network.provider;
 
       const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
@@ -871,15 +841,12 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals);
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals);
-      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals);
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was used
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was used
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals); //how much LP was created
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-      console.log(firstAssetAmount); // how much of tokenA was used
-      console.log(secondAssetAmount); //how much of tokenB was used
-      console.log(lpTokenCreated); //how much LP was created
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
@@ -929,15 +896,12 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount, firstDecimals);
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount, secondDecimals);
-      const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity, lpTokenDecimals);
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was received
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was received
+      const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity, lpTokenDecimals); //how much LP was removed
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.lpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenRemoved);
-      console.log(firstAssetAmount); // how much of tokenA was received
-      console.log(secondAssetAmount); //how much of tokenB was received
-      console.log(lpTokenRemoved); //how much LP was removed
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
@@ -957,8 +921,6 @@ export default {
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
-      console.log(state.debtsPerAsset);
-      console.log(Number(state.debtsPerAsset[borrowRequest.asset].debt));
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -978,7 +940,6 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'borrow');
       const borrowedAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount, config.ASSETS_CONFIG[borrowRequest.asset].decimals);
-      console.log(borrowedAmount);
       const balanceAfterTransaction = Number(state.assetBalances[borrowRequest.asset]) + Number(borrowedAmount);
       const debtAfterTransaction = Number(state.debtsPerAsset[borrowRequest.asset].debt) + Number(borrowedAmount);
       const borrowedAmountUSD = Number(borrowedAmount) * Number(state.assets[borrowRequest.asset].price);
@@ -1082,12 +1043,8 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'swap');
 
-      console.log(getLog(tx, SMART_LOAN.abi, 'Swap'));
-
       const amountSold = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.maximumSold, config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
-      console.log('amountSold', amountSold);
       const amountBought = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.minimumBought, config.ASSETS_CONFIG[swapRequest.targetAsset].decimals);
-      console.log('amountBought', amountBought);
       const sourceBalanceAfterSwap = Number(state.assetBalances[swapRequest.sourceAsset]) - Number(amountSold);
       const targetBalanceAfterSwap = Number(state.assetBalances[swapRequest.targetAsset]) + Number(amountBought);
 
@@ -1110,9 +1067,6 @@ export default {
     },
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
-      console.log(state.debtsPerAsset[swapDebtRequest.sourceAsset]);
-      console.log(state.debtsPerAsset[swapDebtRequest.targetAsset]);
-      console.log(swapDebtRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1125,20 +1079,10 @@ export default {
       let sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
       let sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
-      console.log(swapDebtRequest.targetAmount);
       let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
-      console.log(targetDecimals);
       let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
-      console.log(targetAmount);
-
-      console.log('swapDebtRequest.sourceAsset', swapDebtRequest.sourceAsset);
-      console.log('swapDebtRequest.targetAsset', swapDebtRequest.targetAsset);
-      console.log('parseUnits(swapDebtRequest.sourceAmount)', parseUnits(swapDebtRequest.sourceAmount));
-      console.log('swapDebtRequest.path', swapDebtRequest.path);
-      console.log('swapDebtRequest.adapters', swapDebtRequest.adapters);
 
       const reversedSwapPath = [...swapDebtRequest.path].reverse();
-      console.log(reversedSwapPath);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
         toBytes32(swapDebtRequest.sourceAsset),
@@ -1155,12 +1099,8 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'swap');
 
-      console.log(getLog(tx, SMART_LOAN.abi, 'DebtSwap'));
-
       const amountDebtSwappedTo = formatUnits(getLog(tx, SMART_LOAN.abi, 'DebtSwap').args.borrowAmount, config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals);
-      console.log('amountDebtSwappedTo', amountDebtSwappedTo);
       const amountDebtSwappedFrom = formatUnits(getLog(tx, SMART_LOAN.abi, 'DebtSwap').args.repayAmount, config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals);
-      console.log('amountDebtSwappedFrom', amountDebtSwappedFrom);
 
       const sourceDebtAfterTransaction = Number(state.debtsPerAsset[swapDebtRequest.sourceAsset].debt) - Number(amountDebtSwappedFrom);
       const targetDebtAfterTransaction = Number(state.debtsPerAsset[swapDebtRequest.targetAsset].debt) + Number(amountDebtSwappedTo);
@@ -1302,8 +1242,6 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'wrap');
 
-      console.log(fromWei(getLog(tx, SMART_LOAN.abi, 'WrapNative').args.amount));
-
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
@@ -1323,11 +1261,8 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
 
       const tx = await awaitConfirmation(transaction, provider, 'claimGLPRewards');
-      console.log(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim'));
       const wavaxClaimed = formatUnits(getLog(tx, SMART_LOAN.abi, 'GLPFeesClaim').args.wavaxAmountClaimed, config.ASSETS_CONFIG.AVAX.decimals);
-      console.log(wavaxClaimed);
       const balanceAfterClaimed = Number(state.assetBalances['AVAX']) + Number(wavaxClaimed);
-      console.log(balanceAfterClaimed);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('AVAX', balanceAfterClaimed, false, true);

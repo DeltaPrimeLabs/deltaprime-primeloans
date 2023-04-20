@@ -24,13 +24,13 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  color: $steel-gray;
+  color: var(--modal__top-info-color);
   margin-top: 36px;
   margin-bottom: 10px;
 
   a {
     text-decoration: none;
-    color: $steel-gray;
+    color: var(--modal__top-info-color);
   }
 
   .top-info__label {
@@ -46,7 +46,7 @@
   .top-info__divider {
     width: 2px;
     height: 17px;
-    background-color: $smoke-gray;
+    background-color: var(--modal__top-info-divider-color);
     margin: 0 10px;
   }
 
@@ -88,7 +88,7 @@
 
     .pool__name {
       font-weight: 600;
-      color: black;
+      color: var(--modal__pool-name-color);
     }
   }
 }

@@ -197,7 +197,7 @@ export default {
 
     setupFundsTableHeaderConfig() {
       this.fundsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px',
+        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px 22px',
         cells: [
           {
             label: 'Asset',

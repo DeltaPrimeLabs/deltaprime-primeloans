@@ -43,13 +43,17 @@
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
+        <DeltaIcon class="action-button"
+                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances}"
+                   :icon-src="'src/assets/icons/plus.svg'" :size="26"
+                   v-tooltip="{content: 'Deposit', classes: 'button-tooltip'}"
+                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          v-for="(actionConfig, index) of actionsConfig"
-          v-bind:key="index"
-          :config="actionConfig"
-          v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || !healthLoaded">
+            v-if="moreActionsConfig"
+            class="actions__icon-button"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -86,12 +90,14 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
+import DeltaIcon from "./DeltaIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'LpTableRow',
   components: {
+    DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
     SmallBlock,
@@ -117,7 +123,7 @@ export default {
 
   data() {
     return {
-      actionsConfig: null,
+      moreActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -198,42 +204,29 @@ export default {
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
     setupActionsConfiguration() {
-      this.actionsConfig = [
-        {
-          iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: 'Deposit / Create',
-          disabled: !this.lpTokenBalances,
-          menuOptions: [
-            {
-              key: 'ADD_FROM_WALLET',
-              name: 'Deposit collateral'
-            },
-            {
-              key: 'PROVIDE_LIQUIDITY',
-              name: 'Create LP token',
-              disabled: !this.hasSmartLoanContract,
-              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-            },
-          ]
-        },
-        {
-          iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
-          tooltip: 'Withdraw / Unwind',
-          disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-          menuOptions: [
-            {
-              key: 'WITHDRAW',
-              name: 'Withdraw collateral'
-            },
-            {
-              key: 'REMOVE_LIQUIDITY',
-              name: 'Unwind LP token'
-            }
-          ]
-        },
-      ];
+      this.moreActionsConfig =
+          {
+            iconSrc: 'src/assets/icons/icon_a_more.svg',
+            tooltip: 'More',
+            menuOptions: [
+              {
+                key: 'PROVIDE_LIQUIDITY',
+                name: 'Create LP token',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+              },
+              {
+                key: 'WITHDRAW',
+                name: 'Withdraw collateral',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              },
+              {
+                key: 'REMOVE_LIQUIDITY',
+                name: 'Unwind LP token',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              }
+            ]
+          }
     },
 
     async setupApr() {
@@ -254,20 +247,21 @@ export default {
     },
 
     actionClick(key) {
-      console.log(key);
-      switch (key) {
-        case 'ADD_FROM_WALLET':
-          this.openAddFromWalletModal();
-          break;
-        case 'PROVIDE_LIQUIDITY':
-          this.openProvideLiquidityModal();
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'REMOVE_LIQUIDITY':
-          this.openRemoveLiquidityModal();
-          break;
+      if (!this.disableAllButtons && this.healthLoaded) {
+        switch (key) {
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'PROVIDE_LIQUIDITY':
+            this.openProvideLiquidityModal();
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'REMOVE_LIQUIDITY':
+            this.openRemoveLiquidityModal();
+            break;
+        }
       }
     },
 
@@ -513,7 +507,7 @@ export default {
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+    border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
 
@@ -527,6 +521,7 @@ export default {
         .asset__icon {
           width: 20px;
           height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__info {
@@ -539,7 +534,7 @@ export default {
 
         .asset__dex {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__asset-loan-color);
         }
       }
 
@@ -600,7 +595,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__double-value-color);
           font-weight: 500;
         }
 
@@ -614,7 +609,7 @@ export default {
       .no-value-dash {
         height: 1px;
         width: 15px;
-        background-color: $medium-gray;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }
@@ -625,6 +620,25 @@ export default {
     .small-block-wrapper {
       height: unset;
     }
+  }
+}
+
+.action-button {
+  cursor: pointer;
+  background: var(--icon-button-menu-beta__icon-color--default);
+
+  &:not(:last-child) {
+    margin-right: 12px;
+  }
+
+  &:hover {
+    background: var(--icon-button-menu-beta__icon-color-hover--default);
+  }
+
+  &.action-button--disabled {
+    background: var(--icon-button-menu-beta__icon-color--disabled);
+    cursor: default;
+    pointer-events: none;
   }
 }
 

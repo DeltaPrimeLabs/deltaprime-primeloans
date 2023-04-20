@@ -11,7 +11,7 @@
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
+            <LoadedValue :check="() => pool.deposit != null" :value="pool.deposit | smartRound(5, false) | formatWithSpaces"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
@@ -29,11 +29,15 @@
 
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
+          <LoadedValue :check="() => pool.tvl != null" :value="pool.tvl | smartRound(5, false) | formatWithSpaces"></LoadedValue>
         </div>
         <div class="double-value__usd">
           <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
         </div>
+      </div>
+
+      <div class="table__cell utilisation">
+        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation | percent"></LoadedValue>
       </div>
 
       <div></div>
@@ -59,8 +63,9 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
+
 const ethers = require('ethers');
-import addresses from "../../common/addresses/avax/token_addresses.json";
+import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 
 
@@ -91,13 +96,11 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
           tooltip: 'Deposit',
           iconButtonActionKey: 'DEPOSIT'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
@@ -181,11 +184,11 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
+    grid-template-columns: repeat(3, 1fr) 20% 1fr 120px 76px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+    border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
 
@@ -199,6 +202,7 @@ export default {
         .asset__icon {
           width: 20px;
           height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__info {
@@ -218,7 +222,7 @@ export default {
         align-items: center;
         justify-content: flex-end;
         font-weight: 600;
-        color: $lime-green;
+        color: var(--asset-table-row__apy-color);
       }
 
       &.interest {
@@ -229,6 +233,13 @@ export default {
       }
 
       &.tvl {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 500;
+      }
+
+      &.utilisation {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;
@@ -257,7 +268,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__double-value-color);
           font-weight: 500;
         }
 
@@ -271,7 +282,7 @@ export default {
       .no-value-dash {
         height: 1px;
         width: 15px;
-        background-color: $medium-gray;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }

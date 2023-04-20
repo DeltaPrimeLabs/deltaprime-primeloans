@@ -5,9 +5,7 @@
            v-for="headerCell of config.cells"
            :class="headerCell.class">
         <span>{{ headerCell.label }}</span>
-        <img v-if="headerCell.tooltip" class="info__icon"
-             src="src/assets/icons/info.svg"
-             v-tooltip="{content: headerCell.tooltip, placement: 'top', classes: 'info-tooltip'}">
+        <InfoIcon v-if="headerCell.tooltip" class="info__icon" :tooltip="{content: headerCell.tooltip, placement: 'top', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
         <div v-if="headerCell.sortable" class="cell__sort" v-on:click="sortClick(headerCell)">
           <img v-if="sortBy !== headerCell.id" src="src/assets/icons/icon_order.svg">
           <img v-if="sortBy === headerCell.id" src="src/assets/icons/icon_order_active.svg" v-bind:class="{'sort-descending': !sortAscending}">
@@ -19,8 +17,11 @@
 
 <script>
 
+import InfoIcon from "./InfoIcon.vue";
+
 export default {
   name: 'TableHeader',
+  components: {InfoIcon},
   props: {
     config: null,
     sortBy: null,
@@ -52,8 +53,8 @@ export default {
 .table__header {
   display: grid;
   border-radius: 30px;
-  border: solid 2px $violet-smoke;
-  background-color: $violet-mist;
+  border: solid 2px var(--table-header__border-color);
+  background-color: var(--table-header__background-color);
   height: 34px;
   padding-left: 17px;
   margin-bottom: 5px;
@@ -63,7 +64,7 @@ export default {
     flex-direction: row;
     align-items: center;
     font-size: $font-size-xsm;
-    color: $dark-gray;
+    color: var(--table-header__cell-color);
     font-weight: 500;
 
     &.asset {
@@ -110,13 +111,15 @@ export default {
       justify-content: flex-end;
     }
 
+    &.utilisation {
+      justify-content: flex-end;
+    }
+
     &.actions {
       justify-content: flex-end;
     }
 
     .info__icon {
-      width: 16px;
-      height: 16px;
       margin-left: 5px;
     }
 

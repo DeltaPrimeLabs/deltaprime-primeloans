@@ -81,8 +81,8 @@ export default {
       width: 108px;
       height: 17px;
       border-radius: 9.5px;
-      box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
-      background-color: rgba(191, 188, 255, 0.2);
+      box-shadow: var(--bar__box-shadow);
+      background-color: var(--bar__background-color);
 
       &.bar--slim {
         width: 53px;
@@ -106,7 +106,7 @@ export default {
         min-width: 17px;
         height: 17px;
         border-radius: 9.5px;
-        background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
+        background-image: var(--bar__value-background-image);
 
         &.bar__value--error {
           background-image: none;

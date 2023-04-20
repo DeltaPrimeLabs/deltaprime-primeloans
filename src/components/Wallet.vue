@@ -59,7 +59,7 @@
   }
 
   a {
-    color: #7d7d7d;
+    color: var(--wallet-a-color);
   }
 
   .balance {
@@ -73,7 +73,6 @@
 }
 
 .account {
-  color: $steel-gray;
   font-weight: 500;
 }
 
@@ -90,7 +89,7 @@
   flex-grow: 0;
   margin: 0 13px 0 14px;
   transform: translateY(-2px);
-  border: solid 1px $smoke-gray;
+  border: solid 1px var(--wallet-separator-color);
 }
 </style>
 

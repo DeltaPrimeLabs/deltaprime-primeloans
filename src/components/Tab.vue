@@ -11,8 +11,8 @@ export default {
       type: String,
       default: 'Tab'
     },
-    imgActive: String,
-    imgNotActive: String,
+    tabIcon: String,
+    tabIconSlim: String,
     imgPosition: String,
     titleWidth: String
   },
