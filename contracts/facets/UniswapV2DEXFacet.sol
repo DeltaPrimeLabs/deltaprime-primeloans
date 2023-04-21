@@ -52,7 +52,12 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure remainsSolvent returns (uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought)
+        internal
+        recalculatePartialAssetsExposure(_identifiers2(_soldAsset, _boughtAsset), _identifiers0())
+        remainsSolvent
+        returns (uint256[] memory)
+    {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
 
@@ -84,36 +89,41 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
-        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
-        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
-
-        require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
-        require(tokenB.balanceOf(address(this)) >= amountB, "Not enough tokenB to provide");
-
-        address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
-        address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
-
-        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
-
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin)
+        internal
+        recalculatePartialAssetsExposure(_identifiers3(_assetA, _assetB, calculateLpTokenSymbol(_assetA, _assetB)), _identifiers0())
+        remainsSolvent
+    {
         address lpTokenAddress;
         uint liquidity;
+        {
+            IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
+            IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
-        (lpTokenAddress, amountA, amountB, liquidity)
-          = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
+            require(tokenA.balanceOf(address(this)) >= amountA, "Not enough tokenA to provide");
+            require(tokenB.balanceOf(address(this)) >= amountB, "Not enough tokenB to provide");
 
-        if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
-            bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
-            DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
-        }
+            address(tokenA).safeTransfer(getExchangeIntermediaryContract(), amountA);
+            address(tokenB).safeTransfer(getExchangeIntermediaryContract(), amountB);
 
-        // Remove asset from ownedAssets if the asset balance is 0 after the LP
-        if (tokenA.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_assetA);
-        }
+            IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
 
-        if (tokenB.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_assetB);
+            (lpTokenAddress, amountA, amountB, liquidity)
+            = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
+
+            if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
+                bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
+                DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
+            }
+
+            // Remove asset from ownedAssets if the asset balance is 0 after the LP
+            if (tokenA.balanceOf(address(this)) == 0) {
+                DiamondStorageLib.removeOwnedAsset(_assetA);
+            }
+
+            if (tokenB.balanceOf(address(this)) == 0) {
+                DiamondStorageLib.removeOwnedAsset(_assetB);
+            }
         }
 
         emit AddLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
@@ -122,27 +132,42 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure onlyOwnerOrInsolvent{
-        IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
-        IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin)
+        internal
+        recalculatePartialAssetsExposure(_identifiers3(_assetA, _assetB, calculateLpTokenSymbol(_assetA, _assetB)), _identifiers0())
+        onlyOwnerOrInsolvent
+    {
+        address lpTokenAddress;
+        uint amountA;
+        uint amountB;
+        {
+            IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
+            IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 
-        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
+            (lpTokenAddress, liquidity, amountA, amountB) = _removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
 
-        address lpTokenAddress = exchange.getPair(address(tokenA), address(tokenB));
-        liquidity = Math.min(liquidity, IERC20(lpTokenAddress).balanceOf(address(this)));
-
-        lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
-
-        (uint amountA, uint amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
+            DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
+            DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
+        }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the LP
         if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(calculateLpTokenSymbol(_assetA, _assetB));
         }
-        DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
-        DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
+    }
+
+    function _removeLiquidity(address tokenA, address tokenB, uint _liquidity, uint amountAMin, uint amountBMin) internal returns (address lpTokenAddress, uint256 liquidity, uint amountA, uint amountB) {
+        IAssetsExchange exchange = IAssetsExchange(getExchangeIntermediaryContract());
+
+        lpTokenAddress = exchange.getPair(tokenA, tokenB);
+
+        liquidity = Math.min(_liquidity, IERC20(lpTokenAddress).balanceOf(address(this)));
+
+        lpTokenAddress.safeTransfer(getExchangeIntermediaryContract(), liquidity);
+
+        (amountA, amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
     }
 
     function calculateLpTokenSymbol(bytes32 _assetA, bytes32 _assetB) internal pure returns (bytes32 name) {

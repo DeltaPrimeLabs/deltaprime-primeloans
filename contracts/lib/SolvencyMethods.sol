@@ -203,6 +203,24 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    function _resetPartialPrimeAccountAssetsExposure(bytes32[] memory assets, bytes32[] memory positionIdentifiers) public returns (ITokenManager.ExposureUpdate[] memory exposures) {
+        exposures = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(AssetsExposureController.resetPartialPrimeAccountAssetsExposure.selector),
+                abi.encodeWithSelector(AssetsExposureController.resetPartialPrimeAccountAssetsExposure.selector, assets, positionIdentifiers)
+            ),
+            (ITokenManager.ExposureUpdate[])
+        );
+    }
+
+    // This function executes AssetsExposureController.decreaseAssetsExposure() / AssetsExposureController.increaseAssetsExposure()
+    function _setPartialPrimeAccountAssetsExposure(ITokenManager.ExposureUpdate[] memory exposures, bytes32[] memory assets, bytes32[] memory positionIdentifiers) public {
+        proxyDelegateCalldata(
+            DiamondHelper._getFacetAddress(AssetsExposureController.setPartialPrimeAccountAssetsExposure.selector),
+            abi.encodeWithSelector(AssetsExposureController.setPartialPrimeAccountAssetsExposure.selector, exposures, assets, positionIdentifiers)
+        );
+    }
+
     /**
      * Returns IERC20Metadata instance of a token
      * @param _asset the code of an asset
@@ -211,10 +229,63 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         return IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset, allowInactive));
     }
 
+    function _identifiers0() internal pure returns (bytes32[] memory) {}
+
+    function _identifiers1(bytes32 asset0) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](1);
+        assets[0] = asset0;
+    }
+
+    function _identifiers2(bytes32 asset0, bytes32 asset1) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](2);
+        assets[0] = asset0;
+        assets[1] = asset1;
+    }
+
+    function _identifiers3(bytes32 asset0, bytes32 asset1, bytes32 asset2) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](3);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+    }
+
+    function _identifiers4(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](4);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+    }
+
+    function _identifiers5(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3, bytes32 asset4) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](5);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+        assets[4] = asset4;
+    }
+
+    function _identifiers6(bytes32 asset0, bytes32 asset1, bytes32 asset2, bytes32 asset3, bytes32 asset4, bytes32 asset5) internal pure returns (bytes32[] memory assets) {
+        assets = new bytes32[](6);
+        assets[0] = asset0;
+        assets[1] = asset1;
+        assets[2] = asset2;
+        assets[3] = asset3;
+        assets[4] = asset4;
+        assets[5] = asset5;
+    }
+
     modifier recalculateAssetsExposure() {
         ITokenManager.ExposureUpdate[] memory exposures = _resetPrimeAccountAssetsExposure();
         _;
         _setPrimeAccountAssetsExposure(exposures);
+    }
+
+    modifier recalculatePartialAssetsExposure(bytes32[] memory assets, bytes32[] memory positionIdentifiers) {
+        ITokenManager.ExposureUpdate[] memory exposures = _resetPartialPrimeAccountAssetsExposure(assets, positionIdentifiers);
+        _;
+        _setPartialPrimeAccountAssetsExposure(exposures, assets, positionIdentifiers);
     }
 
     /**

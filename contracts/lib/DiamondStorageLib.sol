@@ -66,6 +66,8 @@ library DiamondStorageLib {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
         // Staked positions of the contract
         IStakingPositions.StakedPosition[] currentStakedPositions;
+        // Position identifier to position index map
+        mapping(bytes32 => uint256) positionIndexes;
     }
 
     struct LiquidationStorage {
@@ -158,30 +160,48 @@ library DiamondStorageLib {
         _positions = smartLoanStorage().currentStakedPositions;
     }
 
+    function positionIndexes() internal view returns (mapping(bytes32 => uint256) storage _positionIndexes) {
+        _positionIndexes = smartLoanStorage().positionIndexes;
+    }
+
     function addStakedPosition(IStakingPositions.StakedPosition memory position) internal {
         IStakingPositions.StakedPosition[] storage positions = stakedPositions();
+        mapping(bytes32 => uint256) storage indexes = positionIndexes();
 
-        bool found;
-
-        for (uint256 i; i < positions.length; i++) {
-            if (positions[i].identifier == position.identifier) {
-                found = true;
-                break;
-            }
+        if (positions.length == 0) {
+            positions.push(position);
+            return;
         }
 
-        if (!found) {
-            positions.push(position);
+        if (indexes[position.identifier] != 0 || positions[0].identifier == position.identifier) {
+            return;
+        }
+
+        indexes[position.identifier] = positions.length;
+        positions.push(position);
+    }
+
+    function getStakedPosition(bytes32 identifier) internal view returns (IStakingPositions.StakedPosition memory position) {
+        IStakingPositions.StakedPosition[] storage positions = stakedPositions();
+        mapping(bytes32 => uint256) storage indexes = positionIndexes();
+
+        if (positions.length > 0 && (indexes[identifier] != 0 || positions[0].identifier == identifier)) {
+            return positions[indexes[identifier]];
         }
     }
 
     function removeStakedPosition(bytes32 identifier) internal {
         IStakingPositions.StakedPosition[] storage positions = stakedPositions();
+        mapping(bytes32 => uint256) storage indexes = positionIndexes();
 
-        for (uint256 i; i < positions.length; i++) {
+        uint256 positionsLength = positions.length;
+        for (uint256 i; i != positionsLength; ++i) {
             if (positions[i].identifier == identifier) {
-                positions[i] = positions[positions.length - 1];
+                indexes[identifier] = 0;
+                indexes[positions[positionsLength - 1].identifier] = i;
+                positions[i] = positions[positionsLength - 1];
                 positions.pop();
+                break;
             }
         }
     }

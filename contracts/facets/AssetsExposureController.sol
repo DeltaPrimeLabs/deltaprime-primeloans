@@ -87,4 +87,83 @@ contract AssetsExposureController {
             }
         }
     }
+
+    function resetPartialPrimeAccountAssetsExposure(bytes32[] memory assets, bytes32[] memory positionIdentifiers) external view returns (ITokenManager.ExposureUpdate[] memory exposures) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        uint256 ownedAssetsLength = assets.length;
+        uint256 positionsLength = positionIdentifiers.length;
+        exposures = new ITokenManager.ExposureUpdate[](ownedAssetsLength + positionsLength);
+
+        for (uint256 i; i != ownedAssetsLength; ++i) {
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assets[i], true));
+            exposures[i] = ITokenManager.ExposureUpdate({
+                identifier: assets[i],
+                decrease: token.balanceOf(address(this)) * 1e18 / 10**token.decimals()
+            });
+        }
+        for (uint256 i; i != positionsLength; ++i) {
+            IStakingPositions.StakedPosition memory position = DiamondStorageLib.getStakedPosition(positionIdentifiers[i]);
+            if (position.asset == address(0)) continue;
+
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(position.balanceSelector));
+            if (success) {
+                uint256 balance = abi.decode(result, (uint256));
+                uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(position.symbol, true)).decimals();
+                exposures[ownedAssetsLength + i] = ITokenManager.ExposureUpdate({
+                    identifier: position.identifier,
+                    decrease: balance * 1e18 / 10**decimals
+                });
+            }
+        }
+    }
+
+    function setPartialPrimeAccountAssetsExposure(ITokenManager.ExposureUpdate[] memory exposures, bytes32[] memory assets, bytes32[] memory positionIdentifiers) external {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        uint256 ownedAssetsLength = assets.length;
+        uint256 exposuresLength = exposures.length;
+        for (uint256 i; i != ownedAssetsLength; ++i) {
+            bytes32 identifier = assets[i];
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(identifier, true));
+            uint256 decrease;
+            for (uint256 j; j != exposuresLength; ++j) {
+                if (exposures[j].identifier == identifier) {
+                    decrease = exposures[j].decrease;
+                    break;
+                }
+            }
+            uint256 increase = token.balanceOf(address(this)) * 1e18 / 10**token.decimals();
+            if (decrease > increase) {
+                tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
+            } else if (decrease < increase) {
+                tokenManager.increaseProtocolExposure(identifier, increase - decrease);
+            }
+        }
+        uint256 positionsLength = positionIdentifiers.length;
+        for (uint256 i; i != positionsLength; ++i) {
+            IStakingPositions.StakedPosition memory position = DiamondStorageLib.getStakedPosition(positionIdentifiers[i]);
+            if (position.asset == address(0)) continue;
+
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(position.balanceSelector));
+            if (success) {
+                bytes32 identifier = position.identifier;
+                uint256 decrease;
+                for (uint256 j = ownedAssetsLength; j != exposuresLength; ++j) {
+                    if (exposures[j].identifier == identifier) {
+                        decrease = exposures[j].decrease;
+                        break;
+                    }
+                }
+                uint256 balance = abi.decode(result, (uint256));
+                uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(position.symbol, true)).decimals();
+                uint256 increase = balance * 1e18 / 10**decimals;
+                if (decrease > increase) {
+                    tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
+                } else if (decrease < increase) {
+                    tokenManager.increaseProtocolExposure(identifier, increase - decrease);
+                }
+            }
+        }
+    }
 }
