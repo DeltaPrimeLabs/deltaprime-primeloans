@@ -79,6 +79,7 @@ export default {
   },
   async created() {
     await this.initNetwork();
+    await this.initNotifiClient();
 
     if (!ethereum) {
       this.showMetamaskBanner = true;
@@ -123,6 +124,7 @@ export default {
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
+    ...mapActions('notifiStore', ['initNotifiClient']),
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 

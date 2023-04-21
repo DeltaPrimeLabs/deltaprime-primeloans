@@ -27,6 +27,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@growthbunker/vuetimeline": "^0.1.17",
     "@nomiclabs/hardhat-etherscan": "^3.0.1",
+    "@notifi-network/notifi-frontend-client": "^0.61.6",
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",

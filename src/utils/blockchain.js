@@ -148,6 +148,19 @@ export async function signMessage(provider, message, wallet, depositor = false) 
   return true;
 }
 
+export async function signMessageForNotifi(provider, message, wallet, depositor = false) {
+  const signer = provider.getSigner();
+  let signedMessage = await signer.signMessage(message);
+
+  let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
+
+  if (signingWallet !== wallet) {
+    Vue.$toast.error(`Wrong signing wallet. Please do not change your Metamask wallet during the procedure.`);
+    return false;
+  }
+  return {signedMessage: utils.arrayify(signedMessage), account: wallet};
+}
+
 export const loanTermsToSign =
   `
 By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
