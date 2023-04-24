@@ -58,11 +58,7 @@ contract AssetsExposureController {
                 }
             }
             uint256 increase = token.balanceOf(address(this)) * 1e18 / 10**token.decimals();
-            if (decrease > increase) {
-                tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
-            } else if (decrease < increase) {
-                tokenManager.increaseProtocolExposure(identifier, increase - decrease);
-            }
+            _updateProtocolExposure(tokenManager, identifier, decrease, increase);
         }
         uint256 positionsLength = positions.length;
         for (uint256 i; i != positionsLength; ++i) {
@@ -79,11 +75,7 @@ contract AssetsExposureController {
                 uint256 balance = abi.decode(result, (uint256));
                 uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
                 uint256 increase = balance * 1e18 / 10**decimals;
-                if (decrease > increase) {
-                    tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
-                } else if (decrease < increase) {
-                    tokenManager.increaseProtocolExposure(identifier, increase - decrease);
-                }
+                _updateProtocolExposure(tokenManager, identifier, decrease, increase);
             }
         }
     }
@@ -134,11 +126,7 @@ contract AssetsExposureController {
                 }
             }
             uint256 increase = token.balanceOf(address(this)) * 1e18 / 10**token.decimals();
-            if (decrease > increase) {
-                tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
-            } else if (decrease < increase) {
-                tokenManager.increaseProtocolExposure(identifier, increase - decrease);
-            }
+            _updateProtocolExposure(tokenManager, identifier, decrease, increase);
         }
         uint256 positionsLength = positionIdentifiers.length;
         for (uint256 i; i != positionsLength; ++i) {
@@ -158,12 +146,16 @@ contract AssetsExposureController {
                 uint256 balance = abi.decode(result, (uint256));
                 uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(position.symbol, true)).decimals();
                 uint256 increase = balance * 1e18 / 10**decimals;
-                if (decrease > increase) {
-                    tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
-                } else if (decrease < increase) {
-                    tokenManager.increaseProtocolExposure(identifier, increase - decrease);
-                }
+                _updateProtocolExposure(tokenManager, identifier, decrease, increase);
             }
+        }
+    }
+
+    function _updateProtocolExposure(ITokenManager tokenManager, bytes32 identifier, uint256 decrease, uint256 increase) internal {
+        if (decrease > increase) {
+            tokenManager.decreaseProtocolExposure(identifier, decrease - increase);
+        } else if (decrease < increase) {
+            tokenManager.increaseProtocolExposure(identifier, increase - decrease);
         }
     }
 }
