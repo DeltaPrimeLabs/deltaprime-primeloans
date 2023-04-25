@@ -315,4 +315,9 @@
   --filters__filter-label-color: #{$washed-blue};
   --filters__clear-text-color: #{$pale-lilac};
   // endregion
+
+  // region TransactionHistory
+  --transaction-history__title-color: #{$steel-gray};
+  --transaction-history__transaction-token-color: #{$steel-gray};
+  // endregion
 }

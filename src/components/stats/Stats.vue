@@ -23,6 +23,8 @@ export default {
   grid-template-columns: repeat(3, 1fr);
   grid-column-gap: 20px;
   grid-row-gap: 20px;
+  width: 100%;
+  margin-top: 30px;
 
   .stats-shares-section {
     grid-area: 1 / 1 / 2 / 3;

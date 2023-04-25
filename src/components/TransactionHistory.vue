@@ -1,6 +1,10 @@
 <template>
   <StatsSection>
     <div class="transaction-history-component">
+      <StatsSectionHeader>
+        Prime Account history
+      </StatsSectionHeader>
+
       <div class="transactions-table">
         <TableHeader :config="transactionHistoryTableConfig"></TableHeader>
 
@@ -9,20 +13,25 @@
             <div class="transaction-cell date" v-if="transaction.date">{{ transaction.date | timeAgo }}</div>
             <div class="transaction-cell type">{{ transaction.transactionAction }}</div>
             <div v-if="transaction.basicTransactionAmount" class="transaction-cell amount">
-              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }} {{ transaction.fromToken }}
+              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }}
+              <span class="transaction__cell__token">{{ transaction.fromToken }}</span>
             </div>
             <div v-if="transaction.txType === 'Swap' || transaction.txType === 'DebtSwap'"
                  class="transaction-cell amount-swap">
-              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }} {{ transaction.fromToken }}
+              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }}
+              <span class="transaction__cell__token">{{ transaction.fromToken }}</span>
               <DeltaIcon class="swap-icon" :icon-src="'src/assets/icons/swap-arrow.svg'"
                          :size="16"
               ></DeltaIcon>
-              {{ transaction.toAmountNumber | smartRound(5, true) | formatWithSpaces }} {{ transaction.toToken }}
+              {{ transaction.toAmountNumber | smartRound(5, true) | formatWithSpaces }}
+              <span class="transaction__cell__token">{{ transaction.toToken }}</span>
             </div>
             <div v-if="transaction.txType === 'AddLiquidity' || transaction.txType === 'RemoveLiquidity'"
                  class="transaction-cell amount-swap">
-              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }} {{ transaction.fromToken }},
-              {{ transaction.toAmountNumber | smartRound(5, true) | formatWithSpaces }} {{ transaction.toToken }}
+              {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }}
+              <span class="transaction__cell__token">{{ transaction.fromToken }}</span>,
+              {{ transaction.toAmountNumber | smartRound(5, true) | formatWithSpaces }}
+              <span class="transaction__cell__token">{{ transaction.toToken }}</span>
             </div>
           </div>
         </div>
@@ -47,6 +56,7 @@ import config from '../config';
 import DeltaIcon from './DeltaIcon';
 import Paginator from './Paginator';
 import StatsSection from './stats/StatsSection';
+import StatsSectionHeader from './stats/StatsSectionHeader';
 
 export default {
   name: 'TransactionHistory',
@@ -54,7 +64,8 @@ export default {
     StatsSection,
     Paginator,
     DeltaIcon,
-    TableHeader
+    TableHeader,
+    StatsSectionHeader
   },
   data() {
     return {
@@ -109,7 +120,7 @@ export default {
       this.accountService.observeAccountLoaded().subscribe(account => {
         this.account = account;
         this.getTransactionHistory(this.account, this.page, this.pageSize);
-      })
+      });
     },
 
     async getTransactionHistory(accountAddress, page, pageSize) {
@@ -192,11 +203,24 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "~@/styles/variables";
 
 .transaction-history-component {
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding: 30px 42px 30px 42px;
+
+  .transaction-history__title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-mlg;
+    font-weight: 500;
+    color: var(--transaction-history__title-color);
+    margin-bottom: 60px;
+  }
 
   .transactions-table {
 
@@ -214,6 +238,11 @@ export default {
         display: flex;
         flex-direction: row;
         align-items: center;
+
+        .transaction__cell__token {
+          margin-left: 5px;
+          color: var(--transaction-history__transaction-token-color);
+        }
 
         &.date {
           justify-content: flex-start;
