@@ -20,11 +20,12 @@
 export default {
   name: 'Toggle',
   props: {
-    options: Array
+    options: Array,
+    initialOption: Number
   },
   data() {
     return {
-      selectedOption: 'AVAX'
+      selectedOption: this.$props.initialOption ? this.$props.options[this.$props.initialOption] : this.$props.options[0]
     }
   },
   mounted() {
@@ -35,16 +36,18 @@ export default {
       const selectedOptionElement = document.getElementById(`option-${this.selectedOption}`);
       const selectOptionRect = selectedOptionElement.getBoundingClientRect();
       this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
+      this.$refs.pointer.style.left = `${selectedOptionElement.offsetLeft}px`;
     },
 
     clickOption(option) {
-      this.selectedOption = option;
-      this.$emit('change', option);
-      const targetOptionElement = document.getElementById(`option-${option}`);
-      const targetOptionRect = targetOptionElement.getBoundingClientRect();
-      this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
-      this.$refs.pointer.style.width = `${targetOptionRect.width}px`;
-
+      if (option !== this.selectedOption) {
+        this.selectedOption = option;
+        this.$emit('change', option);
+        const targetOptionElement = document.getElementById(`option-${option}`);
+        const targetOptionRect = targetOptionElement.getBoundingClientRect();
+        this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
+        this.$refs.pointer.style.width = `${targetOptionRect.width}px`;
+      }
     }
   }
 };
@@ -117,9 +120,7 @@ export default {
 
     .toggle__background {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 131.5px;
+      inset: 0;
       height: 28px;
       background-color: var(--toggle__background);
       border: var(--toggle__border);

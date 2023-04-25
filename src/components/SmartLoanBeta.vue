@@ -33,6 +33,11 @@
                  :tab-icon-slim="'src/assets/icons/plant-slim.svg'">
               <Farm></Farm>
             </Tab>
+            <Tab ref="tab-3" :title="'Stats'"
+                 :tab-icon="'src/assets/icons/stats-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'">
+              <Stats></Stats>
+            </Tab>
           </Tabs>
         </Block>
       </div>
@@ -62,18 +67,27 @@ import {combineLatest, delay} from 'rxjs';
 import {fetchLiquidatedEvents} from "../utils/graph";
 import DataRefreshEventService from "../services/dataRefreshEventService";
 import InfoBubble from "./InfoBubble.vue";
-
-const ASSETS_PATH = 'assets';
-const FARMS_PATH = 'farms';
-
-const ASSETS_PATH_NAME = 'Prime Account Assets';
-const FARMS_PATH_NAME = 'Prime Account Farms';
+import Stats from "./stats/Stats.vue";
+const TABS = [
+  {
+    path: 'assets',
+    pathName: 'Prime Account Assets'
+  },
+  {
+    path: 'farms',
+    pathName: 'Prime Account Farms'
+  },
+  {
+    path: 'stats',
+    pathName: 'Prime Account Stats'
+  },
+]
 
 const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
 
 export default {
   name: 'SmartLoanBeta',
-  components: {InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
+  components: {Stats, InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
   computed: {
     ...mapState('fundsStore', [
       'assetBalances',
@@ -219,14 +233,11 @@ export default {
     setupSelectedTab() {
       const url = document.location.href;
       const lastUrlPart = url.split('/').reverse()[0];
-      if (lastUrlPart !== ASSETS_PATH && lastUrlPart !== FARMS_PATH) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
+      if (!TABS.some(tab => tab.path === lastUrlPart)) {
+      console.error(lastUrlPart);
+        this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        if (lastUrlPart === ASSETS_PATH) {
-          this.selectedTabIndex = 0;
-        } else if (lastUrlPart === FARMS_PATH) {
-          this.selectedTabIndex = 1;
-        }
+        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart)
       }
     },
 
@@ -251,12 +262,7 @@ export default {
 
     tabChange(tabIndex) {
       const url = document.location.href;
-
-      if (tabIndex === 0) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
-      } else if (tabIndex === 1) {
-        this.$router.push({name: FARMS_PATH_NAME, query: this.extractQueryParams(url)});
-      }
+      this.$router.push({name: TABS[tabIndex].pathName, query: this.extractQueryParams(url)});
     },
 
     watchHealthRefresh() {
