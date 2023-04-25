@@ -1,6 +1,6 @@
 <template>
   <StatsSection>
-    <div class="stats-shares__section">
+    <div class="stats-shares__section" v-bind:class="{'stats-shares__section--no-data': sharesChartData.datasets[0].data.length === 0}">
       <StatsSectionHeader>
         Portfolio
       </StatsSectionHeader>
@@ -11,7 +11,10 @@
       <template v-if="farms && assets && lpAssets">
         <Toggle v-on:change="selectedSharesChange" :options="['Farmed', 'LP tokens', 'Held']"
                 :initial-option="2"></Toggle>
-        <div class="stats-shares-section__content">
+        <div v-if="sharesChartData.datasets[0].data.length === 0" class="shares__no-data">
+          No Data
+        </div>
+        <div v-else class="stats-shares-section__content">
           <div class="stats-shares-section__chart" :class="{'stats-shares-section__chart--active': sharesChartData}">
             <PieChart v-if="selectedDataSet" ref="sharesChart" :chart-data="sharesChartData"
                       :chart-options="sharesChartOptions"></PieChart>
@@ -39,12 +42,12 @@
   </StatsSection>
 </template>
 <script>
-import StatsSectionHeader from "./StatsSectionHeader.vue";
-import StatsSection from "./StatsSection.vue";
-import PieChart from "./PieChart.vue";
-import Toggle from "../Toggle.vue";
-import {mapState} from "vuex";
-import config from "../../config";
+import StatsSectionHeader from './StatsSectionHeader.vue';
+import StatsSection from './StatsSection.vue';
+import PieChart from './PieChart.vue';
+import Toggle from '../Toggle.vue';
+import {mapState} from 'vuex';
+import config from '../../config';
 
 const COLOR_PALETTES = {
   LIGHT: [
@@ -65,10 +68,10 @@ const COLOR_PALETTES = {
     '#b96ddd',
     '#f6c1ff',
   ]
-}
+};
 
 export default {
-  name: "StatsSharesSection",
+  name: 'StatsSharesSection',
   components: {Toggle, PieChart, StatsSection, StatsSectionHeader},
   methods: {
     selectedSharesChange(change) {
@@ -85,7 +88,7 @@ export default {
     },
     reloadLpTokens() {
       if (this.lpBalances && this.lpAssets) {
-        this.lpTokens = this.recalculateShares(this.lpBalances, (asset) => this.lpAssets[asset].price, (asset) => `${this.lpAssets[asset].name} ${this.lpAssets[asset].dex}`)
+        this.lpTokens = this.recalculateShares(this.lpBalances, (asset) => this.lpAssets[asset].price, (asset) => `${this.lpAssets[asset].name} ${this.lpAssets[asset].dex}`);
         if (this.selectedShares === 'LP tokens') {
           this.switchSharesOnGraph();
         }
@@ -95,34 +98,38 @@ export default {
       const farmsBalances = {};
       Object.keys(config.FARMED_TOKENS_CONFIG).forEach((farm) => {
         farmsBalances[farm] = config.FARMED_TOKENS_CONFIG[farm].reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
-      })
+      });
       if (farmsBalances && this.lpAssets && this.assets && this.farmsLoaded) {
         this.farms = this.recalculateShares(
-            farmsBalances,
-            (asset) => {
-              return this.isAssetLPToken(asset) ? this.lpAssets[asset].price : this.assets[asset].price
-            },
-            (asset) => this.isAssetLPToken(asset) ? `${config.LP_ASSETS_CONFIG[asset].name} ${config.LP_ASSETS_CONFIG[asset].dex}` : asset
-        )
+          farmsBalances,
+          (asset) => {
+            return this.isAssetLPToken(asset) ? this.lpAssets[asset].price : this.assets[asset].price;
+          },
+          (asset) => this.isAssetLPToken(asset) ? `${config.LP_ASSETS_CONFIG[asset].name} ${config.LP_ASSETS_CONFIG[asset].dex}` : asset
+        );
       }
     },
     isAssetLPToken(asset) {
-      return Object.keys(this.lpAssets).includes(asset)
+      return Object.keys(this.lpAssets).includes(asset);
     },
     switchSharesOnGraph() {
       const chartDataForShares = {
         'Held': this.held,
         'LP tokens': this.lpTokens,
         'Farmed': this.farms,
-      }
-      this.selectedDataSet = chartDataForShares[this.selectedShares]
-      this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset)
-      this.sharesChartData.datasets[0].data = this.selectedDataSet.map(share => share.balance)
+      };
+      console.log(chartDataForShares);
+      this.selectedDataSet = chartDataForShares[this.selectedShares];
+      this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset);
+      this.sharesChartData.datasets[0].data = this.selectedDataSet.map(share => share.balance);
+      console.log('this.sharesChartData.datasets[0].data', this.sharesChartData.datasets[0].data);
       if (this.$refs.sharesChart) {
         this.$refs.sharesChart.rerender();
       }
     },
     recalculateShares(assetsBalances, priceCallback, nameCallback) {
+      console.log('recalculateShares');
+      console.log('assetBalances', assetsBalances);
       let updatedShares = [];
       let sumBalance = 0;
       let sumPercentage = 0;
@@ -132,35 +139,35 @@ export default {
           updatedShares.push({
             asset: nameCallback(asset),
             balance: assetBalance,
-          })
-          sumBalance += assetBalance
+          });
+          sumBalance += assetBalance;
         }
       }
       updatedShares = updatedShares
-          .map((shareData, index) => {
-            const sharePercentage = index === updatedShares.length - 1
-                ? Math.round((100 - sumPercentage) * 100) / 100
-                : Math.round(shareData.balance / sumBalance * 10000) / 100
-            sumPercentage += sharePercentage
-            return {
-              ...shareData,
-              percentage: sharePercentage
-            }
-          })
-          .sort((shareA, shareB) => {
-            return shareA.balance < shareB.balance ? 1 : -1
-          })
+        .map((shareData, index) => {
+          const sharePercentage = index === updatedShares.length - 1
+            ? Math.round((100 - sumPercentage) * 100) / 100
+            : Math.round(shareData.balance / sumBalance * 10000) / 100;
+          sumPercentage += sharePercentage;
+          return {
+            ...shareData,
+            percentage: sharePercentage
+          };
+        })
+        .sort((shareA, shareB) => {
+          return shareA.balance < shareB.balance ? 1 : -1;
+        });
 
       if (updatedShares.length > 7) {
-        const partials = updatedShares.slice(6, updatedShares.length - 1)
+        const partials = updatedShares.slice(6, updatedShares.length - 1);
         const mergedShare = [...partials].reduce((merged, current) => {
           return {
             asset: merged.asset + `, ${current.asset}`,
             balance: merged.balance + current.balance,
             percentage: merged.percentage + current.percentage
-          }
-        })
-        mergedShare.partials = [...partials]
+          };
+        });
+        mergedShare.partials = [...partials];
 
         return [...updatedShares.slice(0, 6), mergedShare];
       } else {
@@ -182,7 +189,7 @@ export default {
       if (this.$refs.sharesChart) {
         this.$refs.sharesChart.rerender();
       }
-    })
+    });
 
     this.farmService.observeRefreshFarm().subscribe(() => {
       this.farmsLoaded = true;
@@ -238,18 +245,31 @@ export default {
           }
         ]
       }
-    }
+    };
   }
-}
+};
 </script>
 
 <style scoped lang="scss">
+@import "~@/styles/variables";
+
 .stats-shares__section {
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 30px 70px 130px 60px;
+
+  &.stats-shares__section--no-data {
+    padding: 30px 70px 40px 60px;
+  }
+
+  .shares__no-data {
+    font-size: $font-size-mlg;
+    color: var(--stats-shares-section__no-data-text-color);
+    font-weight: 500;
+    margin-top: 30px;
+  }
 }
 
 .stats-shares-section__content {

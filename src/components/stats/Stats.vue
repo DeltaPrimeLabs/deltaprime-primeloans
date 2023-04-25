@@ -27,7 +27,7 @@ export default {
   margin-top: 30px;
 
   .stats-shares-section {
-    grid-area: 1 / 1 / 2 / 3;
+    grid-area: 1 / 1 / 2 / 4;
   }
 
   .transaction-history {

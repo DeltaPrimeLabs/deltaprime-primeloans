@@ -27,8 +27,5 @@ export default {
 }
 </script>
 
-<style scoped>
-div {
-  height: 100%;
-}
+<style scoped lang="scss">
 </style>
