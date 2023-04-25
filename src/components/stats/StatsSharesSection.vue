@@ -244,9 +244,9 @@ export default {
 <style scoped lang="scss">
 .stats-shares__section {
   height: 100%;
-  width: 680px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: 30px 70px 130px 60px;
 }
 
