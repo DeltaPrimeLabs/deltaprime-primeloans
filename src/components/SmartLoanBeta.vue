@@ -11,11 +11,11 @@
         :noSmartLoan="noSmartLoanInternal"
         :healthLoading="healthLoading">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
+      <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
          provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b> page.
       </InfoBubble>
-      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp" :cacheKey="`LIQUIDATED-${timestamp}`" style="margin-top: 40px">
+      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp" :cacheKey="`LIQUIDATED-${timestamp}`">
         Liquidation bots unwinded part of your positions<br>
         to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
       </InfoBubble>
