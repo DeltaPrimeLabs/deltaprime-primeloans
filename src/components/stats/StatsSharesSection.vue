@@ -5,31 +5,36 @@
         Portfolio
       </StatsSectionHeader>
 
-      <Toggle v-on:change="selectedSharesChange" :options="['Farmed', 'LP tokens', 'Held']"
-              :initial-option="2"></Toggle>
-      <div class="stats-shares-section__content">
-        <div class="stats-shares-section__chart" :class="{'stats-shares-section__chart--active': sharesChartData}">
-          <PieChart v-if="this.held" ref="sharesChart" :chart-data="sharesChartData"
-                    :chart-options="sharesChartOptions"></PieChart>
-        </div>
-        <div class="stats-shares-section__legend">
-          <div class="legend__entry" v-for="(share, index) in this.selectedDataSet">
-            <div class="entry__circle"
-                 :style="{background: colorPalettes[theme][index]}"></div>
-            <div class="entry__text" v-if="!share.partials">
-              <div class="entry__title">{{ share.asset }}</div>
-              <div class="entry__value">{{ share.percentage }}%</div>
-            </div>
-            <div class="entry__partials" v-if="share.partials">
-              <template v-for="(partial, index) in share.partials">
-                <div class="entry__title">{{ partial.asset }}&nbsp;</div>
-                <div class="entry__value">{{ partial.percentage }}%</div>
-                <template v-if="index !== share.partials.length - 1">,&nbsp;</template>
-              </template>
+      <div v-if="!farms || !assets || !lpAssets" class="loader">
+        <VueLoadersBallBeat color="#A6A3FF" scale="2"></VueLoadersBallBeat>
+      </div>
+      <template v-if="farms && assets && lpAssets">
+        <Toggle v-on:change="selectedSharesChange" :options="['Farmed', 'LP tokens', 'Held']"
+                :initial-option="2"></Toggle>
+        <div class="stats-shares-section__content">
+          <div class="stats-shares-section__chart" :class="{'stats-shares-section__chart--active': sharesChartData}">
+            <PieChart v-if="selectedDataSet" ref="sharesChart" :chart-data="sharesChartData"
+                      :chart-options="sharesChartOptions"></PieChart>
+          </div>
+          <div class="stats-shares-section__legend">
+            <div class="legend__entry" v-for="(share, index) in this.selectedDataSet">
+              <div class="entry__circle"
+                   :style="{background: colorPalettes[theme][index]}"></div>
+              <div class="entry__text" v-if="!share.partials">
+                <div class="entry__title">{{ share.asset }}</div>
+                <div class="entry__value">{{ share.percentage }}%</div>
+              </div>
+              <div class="entry__partials" v-if="share.partials">
+                <template v-for="(partial, index) in share.partials">
+                  <div class="entry__title">{{ partial.asset }}&nbsp;</div>
+                  <div class="entry__value">{{ partial.percentage }}%</div>
+                  <template v-if="index !== share.partials.length - 1">,&nbsp;</template>
+                </template>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </StatsSection>
 </template>
@@ -180,10 +185,8 @@ export default {
     })
 
     this.farmService.observeRefreshFarm().subscribe(() => {
-      if (config.FARMED_TOKENS_CONFIG.AVAX[0].totalStaked) {
-        this.farmsLoaded = true;
-        this.reloadFarms()
-      }
+      this.farmsLoaded = true;
+      this.reloadFarms()
     })
   },
   watch: {
@@ -321,5 +324,13 @@ export default {
   width: 20px;
   border-radius: 50%;
   margin-right: 10px;
+}
+
+.loader {
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
