@@ -89,7 +89,6 @@ export default {
     reloadFarms() {
       const farmsBalances = {};
       Object.keys(config.FARMED_TOKENS_CONFIG).forEach((farm) => {
-        console.warn(config.FARMED_TOKENS_CONFIG[farm][0].totalStaked);
         farmsBalances[farm] = config.FARMED_TOKENS_CONFIG[farm].reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
       })
       if (farmsBalances && this.lpAssets && this.assets && this.farmsLoaded) {
