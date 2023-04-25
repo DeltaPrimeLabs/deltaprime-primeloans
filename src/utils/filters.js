@@ -54,8 +54,12 @@ export default function setupFilters() {
     }
   });
 
-  Vue.filter('date', function (value) {
-    return timeAgo.format(value.getTime());
+  Vue.filter('timeAgo', function (value) {
+    if (value instanceof Date) {
+      return timeAgo.format(value.getTime());
+    } else {
+      return timeAgo.format(new Date(value).getTime());
+    }
   });
 
   Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
