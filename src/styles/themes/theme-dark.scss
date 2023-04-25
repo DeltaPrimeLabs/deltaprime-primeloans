@@ -301,6 +301,20 @@
   --progress-bar__text-overlay-color--finished: #{$deep-space};
   // endregion
 
+  // region StatsSectionHeader
+  --stats-section-header__color: #{$storm-blue};
+  // endregion
+
+  // region StatsSection
+  --stats-section__border-image: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --stats-section__background: #{$space};
+  // endregion
+
+  // region StatsSharesSection
+  --stats-shares-section__legend-entry-color: #{$mist-blue};
+  --stats-shares-section__chart-box-shadow: 0 3px 15px 0 #{$dark-space}99;
+  // endregion
+
   // region tooltip
   --tooltip__box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
   --tooltip__border: solid 1px #{$washed-space};
