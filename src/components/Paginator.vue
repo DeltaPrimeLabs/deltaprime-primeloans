@@ -105,7 +105,6 @@ export default {
       font-size: $font-size-xsm;
       font-weight: 500;
       color: $steel-gray;
-
     }
   }
 }

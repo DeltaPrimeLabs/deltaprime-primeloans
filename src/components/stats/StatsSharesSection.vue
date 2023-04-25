@@ -52,13 +52,13 @@ const COLOR_PALETTES = {
     '#f6c1ff',
   ],
   DARK: [
-    '#dcaf5b',
-    '#c5608c',
-    '#7963e1',
-    '#dbde7a',
-    '#ff8cd0',
-    '#c4c400',
-    '#67ffe1',
+    '#c79bff',
+    '#6b70ed',
+    '#ffca7a',
+    '#ff97c9',
+    '#785eae',
+    '#b96ddd',
+    '#f6c1ff',
   ]
 }
 
