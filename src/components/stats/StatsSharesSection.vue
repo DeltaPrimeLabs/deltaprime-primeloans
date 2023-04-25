@@ -1,6 +1,6 @@
 <template>
   <StatsSection>
-    <div class="stats-shares-section">
+    <div class="stats-shares__section">
       <StatsSectionHeader>
         Portfolio
       </StatsSectionHeader>
@@ -242,7 +242,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.stats-shares-section {
+.stats-shares__section {
   height: 100%;
   width: 680px;
   display: flex;
