@@ -302,7 +302,7 @@
   // endregion
 
   // region StatsSectionHeader
-  --stats-section-header__color: #{$storm-blue};
+  --stats-section-header__color: #{$washed-blue};
   // endregion
 
   // region StatsSection
@@ -311,8 +311,8 @@
   // endregion
 
   // region StatsSharesSection
-  --stats-shares-section__legend-entry-color: #{$mist-blue};
-  --stats-shares-section__chart-box-shadow: 0 3px 15px 0 #{$dark-space}99;
+  --stats-shares-section__legend-entry-color: #{$storm-blue};
+  --stats-shares-section__chart-box-shadow: 0 3px 15px 0 #{$lapis}26;
   // endregion
 
   // region tooltip
@@ -331,8 +331,11 @@
   // endregion
 
   // region TransactionHistory
-  --transaction-history__title-color: #{$steel-gray};
   --transaction-history__transaction-token-color: #{$washed-blue};
+  // endregion
+
+  // region Paginator
+  --paginator__text-color: #{$washed-blue};
   // endregion
 
   // region StatsSharesSection

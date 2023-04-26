@@ -218,7 +218,6 @@ export default {
     justify-content: center;
     font-size: $font-size-mlg;
     font-weight: 500;
-    color: var(--transaction-history__title-color);
     margin-bottom: 60px;
   }
 
@@ -255,12 +254,12 @@ export default {
 
         &.amount {
           justify-content: flex-end;
-          font-weight: 600;
+          font-weight: 500;
         }
 
         &.amount-swap {
           justify-content: flex-end;
-          font-weight: 600;
+          font-weight: 500;
 
           .swap-icon {
             margin: 0 5px;

@@ -104,7 +104,7 @@ export default {
       margin: 0 12px;
       font-size: $font-size-xsm;
       font-weight: 500;
-      color: $steel-gray;
+      color: var(--paginator__text-color);
     }
   }
 }

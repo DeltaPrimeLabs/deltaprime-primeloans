@@ -51,22 +51,22 @@ import config from '../../config';
 
 const COLOR_PALETTES = {
   LIGHT: [
-    '#c79bff',
     '#6b70ed',
-    '#ffca7a',
     '#ff97c9',
-    '#785eae',
+    '#ffca7a',
     '#b96ddd',
+    '#785eae',
     '#f6c1ff',
+    '#c79bff',
   ],
   DARK: [
-    '#c79bff',
-    '#6b70ed',
-    '#ffca7a',
-    '#ff97c9',
-    '#785eae',
-    '#b96ddd',
-    '#f6c1ff',
+    '#175c8e',
+    '#994796',
+    '#fd73b7',
+    '#7478d7',
+    '#4f58a7',
+    '#da85ff',
+    '#755ddc',
   ]
 };
 
@@ -118,18 +118,14 @@ export default {
         'LP tokens': this.lpTokens,
         'Farmed': this.farms,
       };
-      console.log(chartDataForShares);
       this.selectedDataSet = chartDataForShares[this.selectedShares];
       this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset);
       this.sharesChartData.datasets[0].data = this.selectedDataSet.map(share => share.balance);
-      console.log('this.sharesChartData.datasets[0].data', this.sharesChartData.datasets[0].data);
       if (this.$refs.sharesChart) {
         this.$refs.sharesChart.rerender();
       }
     },
     recalculateShares(assetsBalances, priceCallback, nameCallback) {
-      console.log('recalculateShares');
-      console.log('assetBalances', assetsBalances);
       let updatedShares = [];
       let sumBalance = 0;
       let sumPercentage = 0;
@@ -296,6 +292,7 @@ export default {
       border-radius: 50%;
       box-shadow: var(--stats-shares-section__chart-box-shadow);
       position: absolute;
+      pointer-events: none;
     }
   }
 }
