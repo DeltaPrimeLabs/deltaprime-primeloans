@@ -260,6 +260,14 @@ export default {
         maintainAspectRatio: true,
         legend: {
           display: false
+        },
+        tooltips: {
+          callbacks: {
+            label: (tooltipItem, data) => {
+              const value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]
+              return `${data.labels[tooltipItem.index]}: $ ${this.formatTokenBalance(value)}`
+            }
+          },
         }
       },
       sharesChartData: {
