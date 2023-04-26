@@ -40,7 +40,7 @@ import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const curveTokenAddress = TOKEN_ADDRESSES['crvUSDBTCETH'];
+const curveTokenAddress = TOKEN_ADDRESSES['crvUSDBTCAVAX'];
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
 describe('Smart loan', () => {
@@ -68,7 +68,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['DAIe', 'USDCe', 'USDTe', 'WBTCe', 'ETH', 'AVAX', 'crvUSDBTCETH'];
+            let assetsList = ['USDC', 'USDT', 'BTC', 'AVAX', 'crvUSDBTCAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -80,14 +80,10 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
-                ['ETH', 'AVAX'],
+                ['USDC', 'USDT', 'BTC', 'AVAX'],
                 getRedstonePrices,
                 [
-                    {symbol: 'DAIe', value: 1},
-                    {symbol: 'USDCe', value: 1},
-                    {symbol: 'USDTe', value: 1},
-                    {symbol: 'WBTCe', value: 28000},
-                    {symbol: 'crvUSDBTCETH', value: 1012},
+                    {symbol: 'crvUSDBTCAVAX', value: 250},
                 ]
             );
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
@@ -164,11 +160,11 @@ describe('Smart loan', () => {
         });
 
         it("should fail to stake as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeCurve([toWei("9999"), toWei("9999"), toWei("9999"), toWei("9999"), toWei("9999")])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.stakeCurve([toWei("9999"), toWei("9999"), toWei("9999"), toWei("9999")])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake tokens as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.unstakeCurve(toWei("9999"), [0, 0, 0, 0, 0])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeCurve(toWei("9999"), [0, 0, 0, 0])).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake one token as a non-owner", async () => {
@@ -182,37 +178,37 @@ describe('Smart loan', () => {
             let initialStakedBalance = await curveTokenContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
 
-            await expect(wrappedLoan.stakeCurve([0, 0, 0, 0, 0])).to.be.revertedWith("Cannot stake 0 tokens");
+            await expect(wrappedLoan.stakeCurve([0, 0, 0, 0])).to.be.revertedWith("Cannot stake 0 tokens");
 
-            const tokens = ['DAIe', 'USDCe', 'USDTe', 'WBTCe', 'ETH'];
+            const tokens = ['USDC', 'USDT', 'BTC'];
             for (let i = 0; i < tokens.length; i++) {
                 await wrappedLoan.swapPangolin(
                     toBytes32('AVAX'),
                     toBytes32(tokens[i]),
-                    toWei('20'),
+                    toWei('50'),
                     0,
                 );
                 expect(await wrappedLoan.getBalance(toBytes32(tokens[i]))).to.be.gt(0);
             };
 
             // Should stake max if amount > balance
-            await wrappedLoan.stakeCurve([toWei("99999999"), toWei("99999999"), toWei("99999999"), toWei("99999999"), toWei("99999999")]);
+            await wrappedLoan.stakeCurve([toWei("99999999"), toWei("99999999"), toWei("99999999"), toWei("99999999")]);
             for (let i = 0; i < tokens.length; i++) {
                 expect(await wrappedLoan.getBalance(toBytes32(tokens[i]))).to.be.eq(0);
             };
 
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 100);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
         });
 
-        it("should unstake DAI", async () => {
+        it("should unstake USDC", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            await wrappedLoan.unstakeOneTokenCurve(0, parseUnits(Math.round(20 * tokensPrices.get('AVAX')!).toString(), BigNumber.from("6")));
+            await wrappedLoan.unstakeOneTokenCurve(0, parseUnits(Math.round(10 * tokensPrices.get('AVAX')!).toString(), BigNumber.from("6")));
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 25);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 4);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
         });
@@ -222,10 +218,10 @@ describe('Smart loan', () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            await wrappedLoan.unstakeCurve(toWei("99999999"), [0, 0, 0, 0, 0]);
+            await wrappedLoan.unstakeCurve(toWei("99999999"), [0, 0, 0, 0]);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1500);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 100);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
         });
     });

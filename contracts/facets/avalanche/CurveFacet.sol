@@ -16,15 +16,15 @@ import "../../lib/local/DeploymentConstants.sol";
 
 contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // Used to deposit/withdraw tokens
-    address private constant CURVE_POOL_ADDRESS = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
-    // crvUSDBTCETH
-    bytes32 private constant CURVE_TOKEN_SYMBOL = "crvUSDBTCETH";
+    address private constant CURVE_POOL_ADDRESS = 0x25b3D0eeBcd85Ea5A970981c5E2A342f4e1064e8;
+    // crvUSDBTCAVAX
+    bytes32 private constant CURVE_TOKEN_SYMBOL = "crvUSDBTCAVAX";
 
     /**
      * Stakes tokens in Curve atricrypto pool
      * @param amounts amounts of tokens to be staked
      **/
-    function stakeCurve(uint256[5] memory amounts) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeCurve(uint256[4] memory amounts) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         address curveTokenAddress = DeploymentConstants.getTokenManager().getAssetAddress(CURVE_TOKEN_SYMBOL, false);
@@ -33,7 +33,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         bool allZero = true;
         uint256 numStakeTokens;
-        for (uint256 i; i < 5; ++i ) {
+        for (uint256 i; i < 4; ++i ) {
             IERC20 token = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), false));
             amounts[i] = Math.min(token.balanceOf(address(this)), amounts[i]);
             if (amounts[i] > 0) {
@@ -47,7 +47,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes32[] memory stakedAssets = new bytes32[](numStakeTokens);
         uint256[] memory stakedAmounts = new uint256[](numStakeTokens);
         uint256 idx;
-        for (uint256 i; i < 5; ++i ) {
+        for (uint256 i; i < 4; ++i ) {
             if (amounts[i] > 0) {
                 stakedAssets[idx] = getTokenSymbol(i);
                 stakedAmounts[idx++] = amounts[i];
@@ -58,7 +58,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(CURVE_TOKEN_SYMBOL, curveTokenAddress);
-        for (uint256 i; i < 5; ++i ) {
+        for (uint256 i; i < 4; ++i ) {
             IERC20 token = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), false));
             if (amounts[i] > 0 && token.balanceOf(address(this)) == 0) {
                 DiamondStorageLib.removeOwnedAsset(getTokenSymbol(i));
@@ -79,14 +79,14 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes tokens from Curve atricrypto pool
      * @param amount amount of token to be unstaked
      **/
-    function unstakeCurve(uint256 amount, uint256[5] memory min_amounts) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeCurve(uint256 amount, uint256[4] memory min_amounts) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
         IERC20 curveToken = IERC20(curveTokenAddress);
         uint256 curveTokenBalance = curveToken.balanceOf(address(this));
-        uint256[5] memory initialDepositTokenBalances;
-        for (uint256 i; i < 5; ++i) {
+        uint256[4] memory initialDepositTokenBalances;
+        for (uint256 i; i < 4; ++i) {
             IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
             initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
         }
@@ -96,8 +96,8 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         pool.remove_liquidity(amount, min_amounts);
 
         // Add/remove owned tokens
-        uint256[5] memory unstakedAmounts;
-        for (uint256 i; i < 5; ++i) {
+        uint256[4] memory unstakedAmounts;
+        for (uint256 i; i < 4; ++i) {
             IERC20 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
             unstakedAmounts[i] = depositToken.balanceOf(address(this)) - initialDepositTokenBalances[i];
             DiamondStorageLib.addOwnedAsset(getTokenSymbol(i), address(depositToken));
@@ -123,7 +123,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param amount amount of token to be unstaked
      **/
     function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
-        require(i < 5, "Invalid token index");
+        require(i < 4, "Invalid token index");
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         address curveTokenAddress;
         IERC20 depositToken;
@@ -161,13 +161,12 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // INTERNAL FUNCTIONS
 
-    function getTokenSymbols() internal pure returns (bytes32[5] memory tokenSymbols) {
+    function getTokenSymbols() internal pure returns (bytes32[4] memory tokenSymbols) {
         tokenSymbols = [
-            bytes32("DAIe"),
-            bytes32("USDCe"),
-            bytes32("USDTe"),
-            bytes32("WBTCe"),
-            bytes32("ETH")
+            bytes32("USDC"),
+            bytes32("USDT"),
+            bytes32("BTC"),
+            bytes32("AVAX")
         ];
     }
 
@@ -204,7 +203,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         * @param receiptTokenAmount how much of receipt token was unstaked
         * @param timestamp of unstaking
     **/
-    event Unstaked(address indexed user, bytes32[5] assets, address indexed vault, uint256[5] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
+    event Unstaked(address indexed user, bytes32[4] assets, address indexed vault, uint256[4] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user unstakes an asset

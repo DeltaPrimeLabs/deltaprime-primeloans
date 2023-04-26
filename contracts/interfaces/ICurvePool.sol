@@ -12,13 +12,13 @@ interface ICurvePool {
     ) external view returns (uint256);
 
     function add_liquidity(
-        uint256[5] calldata _amounts,
+        uint256[4] calldata _amounts,
         uint256 _min_mint_amount
     ) external;
 
     function remove_liquidity(
         uint256 _amount,
-        uint256[5] calldata _min_amounts
+        uint256[4] calldata _min_amounts
     ) external;
 
     function remove_liquidity_one_coin(
