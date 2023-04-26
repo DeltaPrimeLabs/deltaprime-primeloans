@@ -2,23 +2,26 @@
   <div class="paginator-component">
     <div class="paginator">
       <div class="paginator__button paginator__previous" v-on:click="previousPage()">
-        <img v-if="currentPage === 0" class="icon icon__disabled" src="src/assets/icons/icon_previous_off.svg">
-        <img v-if="currentPage > 0" class="icon icon__active" src="src/assets/icons/icon_next_on.svg">
+        <IconButton :disabled="currentPage === 0"
+                    :icon-src="'src/assets/icons/icon_previous_off.svg'" :size="20"></IconButton>
       </div>
       <div class="paginator__text">
         Page {{ currentPage + 1 }} of {{ totalPages }}
       </div>
       <div class="paginator__button paginator__next" v-on:click="nextPage()">
-        <img v-if="currentPage === totalPages" class="icon icon__disabled" src="src/assets/icons/icon_previous_off.svg">
-        <img v-if="currentPage < totalPages" class="icon icon__active" src="src/assets/icons/icon_next_on.svg">
+        <IconButton :disabled="currentPage === totalPages"
+                    :icon-src="'src/assets/icons/icon_next_on.svg'" :size="20"></IconButton>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import IconButton from "./IconButton.vue";
+
 export default {
   name: 'Paginator',
+  components: {IconButton},
   props: {
     pageSize: null,
     totalElements: null,
@@ -72,28 +75,6 @@ export default {
     flex-direction: row;
     justify-content: flex-end;
     margin: 16px 20px 0 0;
-
-    .paginator__button {
-      cursor: pointer;
-
-      .icon {
-        user-select: none;
-      }
-    }
-
-    .paginator__previous {
-
-      .icon__active {
-        transform: rotate(180deg);
-      }
-    }
-
-    .paginator__next {
-
-      .icon__disabled {
-        transform: rotate(180deg);
-      }
-    }
 
     .paginator__text {
       display: flex;
