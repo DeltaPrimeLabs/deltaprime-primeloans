@@ -24,12 +24,14 @@
               <div class="entry__circle"
                    :style="{background: colorPalettes[theme][index]}"></div>
               <div class="entry__text" v-if="!share.partials">
-                <div class="entry__title">{{ share.asset }}</div>
+                <div class="entry__title">{{ share.asset.name }}</div>
+                <div v-if="share.asset.dex" class="entry__subtitle">{{ share.asset.dex }}</div>
                 <div class="entry__value">{{ share.percentage }}%</div>
               </div>
               <div class="entry__partials" v-if="share.partials">
                 <template v-for="(partial, index) in share.partials">
-                  <div class="entry__title">{{ partial.asset }}&nbsp;</div>
+                  <div class="entry__title">{{ partial.asset.name }}&nbsp;</div>
+                  <div v-if="partial.asset.dex" class="entry__subtitle">{{ partial.asset.dex }}&nbsp;</div>
                   <div class="entry__value">{{ partial.percentage }}%</div>
                   <template v-if="index !== share.partials.length - 1">,&nbsp;</template>
                 </template>
@@ -80,7 +82,11 @@ export default {
     },
     reloadHeld() {
       if (this.assetBalances && this.assets) {
-        this.held = this.recalculateShares(this.assetBalances, (asset) => this.assets[asset].price, (asset) => asset);
+        this.held = this.recalculateShares(
+          this.assetBalances,
+          (asset) => this.assets[asset].price,
+          (asset) => ({name: asset})
+        );
         if (this.selectedShares === 'Held') {
           this.switchSharesOnGraph();
         }
@@ -88,7 +94,14 @@ export default {
     },
     reloadLpTokens() {
       if (this.lpBalances && this.lpAssets) {
-        this.lpTokens = this.recalculateShares(this.lpBalances, (asset) => this.lpAssets[asset].price, (asset) => `${this.lpAssets[asset].name} ${this.lpAssets[asset].dex}`);
+        this.lpTokens = this.recalculateShares(
+          this.lpBalances,
+          (asset) => this.lpAssets[asset].price,
+          (asset) => ({
+            name: this.lpAssets[asset].name,
+            dex: this.lpAssets[asset].dex
+          })
+        );
         if (this.selectedShares === 'LP tokens') {
           this.switchSharesOnGraph();
         }
@@ -105,7 +118,10 @@ export default {
           (asset) => {
             return this.isAssetLPToken(asset) ? this.lpAssets[asset].price : this.assets[asset].price;
           },
-          (asset) => this.isAssetLPToken(asset) ? `${config.LP_ASSETS_CONFIG[asset].name} ${config.LP_ASSETS_CONFIG[asset].dex}` : asset
+          (asset) => ({
+            name: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].name : asset,
+            dex: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].dex : null
+          })
         );
       }
     },
@@ -119,7 +135,7 @@ export default {
         'Farmed': this.farms,
       };
       this.selectedDataSet = chartDataForShares[this.selectedShares];
-      this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset);
+      this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset.dex ? `${share.asset.name} ${share.asset.dex}` : share.asset.name);
       this.sharesChartData.datasets[0].data = this.selectedDataSet.map(share => share.balance);
       if (this.$refs.sharesChart) {
         this.$refs.sharesChart.rerender();
@@ -169,7 +185,23 @@ export default {
       } else {
         return updatedShares;
       }
-    }
+    },
+
+    // TODO move to service
+    formatTokenBalance(value, precision = 5, toFixed = false) {
+      const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+      const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
+      const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+      if (value !== null) {
+        if (!toFixed) {
+          return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
+        } else {
+          return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+        }
+      } else {
+        return '';
+      }
+    },
   },
   computed: {
     ...mapState('fundsStore', ['assetBalances', 'assets', 'lpAssets', 'lpBalances']),
@@ -316,6 +348,7 @@ export default {
 }
 
 .entry__text {
+  position: relative;
   display: flex;
   flex-direction: row;
 }
@@ -325,7 +358,16 @@ export default {
   margin-right: 10px;
 }
 
+.entry__subtitle {
+  position: absolute;
+  font-weight: normal;
+  font-size: $font-size-xs;
+  top: 18px;
+  color: var(--stats-shares-section__legend-entry-subtitle-color);
+}
+
 .entry__partials {
+  position: relative;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;

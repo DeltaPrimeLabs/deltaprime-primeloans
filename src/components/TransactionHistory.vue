@@ -164,6 +164,8 @@ export default {
         'Unstake': 'Unstaked',
         'AddLiquidity': 'Created LP Token',
         'RemoveLiquidity': 'Unwound LP Token',
+        'GlpRedeemed': 'GLP redeemed',
+        'GlpMint': 'GLP minted',
       };
 
       return transactionActionMap[transactionAction] ? transactionActionMap[transactionAction] : transactionAction;
