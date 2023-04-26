@@ -24,7 +24,19 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes tokens in Curve atricrypto pool
      * @param amounts amounts of tokens to be staked
      **/
-    function stakeCurve(uint256[4] memory amounts) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeCurve(uint256[4] memory amounts)
+        external
+        nonReentrant
+        onlyOwner
+        recalculatePartialAssetsExposure(_identifiers5(
+            "USDC",
+            "USDT",
+            "BTC",
+            "AVAX",
+            CURVE_TOKEN_SYMBOL
+        ), _identifiers0())
+        remainsSolvent
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         address curveTokenAddress = DeploymentConstants.getTokenManager().getAssetAddress(CURVE_TOKEN_SYMBOL, false);
@@ -46,11 +58,14 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         bytes32[] memory stakedAssets = new bytes32[](numStakeTokens);
         uint256[] memory stakedAmounts = new uint256[](numStakeTokens);
-        uint256 idx;
-        for (uint256 i; i < 4; ++i ) {
-            if (amounts[i] > 0) {
-                stakedAssets[idx] = getTokenSymbol(i);
-                stakedAmounts[idx++] = amounts[i];
+        {
+            
+            uint256 idx;
+            for (uint256 i; i < 4; ++i ) {
+                if (amounts[i] > 0) {
+                    stakedAssets[idx] = getTokenSymbol(i);
+                    stakedAmounts[idx++] = amounts[i];
+                }
             }
         }
 
@@ -79,7 +94,18 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes tokens from Curve atricrypto pool
      * @param amount amount of token to be unstaked
      **/
-    function unstakeCurve(uint256 amount, uint256[4] memory min_amounts) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeCurve(uint256 amount, uint256[4] memory min_amounts)
+        external
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculatePartialAssetsExposure(_identifiers5(
+            "USDC",
+            "USDT",
+            "BTC",
+            "AVAX",
+            CURVE_TOKEN_SYMBOL
+        ), _identifiers0())
+    {
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
@@ -122,23 +148,31 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param i index of token to be unstaked
      * @param amount amount of token to be unstaked
      **/
-    function unstakeOneTokenCurve(uint256 i, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeOneTokenCurve(uint256 i, uint256 amount)
+        external
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculatePartialAssetsExposure(_identifiers2(getTokenSymbol(i), CURVE_TOKEN_SYMBOL), _identifiers0())
+    {
         require(i < 4, "Invalid token index");
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
-        address curveTokenAddress;
+        IERC20 curveToken;
         IERC20 depositToken;
         {
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-            curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
+            curveToken = IERC20(tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true));
             depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
         }
-        IERC20 curveToken = IERC20(curveTokenAddress);
-        uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
         uint256 curveTokenBalance = curveToken.balanceOf(address(this));
-        uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
-        amount = Math.min(maxWithdrawAmount, amount);
+        uint256 burnAmount;
+        {
+            uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
+            amount = Math.min(maxWithdrawAmount, amount);
+            burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
+        }
 
-        uint256 burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
+        uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
+
         curveToken.approve(CURVE_POOL_ADDRESS, burnAmount);
         pool.remove_liquidity_one_coin(burnAmount, i, 0);
 
@@ -152,7 +186,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit UnstakedOneToken(
             msg.sender,
             getTokenSymbol(i),
-            curveTokenAddress,
+            address(curveToken),
             depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
             curveTokenBalance - newCurveTokenBalance,
             block.timestamp

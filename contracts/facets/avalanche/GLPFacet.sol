@@ -25,7 +25,7 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // fsGLP
     address private constant GLP_TOKEN_ADDRESS = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
 
-    function claimGLpFees() external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function claimGLpFees() external nonReentrant onlyOwner noBorrowInTheSameBlock recalculatePartialAssetsExposure(_identifiers1("AVAX"), _identifiers0()) remainsSolvent {
         IRewardRouterV2 rewardRouter = IRewardRouterV2(REWARD_ROUTER_ADDRESS);
         IRewardTracker rewardTracker = IRewardTracker(rewardRouter.feeGlpTracker());
 
@@ -46,36 +46,46 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit GLPFeesClaim(msg.sender, postClaimingWavaxBalance-initialWavaxBalance, block.timestamp);
     }
 
-    function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+    function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp)
+        external
+        nonReentrant
+        onlyOwner
+        noBorrowInTheSameBlock
+        recalculatePartialAssetsExposure(_identifiers2("GLP", DeploymentConstants.getTokenManager().tokenAddressToSymbol(_token)), _identifiers0())
+        remainsSolvent
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(GLP_TOKEN_ADDRESS), "GLP not supported.");
         require(tokenManager.isTokenAssetActive(_token), "Asset not supported.");
 
         require(_amount > 0, "Amount of GLP to mint  has to be greater than 0");
 
-        IERC20Metadata tokenToMintWith = IERC20Metadata(_token);
-        bytes32 tokenToMintWithSymbol = tokenManager.tokenAddressToSymbol(_token);
-        IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
         IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
+        uint256 glpOutputAmount;
+        {
+            IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
 
-        uint256 glpInitialBalance = glpToken.balanceOf(address(this));
+            _amount = Math.min(IERC20Metadata(_token).balanceOf(address(this)), _amount);
 
-        _amount = Math.min(tokenToMintWith.balanceOf(address(this)), _amount);
+            IERC20Metadata(_token).approve(GLP_MANAGER_ADDRESS, _amount);
 
-        tokenToMintWith.approve(GLP_MANAGER_ADDRESS, _amount);
+            uint256 glpInitialBalance = glpToken.balanceOf(address(this));
 
-        uint256 glpOutputAmount = glpRewarder.mintAndStakeGlp(_token, _amount, _minUsdg, _minGlp);
+            glpOutputAmount = glpRewarder.mintAndStakeGlp(_token, _amount, _minUsdg, _minGlp);
 
-        require((glpToken.balanceOf(address(this)) - glpInitialBalance) == glpOutputAmount, "GLP minted and balance difference mismatch");
-        require(glpOutputAmount >=_minGlp, "Insufficient output amount");
+            require((glpToken.balanceOf(address(this)) - glpInitialBalance) == glpOutputAmount, "GLP minted and balance difference mismatch");
+            require(glpOutputAmount >=_minGlp, "Insufficient output amount");
+        }
 
         // Add asset to ownedAssets
         if (glpToken.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset("GLP", GLP_TOKEN_ADDRESS);
         }
 
+        bytes32 tokenToMintWithSymbol = tokenManager.tokenAddressToSymbol(_token);
+
         // Remove asset from ownedAssets if the asset balance is 0 after the mint
-        if (tokenToMintWith.balanceOf(address(this)) == 0) {
+        if (IERC20Metadata(_token).balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(tokenToMintWithSymbol);
         }
 
@@ -89,24 +99,32 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     }
 
-    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure    {
+    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut)
+        external
+        nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock
+        recalculatePartialAssetsExposure(_identifiers2("GLP", DeploymentConstants.getTokenManager().tokenAddressToSymbol(_tokenOut)), _identifiers0())
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(_tokenOut), "Asset not supported.");
 
         require(_glpAmount > 0, "Amount of GLP to redeem has to be greater than 0");
 
         IERC20Metadata redeemedToken = IERC20Metadata(_tokenOut);
-        bytes32 redeemedTokenSymbol = tokenManager.tokenAddressToSymbol(_tokenOut);
         IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
-        IERC20Metadata glpToken = IERC20Metadata(GLP_TOKEN_ADDRESS);
 
-        uint256 redeemedTokenInitialBalance = redeemedToken.balanceOf(address(this));
-        _glpAmount = Math.min(glpToken.balanceOf(address(this)), _glpAmount);
+        _glpAmount = Math.min(IERC20Metadata(GLP_TOKEN_ADDRESS).balanceOf(address(this)), _glpAmount);
 
-        uint256 redeemedAmount = glpRewarder.unstakeAndRedeemGlp(_tokenOut, _glpAmount, _minOut, address(this));
+        uint256 redeemedAmount;
+        {
+            uint256 redeemedTokenInitialBalance = redeemedToken.balanceOf(address(this));
 
-        require((redeemedToken.balanceOf(address(this)) - redeemedTokenInitialBalance) == redeemedAmount, "Redeemed token amount and balance difference mismatch");
-        require(redeemedAmount >= _minOut, "Insufficient output amount");
+            redeemedAmount = glpRewarder.unstakeAndRedeemGlp(_tokenOut, _glpAmount, _minOut, address(this));
+
+            require((redeemedToken.balanceOf(address(this)) - redeemedTokenInitialBalance) == redeemedAmount, "Redeemed token amount and balance difference mismatch");
+            require(redeemedAmount >= _minOut, "Insufficient output amount");
+        }
+
+        bytes32 redeemedTokenSymbol = tokenManager.tokenAddressToSymbol(_tokenOut);
 
         // Add asset to ownedAssets
         if (redeemedToken.balanceOf(address(this)) > 0) {
@@ -114,7 +132,7 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the redemption
-        if (glpToken.balanceOf(address(this)) == 0) {
+        if (IERC20Metadata(GLP_TOKEN_ADDRESS).balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset("GLP");
         }
 
