@@ -15,6 +15,7 @@
           No Data
         </div>
         <div v-else class="stats-shares-section__content">
+          <div class="stats-shares-section__legend-placeholder"></div>
           <div class="stats-shares-section__chart" :class="{'stats-shares-section__chart--active': sharesChartData}">
             <PieChart v-if="selectedDataSet" ref="sharesChart" :chart-data="sharesChartData"
                       :chart-options="sharesChartOptions"></PieChart>
@@ -399,5 +400,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.stats-shares-section__legend-placeholder {
+  width: 200px;
 }
 </style>
