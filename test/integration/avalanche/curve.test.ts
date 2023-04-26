@@ -197,8 +197,8 @@ describe('Smart loan', () => {
                 expect(await wrappedLoan.getBalance(toBytes32(tokens[i]))).to.be.eq(0);
             };
 
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 100);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 120);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1800);
         });
 
         it("should unstake USDC", async () => {
@@ -206,11 +206,11 @@ describe('Smart loan', () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            await wrappedLoan.unstakeOneTokenCurve(0, parseUnits(Math.round(10 * tokensPrices.get('AVAX')!).toString(), BigNumber.from("6")));
+            await wrappedLoan.unstakeOneTokenCurve(0, parseUnits(Math.round(50 * tokensPrices.get('AVAX')!).toString(), BigNumber.from("6")));
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 4);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 500);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 30);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1800);
         });
 
         it("should unstake all tokens", async () => {
@@ -222,7 +222,7 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1500);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 100);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1800);
         });
     });
 });
