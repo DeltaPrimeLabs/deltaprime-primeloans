@@ -21,7 +21,7 @@
               {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }}
               <span class="transaction__cell__token">{{ transaction.fromToken }}</span>
               <DeltaIcon class="swap-icon" :icon-src="'src/assets/icons/swap-arrow.svg'"
-                         :size="16"
+                         :size="16" :no-hover="true"
               ></DeltaIcon>
               {{ transaction.toAmountNumber | smartRound(5, true) | formatWithSpaces }}
               <span class="transaction__cell__token">{{ transaction.toToken }}</span>
