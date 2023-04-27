@@ -117,6 +117,20 @@ export default {
 
     &.actions {
       justify-content: flex-end;
+      padding-right: 22px;
+    }
+
+    &.date {
+      justify-content: flex-start;
+    }
+
+    &.action {
+      justify-content: flex-start;
+    }
+
+    &.amount {
+      justify-content: flex-end;
+      padding-right: 22px;
     }
 
     .info__icon {

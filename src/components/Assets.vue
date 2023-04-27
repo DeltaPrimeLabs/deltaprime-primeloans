@@ -197,7 +197,7 @@ export default {
 
     setupFundsTableHeaderConfig() {
       this.fundsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px 22px',
+        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px',
         cells: [
           {
             label: 'Asset',
@@ -257,7 +257,7 @@ export default {
 
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 80px 22px',
+        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 102px',
         cells: [
           {
             label: 'LP Token',

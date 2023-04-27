@@ -4,6 +4,7 @@
   color-scheme: light;
   --default-text-color: #{$black};
   --default-input-placeholder-color: #{$steel-gray};
+
   // region App
   --app-page-content__background: linear-gradient(152deg, #{$steel-blue} 23%, #{$tiger-orange} 65%, #{$raspberry} 96%);
   --app-page-content__background--opacity: 0.08;
@@ -301,6 +302,21 @@
   --progress-bar__text-overlay-color--finished: #{$white};
   // endregion
 
+  // region StatsSectionHeader
+  --stats-section-header__color: #{$steel-gray};
+  // endregion
+
+  // region StatsSection
+  --stats-section__border-image: linear-gradient(162deg, #{$delta-pale} 4%, #{$pale-orange} 56%, #{$pale-raspberry} 101%);
+  --stats-section__background: #{$white};
+  // endregion
+
+  // region StatsSharesSection
+  --stats-shares-section__legend-entry-color: #{$steel-gray};
+  --stats-shares-section__legend-entry-subtitle-color: #{$steel-gray};
+  --stats-shares-section__chart-box-shadow: 0 3px 15px 0 #{$hot-red}26;
+  // endregion
+
   // region tooltip
   --tooltip__box-shadow: 2px 2px 4px 0 #{$delta-steel}7f;
   --tooltip__border: solid 1px #{$cloud-gray};
@@ -314,5 +330,17 @@
   // region filters
   --filters__filter-label-color: #{$medium-gray};
   --filters__clear-text-color: #{$delta-accent};
+  // endregion
+
+  // region TransactionHistory
+  --transaction-history__transaction-token-color: #{$steel-gray};
+  // endregion
+
+  // region Paginator
+  --paginator__text-color: #{$steel-gray};
+  // endregion
+
+  // region StatsSharesSection
+  --stats-shares-section__no-data-text-color: #{$steel-gray};
   // endregion
 }

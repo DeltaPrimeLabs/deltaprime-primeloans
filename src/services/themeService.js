@@ -1,10 +1,10 @@
-import {Subject} from 'rxjs';
+import {BehaviorSubject, Subject} from 'rxjs';
 
 export default class ThemeService {
-  themeChange$ = new Subject();
+  themeChange$ = new BehaviorSubject('LIGHT');
 
-  emitThemeChange() {
-    this.themeChange$.next(null);
+  emitThemeChange(theme) {
+    this.themeChange$.next(theme);
   }
 
   observeThemeChange() {

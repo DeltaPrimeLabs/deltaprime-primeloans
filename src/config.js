@@ -21,6 +21,7 @@ export default {
     COMPETITION_START_BLOCK: 14858534,
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.01,
+    TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 43114,
     // chainId: 1337,
     //update leverage after every change in contracts
@@ -80,7 +81,7 @@ export default {
         'TraderJoe': {
             intermediaryAddress: TRADERJOE_INTERMEDIARY_TUP.address,
             routerAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
-            swapMethod: 'swapTraderJoe',
+
             addLiquidityMethod: 'addLiquidityTraderJoe',
             removeLiquidityMethod: 'removeLiquidityTraderJoe',
             logo: 'joe.png'

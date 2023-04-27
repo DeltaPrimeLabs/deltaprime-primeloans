@@ -13,11 +13,14 @@
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
-         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b> page.
+        provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b>
+        page.
       </InfoBubble>
-      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp" :cacheKey="`LIQUIDATED-${timestamp}`">
+      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp"
+                  :cacheKey="`LIQUIDATED-${timestamp}`">
         Liquidation bots unwinded part of your positions<br>
-        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
+        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations"
+                                                            target="_blank">More</a>.
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
@@ -33,6 +36,11 @@
                  :tab-icon-slim="'src/assets/icons/plant-slim.svg'">
               <Farm></Farm>
             </Tab>
+            <Tab ref="tab-3" :title="'Stats'"
+                 :tab-icon="'src/assets/icons/stats-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'">
+              <Stats></Stats>
+            </Tab>
           </Tabs>
         </Block>
       </div>
@@ -41,7 +49,11 @@
       <div class="tutorial-video__close" v-on:click="closeVideo">
         <img class="close__icon" src="src/assets/icons/cross.svg">
       </div>
-      <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>    </div>
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen></iframe>
+    </div>
   </div>
 </template>
 
@@ -62,18 +74,28 @@ import {combineLatest, delay} from 'rxjs';
 import {fetchLiquidatedEvents} from "../utils/graph";
 import DataRefreshEventService from "../services/dataRefreshEventService";
 import InfoBubble from "./InfoBubble.vue";
+import TransactionHistory from './TransactionHistory';
+import Stats from "./stats/Stats.vue";
+const TABS = [
+  {
+    path: 'assets',
+    pathName: 'Prime Account Assets'
+  },
+  {
+    path: 'farms',
+    pathName: 'Prime Account Farms'
+  },
+  {
+    path: 'stats',
+    pathName: 'Prime Account Stats'
+  },
+]
 
-const ASSETS_PATH = 'assets';
-const FARMS_PATH = 'farms';
-
-const ASSETS_PATH_NAME = 'Prime Account Assets';
-const FARMS_PATH_NAME = 'Prime Account Farms';
-
-const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
+const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
+  components: {TransactionHistory, Stats, InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
   computed: {
     ...mapState('fundsStore', [
       'assetBalances',
@@ -173,16 +195,16 @@ export default {
 
     initAccountApr() {
       combineLatest([
-          this.poolService.observePools(),
-          this.farmService.observeRefreshFarm(),
-          this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
-          this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
-          this.dataRefreshEventService.observeFullLoanStatusRefresh(),
-          this.dataRefreshEventService.observeAssetApysDataRefresh(),
+        this.poolService.observePools(),
+        this.farmService.observeRefreshFarm(),
+        this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
+        this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
+        this.dataRefreshEventService.observeFullLoanStatusRefresh(),
+        this.dataRefreshEventService.observeAssetApysDataRefresh(),
       ])
-          .subscribe(async ([provider, account]) => {
-             await this.getAccountApr();
-          });
+        .subscribe(async ([provider, account]) => {
+          await this.getAccountApr();
+        });
     },
 
     async assetBalancesChange(balances) {
@@ -219,14 +241,11 @@ export default {
     setupSelectedTab() {
       const url = document.location.href;
       const lastUrlPart = url.split('/').reverse()[0];
-      if (lastUrlPart !== ASSETS_PATH && lastUrlPart !== FARMS_PATH) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
+      if (!TABS.some(tab => tab.path === lastUrlPart)) {
+      console.error(lastUrlPart);
+        this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        if (lastUrlPart === ASSETS_PATH) {
-          this.selectedTabIndex = 0;
-        } else if (lastUrlPart === FARMS_PATH) {
-          this.selectedTabIndex = 1;
-        }
+        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart)
       }
     },
 
@@ -243,20 +262,15 @@ export default {
 
     getLiquidatedEvents() {
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
-          events => {
-            this.liquidationTimestamps = events.map(event => event.timestamp);
-          }
-      )
+        events => {
+          this.liquidationTimestamps = events.map(event => event.timestamp);
+        }
+      );
     },
 
     tabChange(tabIndex) {
       const url = document.location.href;
-
-      if (tabIndex === 0) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
-      } else if (tabIndex === 1) {
-        this.$router.push({name: FARMS_PATH_NAME, query: this.extractQueryParams(url)});
-      }
+      this.$router.push({name: TABS[tabIndex].pathName, query: this.extractQueryParams(url)});
     },
 
     watchHealthRefresh() {
@@ -273,11 +287,11 @@ export default {
         );
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
-      })
+      });
     },
 
     watchAprRefresh() {
-      this.aprService.observeRefreshApr().subscribe(async() => {
+      this.aprService.observeRefreshApr().subscribe(async () => {
         this.apr = this.accountApr;
       });
     },
@@ -285,13 +299,13 @@ export default {
     watchCollateral() {
       this.collateralService.observeCollateral().subscribe(collateral => {
         this.collateral = collateral;
-      })
+      });
     },
 
     watchDebt() {
       this.debtService.observeDebt().subscribe(debt => {
         this.debt = debt;
-      })
+      });
     },
 
     closeVideo() {
