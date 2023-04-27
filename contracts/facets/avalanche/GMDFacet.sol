@@ -130,8 +130,12 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
     * Stakes token in GMD
     * @dev This function uses the redstone-evm-connector
     **/
-    function gmdStakeToken(IGMDFacet.StakingDetails memory position) internal
-    onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+    function gmdStakeToken(IGMDFacet.StakingDetails memory position)
+        internal
+        onlyOwner nonReentrant
+        recalculatePartialAssetsExposure(_identifiers2(position.identifier, position.symbol), _identifiers0())
+        remainsSolvent
+    {
         IGMDVault vault = IGMDVault(GMDVaultAddress);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         IERC20Metadata receiptToken = IERC20Metadata(position.receiptToken);
@@ -168,13 +172,15 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
     * it may be necessary to perform it in a separate transaction to liquidation
     * @dev This function uses the redstone-evm-connector
     **/
-    function gmdUnstakeToken(IGMDFacet.UnstakingDetails memory position) internal
-    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant {
+    function gmdUnstakeToken(IGMDFacet.UnstakingDetails memory position)
+        internal
+        onlyOwnerOrInsolvent
+        recalculatePartialAssetsExposure(_identifiers2(position.identifier, position.symbol), _identifiers0())
+        nonReentrant
+    {
         IGMDVault vault = IGMDVault(GMDVaultAddress);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
         IERC20Metadata receiptToken = IERC20Metadata(position.receiptToken);
-
-        uint256 initialReceiptTokenBalance = receiptToken.balanceOf(address(this));
 
         uint256 amountUnstaked = Math.min(receiptToken.balanceOf(address(this)), position.amountUnstaked);
         require(amountUnstaked > 0, "Cannot unstake 0 tokens");

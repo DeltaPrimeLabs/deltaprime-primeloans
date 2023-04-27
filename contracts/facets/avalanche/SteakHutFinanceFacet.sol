@@ -57,14 +57,26 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
-    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
-        IERC20 vaultToken = IERC20(vaultAddress);
-        uint256 initialVaultBalance = vaultToken.balanceOf(address(this));
+    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails)
+        private
+        nonReentrant
+        onlyOwner
+        recalculatePartialAssetsExposure(_identifiers3(stakingDetails.token0Symbol, stakingDetails.token1Symbol, stakingDetails.vaultTokenSymbol), _identifiers0())
+        remainsSolvent 
+    {
+        address vaultAddress;
+        uint256 initialVaultBalance;
+        IERC20 token0;
+        IERC20 token1;
+        {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
 
-        IERC20 token0 = IERC20(tokenManager.getAssetAddress(stakingDetails.token0Symbol, false));
-        IERC20 token1 = IERC20(tokenManager.getAssetAddress(stakingDetails.token1Symbol, false));
+            initialVaultBalance = IERC20(vaultAddress).balanceOf(address(this));
+
+            token0 = IERC20(tokenManager.getAssetAddress(stakingDetails.token0Symbol, false));
+            token1 = IERC20(tokenManager.getAssetAddress(stakingDetails.token1Symbol, false));
+        }
 
         stakingDetails.amount0Desired = Math.min(token0.balanceOf(address(this)), stakingDetails.amount0Desired);
         stakingDetails.amount1Desired = Math.min(token1.balanceOf(address(this)), stakingDetails.amount1Desired);
@@ -90,7 +102,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             vaultAddress,
             amount0Actual,
             amount1Actual,
-            vaultToken.balanceOf(address(this)) - initialVaultBalance,
+            IERC20(vaultAddress).balanceOf(address(this)) - initialVaultBalance,
             block.timestamp
         );
     }
@@ -99,16 +111,28 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
-    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
-        uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
-
+    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails)
+        private
+        nonReentrant
+        onlyOwnerOrInsolvent
+        recalculatePartialAssetsExposure(_identifiers3(unstakingDetails.token0Symbol, unstakingDetails.token1Symbol, unstakingDetails.vaultTokenSymbol), _identifiers0())
+    {
+        address vaultAddress;
+        uint256 vaultTokenBalance;
         uint256 amount0Unstaked;
         uint256 amount1Unstaked;
         {
-            IERC20 depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
-            IERC20 depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
+            IERC20 depositToken0;
+            IERC20 depositToken1;
+            {
+                ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+                vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
+                vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
+
+                depositToken0 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token0Symbol, false));
+                depositToken1 = IERC20(tokenManager.getAssetAddress(unstakingDetails.token1Symbol, false));
+            }
             {
                 uint256 initialDepositTokenBalance0 = depositToken0.balanceOf(address(this));
                 uint256 initialDepositTokenBalance1 = depositToken1.balanceOf(address(this));

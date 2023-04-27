@@ -90,8 +90,13 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     * if needed it has to be performed in a separate transaction to liquidation
     * @dev This function uses the redstone-evm-connector
     **/
-    function unstakeToken(IStakingPositions.StakedPosition memory position) internal
-    onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
+    function unstakeToken(IStakingPositions.StakedPosition memory position)
+        internal
+        onlyOwnerOrInsolvent
+        recalculatePartialAssetsExposure(_identifiers1(position.symbol), _identifiers1(position.identifier))
+        nonReentrant
+        returns (uint256 unstaked)
+    {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
 

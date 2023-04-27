@@ -55,7 +55,14 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         });
     }
 
-    function yakSwap(uint256 _amountIn, uint256 _amountOut, address[] calldata _path, address[] calldata _adapters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+    function yakSwap(uint256 _amountIn, uint256 _amountOut, address[] calldata _path, address[] calldata _adapters)
+        external
+        nonReentrant
+        onlyOwner
+        noBorrowInTheSameBlock
+        recalculatePartialAssetsExposure(_identifiers2(getInitialTokensDetails(_path[0], _path[_path.length - 1]).tokenBoughtSymbol, getInitialTokensDetails(_path[0], _path[_path.length - 1]).tokenSoldSymbol), _identifiers0())
+        remainsSolvent
+    {
         SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(_path[0], _path[_path.length - 1]);
 
         _amountIn = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), _amountIn);
