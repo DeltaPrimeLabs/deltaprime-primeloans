@@ -162,7 +162,7 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function isTokenAssetActive(address token) external view returns(bool) {
-        return tokenToStatus[token] == 2;
+        return tokenToStatus[token] == _ACTIVE;
     }
 
     function activateToken(address token) public onlyOwner {

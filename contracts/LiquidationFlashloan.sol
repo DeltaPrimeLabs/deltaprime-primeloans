@@ -106,6 +106,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address,
     bytes calldata _params
   ) public override returns (bool) {
+    require(msg.sender == address(POOL), "msg.sender != POOL");
+
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
 
     // Use calldata instead of memory in order to avoid the "Stack Too deep" CompileError
@@ -114,8 +116,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256[] calldata premiums = getPremiums();
 
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(lep.loan, 0);
-      IERC20(assets[i]).approve(lep.loan, amounts[i]);
+      assets[i].safeApprove(lep.loan, 0);
+      assets[i].safeApprove(lep.loan, amounts[i]);
     }
 
     (
