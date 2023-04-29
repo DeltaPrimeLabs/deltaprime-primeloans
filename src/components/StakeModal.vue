@@ -63,7 +63,7 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Daily interest:
+                Mean daily interest (365D):
               </div>
               <div class="summary__value">
                 ≈ $ {{ calculateDailyInterest | smartRound(10, true) }}

@@ -46,10 +46,10 @@
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              Daily interest ≈
+              Mean daily interest (365D):
             </div>
             <div class="summary__value">
-              $ {{ calculateDailyInterest | smartRound(8, true) }}
+              ≈ $ {{ calculateDailyInterest | smartRound(8, true) }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
