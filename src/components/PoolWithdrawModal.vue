@@ -19,8 +19,7 @@
         <TransactionResultSummaryBeta>
           <div class="summary__title">
             <div class="pool">
-              <img v-if="assetSymbol === 'AVAX'" class="pool__icon" src="src/assets/logo/avax.svg">
-              <img v-if="assetSymbol === 'USDC'" class="pool__icon" src="src/assets/logo/usdc.svg">
+              <img class="pool__icon" v-if="assetSymbol" :src="getAssetIcon(assetSymbol)">
               <div class="pool__name">{{ assetSymbol }} Pool</div>
               ,
             </div>
@@ -28,21 +27,21 @@
           </div>
           <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div>
+            <div class="summary__value__pair">
               <div class="summary__label">
                 Deposit:
               </div>
               <div class="summary__value">
-                {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+                {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
               </div>
             </div>
-            <div class="summary__divider"></div>
-            <div>
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
               <div class="summary__label">
-                Daily interest ≈
+                Mean daily interest (365D):
               </div>
               <div class="summary__value">
-                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+                ≈ {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
               </div>
             </div>
           </div>
