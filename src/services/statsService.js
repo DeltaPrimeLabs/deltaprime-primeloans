@@ -40,6 +40,7 @@ export default class StatsService {
         id
         numTransactions
         transactions(first: ${pageSize}, skip: ${skip} orderBy: timestamp, orderDirection: desc) {
+          id
           fromAmount
           fromAsset
           timestamp
