@@ -1,15 +1,16 @@
 <template>
   <StatsSection>
-    <div class="stats-shares__section" v-bind:class="{'stats-shares__section--no-data': sharesChartData.datasets[0].data.length === 0}">
+    <div class="stats-shares__section"
+         v-bind:class="{'stats-shares__section--no-data': sharesChartData.datasets[0].data.length === 0}">
       <StatsSectionHeader>
         Portfolio
       </StatsSectionHeader>
 
-      <div v-if="!farms || !assets || !lpAssets" class="loader">
+      <div v-if="!farms || !assets || !lpAssets || !borrowed" class="loader">
         <VueLoadersBallBeat color="#A6A3FF" scale="2"></VueLoadersBallBeat>
       </div>
-      <template v-if="farms && assets && lpAssets">
-        <Toggle v-on:change="selectedSharesChange" :options="['Farmed', 'LP tokens', 'Held']"
+      <template v-if="farms && assets && lpAssets && borrowed">
+        <Toggle v-on:change="selectedSharesChange" :options="['Farmed', 'LP tokens', 'Held', 'Borrowed', 'Total']"
                 :initial-option="2"></Toggle>
         <div v-if="sharesChartData.datasets[0].data.length === 0" class="shares__no-data">
           No Data
@@ -30,12 +31,15 @@
                 <div class="entry__value">{{ share.percentage }}%</div>
               </div>
               <div class="entry__partials" v-if="share.partials">
-                <template v-for="(partial, index) in share.partials">
-                  <div class="entry__title">{{ partial.asset.name }}&nbsp;</div>
-                  <div v-if="partial.asset.dex" class="entry__subtitle">{{ partial.asset.dex }}&nbsp;</div>
-                  <div class="entry__value">{{ partial.percentage }}%</div>
-                  <template v-if="index !== share.partials.length - 1">,&nbsp;</template>
-                </template>
+                <div class="entry__partial" v-for="(partial, index) in share.partials">
+                  <div class="entry__fullname">
+                    <div class="entry__title">{{ partial.asset.name }}&nbsp;</div>
+                    <div v-if="partial.asset.dex" class="entry__subtitle">{{ partial.asset.dex }}&nbsp;</div>
+                  </div>
+                  <div class="entry__value">
+                    {{ partial.percentage }}%<template v-if="index !== share.partials.length - 1">,</template>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -84,9 +88,9 @@ export default {
     reloadHeld() {
       if (this.assetBalances && this.assets) {
         this.held = this.recalculateShares(
-          this.assetBalances,
-          (asset) => this.assets[asset].price,
-          (asset) => ({name: asset})
+            this.assetBalances,
+            (asset) => this.assets[asset].price,
+            (asset) => ({name: asset})
         );
         if (this.selectedShares === 'Held') {
           this.switchSharesOnGraph();
@@ -96,12 +100,12 @@ export default {
     reloadLpTokens() {
       if (this.lpBalances && this.lpAssets) {
         this.lpTokens = this.recalculateShares(
-          this.lpBalances,
-          (asset) => this.lpAssets[asset].price,
-          (asset) => ({
-            name: this.lpAssets[asset].name,
-            dex: this.lpAssets[asset].dex
-          })
+            this.lpBalances,
+            (asset) => this.lpAssets[asset].price,
+            (asset) => ({
+              name: this.lpAssets[asset].name,
+              dex: this.lpAssets[asset].dex
+            })
         );
         if (this.selectedShares === 'LP tokens') {
           this.switchSharesOnGraph();
@@ -115,15 +119,73 @@ export default {
       });
       if (farmsBalances && this.lpAssets && this.assets && this.farmsLoaded) {
         this.farms = this.recalculateShares(
-          farmsBalances,
-          (asset) => {
-            return this.isAssetLPToken(asset) ? this.lpAssets[asset].price : this.assets[asset].price;
-          },
-          (asset) => ({
-            name: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].name : asset,
-            dex: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].dex : null
-          })
+            farmsBalances,
+            (asset) => {
+              return this.isAssetLPToken(asset) ? this.lpAssets[asset].price : this.assets[asset].price;
+            },
+            (asset) => ({
+              name: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].name : asset,
+              dex: this.isAssetLPToken(asset) ? config.LP_ASSETS_CONFIG[asset].dex : null
+            })
         );
+      }
+    },
+    reloadBorrowed() {
+      if (this.debtsPerAsset && this.assets) {
+        const debts = {}
+        Object.keys(this.debtsPerAsset).forEach(assetKey => {
+          debts[assetKey] = this.debtsPerAsset[assetKey].debt
+        })
+        this.borrowed = this.recalculateShares(
+            debts,
+            (asset) => this.assets[asset].price,
+            (asset) => ({name: asset})
+        )
+        if (this.selectedShares === 'Borrowed') {
+          this.switchSharesOnGraph();
+        }
+      }
+    },
+    reloadTotal() {
+      if (this.farms && this.lpTokens && this.held) {
+        const totalAssets = [];
+        let totalBalance = 0;
+        let sumPercentage = 0;
+
+        [this.farms, this.lpTokens, this.held].forEach(assetCategory => {
+          assetCategory.forEach(asset => {
+            totalBalance += asset.balance;
+            const foundAssetIndex = totalAssets.findIndex(alreadyAdded => (
+                alreadyAdded.asset.name === asset.asset.name
+                && (alreadyAdded.asset.dex || null) === (asset.asset.dex || null)
+            ))
+            if (foundAssetIndex > -1) {
+              totalAssets[foundAssetIndex].balance += asset.balance
+            } else {
+              totalAssets.push({
+                asset: {...asset.asset},
+                balance: asset.balance,
+              });
+            }
+          })
+        })
+
+        const calculatedTotals = totalAssets
+            .map((asset, index) => {
+              const sharePercentage = index === totalAssets.length - 1
+                  ? Math.round((100 - sumPercentage) * 100) / 100
+                  : Math.round(asset.balance / totalBalance * 10000) / 100;
+              sumPercentage += sharePercentage;
+              return {
+                ...asset,
+                percentage: sharePercentage
+              }
+            })
+            .sort((shareA, shareB) => {
+              return shareA.balance < shareB.balance ? 1 : -1;
+            });
+
+        this.total = this.mergeToMaxNumberOfAssets(calculatedTotals);
       }
     },
     isAssetLPToken(asset) {
@@ -134,6 +196,8 @@ export default {
         'Held': this.held,
         'LP tokens': this.lpTokens,
         'Farmed': this.farms,
+        'Borrowed': this.borrowed,
+        'Total': this.total,
       };
       this.selectedDataSet = chartDataForShares[this.selectedShares];
       this.sharesChartData.labels = this.selectedDataSet.map(share => share.asset.dex ? `${share.asset.name} ${share.asset.dex}` : share.asset.name);
@@ -157,35 +221,21 @@ export default {
         }
       }
       updatedShares = updatedShares
-        .map((shareData, index) => {
-          const sharePercentage = index === updatedShares.length - 1
-            ? Math.round((100 - sumPercentage) * 100) / 100
-            : Math.round(shareData.balance / sumBalance * 10000) / 100;
-          sumPercentage += sharePercentage;
-          return {
-            ...shareData,
-            percentage: sharePercentage
-          };
-        })
-        .sort((shareA, shareB) => {
-          return shareA.balance < shareB.balance ? 1 : -1;
-        });
+          .map((shareData, index) => {
+            const sharePercentage = index === updatedShares.length - 1
+                ? Math.round((100 - sumPercentage) * 100) / 100
+                : Math.round(shareData.balance / sumBalance * 10000) / 100;
+            sumPercentage += sharePercentage;
+            return {
+              ...shareData,
+              percentage: sharePercentage
+            };
+          })
+          .sort((shareA, shareB) => {
+            return shareA.balance < shareB.balance ? 1 : -1;
+          });
 
-      if (updatedShares.length > 7) {
-        const partials = updatedShares.slice(6, updatedShares.length - 1);
-        const mergedShare = [...partials].reduce((merged, current) => {
-          return {
-            asset: merged.asset + `, ${current.asset}`,
-            balance: merged.balance + current.balance,
-            percentage: merged.percentage + current.percentage
-          };
-        });
-        mergedShare.partials = [...partials];
-
-        return [...updatedShares.slice(0, 6), mergedShare];
-      } else {
-        return updatedShares;
-      }
+      return this.mergeToMaxNumberOfAssets(updatedShares);
     },
 
     // TODO move to service
@@ -203,9 +253,25 @@ export default {
         return '';
       }
     },
+    mergeToMaxNumberOfAssets(assets) {
+      if (assets.length > 7) {
+        const partials = assets.slice(6, assets.length - 1);
+        const mergedShare = [...partials].reduce((merged, current) => {
+          return {
+            asset: {name: merged.asset.name + `, ${current.asset.name}${current.asset.dex ? ' ' + current.asset.dex : ''}`},
+            balance: merged.balance + current.balance,
+            percentage: merged.percentage + current.percentage
+          };
+        });
+        mergedShare.partials = [...partials];
+        return [...assets.slice(0, 6), mergedShare];
+      } else {
+        return assets;
+      }
+    }
   },
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'assets', 'lpAssets', 'lpBalances']),
+    ...mapState('fundsStore', ['assetBalances', 'assets', 'lpAssets', 'lpBalances', 'debtsPerAsset']),
     ...mapState('serviceRegistry', [
       'themeService',
       'farmService'
@@ -243,9 +309,30 @@ export default {
     assets: {
       handler() {
         this.reloadHeld();
+        this.reloadBorrowed();
       },
       immediate: true
-    }
+    },
+    debtsPerAsset: {
+      handler() {
+        this.reloadBorrowed();
+      }
+    },
+    held: {
+      handler() {
+        this.reloadTotal();
+      }
+    },
+    lpTokens: {
+      handler() {
+        this.reloadTotal();
+      }
+    },
+    farms: {
+      handler() {
+        this.reloadTotal();
+      }
+    },
   },
   data() {
     return {
@@ -253,6 +340,8 @@ export default {
       farmsLoaded: null,
       selectedDataSet: null,
       held: null,
+      borrowed: null,
+      total: null,
       lpTokens: null,
       farms: null,
       selectedShares: 'Held',
@@ -375,14 +464,31 @@ export default {
   color: var(--stats-shares-section__legend-entry-subtitle-color);
 }
 
+.entry__fullname {
+  .entry__subtitle {
+    display: flex;
+    flex-direction: column;
+    position: initial;
+  }
+}
+
 .entry__partials {
   position: relative;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-wrap: wrap;
 
   .entry__title {
     margin-right: 0;
+  }
+}
+
+.entry__partial {
+  display: flex;
+  flex-direction: row;
+
+  .entry__subtitle {
+    margin-bottom: 4px;
   }
 }
 
