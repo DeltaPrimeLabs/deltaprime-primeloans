@@ -42,6 +42,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     VestingDistributor public vestingDistributor;
 
+    uint8 internal _decimals;
+
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
             && AddressUpgradeable.isContract(address(borrowersRegistry_))
@@ -56,6 +58,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         poolRewarder = poolRewarder_;
         tokenAddress = tokenAddress_;
         totalSupplyCap = _totalSupplyCap;
+
+        _decimals = IERC20Metadata(tokenAddress_).decimals();
 
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -359,8 +363,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _symbol = "";
     }
 
-    function decimals() public virtual pure returns(uint8 decimals){
-        decimals = 0;
+    function decimals() public virtual view returns(uint8){
+        return _decimals;
     }
 
     function totalSupply() public view override returns (uint256) {
