@@ -197,7 +197,7 @@ export default {
 
     setupFundsTableHeaderConfig() {
       this.fundsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px',
+        gridTemplateColumns: 'repeat(6, 1fr) 90px 76px 102px',
         cells: [
           {
             label: 'Asset',
@@ -213,6 +213,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },
+          {
+            label: 'Farmed',
+            sortable: false,
+            class: 'farmed',
+            id: 'FARMED',
+            tooltip: `The number and value of staked assets in your Prime Account.`
           },
           {
             label: 'Borrowed',
