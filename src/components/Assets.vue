@@ -264,7 +264,7 @@ export default {
 
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 102px',
+        gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',
         cells: [
           {
             label: 'LP Token',
@@ -280,6 +280,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },
+          {
+            label: 'Farmed',
+            sortable: false,
+            class: 'farmed',
+            id: 'FARMED',
+            tooltip: `The number and value of staked assets in your Prime Account.`
           },
           {
             label: 'TVL',

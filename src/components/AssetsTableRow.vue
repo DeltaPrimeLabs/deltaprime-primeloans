@@ -33,7 +33,7 @@
         <template
             v-if="totalStaked">
           <div class="double-value__pieces">
-            <span v-if="isTotalStakedEstimated">~</span>{{ totalStaked | smartRound }}
+            {{ totalStaked | smartRound }}
           </div>
           <div class="double-value__usd">
             <span v-if="totalStaked">{{ totalStaked * asset.price | usd }}</span>
@@ -196,7 +196,6 @@ export default {
       disableAllButtons: false,
       borrowApyPerPool: {},
       healthLoaded: false,
-      isTotalStakedEstimated: false,
       totalStaked: null,
       availableFarms: [],
     };
@@ -841,7 +840,6 @@ export default {
     watchExternalTotalStakedUpdate() {
       this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
         if (updateEvent.assetSymbol === this.asset.symbol) {
-          this.isTotalStakedEstimated = !updateEvent.isTrueData;
           if (updateEvent.action === 'STAKE') {
             this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
           } else if (updateEvent.action === 'UNSTAKE') {

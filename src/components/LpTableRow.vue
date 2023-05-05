@@ -28,6 +28,21 @@
         </template>
       </div>
 
+      <div class="table__cell table__cell--double-value farmed">
+        <template
+            v-if="totalStaked">
+          <div class="double-value__pieces">
+            {{ totalStaked | smartRound }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="totalStaked">{{ totalStaked * lpToken.price | usd }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         {{ lpToken.tvl | usd }}
       </div>
@@ -111,6 +126,7 @@ export default {
   },
 
   async mounted() {
+    this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
@@ -118,6 +134,8 @@ export default {
     this.watchProgressBarState();
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
+    this.watchExternalTotalStakedUpdate();
+    this.watchFarmRefreshEvent();
     await this.setupApr();
   },
 
@@ -133,6 +151,8 @@ export default {
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
+      totalStaked: null,
+      availableFarms: [],
     };
   },
 
@@ -156,7 +176,9 @@ export default {
       'dataRefreshEventService',
       'progressBarService',
       'lpService',
-      'healthService'
+      'healthService',
+      'stakedExternalUpdateService',
+      'farmService'
     ]),
 
     hasSmartLoanContract() {
@@ -486,6 +508,32 @@ export default {
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
+
+    watchExternalTotalStakedUpdate() {
+      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.lpToken.symbol) {
+          if (updateEvent.action === 'STAKE') {
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+          } else if (updateEvent.action === 'UNSTAKE') {
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+          }
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchFarmRefreshEvent() {
+      console.log(this.availableFarms);
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        if (this.availableFarms) {
+          this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+        }
+      });
+    },
+
+    setupAvailableFarms() {
+      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.lpToken.symbol];
+    },
   },
 };
 </script>
@@ -503,7 +551,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 20% repeat(2, 1fr) 15% 135px 60px 80px 22px;
+    grid-template-columns: repeat(4, 1fr) 12% 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -539,6 +587,10 @@ export default {
       }
 
       &.balance {
+        align-items: flex-end;
+      }
+
+      &.farmed {
         align-items: flex-end;
       }
 
