@@ -210,6 +210,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
             for (uint256 i; i < assetsOwned.length; i++) {
                 IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
+
+                if (address(token) == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+                    token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+                }
+
                 uint256 balance = token.balanceOf(address(this));
 
                 address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
