@@ -139,6 +139,7 @@ export default {
 
     async getTransactionHistory(accountAddress, page, pageSize) {
       const response = await this.statsService.getUserTransactionHistory(accountAddress, page, pageSize);
+      console.log(response);
       this.transactionHistory = response.data.user.transactions;
       this.totalTransactions = response.data.user.numTransactions;
       this.$forceUpdate();
