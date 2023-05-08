@@ -2,13 +2,13 @@
   <div class="edit-contact">
     <template v-if="!editMode">
       <div class="view-container">
-        <div class="contact-box">
+        <div v-if="emailInfo" class="contact-box">
           <div class="notifi-modal__text-info contact-info">
             {{ emailInfo.emailAddress }}
           </div>
           <div
             v-if="!emailInfo.isConfirmed"
-            class="contact-verify"
+            class="link-text contact-verify"
           >
             <a
               class="verify-link"
@@ -19,7 +19,7 @@
           </div>
         </div>
 
-        <div class="contact-box">
+        <div v-if="phoneInfo" class="contact-box">
           <div class="notifi-modal__text-info contact-info">
             {{ telegramInfo.telegramId }}
           </div>
@@ -37,24 +37,26 @@
           </div>
         </div>
 
-        <div class="contact-box">
+        <div v-if="telegramInfo" class="contact-box">
           <div class="notifi-modal__text-info contact-info">
             {{ phoneInfo.phoneNumber }}
           </div>
         </div>
       </div>
 
-      <div
-        class="link-text edit-button"
-        @click="editMode = true"
-      >
-        <IconButton
-          class="edit-icon"
-          :icon-src="'src/assets/icons/icon_edit_xs.svg'"
-          :size="12.7"
+      <div class="edit-button">
+        <div
+          class="link-text"
           @click="() => {}"
-        ></IconButton>
-        Edit contact info
+        >
+          <IconButton
+            class="edit-icon"
+            :icon-src="'src/assets/icons/icon_edit_xs.svg'"
+            :size="12.7"
+            @click="() => {}"
+          ></IconButton>
+          Edit contact info
+        </div>
       </div>
     </template>
 
@@ -76,9 +78,9 @@ export default ({
     IconButton
   },
   props: {
-    emailInfo: { type: Object, default: () => {} },
-    phoneInfo: { type: Object, default: () => {} },
-    telegramInfo: { type: Object, default: () => {} }
+    emailInfo: null,
+    phoneInfo: null,
+    telegramInfo: null
   },
   data() {
     return {
@@ -128,7 +130,6 @@ export default ({
       }
 
       .contact-verify {
-        display: flex;
         margin-left: 5px;
 
         .verify-link {
@@ -149,6 +150,10 @@ export default ({
     margin-right: 12px;
     text-align: right;
 
+    span {
+      display: inline-flex;
+    }
+
     .edit-icon {
       margin-right: 4px;
       transform: translateY(-1px);
@@ -157,6 +162,7 @@ export default ({
 }
 
 .link-text {
+  display: flex;
   font-size: $font-size-xs;
   font-weight: 600;
   color: var(--edit-contact__contact-verify-color);

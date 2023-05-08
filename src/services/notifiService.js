@@ -244,4 +244,8 @@ export default class notifiService {
     const id = await client.sendEmailTargetVerification({ targetId });
     return id;
   }
+
+  async deletAlert(client, id) {
+    await client.deleteAlert({ id });
+  }
 }

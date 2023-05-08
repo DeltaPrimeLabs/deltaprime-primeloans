@@ -53,7 +53,7 @@
         :label="'Next'"
         @click.once="handleClick"
         :customStyle="customStyles.button"
-        :disabled="invalid || !targets['emailAddress'] && !targets['phoneNumber'] && !targets['telegramId']"
+        :disabled="invalid || !targets.emailAddress && !targets.phoneNumber && !targets.telegramId"
         :waiting="screenLoading"
         :rightIconSrc="'src/assets/icons/icon_arrow_s_white.svg'"
       ></Button>
@@ -110,6 +110,7 @@ export default ({
 
       const inputName = event.type === 'email' ? 'emailAddress' : event.type === 'phone' ? 'phoneNumber' : 'telegramId';
 
+      this.invalid = false;
       this.targets = {
         ...this.targets,
         [inputName]: event.value

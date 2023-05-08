@@ -10,19 +10,26 @@
   
 <script>
 export default {
-  name: "ThemeToggle",
+  name: "ToggleButton",
   components: {},
-  created() {
+  props: {
+    alertId: null,
+    alertType: { type: String, default: '' },
+    toggleOn: { type: Boolean, default: false }
   },
   data() {
     return {
-      toggled: false
+      toggled: this.toggleOn
     }
   },
   methods: {
     handleClick() {
-      toggled = !toggled;
-      this.$emit('alertToggle', toggled);
+      this.toggled = !this.toggled;
+      this.$emit('alertToggle', {
+        alertId: this.alertId,
+        alertType: this.alertType,
+        toggle: this.toggled
+      });
     },
   }
 }

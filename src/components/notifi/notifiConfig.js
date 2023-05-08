@@ -39,31 +39,31 @@ export default {
       }
     }
   },
-  ALERTS_CONFIG: [
-    {
-      id: "announcements",
+  ALERTS_CONFIG: {
+    "BROADCAST_MESSAGES": {
+      type: "announcements",
       label: "DeltaPrime Announcements",
-      toggle: true
+      toggle: true,
     },
-    {
-      id: "liquidation",
+    "LIQUIDATIONS": {
+      type: "liquidation",
       label: "Liquidation Alerts",
       tooltip: "Liquidation Alerts",
       toggle: true
     },
-    {
-      id: "loanHealth",
+    "DELTA_PRIME_LENDING_HEALTH_EVENTS": {
+      type: "loanHealth",
       label: "Loan Health Alerts",
       tooltip: "Loan Health Alerts",
       toggle: true,
       settingsNote: "Alert me when my loan health score goes below LTV threshold"
     },
-    {
-      id: "interestRate",
+    "DELTA_PRIME_BORROW_RATE_EVENTS": {
+      type: "borrowRate",
       label: "Borrowing Interest Rate Alerts",
       tooltip: "Borrowing Interest Rate Alerts"
     }
-  ],
+  },
   NOTIFICATION_ICONS_CONFIG: {
     "Announcement": {
       iconSrc: "src/assets/icons/icon_announcement.svg"
@@ -86,9 +86,9 @@ export default {
       id: "sixty",
       value: 60
     },
-    {
+    {//default
       id: "seventy",
-      value: 70
+      value: 70,
     }
   ]
 }
