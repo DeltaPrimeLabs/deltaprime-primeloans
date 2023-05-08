@@ -1540,19 +1540,19 @@
   dependencies:
     "@types/bignumber.js" "^5.0.0"
 
-"@notifi-network/notifi-frontend-client@^0.61.6":
-  version "0.61.6"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-0.61.6.tgz#77a122b818a206df8c5b217484ed80c6de93aa0d"
-  integrity sha512-ygRJuJJNdgIFG/CF2TgVpt5Pv0hr05FNRGOacUuq1Lg3eBSfFRweWDdynQC3z1yWwnakhadNrz4l4tNE3+/b9g==
+"@notifi-network/notifi-frontend-client@^0.63.0":
+  version "0.63.0"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-0.63.0.tgz#36907bdee8d58c1da35d52c4fc6a3792dac28440"
+  integrity sha512-7gfnsp86Mqb9fKJPFLir/P4YIBTgLEmsClLLATfDV+ubX5YDU+vNVO4syERlzm7a5ITibkesocdwVfwnHT8fsw==
   dependencies:
-    "@notifi-network/notifi-graphql" "^0.61.6"
+    "@notifi-network/notifi-graphql" "^0.63.0"
     graphql-request "5.1.0"
     localforage "^1.10.0"
 
-"@notifi-network/notifi-graphql@^0.61.6":
-  version "0.61.6"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-0.61.6.tgz#b718308eb8135b9be8e7ed3fc8ba3e7bbfc4b969"
-  integrity sha512-aa1PIfTtG6cBRKCCSQQ8R8cvEHPPkbm84w5OrPkJIhLwTTvC03l+iiYEVdAK1Yx+6zQ90Wtk1RAgsLP+pMB6aQ==
+"@notifi-network/notifi-graphql@^0.63.0":
+  version "0.63.0"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-0.63.0.tgz#bb6db1f44ee9ce7824204b5beeb10b448d3bd603"
+  integrity sha512-Yn3MksL+GGEEHl1B+4G9MSOAfUWfXZF4nsSNzVQw6OmBzpXF4W44nQWHpWhZo2Qvr8XZYHryqhAcTF6HezoQgA==
   dependencies:
     graphql "^16.6.0"
     graphql-request "5.1.0"
@@ -10852,6 +10852,11 @@ moment-timezone@^0.5.10:
   version "2.29.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
   integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
+
+moment@^2.29.4:
+  version "2.29.4"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.4.tgz#3dbe052889fe7c1b2ed966fcb3a77328964ef108"
+  integrity sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==
 
 move-concurrently@^1.0.1:
   version "1.0.1"

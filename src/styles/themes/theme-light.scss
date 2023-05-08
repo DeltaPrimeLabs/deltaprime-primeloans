@@ -343,4 +343,49 @@
   // region StatsSharesSection
   --stats-shares-section__no-data-text-color: #{$steel-gray};
   // endregion
+
+  // region NotifiModal
+  --notifi-modal__container-box-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
+  --notifi-modal__container-border: solid 2px #{$delta-secondary};
+  --notifi-modal__container-background-color: #{$white};
+  --notifi-modal__container-top-info-color: #{$steel-gray};
+  --notifi-modal__container-footer-font-color: #{$black}b3;
+  --notifi-modal__container-inner-border-color: #{$violet-smoke};
+  --notifi-modal__container-separator: linear-gradient(to right, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
+  --notifi-modal__container-input-color: #{$black};
+  --notifi-modal__container-text-small: #{$medium-gray};
+  --notifi-modal__container-notification-box-hover-color: #{$violet-mist};
+  // endregion
+
+  // region FromInput
+  --form-input__border: solid 2px #{$violet-smoke};
+  --form-input__background-color: #{$violet-mist};
+  --form-input__error-color: #{$red};
+  // endregion
+
+  // region EditContact
+  --edit-contact__border: solid 2px #{$violet-smoke};
+  --edit-contact__background-color: #{$violet-mist};
+  --edit-contact__contact-info-color: #{$dark-gray};
+  --edit-contact__contact-verify-color: #{$persian-blue};
+  --edit-contact__contact-box-top-border: 1px solid #{$violet-smoke};
+  // endregion
+
+  // region ThemeToggle
+  --toggle-button__background: #{$delta-light};
+  --toggle-button__toggle-on-background: #{$delta-accent};
+  --toggle-button__switch-box-shadow: 1px 1px 4px 0 #{$smoke-purple}4c;
+  --toggle-button__switch-background: #{$white};
+  --toggle-button__switch-on-background: #{$white};
+  // endregion
+
+  // region HealthRateButton
+  --health-rate-button__border-color: #{$smoke-gray};
+  --health-rate-button__background-color: #{$white};
+  --health-rate-button__rate-inactive-color: #{$steel-gray};
+  --health-rate-button__rate-active-color: #{$black};
+  --health-rate-button__active-border-color: #{$delta-primary};
+  --health-rate-button__active-background-color: #{$delta-burnt-out};
+  --health-rate-button__active-box_shadow: 2px 2px 4px 0 #{$delta-steel}7f;
+  // endregion
 }

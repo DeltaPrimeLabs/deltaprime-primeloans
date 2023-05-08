@@ -1,8 +1,19 @@
 <template>
   <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']"
-          @click="clicked()">
+          @click="clicked()"
+          :style="customStyle">
     <div class="btn-label">
+      <img
+        v-if="leftIconSrc"
+        class="btn-label__icon-left"
+        :src="leftIconSrc"
+      >
       {{ label }}
+      <img
+        v-if="rightIconSrc"
+        class="btn-label__icon-right"
+        :src="rightIconSrc"
+      >
     </div>
     <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
@@ -15,7 +26,10 @@ export default {
   props: {
     disabled: false,
     waiting: false,
-    label: ''
+    label: '',
+    customStyle: { type: Object, default: null },
+    leftIconSrc: { type: String, default: null },
+    rightIconSrc: { type: String, default: null }
   },
   methods: {
     clicked() {
@@ -56,7 +70,23 @@ export default {
   }
 
   .btn-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-width: 57px;
+
+    .btn-label__icon-left, .btn-label__icon-right {
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .btn-label__icon-left {
+      margin-right: 8px;
+    }
+
+    .btn-label__icon-right {
+      margin-left: 8px;
+    }
   }
 
   .ball-beat {

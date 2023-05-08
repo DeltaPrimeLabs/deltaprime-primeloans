@@ -26,6 +26,37 @@ Vue.use(VTooltip, {
 
 Vue.mixin(globalMixin);
 
+// notifi modal open/close on outside click
+let handleOutsideClick
+Vue.directive('closable', {
+  updated(el, binding, vnode, prevVnode) {
+    handleOutsideClick = (e) => {
+      e.stopPropagation();
+
+      const { handler, exclude } = binding.value;
+      let clickedOnExcludedEl = false;
+
+      exclude.forEach(refName => {
+        if (!clickedOnExcludedEl) {
+          const excludedEl = vnode.context.$refs[refName];
+          clickedOnExcludedEl = excludedEl && excludedEl.$el.contains(e.target);
+        }
+      });
+
+      if (!el.contains(e.target) && !clickedOnExcludedEl) {
+        vnode.context[handler]();
+      }
+    }
+    document.addEventListener('click', handleOutsideClick);
+    // document.addEventListener('touchstart', handleOutsideClick); // for mobile
+  },
+
+  unbind() {
+    document.removeEventListener('click', handleOutsideClick);
+    // document.removeEventListener('touchstart', handleOutsideClick); // for mobile
+  }
+})
+
 setupFilters();
 
 /* eslint-disable no-new */

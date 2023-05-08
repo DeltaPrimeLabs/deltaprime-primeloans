@@ -16,33 +16,43 @@
     <div class="balance">{{ accountBalance | avax }}</div>
     <img class="logo" src="src/assets/icons/avax-icon.svg"/>
     <div class="separator"></div>
-    <IconButton :disabled="!account"
+    <IconButton :disabled="!account || !notifiScreenLoaded"
+                ref="notifiBtn"
                 class="alert-icon"
-                :icon-src="'src/assets/icons/alert_icon.svg'" :size="16"
+                :icon-src="'src/assets/icons/alert_icon.svg'" :size="20"
                 v-tooltip="{content: 'Notifications', classes: 'info-tooltip'}"
-                v-on:click="actionClick('OPEN')">
+                @click="showModal = !showModal">
     </IconButton>
+    <NotifiModal
+      :show="showModal"
+      @modalClosed="showModal = false"
+      v-closable="{
+        exclude: ['notifiBtn'],
+        handler: 'handleClose'
+      }"
+    >
+    </NotifiModal>
   </div>
 </template>
 
 
 <script>
-  import { mapState, mapActions } from "vuex";
+  import { mapState } from "vuex";
   import IconButton from "./IconButton.vue";
+  import NotifiModal from "./notifi/NotifiModal.vue";
   const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
   export default {
     name: 'Wallet',
-    props: {
-      title: String
-    },
     components: {
       IconButton,
+      NotifiModal
     },
     computed: {
       ...mapState('network', ['provider', 'account', 'accountBalance']),
       ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
-      ...mapState('notifiStore', ['notifiAuthenticated', 'targetGroups']),
+      ...mapState('serviceRegistry', ['notifiService']),
+      ...mapState('notifiStore', ['notifi']),
       network() {
         return 'Avalanche';
       },
@@ -52,53 +62,23 @@
     },
     data() {
       return {
-
+        showModal: false,
+        notifiScreenLoaded: false
       }
     },
+    mounted() {
+      this.watchNotifiCurrentScreen();
+    },
     methods: {
-      ...mapActions('notifiStore', ['initAuth', 'createAlert', 'createTargetGroups']),
-      actionClick(key) {
-        switch (key) {
-          case 'OPEN':
-            if (!this.notifiAuthenticated) {
-              // show initial screen to connect to notifi
-            } else if(!this.targetGroups || this.targetGroups.length == 0) {
-              // show destinations setup screen
-            } else {
-              // show main screen
-            }
-            this.handleNotifi();
-            break;
-          case 'LOGIN':
-            this.initAuth();
-            break;
-          case 'CREATE': 
-            this.createAlert();
-            break;
-        }
+      handleClose() {
+        this.showModal = false;
+        this.notifiService.refreshClientInfo(this.notifi.client);
       },
-      async handleNotifi() {
-        await this.initAuth();
 
-        const targetPayload = {
-          name: 'Default',
-          emailAddress: 'willie.lee226@gmail.com'
-        };
-        await this.createTargetGroups({ targetPayload });
-
-        const eventType = {
-          name: 'Loan Health Alerts',
-          filterType: 'DELTA_PRIME_LENDING_HEALTH_EVENTS',
-          selectedUIType: "HEALTH_CHECK",
-          alertFrequency: 'DAILY',
-          checkRatios: [{ type: 'below', value: 90 }],
-        };
-
-        const inputs = {
-          ['Loan Health Alerts__healthRatio']: 90, // in percent, like 100
-        };
-
-        await this.createAlert({ eventType, inputs });
+      watchNotifiCurrentScreen() {
+        this.notifiService.observeCurrentScreen().subscribe(() => {
+          this.notifiScreenLoaded = true;
+        });
       }
     }
   }
@@ -111,6 +91,7 @@
   display: flex;
   font-weight: 500;
   font-size: 14px;
+  position: relative;
 
   @media screen and (max-width: $md) {
     font-size: initial;
@@ -153,9 +134,7 @@
 .alert-icon {
   cursor: pointer;
   margin-right: 5px;
-  &:hover {
-    transform: scale(1.2);
-  }
+  transform: translateY(-2px);
 }
 </style>
 
