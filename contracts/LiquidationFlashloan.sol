@@ -170,8 +170,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Approve AAVE POOL
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(address(POOL), 0);
-      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
+      assets[i].safeApprove(address(POOL), 0);
+      assets[i].safeApprove(address(POOL), amounts[i] + premiums[i]);
     }
 
     return true;
