@@ -13,6 +13,8 @@ import "../../interfaces/facets/IGMDVault.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
+    using TransferHelper for address;
+
     // CONSTANTS
 
     address private constant GMDVaultAddress = 0x5517c5F22177BcF7b320A2A5daF2334344eFb38C;
@@ -140,7 +142,8 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
         uint256 amountStaked = Math.min(stakedToken.balanceOf(address(this)), position.amountStaked);
         require(amountStaked > 0, "Cannot stake 0 tokens");
 
-        stakedToken.approve(GMDVaultAddress, amountStaked);
+        address(stakedToken).safeApprove(GMDVaultAddress, 0);
+        address(stakedToken).safeApprove(GMDVaultAddress, amountStaked);
 
         vault.enter(amountStaked, position.pid);
 
@@ -173,8 +176,6 @@ contract GMDFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent{
         IGMDVault vault = IGMDVault(GMDVaultAddress);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
         IERC20Metadata receiptToken = IERC20Metadata(position.receiptToken);
-
-        uint256 initialReceiptTokenBalance = receiptToken.balanceOf(address(this));
 
         uint256 amountUnstaked = Math.min(receiptToken.balanceOf(address(this)), position.amountUnstaked);
         require(amountUnstaked > 0, "Cannot unstake 0 tokens");

@@ -16,6 +16,8 @@ import "../../interfaces/ITokenManager.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    using TransferHelper for address;
+
     // Used to claim GLP fees
     address private constant REWARD_ROUTER_ADDRESS = 0x82147C5A7E850eA4E28155DF107F2590fD4ba327;
     // Used to mint/redeem GLP
@@ -62,7 +64,8 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _amount = Math.min(tokenToMintWith.balanceOf(address(this)), _amount);
 
-        tokenToMintWith.approve(GLP_MANAGER_ADDRESS, _amount);
+        _token.safeApprove(GLP_MANAGER_ADDRESS, 0);
+        _token.safeApprove(GLP_MANAGER_ADDRESS, _amount);
 
         uint256 glpOutputAmount = glpRewarder.mintAndStakeGlp(_token, _amount, _minUsdg, _minGlp);
 

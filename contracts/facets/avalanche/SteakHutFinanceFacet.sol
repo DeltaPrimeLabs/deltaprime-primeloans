@@ -15,6 +15,8 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    using TransferHelper for address;
+
     /**
      * Stakes in SteakHut AVAX/USDC pool
      * @param amount0Desired amount of AVAX to be staked
@@ -70,8 +72,10 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakingDetails.amount1Desired = Math.min(token1.balanceOf(address(this)), stakingDetails.amount1Desired);
         require(stakingDetails.amount0Desired > 0 && stakingDetails.amount1Desired > 0, "Cannot stake 0 tokens");
 
-        token0.approve(vaultAddress, stakingDetails.amount0Desired);
-        token1.approve(vaultAddress, stakingDetails.amount1Desired);
+        address(token0).safeApprove(vaultAddress, 0);
+        address(token0).safeApprove(vaultAddress, stakingDetails.amount0Desired);
+        address(token1).safeApprove(vaultAddress, 0);
+        address(token1).safeApprove(vaultAddress, stakingDetails.amount1Desired);
         (, uint256 amount0Actual, uint256 amount1Actual) = ISteakHutPool(vaultAddress).deposit(stakingDetails.amount0Desired, stakingDetails.amount1Desired, stakingDetails.amount0Min, stakingDetails.amount1Min);
 
         // Add/remove owned tokens

@@ -139,7 +139,8 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(tokenManager.tokenToStatus(stakingDetails.vaultAddress) == 2, "Vault token not supported");
         require(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) >= stakingDetails.amount, "Not enough LP token available");
 
-        IERC20Metadata(stakingDetails.lpTokenAddress).approve(stakingDetails.vaultAddress, stakingDetails.amount);
+        stakingDetails.lpTokenAddress.safeApprove(stakingDetails.vaultAddress, 0);
+        stakingDetails.lpTokenAddress.safeApprove(stakingDetails.vaultAddress, stakingDetails.amount);
 
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
 
