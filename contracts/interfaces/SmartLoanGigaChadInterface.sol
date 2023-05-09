@@ -21,5 +21,14 @@ import "./facets/avalanche/IVectorFinanceFacetOld.sol";
 import "./facets/avalanche/IBeefyFinanceFacet.sol";
 
 interface SmartLoanGigaChadInterface is IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet {
+    error CalldataOverOrUnderFlow();
+    error IncorrectUnsignedMetadataSize();
+    error InsufficientNumberOfUniqueSigners(uint256 receivedSignersCount, uint256 requiredSignersCount);
+    error EachSignerMustProvideTheSameValue();
+    error EmptyCalldataPointersArr();
+    error InvalidCalldataPointer();
+    error CalldataMustHaveValidPayload();
+    error SignerNotAuthorised(address receivedSigner);
+    error TimestampIsNotValid();
 
 }
