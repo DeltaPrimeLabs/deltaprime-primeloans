@@ -342,4 +342,11 @@
   // region StatsSharesSection
   --stats-shares-section__no-data-text-color: #{$washed-blue};
   // endregion
+
+  // region StatsChartSection
+  --stats-chart-section__tick-color: #{$washed-space};
+  --stats-chart-section__axes-text-color: #{$washed-blue};
+  --stats-chart-section__point-color: #{$mist-blue};
+  --stats-chart-section__toggle-metadata-separator-color: #{$washed-space};
+  // endregion
 }

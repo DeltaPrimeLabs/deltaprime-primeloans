@@ -1,5 +1,6 @@
 <template>
   <div class="stats-container">
+    <StatsChartSection class="stats-chart-section"></StatsChartSection>
     <StatsSharesSection class="stats-shares-section"></StatsSharesSection>
     <TransactionHistory class="transaction-history"></TransactionHistory>
   </div>
@@ -10,10 +11,11 @@ import PieChart from "./PieChart.vue";
 import StatsSection from "./StatsSection.vue";
 import StatsSharesSection from "./StatsSharesSection.vue";
 import TransactionHistory from '../TransactionHistory';
+import StatsChartSection from "./StatsChartSection.vue";
 
 export default {
   name: "Stats",
-  components: {TransactionHistory, StatsSharesSection, StatsSection, PieChart}
+  components: {StatsChartSection, TransactionHistory, StatsSharesSection, StatsSection, PieChart}
 }
 </script>
 
@@ -26,12 +28,16 @@ export default {
   width: 100%;
   margin-top: 30px;
 
-  .stats-shares-section {
+  .stats-chart-section {
     grid-area: 1 / 1 / 2 / 4;
   }
 
-  .transaction-history {
+  .stats-shares-section {
     grid-area: 2 / 1 / 3 / 4;
+  }
+
+  .transaction-history {
+    grid-area: 3 / 1 / 4 / 4;
   }
 }
 
