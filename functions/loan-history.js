@@ -6,7 +6,7 @@ const ARTIFACT = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const fs = require("fs");
 const { WrapperBuilder } = require("@redstone-finance/evm-connector");
-const queryHistoricalFeeds = require("./query-arweave");
+const { queryHistoricalFeeds } = require("./query-arweave");
 const { SignedDataPackage } = require("redstone-protocol");
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
@@ -20,7 +20,8 @@ const web = new Web3(new Web3.providers.HttpProvider(jsonRPC));
 let wallet = mnemonicWallet.connect(provider);
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-module.exports = async function getData(loanAddress, timestamp) {
+
+async function getData(loanAddress, timestamp) {
   let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
@@ -68,20 +69,16 @@ module.exports = async function getData(loanAddress, timestamp) {
     res
   );
 
-  console.log('getFullLoanStatus: ')
-  console.log(decoded[0])
-  console.log('total value: ', fromWei(decoded[0][0]))
-  console.log('debt: ', fromWei(decoded[0][1]))
-  console.log('twv: ', fromWei(decoded[0][2]))
-  console.log('health ratio: ', fromWei(decoded[0][3]))
-  console.log('solvent: ', fromWei(decoded[0][4]))
-
   return {
     totalValue: fromWei(decoded[0][0]),
-    debtValue: fromWei(decoded[0][1]),
+    borrowed: fromWei(decoded[0][1]),
     twv: fromWei(decoded[0][2]),
-    healthRatio: fromWei(decoded[0][3]),
-    solvent: fromWei(decoded[0][4])
-  }
+    health: fromWei(decoded[0][3]),
+    solvent: fromWei(decoded[0][4]),
+  };
 
+}
+
+module.exports = {
+  getLoanStatusAtTimestamp: getData
 }

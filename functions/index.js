@@ -9,7 +9,6 @@ const ApolloClient = require("apollo-client").ApolloClient;
 const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 const gql = require("graphql-tag");
-const { execSync } = require('child_process');
 
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
@@ -34,7 +33,7 @@ const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
 const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
 const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
-const getLoanStatusAtTimestamp = require('./loan-history');
+const { getLoanStatusAtTimestamp } = require('./loan-history');
 const timestampInterval = 3600 * 1000;
 
 const db = getFirestore();
@@ -46,11 +45,6 @@ const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea06
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
-
-async function exec(cmd) {
-  console.log(`exec: ${cmd}`);
-  return execSync(cmd, { stdio: 'inherit' });
-}
 
 function wrap(contract) {
   return WrapperBuilder.wrap(contract).usingDataService(
@@ -411,115 +405,146 @@ exports.apyAggregator = functions
     return null;
   });
 
-exports.saveLoansStatusHistory = functions
-  .runWith({ timeoutSeconds: 120, memory: "1GB" })
-  .pubsub.schedule('*/5 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting Loans Status.");
+// exports.saveLoansStatusHourly = functions
+//   .runWith({ timeoutSeconds: 120, memory: "1GB" })
+//   .pubsub.schedule('*/5 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting Loans Status.");
 
-    // const loanAddresses = await factory.getAllLoans();
-    const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
+//     // const loanAddresses = await factory.getAllLoans();
+//     const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
 
-    await Promise.all(
-      loanAddresses.map(async (loanAddress) => {
-        const defaultTimestamp = Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
-        const loanHistoryRef = db.collection('loansHistory').doc(loanAddress.toLowerCase());
-        const loanHistorySnap = await loanHistoryRef.get();
-        const timestamps = [];
-        let timestamp;
+//     await Promise.all(
+//       loanAddresses.map(async (loanAddress) => {
+//         const defaultTimestamp = Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
+//         const loanHistoryRef = db.collection('loansHistory').doc(loanAddress.toLowerCase());
+//         const loanHistorySnap = await loanHistoryRef.get();
+//         const timestamps = [];
+//         let timestamp;
 
-        if (!loanHistorySnap.exists) {
-          // loan's single history is not saved yet, we create from 30 days ago
-          timestamp = defaultTimestamp;
-        } else {
-          // we add new history after the latest timestamp
-          const loanHistory = loanHistorySnap.data();
-          console.log(loanHistory);
+//         if (!loanHistorySnap.exists) {
+//           // loan's single history is not saved yet, we create from 30 days ago
+//           timestamp = defaultTimestamp;
+//         } else {
+//           // we add new history after the latest timestamp
+//           const loanHistory = loanHistorySnap.data();
+//           console.log(loanHistory);
 
-          timestamp = Math.max([...Object.keys(loanHistory).map(Number), defaultTimestamp])
-                    + timestampInterval; // next timestamp where we get loan status
-        }
+//           timestamp = Math.max([...Object.keys(loanHistory).map(Number), defaultTimestamp])
+//                     + timestampInterval; // next timestamp where we get loan status
+//         }
 
-        // get timestamps
-        while (timestamp < Date.now()) {
-          console.log(timestamp);
-          timestamps.push(timestamp);
-          timestamp += timestampInterval;
-        }
+//         // get timestamps
+//         while (timestamp < Date.now()) {
+//           console.log(timestamp);
+//           timestamps.push(timestamp);
+//           timestamp += timestampInterval;
+//         }
 
-        console.log(timestamps);
+//         console.log(timestamps);
 
-        if (timestamps.length > 0) {
-          await Promise.all(
-            timestamps.map(async (timestamp) => {
-              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-              console.log(loanStatus);
+//         if (timestamps.length > 0) {
+//           await Promise.all(
+//             timestamps.map(async (timestamp) => {
+//               const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+//               console.log(loanStatus);
 
-              await loanHistoryRef.set({
-                [timestamp]: {
-                  totalValue: loanStatus.totalValue,
-                  debtValue: loanStatus.debtValue
-                }
-              }, { merge: true });
-            })
-          );
+//               await loanHistoryRef.set({
+//                 [timestamp]: {
+//                   totalValue: loanStatus.totalValue,
+//                   debtValue: loanStatus.debtValue
+//                 }
+//               }, { merge: true });
+//             })
+//           );
+//         }
+//       })
+//     )
 
-          // while (timestamp < Date.now()) {
-          //   const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-          //   console.log(loanStatus);
+//     functions.logger.info("Latest loan status saved.");
 
-          //   await loanHistoryRef.set({
-          //     [timestamp]: {
-          //       totalValue: loanStatus.totalValue,
-          //       debtValue: loanStatus.debtValue
-          //     }
-          //   }, { merge: true });
+//     return null;
+//   });
 
-          //   timestamp += timestampInterval;
-          // }
-        }
-      })
-    )
+const getEventsForPeriod = (from, to) => {
 
-    functions.logger.info("Latest loan status saved.");
-
-    return null;
-  });
+}
 
 exports.getLoansStatusHistory = onRequest(
-  { cors: [/deltaprime\.io$/] },
+  // { cors: [/deltaprime\.io$/] },
+  {},
   async (req, res) => {
-    const citiesRef = db.collection('cities');
-    const snapshot = await citiesRef.where('capital', '==', true).get();
-    if (snapshot.empty) {
-      console.log('No matching documents.');
-      return;
-    }  
+    const loanHistoryRef = db
+      .collection('loansHistory')
+      .doc(req.params.address)
+      .collection('loanStatus');
+    const snapshot = await loanHistoryRef
+      .where('timestamp', '>=', req.params.from)
+      .where('timestamp', '<=', req.params.to)
+      .get();
 
-    snapshot.forEach(doc => {
-      console.log(doc.id, '=>', doc.data());
-    });
-    res.status(200).send("Hello world!");
+    if (!snapshot.exists) {
+      res.status(200).send({
+        sucess: true,
+        data: [],
+        message: "there is no loan history for the period"
+      })
+    } else {
+      const loanHistory = snapshot.data();
+      const timestamps = Object.keys(loanHistory).map(Number).sort((a, b) => a - b);
+      const data = [];
+      const events = [];
+
+      timestamps.map((timestamp) => {
+        data.push({
+          timestamp: timestamp,
+          totalValue: loanHistory[timestamp].totalValue,
+          borrowed: loanHistory[timestamp].debtValue,
+          collateral: loanHistory[timestamp].totalValue - loanHistory[timestamp].debtValue,
+          health: loanHistory[timestamp].health,
+          solvent: loanHistory[timestamp].solvent,
+          events
+        });
+      });
+
+      res.status(200).send({
+        success: true,
+        data,
+      })
+    }
   }
 )
 
 async function getLoans() {
+  functions.logger.info("Getting Loans Status.");
+
+  // const loanAddresses = await factory.getAllLoans();
   const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
 
   await Promise.all(
     loanAddresses.map(async (loanAddress) => {
-      const defaultTimestamp = Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
-      const loanHistoryRef = db.collection('loansHistory').doc(loanAddress.toLowerCase());
+      const defaultTimestamp = 1683681918117; //Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
       const loanHistorySnap = await loanHistoryRef.get();
+      const loanHistory = [];
+
+      loanHistorySnap.forEach(doc => {
+        loanHistory.push({
+          [doc.id]: doc.data()
+        });
+      });
+
       const timestamps = [];
       let timestamp;
 
-      if (!loanHistorySnap.exists) {
+      if (loanHistory.length === 0) {
         // loan's single history is not saved yet, we create from 30 days ago
         timestamp = defaultTimestamp;
       } else {
         // we add new history after the latest timestamp
-        const loanHistory = loanHistorySnap.data();
         console.log(loanHistory);
 
         timestamp = Math.max(...Object.keys(loanHistory).map(Number), defaultTimestamp)
@@ -535,18 +560,20 @@ async function getLoans() {
       console.log(timestamps);
 
       if (timestamps.length > 0) {
-        await Promise.all(
+        Promise.all(
           timestamps.map(async (timestamp) => {
-            const loanStatus = await exec('npx hardhat run ./loan-history.js');
-            // const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
             console.log(loanStatus);
 
-            // await loanHistoryRef.set({
-            //   [timestamp]: {
-            //     totalValue: loanStatus.totalValue,
-            //     debtValue: loanStatus.debtValue
-            //   }
-            // }, { merge: true });
+            loanHistoryRef.doc(timestamp).set({
+              totalValue: loanStatus.totalValue,
+              borrowed: loanStatus.borrowed,
+              collateral: loanStatus.totalValue - loanStatus.borrowed,
+              twv: loanStatus.twv,
+              health: loanStatus.health,
+              solvent: loanStatus.solvent === 1e-18,
+              timestamp: timestamp
+            });
           })
         );
       }
@@ -554,4 +581,4 @@ async function getLoans() {
   )
 }
 
-getLoans();
+getLoans()

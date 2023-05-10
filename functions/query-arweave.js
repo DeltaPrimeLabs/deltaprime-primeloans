@@ -60,10 +60,14 @@ async function queryArweave(timestamp, nodeAddress) {
     return response;
 }
 
-module.exports = async (timestamp, nodeAddress) => {
+const queryHistoricalFeeds = async (timestamp, nodeAddress) => {
     try {
         return await queryArweave(timestamp, nodeAddress);
     } catch (error) {
         console.log(error);
     }
 };
+
+module.exports = {
+    queryHistoricalFeeds
+}
