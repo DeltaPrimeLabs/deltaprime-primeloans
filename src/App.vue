@@ -338,7 +338,7 @@ a {
 .banner-unwinded-glp {
   height: 70px;
   text-align: center;
-  padding: 0 40px;
+  padding: 0 70px;
 }
 
 .top-bar__left-part {
