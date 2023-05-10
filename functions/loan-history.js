@@ -62,7 +62,9 @@ async function getData(loanAddress, timestamp) {
 
   const tx = await wrappedContract.populateTransaction.getFullLoanStatus()
 
+  console.log('here1')
   let res = await loan.signer.call(tx, block.number)
+  console.log('here2')
 
 
   const decoded = loan.interface.decodeFunctionResult(

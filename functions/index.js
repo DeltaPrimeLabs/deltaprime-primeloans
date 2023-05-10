@@ -405,8 +405,9 @@ exports.apyAggregator = functions
   });
 
 const uploadLoanStatus = async () => {
-  const loanAddresses = await factory.getAllLoans();
-  // const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
+  // const loanAddresses = await factory.getAllLoans();
+  const loanAddresses = [
+      '0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5'];
 
   for (const loanAddress of loanAddresses) {
     const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
@@ -447,8 +448,10 @@ const uploadLoanStatus = async () => {
     console.log(timestamps);
 
     if (timestamps.length > 0) {
-      return await Promise.all(
-        timestamps.map(async (timestamp) => {
+
+      for (const timestamp of timestamps) {
+
+        try {
           const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
 
           await loanHistoryRef.doc(timestamp.toString()).set({
@@ -460,8 +463,12 @@ const uploadLoanStatus = async () => {
             solvent: loanStatus.solvent === 1e-18,
             timestamp: timestamp
           });
-        })
-      );
+        } catch(e) {
+          console.log('ERRRORRRR')
+          console.log(e)
+        }
+
+      }
     }
   }
 }
