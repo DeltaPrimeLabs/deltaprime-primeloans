@@ -1,7 +1,7 @@
 <template>
   <div class="page-content">
     <!--    <button v-on:click="testClick()">test</button>-->
-    <Banner v-if="showAnkrBanner" class="banner-unwinded-glp">
+    <Banner v-if="showAnkrBanner" :closable="true" class="banner-unwinded-glp">
       Currently AVAX-USDC swaps on the public RPC might be unavailable. Together with Yield Yak we are working on a solution for this. If you need to change exposure immediately, please change to the <a class="banner-link" href="https://chainlist.org/" target="_blank"><b>Ankr&nbsp;RPC</b></a> or jump in our Discord for assistance.
     </Banner>
     <Banner v-if="showNetworkBanner">
@@ -338,6 +338,7 @@ a {
 .banner-unwinded-glp {
   height: 70px;
   text-align: center;
+  padding: 0 40px;
 }
 
 .top-bar__left-part {
