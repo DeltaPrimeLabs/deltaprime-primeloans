@@ -448,27 +448,17 @@ const uploadLoanStatus = async () => {
       if (timestamps.length > 0) {
         await Promise.all(
           timestamps.map(async (timestamp) => {
-            // const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-            console.log(timestamp);
-            await loanHistoryRef.doc(timestamp.toString()).set({
-              totalValue: 123.2,
-              borrowed: 4.4,
-              collateral: 34.5,
-              twv: 31.2,
-              health: 14.5,
-              solvent: true,
+            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+
+            await loanHistoryRef.doc(timestamp).set({
+              totalValue: loanStatus.totalValue,
+              borrowed: loanStatus.borrowed,
+              collateral: loanStatus.totalValue - loanStatus.borrowed,
+              twv: loanStatus.twv,
+              health: loanStatus.health,
+              solvent: loanStatus.solvent === 1e-18,
               timestamp: timestamp
             });
-
-            // loanHistoryRef.doc(timestamp).set({
-            //   totalValue: loanStatus.totalValue,
-            //   borrowed: loanStatus.borrowed,
-            //   collateral: loanStatus.totalValue - loanStatus.borrowed,
-            //   twv: loanStatus.twv,
-            //   health: loanStatus.health,
-            //   solvent: loanStatus.solvent === 1e-18,
-            //   timestamp: timestamp
-            // });
           })
         );
       }
@@ -547,7 +537,7 @@ exports.loanhistory = functions
           timestamp: timestamp,
           totalValue: loanHistory[timestamp].totalValue,
           borrowed: loanHistory[timestamp].debtValue,
-          collateral: loanHistory[timestamp].totalValue - loanHistory[timestamp].debtValue,
+          collateral: loanHistory[timestamp].collateral,
           health: loanHistory[timestamp].health,
           solvent: loanHistory[timestamp].solvent,
           events
