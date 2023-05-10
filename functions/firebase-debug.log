@@ -1,0 +1,415 @@
+[debug] [2023-05-10T03:11:35.394Z] ----------------------------------------------------------------------
+[debug] [2023-05-10T03:11:35.395Z] Command:       /home/markmanu/.nvm/versions/node/v16.19.0/bin/node /home/markmanu/.nvm/versions/node/v16.19.0/bin/firebase functions:shell
+[debug] [2023-05-10T03:11:35.396Z] CLI Version:   11.23.1
+[debug] [2023-05-10T03:11:35.396Z] Platform:      linux
+[debug] [2023-05-10T03:11:35.396Z] Node Version:  v16.19.0
+[debug] [2023-05-10T03:11:35.396Z] Time:          Wed May 10 2023 11:11:35 GMT+0800 (China Standard Time)
+[debug] [2023-05-10T03:11:35.396Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-05-10T03:11:35.444Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-05-10T03:11:35.445Z] > authorizing via signed-in user (willie.lee226@gmail.com)
+[debug] [2023-05-10T03:11:35.445Z] [iam] checking project delta-prime-db for permissions ["firebase.projects.get"]
+[debug] [2023-05-10T03:11:35.446Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions [none]
+[debug] [2023-05-10T03:11:35.446Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions x-goog-quota-user=projects/delta-prime-db
+[debug] [2023-05-10T03:11:35.447Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:11:36.613Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions 200
+[debug] [2023-05-10T03:11:36.613Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:11:36.617Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2023-05-10T03:11:36.618Z] defaultcredentials: writing to file /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:11:36.619Z] DEBUG: Setting GAC to /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:11:36.619Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig [none]
+[debug] [2023-05-10T03:11:37.846Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig 200
+[debug] [2023-05-10T03:11:37.847Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig {"projectId":"delta-prime-db","storageBucket":"delta-prime-db.appspot.com"}
+[debug] [2023-05-10T03:11:37.874Z] [functions] Watching "/home/markmanu/task/deltaprime/functions" for Cloud Functions...
+[debug] [2023-05-10T03:11:37.881Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2023-05-10T03:11:39.461Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.0.19",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "ethers": "^5.7.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^4.2.1",
+    "graphql": "^15.8.0",
+    "graphql-request": "^6.0.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1",
+    "redstone-protocol": "^1.0.5",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}
+[debug] [2023-05-10T03:11:39.461Z] Building nodejs source
+[debug] [2023-05-10T03:11:39.462Z] Failed to find version of module node: reached end of search path /home/markmanu/task/deltaprime/functions/node_modules
+[info] ✔  functions: Using node@16 from host. 
+[debug] [2023-05-10T03:11:39.463Z] Could not find functions.yaml. Must use http discovery
+[debug] [2023-05-10T03:11:39.467Z] Found firebase-functions binary at '/home/markmanu/task/deltaprime/functions/node_modules/.bin/firebase-functions'
+[debug] [2023-05-10T03:11:39.552Z] Serving at port 8237
+
+[debug] [2023-05-10T03:11:40.161Z] Got response from /__/functions.yaml {"endpoints":{"scheduledFunction":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"scheduledFunction"},"gmxScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"gmxScraper"},"vectorScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"vectorScraper"},"apyAggregator":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"apyAggregator"},"getLoansStatusHistory":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/5 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"getLoansStatusHistory"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[debug] [2023-05-10T03:11:40.188Z] shutdown requested via /__/quitquitquit
+
+[debug] [2023-05-10T03:11:47.738Z] [functions] Loaded functions definitions from source: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory.
+[debug] [2023-05-10T03:11:47.738Z] [functions[us-central1-scheduledFunction]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:11:47.739Z] [functions[us-central1-gmxScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:11:47.739Z] [functions[us-central1-vectorScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:11:47.739Z] [functions[us-central1-apyAggregator]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:11:47.739Z] [functions[us-central1-getLoansStatusHistory]] function ignored because the pubsub emulator does not exist or is not running.
+[info] i  functions: Loaded functions: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory 
+[warn] ⚠  functions: The following emulators are not running, calls to these services will affect production: firestore, database, pubsub, storage, eventarc 
+[debug] [2023-05-10T03:14:12.043Z] DEBUG: File /home/markmanu/task/deltaprime/functions/index.js changed, reloading triggers
+[debug] [2023-05-10T03:14:13.046Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2023-05-10T03:14:14.690Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.0.19",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "ethers": "^5.7.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^4.2.1",
+    "graphql": "^15.8.0",
+    "graphql-request": "^6.0.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1",
+    "redstone-protocol": "^1.0.5",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}
+[debug] [2023-05-10T03:14:14.690Z] Building nodejs source
+[debug] [2023-05-10T03:14:14.690Z] Failed to find version of module node: reached end of search path /home/markmanu/task/deltaprime/functions/node_modules
+[info] ✔  functions: Using node@16 from host. 
+[debug] [2023-05-10T03:14:14.691Z] Could not find functions.yaml. Must use http discovery
+[debug] [2023-05-10T03:14:14.692Z] Found firebase-functions binary at '/home/markmanu/task/deltaprime/functions/node_modules/.bin/firebase-functions'
+[debug] [2023-05-10T03:14:14.780Z] Serving at port 8067
+
+[debug] [2023-05-10T03:14:15.443Z] Got response from /__/functions.yaml {"endpoints":{"scheduledFunction":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"scheduledFunction"},"gmxScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"gmxScraper"},"vectorScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"vectorScraper"},"apyAggregator":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"apyAggregator"},"getLoansStatusHistory":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/5 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"getLoansStatusHistory"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[debug] [2023-05-10T03:14:15.462Z] shutdown requested via /__/quitquitquit
+
+[debug] [2023-05-10T03:14:23.364Z] ----------------------------------------------------------------------
+[debug] [2023-05-10T03:14:23.366Z] Command:       /home/markmanu/.nvm/versions/node/v16.19.0/bin/node /home/markmanu/.nvm/versions/node/v16.19.0/bin/firebase functions:shell
+[debug] [2023-05-10T03:14:23.366Z] CLI Version:   11.23.1
+[debug] [2023-05-10T03:14:23.366Z] Platform:      linux
+[debug] [2023-05-10T03:14:23.366Z] Node Version:  v16.19.0
+[debug] [2023-05-10T03:14:23.367Z] Time:          Wed May 10 2023 11:14:23 GMT+0800 (China Standard Time)
+[debug] [2023-05-10T03:14:23.367Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-05-10T03:14:23.416Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-05-10T03:14:23.416Z] > authorizing via signed-in user (willie.lee226@gmail.com)
+[debug] [2023-05-10T03:14:23.416Z] [iam] checking project delta-prime-db for permissions ["firebase.projects.get"]
+[debug] [2023-05-10T03:14:23.418Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions [none]
+[debug] [2023-05-10T03:14:23.418Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions x-goog-quota-user=projects/delta-prime-db
+[debug] [2023-05-10T03:14:23.418Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:14:24.553Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions 200
+[debug] [2023-05-10T03:14:24.554Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:14:24.563Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2023-05-10T03:14:24.567Z] defaultcredentials: writing to file /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:14:24.569Z] DEBUG: Setting GAC to /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:14:24.570Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig [none]
+[debug] [2023-05-10T03:14:25.831Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig 200
+[debug] [2023-05-10T03:14:25.831Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig {"projectId":"delta-prime-db","storageBucket":"delta-prime-db.appspot.com"}
+[debug] [2023-05-10T03:14:25.838Z] [functions] Watching "/home/markmanu/task/deltaprime/functions" for Cloud Functions...
+[debug] [2023-05-10T03:14:25.841Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2023-05-10T03:14:27.429Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.0.19",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "ethers": "^5.7.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^4.2.1",
+    "graphql": "^15.8.0",
+    "graphql-request": "^6.0.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1",
+    "redstone-protocol": "^1.0.5",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}
+[debug] [2023-05-10T03:14:27.430Z] Building nodejs source
+[debug] [2023-05-10T03:14:27.430Z] Failed to find version of module node: reached end of search path /home/markmanu/task/deltaprime/functions/node_modules
+[info] ✔  functions: Using node@16 from host. 
+[debug] [2023-05-10T03:14:27.432Z] Could not find functions.yaml. Must use http discovery
+[debug] [2023-05-10T03:14:27.436Z] Found firebase-functions binary at '/home/markmanu/task/deltaprime/functions/node_modules/.bin/firebase-functions'
+[debug] [2023-05-10T03:14:27.523Z] Serving at port 8587
+
+[debug] [2023-05-10T03:14:28.148Z] Got response from /__/functions.yaml {"endpoints":{"scheduledFunction":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"scheduledFunction"},"gmxScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"gmxScraper"},"vectorScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"vectorScraper"},"apyAggregator":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"apyAggregator"},"getLoansStatusHistory":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/5 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"getLoansStatusHistory"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[debug] [2023-05-10T03:14:28.169Z] shutdown requested via /__/quitquitquit
+
+[debug] [2023-05-10T03:14:38.181Z] [functions] Loaded functions definitions from source: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory.
+[debug] [2023-05-10T03:14:38.182Z] [functions[us-central1-scheduledFunction]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:14:38.182Z] [functions[us-central1-gmxScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:14:38.182Z] [functions[us-central1-vectorScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:14:38.182Z] [functions[us-central1-apyAggregator]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:14:38.182Z] [functions[us-central1-getLoansStatusHistory]] function ignored because the pubsub emulator does not exist or is not running.
+[info] i  functions: Loaded functions: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory 
+[warn] ⚠  functions: The following emulators are not running, calls to these services will affect production: firestore, database, pubsub, storage, eventarc 
+[debug] [2023-05-10T03:14:40.607Z] shell:getLoansStatusHistory: trigger={"entryPoint":"getLoansStatusHistory","platform":"gcfv1","region":"us-central1","name":"getLoansStatusHistory","id":"us-central1-getLoansStatusHistory","codebase":"default","availableMemoryMb":1024,"labels":{"EVENTARC_CLOUD_EVENT_SOURCE":"cloudfunctions-emulated.googleapis.com/projects/delta-prime-db/locations/us-central1/functions/getLoansStatusHistory"},"timeoutSeconds":120,"secretEnvironmentVariables":[],"eventTrigger":{"eventType":"pubsub","resource":""},"schedule":{"schedule":"*/5 * * * *","timeZone":null,"retryConfig":{"maxBackoffSeconds":null,"minBackoffSeconds":null,"maxRetrySeconds":null,"retryCount":null,"maxDoublings":null}}}
+[debug] [2023-05-10T03:14:40.608Z] shell:getLoansStatusHistory: opts={}, data={}
+[debug] [2023-05-10T03:14:40.640Z] DEBUG: [worker-pool] addWorker(us-central1-getLoansStatusHistory)
+[debug] [2023-05-10T03:14:40.643Z] DEBUG: [worker-pool] Adding worker with key us-central1-getLoansStatusHistory, total=1
+[debug] [2023-05-10T03:14:41.177Z] DEBUG: [runtime-status] [65109] Resolved module firebase-admin {"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}
+[debug] [2023-05-10T03:14:41.177Z] DEBUG: [runtime-status] [65109] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:14:41.178Z] DEBUG: [runtime-status] [65109] Outgoing network have been stubbed. [{"name":"http","status":"mocked"},{"name":"http","status":"mocked"},{"name":"https","status":"mocked"},{"name":"https","status":"mocked"},{"name":"net","status":"mocked"}]
+[debug] [2023-05-10T03:14:41.179Z] DEBUG: [runtime-status] [65109] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:14:41.261Z] DEBUG: [runtime-status] [65109] Checked functions.config() {"config":{}}
+[debug] [2023-05-10T03:14:41.261Z] DEBUG: [runtime-status] [65109] firebase-functions has been stubbed. {"functionsResolution":{"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}}
+[debug] [2023-05-10T03:14:41.262Z] DEBUG: [runtime-status] [65109] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:14:41.263Z] DEBUG: [runtime-status] [65109] Resolved module firebase-admin {"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}
+[debug] [2023-05-10T03:14:41.264Z] DEBUG: [runtime-status] [65109] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:14:41.264Z] DEBUG: [runtime-status] [65109] firebase-admin has been stubbed. {"adminResolution":{"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}}
+[debug] [2023-05-10T03:14:41.747Z] DEBUG: [runtime-status] [65109] Functions runtime initialized. {"cwd":"/home/markmanu/task/deltaprime/functions","node_version":"16.19.0"}
+[debug] [2023-05-10T03:14:41.747Z] DEBUG: [runtime-status] [65109] Listening to port: /tmp/fire_emu_7c2172adbdf5ec7c.sock
+[debug] [2023-05-10T03:14:41.764Z] DEBUG: [worker-us-central1-getLoansStatusHistory-52b6ac9d-2e10-4f70-b2bf-5a0c5c80c6c4]: IDLE
+[debug] [2023-05-10T03:14:41.771Z] DEBUG: [runtime-status] [65109] RunBackground {"data":{},"context":{"eventId":"f29f523a-6db8-41a0-a7d4-303b484ea545","timestamp":"2023-05-10T03:14:40.609Z","eventType":"pubsub"}}
+[info] >  {"severity":"INFO","message":"Getting Loans Status."} {"user":{"severity":"INFO","message":"Getting Loans Status."},"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {\"severity\":\"INFO\",\"message\":\"Getting Loans Status.\"}"}}
+[info] >  { {"user":"{","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {"}}
+[info] >    '1681091381306': { totalValue: 333.33, debtValue: 44.44 }, {"user":"  '1681091381306': { totalValue: 333.33, debtValue: 44.44 },","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681091381306': { totalValue: 333.33, debtValue: 44.44 },"}}
+[info] >    '1681957297836': { totalValue: 111.11, debtValue: 22.22 } {"user":"  '1681957297836': { totalValue: 111.11, debtValue: 22.22 }","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681957297836': { totalValue: 111.11, debtValue: 22.22 }"}}
+[info] >  } {"user":"}","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m }"}}
+[info] >  [] {"user":[],"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m []"}}
+[info] >  { {"user":"{","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {"}}
+[info] >    '1681091381306': { totalValue: 123.456, debtValue: 23.45 }, {"user":"  '1681091381306': { totalValue: 123.456, debtValue: 23.45 },","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681091381306': { totalValue: 123.456, debtValue: 23.45 },"}}
+[info] >    '1681957297836': { totalValue: 333.33, debtValue: 55.55 } {"user":"  '1681957297836': { totalValue: 333.33, debtValue: 55.55 }","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681957297836': { totalValue: 333.33, debtValue: 55.55 }"}}
+[info] >  } {"user":"}","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m }"}}
+[info] >  [] {"user":[],"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m []"}}
+[debug] [2023-05-10T03:17:15.380Z] DEBUG: [worker-us-central1-getLoansStatusHistory-52b6ac9d-2e10-4f70-b2bf-5a0c5c80c6c4]: exited
+[debug] [2023-05-10T03:17:15.381Z] DEBUG: [worker-us-central1-getLoansStatusHistory-52b6ac9d-2e10-4f70-b2bf-5a0c5c80c6c4]: FINISHED
+[debug] [2023-05-10T03:17:29.798Z] ----------------------------------------------------------------------
+[debug] [2023-05-10T03:17:29.800Z] Command:       /home/markmanu/.nvm/versions/node/v16.19.0/bin/node /home/markmanu/.nvm/versions/node/v16.19.0/bin/firebase functions:shell
+[debug] [2023-05-10T03:17:29.800Z] CLI Version:   11.23.1
+[debug] [2023-05-10T03:17:29.800Z] Platform:      linux
+[debug] [2023-05-10T03:17:29.800Z] Node Version:  v16.19.0
+[debug] [2023-05-10T03:17:29.801Z] Time:          Wed May 10 2023 11:17:29 GMT+0800 (China Standard Time)
+[debug] [2023-05-10T03:17:29.801Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-05-10T03:17:29.848Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-05-10T03:17:29.848Z] > authorizing via signed-in user (willie.lee226@gmail.com)
+[debug] [2023-05-10T03:17:29.848Z] [iam] checking project delta-prime-db for permissions ["firebase.projects.get"]
+[debug] [2023-05-10T03:17:29.849Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions [none]
+[debug] [2023-05-10T03:17:29.850Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions x-goog-quota-user=projects/delta-prime-db
+[debug] [2023-05-10T03:17:29.850Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:17:30.986Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions 200
+[debug] [2023-05-10T03:17:30.986Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:17:30.989Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2023-05-10T03:17:30.990Z] defaultcredentials: writing to file /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:17:30.991Z] DEBUG: Setting GAC to /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:17:30.991Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig [none]
+[debug] [2023-05-10T03:17:32.194Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig 200
+[debug] [2023-05-10T03:17:32.195Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig {"projectId":"delta-prime-db","storageBucket":"delta-prime-db.appspot.com"}
+[debug] [2023-05-10T03:17:32.201Z] [functions] Watching "/home/markmanu/task/deltaprime/functions" for Cloud Functions...
+[debug] [2023-05-10T03:17:32.204Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2023-05-10T03:17:33.873Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.0.19",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "ethers": "^5.7.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^4.2.1",
+    "graphql": "^15.8.0",
+    "graphql-request": "^6.0.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1",
+    "redstone-protocol": "^1.0.5",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}
+[debug] [2023-05-10T03:17:33.873Z] Building nodejs source
+[debug] [2023-05-10T03:17:33.873Z] Failed to find version of module node: reached end of search path /home/markmanu/task/deltaprime/functions/node_modules
+[info] ✔  functions: Using node@16 from host. 
+[debug] [2023-05-10T03:17:33.875Z] Could not find functions.yaml. Must use http discovery
+[debug] [2023-05-10T03:17:33.879Z] Found firebase-functions binary at '/home/markmanu/task/deltaprime/functions/node_modules/.bin/firebase-functions'
+[debug] [2023-05-10T03:17:33.968Z] Serving at port 8302
+
+[debug] [2023-05-10T03:17:34.590Z] Got response from /__/functions.yaml {"endpoints":{"scheduledFunction":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"scheduledFunction"},"gmxScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"gmxScraper"},"vectorScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"vectorScraper"},"apyAggregator":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"apyAggregator"},"getLoansStatusHistory":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/5 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"getLoansStatusHistory"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[debug] [2023-05-10T03:17:34.613Z] shutdown requested via /__/quitquitquit
+
+[debug] [2023-05-10T03:17:44.621Z] [functions] Loaded functions definitions from source: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory.
+[debug] [2023-05-10T03:17:44.622Z] [functions[us-central1-scheduledFunction]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:17:44.622Z] [functions[us-central1-gmxScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:17:44.622Z] [functions[us-central1-vectorScraper]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:17:44.622Z] [functions[us-central1-apyAggregator]] function ignored because the pubsub emulator does not exist or is not running.
+[debug] [2023-05-10T03:17:44.622Z] [functions[us-central1-getLoansStatusHistory]] function ignored because the pubsub emulator does not exist or is not running.
+[info] i  functions: Loaded functions: scheduledFunction, gmxScraper, vectorScraper, apyAggregator, getLoansStatusHistory 
+[warn] ⚠  functions: The following emulators are not running, calls to these services will affect production: firestore, database, pubsub, storage, eventarc 
+[debug] [2023-05-10T03:17:47.070Z] shell:getLoansStatusHistory: trigger={"entryPoint":"getLoansStatusHistory","platform":"gcfv1","region":"us-central1","name":"getLoansStatusHistory","id":"us-central1-getLoansStatusHistory","codebase":"default","availableMemoryMb":1024,"labels":{"EVENTARC_CLOUD_EVENT_SOURCE":"cloudfunctions-emulated.googleapis.com/projects/delta-prime-db/locations/us-central1/functions/getLoansStatusHistory"},"timeoutSeconds":120,"secretEnvironmentVariables":[],"eventTrigger":{"eventType":"pubsub","resource":""},"schedule":{"schedule":"*/5 * * * *","timeZone":null,"retryConfig":{"maxBackoffSeconds":null,"minBackoffSeconds":null,"maxRetrySeconds":null,"retryCount":null,"maxDoublings":null}}}
+[debug] [2023-05-10T03:17:47.070Z] shell:getLoansStatusHistory: opts={}, data={}
+[debug] [2023-05-10T03:17:47.079Z] DEBUG: [worker-pool] addWorker(us-central1-getLoansStatusHistory)
+[debug] [2023-05-10T03:17:47.079Z] DEBUG: [worker-pool] Adding worker with key us-central1-getLoansStatusHistory, total=1
+[debug] [2023-05-10T03:17:47.589Z] DEBUG: [runtime-status] [65440] Resolved module firebase-admin {"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}
+[debug] [2023-05-10T03:17:47.590Z] DEBUG: [runtime-status] [65440] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:17:47.591Z] DEBUG: [runtime-status] [65440] Outgoing network have been stubbed. [{"name":"http","status":"mocked"},{"name":"http","status":"mocked"},{"name":"https","status":"mocked"},{"name":"https","status":"mocked"},{"name":"net","status":"mocked"}]
+[debug] [2023-05-10T03:17:47.591Z] DEBUG: [runtime-status] [65440] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:17:47.674Z] DEBUG: [runtime-status] [65440] Checked functions.config() {"config":{}}
+[debug] [2023-05-10T03:17:47.674Z] DEBUG: [runtime-status] [65440] firebase-functions has been stubbed. {"functionsResolution":{"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}}
+[debug] [2023-05-10T03:17:47.676Z] DEBUG: [runtime-status] [65440] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:17:47.676Z] DEBUG: [runtime-status] [65440] Resolved module firebase-admin {"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}
+[debug] [2023-05-10T03:17:47.677Z] DEBUG: [runtime-status] [65440] Resolved module firebase-functions {"declared":true,"installed":true,"version":"4.2.1","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-functions/lib/v1/index.js"}
+[debug] [2023-05-10T03:17:47.677Z] DEBUG: [runtime-status] [65440] firebase-admin has been stubbed. {"adminResolution":{"declared":true,"installed":true,"version":"10.3.0","resolution":"/home/markmanu/task/deltaprime/functions/node_modules/firebase-admin/lib/index.js"}}
+[debug] [2023-05-10T03:17:48.159Z] DEBUG: [runtime-status] [65440] Functions runtime initialized. {"cwd":"/home/markmanu/task/deltaprime/functions","node_version":"16.19.0"}
+[debug] [2023-05-10T03:17:48.159Z] DEBUG: [runtime-status] [65440] Listening to port: /tmp/fire_emu_8ebb69979cce83dc.sock
+[debug] [2023-05-10T03:17:48.195Z] DEBUG: [worker-us-central1-getLoansStatusHistory-9c292f3e-09f3-4f2a-91bf-a612936475e3]: IDLE
+[debug] [2023-05-10T03:17:48.205Z] DEBUG: [runtime-status] [65440] RunBackground {"data":{},"context":{"eventId":"373d601e-5e52-4c2f-b8e3-093358cac9d7","timestamp":"2023-05-10T03:17:47.070Z","eventType":"pubsub"}}
+[info] >  {"severity":"INFO","message":"Getting Loans Status."} {"user":{"severity":"INFO","message":"Getting Loans Status."},"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {\"severity\":\"INFO\",\"message\":\"Getting Loans Status.\"}"}}
+[info] >  { {"user":"{","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {"}}
+[info] >    '1681091381306': { totalValue: 123.456, debtValue: 23.45 }, {"user":"  '1681091381306': { totalValue: 123.456, debtValue: 23.45 },","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681091381306': { totalValue: 123.456, debtValue: 23.45 },"}}
+[info] >    '1681957297836': { totalValue: 333.33, debtValue: 55.55 } {"user":"  '1681957297836': { totalValue: 333.33, debtValue: 55.55 }","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681957297836': { totalValue: 333.33, debtValue: 55.55 }"}}
+[info] >  } {"user":"}","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m }"}}
+[info] >  [] {"user":[],"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m []"}}
+[info] >  { {"user":"{","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {"}}
+[info] >    '1681091381306': { totalValue: 333.33, debtValue: 44.44 }, {"user":"  '1681091381306': { totalValue: 333.33, debtValue: 44.44 },","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681091381306': { totalValue: 333.33, debtValue: 44.44 },"}}
+[info] >    '1681957297836': { totalValue: 111.11, debtValue: 22.22 } {"user":"  '1681957297836': { totalValue: 111.11, debtValue: 22.22 }","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m   '1681957297836': { totalValue: 111.11, debtValue: 22.22 }"}}
+[info] >  } {"user":"}","metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m }"}}
+[info] >  [] {"user":[],"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m []"}}
+[info] >  {"severity":"INFO","message":"Latest loan status saved."} {"user":{"severity":"INFO","message":"Latest loan status saved."},"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-getLoansStatusHistory"},"extension":{},"message":"\u001b[90m> \u001b[39m {\"severity\":\"INFO\",\"message\":\"Latest loan status saved.\"}"}}
+[debug] [2023-05-10T03:17:59.291Z] DEBUG: [worker-us-central1-getLoansStatusHistory-9c292f3e-09f3-4f2a-91bf-a612936475e3]: exited
+[debug] [2023-05-10T03:17:59.291Z] DEBUG: [worker-us-central1-getLoansStatusHistory-9c292f3e-09f3-4f2a-91bf-a612936475e3]: FINISHED
+[debug] [2023-05-10T03:18:28.110Z] ----------------------------------------------------------------------
+[debug] [2023-05-10T03:18:28.112Z] Command:       /home/markmanu/.nvm/versions/node/v16.19.0/bin/node /home/markmanu/.nvm/versions/node/v16.19.0/bin/firebase functions:shell
+[debug] [2023-05-10T03:18:28.112Z] CLI Version:   11.23.1
+[debug] [2023-05-10T03:18:28.112Z] Platform:      linux
+[debug] [2023-05-10T03:18:28.112Z] Node Version:  v16.19.0
+[debug] [2023-05-10T03:18:28.112Z] Time:          Wed May 10 2023 11:18:28 GMT+0800 (China Standard Time)
+[debug] [2023-05-10T03:18:28.113Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-05-10T03:18:28.159Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-05-10T03:18:28.159Z] > authorizing via signed-in user (willie.lee226@gmail.com)
+[debug] [2023-05-10T03:18:28.160Z] [iam] checking project delta-prime-db for permissions ["firebase.projects.get"]
+[debug] [2023-05-10T03:18:28.161Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions [none]
+[debug] [2023-05-10T03:18:28.161Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions x-goog-quota-user=projects/delta-prime-db
+[debug] [2023-05-10T03:18:28.161Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:18:29.314Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions 200
+[debug] [2023-05-10T03:18:29.315Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delta-prime-db:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2023-05-10T03:18:29.325Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2023-05-10T03:18:29.328Z] defaultcredentials: writing to file /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:18:29.330Z] DEBUG: Setting GAC to /home/markmanu/.config/firebase/willie_lee226_gmail.com_application_default_credentials.json
+[debug] [2023-05-10T03:18:29.330Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig [none]
+[debug] [2023-05-10T03:18:30.539Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig 200
+[debug] [2023-05-10T03:18:30.539Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delta-prime-db/adminSdkConfig {"projectId":"delta-prime-db","storageBucket":"delta-prime-db.appspot.com"}
+[debug] [2023-05-10T03:18:30.546Z] [functions] Watching "/home/markmanu/task/deltaprime/functions" for Cloud Functions...
+[debug] [2023-05-10T03:18:30.549Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2023-05-10T03:18:32.135Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.0.19",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "ethers": "^5.7.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^4.2.1",
+    "graphql": "^15.8.0",
+    "graphql-request": "^6.0.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.6.9",
+    "puppeteer": "18.2.1",
+    "redstone-protocol": "^1.0.5",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}
+[debug] [2023-05-10T03:18:32.135Z] Building nodejs source
+[debug] [2023-05-10T03:18:32.136Z] Failed to find version of module node: reached end of search path /home/markmanu/task/deltaprime/functions/node_modules
+[info] ✔  functions: Using node@16 from host. 
+[debug] [2023-05-10T03:18:32.138Z] Could not find functions.yaml. Must use http discovery
+[debug] [2023-05-10T03:18:32.142Z] Found firebase-functions binary at '/home/markmanu/task/deltaprime/functions/node_modules/.bin/firebase-functions'
+[debug] [2023-05-10T03:18:32.229Z] Serving at port 8173
+
+[debug] [2023-05-10T03:18:32.824Z] Got response from /__/functions.yaml {"endpoints":{"scheduledFunction":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"scheduledFunction"},"gmxScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"gmxScraper"},"vectorScraper":{"platform":"gcfv1","availableMemoryMb":2048,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"vectorScraper"},"apyAggregator":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/1 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"apyAggregator"},"getLoansStatusHistory":{"platform":"gcfv1","availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"scheduleTrigger":{"schedule":"*/5 * * * *","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetryDuration":null,"maxBackoffDuration":null,"minBackoffDuration":null},"timeZone":null},"labels":{},"entryPoint":"getLoansStatusHistory"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[debug] [2023-05-10T03:18:32.845Z] shutdown requested via /__/quitquitquit
+
