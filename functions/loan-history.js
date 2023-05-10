@@ -22,6 +22,7 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 
 
 async function getData(loanAddress, timestamp) {
+  console.log(loanAddress, timestamp);
   let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
@@ -69,7 +70,7 @@ async function getData(loanAddress, timestamp) {
     res
   );
 
-  return {
+  const status = {
     totalValue: fromWei(decoded[0][0]),
     borrowed: fromWei(decoded[0][1]),
     twv: fromWei(decoded[0][2]),
@@ -77,6 +78,8 @@ async function getData(loanAddress, timestamp) {
     solvent: fromWei(decoded[0][4]),
   };
 
+  console.log(status);
+  return status;
 }
 
 module.exports = {

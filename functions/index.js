@@ -1,6 +1,5 @@
 //FIRESTORE config
 const functions = require("firebase-functions");
-const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const fetch = require("node-fetch");
@@ -405,101 +404,141 @@ exports.apyAggregator = functions
     return null;
   });
 
+const uploadLoanStatus = async () => {
+  const loanAddresses = await factory.getAllLoans();
+  // const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
+
+  return await Promise.all(
+    loanAddresses.map(async (loanAddress) => {
+      const defaultTimestamp = Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      const loanHistorySnap = await loanHistoryRef.get();
+      const loanHistory = [];
+
+      loanHistorySnap.forEach(doc => {
+        loanHistory.push({
+          [doc.id]: doc.data()
+        });
+      });
+
+      const timestamps = [];
+      let timestamp;
+
+      if (loanHistory.length === 0) {
+        // loan's single history is not saved yet, we create from 30 days ago
+        timestamp = defaultTimestamp;
+      } else {
+        // we add new history after the latest timestamp
+        timestamp = Math.max(...Object.keys(loanHistory).map(Number), defaultTimestamp)
+                  + timestampInterval; // next timestamp where we get loan status
+      }
+
+      // get timestamps
+      while (timestamp < Date.now()) {
+        timestamps.push(timestamp);
+        timestamp += timestampInterval;
+      }
+
+      console.log(loanHistory);
+      console.log(timestamps);
+
+      if (timestamps.length > 0) {
+        await Promise.all(
+          timestamps.map(async (timestamp) => {
+            // const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+            console.log(timestamp);
+            await loanHistoryRef.doc(timestamp.toString()).set({
+              totalValue: 123.2,
+              borrowed: 4.4,
+              collateral: 34.5,
+              twv: 31.2,
+              health: 14.5,
+              solvent: true,
+              timestamp: timestamp
+            });
+
+            // loanHistoryRef.doc(timestamp).set({
+            //   totalValue: loanStatus.totalValue,
+            //   borrowed: loanStatus.borrowed,
+            //   collateral: loanStatus.totalValue - loanStatus.borrowed,
+            //   twv: loanStatus.twv,
+            //   health: loanStatus.health,
+            //   solvent: loanStatus.solvent === 1e-18,
+            //   timestamp: timestamp
+            // });
+          })
+        );
+      }
+    })
+  )
+}
+
 exports.saveLoansStatusHourly = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/5 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-
-    // const loanAddresses = await factory.getAllLoans();
-    const loanAddresses = ['0x03f838e242292396ed2EE973A00C8bD7515bb16E', '0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9'];
-
-    await Promise.all(
-      loanAddresses.map(async (loanAddress) => {
-        const defaultTimestamp = Date.now() - 30 * 24 * timestampInterval; // from 30 days ago by default
-        const loanHistoryRef = db
-          .collection('loansHistory')
-          .doc(loanAddress.toLowerCase())
-          .collection('loanStatus');
-        const loanHistorySnap = await loanHistoryRef.get();
-        const loanHistory = [];
-
-        loanHistorySnap.forEach(doc => {
-          loanHistory.push({
-            [doc.id]: doc.data()
-          });
-        });
-
-        const timestamps = [];
-        let timestamp;
-
-        if (loanHistory.length === 0) {
-          // loan's single history is not saved yet, we create from 30 days ago
-          timestamp = defaultTimestamp;
-        } else {
-          // we add new history after the latest timestamp
-          console.log(loanHistory);
-
-          timestamp = Math.max(...Object.keys(loanHistory).map(Number), defaultTimestamp)
-                    + timestampInterval; // next timestamp where we get loan status
-        }
-
-        // get timestamps
-        while (timestamp < Date.now()) {
-          timestamps.push(timestamp);
-          timestamp += timestampInterval;
-        }
-
-        console.log(timestamps);
-
-        if (timestamps.length > 0) {
-          Promise.all(
-            timestamps.map(async (timestamp) => {
-              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-              console.log(loanStatus);
-
-              loanHistoryRef.doc(timestamp).set({
-                totalValue: loanStatus.totalValue,
-                borrowed: loanStatus.borrowed,
-                collateral: loanStatus.totalValue - loanStatus.borrowed,
-                twv: loanStatus.twv,
-                health: loanStatus.health,
-                solvent: loanStatus.solvent === 1e-18,
-                timestamp: timestamp
-              });
-            })
-          );
-        }
-      })
-    )
-    return null;
+    return uploadLoanStatus()
+      .then(() => {
+        functions.logger.info("Loans Status upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+      });
   });
 
 // const getEventsForPeriod = (from, to) => {
 // }
 
-exports.getLoansStatusHistory = onRequest(
-  // { cors: [/deltaprime\.io$/] },
-  {},
-  async (req, res) => {
+exports.loanhistory = functions
+  .https
+  .onRequest(async (req, res) => {
+    console.log("address:", req.query.address);
+    console.log("from: ", req.query.from);
+    console.log("to", req.query.to);
+    if (!req.query.address) {
+      res.status(400).send({
+        error: true,
+        data: [],
+        message: "valid loan address is required"
+      })
+    }
+
     const loanHistoryRef = db
       .collection('loansHistory')
-      .doc(req.params.address)
+      .doc(req.query.address.toLowerCase())
       .collection('loanStatus');
-    const snapshot = await loanHistoryRef
-      .where('timestamp', '>=', req.params.from)
-      .where('timestamp', '<=', req.params.to)
-      .get();
+    let snapshot;
 
-    if (!snapshot.exists) {
+    if (!req.query.from || !req.query.to) {
+      snapshot = await loanHistoryRef.get();
+    } else {
+      snapshot = await loanHistoryRef
+        .where('timestamp', '>=', req.query.from)
+        .where('timestamp', '<=', req.query.to)
+        .get();
+    }
+
+    if (snapshot.empty) {
       res.status(200).send({
         sucess: true,
         data: [],
         message: "there is no loan history for the period"
       })
     } else {
-      const loanHistory = snapshot.data();
+      const loanHistory = [];
+
+      snapshot.forEach(doc => {
+        loanHistory.push({
+          [doc.id]: doc.data()
+        });
+      });
+
       const timestamps = Object.keys(loanHistory).map(Number).sort((a, b) => a - b);
+      console.log(loanHistory);
+      console.log(timestamps);
       const data = [];
       const events = [];
 
