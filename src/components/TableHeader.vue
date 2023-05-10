@@ -74,6 +74,10 @@ export default {
       justify-content: flex-end;
     }
 
+    &.farmed {
+      justify-content: flex-end;
+    }
+
     &.loan {
       justify-content: flex-end;
     }

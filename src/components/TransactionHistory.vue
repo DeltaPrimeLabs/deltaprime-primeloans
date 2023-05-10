@@ -11,6 +11,14 @@
         <div class="table-body" v-if="transactionHistory">
           <div class="transaction-row" v-for="transaction of transactionHistory">
             <div class="transaction-cell date" v-if="transaction.date">{{ transaction.date | timeAgo }}</div>
+            <div class="transaction-cell id" v-if="transaction.date">
+              <img class="icon" src="src/assets/logo/snowtrace.png"/>
+              <div class="transaction-id-wrapper">
+                <a class="transaction-id" :href="`https://snowtrace.io/tx/${transaction.id}`" target="_blank">
+                  {{ transaction.id | tx(true) }}
+                </a>
+              </div>
+            </div>
             <div class="transaction-cell type">{{ transaction.transactionAction }}</div>
             <div v-if="transaction.basicTransactionAmount" class="transaction-cell amount">
               {{ transaction.fromAmountNumber | smartRound(5, true) | formatWithSpaces }}
@@ -92,13 +100,19 @@ export default {
   methods: {
     setupTableHeader() {
       this.transactionHistoryTableConfig = {
-        gridTemplateColumns: '3fr 1fr 2fr',
+        gridTemplateColumns: '240px 240px 1fr 2fr',
         cells: [
           {
             label: 'Date',
             sortable: false,
             class: 'date',
             id: 'DATE',
+          },
+          {
+            label: 'Transaction ID',
+            sortable: false,
+            class: 'transaction-id',
+            id: 'TRANSACTION_ID',
           },
           {
             label: 'Action',
@@ -125,6 +139,7 @@ export default {
 
     async getTransactionHistory(accountAddress, page, pageSize) {
       const response = await this.statsService.getUserTransactionHistory(accountAddress, page, pageSize);
+      console.log(response);
       this.transactionHistory = response.data.user.transactions;
       this.totalTransactions = response.data.user.numTransactions;
       this.$forceUpdate();
@@ -227,7 +242,7 @@ export default {
 
     .transaction-row {
       display: grid;
-      grid-template-columns: 3fr 1fr 2fr;
+      grid-template-columns: 240px 240px 1fr 2fr;
       height: 60px;
       border-style: solid;
       border-width: 0 0 2px 0;
@@ -247,6 +262,25 @@ export default {
 
         &.date {
           justify-content: flex-start;
+        }
+
+        &.id {
+          justify-content: flex-start;
+
+          .icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+          }
+
+          .transaction-id-wrapper {
+            display: flex;
+            flex-direction: row;
+
+            .transaction-id {
+              color: var(--transaction-history__transaction-token-color);
+            }
+          }
         }
 
         &.type {
@@ -272,7 +306,6 @@ export default {
               background: var(--icon-button__icon-color-hover--default);
             }
           }
-
         }
       }
     }

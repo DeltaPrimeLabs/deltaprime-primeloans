@@ -203,7 +203,7 @@ export default {
       } catch (error) {
         console.error(error);
         console.error('ERROR DURING UPDATE FUNDS');
-        console.log('refreshing page in 5s');
+        console.warn('refreshing page in 5s');
         setTimeout(() => {
           window.location.reload();
         }, 5000);
@@ -493,9 +493,6 @@ export default {
 
       commit('setLpAssets', lpAssets);
 
-      console.log('lpAssets');
-      console.log(lpAssets);
-
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
@@ -558,7 +555,6 @@ export default {
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
-            console.log(asset, asset.apy);
             yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
           }
         }

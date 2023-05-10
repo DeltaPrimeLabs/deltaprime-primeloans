@@ -23,20 +23,16 @@ export default {
   },
   mutations: {
     setFarms(state, farms) {
-      console.log('STAKE STORE FARMS +++++++');
-      console.log(farms);
       state.farms = farms;
     },
 
     setStakedBalanceInFarm(state, stakedBalanceChange) {
       const farm = state.farms[stakedBalanceChange.assetSymbol].find(farm => farm.protocolIdentifier === stakedBalanceChange.protocolIdentifier);
-      console.log('found farm', farm);
       farm.totalStaked = stakedBalanceChange.totalStaked;
     },
 
     setReceiptTokenBalanceInFarm(state, receiptTokenBalanceChange) {
       const farm = state.farms[receiptTokenBalanceChange.assetSymbol].find(farm => farm.protocolIdentifier === receiptTokenBalanceChange.protocolIdentifier);
-      console.log('found farm', farm);
       farm.totalBalance = receiptTokenBalanceChange.totalBalance;
     },
   },
@@ -71,12 +67,9 @@ export default {
       let tx = await awaitConfirmation(stakeTransaction, provider, 'stake');
       //TODO: update after rebase
       const depositTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount, stakeRequest.decimals);
-      console.log('depositTokenAmount', depositTokenAmount); //how much of token was staked
       const receiptTokenDepositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, 18);
-      console.log('receiptTokenDepositAmount', receiptTokenDepositAmount); //how much of vault token was obtained
 
       const farm = state.farms[stakeRequest.assetSymbol].find(farm => farm.protocolIdentifier === stakeRequest.protocolIdentifier);
-      console.log(farm);
 
       const totalStakedAfterTransaction = Number(farm.totalStaked) + Number(depositTokenAmount);
       await commit('setStakedBalanceInFarm', {
@@ -119,9 +112,6 @@ export default {
     async unstake({ state, rootState, dispatch, commit }, { unstakeRequest }) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
-      console.log('unstakeRequest');
-      console.log(unstakeRequest);
-
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
       (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
@@ -129,10 +119,6 @@ export default {
       unstakeRequest.assetSymbol,
       Object.keys(config.POOLS_CONFIG)
       ]);
-
-
-      console.log('loanAssets');
-      console.log(loanAssets);
 
       const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
@@ -149,9 +135,7 @@ export default {
 
       let tx = await awaitConfirmation(unstakeTransaction, provider, 'unstake');
       const unstakedTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount, unstakeRequest.decimals);
-      console.log(unstakedTokenAmount); //how much of token was unstaked
       const unstakedReceiptTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, 18);
-      console.log(unstakedReceiptTokenAmount); //how much of vault token was used (unstaked/burned)
 
       const farm = state.farms[unstakeRequest.assetSymbol].find(farm => farm.protocolIdentifier === unstakeRequest.protocolIdentifier);
 
@@ -215,12 +199,9 @@ export default {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
-      console.log(getLog(tx, SMART_LOAN.abi, 'Migrated'));
       const migratedTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Migrated').args.migratedAmount, migrateRequest.decimals);
-      console.log('migratedTokenAmount', migratedTokenAmount); //how much of token was unstaked
 
       const migratedReceiptTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Migrated').args.migratedAmount, 18);
-      console.log('migratedReceiptTokenAmount', migratedReceiptTokenAmount); //how much of vault token was used (unstaked/burned)
 
       const migrationSourceFarm = state.farms[migrateRequest.assetSymbol].find(farm => farm.protocolIdentifier === migrateRequest.protocolIdentifier);
       const migrationTargetFarm = state.farms[migrateRequest.assetSymbol].find(farm => farm.protocolIdentifier === migrationSourceFarm.migrateToProtocolIdentifier);
