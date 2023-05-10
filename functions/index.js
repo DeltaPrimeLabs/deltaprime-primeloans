@@ -436,8 +436,10 @@ const uploadLoanStatus = async () => {
                   + timestampInterval; // next timestamp where we get loan status
       }
 
+      const limitTimestamp = timestamp + 12 * timestampInterval; // 12 hours only at once
+
       // get timestamps
-      while (timestamp < Date.now()) {
+      while (timestamp < Date.now() || timestamp < limitTimestamp) {
         timestamps.push(timestamp);
         timestamp += timestampInterval;
       }
@@ -468,7 +470,7 @@ const uploadLoanStatus = async () => {
 
 exports.saveLoansStatusHourly = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
-  .pubsub.schedule('*/5 * * * *')
+  .pubsub.schedule('*/10 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
     return uploadLoanStatus()
