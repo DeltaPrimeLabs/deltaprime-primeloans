@@ -130,15 +130,17 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       if (assetDeficit[i].amount != 0) {
         for (uint32 j = 0; j < assetSurplus.length; j++) {
           if (assetSurplus[j].amount != 0) {
+            bool shouldBreak;
             for (uint32 k = 0; k < lep.offers.length; ++k) {
               IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
               if (
                 offer.path[0] == assetSurplus[j].asset &&
                 offer.path[offer.path.length - 1] == assetDeficit[i].asset
               ) {
+                uint256 remainDeficitAmount;
                 (
-                  bool shouldBreak,
-                  uint256 remainDeficitAmount
+                  shouldBreak,
+                  remainDeficitAmount
                 ) = swapToNegateDeficits(
                     assetDeficit[i],
                     assetSurplus[j],
@@ -152,6 +154,9 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                   break;
                 }
               }
+            }
+            if (shouldBreak) {
+              break;
             }
           }
         }
