@@ -22,3 +22,6 @@ Fetches historical data for loans from `loan-addresses.json`.
 
 Run `node fetch-loans.js`
 
+## index.js > saveLoansStatusFromFile
+Saves historical data to firestore from `results` folder.
+
