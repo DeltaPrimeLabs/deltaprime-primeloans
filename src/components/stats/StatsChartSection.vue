@@ -1,25 +1,29 @@
 <template>
   <StatsSection>
     <div class="stats-chart__section">
-      <div v-if="!loaded" class="loader">
+      <div v-if="!chartSelectedData" class="loader">
         <VueLoadersBallBeat color="#A6A3FF" scale="2"></VueLoadersBallBeat>
       </div>
-      <template v-if="loaded">
+      <template v-if="chartSelectedData">
         <div class="toggles">
           <div class="toggle--data">
-            <Toggle v-on:change="onDataChange" :options="['PnL', 'Total Value', 'Collateral']"
-                    :initial-option="2"></Toggle>
+            <Toggle v-on:change="onOptionChange" :options="['Total Value', 'Collateral']"
+                    :initial-option="0"></Toggle>
           </div>
           <div class="toggle--metadata">
-            <Toggle v-on:change="onPeriodChange" :options="['7 days', '30 days', '1 year']"
-                    :initial-option="1"></Toggle>
+            <Toggle v-on:change="onPeriodChange" :options="['7 days']"
+                    :initial-option="0"></Toggle>
             <div class="toggle-metadata__separator"></div>
-            <Toggle v-on:change="onCurrencyChange" :options="['USD', 'AVAX']"
-                    :initial-option="1"></Toggle>
+            <Toggle v-on:change="onCurrencyChange" :options="['USD']"
+                    :initial-option="0"></Toggle>
           </div>
         </div>
-        <div class="stats-chart-section__chart">
-          <LineChart ref="chart" :chart-options="this.chartOptions()" :chart-data="this.chartData()" :theme="theme"></LineChart>
+        <div v-if="chartSelectedData.length === 0" class="chart__no-data">
+          No Data
+        </div>
+        <div v-else class="stats-chart-section__chart">
+          <LineChart ref="chart" :chart-options="this.chartOptions()" :chart-data="this.chartData()"
+                     :theme="theme"></LineChart>
         </div>
       </template>
     </div>
@@ -33,32 +37,53 @@ import {mapState} from "vuex";
 import {getThemeVariable} from "../../utils/style-themes";
 import Toggle from "../Toggle.vue";
 
-const mockData = [{"x": 1683510540000, "y": 10}, {"x": 1683511140000, "y": 80}, {
-  "x": 1683511740000,
-  "y": 10
-}, {"x": 1683512340000, "y": 80}, {"x": 1683512940000, "y": 10}, {"x": 1683513540000, "y": 80, event: true}, {
-  "x": 1683514140000,
-  "y": 10
-}];
+const valuesNameForOptions = {
+  'Total Value': 'totalValue',
+  'Collateral': 'collateral',
+}
+
+const valuesNameForPeriod = {
+  '7 days': 'weekData',
+}
+
+const valuesNameForCurrency = {
+  'USD': 'usd',
+}
+
 export default {
   name: "StatsChartSection",
   components: {Toggle, StatsSection, LineChart},
   mounted() {
     this.themeService.observeThemeChange().subscribe(theme => {
-      console.error(theme);
       this.onThemeChange(theme)
     });
-    setTimeout(() => {
-      this.loaded = true
-    }, 100)
+    if (this.smartLoanContract) {
+      this.setupData();
+    }
   },
   computed: {
     ...mapState('serviceRegistry', [
       'themeService',
+      'loanHistoryService'
     ]),
-
+    ...mapState('fundsStore', ['smartLoanContract']),
   },
   methods: {
+    setupData() {
+      this.loanHistoryService.getLoanHistoryData(this.smartLoanContract.address).then(loanHistory => {
+        this.weekData = {
+          totalValue: {
+            usd: loanHistory.data.map(historyEntry => historyEntry.totalValue)
+          },
+          timestamps: loanHistory.data.map(historyEntry => historyEntry.timestamp),
+          collateral: {
+            usd: loanHistory.data.map(historyEntry => historyEntry.collateral),
+          },
+          events: loanHistory.data.map(historyEntry => historyEntry.events),
+        }
+        this.updateChartData();
+      })
+    },
     onThemeChange(theme) {
       this.theme = theme;
       if (this.$refs.chart) {
@@ -67,14 +92,59 @@ export default {
         })
       }
     },
-    onDataChange(dataOption) {
-
+    onOptionChange(dataOption) {
+      this.selectedOption = valuesNameForOptions[dataOption]
+      this.updateChartData()
     },
     onPeriodChange(periodOption) {
-
+      this.selectedPeriod = valuesNameForPeriod[periodOption]
+      this.updateChartData()
     },
     onCurrencyChange(currencyOption) {
+      this.selectedCurrency = valuesNameForCurrency[currencyOption]
+      this.updateChartData()
+    },
+    updateChartData() {
+      const selectedDataset = this[this.selectedPeriod];
+      this.chartSelectedData = selectedDataset.timestamps.map((timestamp, index) => {
+        const valueForTimestamp = selectedDataset[this.selectedOption][this.selectedCurrency][index];
+        if (index === 0) {
+          this.chartMin = valueForTimestamp;
+          this.chartMax = valueForTimestamp;
+        } else if (this.chartMin > valueForTimestamp) {
+          this.chartMin = valueForTimestamp
+        } else if (this.chartMax < valueForTimestamp) {
+          this.chartMax = valueForTimestamp
+        }
 
+        return {
+          x: timestamp,
+          y: valueForTimestamp,
+          event: selectedDataset.events[index].length > 0 ? selectedDataset.events[index] : null
+        }
+      })
+
+      this.chartPointRadius = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 4 : 0)
+      this.chartPointRadius = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 4 : 0)
+      this.chartPointHoverBorderWidth = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 3 : 0)
+      setTimeout(() => {
+        this.$refs.chart.rerender();
+      })
+    },
+    // TODO move to service
+    formatTokenBalance(value, precision = 5, toFixed = false) {
+      const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+      const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
+      const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+      if (value !== null) {
+        if (!toFixed) {
+          return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
+        } else {
+          return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+        }
+      } else {
+        return '';
+      }
     },
     chartOptions() {
       return {
@@ -92,9 +162,8 @@ export default {
         responsive: true,
         tooltips: {
           custom: (tooltipData) => {
-            console.warn(tooltipData);
             if (tooltipData && tooltipData.body && !tooltipData.body[0].lines[0]) {
-              tooltipData.opacity = 0;
+              // tooltipData.opacity = 0;
             }
           },
           enabled: true,
@@ -109,9 +178,7 @@ export default {
           caretPadding: 6,
           callbacks: {
             label: (tooltipItem, data) => {
-              console.log(tooltipItem);
-              console.log(data);
-              return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].event ? 'label taki o' : ''
+              return `$ ${this.formatTokenBalance(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y)}`
             }
           },
         },
@@ -129,6 +196,8 @@ export default {
               drawOnChartArea: false,
               tickMarkLength: 0,
               lineWidth: 0,
+              precision: 4,
+              stepSize: 0.001
             },
             ticks: {
               backdropPadding: 10,
@@ -139,6 +208,8 @@ export default {
               padding: 15,
               fontFamily: 'Montserrat',
               fontColor: getThemeVariable('--stats-chart-section__axes-text-color'),
+              precision: 4,
+              stepSize: 0.001
             }
           }],
           yAxes: [{
@@ -150,15 +221,19 @@ export default {
               tickMarkLength: 0,
               drawBorder: false,
               color: getThemeVariable('--stats-chart-section__tick-color'),
+              precision: 4,
+              stepSize: 0.001
             },
             ticks: {
               display: true,
               maxTicksLimit: 1,
-              min: 10,
-              max: 80 + 0.01 * 80,
+              min: this.chartMin,
+              max: this.chartMax,
               fontFamily: 'Montserrat',
               padding: 10,
               fontColor: getThemeVariable('--stats-chart-section__axes-text-color'),
+              precision: 4,
+              stepSize: 0.001
             }
           }]
         },
@@ -169,12 +244,12 @@ export default {
         datasets: [
           {
             fill: false,
-            data: mockData,
+            data: this.chartSelectedData,
             borderWidth: 5,
-            pointRadius: [4, 0, 4, 0, 4],
-            pointHoverRadius: [4, 0, 4, 0, 4],
-            pointBorderWidth: [0, 0, 0, 0, 0],
-            pointHoverBorderWidth: [3, 0, 3, 0, 3],
+            pointRadius: this.chartPointRadius,
+            pointHoverRadius: this.chartPointHoverRadius,
+            pointBorderWidth: 0,
+            pointHoverBorderWidth: this.chartPointHoverBorderWidth,
             pointBorderColor: 'transparent',
             pointBackgroundColor: getThemeVariable('--stats-chart-section__point-color'),
             pointHoverBackgroundColor: 'transparent',
@@ -187,27 +262,52 @@ export default {
   data() {
     return {
       theme: 'DARK',
-      totalValue: mockData,
       loaded: false,
+      timestamps: null,
+      chartSelectedData: null,
+      chartPointRadius: null,
+      chartPointHoverRadius: null,
+      chartPointHoverBorderWidth: null,
+      chartMin: null,
+      chartMax: null,
+      collateral: null,
+      events: null,
+      weekData: null,
+      selectedOption: 'totalValue',
+      selectedPeriod: 'weekData',
+      selectedCurrency: 'usd',
     }
+  },
+  watch: {
+    smartLoanContract: {
+      handler(smartLoanContract) {
+        if (smartLoanContract) {
+          this.setupData();
+        }
+      },
+    },
   }
 }
 </script>
 
 <style scoped lang="scss">
+@import "~@/styles/variables";
+
 .stats-chart__section {
-  height: 418px;
   padding: 30px 70px 50px 70px;
 }
 
 .stats-chart-section__chart {
+  display: flex;
   position: relative;
   width: 960px;
   height: 256px;
-}
-</style>
 
-<style lang="scss">
+  div {
+    width: 100%;
+  }
+}
+
 .stats-chart-section__chart canvas {
   height: 256px !important;
 }
@@ -229,5 +329,22 @@ export default {
 .toggle-metadata__separator {
   width: 2px;
   background: var(--stats-chart-section__toggle-metadata-separator-color);
+}
+
+.loader {
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart__no-data {
+  width: 100%;
+  text-align: center;
+  font-size: $font-size-mlg;
+  color: var(--stats-shares-section__no-data-text-color);
+  font-weight: 500;
+  margin-top: 30px;
 }
 </style>
