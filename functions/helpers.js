@@ -1,9 +1,10 @@
-const fs = require('fs');
 const ethers = require("ethers");
-const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
 const FACTORY = require(`./SmartLoansFactory.json`);
 const fs = require("fs");
+
+const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
+const jsonRPC = config.jsonRpc;
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);

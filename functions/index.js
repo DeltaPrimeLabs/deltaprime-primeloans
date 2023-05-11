@@ -21,8 +21,11 @@ initializeApp({
 });
 
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
-//const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
-const jsonRPC = "https://avalanche-mainnet.infura.io/v3/44a75435541f40cdac3945feaf38ba26"
+
+const fs = require("fs");
+
+const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
+const jsonRPC = config.jsonRpc;
 
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const FACTORY = require(`./SmartLoansFactory.json`);
@@ -33,7 +36,6 @@ const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app
 const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
 const { getLoanStatusAtTimestamp } = require('./loan-history');
-const fs = require("fs");
 const timestampInterval = 24 * 3600 * 1000;
 
 const db = getFirestore();

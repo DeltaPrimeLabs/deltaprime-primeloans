@@ -1,11 +1,11 @@
 const EthDater = require('ethereum-block-by-date');
+const fs = require("fs");
 
-const jsonRPC = "https://nd-979-211-781.p2pify.com/9c3a43ea826793fb82fb77d4132af525/ext/bc/C/rpc";
-// const jsonRPC = "https://rpc.ankr.com/avalanche";
+const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
+const jsonRPC = config.jsonRpc;
 
 const ARTIFACT = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
-const fs = require("fs");
 const { WrapperBuilder } = require("@redstone-finance/evm-connector");
 const { queryHistoricalFeeds } = require("./query-arweave");
 const { SignedDataPackage } = require("redstone-protocol");
