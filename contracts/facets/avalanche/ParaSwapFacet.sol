@@ -15,6 +15,8 @@ import "../../interfaces/ITokenManager.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
+    using TransferHelper for address;
+
     address private constant PARA_TRANSFER_PROXY = 0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
     address private constant PARA_ROUTER = 0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
 
@@ -62,7 +64,8 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 amount = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), data.fromAmount);
         require(amount > 0, "Amount of tokens to sell has to be greater than 0");
 
-        swapTokensDetails.soldToken.approve(PARA_TRANSFER_PROXY, amount);
+        address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, amount);
 
         IParaSwapRouter router = IParaSwapRouter(PARA_ROUTER);
 
