@@ -409,9 +409,7 @@ exports.apyAggregator = functions
   });
 
 const uploadLoanStatus = async () => {
-  // const loanAddresses = await factory.getAllLoans();
-  const loanAddresses = [
-      '0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5'];
+  const loanAddresses = await factory.getAllLoans();
 
   for (const loanAddress of loanAddresses) {
     const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
@@ -420,63 +418,60 @@ const uploadLoanStatus = async () => {
       .doc(loanAddress.toLowerCase())
       .collection('loanStatus');
     const loanHistorySnap = await loanHistoryRef.get();
-    const loanHistory = [];
+    const loanHistory = {};
 
     loanHistorySnap.forEach(doc => {
-      loanHistory.push({
-        [doc.id]: doc.data()
-      });
+      loanHistory[doc.id] = doc.data();
     });
 
     const timestamps = [];
     let timestamp;
 
-    if (loanHistory.length === 0) {
+    if (Object.keys(loanHistory).length === 0) {
       // loan's single history is not saved yet, we create from 30 days ago
       timestamp = defaultTimestamp;
     } else {
       // we add new history after the latest timestamp
-      timestamp = Math.max(...Object.keys(loanHistory).map(Number), defaultTimestamp)
+      timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
                 + timestampInterval; // next timestamp where we get loan status
     }
 
-    const limitTimestamp = timestamp + 6 * timestampInterval;
+    // const limitTimestamp = timestamp + 30 * timestampInterval;
 
     // get timestamps
-    while (timestamp <= limitTimestamp && timestamp <= Date.now()) {
+    while (timestamp < Date.now()) {
       timestamps.push(timestamp);
       timestamp += timestampInterval;
     }
+    console.log(timestamps);
 
     if (timestamps.length > 0) {
+      return await Promise.all(
+        timestamps.map(async (timestamp) => {
+          const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
-      for (const timestamp of timestamps) {
+          if (!status.exists) {
+            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
 
-        try {
-          const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-
-          await loanHistoryRef.doc(timestamp.toString()).set({
-            totalValue: loanStatus.totalValue,
-            borrowed: loanStatus.borrowed,
-            collateral: loanStatus.totalValue - loanStatus.borrowed,
-            twv: loanStatus.twv,
-            health: loanStatus.health,
-            solvent: loanStatus.solvent === 1e-18,
-            timestamp: timestamp
-          });
-        } catch(e) {
-          console.log('ERRRORRRR')
-          console.log(e)
-        }
-
-      }
+            await loanHistoryRef.doc(timestamp.toString()).set({
+              totalValue: loanStatus.totalValue,
+              borrowed: loanStatus.borrowed,
+              collateral: loanStatus.totalValue - loanStatus.borrowed,
+              twv: loanStatus.twv,
+              health: loanStatus.health,
+              solvent: loanStatus.solvent === 1e-18,
+              timestamp: timestamp
+            });
+          }
+        })
+      );
     }
   }
 }
 
 exports.saveLoansStatusHourly = functions
   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-  .pubsub.schedule('*/5 * * * *')
+  .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
     return uploadLoanStatus()
@@ -508,10 +503,12 @@ exports.loanhistory = functions
   .https
   .onRequest((req, res) => {
     cors(req, res, async () => {
-      console.log("address:", req.query.address);
-      console.log("from: ", req.query.from);
-      console.log("to", req.query.to);
-      if (!req.query.address) {
+      const address = req.query.address
+      const from = req.query.from;
+      const to = req.query.to;
+      console.log(address, from, to)
+
+      if (!address) {
         res.status(400).send({
           error: true,
           data: [],
@@ -521,16 +518,16 @@ exports.loanhistory = functions
 
       const loanHistoryRef = db
         .collection('loansHistory')
-        .doc(req.query.address.toLowerCase())
+        .doc(address.toLowerCase())
         .collection('loanStatus');
       let snapshot;
 
-      if (!req.query.from || !req.query.to) {
+      if (!from || !to) {
         snapshot = await loanHistoryRef.get();
       } else {
         snapshot = await loanHistoryRef
-          .where('timestamp', '>=', req.query.from)
-          .where('timestamp', '<=', req.query.to)
+          .where('timestamp', '>=', Number(from))
+          .where('timestamp', '<=', Number(to))
           .get();
       }
 
@@ -541,37 +538,34 @@ exports.loanhistory = functions
           message: "there is no loan history for the period"
         })
       } else {
-        const loanHistory = [];
+        const loanHistory = {};
 
         snapshot.forEach(doc => {
-          loanHistory.push({
-            [doc.id]: doc.data()
-          });
+          loanHistory[doc.id] = doc.data();
         });
 
         const timestamps = Object.keys(loanHistory).map(Number).sort((a, b) => a - b);
-        console.log(loanHistory);
-        console.log(timestamps);
         const data = [];
         const events = [];
+        console.log(loanHistory);
 
-        timestamps.map((timestamp) => {
-          data.push({
-            timestamp: timestamp,
-            totalValue: loanHistory[timestamp].totalValue,
-            borrowed: loanHistory[timestamp].debtValue,
-            collateral: loanHistory[timestamp].collateral,
-            health: loanHistory[timestamp].health,
-            solvent: loanHistory[timestamp].solvent,
-            events
+          timestamps.map((timestamp) => {
+            data.push({
+              timestamp: timestamp,
+              totalValue: loanHistory[timestamp].totalValue,
+              borrowed: loanHistory[timestamp].debtValue,
+              collateral: loanHistory[timestamp].collateral,
+              health: loanHistory[timestamp].health,
+              solvent: loanHistory[timestamp].solvent,
+              events
+            });
           });
-        });
 
-        res.status(200).send({
-          success: true,
-          data,
-        })
-      }      
+          res.status(200).send({
+            success: true,
+            data,
+          })
+        }      
     });
   }
 )
