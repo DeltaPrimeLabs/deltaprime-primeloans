@@ -33,6 +33,7 @@ const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app
 const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
 
 const { getLoanStatusAtTimestamp } = require('./loan-history');
+const fs = require("fs");
 const timestampInterval = 24 * 3600 * 1000;
 
 const db = getFirestore();
@@ -444,9 +445,6 @@ const uploadLoanStatus = async () => {
       timestamp += timestampInterval;
     }
 
-    console.log(loanHistory);
-    console.log(timestamps);
-
     if (timestamps.length > 0) {
 
       for (const timestamp of timestamps) {
@@ -485,6 +483,20 @@ exports.saveLoansStatusHourly = functions
         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
       });
   });
+
+exports.saveLoansStatusFromFile = functions
+    .runWith({ timeoutSeconds: 120, memory: "2GB" })
+    .pubsub.schedule('*/5 * * * *')
+    .onRun(async (context) => {
+      functions.logger.info("Getting Loans Status.");
+      return uploadLoanStatusFromFile()
+          .then(() => {
+            functions.logger.info("Loans Status upload success.");
+          }).catch((err) => {
+            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+          });
+    });
+
 
 // const getEventsForPeriod = (from, to) => {
 // }
@@ -558,3 +570,51 @@ exports.loanhistory = functions
     }
   }
 )
+
+const uploadLoanStatusFromFile = async () => {
+  // const loanAddresses = await factory.getAllLoans();
+
+  const files = fs.readdirSync('results');
+  const loanAddresses = files.map(filename => filename.replace('.json', ''));
+
+  console.log(loanAddresses)
+
+  for (const loanAddress of loanAddresses) {
+    const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+    const loanHistorySnap = await loanHistoryRef.get();
+    const loanHistory = [];
+
+    loanHistorySnap.forEach(doc => {
+      loanHistory.push({
+        [doc.id]: doc.data()
+      });
+    });
+
+    const file = fs.readFileSync(`results/${loanAddress}.json`, "utf-8");
+    const json = JSON.parse(file);
+
+    const dataPoints = json.dataPoints;
+
+    console.log(dataPoints)
+
+    for (const dataPoint of dataPoints) {
+      try {
+        await loanHistoryRef.doc(dataPoint.timestamp.toString()).set({
+          totalValue: dataPoint.totalValue,
+          borrowed: dataPoint.borrowed,
+          collateral: dataPoint.totalValue - dataPoint.borrowed,
+          twv: dataPoint.twv,
+          health: dataPoint.health,
+          solvent: dataPoint.solvent === 1e-18,
+          timestamp: dataPoint.timestamp
+        });
+      } catch(e) {
+        console.log('ERRRORRRR')
+        console.log(e)
+      }
+    }
+  }
+}
