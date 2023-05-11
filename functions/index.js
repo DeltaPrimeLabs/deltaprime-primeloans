@@ -8,6 +8,7 @@ const ApolloClient = require("apollo-client").ApolloClient;
 const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 const gql = require("graphql-tag");
+const cors = require('cors')({origin: true});
 
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
@@ -486,18 +487,18 @@ exports.saveLoansStatusHourly = functions
       });
   });
 
-exports.saveLoansStatusFromFile = functions
-    .runWith({ timeoutSeconds: 120, memory: "2GB" })
-    .pubsub.schedule('*/5 * * * *')
-    .onRun(async (context) => {
-      functions.logger.info("Getting Loans Status.");
-      return uploadLoanStatusFromFile()
-          .then(() => {
-            functions.logger.info("Loans Status upload success.");
-          }).catch((err) => {
-            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-          });
-    });
+// exports.saveLoansStatusFromFile = functions
+//     .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//     .pubsub.schedule('*/5 * * * *')
+//     .onRun(async (context) => {
+//       functions.logger.info("Getting Loans Status.");
+//       return uploadLoanStatusFromFile()
+//           .then(() => {
+//             functions.logger.info("Loans Status upload success.");
+//           }).catch((err) => {
+//             functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//           });
+//     });
 
 
 // const getEventsForPeriod = (from, to) => {
@@ -505,71 +506,73 @@ exports.saveLoansStatusFromFile = functions
 
 exports.loanhistory = functions
   .https
-  .onRequest(async (req, res) => {
-    console.log("address:", req.query.address);
-    console.log("from: ", req.query.from);
-    console.log("to", req.query.to);
-    if (!req.query.address) {
-      res.status(400).send({
-        error: true,
-        data: [],
-        message: "valid loan address is required"
-      })
-    }
+  .onRequest((req, res) => {
+    cors(req, res, async () => {
+      console.log("address:", req.query.address);
+      console.log("from: ", req.query.from);
+      console.log("to", req.query.to);
+      if (!req.query.address) {
+        res.status(400).send({
+          error: true,
+          data: [],
+          message: "valid loan address is required"
+        })
+      }
 
-    const loanHistoryRef = db
-      .collection('loansHistory')
-      .doc(req.query.address.toLowerCase())
-      .collection('loanStatus');
-    let snapshot;
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(req.query.address.toLowerCase())
+        .collection('loanStatus');
+      let snapshot;
 
-    if (!req.query.from || !req.query.to) {
-      snapshot = await loanHistoryRef.get();
-    } else {
-      snapshot = await loanHistoryRef
-        .where('timestamp', '>=', req.query.from)
-        .where('timestamp', '<=', req.query.to)
-        .get();
-    }
+      if (!req.query.from || !req.query.to) {
+        snapshot = await loanHistoryRef.get();
+      } else {
+        snapshot = await loanHistoryRef
+          .where('timestamp', '>=', req.query.from)
+          .where('timestamp', '<=', req.query.to)
+          .get();
+      }
 
-    if (snapshot.empty) {
-      res.status(200).send({
-        sucess: true,
-        data: [],
-        message: "there is no loan history for the period"
-      })
-    } else {
-      const loanHistory = [];
+      if (snapshot.empty) {
+        res.status(200).send({
+          sucess: true,
+          data: [],
+          message: "there is no loan history for the period"
+        })
+      } else {
+        const loanHistory = [];
 
-      snapshot.forEach(doc => {
-        loanHistory.push({
-          [doc.id]: doc.data()
+        snapshot.forEach(doc => {
+          loanHistory.push({
+            [doc.id]: doc.data()
+          });
         });
-      });
 
-      const timestamps = Object.keys(loanHistory).map(Number).sort((a, b) => a - b);
-      console.log(loanHistory);
-      console.log(timestamps);
-      const data = [];
-      const events = [];
+        const timestamps = Object.keys(loanHistory).map(Number).sort((a, b) => a - b);
+        console.log(loanHistory);
+        console.log(timestamps);
+        const data = [];
+        const events = [];
 
-      timestamps.map((timestamp) => {
-        data.push({
-          timestamp: timestamp,
-          totalValue: loanHistory[timestamp].totalValue,
-          borrowed: loanHistory[timestamp].debtValue,
-          collateral: loanHistory[timestamp].collateral,
-          health: loanHistory[timestamp].health,
-          solvent: loanHistory[timestamp].solvent,
-          events
+        timestamps.map((timestamp) => {
+          data.push({
+            timestamp: timestamp,
+            totalValue: loanHistory[timestamp].totalValue,
+            borrowed: loanHistory[timestamp].debtValue,
+            collateral: loanHistory[timestamp].collateral,
+            health: loanHistory[timestamp].health,
+            solvent: loanHistory[timestamp].solvent,
+            events
+          });
         });
-      });
 
-      res.status(200).send({
-        success: true,
-        data,
-      })
-    }
+        res.status(200).send({
+          success: true,
+          data,
+        })
+      }      
+    });
   }
 )
 
