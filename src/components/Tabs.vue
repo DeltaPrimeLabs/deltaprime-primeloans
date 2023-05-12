@@ -4,7 +4,7 @@
       <div ref="highlight" class="highlight"></div>
       <li v-for='(tab, index) in tabs'
           :key='tab.title'
-          @click="selectedIndex = index"
+          @click="selectTab(index)"
           :class="{
           'tab-selected': (index === selectedIndex)}">
         <div class="tab-button">
@@ -19,13 +19,19 @@
         </div>
       </li>
     </ul>
-    <slot></slot>
+    <div class="tab-window" v-bind:style="`height: ${tabHeight + 2}px;`">
+      <div class="window-shade-left"></div>
+      <div class="window-shade-right"></div>
+      <div class="tab-bodies" v-bind:style="`left: ${tabsShift}px;`">
+        <slot></slot>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import DeltaIcon from "./DeltaIcon.vue";
-import ThemeToggle from "./ThemeToggle.vue";
+import DeltaIcon from './DeltaIcon.vue';
+import ThemeToggle from './ThemeToggle.vue';
 
 export default {
   components: {ThemeToggle, DeltaIcon},
@@ -42,25 +48,31 @@ export default {
   data() {
     return {
       selectedIndex: this.openTabIndex,
-      tabs: []
-    }
+      tabs: [],
+      tabsShift: 0,
+      tabHeight: 0,
+    };
   },
   mounted() {
     this.tabs = Object.values(this.$scopedSlots.default()[0].context.$refs)
     this.selectTab(this.openTabIndex)
     setTimeout(() => {
       this.moveHighlightToSelectedTab();
-    })
+    });
   },
   methods: {
-    selectTab(i) {
-      this.tabs.forEach((tab, index) => {
-        tab.isActive = (index === i)
-      });
+    selectTab(index) {
+      this.tabsShift = index * -1230;
+      this.selectedIndex = index;
       setTimeout(() => {
         this.moveHighlightToSelectedTab();
-      })
+        let tabRect = this.tabs[this.selectedIndex].$el.getBoundingClientRect();
+        this.tabHeight = tabRect.height;
+        this.$emit('tabChange', this.selectedIndex);
+      });
+
     },
+
     moveHighlightToSelectedTab() {
       this.$refs.highlight.style.left = `${this.$refs.tabs.children.item(this.selectedIndex + 1).offsetLeft - 12}px`;
       this.$refs.highlight.style.width = `${this.$refs.tabs.children.item(this.selectedIndex + 1).offsetWidth + 24}px`;
@@ -75,7 +87,7 @@ export default {
       this.selectedIndex = value;
     },
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
@@ -96,6 +108,7 @@ ul.tabs-header {
   background: var(--tabs__header-background-color);
   box-shadow: var(--tabs__header-box-shadow);
   border-radius: 999px;
+  margin-top: 50px;
 
   @media screen and (min-width: $md) {
     font-size: $font-size-lg;
@@ -195,6 +208,41 @@ li:not(.tab-selected):hover {
   width: 170px;
   border-radius: 999px;
   transition: left 250ms ease-in-out, width 250ms ease-in-out;
+}
+
+.tab-window {
+  position: relative;
+  overflow: hidden;
+  transition: all 50ms;
+}
+
+.tab-bodies {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  position: absolute;
+  left: 0;
+  transition: all 300ms;
+}
+
+.window-shade-left {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  width: 30px;
+  background: linear-gradient(90deg, var(--block__background-color) 0%, rgba(0,0,0,0) 50%);
+}
+
+.window-shade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 2;
+  width: 30px;
+  background: linear-gradient(90deg, rgba(0,0,0,0) 50%, var(--block__background-color) 100%);
 }
 
 </style>

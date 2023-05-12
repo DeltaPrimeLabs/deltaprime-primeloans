@@ -380,7 +380,7 @@ export default {
 @import "~@/styles/variables";
 
 .stats-shares__section {
-  height: 100%;
+  height: 606px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -502,7 +502,7 @@ export default {
 
 .loader {
   width: 100%;
-  height: 300px;
+  height: 446px;
   display: flex;
   align-items: center;
   justify-content: center;
