@@ -19,10 +19,10 @@
         </div>
       </li>
     </ul>
-    <div class="tab-window" v-bind:style="`height: ${tabHeight + 2}px;`">
+    <div class="tab-window" v-bind:style="`min-height: ${tabHeight + 2}px;`">
       <div class="window-shade-left"></div>
       <div class="window-shade-right"></div>
-      <div class="tab-bodies" v-bind:style="`left: ${tabsShift}px;`">
+      <div id="tab-bodies" class="tab-bodies" v-bind:style="`left: ${tabsShift}px;`">
         <slot></slot>
       </div>
     </div>
@@ -58,6 +58,7 @@ export default {
     this.selectTab(this.openTabIndex)
     setTimeout(() => {
       this.moveHighlightToSelectedTab();
+      this.setupResizeObserver();
     });
   },
   methods: {
@@ -76,7 +77,21 @@ export default {
     moveHighlightToSelectedTab() {
       this.$refs.highlight.style.left = `${this.$refs.tabs.children.item(this.selectedIndex + 1).offsetLeft - 12}px`;
       this.$refs.highlight.style.width = `${this.$refs.tabs.children.item(this.selectedIndex + 1).offsetWidth + 24}px`;
-    }
+    },
+
+    setupResizeObserver() {
+      const assetsComponent = document.getElementsByClassName('funds-beta-component')[0]
+      const farmsComponent = document.getElementsByClassName('stake-beta-component')[0]
+      const statsComponent = document.getElementsByClassName('stats-container')[0]
+
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          this.tabHeight = entry.contentRect.height;
+        }
+      });
+
+      resizeObserver.observe(farmsComponent);
+    },
   },
   watch: {
     selectedIndex: function (value) {
