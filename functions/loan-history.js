@@ -7,16 +7,12 @@ const jsonRPC = config.jsonRpc;
 const ARTIFACT = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const { WrapperBuilder } = require("@redstone-finance/evm-connector");
-const { queryHistoricalFeeds } = require("./query-arweave");
 const { SignedDataPackage } = require("redstone-protocol");
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
 let provider = new ethers.providers.JsonRpcProvider(jsonRPC);
-
-const Web3 = require('web3');
-const web = new Web3(new Web3.providers.HttpProvider(jsonRPC));
 
 
 let wallet = mnemonicWallet.connect(provider);
@@ -65,7 +61,7 @@ async function getData(loanAddress, timestamp) {
 
     const tx = await wrappedContract.populateTransaction.getFullLoanStatus()
 
-    let res = await loan.signer.call(tx, block.number)
+    let res = await loan.signer.call(tx, block.timestamp)
 
     const decoded = loan.interface.decodeFunctionResult(
         'getFullLoanStatus',

@@ -5,6 +5,9 @@ const fs = require("fs");
 const {queryHistoricalFeeds} = require("./query-arweave");
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRPC = config.jsonRpc;
+const EthDater = require("ethereum-block-by-date");
+const Web3 = require('web3');
+const web = new Web3(new Web3.providers.HttpProvider(jsonRPC));
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
@@ -70,6 +73,11 @@ const fetchHistoricalPrices = async () => {
     let json = JSON.parse(feedsFile);
 
     for (let timestamp of timestamps) {
+        const dater = new EthDater(web);
+
+        let blockData = await dater.getDate(timestamp);
+
+        let block = await provider.getBlock(blockData.block);
 
         let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
 
