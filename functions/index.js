@@ -469,16 +469,61 @@ const uploadLoanStatus = async () => {
   }
 }
 
-exports.saveLoansStatusHourly = functions
+// exports.saveLoansStatusHourly = functions
+//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//   .pubsub.schedule('*/1 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting Loans Status.");
+//     return uploadLoanStatus()
+//       .then(() => {
+//         functions.logger.info("Loans Status upload success.");
+//       }).catch((err) => {
+//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//       });
+//   });
+
+
+const uploadLiveLoansStatus = async () => {
+  const loanAddresses = await factory.getAllLoans();
+
+  const timestamp = Date.now();
+
+  await Promise.all(
+    loanAddresses.map(async (loanAddress) => {
+      console.log(loanAddress, timestamp);
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+      const wrappedContract = wrap(loanContract);
+      const status = await wrappedContract.getFullLoanStatus();
+
+      if (status) {
+        await loanHistoryRef.doc(timestamp.toString()).set({
+          totalValue: fromWei(status[0]),
+          borrowed: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
+          twv: fromWei(status[2]),
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18,
+          timestamp
+        });
+      }
+    })
+  );
+}
+
+exports.saveLiveLoansStatus = functions
   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-  .pubsub.schedule('*/1 * * * *')
+  .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLoanStatus()
+    return uploadLiveLoansStatus()
       .then(() => {
-        functions.logger.info("Loans Status upload success.");
+        functions.logger.info("Live Loans Status upload success.");
       }).catch((err) => {
-        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+        functions.logger.info(`Live Loans Status upload failed. Error: ${err}`);
       });
   });
 
