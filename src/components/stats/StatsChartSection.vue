@@ -7,11 +7,11 @@
       <template v-if="chartSelectedData">
         <div class="toggles">
           <div class="toggle--data">
-            <Toggle v-on:change="onOptionChange" :options="['Total Value', 'Collateral']"
+            <Toggle v-on:change="onOptionChange" :options="['Total Value', 'Collateral', 'Borrowed']"
                     :initial-option="0"></Toggle>
           </div>
           <div class="toggle--metadata">
-            <Toggle v-on:change="onPeriodChange" :options="['7 days']"
+            <Toggle v-on:change="onPeriodChange" :options="['7 days', '30 days']"
                     :initial-option="0"></Toggle>
             <div class="toggle-metadata__separator"></div>
             <Toggle v-on:change="onCurrencyChange" :options="['USD']"
@@ -40,10 +40,12 @@ import Toggle from "../Toggle.vue";
 const valuesNameForOptions = {
   'Total Value': 'totalValue',
   'Collateral': 'collateral',
+  'Borrowed': 'borrowed',
 }
 
 const valuesNameForPeriod = {
   '7 days': 'weekData',
+  '30 days': 'monthData',
 }
 
 const valuesNameForCurrency = {
@@ -71,18 +73,25 @@ export default {
   methods: {
     setupData() {
       this.loanHistoryService.getLoanHistoryData(this.smartLoanContract.address).then(loanHistory => {
-        this.weekData = {
-          totalValue: {
-            usd: loanHistory.data.map(historyEntry => historyEntry.totalValue)
-          },
-          timestamps: loanHistory.data.map(historyEntry => historyEntry.timestamp),
-          collateral: {
-            usd: loanHistory.data.map(historyEntry => historyEntry.collateral),
-          },
-          events: loanHistory.data.map(historyEntry => historyEntry.events),
-        }
+        this.weekData = this.processData(loanHistory.week)
+        this.monthData = this.processData(loanHistory.month)
         this.updateChartData();
       })
+    },
+    processData(data) {
+      return {
+        totalValue: {
+          usd: data.map(historyEntry => historyEntry.totalValue)
+        },
+        timestamps: data.map(historyEntry => historyEntry.timestamp),
+        collateral: {
+          usd: data.map(historyEntry => historyEntry.collateral),
+        },
+        borrowed: {
+          usd: data.map(historyEntry => historyEntry.totalValue - historyEntry.collateral),
+        },
+        events: data.map(historyEntry => historyEntry.events),
+      }
     },
     onThemeChange(theme) {
       this.theme = theme;
@@ -105,6 +114,7 @@ export default {
       this.updateChartData()
     },
     updateChartData() {
+      console.log(this.weekData);
       const selectedDataset = this[this.selectedPeriod];
       this.chartSelectedData = selectedDataset.timestamps.map((timestamp, index) => {
         const valueForTimestamp = selectedDataset[this.selectedOption][this.selectedCurrency][index];
@@ -123,6 +133,9 @@ export default {
           event: selectedDataset.events[index].length > 0 ? selectedDataset.events[index] : null
         }
       })
+      if (this.chartMin === this.chartMax) {
+        this.chartMax += 1
+      }
 
       this.chartPointRadius = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 4 : 0)
       this.chartPointRadius = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 4 : 0)
@@ -273,6 +286,7 @@ export default {
       collateral: null,
       events: null,
       weekData: null,
+      monthData: null,
       selectedOption: 'totalValue',
       selectedPeriod: 'weekData',
       selectedCurrency: 'usd',
