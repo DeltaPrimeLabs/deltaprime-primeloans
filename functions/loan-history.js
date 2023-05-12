@@ -40,8 +40,6 @@ async function getData(loanAddress, timestamp) {
 
     const feeds = json[timestamp];
 
-    console.log(feeds)
-
     let packages = [];
 
 
@@ -64,7 +62,7 @@ async function getData(loanAddress, timestamp) {
 
     const tx = await wrappedContract.populateTransaction.getFullLoanStatus()
 
-    let res = await loan.signer.call(tx, block.timestamp)
+    let res = await loan.signer.call(tx, block.number)
 
     const decoded = loan.interface.decodeFunctionResult(
         'getFullLoanStatus',
