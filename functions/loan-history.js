@@ -4,6 +4,9 @@ const fs = require("fs");
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRPC = config.jsonRpc;
 
+const Web3 = require('web3');
+const web = new Web3(new Web3.providers.HttpProvider(jsonRPC));
+
 const ARTIFACT = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const { WrapperBuilder } = require("@redstone-finance/evm-connector");
