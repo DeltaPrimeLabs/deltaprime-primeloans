@@ -19,7 +19,6 @@ let provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 
 
 let wallet = mnemonicWallet.connect(provider);
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 
 async function getData(loanAddress, timestamp) {
@@ -38,27 +37,10 @@ async function getData(loanAddress, timestamp) {
 
     let json = JSON.parse(feedsFile);
 
-    const feeds = json[timestamp];
-
-    let packages = [];
-
-
-    for (let obj of feeds) {
-
-      let txId = obj.node.id;
-      let url = `https://arweave.net/${txId}`;
-
-      const response = await fetch(url);
-
-      const json = await response.json();
-
-      const dataPackage = SignedDataPackage.fromObj(json)
-
-      packages.push(dataPackage);
-    }
+    const feeds = json[timestamp].map(feed => SignedDataPackage.fromObj(feed));
 
     const wrappedContract =
-        WrapperBuilder.wrap(loan).usingDataPackages(packages);
+        WrapperBuilder.wrap(loan).usingDataPackages(feeds);
 
     const tx = await wrappedContract.populateTransaction.getFullLoanStatus()
 

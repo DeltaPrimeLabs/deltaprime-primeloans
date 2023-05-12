@@ -9,6 +9,7 @@ const EthDater = require("ethereum-block-by-date");
 const Web3 = require('web3');
 const web = new Web3(new Web3.providers.HttpProvider(jsonRPC));
 const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
 
@@ -68,11 +69,11 @@ const fetchHistoricalPrices = async () => {
 
     const timestamps = timestampsData.timestamps;
 
-    const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
-
-    let json = JSON.parse(feedsFile);
+    let json = {};
 
     for (let timestamp of timestamps) {
+        json[timestamp] = [];
+
         const dater = new EthDater(web);
 
         let blockData = await dater.getDate(timestamp);
@@ -81,12 +82,22 @@ const fetchHistoricalPrices = async () => {
 
         let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
 
-        const feed = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+        const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-        json[timestamp] = feed;
+        for (let obj of feeds) {
 
-       fs.writeFileSync('feeds.json', JSON.stringify(json));
+            let txId = obj.node.id;
+            let url = `https://arweave.net/${txId}`;
+
+            const response = await fetch(url);
+
+            json[timestamp].push(await response.json());
+        }
     }
+
+    console.log(json)
+
+    fs.writeFileSync('feeds.json', JSON.stringify(json));
 }
 
 
