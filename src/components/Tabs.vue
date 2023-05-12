@@ -84,13 +84,18 @@ export default {
       const farmsComponent = document.getElementsByClassName('stake-beta-component')[0]
       const statsComponent = document.getElementsByClassName('stats-container')[0]
 
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          this.tabHeight = entry.contentRect.height;
+      const resizeObserver = new ResizeObserver((events) => {
+        for (const event of events) {
+          if (this.selectedIndex === 2) {
+            this.tabHeight = event.contentRect.height + 30;
+          } else {
+            this.tabHeight = event.contentRect.height;
+          }
         }
       });
 
       resizeObserver.observe(farmsComponent);
+      resizeObserver.observe(statsComponent);
     },
   },
   watch: {

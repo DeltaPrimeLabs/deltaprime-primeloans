@@ -1,5 +1,5 @@
 <template>
-  <div class="stats-container">
+  <div id="stats-container" class="stats-container">
     <StatsChartSection class="stats-chart-section"></StatsChartSection>
     <StatsSharesSection class="stats-shares-section"></StatsSharesSection>
     <TransactionHistory class="transaction-history"></TransactionHistory>
@@ -21,15 +21,18 @@ export default {
 
 <style scoped lang="scss">
 .stats-container {
+  box-sizing: border-box;
+  height: 1706px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-column-gap: 20px;
   grid-row-gap: 20px;
   width: 100%;
-  margin-top: 30px;
+  padding-top: 30px;
 
   .stats-chart-section {
     grid-area: 1 / 1 / 2 / 4;
+    height: 424px;
   }
 
   .stats-shares-section {
