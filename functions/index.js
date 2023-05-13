@@ -527,18 +527,18 @@ exports.saveLiveLoansStatus = functions
       });
   });
 
-// exports.saveLoansStatusFromFile = functions
-//     .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//     .pubsub.schedule('*/5 * * * *')
-//     .onRun(async (context) => {
-//       functions.logger.info("Getting Loans Status.");
-//       return uploadLoanStatusFromFile()
-//           .then(() => {
-//             functions.logger.info("Loans Status upload success.");
-//           }).catch((err) => {
-//             functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-//           });
-//     });
+exports.saveLoansStatusFromFile = functions
+    .runWith({ timeoutSeconds: 120, memory: "2GB" })
+    .pubsub.schedule('*/5 * * * *')
+    .onRun(async (context) => {
+      functions.logger.info("Getting Loans Status.");
+      return uploadLoanStatusFromFile()
+          .then(() => {
+            functions.logger.info("Loans Status upload success.");
+          }).catch((err) => {
+            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+          });
+    });
 
 
 // const getEventsForPeriod = (from, to) => {
@@ -661,4 +661,4 @@ const uploadLoanStatusFromFile = async () => {
       }
     }
   }
-}
+}0x7618D1CE29993bC5A8738B03B8836f6A2d96a61d

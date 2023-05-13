@@ -101,9 +101,93 @@ const fetchHistoricalPrices = async () => {
 }
 
 
+const checkMissingLoansData = () => {
+    let missing = [];
 
+
+    let moreThan10 = 0;
+    let moreThan20 = 0;
+    let moreThan30 = 0;
+
+    let lessThan20Array = [];
+
+
+    fs.readdirSync('./results/').forEach(name => {
+        let file = fs.readFileSync('./results/' + name, 'utf-8');
+
+        let json = JSON.parse(file);
+
+
+        if (json.dataPoints.length >= 10) {
+            moreThan10++;
+        }
+
+        if (json.dataPoints.length >= 20) {
+            moreThan20++;
+        } else {
+            lessThan20Array.push(name.replace('.json',''));
+
+        }
+        if (json.dataPoints.length >= 30) {
+            moreThan30++;
+        }
+
+
+        if (!json.dataPoints || json.dataPoints.length === 0) {
+            missing.push(name.replace('.json',''))
+        }
+    });
+
+    console.log('more than 10: ', moreThan10);
+    console.log('more than 20: ', moreThan20);
+    console.log('more than 30: ', moreThan30);
+
+    console.log('less thatn 20: ', lessThan20Array.length);
+
+    const missingJson = {};
+
+    missingJson.addresses = missing;
+
+    let json = {}
+    json.addresses = lessThan20Array;
+
+    fs.writeFileSync('left-loan-addresses.json', JSON.stringify(json));
+
+    fs.writeFileSync('missing.json', JSON.stringify(missingJson))
+}
+
+const findNotFetchedAddresses = () => {
+    let file = fs.readFileSync('loan-addresses.json', 'utf-8');
+
+    let allAddresses = JSON.parse(file).addresses;
+
+    let fetchedAddresses = [];
+    let notFetchedAddresses = [];
+
+    fs.readdirSync('./results/').forEach(name => {
+        let address = name.replace('.json', '');
+
+        fetchedAddresses.push(address);
+    });
+
+    allAddresses.forEach(address => {
+        if (!fetchedAddresses.includes(address)) {
+            notFetchedAddresses.push(address);
+        }
+
+    });
+
+    let json = {}
+    json.addresses = notFetchedAddresses;
+
+    fs.writeFileSync('left-loan-addresses.json', JSON.stringify(json));
+
+    console.log("not fetched: ", notFetchedAddresses.length);
+}
 
 //methods run
+//checkMissingLoansData();
+//findNotFetchedAddresses();
 fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
 // fillFailedTimestamps('0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5');
 // fetchLoanAddresses();
