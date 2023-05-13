@@ -11,7 +11,7 @@
                     :initial-option="0"></Toggle>
           </div>
           <div class="toggle--metadata">
-            <Toggle v-on:change="onPeriodChange" :options="['All', '7 days', '30 days']"
+            <Toggle v-on:change="onPeriodChange" :options="['Max', '7 days', '30 days']"
                     :initial-option="0"></Toggle>
             <div class="toggle-metadata__separator"></div>
             <Toggle v-on:change="onCurrencyChange" :options="['USD']"
@@ -46,7 +46,7 @@ const valuesNameForOptions = {
 const valuesNameForPeriod = {
   '7 days': 'weekData',
   '30 days': 'monthData',
-  'All': 'allData',
+  'Max': 'allData',
 }
 
 const valuesNameForCurrency = {
