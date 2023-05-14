@@ -11,7 +11,7 @@
                     :initial-option="0"></Toggle>
           </div>
           <div class="toggle--metadata">
-            <Toggle v-on:change="onPeriodChange" :options="['7 days', '30 days']"
+            <Toggle v-on:change="onPeriodChange" :options="['Max', '7 days', '30 days']"
                     :initial-option="0"></Toggle>
             <div class="toggle-metadata__separator"></div>
             <Toggle v-on:change="onCurrencyChange" :options="['USD']"
@@ -46,6 +46,7 @@ const valuesNameForOptions = {
 const valuesNameForPeriod = {
   '7 days': 'weekData',
   '30 days': 'monthData',
+  'Max': 'allData',
 }
 
 const valuesNameForCurrency = {
@@ -75,6 +76,7 @@ export default {
       this.loanHistoryService.getLoanHistoryData(this.smartLoanContract.address).then(loanHistory => {
         this.weekData = this.processData(loanHistory.week)
         this.monthData = this.processData(loanHistory.month)
+        this.allData = this.processData(loanHistory.all)
         this.updateChartData();
       })
     },
@@ -114,7 +116,6 @@ export default {
       this.updateChartData()
     },
     updateChartData() {
-      console.log(this.weekData);
       const selectedDataset = this[this.selectedPeriod];
       this.chartSelectedData = selectedDataset.timestamps.map((timestamp, index) => {
         const valueForTimestamp = selectedDataset[this.selectedOption][this.selectedCurrency][index];
@@ -286,9 +287,10 @@ export default {
       collateral: null,
       events: null,
       weekData: null,
+      allData: null,
       monthData: null,
       selectedOption: 'totalValue',
-      selectedPeriod: 'weekData',
+      selectedPeriod: 'allData',
       selectedCurrency: 'usd',
     }
   },
