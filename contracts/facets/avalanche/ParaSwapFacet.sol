@@ -36,8 +36,8 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             _boughtTokenAddress = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
         }
 
-        if (_soldTokenAddress == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
-            _soldTokenAddress = 0xaE64d55a6f09E4263421737397D1fdFA71896a69;
+        if (_soldTokenAddress == 0xaE64d55a6f09E4263421737397D1fdFA71896a69) {
+            _soldTokenAddress = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
         }
 
         bytes32 _tokenSoldSymbol = tokenManager.tokenAddressToSymbol(_soldTokenAddress);
