@@ -119,6 +119,26 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return loans;
     }
 
+    function getLoans(uint256 _from, uint256 _count) public view returns (address[] memory _loans) {
+        uint256 length = loans.length;
+        if (_from >= length) {
+            _loans = new address[](0);
+            return _loans;
+        }
+
+        if (_count > length - _from) {
+            _count = length - _from;
+        }
+        _loans = new address[](_count);
+        for (uint256 i; i != _count; ++i) {
+            _loans[i] = loans[_from + i];
+        }
+    }
+
+    function getLoansLength() external view returns (uint256) {
+        return loans.length;
+    }
+
     /* ========== OVERRIDDEN FUNCTIONS ========== */
 
     function renounceOwnership() public virtual override {}
