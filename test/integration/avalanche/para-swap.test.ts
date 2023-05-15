@@ -45,8 +45,6 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const {expect} = chai;
 
-const tester = "0x000000F406CA147030BE7069149e4a7423E3A264";
-
 describe('ParaSwap', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
@@ -70,12 +68,12 @@ describe('ParaSwap', () => {
             diamondAddress: any;
 
         const getSwapData = async () => {
-            const srcAmount = toWei("0.5");
+            const srcAmount = toWei("10");
             const priceRoute = await paraSwapMin.swap.getRate({
                 srcToken: TOKEN_ADDRESSES['AVAX'],
                 destToken: TOKEN_ADDRESSES['USDC'],
                 amount: srcAmount.toString(),
-                userAddress: tester,
+                userAddress: owner.address,
                 side: SwapSide.SELL,
             });
             const txParams = await paraSwapMin.swap.buildTx({
@@ -84,8 +82,10 @@ describe('ParaSwap', () => {
                 srcAmount: priceRoute.srcAmount,
                 destAmount: priceRoute.destAmount,
                 priceRoute,
-                userAddress: tester,
+                userAddress: owner.address,
                 partner: 'anon',
+            }, {
+                ignoreChecks: true,
             });
             const swapData = paraSwapRouteToSimpleData(txParams);
             return swapData;
