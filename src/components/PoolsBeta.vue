@@ -167,14 +167,16 @@ export default {
     margin-top: 30px;
 
     .title {
+      margin-top: 55px;
       font-size: $font-size-xxl;
       font-weight: bold;
       margin-bottom: 31px;
     }
 
     .pools {
-      margin-top: 65px;
       width: 100%;
+      margin-top: 65px;
+      padding: 0 53px;
       display: flex;
       flex-direction: row;
       align-items: center;

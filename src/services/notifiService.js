@@ -96,7 +96,7 @@ export default class notifiService {
     return targetGroups;
   }
 
-  async createAnnouncements(client) {
+  async createAnnouncements({ client }) {
     const eventType = {
       type: 'broadcast',
       name: 'DeltaPrime Announcements',
@@ -111,7 +111,7 @@ export default class notifiService {
       inputs: {},
     });
   
-    console.log('createAnnouncements', result);
+    return result;
   }
 
   /*
@@ -123,7 +123,7 @@ export default class notifiService {
   - DAILY
   */
 
-  async createLiquidationAlerts(client, walletAddress) {
+  async createLiquidationAlerts({ client, walletAddress }) {
     const eventType = {
       type: "custom",
       name: "Liquidation Alerts",
@@ -144,10 +144,10 @@ export default class notifiService {
       },
     });
   
-    console.log('createLiquidationAlerts', result);
+    return result;
   }
 
-  async createLoanHealthAlerts(client, walletAddress, healthRatio) {
+  async createLoanHealthAlerts({ client, walletAddress, healthRatio }) {
     const eventType = {
       type: 'custom',
       name: 'Loan Health Alerts',
@@ -173,7 +173,7 @@ export default class notifiService {
     return result;
   }
 
-  async createBorrowRateAlerts(client, poolAddress, thresholdDirection, threshold) {
+  async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold }) {
     const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'custom',
@@ -197,10 +197,10 @@ export default class notifiService {
       inputs: {},
     });
 
-    console.log('createBorrowRateAlerts', result);
+    return result;
   }
 
-  async createLendingRateAlerts(client, poolAddress, thresholdDirection, threshold) {
+  async createLendingRateAlerts({ client, poolAddress, thresholdDirection, threshold }) {
     const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'custom',
@@ -224,10 +224,11 @@ export default class notifiService {
       inputs: {},
     });
 
-    console.log('createLendingRateAlerts', result);
+    return result;
   }
 
   deleteAlert(client, alertId) {
+    console.log('alert deleted', alertId);
     client.deleteAlert({ id: alertId });
   }
 

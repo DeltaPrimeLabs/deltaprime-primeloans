@@ -15,7 +15,7 @@
         :src="rightIconSrc"
       >
     </div>
-    <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
+    <vue-loaders-ball-beat :style="customStyle ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
 </template>
 

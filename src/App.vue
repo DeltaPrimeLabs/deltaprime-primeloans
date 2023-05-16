@@ -7,6 +7,9 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
+    <Banner v-if="showUnwindedGlpBanner" class="banner-unwinded-glp">
+      Gm! Part of your position got unwinded by a liquidation bot due to a temporarily reduced GLP borrowing power. We will refund your Prime Account with any paid redemption and minting fees. <br/> Our apologies if this causes any inconvenience!
+    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
@@ -73,6 +76,7 @@ export default {
       highGasPrice: false,
       gasPriceIntervalId: null,
       showGlpBanner: false,
+      showUnwindedGlpBanner: false,
       showDepositBanner: false,
       darkMode: false,
     };
@@ -98,6 +102,10 @@ export default {
     }
 
     this.initGasPrices();
+
+    if (window.location.href.includes('prime-account') && this.hasUnwindedGlp()) {
+      this.showUnwindedGlpBanner = true;
+    }
 
     if (window.location.href.includes('prime-account')) {
       this.showGlpBanner = true;
@@ -210,6 +218,10 @@ export default {
       this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
     },
 
+    hasUnwindedGlp() {
+      return ["0x2716f9dd4058b2e2023a79100795c1647f9a5cfa", "0xc991663FA798E5f27C854EE751285C23796EF6f6", "0xB0399dAC8f4D4100b49b2a7B3873481114229D18", "0x57356793365301b26bD8dA93a7249C92A2003b1D", "0xfb5845A7128149215a92B7dd01985C31EdA3A202", "0x76Ee7EE3C1B60e2bcA3Effb3d266BF0688BF4297", "0xfA713713B1ACd89A00e6b35512161630d5ea90de", "0xc5dE27336E04e4A6EB1A766323d3AD1d21efA767", "0xfE6776498f7b814A6b7b69fc37cDf8A993B01708", "0xC69aDFF7F2f28d5339fCe333259B1d804ffA44B3", "0x648349e02C549986C8ef2b75514d73040D581Acc", "0x6f36736A0D146e8B2DE5d580fe181Aa2f9f46D2a", "0x8aC228d85989cea83b8C07b8829524214C92Fee8", "0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12", "0x6C21A841d6f029243AF87EF01f6772F05832144b", "0x8c1A4C98C470900567FB9e764243c89cDa79400C", "0x254D63d3eDfDf71a50D8Fa51B7D5083b46381E5a", "0xB8e6F532f6FeE638d369228E87af10A79ecaaf63", "0xbCc8cB0a825c61355a460da85159f1B43D5d49AB", "0xF20EeBD5E7B0b812CF2A892772439C1B945287fE"].includes(this.account);
+    },
+
     watchCloseModal() {
       this.modalService.watchCloseModal().subscribe(() => {
         this.closeModal();
@@ -315,6 +327,12 @@ a {
 .banner-link {
   text-decoration: underline;
   cursor: pointer;
+}
+
+.banner-unwinded-glp {
+  height: 70px;
+  text-align: center;
+  padding: 0 70px;
 }
 
 .top-bar__left-part {

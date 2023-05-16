@@ -111,12 +111,18 @@ export default ({
       const inputName = event.type === 'email' ? 'emailAddress' : event.type === 'phone' ? 'phoneNumber' : 'telegramId';
 
       this.invalid = false;
-      this.targets = {
-        ...this.targets,
-        [inputName]: event.value
+
+      if (!event.value){
+        delete this.targets[inputName];
+      } else {
+        this.targets = {
+          ...this.targets,
+          [inputName]: event.value
+        }
       }
     },
     handleClick() {
+      console.log(this.targets);
       this.$emit('createTargets', this.targets);
     }
   }

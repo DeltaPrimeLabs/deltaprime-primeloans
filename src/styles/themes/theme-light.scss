@@ -344,17 +344,27 @@
   --stats-shares-section__no-data-text-color: #{$steel-gray};
   // endregion
 
+  // region StatsChartSection
+  --stats-chart-section__tick-color: #{$delta-steel}7f;
+  --stats-chart-section__axes-text-color: #{$steel-gray};
+  --stats-chart-section__point-color: #{$persian-blue};
+  --stats-chart-section__toggle-metadata-separator-color: #{$goose-gray};
+  --stats-chart-section__no-data-color: #{$steel-gray};
+  // endregion
+
   // region NotifiModal
   --notifi-modal__container-box-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
   --notifi-modal__container-border: solid 2px #{$delta-secondary};
   --notifi-modal__container-background-color: #{$white};
-  --notifi-modal__container-top-info-color: #{$steel-gray};
+  --notifi-modal__container-info-color: #{$steel-gray};
   --notifi-modal__container-footer-font-color: #{$black}b3;
   --notifi-modal__container-inner-border-color: #{$violet-smoke};
   --notifi-modal__container-separator: linear-gradient(to right, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
-  --notifi-modal__container-input-color: #{$black};
+  --notifi-modal__container-common-color: #{$black};
   --notifi-modal__container-text-small: #{$medium-gray};
   --notifi-modal__container-notification-box-hover-color: #{$violet-mist};
+  --notifi-modal__container-header-box-shadow: 0 2px 6px 0 #{$delta-steel}1a;
+  --notifi-modal__container-footer-box-shadow: 0 -2px 6px 0 #{$delta-steel}1a;
   // endregion
 
   // region FromInput
@@ -371,7 +381,7 @@
   --edit-contact__contact-box-top-border: 1px solid #{$violet-smoke};
   // endregion
 
-  // region ThemeToggle
+  // region ToggleButton
   --toggle-button__background: #{$delta-light};
   --toggle-button__toggle-on-background: #{$delta-accent};
   --toggle-button__switch-box-shadow: 1px 1px 4px 0 #{$smoke-purple}4c;
@@ -383,9 +393,13 @@
   --health-rate-button__border-color: #{$smoke-gray};
   --health-rate-button__background-color: #{$white};
   --health-rate-button__rate-inactive-color: #{$steel-gray};
-  --health-rate-button__rate-active-color: #{$black};
   --health-rate-button__active-border-color: #{$delta-primary};
   --health-rate-button__active-background-color: #{$delta-burnt-out};
-  --health-rate-button__active-box_shadow: 2px 2px 4px 0 #{$delta-steel}7f;
+  // endregion
+
+  // region Settings (Notifi)
+  --notifi-settings__borrow-rate-border: 1px solid #{$violet-smoke};
+  --notifi-settings__box-shadow: 2px 2px 4px 0 #{$delta-steel}7f;
+  --notifi-settings__active-option-font-color: #{$black};
   // endregion
 }

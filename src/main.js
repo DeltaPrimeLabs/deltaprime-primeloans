@@ -29,7 +29,7 @@ Vue.mixin(globalMixin);
 // notifi modal open/close on outside click
 let handleOutsideClick
 Vue.directive('closable', {
-  bind(el, binding, vnode, prevVnode) {
+  created(el, binding, vnode, prevVnode) {
     handleOutsideClick = (e) => {
       e.stopPropagation();
 

@@ -105,7 +105,7 @@ export default ({
       flex: auto;
       background: transparent;
       border: none;
-      color: var(--notifi-modal__container-input-color);
+      color: var(--notifi-modal__container-common-color);
       font-family: 'Montserrat';
       font-size: 14px;
       font-weight: 500;

@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  name: 'Toggle',
+  name: 'RoundToggle',
   props: {
     options: Array,
     initialOption: Number
@@ -71,12 +71,12 @@ export default {
     .pointer {
       position: absolute;
       left: 0;
-      height: 28px;
+      height: 32px;
       width: 50px;
       margin: 0 80px 0 0;
-      padding: 4px 10px;
-      box-shadow: var(--toggle__pointer-box-shadow);
-      border-radius: 7px;
+      padding: 6px 12px;
+      box-shadow: var(--notifi-settings__box-shadow);
+      border-radius: 10px;
       backdrop-filter: contrast(200%) brightness(150%);
       z-index: 1;
       transition: all 100ms;
@@ -84,7 +84,7 @@ export default {
       &:before {
         content: '';
         position: absolute;
-        border-radius: 7px;
+        border-radius: 10px;
         inset: 0;
         background: var(--toggle__pointer-border);
       }
@@ -92,7 +92,7 @@ export default {
       &:after {
         content: '';
         position: absolute;
-        border-radius: 6px;
+        border-radius: 10px;
         inset: 1px;
         background: var(--toggle__pointer-background);
       }
@@ -101,17 +101,17 @@ export default {
     .toggle__options {
       display: flex;
       flex-direction: row;
-      border-radius: 7px;
-      font-size: $font-size-xsm;
+      border-radius: 10px;
+      font-size: $font-size-sm;
       color: var(--toggle__options-color);
       z-index: 2;
 
       .option {
-        padding: 4px 10px;
+        padding: 6px 12px;
         cursor: pointer;
 
         &.option--selected {
-          color: var(--toggle__options-color--selected);
+          color: var(--notifi-settings__active-option-font-color);
           font-weight: 600;
         }
 
@@ -124,11 +124,11 @@ export default {
     .toggle__background {
       position: absolute;
       inset: 0;
-      height: 28px;
+      height: 32px;
       background-color: var(--toggle__background);
       border: var(--toggle__border);
       z-index: 0;
-      border-radius: 7px;
+      border-radius: 10px;
     }
   }
 }

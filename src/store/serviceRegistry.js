@@ -16,6 +16,7 @@ import CollateralService from '../services/collateralService';
 import DebtService from '../services/debtService';
 import ThemeService from "../services/themeService";
 import StatsService from '../services/statsService';
+import LoanHistoryService from "../services/loanHistoryService";
 import NotifiService from '../services/notifiService';
 
 export default {
@@ -39,6 +40,7 @@ export default {
     debtService: new DebtService(),
     themeService: new ThemeService(),
     statsService: new StatsService(),
+    loanHistoryService: new LoanHistoryService(),
     notifiService: new NotifiService(),
   },
 };

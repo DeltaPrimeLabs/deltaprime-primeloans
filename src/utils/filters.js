@@ -103,4 +103,10 @@ export default function setupFilters() {
   Vue.filter('notificationTime', function (value) {
     return moment(value).format('DD.MM.YYYY | HH:mm');
   });
+
+  Vue.filter('title', function(value) {
+    return value.toLowerCase().split(' ').map(function (word) {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+  });
 }

@@ -1,3 +1,9 @@
+import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
+import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
+import USDT_POOL_TUP from '@contracts/UsdtPoolTUP.json';
+import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
+import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
+
 export default {
   SCREENS_CONFIG: {
     login: { // user registration to notifi screen
@@ -41,27 +47,32 @@ export default {
   },
   ALERTS_CONFIG: {
     "BROADCAST_MESSAGES": {
-      type: "announcements",
+      type: "BROADCAST_MESSAGES",
       label: "DeltaPrime Announcements",
       toggle: true,
+      createMethod: "createAnnouncements"
     },
     "LIQUIDATIONS": {
-      type: "liquidation",
+      type: "LIQUIDATIONS",
       label: "Liquidation Alerts",
       tooltip: "Liquidation Alerts",
-      toggle: true
+      toggle: true,
+      createMethod: "createLiquidationAlerts"
     },
     "DELTA_PRIME_LENDING_HEALTH_EVENTS": {
-      type: "loanHealth",
+      type: "DELTA_PRIME_LENDING_HEALTH_EVENTS",
       label: "Loan Health Alerts",
       tooltip: "Loan Health Alerts",
       toggle: true,
+      createMethod: "createLoanHealthAlerts",
+      thresholdOptions: true,
       settingsNote: "Alert me when my loan health score goes below LTV threshold"
     },
     "DELTA_PRIME_BORROW_RATE_EVENTS": {
-      type: "borrowRate",
+      type: "DELTA_PRIME_BORROW_RATE_EVENTS",
       label: "Borrowing Interest Rate Alerts",
-      tooltip: "Borrowing Interest Rate Alerts"
+      tooltip: "Borrowing Interest Rate Alerts",
+      createMethod: "createBorrowRateAlerts"
     }
   },
   NOTIFICATION_ICONS_CONFIG: {
@@ -89,6 +100,32 @@ export default {
     {//default
       id: "seventy",
       value: 70,
+    },
+    // {
+    //   id: "custom",
+    //   value: 0
+    // }
+  ],
+  POOLS_CONFIG: [
+    {
+      name: "AVAX",
+      address: WAVAX_POOL_TUP.address,
+    },
+    {
+      name: "USDC",
+      address: USDC_POOL_TUP.address,
+    },
+    {
+      name: "USDT",
+      address: USDT_POOL_TUP.address,
+    },
+    {
+      name: "BTC",
+      address: BTC_POOL_TUP.address,
+    },
+    {
+      name: "ETH",
+      address: ETH_POOL_TUP.address,
     }
   ]
 }

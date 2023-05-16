@@ -5,11 +5,11 @@
     </div>
     <div class="container">
       <StatsBarBeta
-        :collateral="noSmartLoanInternal ? 0 : collateral"
-        :debt="noSmartLoanInternal ? 0 : debt"
-        :health="noSmartLoanInternal ? 1 : health"
-        :noSmartLoan="noSmartLoanInternal"
-        :healthLoading="healthLoading">
+          :collateral="noSmartLoanInternal ? 0 : collateral"
+          :debt="noSmartLoanInternal ? 0 : debt"
+          :health="noSmartLoanInternal ? 1 : health"
+          :noSmartLoan="noSmartLoanInternal"
+          :healthLoading="healthLoading">
       </StatsBarBeta>
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
@@ -64,18 +64,18 @@ import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
 import Assets from './Assets';
-import {mapActions, mapGetters, mapState} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 import Farm from './Farm';
 import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
-import {combineLatest, delay} from 'rxjs';
-import {fetchLiquidatedEvents} from "../utils/graph";
-import DataRefreshEventService from "../services/dataRefreshEventService";
-import InfoBubble from "./InfoBubble.vue";
+import {combineLatest} from 'rxjs';
+import {fetchLiquidatedEvents} from '../utils/graph';
+import InfoBubble from './InfoBubble.vue';
 import TransactionHistory from './TransactionHistory';
-import Stats from "./stats/Stats.vue";
+import Stats from './stats/Stats.vue';
+
 const TABS = [
   {
     path: 'assets',
@@ -89,13 +89,25 @@ const TABS = [
     path: 'stats',
     pathName: 'Prime Account Stats'
   },
-]
+];
 
 const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {TransactionHistory, Stats, InfoBubble, Farm, Assets, Block, StatsBarBeta, Tabs, Tab, AccountAprWidget, Banner},
+  components: {
+    TransactionHistory,
+    Stats,
+    InfoBubble,
+    Farm,
+    Assets,
+    Block,
+    StatsBarBeta,
+    Tabs,
+    Tab,
+    AccountAprWidget,
+    Banner
+  },
   computed: {
     ...mapState('fundsStore', [
       'assetBalances',
@@ -178,7 +190,6 @@ export default {
     this.watchDebt();
     this.setupVideoVisibility();
     this.initAccountApr();
-
     this.initStoresWhenProviderAndAccountCreated();
   },
   methods: {
@@ -242,10 +253,9 @@ export default {
       const url = document.location.href;
       const lastUrlPart = url.split('/').reverse()[0];
       if (!TABS.some(tab => tab.path === lastUrlPart)) {
-      console.error(lastUrlPart);
         this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart)
+        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart);
       }
     },
 
@@ -343,6 +353,7 @@ export default {
   border-radius: 25px;
   bottom: 20px;
   right: 20px;
+  z-index: 2;
 
   .tutorial-video__close {
     position: absolute;

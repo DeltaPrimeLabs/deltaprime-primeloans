@@ -3,11 +3,18 @@
     class="add-interest-rate"
   >
     <div
+      v-if="!newWindow"
       class="add-rate-btn"
       @click="newWindow = true"
     >
       <img src="src/assets/icons/icon_a_plus_single.svg">
       Add Rate
+    </div>
+    <div
+      v-if="newWindow"
+      class="new-window"
+    >
+
     </div>
   </div>
 </template>
@@ -37,6 +44,10 @@ export default ({
     color: var(--edit-contact__contact-verify-color);
     cursor: pointer;
     transform: translateX(-3px);
+  }
+
+  .new-window {
+
   }
 }
 </style>

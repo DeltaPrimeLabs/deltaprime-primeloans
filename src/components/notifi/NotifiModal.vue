@@ -116,12 +116,6 @@ export default {
       combineLatest([this.notifiService.observeNotifi()])
         .subscribe(([notifi]) => {
           this.notifi = notifi;
-          // if (!this.notifi.history) {
-          //   this.notifi.history = history;
-          // } else {
-          //   this.notifi.history.nodes = [...this.notifi.history.nodes, history.nodes];
-          //   this.notifi.history.pageInfo
-          // }
           this.screenLoading = false;
 
           if (!this.notifi || !this.notifi.authenticated) {
@@ -253,6 +247,7 @@ export default {
       display: flex;
       padding: 24px 30px 20px;
       border-bottom: solid 1px var(--notifi-modal__container-inner-border-color);
+      box-shadow: var(--notifi-modal__container-header-box-shadow);
 
       .header__left-arrow {
         margin-right: 14px;
@@ -288,6 +283,7 @@ export default {
       justify-content: center;
       align-items: center;
       border-top: solid 1px var(--notifi-modal__container-inner-border-color);
+      box-shadow: var(--notifi-modal__container-footer-box-shadow);
 
       .footer__powered-by {
         margin-right: 7.8px;
