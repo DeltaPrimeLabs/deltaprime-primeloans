@@ -24,9 +24,10 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <!--    <Banner v-if="showDepositBanner" background="green" :closable="true">
-          Interest rates are temporarily lowered to normal levels. New integrations incoming this Friday!
-        </Banner>-->
+    <Banner v-if="showDepositBanner" background="green" :closable="true">
+      Steak Hut incoming! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
+      Expect interest rates to be back up again in a week.
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
