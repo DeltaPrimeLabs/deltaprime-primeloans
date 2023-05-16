@@ -384,6 +384,7 @@ export default {
         this.reverseSwap();
       } else {
         if (this.sourceAsset !== changeEvent.asset) {
+          console.log(changeEvent)
           this.sourceAsset = changeEvent.asset;
           this.calculateSourceAssetBalance();
           this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
@@ -558,6 +559,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+@import "~@/styles/slippage";
 
 .swap-modal-component {
 
@@ -621,53 +623,6 @@ export default {
 .target-asset-info {
   display: flex;
   justify-content: flex-end;
-}
-
-.slippage-bar {
-  border-top: solid 2px #f0f0f0;
-  border-bottom: solid 2px #f0f0f0;
-  margin-top: 26px;
-  height: 42px;
-  font-family: Montserrat;
-  font-size: 16px;
-  color: #7d7d7d;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 15px;
-  padding-right: 15px;
-
-  .info__icon {
-    transform: translateY(-1px);
-  }
-
-  .percent {
-    font-weight: 600;
-  }
-
-  .slippage-info {
-    display: flex;
-    align-items: center;
-
-    .percent {
-      margin-left: 6px;
-    }
-
-    .slippage-label {
-      margin-right: 6px;
-    }
-  }
-
-  .deviation-value {
-    font-weight: 600;
-  }
-
-  .slippage__divider {
-    width: 2px;
-    height: 17px;
-    background-color: #f0f0f0;
-    margin: 0 10px;
-  }
 }
 
 .bar-gauge-tall-wrapper {

@@ -425,6 +425,9 @@ export default {
         case 'ADD_FROM_WALLET':
           this.openAddFromWalletModal();
           break;
+        case 'BRIDGE_COLLATERAL':
+          this.openBridgeModal();
+          break;
         case 'WITHDRAW':
           this.openWithdrawModal();
           break;
@@ -684,6 +687,31 @@ export default {
           })
             .then(() => {
             });
+        }
+      });
+    },
+
+    async openBridgeModal() {
+      const modalInstance = this.openModal(BridgeModal);
+
+      modalInstance.noSmartLoan = this.noSmartLoan;
+      modalInstance.$on('BRIDGE', bridgeEvent => {
+        if (this.smartLoanContract) {
+          const value = bridgeEvent.value;
+          //
+          // if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
+          //   this.handleTransaction(this.createAndFundLoan, {
+          //         asset: addFromWalletEvent.asset,
+          //         value: value,
+          //         isLP: false
+          //       }, () => {
+          //         this.scheduleHardRefresh();
+          //         this.$forceUpdate();
+          //       },
+          //       (error) => {
+          //         this.handleTransactionError(error);
+          //       });
+          //   }
         }
       });
     },

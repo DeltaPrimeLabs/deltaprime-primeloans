@@ -19,7 +19,7 @@
       <div class="divider"></div>
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
-          <img class="selected-asset__icon" :src="selectedAsset.logo">
+          <img class="selected-asset__icon" :src="selectedAsset.logo ? selectedAsset.logo : selectedAsset.logoURI">
           <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
         <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1">
@@ -30,9 +30,9 @@
           <div class="dropdown__list">
             <div class="dropdown__option"
                  v-for="assetOption in displayedOptions"
-                 v-bind:key="assetOption.symbol"
+                 v-bind:key="assetOption.address ? assetOption.address : assetOption.symbol"
                  v-on:click="selectOption(assetOption)">
-              <img class="option__icon" :src="assetOption.logo">
+              <img class="option__icon" :src="assetOption.logo ? assetOption.logo : assetOption.logoURI">
               <div class="option__symbol">{{ assetOption.symbol }}</div>
               <div class="option__name">{{ assetOption.name }}</div>
             </div>

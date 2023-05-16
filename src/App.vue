@@ -122,9 +122,10 @@ export default {
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
-      ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
+      //TODO
+      // ethereum.on('chainChanged', () => {
+      //   window.location.reload();
+      // });
 
       return this.toDec(chainId);
     },

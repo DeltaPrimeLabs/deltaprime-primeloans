@@ -26,6 +26,7 @@
     "@apollo/client": "^3.7.2",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@growthbunker/vuetimeline": "^0.1.17",
+    "@lifi/sdk": "^1.7.2",
     "@nomiclabs/hardhat-etherscan": "^3.0.1",
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.1",

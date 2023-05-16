@@ -57,6 +57,7 @@
 import LoadedValue from './LoadedValue';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
+import BridgeDepositModal from './BridgeDepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
 const ethers = require('ethers');
@@ -86,14 +87,25 @@ export default {
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw']),
+    ...mapActions('network', ['initNetwork']),
+    ...mapActions('poolStore', ['deposit', 'withdraw', 'bridge']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
           hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: 'Deposit',
-          iconButtonActionKey: 'DEPOSIT'
+          tooltip: 'Deposit / Bridge',
+          // iconButtonActionKey: 'DEPOSIT',
+          menuOptions: [
+            {
+              key: 'DEPOSIT',
+              name: 'Deposit'
+            },
+            {
+              key: 'BRIDGE',
+              name: 'Bridge'
+            },
+          ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
@@ -108,6 +120,9 @@ export default {
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
+          break;
+        case 'BRIDGE':
+          this.openBridgeModal();
           break;
         case 'WITHDRAW':
           this.openWithdrawModal();
@@ -136,6 +151,35 @@ export default {
 
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
+          this.closeModal();
+        });
+      });
+    },
+
+    async openBridgeModal() {
+      const modalInstance = this.openModal(BridgeDepositModal);
+      modalInstance.account = this.account;
+      modalInstance.signer = this.provider.getSigner();
+      modalInstance.poolAsset = this.pool.asset;
+      modalInstance.poolAssetPrice = this.pool.assetPrice;
+      modalInstance.poolAddress = this.pool.contract.address;
+      modalInstance.deposit = this.pool.deposit;
+
+      modalInstance.$on('BRIDGE', async bridgeEvent => {
+        await this.initNetwork();
+
+        const bridgeRequest = {
+          lifi: bridgeEvent.lifi,
+          route: bridgeEvent.route,
+        };
+
+        this.handleTransaction(this.bridge, {bridgeRequest: bridgeRequest}, () => {
+          ////
+
           this.$forceUpdate();
         }, () => {
 

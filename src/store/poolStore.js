@@ -47,7 +47,7 @@ export default {
     async setupPools({rootState, commit}) {
       const poolService = rootState.serviceRegistry.poolService;
 
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData)
@@ -123,5 +123,16 @@ export default {
         dispatch('setupPools');
       }, 30000);
     },
-  }
+
+    async bridge({state, rootState, commit, dispatch}, {bridgeRequest}) {
+      const provider = rootState.network.provider;
+
+      console.log(bridgeRequest.lifi)
+      console.log(bridgeRequest.route)
+      const route = await bridgeRequest.lifi.executeRoute(provider.getSigner(), bridgeRequest.route);
+
+      console.log(route)
+      console.log('bridge tx executed')
+    }
+  },
 };
