@@ -197,6 +197,7 @@ export default class notifiService {
       inputs: {},
     });
 
+    console.log(result);
     return result;
   }
 

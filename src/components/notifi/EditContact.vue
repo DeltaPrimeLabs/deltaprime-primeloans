@@ -24,7 +24,7 @@
             {{ telegramInfo.telegramId }}
           </div>
           <div
-            v-if="telegramInfo.isConfirmed"
+            v-if="!telegramInfo.isConfirmed"
             class="link-text contact-verify"
           >
             <a
@@ -83,6 +83,7 @@ export default ({
     telegramInfo: null
   },
   data() {
+    console.log(this.telegramInfo);
     return {
       editMode: false
     }

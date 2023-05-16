@@ -60,7 +60,9 @@
           </template>
 
           <template v-if="alert.type === 'DELTA_PRIME_BORROW_RATE_EVENTS'">
-            <AddInterestRate></AddInterestRate>
+            <AddInterestRate
+              @borrowInterestRate="handleBorrowRate"
+            ></AddInterestRate>
             <div
               v-for="(option, id) in alert.filterOptions"
               v-bind:key="id"
@@ -125,6 +127,7 @@ export default ({
     ...mapState('notifiStore', ['alertSettings']),
   },
   mounted() {
+    console.log(this.alertSettings);
     this.selectedHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'].filterOptions
         && (this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'].filterOptions.threshold == 0.6
         ? notifiConfig.HEALTH_RATES_CONFIG[0]
@@ -198,6 +201,16 @@ export default ({
       }
     },
 
+    handleBorrowRate(rate) {
+      console.log(rate);
+      this.notifiService.createBorrowRateAlerts({
+        client: this.client,
+        poolAddress: rate.poolAddress,
+        thresholdDirection: rate.thresholdDirection,
+        threshold: rate.threshold
+      });
+    },
+
     addressToPoolName(address) {
       console.log(address);
       const pool = this.pools.find(pool => pool.address.toLowerCase() === address.toLowerCase());
@@ -247,7 +260,6 @@ export default ({
 
     .interest-rate {
       display: flex;
-      margin-top: 6.5px;
       padding: 8px 0 6px;
       font-family: Montserrat;
       font-size: $font-size-xsm;
@@ -277,6 +289,10 @@ export default ({
         &:hover {
           color: $black;
         }
+      }
+
+      &:first-child {
+        margin-top: 6.5px;
       }
 
       &:not(:first-child) {

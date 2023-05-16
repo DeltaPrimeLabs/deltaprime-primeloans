@@ -85,10 +85,10 @@ export default {
     "Loan Health Alerts": {
       iconSrc: "src/assets/icons/icon_health.svg"
     },
-    "$USDC Borrowing Interest Rate Alert": {
+    "Borrowing Interest Rate Alert": {
       iconSrc: "src/assets/icons/icon_rate.svg"
     },
-    "$USDC Deposit Interest Rate Alert": {
+    "Deposit Interest Rate Alert": {
       iconSrc: "src/assets/icons/icon_rate.svg"
     }
   },

@@ -26,8 +26,8 @@ export default {
 
       const walletBlockchain = 'AVALANCHE';
       const walletPublicKey = rootState.network.account;
-      const tenantId = 'deltaprimenotifidev';
-      const blockchainEnv = 'Development';
+      const tenantId = 'deltaprime';
+      const blockchainEnv = 'Production';
 
       const notifi = await notifiService.setupNotifiClient(walletBlockchain, walletPublicKey, tenantId, blockchainEnv);
 
@@ -35,18 +35,20 @@ export default {
 
       const alertSettings = notifiConfig.ALERTS_CONFIG;
 
-      for (const alert of notifi.alerts) {
-        alertSettings[alert.filter.filterType]['id'] = alert.id;
-        alertSettings[alert.filter.filterType]['created'] = true;
-        if (alert.filter.filterType === 'DELTA_PRIME_BORROW_RATE_EVENTS') {
-          // we can have multiple borrow rate alerts with differnt thresholds
-          if (!alertSettings[alert.filter.filterType]['filterOptions']) alertSettings[alert.filter.filterType]['filterOptions'] = [];
-          alertSettings[alert.filter.filterType]['filterOptions'].push({
-            ...JSON.parse(alert.filterOptions),
-            poolAddress: alert.sourceGroup.sources[0].blockchainAddress
-          });
-        } else {
-          alertSettings[alert.filter.filterType]['filterOptions'] = JSON.parse(alert.filterOptions);
+      if (notifi.alerts) {
+        for (const alert of notifi.alerts) {
+          alertSettings[alert.filter.filterType]['id'] = alert.id;
+          alertSettings[alert.filter.filterType]['created'] = true;
+          if (alert.filter.filterType === 'DELTA_PRIME_BORROW_RATE_EVENTS') {
+            // we can have multiple borrow rate alerts with differnt thresholds
+            if (!alertSettings[alert.filter.filterType]['filterOptions']) alertSettings[alert.filter.filterType]['filterOptions'] = [];
+            alertSettings[alert.filter.filterType]['filterOptions'].push({
+              ...JSON.parse(alert.filterOptions),
+              poolAddress: alert.sourceGroup.sources[0].blockchainAddress
+            });
+          } else {
+            alertSettings[alert.filter.filterType]['filterOptions'] = JSON.parse(alert.filterOptions);
+          }
         }
       }
 
