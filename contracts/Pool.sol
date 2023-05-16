@@ -472,13 +472,17 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function _getAmounts(address account) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
-        lockedAmount = vestingDistributor.locked(account);
-        transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
+        if (address(vestingDistributor) != address(0)) {
+            lockedAmount = vestingDistributor.locked(account);
+            transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
+        } else {
+            transferrableAmount = _deposited[account];
+        }
     }
 
     function _updateWithdrawn(address account, uint256 amount, uint256 lockedAmount) internal {
         uint256 availableUnvested = _deposited[account] - lockedAmount;
-        if (amount > availableUnvested) {
+        if (amount > availableUnvested && address(vestingDistributor) != address(0)) {
             vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
         }
     }
