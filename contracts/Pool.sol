@@ -108,6 +108,20 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         emit RatesCalculatorChanged(address(ratesCalculator_), block.timestamp);
     }
 
+    /// @notice Sets the slopes, offsets, breakpoints and maxRate for the rates calculator
+    /// @param _slopes New slopes value
+    /// @param _offsets New offsets value
+    /// @param _breakpoints New breakpoints value
+    /// @param _maxRate New maxRate value
+    function setUtilisationValues(
+        uint256[4] memory _slopes,
+        uint256[4] memory _offsets,
+        uint256[3] memory _breakpoints,
+        uint256 _maxRate
+    ) external onlyOwner {
+        ratesCalculator.setUtilisationValues(_slopes, _offsets, _breakpoints, _maxRate);
+    }
+
     /**
      * Sets the new borrowers registry contract.
      * The borrowers registry decides if an account can borrow funds.
