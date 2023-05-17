@@ -13,4 +13,16 @@ contract BtcPool is Pool {
     function getMaxPoolUtilisationForBorrowing() override public view returns (uint256) {
         return 0.9e18;
     }
+
+    function name() public virtual override pure returns(string memory _name){
+        _name = "DeltaPrimeBitcoin";
+    }
+
+    function symbol() public virtual override pure returns(string memory _symbol){
+        _symbol = "DPBTCb";
+    }
+
+    function decimals() public virtual override pure returns(uint8 decimals){
+        decimals = 8;
+    }
 }
