@@ -8,15 +8,15 @@ import redstone from 'redstone-api';
 const ethers = require('ethers');
 
 export default class PoolService {
-  refreshPools$ = new Subject();
+  pools$ = new Subject();
 
   emitPools(pools) {
     console.log('emitting pools', pools);
-    this.refreshPools$.next(pools);
+    this.pools$.next(pools);
   }
 
   observePools() {
-    return this.refreshPools$.asObservable();
+    return this.pools$.asObservable();
   }
 
   setupPools(provider, account, redstonePriceData) {

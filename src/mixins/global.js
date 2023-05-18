@@ -93,6 +93,10 @@ export default {
     },
 
     async getWalletTokenBalance(account, assetSymbol, tokenContract, isLP) {
+      console.log(account);
+      console.log(assetSymbol);
+      console.log(tokenContract);
+      console.log(isLP);
       const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
       let walletAssetBalance;
       if (!isLP) {

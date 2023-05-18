@@ -626,6 +626,9 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
+      console.log('state.smartLoanContract.address', state.smartLoanContract.address);
+      console.log(state.smartLoanContract.address);
+
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
         const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
         await awaitConfirmation(approveTransaction, provider, 'approve');

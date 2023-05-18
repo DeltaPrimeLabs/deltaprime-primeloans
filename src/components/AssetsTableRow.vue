@@ -506,6 +506,7 @@ export default {
     },
 
     openSwapModal() {
+      console.log(this.assetBalances);
       const modalInstance = this.openModal(SwapModal);
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
