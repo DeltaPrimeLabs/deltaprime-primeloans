@@ -4,21 +4,21 @@
   position: relative;
 
   &::-webkit-scrollbar {
-    width: 4px;
-    position: absolute;
-    right: 15px;
+    width: 12px;
   }
 
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  // &::-webkit-scrollbar-track {
+  //   background: transparent;
+  // }
 
   &::-webkit-scrollbar-thumb {
-    background: $delta-light;
-    border-radius: 2px;
+    border: 4px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+    background-color: var(--notifi-modal__scroll-bar-background);
+    border-radius: 999px;
 
-    &::hover {
-      background: $delta-primary
+    &:hover {
+      background-color: var(--notifi-modal__scroll-bar-hover-background);
     }
   }
 }

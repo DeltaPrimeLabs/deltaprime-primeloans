@@ -364,6 +364,8 @@
   --notifi-modal__container-notification-box-hover-color: #{$mist-navy};
   --notifi-modal__container-header-box-shadow: 0 2px 6px 0 #{$dark-space}4d;
   --notifi-modal__container-footer-box-shadow: 0 -2px 6px 0 #{$dark-space}4d;
+  --notifi-modal__scroll-bar-background: #{$pale-space};
+  --notifi-modal__scroll-bar-hover-background: #{$dark-space};
   // endregion
 
   // region FromInput
@@ -397,8 +399,36 @@
   // endregion
 
   // region Settings (Notifi)
-  --notifi-settings__borrow-rate-border: 1px solid #{$deep-space};
+  --notifi-settings__borrow-rate-border: 1px solid #{$pale-space};
   --notifi-settings__box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
   --notifi-settings__active-option-font-color: #{$mist-blue};
+  // endregion
+
+  // region AddBorrowRate
+  --add-borrow-rate__container-box-shadow: 1px 1px 8px 0 #{$dark-space}cc;
+  --add-borrow-rate__container-background-color: #{$space};
+  // endregion
+
+  // region Dropdown (Notifi)
+  --notifi-dropdown__border-color: #{$washed-space};
+  --notifi-dropdown__background-color: #{$space};
+  --notifi-dropdown__hover-background-color: #{$mist-navy};
+  --notifi-dropdown__chevron-color: #{$pale-lilac};
+  --notifi-dropdown__select-font-color: #{$mist-blue};
+  --notifi-dropdown__dropdown-box-shadow: 2px 2px 8px 0 #{$dark-space}80;
+  // endregion
+
+  // region RoundToggle (Notifi)
+  --notifi-round-toggle__pointer-background-color: #{$light-fuchsia};
+  --notifi-round-toggle__pointer-border: solid 2px #{$pale-fuchsia};
+  --notifi-round-toggle__background-border: solid 2px #{$deep-space};
+  --notifi-round-toggle__background-color: #{$shallow-space};
+  // endregion
+
+  // region ApyInput
+  --apy-input__font-color: #{$mist-blue};
+  --apy-input__unit-font-color: #{$storm-blue};
+  --apy-input__background-image: linear-gradient(to right, #{$deep-navy} 9%, #{$deep-teal} 50%, #{$eggplant} 92%);
+  --apy-input__box-shadow: inset 3px 3px 8px 0 #{$dark-space}80;
   // endregion
 }

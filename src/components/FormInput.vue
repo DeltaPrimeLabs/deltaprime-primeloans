@@ -33,6 +33,7 @@ export default ({
   name: 'FormInput',
   components: {},
   props: {
+    inputType: null,
     type: { type: String, default: 'text' },
     leftIconSrc: String,
     defaultValue: null,
@@ -64,8 +65,18 @@ export default ({
     },
 
     handleInput() {
-      const invalid = this.validateInput(this.inputValue);
-      this.error = invalid;
+      if (this.inputType === 'number' && !this.inputValue.match(/^\d+$/)) {
+        this.inputValue = this.inputValue.substring(0, this.inputValue.length - 1);
+      }
+
+      let invalid;
+
+      if (!this.inputValue || this.inputValue === '') {
+        this.error = false;
+      } else {
+        invalid = this.validateInput(this.inputValue);
+        this.error = invalid;
+      }
 
       this.$emit('valueChange', {
         type: this.type,
@@ -126,6 +137,8 @@ export default ({
   }
 
   .error {
+    display: flex;
+    align-items: center;
     width: 100%;
     min-height: 15px;
     padding-top: 2px;

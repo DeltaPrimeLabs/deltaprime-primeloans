@@ -5,17 +5,17 @@ import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
 import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
 
 export default {
+  customStyles: {
+    button: {
+      fontSize: "14px",
+      padding: "9px 16px"
+    }
+  },
   SCREENS_CONFIG: {
     login: { // user registration to notifi screen
       componentName: "Login",
       title: "Connect to Notifi",
       topInfo: "It’s been a while! Connect to Notifi to load your notification details.",
-      customStyles: {
-        button: {
-          fontSize: "14px",
-          padding: "9px 16px"
-        }
-      }
     },
     notifications: { // main screen with notifications list
       componentName: "Notifications",
@@ -37,12 +37,6 @@ export default {
       componentName: "TargetSetup",
       title: "Get Notifications",
       topInfo: "Get alerts to the destinations of your choice",
-      customStyles: {
-        button: {
-          fontSize: "14px",
-          padding: "9px 16px"
-        }
-      }
     }
   },
   ALERTS_CONFIG: {
@@ -66,7 +60,7 @@ export default {
       toggle: true,
       createMethod: "createLoanHealthAlerts",
       thresholdOptions: true,
-      settingsNote: "Alert me when my loan health score goes below LTV threshold"
+      settingsNote: "Alert me when my loan health score goes below Health threshold"
     },
     "DELTA_PRIME_BORROW_RATE_EVENTS": {
       type: "DELTA_PRIME_BORROW_RATE_EVENTS",
@@ -101,10 +95,10 @@ export default {
       id: "seventy",
       value: 70,
     },
-    // {
-    //   id: "custom",
-    //   value: 0
-    // }
+    {
+      id: "custom",
+      value: null,
+    }
   ],
   POOLS_CONFIG: [
     {

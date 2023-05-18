@@ -89,8 +89,8 @@ export default ({
         return this.iconsConfig.Announcement.iconSrc;
       }
 
-      const sourceName = notification.detail.sourceName.substring(notification.detail.sourceName.indexOf(" ") + 1);
-      return this.iconsConfig[sourceName].iconSrc;
+      const sourceName = Object.keys(this.iconsConfig).find(key => notification.detail.sourceName.includes(key));
+      return this.iconsConfig[sourceName] && this.iconsConfig[sourceName].iconSrc;
     },
 
     getBoxTitle(notification) {

@@ -33,10 +33,12 @@
     ></FormInput>
 
     <FormInput
+      :inputType="'number'"
       :type="'phone'"
       :placeholder="'xxx-xx-xxx'"
       :leftIconSrc="'src/assets/icons/icon_phone.svg'"
       :noSpace="true"
+      :validators="phoneValidators"
       @valueChange="handleChange"
     ></FormInput>
 
@@ -83,7 +85,8 @@ export default ({
       alerts: notifiConfig.ALERTS_CONFIG,
       targets: {},
       invalid: null,
-      emailValidators: []
+      emailValidators: [],
+      phoneValidators: []
     }
   },
   mounted() {
@@ -100,6 +103,15 @@ export default ({
           }
         }
       ]
+      this.phoneValidators = [
+        {
+          validate: (value) => {
+            if (!/^\d+$/.test(value)) {
+              return 'Your phone number is invalid';
+            }
+          }
+        }        
+      ]
     },
 
     handleChange(event) {
@@ -113,15 +125,29 @@ export default ({
       this.invalid = false;
 
       if (!event.value){
-        delete this.targets[inputName];
-      } else {
         this.targets = {
           ...this.targets,
-          [inputName]: event.value
+          [inputName]: ''
+        }
+      } else {
+        let value = event.value;
+        if (inputName === 'telegramId' && event.value[0] === '@') {
+          value = event.value.substring(1)
+        } else if (inputName === 'phoneNumber') {
+          value = '+' + event.value;
+        }
+
+        this.targets = {
+          ...this.targets,
+          [inputName]: value
         }
       }
     },
     handleClick() {
+      Object.keys(this.targets).forEach(key => {
+        if (!this.targets[key]) delete this.targets[key]
+      });
+
       console.log(this.targets);
       this.$emit('createTargets', this.targets);
     }

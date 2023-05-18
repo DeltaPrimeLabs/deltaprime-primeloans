@@ -52,7 +52,6 @@
       ...mapState('network', ['provider', 'account', 'accountBalance']),
       ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
       ...mapState('serviceRegistry', ['notifiService']),
-      ...mapState('notifiStore', ['notifi']),
       network() {
         return 'Avalanche';
       },
@@ -63,13 +62,20 @@
     data() {
       return {
         showModal: false,
-        notifiScreenLoaded: false
+        notifiScreenLoaded: false,
+        notifi: null
       }
     },
     mounted() {
       this.watchNotifiCurrentScreen();
     },
     methods: {
+      watchNotifi() {
+        this.notifiService.observeNotifi().subscribe((notifi) => {
+          this.notifi = notifi;
+        });
+      },
+
       handleClose() {
         this.showModal = false;
         this.notifiService.refreshClientInfo(this.notifi.client);

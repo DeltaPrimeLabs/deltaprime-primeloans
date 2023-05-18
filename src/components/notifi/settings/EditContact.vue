@@ -19,7 +19,7 @@
           </div>
         </div>
 
-        <div v-if="phoneInfo" class="contact-box">
+        <div v-if="telegramInfo" class="contact-box">
           <div class="notifi-modal__text-info contact-info">
             {{ telegramInfo.telegramId }}
           </div>
@@ -37,7 +37,7 @@
           </div>
         </div>
 
-        <div v-if="telegramInfo" class="contact-box">
+        <div v-if="phoneInfo" class="contact-box">
           <div class="notifi-modal__text-info contact-info">
             {{ phoneInfo.phoneNumber }}
           </div>
@@ -70,7 +70,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import IconButton from "../IconButton.vue";
+import IconButton from "../../IconButton.vue";
 
 export default ({
   name: 'Settings',
@@ -80,21 +80,20 @@ export default ({
   props: {
     emailInfo: null,
     phoneInfo: null,
-    telegramInfo: null
+    telegramInfo: null,
+    notifiClient: null
   },
   data() {
-    console.log(this.telegramInfo);
     return {
       editMode: false
     }
   },
   computed: {
-    ...mapState('notifiStore', ['notifi']),
     ...mapState('serviceRegistry', ['notifiService'])
   },
   methods: {
     handleVerifyEmail() {
-      this.notifiService.sendEmailTargetVerification(this.notifi.client, this.emailInfo.id);
+      this.notifiService.sendEmailTargetVerification(this.notifiClient, this.emailInfo.id);
     },
 
     handleVerifyTelegram() {

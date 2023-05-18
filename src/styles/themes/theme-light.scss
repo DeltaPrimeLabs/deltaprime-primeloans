@@ -365,6 +365,8 @@
   --notifi-modal__container-notification-box-hover-color: #{$violet-mist};
   --notifi-modal__container-header-box-shadow: 0 2px 6px 0 #{$delta-steel}1a;
   --notifi-modal__container-footer-box-shadow: 0 -2px 6px 0 #{$delta-steel}1a;
+  --notifi-modal__scroll-bar-background: #{$delta-light};
+  --notifi-modal__scroll-bar-hover-background: #{$delta-steel};
   // endregion
 
   // region FromInput
@@ -401,5 +403,33 @@
   --notifi-settings__borrow-rate-border: 1px solid #{$violet-smoke};
   --notifi-settings__box-shadow: 2px 2px 4px 0 #{$delta-steel}7f;
   --notifi-settings__active-option-font-color: #{$black};
+  // endregion
+
+  // region AddBorrowRate
+  --add-borrow-rate__container-box-shadow: 1px 1px 8px 0 #{$mist-lilac}80;
+  --add-borrow-rate__container-background-color: #{$white};
+  // endregion
+
+  // region Dropdown (Notifi)
+  --notifi-dropdown__border-color: #{$smoke-gray};
+  --notifi-dropdown__background-color: #{$white};
+  --notifi-dropdown__hover-background-color: #{$light-violet};
+  --notifi-dropdown__chevron-color: #{$delta-accent};
+  --notifi-dropdown__select-font-color: #{$black};
+  --notifi-dropdown__dropdown-box-shadow: 2px 2px 8px 0 #{$mist-lilac}80;
+  // endregion
+
+  // region RoundToggle (Notifi)
+  --notifi-round-toggle__pointer-background-color: #{$delta-burnt-out};
+  --notifi-round-toggle__pointer-border: solid 2px #{$delta-primary};
+  --notifi-round-toggle__background-border: solid 1px #{$goose-gray};
+  --notifi-round-toggle__background-color: #{$mist-gray};
+  // endregion
+
+  // region ApyInput
+  --apy-input__font-color: #{$black};
+  --apy-input__unit-font-color: #{$steel-gray};
+  --apy-input__background-image: linear-gradient(120deg, #{$steel-blue}14 32%, #{$mist-orange}14 59%, #{$raspberry}14 84%);
+  --apy-input__box-shadow: inset 2px 2px 6px 0 #{$delta-steel}80;
   // endregion
 }

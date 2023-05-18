@@ -9,11 +9,12 @@
         :src="leftIconSrc"
       >
       {{ label }}
-      <img
+      <DeltaIcon
         v-if="rightIconSrc"
-        class="btn-label__icon-right"
-        :src="rightIconSrc"
-      >
+        class="btn-label__icon btn-label__icon-right"
+        :icon-src="rightIconSrc"
+        :size="16"
+      ></DeltaIcon>
     </div>
     <vue-loaders-ball-beat :style="customStyle ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
@@ -21,8 +22,12 @@
 
 
 <script>
+import DeltaIcon from './DeltaIcon.vue';
 export default {
   name: 'Button',
+  components: {
+    DeltaIcon
+  },
   props: {
     disabled: false,
     waiting: false,
@@ -74,6 +79,10 @@ export default {
     justify-content: center;
     align-items: center;
     min-width: 57px;
+
+    .btn-label__icon {
+      background: var(--button__purple-color);
+    }
 
     .btn-label__icon-left, .btn-label__icon-right {
       height: 100%;
@@ -127,6 +136,12 @@ export default {
     color: var(--button__purple-color--disabled);
     background-image: var(--button__purple-background--disabled);
     box-shadow: none;
+
+    .btn-label {
+      .btn-label__icon {
+        background: var(--button__purple-color--disabled);        
+      }
+    }
   }
 }
 </style>

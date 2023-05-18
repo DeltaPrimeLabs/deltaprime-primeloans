@@ -48,6 +48,8 @@
           v-bind="{...currentScreen, ...notifi}"
           :screenLoading="screenLoading"
           :notification="selectedNotification"
+          :customStyles="customStyles"
+          :alertSettings="alertSettings"
           @loginNotifi="handleLogin"
           @createTargets="handleCreateTargets"
           @notificationDetail="handleNotificationDetail"
@@ -92,7 +94,9 @@ export default {
       notifi: null,
       currentScreen: null,
       screenLoading: false,
-      selectedNotification: null
+      selectedNotification: null,
+      customStyles: notifiConfig.customStyles,
+      alertSettings: null
     }
   },
   computed: {
@@ -102,19 +106,18 @@ export default {
   mounted() {
     this.setupNotifi();
     this.watchNotifi();
+    this.watchAlertSettingsLoaded();
   },
   methods: {
-    ...mapActions('notifiStore', ['notifiStoreSetup']),
     setupNotifi() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
-        .subscribe(() => {
-          this.notifiStoreSetup();
+        .subscribe(([provider, account]) => {
+          this.notifiService.setupNotifi(account);
         });
     },
 
     watchNotifi() {
-      combineLatest([this.notifiService.observeNotifi()])
-        .subscribe(([notifi]) => {
+      this.notifiService.observeNotifi().subscribe((notifi) => {
           this.notifi = notifi;
           this.screenLoading = false;
 
@@ -134,15 +137,26 @@ export default {
         })
     },
 
+    watchAlertSettingsLoaded() {
+      this.notifiService.observeAlertSettingsUpdated().subscribe(() => {
+        this.alertSettings = {...this.notifiService.alertSettings};
+      });
+    },
+
     refreshClientInfo() {
       // update client info and navigate to another screen
       this.notifiService.refreshClientInfo(this.notifi.client);
     },
 
     async handleLogin() {
-      this.screenLoading = true;
-      await this.notifiService.login(this.notifi.client, this.provider, this.account);
-      this.refreshClientInfo();
+      try {
+        this.screenLoading = true;
+        await this.notifiService.login(this.notifi.client, this.provider, this.account);
+        this.refreshClientInfo();
+      } catch(e) {
+        console.log("Login Notifi Error", e);
+        this.refreshClientInfo();
+      }
     },
 
     async handleCreateTargets(targets) {

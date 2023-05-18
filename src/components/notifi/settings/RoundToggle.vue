@@ -44,7 +44,7 @@ export default {
     clickOption(option) {
       if (option !== this.selectedOption) {
         this.selectedOption = option;
-        this.$emit('change', option);
+        this.$emit('toggleOptionSelected', option);
         const targetOptionElement = document.getElementById(`option-${option}`);
         const targetOptionRect = targetOptionElement.getBoundingClientRect();
         this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
@@ -75,27 +75,12 @@ export default {
       width: 50px;
       margin: 0 80px 0 0;
       padding: 6px 12px;
-      box-shadow: var(--notifi-settings__box-shadow);
+      background-color: var(--notifi-round-toggle__pointer-background-color);
       border-radius: 10px;
-      backdrop-filter: contrast(200%) brightness(150%);
+      border: var(--notifi-round-toggle__pointer-border);
+      box-shadow: var(--notifi-settings__box-shadow);
       z-index: 1;
       transition: all 100ms;
-
-      &:before {
-        content: '';
-        position: absolute;
-        border-radius: 10px;
-        inset: 0;
-        background: var(--toggle__pointer-border);
-      }
-
-      &:after {
-        content: '';
-        position: absolute;
-        border-radius: 10px;
-        inset: 1px;
-        background: var(--toggle__pointer-background);
-      }
     }
 
     .toggle__options {
@@ -125,10 +110,10 @@ export default {
       position: absolute;
       inset: 0;
       height: 32px;
-      background-color: var(--toggle__background);
-      border: var(--toggle__border);
+      background-color: var(--notifi-round-toggle__background-color);
+      border: var(--notifi-round-toggle__background-border);
       z-index: 0;
-      border-radius: 10px;
+      border-radius: 8px;
     }
   }
 }
