@@ -15,6 +15,20 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    modifier onlyWhitelistedAccounts {
+        if(
+            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
+            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
+            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547
+
+        ){
+            _;
+        } else {
+            revert("Not whitelisted");
+        }
+    }
     /**
      * Stakes in SteakHut AVAX/USDC balanced-wide pool
      * @param amount0Desired amount of AVAX to be staked
@@ -26,7 +40,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC_LP",
+            vaultTokenSymbol: "SHLB_AVAX-USDC_B",
             amount0Desired: amount0Desired,
             amount1Desired: amount1Desired,
             amount0Min: amount0Min,
@@ -44,7 +58,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC_LP",
+            vaultTokenSymbol: "SHLB_AVAX-USDC_B",
             liquidity: liquidity,
             amount0Min: amount0Min,
             amount1Min: amount1Min
@@ -62,7 +76,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Symbol: "BTC",
             token1Symbol: "AVAX",
-            vaultTokenSymbol: "SH_BTC_AVAX_LP",
+            vaultTokenSymbol: "SHLB_BTC.b-AVAX_B",
             amount0Desired: amount0Desired,
             amount1Desired: amount1Desired,
             amount0Min: amount0Min,
@@ -80,7 +94,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Symbol: "BTC",
             token1Symbol: "AVAX",
-            vaultTokenSymbol: "SH_BTC_AVAX_LP",
+            vaultTokenSymbol: "SHLB_BTC.b-AVAX_B",
             liquidity: liquidity,
             amount0Min: amount0Min,
             amount1Min: amount1Min
@@ -96,9 +110,9 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      **/
     function stakeSteakHutUSDTeUSDT(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
-            token0Symbol: "USDTe",
+            token0Symbol: "USDT.e",
             token1Symbol: "USDT",
-            vaultTokenSymbol: "SH_USDTe_USDT_LP",
+            vaultTokenSymbol: "SHLB_USDT.e-USDt_C",
             amount0Desired: amount0Desired,
             amount1Desired: amount1Desired,
             amount0Min: amount0Min,
@@ -114,9 +128,9 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      **/
     function unstakeSteakHutUSDTeUSDT(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
-            token0Symbol: "USDTe",
+            token0Symbol: "USDT.e",
             token1Symbol: "USDT",
-            vaultTokenSymbol: "SH_USDTe_USDT_LP",
+            vaultTokenSymbol: "SHLB_USDT.e-USDt_C",
             liquidity: liquidity,
             amount0Min: amount0Min,
             amount1Min: amount1Min
@@ -129,7 +143,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
-    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
         IERC20 vaultToken = IERC20(vaultAddress);
@@ -171,7 +185,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
-    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private onlyWhitelistedAccounts nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
         uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
