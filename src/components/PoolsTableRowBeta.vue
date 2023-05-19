@@ -149,14 +149,11 @@ export default {
       const poolAssetsPrices = {};
       const poolContracts = {};
       this.poolService.observePools().subscribe(pools => {
-        console.log(pools);
         pools.forEach(pool => {
           poolDepositBalances[pool.asset.symbol] = pool.deposit;
           poolAssetsPrices[pool.asset.symbol] = pool.assetPrice;
           poolContracts[pool.asset.symbol] = pool.contract;
         })
-        console.log(poolDepositBalances);
-        console.log(poolAssetsPrices);
         this.poolDepositBalances = poolDepositBalances;
         this.poolAssetsPrices = poolAssetsPrices;
         this.poolContracts = poolContracts;
@@ -197,7 +194,6 @@ export default {
         }, () => {
 
         }).then(() => {
-          this.closeModal();
         });
       });
     },
@@ -220,7 +216,6 @@ export default {
         }, () => {
 
         }).then(() => {
-          this.closeModal();
         });
       });
     },
@@ -241,7 +236,6 @@ export default {
 
 
       modalInstance.$on('SWAP', swapEvent => {
-        console.log(swapEvent);
         const sourceAssetDecimals = config.ASSETS_CONFIG[swapEvent.sourceAsset].decimals;
         const targetAssetDecimals = config.ASSETS_CONFIG[swapEvent.targetAsset].decimals;
         const swapDepositRequest = {
@@ -257,10 +251,6 @@ export default {
         }, () => {
 
         }).then(() => {
-          setTimeout(() => {
-            this.closeModal();
-            location.reload();
-          }, 5000);
         })
       })
     },

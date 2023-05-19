@@ -8,6 +8,8 @@ import config from '@/config';
 
 const ethers = require('ethers');
 const DEPOSIT_SWAP_CONTRACT_ADDRESS = '0x74B5C3499AbDe6D85B6287617195813455051713';
+const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+
 export default {
   namespaced: true,
   state: {
@@ -75,13 +77,19 @@ export default {
         depositTransaction = await poolContract
           .connect(provider.getSigner())
           .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});
+
+        rootState.serviceRegistry.progressBarService.requestProgressBar();
+        rootState.serviceRegistry.modalService.closeModal();
       } else {
         const allowance = formatUnits(await tokenContract.allowance(rootState.network.account, poolContract.address), decimals);
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(poolContract.address,
-              parseUnits(String(depositRequest.amount), decimals), { gasLimit: 100000 });
+              parseUnits(String(depositRequest.amount), decimals), {gasLimit: 100000});
+
+          rootState.serviceRegistry.progressBarService.requestProgressBar();
+          rootState.serviceRegistry.modalService.closeModal();
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
@@ -91,6 +99,12 @@ export default {
           .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       await awaitConfirmation(depositTransaction, provider, 'deposit');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
       setTimeout(() => {
         dispatch('network/updateBalance', {}, {root: true});
       }, 1000);
@@ -108,13 +122,26 @@ export default {
         withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdrawNativeToken(
             parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals), {gasLimit: 300000});
+
+        rootState.serviceRegistry.progressBarService.requestProgressBar();
+        rootState.serviceRegistry.modalService.closeModal();
+
       } else {
         withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdraw(
             parseUnits(String(withdrawRequest.amount),
               config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+
+        rootState.serviceRegistry.progressBarService.requestProgressBar();
+        rootState.serviceRegistry.modalService.closeModal();
+
       }
       await awaitConfirmation(withdrawTransaction, provider, 'deposit');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(() => {
         dispatch('network/updateBalance', {}, {root: true});
@@ -142,6 +169,9 @@ export default {
 
       console.log('after approve TX');
 
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(approveTransaction, provider, 'approve');
 
       console.log('after await confirmation');
@@ -162,6 +192,14 @@ export default {
       console.log('targetAmountInWei', targetAmountInWei);
 
       await awaitConfirmation(depositSwapTransaction, provider, 'depositSwap');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.poolService.emitPoolDepositChange(swapDepositRequest.sourceAmount, swapDepositRequest.sourceAsset, 'WITHDRAW');
+      rootState.serviceRegistry.poolService.emitPoolDepositChange(swapDepositRequest.targetAmount, swapDepositRequest.targetAsset, 'DEPOSIT');
     }
   }
 };
