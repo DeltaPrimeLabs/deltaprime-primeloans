@@ -10,7 +10,7 @@
       v-model="customValue"
       :placeholder="placeholder"
       @input="handleInput"
-      @change="handleChange"
+      @blur="handleBlur"
       @focus="placeholder = '0'"
     >
     <span v-if="customValue || placeholder === '0'">%</span>
@@ -51,8 +51,9 @@ export default ({
       }
     },
 
-    handleChange() {
+    handleBlur() {
       this.placeholder = 'Custom';
+      console.log(this.placeholder);
       this.handleUpdate();
     }
   }
@@ -95,7 +96,7 @@ export default ({
   }
 
   &.health-rate-custom {
-    width: 88px;
+    width: 90px;
     display: flex;
     justify-content: center;
     padding: 0 10px;

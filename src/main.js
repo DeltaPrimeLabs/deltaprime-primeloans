@@ -29,11 +29,11 @@ Vue.mixin(globalMixin);
 // notifi modal open/close on outside click
 let handleOutsideClick
 Vue.directive('closable', {
-  created(el, binding, vnode, prevVnode) {
+  bind(el, binding, vnode, prevVnode) {
     handleOutsideClick = (e) => {
       e.stopPropagation();
 
-      const { handler, exclude } = binding.value;
+      const { handler, exclude, currentScreen } = vnode.context[binding.arg];
       let clickedOnExcludedEl = false;
 
       exclude.forEach(refName => {
@@ -43,7 +43,7 @@ Vue.directive('closable', {
         }
       });
 
-      if (!el.contains(e.target) && !clickedOnExcludedEl) {
+      if (!el.contains(e.target) && !clickedOnExcludedEl && !currentScreen.contains(e.target)) {
         vnode.context[handler]();
       }
     }

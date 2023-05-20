@@ -54,6 +54,7 @@
           @createTargets="handleCreateTargets"
           @notificationDetail="handleNotificationDetail"
           @loadMoreHistory="loadMoreHistory"
+          ref="notifiScreen"
         ></component>
       </div>
 
@@ -103,6 +104,15 @@ export default {
     ...mapState('network', ['provider', 'account']),
     ...mapState('serviceRegistry', ['providerService', 'accountService', 'notifiService']),
   },
+  watch: {
+    currentScreen: {
+      handler(newScreen) {
+        if (!this.$refs.notifiScreen) return;
+
+        this.$emit('currentScreen', this.$refs.notifiScreen.$el);
+      }
+    }
+  },
   mounted() {
     this.setupNotifi();
     this.watchNotifi();
@@ -133,7 +143,6 @@ export default {
           }
 
           this.notifiService.emitCurrentScreen();
-          // this.handleNotifi();
         })
     },
 
@@ -187,48 +196,6 @@ export default {
     async loadMoreHistory(after) {
       const moreHistory = await this.notifiService.getNotifications(this.notifi.client, after);
       this.notifiService.emitLoadHistory(moreHistory);
-    },
-
-    async handleNotifi() {
-      // const data = await this.notifi.client.fetchData();
-      // console.log(data);
-      // for (const alert of data.alert) {
-      //   console.log(alert.id);
-      //   this.notifi.client.deleteAlert({id: alert.id});
-      // }
-
-      // const targetPayload = {
-      //   name: 'Default',
-      //   telegramId: 'crypteristic',
-      //   phoneNumber: '+13474671201',
-      //   emailAddress: 'willie.lee226@gmail.com'
-      // };
-      // await this.notifiService.createTargetGroups(this.notifi.client, targetPayload);
-
-      // const name = `Borrow Rate Alerts: 0x2323dAC85C6Ab9bd6a8B5Fb75B0581E31232d12b below 14`;
-      // const eventType = {
-      //   type: 'custom',
-      //   name,
-      //   sourceType: 'DELTA_PRIME_LENDING_RATES',
-      //   filterType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
-      //   sourceAddress: {
-      //     type: "value",
-      //     value: "0x2323dAC85C6Ab9bd6a8B5Fb75B0581E31232d12b",
-      //   },
-      //   selectedUIType: "TOGGLE",
-      //   filterOptions: {
-      //     alertFrequency: 'QUARTER_HOUR',
-      //     threshold: 0.14,
-      //     thresholdDirection: 'below',
-      //   },
-      // }
-
-      // const inputs = {
-      //   // ['Loan Health Alerts__healthRatio']: 0.9, // in percent, like 100
-      // };
-
-      // await this.notifiService.createAlert(this.notifi.client, this.account, eventType, inputs);
-      // this.notifiService.createLoanHealthAlerts(this.notifi.client, this.account, 0.9);
     }
   }
 }
