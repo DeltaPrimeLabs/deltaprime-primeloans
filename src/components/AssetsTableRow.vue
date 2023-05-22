@@ -85,7 +85,7 @@
         <IconButton class="action-button"
                    :disabled="(disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan))"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
-                   v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
+                   v-tooltip="{content: 'Deposit collateral (if you already have that position)', classes: 'button-tooltip'}"
                    v-on:click="actionClick('ADD_FROM_WALLET')">
           <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
             To create your Prime Account, click on the

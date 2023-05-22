@@ -28,21 +28,6 @@
         </template>
       </div>
 
-      <div class="table__cell table__cell--double-value farmed">
-        <template
-            v-if="totalStaked">
-          <div class="double-value__pieces">
-            {{ totalStaked | smartRound }}
-          </div>
-          <div class="double-value__usd">
-            <span v-if="totalStaked">{{ totalStaked * lpToken.price | usd }}</span>
-          </div>
-        </template>
-        <template v-else>
-          <div class="no-value-dash"></div>
-        </template>
-      </div>
-
       <div class="table__cell table__cell--double-value loan">
         {{ lpToken.tvl | usd }}
       </div>
@@ -96,7 +81,7 @@ import SmallChartBeta from './SmallChartBeta';
 import AddFromWalletModal from './AddFromWalletModal';
 import config from '../config';
 import {mapActions, mapState} from 'vuex';
-import ProvideLiquidityModal from './ProvideLiquidityModal';
+import ProvideConcentratedLiquidityModal from "./ProvideConcentratedLiquidityModal.vue";
 import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
@@ -106,11 +91,13 @@ import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
+import ApolloClient from "apollo-boost";
+import gql from "graphql-tag";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
-  name: 'LpTableRow',
+  name: 'ConcentratedLpTableRow',
   components: {
     DeltaIcon,
     DoubleAssetIcon,
@@ -126,7 +113,6 @@ export default {
   },
 
   async mounted() {
-    this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
@@ -134,9 +120,9 @@ export default {
     this.watchProgressBarState();
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
-    this.watchExternalTotalStakedUpdate();
-    this.watchFarmRefreshEvent();
-    await this.setupApr();
+    this.setupApr();
+    this.setupPoolData();
+    this.setupTvl();
   },
 
   data() {
@@ -151,8 +137,10 @@ export default {
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
-      totalStaked: null,
-      availableFarms: [],
+      totalFirstAmount: 0,
+      totalSecondAmount: 0,
+      firstPrice: 0,
+      secondPrice: 0,
     };
   },
 
@@ -205,14 +193,6 @@ export default {
         }
       }
     },
-    assets: {
-      handler(assets) {
-        if (assets) {
-          this.setupTvl();
-        }
-      },
-      immediate: true
-    },
     lpBalances: {
       handler(lpBalances) {
         if (lpBalances) {
@@ -224,7 +204,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
+    ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidityConcentratedPool', 'removeLiquidityConcentratedPool']),
     setupActionsConfiguration() {
       this.moreActionsConfig =
           {
@@ -233,18 +213,18 @@ export default {
             menuOptions: [
               {
                 key: 'PROVIDE_LIQUIDITY',
-                name: 'Create LP token',
+                name: 'Create Concentrated LP token',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
               },
               {
                 key: 'WITHDRAW',
-                name: 'Withdraw collateral',
+                name: 'Withdraw to wallet',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {
                 key: 'REMOVE_LIQUIDITY',
-                name: 'Unwind LP token',
+                name: 'Unwind Concentrated LP token',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               }
             ]
@@ -254,6 +234,50 @@ export default {
     async setupApr() {
       if (!this.lpToken.apy) return;
       this.apr = this.lpToken.apy;
+    },
+
+    async setupTvl() {
+      if (!this.lpToken.tvl) return;
+      this.tvl = this.lpToken.tvl;
+    },
+
+    async setupPoolData() {
+      let query = `{
+          vaults(where: {id: "${this.lpToken.address}"}) {
+          id
+          shares
+          underlyingX
+          underlyingY
+          tokenX {
+            id
+            decimals
+            priceUSD
+            symbol
+          }
+          tokenY {
+            id
+            decimals
+            priceUSD
+            symbol
+          }
+          }
+        }`;
+
+      const client = new ApolloClient({
+        uri: "https://api.thegraph.com/subgraphs/name/0xsirloin/steakhutlb"
+      });
+
+      client.query({query: gql(query)}).then(
+          resp => {
+            const vault = resp.data.vaults[0];
+            this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
+            this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
+            this.firstPrice = vault.tokenX.priceUSD;
+            this.secondPrice = vault.tokenY.priceUSD;
+          }
+      )
+
+
     },
 
     toggleChart() {
@@ -350,23 +374,25 @@ export default {
     },
 
     openProvideLiquidityModal() {
-      const modalInstance = this.openModal(ProvideLiquidityModal);
+      const modalInstance = this.openModal(ProvideConcentratedLiquidityModal);
       modalInstance.lpToken = this.lpToken;
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.totalFirstAmount = this.totalFirstAmount;
+      modalInstance.totalSecondAmount = this.totalSecondAmount;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,
+            method: this.lpToken.addMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
             firstAmount: provideLiquidityEvent.firstAmount.toString(),
             secondAmount: provideLiquidityEvent.secondAmount.toString(),
-            dex: this.lpToken.dex,
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
-          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
+          this.handleTransaction(this.provideLiquidityConcentratedPool, {provideLiquidityRequest: provideLiquidityRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -387,14 +413,13 @@ export default {
         const removeLiquidityRequest = {
           value: removeEvent.amount,
           symbol: this.lpToken.symbol,
-          firstAsset: this.lpToken.primary,
-          secondAsset: this.lpToken.secondary,
+          method: this.lpToken.removeMethod,
           minFirstAmount: removeEvent.minReceivedFirst.toString(),
           minSecondAmount: removeEvent.minReceivedSecond.toString(),
-          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          assetDecimals: config.CONCENTRATED_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           dex: this.lpToken.dex
         };
-        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+        this.handleTransaction(this.removeLiquidityConcentratedPool, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -408,25 +433,9 @@ export default {
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 
-    async setupTvl() {
-      const firstTokenContract = new ethers.Contract(addresses[this.lpToken.primary], erc20ABI, this.provider);
-      const secondTokenContract = new ethers.Contract(addresses[this.lpToken.secondary], erc20ABI, this.provider);
-
-      let priceFirst = this.assets[this.lpToken.primary].price;
-      let priceSecond = this.assets[this.lpToken.secondary].price;
-
-      if (priceFirst && priceSecond) {
-        let valueOfFirst = formatUnits(await firstTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].decimals) * config.ASSETS_CONFIG[this.lpToken.primary].price;
-        let valueOfSecond = formatUnits(await secondTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].secondary) * config.ASSETS_CONFIG[this.lpToken.secondary].price;
-
-        this.tvl = valueOfFirst + valueOfSecond;
-        this.lpToken.tvl = valueOfFirst + valueOfSecond;
-      }
-    },
-
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, "LP");
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, 'CONCENTRATED_LP');
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -507,32 +516,6 @@ export default {
       this.closeModal();
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
-    },
-
-    watchExternalTotalStakedUpdate() {
-      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
-        if (updateEvent.assetSymbol === this.lpToken.symbol) {
-          if (updateEvent.action === 'STAKE') {
-            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
-          } else if (updateEvent.action === 'UNSTAKE') {
-            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
-          }
-          this.$forceUpdate();
-        }
-      });
-    },
-
-    watchFarmRefreshEvent() {
-      console.log(this.availableFarms);
-      this.farmService.observeRefreshFarm().subscribe(async () => {
-        if (this.availableFarms) {
-          this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
-        }
-      });
-    },
-
-    setupAvailableFarms() {
-      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.lpToken.symbol];
     },
   },
 };

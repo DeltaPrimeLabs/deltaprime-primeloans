@@ -40,6 +40,8 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 const HARD_REFRESH_DELAY = 60000;
 
+console.log('fundsStore')
+console.log(firebaseConfig)
 const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
@@ -918,6 +920,117 @@ export default {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
     },
+
+    async provideLiquidityConcentratedPool({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
+      const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
+      const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
+
+      let minAmount = 0.9;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [provideLiquidityRequest.symbol]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract[provideLiquidityRequest.method](
+          parseUnits(parseFloat(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+          parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+          parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
+          parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'create concentrated LP token');
+
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was used
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was used
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals); //how much LP was created
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
+    async removeLiquidityConcentratedPool({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
+
+      const provider = rootState.network.provider;
+
+      const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
+      const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
+      const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract[config.DEX_CONFIG[removeLiquidityRequest.dex].removeLiquidityMethod](
+          toBytes32(removeLiquidityRequest.firstAsset),
+          toBytes32(removeLiquidityRequest.secondAsset),
+          parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
+          parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
+          parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
+          {gasLimit: 4000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
+
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was received
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was received
+      const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity, lpTokenDecimals); //how much LP was removed
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(firstAssetAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(secondAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.lpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenRemoved);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       const provider = rootState.network.provider;
