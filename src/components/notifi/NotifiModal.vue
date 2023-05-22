@@ -60,7 +60,7 @@
 
       <div class="modal-footer">
         <span class="footer__powered-by">Powered by</span>
-        <img src="src/assets/logo/notifi_small_logo.svg" />
+        <img :src="notifiImgSrc" />
       </div>
     </div>
   </div>
@@ -97,12 +97,17 @@ export default {
       screenLoading: false,
       selectedNotification: null,
       customStyles: notifiConfig.customStyles,
-      alertSettings: null
+      alertSettings: null,
+      notifiImgSrc: null
     }
   },
   computed: {
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'notifiService']),
+    ...mapState('serviceRegistry', ['providerService',
+      'accountService',
+      'notifiService',
+      'themeService'
+    ]),
   },
   watch: {
     currentScreen: {
@@ -117,6 +122,7 @@ export default {
     this.setupNotifi();
     this.watchNotifi();
     this.watchAlertSettingsLoaded();
+    this.watchThemeChange();
   },
   methods: {
     setupNotifi() {
@@ -150,6 +156,16 @@ export default {
       this.notifiService.observeAlertSettingsUpdated().subscribe(() => {
         this.alertSettings = {...this.notifiService.alertSettings};
       });
+    },
+
+    watchThemeChange() {
+      this.themeService.observeThemeChange().subscribe((theme) => {
+        if (theme === 'DARK') {
+          this.notifiImgSrc = 'src/assets/logo/notifi_small_logo_white.svg';
+        } else {
+          this.notifiImgSrc = 'src/assets/logo/notifi_small_logo.svg';
+        }
+      })
     },
 
     refreshClientInfo() {

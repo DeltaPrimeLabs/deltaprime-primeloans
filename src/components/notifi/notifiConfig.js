@@ -71,19 +71,24 @@ export default {
   },
   NOTIFICATION_ICONS_CONFIG: {
     "Announcement": {
-      iconSrc: "src/assets/icons/icon_announcement.svg"
+      LIGHT: "src/assets/icons/icon_announcement.svg",
+      DARK: "src/assets/icons/icon_announcement_dark.svg"
     },
     "Liquidation": {
-      iconSrc: "src/assets/icons/icon_liquidation.svg"
+      LIGHT: "src/assets/icons/icon_liquidation.svg",
+      DARK: "src/assets/icons/icon_liquidation_dark.svg"
     },
     "Loan Health Alerts": {
-      iconSrc: "src/assets/icons/icon_health.svg"
+      LIGHT: "src/assets/icons/icon_health.svg",
+      DARK: "src/assets/icons/icon_health_dark.svg"
     },
     "Borrowing Interest Rate Alert": {
-      iconSrc: "src/assets/icons/icon_rate.svg"
+      LIGHT: "src/assets/icons/icon_rate.svg",
+      DARK: "src/assets/icons/icon_rate_dark.svg"
     },
     "Deposit Interest Rate Alert": {
-      iconSrc: "src/assets/icons/icon_rate.svg"
+      LIGHT: "src/assets/icons/icon_rate.svg",
+      DARK: "src/assets/icons/icon_rate_dark.svg"
     }
   },
   HEALTH_RATES_CONFIG: [

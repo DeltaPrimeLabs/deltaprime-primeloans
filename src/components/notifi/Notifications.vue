@@ -67,14 +67,16 @@ export default ({
     return {
       notifications: this.history.nodes,
       pageInfo: this.history.pageInfo,
-      iconsConfig: notifiConfig.NOTIFICATION_ICONS_CONFIG
+      iconsConfig: notifiConfig.NOTIFICATION_ICONS_CONFIG,
+      theme: null
     }
   },
   computed: {
-    ...mapState('serviceRegistry', ['notifiService']),
+    ...mapState('serviceRegistry', ['notifiService', 'themeService']),
   },
   mounted() {
     this.watchHistory();
+    this.watchThemeChange();
   },
   methods: {
     watchHistory() {
@@ -84,13 +86,19 @@ export default ({
       });
     },
 
+    watchThemeChange() {
+      this.themeService.observeThemeChange().subscribe((theme) => {
+        this.theme = theme;
+      })
+    },
+
     getBoxIcon(notification) {
       if (notification.category === 'CREATOR_MESSAGE') {
-        return this.iconsConfig.Announcement.iconSrc;
+        return this.iconsConfig.Announcement[this.theme];
       }
 
       const sourceName = Object.keys(this.iconsConfig).find(key => notification.detail.sourceName.includes(key));
-      return this.iconsConfig[sourceName] && this.iconsConfig[sourceName].iconSrc;
+      return this.iconsConfig[sourceName] && this.iconsConfig[sourceName][this.theme];
     },
 
     getBoxTitle(notification) {

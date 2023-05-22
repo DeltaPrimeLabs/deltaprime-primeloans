@@ -43,7 +43,8 @@ Vue.directive('closable', {
         }
       });
 
-      if (!el.contains(e.target) && !clickedOnExcludedEl && !currentScreen.contains(e.target)) {
+      if (!currentScreen && !el.contains(e.target) && !clickedOnExcludedEl ||
+          currentScreen && !el.contains(e.target) && !clickedOnExcludedEl && !currentScreen.contains(e.target)) {
         vnode.context[handler]();
       }
     }
