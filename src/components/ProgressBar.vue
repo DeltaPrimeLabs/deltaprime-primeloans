@@ -96,6 +96,7 @@ export default {
 
 .progress-bar-component {
   position: fixed;
+  z-index: 2;
   bottom: 0;
   left: 0;
   height: 36px;

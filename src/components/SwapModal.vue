@@ -623,7 +623,7 @@ export default {
   .reverse-swap-button {
     position: relative;
     cursor: pointer;
-    margin: 14px auto;
+    margin: 28px auto;
     height: 40px;
     width: 40px;
     border: var(--swap-modal__reverse-swap-button-border);

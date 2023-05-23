@@ -26,17 +26,19 @@ export default {
   data() {
     return {
       selectedOption: this.$props.initialOption ? this.$props.options[this.$props.initialOption] : this.$props.options[0]
-    }
+    };
   },
   mounted() {
     this.setup();
   },
   methods: {
     setup() {
-      const selectedOptionElement = document.getElementById(`option-${this.selectedOption}`);
-      const selectOptionRect = selectedOptionElement.getBoundingClientRect();
-      this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
-      this.$refs.pointer.style.left = `${selectedOptionElement.offsetLeft}px`;
+      setTimeout(() => {
+        const selectedOptionElement = document.getElementById(`option-${this.selectedOption}`);
+        const selectOptionRect = selectedOptionElement.getBoundingClientRect();
+        this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
+        this.$refs.pointer.style.left = `${selectedOptionElement.offsetLeft}px`;
+      }, 100);
     },
 
     clickOption(option) {
@@ -70,6 +72,7 @@ export default {
       position: absolute;
       left: 0;
       height: 28px;
+      width: 50px;
       margin: 0 80px 0 0;
       padding: 4px 10px;
       box-shadow: var(--toggle__pointer-box-shadow);

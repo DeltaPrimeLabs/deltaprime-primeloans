@@ -182,6 +182,12 @@ describe("Smart loan", () => {
             }
         );
 
+        it("should check Pool ERC20Details methods", async () => {
+            expect(await poolContracts.get('USDC')!.name()).to.be.eq("DeltaPrimeUSDCoin");
+            expect(await poolContracts.get('USDC')!.symbol()).to.be.eq("DPUSDC");
+            expect(await poolContracts.get('USDC')!.decimals()).to.be.eq(6);
+        });
+
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(borrower).createLoan();
 

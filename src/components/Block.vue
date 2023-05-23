@@ -25,12 +25,8 @@
   flex-direction: column;
   align-items: center;
   border-radius: 35px;
-  padding: 1.5rem;
   background: var(--block__background-color);
-
-  @media screen and (min-width: $md) {
-    padding: 50px 54px;
-  }
+  padding-bottom: 50px;
 }
 
 .block-wrapper.bordered {

@@ -10,4 +10,15 @@ import "../../Pool.sol";
  * @dev Contract allowing user to deposit to and borrow USDT from a dedicated user account
  */
 contract UsdtPool is Pool {
+    function name() public virtual override pure returns(string memory _name){
+        _name = "DeltaPrimeTetherToken";
+    }
+
+    function symbol() public virtual override pure returns(string memory _symbol){
+        _symbol = "DPUSDt";
+    }
+
+    function decimals() public virtual override pure returns(uint8 decimals){
+        decimals = 6;
+    }
 }
