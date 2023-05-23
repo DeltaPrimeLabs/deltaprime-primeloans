@@ -12,14 +12,14 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpBalances && parseFloat(lpBalances[lpToken.symbol])">
+        <template v-if="concentratedLpTokenBalances && parseFloat(concentratedLpTokenBalances[lpToken.symbol])">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
-            {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
+            {{ formatTokenBalance(concentratedLpTokenBalances[lpToken.symbol], 10, true) }}
           </div>
           <div class="double-value__usd">
-            <span v-if="lpBalances[lpToken.symbol]">
-              {{ lpBalances[lpToken.symbol] * lpToken.price | usd }}
+            <span v-if="concentratedLpTokenBalances[lpToken.symbol]">
+              {{ concentratedLpTokenBalances[lpToken.symbol] * lpToken.price | usd }}
             </span>
           </div>
         </template>
@@ -82,7 +82,7 @@ import AddFromWalletModal from './AddFromWalletModal';
 import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import ProvideConcentratedLiquidityModal from "./ProvideConcentratedLiquidityModal.vue";
-import RemoveLiquidityModal from './RemoveLiquidityModal';
+import RemoveConcentratedLiquidityModal from './RemoveConcentratedLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
@@ -134,6 +134,7 @@ export default {
       apr: 0,
       tvl: 0,
       lpTokenBalances: [],
+      concentratedLpTokenBalances: [],
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
@@ -147,14 +148,13 @@ export default {
   computed: {
     ...mapState('fundsStore', [
       'health',
-      'lpBalances',
       'smartLoanContract',
       'fullLoanStatus',
       'assetBalances',
       'assets',
       'debtsPerAsset',
       'lpAssets',
-      'lpBalances'
+      'concentratedLpBalances',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -193,10 +193,10 @@ export default {
         }
       }
     },
-    lpBalances: {
-      handler(lpBalances) {
-        if (lpBalances) {
-          this.lpTokenBalances = lpBalances;
+    concentratedLpBalances: {
+      handler(concentratedLpBalances) {
+        if (concentratedLpBalances) {
+          this.concentratedLpTokenBalances = concentratedLpBalances;
         }
       },
       immediate: true
@@ -315,11 +315,11 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances && this.lpBalances[this.lpToken.symbol] ? this.lpBalances[this.lpToken.symbol] : 0;
+      modalInstance.assetBalance = this.concentratedLpTokenBalances && this.concentratedLpTokenBalances[this.lpToken.symbol] ? this.concentratedLpTokenBalances[this.lpToken.symbol] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
-      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -348,11 +348,11 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
+      modalInstance.assetBalance = this.concentratedLpTokenBalances[this.lpToken.symbol];
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
-      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -376,7 +376,7 @@ export default {
     openProvideLiquidityModal() {
       const modalInstance = this.openModal(ProvideConcentratedLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
+      modalInstance.lpTokenBalance = Number(this.concentratedLpTokenBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.totalFirstAmount = this.totalFirstAmount;
@@ -404,9 +404,9 @@ export default {
 
     //TODO: duplicated code
     openRemoveLiquidityModal() {
-      const modalInstance = this.openModal(RemoveLiquidityModal);
+      const modalInstance = this.openModal(RemoveConcentratedLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
+      modalInstance.lpTokenBalance = Number(this.concentratedLpTokenBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
@@ -414,6 +414,8 @@ export default {
           value: removeEvent.amount,
           symbol: this.lpToken.symbol,
           method: this.lpToken.removeMethod,
+          firstAsset: this.lpToken.primary,
+          secondAsset: this.lpToken.secondary,
           minFirstAmount: removeEvent.minReceivedFirst.toString(),
           minSecondAmount: removeEvent.minReceivedSecond.toString(),
           assetDecimals: config.CONCENTRATED_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
@@ -468,7 +470,7 @@ export default {
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
-          this.lpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.concentratedLpTokenBalances[this.lpToken.symbol] = updateEvent.balance;
           this.isBalanceEstimated = !updateEvent.isTrueData;
           this.$forceUpdate();
         }
@@ -534,7 +536,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 12% 135px 60px 80px 22px;
+    grid-template-columns: repeat(4, 1fr) 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
