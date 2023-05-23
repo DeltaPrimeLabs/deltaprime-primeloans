@@ -26,7 +26,6 @@
             <Dropdown
               :options="pools"
               @dropdownSelected="handleDropdownOption"
-              ref="notifiDropdown"
             ></Dropdown>
           </div>
           <div class="edit-box">

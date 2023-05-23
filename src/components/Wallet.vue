@@ -62,7 +62,7 @@
         notifiScreenLoaded: false,
         notifi: null,
         dirArg: {
-          exclude: ['notifiBtn', 'notifiDropdown'],
+          exclude: ['notifiBtn'],
           handler: 'handleClose',
           currentScreen: null
         }
