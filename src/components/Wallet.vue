@@ -62,7 +62,7 @@
         notifiScreenLoaded: false,
         notifi: null,
         dirArg: {
-          exclude: ['notifiBtn', 'notifiScreen'],
+          exclude: ['notifiBtn', 'notifiDropdown'],
           handler: 'handleClose',
           currentScreen: null
         }
@@ -91,10 +91,7 @@
       },
 
       handleCurrentScreen(screen) {
-        this.dirArg = {
-          ...this.dirArg,
-          currentScreen: screen
-        };
+        this.dirArg.currentScreen = screen;
       }
     }
   }

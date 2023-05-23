@@ -39,6 +39,7 @@ Vue.directive('closable', {
       exclude.forEach(refName => {
         if (!clickedOnExcludedEl) {
           const excludedEl = vnode.context.$refs[refName];
+          // console.log(excludedEl.$el);
           clickedOnExcludedEl = excludedEl && excludedEl.$el.contains(e.target);
         }
       });

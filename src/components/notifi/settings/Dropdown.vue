@@ -17,7 +17,7 @@
       ></DeltaIcon>
     </div>
     <div
-      v-if="open"
+      v-show="open"
       class="dropdown"
     >
       <div
