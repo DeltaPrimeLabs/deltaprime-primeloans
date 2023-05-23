@@ -374,6 +374,8 @@ exports.apyAggregator = functions
 
         // fetching YieldYak APYs
         for (const [token, farm] of Object.entries(yieldYakConfig)) {
+          if (!yieldYakApys[farm.stakingContractAddress]) continue
+
           const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
 
           if (token in apys) {
