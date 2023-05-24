@@ -13,6 +13,7 @@ const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
 const tokenAddresses = require('./token_addresses.json');
 const lpAssets = require('./lpAssets.json');
+const steakHutApyConfig = require('./steakHutApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -314,7 +315,7 @@ const getTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
   return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
 
-exports.apyAggregator = functions
+exports.lpAndFarmApyAggregator = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
@@ -551,3 +552,56 @@ exports.loanhistory = functions
     }
   }
 )
+
+const getApysFromSteakHut = async () => {
+  functions.logger.info("parsing APYs from SteakHut");
+  const URL = "https://app.steakhut.finance/pool/";
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+
+  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
+
+    // navigate pools page and wait till javascript fully load.
+    await page.goto(URL + address, {
+      waitUntil: "networkidle0",
+    });
+
+    functions.logger.info("parsing APR (7-Day)...");
+
+    // const selector = "";
+    // await page.mainFrame().waitForFunction(
+    //   selector => !!document.querySelector(selector).innerText,
+    //   {},
+    //   selector
+    // )
+
+    const apy = await page.evaluate(() => {
+      const fields = document.querySelectorAll(".chakra-heading");
+      return fields[0].innerText.replace("%", "").trim();
+    });
+
+    console.log(apy)
+
+    // update APY in db
+    if (apy) {
+      await db.collection('apys').doc(asset).set({
+        apy: apy / 100
+      });
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.steakhutScrapper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromSteakHut()
+      .then(() => {
+        functions.logger.info("SteakHut APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
+      });
+  });
