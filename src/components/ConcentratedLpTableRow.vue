@@ -46,7 +46,7 @@
         <DeltaIcon class="action-button"
                    v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
-                   v-tooltip="{content: 'Deposit', classes: 'button-tooltip'}"
+                   v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
             v-if="moreActionsConfig"
@@ -154,6 +154,8 @@ export default {
       'assets',
       'debtsPerAsset',
       'lpAssets',
+      'concentratedLpAssets',
+      'lpBalances',
       'concentratedLpBalances',
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -201,6 +203,14 @@ export default {
       },
       immediate: true
     },
+    lpBalances: {
+      handler(lpBalances) {
+        if (lpBalances) {
+          this.lpTokenBalances = lpBalances;
+        }
+      },
+      immediate: true
+    },
   },
 
   methods: {
@@ -218,13 +228,13 @@ export default {
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
               },
               {
-                key: 'WITHDRAW',
-                name: 'Withdraw to wallet',
+                key: 'REMOVE_LIQUIDITY',
+                name: 'Unwind Concentrated LP token',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {
-                key: 'REMOVE_LIQUIDITY',
-                name: 'Unwind Concentrated LP token',
+                key: 'WITHDRAW',
+                name: 'Withdraw LP to wallet',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               }
             ]
@@ -319,6 +329,7 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
@@ -331,8 +342,8 @@ export default {
           const fundRequest = {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
-            assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            isLP: true,
+            assetDecimals: config.CONCENTRATED_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+            type: 'CONCENTRATED_LP',
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
@@ -352,7 +363,9 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
-      modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpTokenBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -361,8 +374,8 @@ export default {
         const withdrawRequest = {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
-          assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-          isLP: true,
+          assetDecimals: config.CONCENTRATED_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          type: 'CONCENTRATED_LP',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.$forceUpdate();

@@ -721,9 +721,33 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
       const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.assetDecimals);
-      const depositAmountUSD = Number(depositAmount) * state.assets[fundRequest.asset].price;
+      let price;
+      switch (fundRequest.type) {
+        case 'ASSET':
+          price = state.assets[fundRequest.asset].price;
+          break;
+        case 'LP':
+          price = state.lpAssets[fundRequest.asset].price;
+          break;
+        case 'CONCENTRATED_LP':
+          price = state.concentratedLpAssets[fundRequest.asset].price;
+          break;
+      }
+
+      const depositAmountUSD = Number(depositAmount) * price;
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt + depositAmountUSD;
-      const assetBalanceBeforeDeposit = fundRequest.isLP ? state.lpBalances[fundRequest.asset] : state.assetBalances[fundRequest.asset];
+      let assetBalanceBeforeDeposit;
+      switch (fundRequest.type) {
+        case 'ASSET':
+          assetBalanceBeforeDeposit = state.assetBalances[fundRequest.asset];
+          break;
+        case 'LP':
+          assetBalanceBeforeDeposit = state.lpBalances[fundRequest.asset];
+          break;
+        case 'CONCENTRATED_LP':
+          assetBalanceBeforeDeposit = state.concentratedLpBalances[fundRequest.asset];
+          break;
+      }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
       await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
@@ -813,8 +837,32 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.assetDecimals);
-      const withdrawAmountUSD = Number(withdrawAmount) * state.assets[withdrawRequest.asset].price;
-      const assetBalanceBeforeWithdraw = withdrawRequest.isLP ? state.lpBalances[withdrawRequest.asset] : state.assetBalances[withdrawRequest.asset];
+      let price;
+      switch (withdrawRequest.type) {
+        case 'ASSET':
+          price = state.assets[withdrawRequest.asset].price;
+          break;
+        case 'LP':
+          price = state.lpAssets[withdrawRequest.asset].price;
+          break;
+        case 'CONCENTRATED_LP':
+          price = state.concentratedLpAssets[withdrawRequest.asset].price;
+          break;
+      }
+      const withdrawAmountUSD = Number(withdrawAmount) * price;
+
+      let assetBalanceBeforeWithdraw;
+      switch (withdrawRequest.type) {
+        case 'ASSET':
+          assetBalanceBeforeWithdraw = state.assetBalances[withdrawRequest.asset];
+          break;
+        case 'LP':
+          assetBalanceBeforeWithdraw = state.lpBalances[withdrawRequest.asset];
+          break;
+        case 'CONCENTRATED_LP':
+          assetBalanceBeforeWithdraw = state.concentratedLpBalances[withdrawRequest.asset];
+          break;
+      }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
 
