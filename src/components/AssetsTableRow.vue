@@ -209,7 +209,9 @@ export default {
       'debtsPerAsset',
       'assets',
       'lpAssets',
+      'concentratedLpAssets',
       'lpBalances',
+      'concentratedLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -479,7 +481,9 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
@@ -517,7 +521,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -550,7 +556,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = BORROWABLE_ASSETS.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -584,7 +592,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -636,7 +646,7 @@ export default {
                 value: value,
                 asset: this.asset.symbol,
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-                isLP: false,
+                type: 'ASSET',
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.$forceUpdate();
@@ -658,7 +668,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -671,7 +683,7 @@ export default {
             asset: withdrawEvent.withdrawAsset,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-            isLP: false,
+            type: 'ASSET',
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();
@@ -685,7 +697,7 @@ export default {
             asset: this.asset.symbol,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-            isLP: false,
+            type: 'ASSET',
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();
@@ -705,7 +717,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;

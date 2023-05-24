@@ -21,13 +21,23 @@
       </div>
     </div>
     <div class="lp-tokens">
+      <div class="lp-table" v-if="concentratedLpTokens">
+        <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
+        <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">{{ lpToken }}
+        </ConcentratedLpTableRow>
+        <!--        <div class="paginator-container">-->
+        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
+        <!--        </div>-->
+      </div>
+    </div>
+    <div class="lp-tokens">
       <div class="filters" v-if="assetFilterGroups">
         <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
                      v-on:filterChange="setLpFilter"></AssetFilter>
       </div>
       <div class="lp-table" v-if="lpTokens && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
-        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{ lpToken }}
+        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken" showFarmed="false">{{ lpToken }}
         </LpTableRow>
 <!--        <div class="paginator-container">-->
 <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
@@ -50,6 +60,7 @@ import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import LpTableRow from './LpTableRow';
+import ConcentratedLpTableRow from './ConcentratedLpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
@@ -60,16 +71,19 @@ export default {
     DexFilter,
     Checkbox,
     Paginator,
-    LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta
+    LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta,
+    ConcentratedLpTableRow
   },
   data() {
     return {
       funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
+      concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,
       selectedLpTokens: [] = [],
       selectedDexes: [] = [],
       fundsTableHeaderConfig: null,
       lpTableHeaderConfig: null,
+      concentratedLpTableHeaderConfig: null,
       lpAssetsFilterOptions: null,
       lpDexFilterOptions: null,
       assetFilterGroups: null,
@@ -102,6 +116,7 @@ export default {
     this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
     this.setupLpTableHeaderConfig();
+    this.setupConcentratedLpTableHeaderConfig();
     this.setupAssetFilterGroups();
     this.updateLpPriceData();
   },
@@ -287,6 +302,62 @@ export default {
             class: 'farmed',
             id: 'FARMED',
             tooltip: `The number and value of staked assets in your Prime Account.`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes 7.2% sAVAX price appreciation if the pool includes that asset.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
+
+    setupConcentratedLpTableHeaderConfig() {
+      this.concentratedLpTableHeaderConfig = {
+        gridTemplateColumns: 'repeat(4, 1fr) 135px 60px 80px 22px',
+        cells: [
+          {
+            label: 'Concentrated LP',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The concentrated LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Balance',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The number and value of unstaked assets in your Prime Account.`
           },
           {
             label: 'TVL',

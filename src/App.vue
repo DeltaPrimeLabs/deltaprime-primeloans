@@ -7,9 +7,6 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
-    <Banner v-if="showUnwindedGlpBanner" class="banner-unwinded-glp">
-      Gm! Part of your position got unwinded by a liquidation bot due to a temporarily reduced GLP borrowing power. We will refund your Prime Account with any paid redemption and minting fees. <br/> Our apologies if this causes any inconvenience!
-    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
@@ -77,7 +74,6 @@ export default {
       highGasPrice: false,
       gasPriceIntervalId: null,
       showGlpBanner: false,
-      showUnwindedGlpBanner: false,
       showDepositBanner: false,
       darkMode: false,
     };
@@ -103,10 +99,6 @@ export default {
     }
 
     this.initGasPrices();
-
-    if (window.location.href.includes('prime-account') && this.hasUnwindedGlp()) {
-      this.showUnwindedGlpBanner = true;
-    }
 
     if (window.location.href.includes('prime-account')) {
       this.showGlpBanner = true;
