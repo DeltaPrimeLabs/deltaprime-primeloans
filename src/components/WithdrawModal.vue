@@ -114,8 +114,9 @@ export default {
     farms: {},
     debtsPerAsset: {},
     lpAssets: {},
-    concentratedLpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
   },
 
   data() {

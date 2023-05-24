@@ -88,6 +88,10 @@ export default {
     asset: {},
     assets: {},
     assetBalances: {},
+    lpAssets: {},
+    lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
@@ -166,6 +170,15 @@ export default {
         tokens.push({
           price: data.price,
           balance: parseFloat(this.lpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.concentratedLpBalances[symbol]),
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });

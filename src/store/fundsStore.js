@@ -538,7 +538,7 @@ export default {
         let concentratedLpAssets = state.concentratedLpAssets;
 
       //TODO: update once the symbols match
-      // for (let [symbol, lpAsset] of Object.entries(concentratedLpAssets)) {
+      // for (let [symbol, lpAsset] of Object.entries(this.concentratedLpAssets)) {
       //     // we don't use getApy method anymore, but fetch APYs from db
       //     if (apys[symbol] && apys[symbol].apy) {
       //         lpAssets[symbol].apy = apys[symbol].apy;
@@ -635,6 +635,17 @@ export default {
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
             yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + apy) * assetAppreciation) - 1) * lpAsset.price;
+          }
+        }
+
+        if (state.concentratedLpAssets && state.concentratedLpBalances) {
+          for (let entry of Object.entries(state.concentratedLpAssets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+
+            yearlyLpInterest += parseFloat(state.concentratedLpBalances[symbol]) * apy * lpAsset.price;
           }
         }
 
@@ -1267,7 +1278,7 @@ export default {
         targetAmount,
         swapRequest.path,
         swapRequest.adapters,
-        {gasLimit: 4000000}
+        {gasLimit: 5500000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
