@@ -25,6 +25,9 @@
       Steak Hut incoming! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
       Expect interest rates to be back up again in a week.
     </Banner>
+    <Banner v-if="showPrimeAccountBanner" background="green" :closable="true">
+      SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -75,6 +78,7 @@ export default {
       gasPriceIntervalId: null,
       showGlpBanner: false,
       showDepositBanner: false,
+      showPrimeAccountBanner: false,
       darkMode: false,
     };
   },
@@ -106,6 +110,10 @@ export default {
 
     if (window.location.href.includes('pools')) {
       this.showDepositBanner = true;
+    }
+
+    if (window.location.href.includes('prime-account')) {
+      this.showPrimeAccountBanner = true;
     }
   },
 
