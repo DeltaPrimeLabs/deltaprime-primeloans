@@ -1,5 +1,5 @@
 <template>
-  <div class='tab' v-show='isActive'>
+  <div class='tab'>
     <slot></slot>
   </div>
 </template>
@@ -28,9 +28,13 @@ export default {
 @import "~@/styles/variables";
 
 .tab {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  align-items: flex-start;
+  width: 1126px;
+  margin: 20px 52px 0 52px;
 
   @media screen and (min-width: $md) {
     margin-top: 0;

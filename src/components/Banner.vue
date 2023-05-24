@@ -15,6 +15,10 @@
     name: 'Banner',
     components: {DeltaIcon},
     props: {
+      id: {
+        type: String,
+        default: 'BannerID'
+      },
       title: String,
       closable: {
         type: Boolean,
@@ -33,6 +37,7 @@
     methods: {
       closeBanner() {
         this.bannerVisible = false;
+        localStorage.setItem(this.id, 'CLOSED');
       }
     },
     computed: {

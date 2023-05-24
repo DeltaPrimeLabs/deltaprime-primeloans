@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "./facets/avalanche/IYieldYakFacet.sol";
+import "./facets/avalanche/IGMDFacet.sol";
 import "./facets/avalanche/IYieldYakSwapFacet.sol";
 import "./facets/avalanche/IGLPFacet.sol";
 import "./facets/avalanche/IPangolinDEXFacet.sol";
@@ -19,16 +20,9 @@ import "./facets/celo/IUbeswapDEXFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacetOld.sol";
 import "./facets/avalanche/IBeefyFinanceFacet.sol";
+import "./facets/avalanche/ICurveFacet.sol";
+import "./facets/avalanche/ISteakHutFinanceFacet.sol";
 
-interface SmartLoanGigaChadInterface is IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet {
-    error CalldataOverOrUnderFlow();
-    error IncorrectUnsignedMetadataSize();
-    error InsufficientNumberOfUniqueSigners(uint256 receivedSignersCount, uint256 requiredSignersCount);
-    error EachSignerMustProvideTheSameValue();
-    error EmptyCalldataPointersArr();
-    error InvalidCalldataPointer();
-    error CalldataMustHaveValidPayload();
-    error SignerNotAuthorised(address receivedSigner);
-    error TimestampIsNotValid();
+interface SmartLoanGigaChadInterface is IGMDFacet, IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet, ICurveFacet, ISteakHutFinanceFacet {
 
 }

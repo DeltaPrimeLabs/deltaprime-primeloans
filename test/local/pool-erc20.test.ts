@@ -95,7 +95,7 @@ describe("Pool ERC20 token functions", () => {
         it("should accumulate user2 interest prior to transferring the funds", async () => {
             // given
             await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-            await sut.connect(user1).deposit(toWei("1.0"));
+            await sut.connect(user1).depositOnBehalf(toWei("1.0"), user1.address);
 
             await mockToken.connect(user2).approve(sut.address, toWei("2.0"));
             await sut.connect(user2).deposit(toWei("2.0"));

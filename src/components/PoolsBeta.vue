@@ -9,8 +9,11 @@
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
               <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
-                                   :pool="pool"></PoolsTableRowBeta>
+                <PoolsTableRowBeta v-for="pool in poolsList"
+                                   v-bind:key="pool.asset.symbol"
+                                   :pool="pool"
+                                   :depositAssetsWalletBalancesStream="depositAssetsWalletBalances$">
+                </PoolsTableRowBeta>
               </div>
             </div>
           </div>
@@ -28,7 +31,11 @@ import NameValueBadgeBeta from './NameValueBadgeBeta';
 import PoolsTableRowBeta from './PoolsTableRowBeta';
 import TableHeader from './TableHeader';
 import {mapActions, mapState} from 'vuex';
-import {combineLatest} from 'rxjs';
+import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
+import addresses from '../../common/addresses/avax/token_addresses.json';
+import erc20ABI from '../../test/abis/ERC20.json';
+
+const ethers = require('ethers');
 
 export default {
   name: 'PoolsBeta',
@@ -51,10 +58,12 @@ export default {
       totalDeposit: 0,
       poolsList: null,
       poolsTableHeaderConfig: null,
+      depositAssetsWalletBalances$: new BehaviorSubject({}),
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService']),
+    ...mapState('network', ['account', 'accountBalance', 'provider']),
   },
 
   methods: {
@@ -102,12 +111,35 @@ export default {
         this.setupTotalTVL();
         this.setupTotalDeposit();
         this.$forceUpdate();
+        this.setupWalletDepositAssetBalances(pools);
+      });
+    },
+
+    setupWalletDepositAssetBalances(pools) {
+      const depositAssetsWalletBalances = {};
+      combineLatest(
+        pools.map(pool => {
+            const contract = new ethers.Contract(addresses[pool.asset.symbol], erc20ABI, this.provider.getSigner());
+            return this.getWalletTokenBalance(
+              this.account,
+              pool.asset.symbol,
+              contract
+            );
+          }
+        )
+      ).subscribe(walletAssetBalances => {
+        console.log(walletAssetBalances);
+        walletAssetBalances.forEach((balance, index) => {
+          depositAssetsWalletBalances[pools[index].asset.symbol] = balance;
+        });
+        console.log(depositAssetsWalletBalances);
+        this.walletAssetBalancesService.emitWalletAssetBalances(depositAssetsWalletBalances);
       });
     },
 
     setupPoolsTableHeaderConfig() {
       this.poolsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 120px 76px 22px',
+        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 90px 110px 22px',
         cells: [
           {
             label: 'Asset',
@@ -167,14 +199,16 @@ export default {
     margin-top: 30px;
 
     .title {
+      margin-top: 55px;
       font-size: $font-size-xxl;
       font-weight: bold;
       margin-bottom: 31px;
     }
 
     .pools {
-      margin-top: 65px;
       width: 100%;
+      margin-top: 65px;
+      padding: 0 53px;
       display: flex;
       flex-direction: row;
       align-items: center;
