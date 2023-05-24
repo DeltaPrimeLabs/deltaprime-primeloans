@@ -49,6 +49,7 @@ export default {
   state: {
     assets: null,
     lpAssets: null,
+    concentratedLpAssets: null,
     supportedAssets: null,
     provider: null,
     smartLoanContract: null,
@@ -85,6 +86,10 @@ export default {
 
     setLpAssets(state, assets) {
       state.lpAssets = assets;
+    },
+
+    setConcentratedLpAssets(state, assets) {
+      state.concentratedLpAssets = assets;
     },
 
     setSupportedAssets(state, assets) {
@@ -529,6 +534,28 @@ export default {
       }
 
       commit('setLpAssets', lpAssets);
+
+        let concentratedLpAssets = state.concentratedLpAssets;
+
+      //TODO: update once the symbols match
+      // for (let [symbol, lpAsset] of Object.entries(concentratedLpAssets)) {
+      //     // we don't use getApy method anymore, but fetch APYs from db
+      //     if (apys[symbol] && apys[symbol].apy) {
+      //         lpAssets[symbol].apy = apys[symbol].apy;
+      //     }
+      // }
+
+      //TODO: replace with for logic
+        try {
+          concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
+          concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
+
+          // concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = apys['BTC.b_AVAX'].apy;
+        } catch (e) {
+          console.log(e);
+        }
+
+        commit('setConcentratedLpAssets', concentratedLpAssets);
 
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
