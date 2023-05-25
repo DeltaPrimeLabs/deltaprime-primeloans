@@ -142,10 +142,10 @@ contract TokenManager is OwnableUpgradeable {
 
     function _setCurrentProtocolExposure(bytes32 groupIdentifier, uint256 currentExposure) internal {
         require(groupIdentifier != "", "Cannot set an empty string asset.");
-        uint256 prevExposure = groupToExposure[groupIdentifier].max;
+        uint256 prevExposure = groupToExposure[groupIdentifier].current;
         groupToExposure[groupIdentifier].current = currentExposure;
 
-        emit ProtocolExposureSet(msg.sender, groupIdentifier, prevExposure, currentExposure, groupToExposure[groupIdentifier].current , block.timestamp);
+        emit ProtocolCurrentExposureSet(msg.sender, groupIdentifier, prevExposure, currentExposure, block.timestamp);
     }
 
     function setIdentifiersToExposureGroups(bytes32[] memory identifiers, bytes32[] memory exposureGroups) public onlyOwner {
@@ -309,6 +309,19 @@ contract TokenManager is OwnableUpgradeable {
      * @param timestamp time of setting max exposure
      **/
     event ProtocolExposureSet(address indexed performer, bytes32 indexed groupIdentifier, uint256 prevMaxExposure, uint256 newMaxExposure, uint256 currentExposure, uint256 timestamp);
+
+
+    /**
+         * @dev emitted after setting max exposure for a given protocol.
+     * @param performer an address of the wallet setting max exposure
+     * @param groupIdentifier exposure group identifier
+     * @param prevCurrentExposure previous max protocol exposure
+     * @param newCurrentExposure new max protocol exposure
+     * @param timestamp time of setting max exposure
+     **/
+    event ProtocolCurrentExposureSet(address indexed performer, bytes32 indexed groupIdentifier, uint256 prevCurrentExposure, uint256 newCurrentExposure, uint256 timestamp);
+
+
 
     /**
      * @dev emitted after adding a token asset
