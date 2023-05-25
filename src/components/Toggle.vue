@@ -1,11 +1,11 @@
 <template>
-  <div class="toggle-component">
+  <div class="toggle-component" ref="toggleComponent">
     <div class="toggle">
       <div class="toggle__options">
         <div class="option"
              v-for="option in options"
              v-bind:key="option"
-             v-bind:id="'option-' + option"
+             v-bind:id="`option-${option}-${uuid}`"
              v-bind:class="{'option--selected': option === selectedOption}"
              v-on:click="clickOption(option)">{{ option }}
         </div>
@@ -25,7 +25,8 @@ export default {
   },
   data() {
     return {
-      selectedOption: this.$props.initialOption ? this.$props.options[this.$props.initialOption] : this.$props.options[0]
+      selectedOption: this.$props.initialOption ? this.$props.options[this.$props.initialOption] : this.$props.options[0],
+      uuid: crypto.randomUUID(),
     };
   },
   mounted() {
@@ -34,7 +35,7 @@ export default {
   methods: {
     setup() {
       setTimeout(() => {
-        const selectedOptionElement = document.getElementById(`option-${this.selectedOption}`);
+        const selectedOptionElement = document.getElementById(`option-${this.selectedOption}-${this.uuid}`);
         const selectOptionRect = selectedOptionElement.getBoundingClientRect();
         this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
         this.$refs.pointer.style.left = `${selectedOptionElement.offsetLeft}px`;
@@ -45,7 +46,7 @@ export default {
       if (option !== this.selectedOption) {
         this.selectedOption = option;
         this.$emit('change', option);
-        const targetOptionElement = document.getElementById(`option-${option}`);
+        const targetOptionElement = document.getElementById(`option-${this.selectedOption}-${this.uuid}`);
         const targetOptionRect = targetOptionElement.getBoundingClientRect();
         this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
         this.$refs.pointer.style.width = `${targetOptionRect.width}px`;
