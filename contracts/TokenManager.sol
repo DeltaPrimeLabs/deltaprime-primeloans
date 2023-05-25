@@ -118,6 +118,13 @@ contract TokenManager is OwnableUpgradeable {
         }
     }
 
+    function setCurrentProtocolExposure(bytes32[] memory groupIdentifiers, uint256[] memory currentExposures) external onlyOwner {
+        require(groupIdentifiers.length == currentExposures.length, "Arrays lengths mismatch");
+        for (uint256 i = 0; i < groupIdentifiers.length; i++) {
+            _setCurrentProtocolExposure(groupIdentifiers[i], currentExposures[i]);
+        }
+    }
+
     function setMaxProtocolsExposure(bytes32[] memory groupIdentifiers, uint256[] memory maxExposures) public onlyOwner {
         require(groupIdentifiers.length == maxExposures.length, "Arrays lengths mismatch");
         for (uint256 i = 0; i < groupIdentifiers.length; i++) {
@@ -131,6 +138,14 @@ contract TokenManager is OwnableUpgradeable {
         groupToExposure[groupIdentifier].max = maxExposure;
 
         emit ProtocolExposureSet(msg.sender, groupIdentifier, prevExposure, maxExposure, groupToExposure[groupIdentifier].current , block.timestamp);
+    }
+
+    function _setCurrentProtocolExposure(bytes32 groupIdentifier, uint256 currentExposure) internal {
+        require(groupIdentifier != "", "Cannot set an empty string asset.");
+        uint256 prevExposure = groupToExposure[groupIdentifier].max;
+        groupToExposure[groupIdentifier].current = currentExposure;
+
+        emit ProtocolExposureSet(msg.sender, groupIdentifier, prevExposure, currentExposure, groupToExposure[groupIdentifier].current , block.timestamp);
     }
 
     function setIdentifiersToExposureGroups(bytes32[] memory identifiers, bytes32[] memory exposureGroups) public onlyOwner {

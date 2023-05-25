@@ -142,7 +142,7 @@ describe('Smart loan', () => {
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("");
-            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN")))).to.be.equal("");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN_AUTO")))).to.be.equal("");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("YY_AAVE_AVAX")))).to.be.equal("");
 
             await tokenManager.setIdentifiersToExposureGroups(
@@ -151,7 +151,7 @@ describe('Smart loan', () => {
                     toBytes32("sAVAX"),
                     toBytes32("MCKUSD"),
                     toBytes32("USDC"),
-                    toBytes32("VF_USDC_MAIN"),
+                    toBytes32("VF_USDC_MAIN_AUTO"),
                     toBytes32("YY_AAVE_AVAX"),
                 ],
                 [
@@ -167,8 +167,25 @@ describe('Smart loan', () => {
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("sAVAX")))).to.be.equal("AVAX_GROUP");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("MCKUSD")))).to.be.equal("STABLES_GROUP");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("USDC")))).to.be.equal("STABLES_GROUP");
-            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN")))).to.be.equal("VECTOR_FINANCE");
+            expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("VF_USDC_MAIN_AUTO")))).to.be.equal("VECTOR_FINANCE");
             expect(fromBytes32(await tokenManager.identifierToExposureGroup(toBytes32("YY_AAVE_AVAX")))).to.be.equal("YIELD_YAK");
+        });
+
+        it("should set and check exposure group current exposures", async () => {
+            expect((await tokenManager.groupToExposure(toBytes32("test1")))[0]).to.be.equal(0);
+            expect((await tokenManager.groupToExposure(toBytes32("test2")))[0]).to.be.equal(0);
+
+            await expect(tokenManager.connect(depositor).setCurrentProtocolExposure([toBytes32("test1")], [1])).to.be.revertedWith("Ownable: caller is not the owner");
+            await tokenManager.setCurrentProtocolExposure([toBytes32("test1")], [10]);
+            await tokenManager.setCurrentProtocolExposure([toBytes32("test2")], [11]);
+
+            expect((await tokenManager.groupToExposure(toBytes32("test1")))[0]).to.be.equal(10);
+            expect((await tokenManager.groupToExposure(toBytes32("test2")))[0]).to.be.equal(11);
+
+            await tokenManager.setCurrentProtocolExposure([toBytes32("test1")], [0]);
+            await tokenManager.setCurrentProtocolExposure([toBytes32("test2")], [0]);
+            expect((await tokenManager.groupToExposure(toBytes32("test1")))[0]).to.be.equal(0);
+            expect((await tokenManager.groupToExposure(toBytes32("test2")))[0]).to.be.equal(0);
         });
 
         it("should set and check exposure group max exposures", async () => {
@@ -316,13 +333,13 @@ describe('Smart loan', () => {
             )
             let initialUsdcExposure = fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0]);
 
-            await expect(wrappedLoan.vectorStakeUSDC1(parseUnits("11", usdcDecimals))).to.be.revertedWith("Max asset exposure breached");
-            await wrappedLoan.vectorStakeUSDC1(parseUnits("10", usdcDecimals));
+            await expect(wrappedLoan.vectorStakeUSDC1Auto(parseUnits("11", usdcDecimals))).to.be.revertedWith("Max asset exposure breached");
+            await wrappedLoan.vectorStakeUSDC1Auto(parseUnits("10", usdcDecimals));
             expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.equal(initialUsdcBalance - 10);
             expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.equal(10);
             expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.equal(initialUsdcExposure - 10);
 
-            await wrappedLoan.vectorUnstakeUSDC1(parseUnits("10", usdcDecimals), parseUnits("9", usdcDecimals));
+            await wrappedLoan.vectorUnstakeUSDC1Auto(parseUnits("10", usdcDecimals), parseUnits("9", usdcDecimals));
 
             expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.closeTo(initialUsdcBalance, 0.01);
             expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.equal(0);
