@@ -427,6 +427,7 @@ export default {
       modalInstance.lpTokenBalance = Number(this.concentratedLpTokenBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
+      modalInstance.tokenAvailableDecimals = this.lpToken.symbol === 'SHLB_USDT.e-USDt_C' ? 18 : 10;
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           value: removeEvent.amount,
@@ -440,6 +441,7 @@ export default {
           dex: this.lpToken.dex
         };
         this.handleTransaction(this.removeLiquidityConcentratedPool, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+          console.log(removeLiquidityRequest);
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
