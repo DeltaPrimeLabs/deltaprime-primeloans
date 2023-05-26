@@ -669,7 +669,7 @@ const uploadLoanStatusFromFile = async () => {
 const getApysFromSteakHut = async () => {
   functions.logger.info("parsing APYs from SteakHut");
   const URL = "https://app.steakhut.finance/pool/";
-  const browser = await puppeteer.launch({headless: false});
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   for (const [asset, address] of Object.entries(steakHutApyConfig)) {
