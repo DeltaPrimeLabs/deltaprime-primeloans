@@ -93,12 +93,12 @@ export default {
   },
   HEALTH_RATES_CONFIG: [
     {
-      id: "sixty",
-      value: 60
+      id: "fifty",
+      value: 50
     },
     {//default
-      id: "seventy",
-      value: 70,
+      id: "hundred",
+      value: 100,
     },
     {
       id: "custom",
