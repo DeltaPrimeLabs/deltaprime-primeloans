@@ -228,6 +228,8 @@ export default {
       debtsPerAsset: {},
       lpAssets: {},
       lpBalances: {},
+      concentratedLpAssets: {},
+      concentratedLpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -562,6 +564,16 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage,
+          symbol: symbol
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -623,7 +635,7 @@ export default {
   .reverse-swap-button {
     position: relative;
     cursor: pointer;
-    margin: 14px auto;
+    margin: 28px auto;
     height: 40px;
     width: 40px;
     border: var(--swap-modal__reverse-swap-button-border);
