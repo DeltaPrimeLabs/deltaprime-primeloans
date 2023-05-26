@@ -1,5 +1,5 @@
 <template>
-  <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="concentrated-lp-table-row-component" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
@@ -539,7 +539,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.lp-table-row-component {
+.concentrated-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
 
