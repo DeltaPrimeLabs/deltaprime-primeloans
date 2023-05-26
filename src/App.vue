@@ -23,7 +23,7 @@
     </Banner>
     <Banner v-if="showDepositBanner" background="green" :closable="true">
       Steak Hut incoming! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
-      Expect interest rates to be back up this Friday.
+      Expect interest rates to be back up soon.
     </Banner>
     <Banner v-if="showPrimeAccountBanner" background="green" :closable="true">
       SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
