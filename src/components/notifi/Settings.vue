@@ -76,7 +76,7 @@
                 <span class="rate__asset-name">{{ addressToPoolName(option.poolAddress) }}</span>
                 <span
                   class="remove-icon"
-                  @click="handleRemoveBorrowRate(option.id)"
+                  @click.stop="handleRemoveBorrowRate(option.id)"
                 >
                   &times;
                 </span>
@@ -237,12 +237,10 @@ export default ({
   flex-direction: column;
 
   .alert-settings {
+    margin-bottom: 20px;
+
     .alert-box {
       padding: 0 30px;
-
-      &:last-child {
-        margin-bottom: 80px;
-      }
 
       .alert-option {
         display: flex;

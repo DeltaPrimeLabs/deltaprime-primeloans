@@ -97,7 +97,7 @@ export default class notifiService {
       // get user's targets and alerts configured
       data = await client.fetchData();
       history = await this.getNotifications(client);
-      // console.log("alerts", data.alert);
+      console.log("alerts", data.alert);
       // console.log("targetGroups", data.targetGroup);
       // console.log("history", history);
     }

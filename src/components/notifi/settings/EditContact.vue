@@ -12,7 +12,7 @@
           >
             <a
               class="verify-link"
-              @click="handleVerifyEmail"
+              @click.stop="handleVerifyEmail"
             >
               Resend Link
             </a>
@@ -30,7 +30,7 @@
             <a
               class="verify-link"
               target="_blank"
-              @click="handleVerifyTelegram()"
+              @click.stop="handleVerifyTelegram()"
             >
               Verify ID
             </a>
@@ -53,7 +53,6 @@
             class="edit-icon"
             :icon-src="'src/assets/icons/icon_edit_xs.svg'"
             :size="12.7"
-            @click="() => {}"
           ></IconButton>
           Edit contact info
         </div>

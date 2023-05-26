@@ -53,7 +53,7 @@
     <div class="next-button">
       <Button
         :label="'Next'"
-        @click.once="handleClick"
+        @click.stop.native="handleClick"
         :customStyle="customStyles.button"
         :disabled="invalid || !targets.emailAddress && !targets.phoneNumber && !targets.telegramId"
         :waiting="screenLoading"

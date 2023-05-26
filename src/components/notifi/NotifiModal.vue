@@ -18,7 +18,7 @@
           :icon-src="'src/assets/icons/left-arrow.svg'"
           :size="20"
           :disabled="screenLoading"
-          @click="handleBack"
+          @click.stop.native="handleBack"
         ></IconButton>
 
         <div class="header__text">
@@ -38,7 +38,7 @@
           class="header__right-settings"
           :icon-src="'src/assets/icons/icon_settings.svg'"
           :size="22"
-          @click="handleSettings"
+          @click.stop.native="handleSettings"
         ></IconButton>
       </div>
 
@@ -54,7 +54,6 @@
           @createTargets="handleCreateTargets"
           @notificationDetail="handleNotificationDetail"
           @loadMoreHistory="loadMoreHistory"
-          ref="notifiScreen"
         ></component>
       </div>
 
@@ -108,15 +107,6 @@ export default {
       'notifiService',
       'themeService'
     ]),
-  },
-  watch: {
-    currentScreen: {
-      handler(newScreen) {
-        if (!this.$refs.notifiScreen) return;
-
-        this.$emit('currentScreen', this.$refs.notifiScreen.$el);
-      }
-    }
   },
   mounted() {
     this.setupNotifi();

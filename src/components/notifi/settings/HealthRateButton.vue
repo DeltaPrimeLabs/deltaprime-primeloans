@@ -53,7 +53,6 @@ export default ({
 
     handleBlur() {
       this.placeholder = 'Custom';
-      console.log(this.placeholder);
       this.handleUpdate();
     }
   }

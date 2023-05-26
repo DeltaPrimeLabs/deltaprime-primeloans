@@ -5,7 +5,7 @@
     <div
       v-if="!addWindow"
       class="add-rate-btn"
-      @click="addWindow = true"
+      @click.stop="addWindow = true"
     >
       <img src="src/assets/icons/icon_a_plus_single.svg">
       Add Rate
@@ -18,7 +18,7 @@
         class="close-icon"
         :icon-src="'src/assets/icons/cross.svg'"
         :size="17"
-        @click.native="addWindow = false"
+        @click.stop.native="addWindow = false"
       ></DeltaIcon>
       <div>
         <div class="borrow-rate-edit">
@@ -46,7 +46,7 @@
             <Button
               :label="'Save'"
               :disabled="!poolAddress || !thresholdDirection || !threshold"
-              @click.once="handleSave"
+              @click.stop.native="handleSave"
               :customStyle="buttonStyles"
               :waiting="saving"
             ></Button>

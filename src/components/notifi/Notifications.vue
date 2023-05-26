@@ -8,7 +8,7 @@
       v-if="notification.detail"
       v-bind:key="id"
       class="notification-box"
-      @click="handleDetail(notification)"
+      @click.stop="handleDetail(notification)"
     >
       <div class="box-icon">
         <img :src="getBoxIcon(notification)">
