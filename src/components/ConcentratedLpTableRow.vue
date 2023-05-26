@@ -28,6 +28,11 @@
         </template>
       </div>
 
+      <div class="table__cell composition">
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance, 8, true) }}
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         {{ lpToken.tvl | usd }}
       </div>
@@ -549,7 +554,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 135px 60px 80px 22px;
+    grid-template-columns: 160px 150px 260px 150px repeat(2, 1fr) 70px 60px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -586,6 +591,16 @@ export default {
 
       &.balance {
         align-items: flex-end;
+      }
+
+      &.composition {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        img {
+          margin-left: 5px;
+        }
       }
 
       &.farmed {
@@ -670,6 +685,13 @@ export default {
     .small-block-wrapper {
       height: unset;
     }
+  }
+
+  .asset__icon {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    margin-right: 9px;
   }
 }
 

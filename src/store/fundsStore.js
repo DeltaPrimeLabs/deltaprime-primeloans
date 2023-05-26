@@ -480,7 +480,7 @@ export default {
       }, 30000);
     },
 
-    async getAllAssetsBalances({state, commit, rootState}) {
+    async getAllAssetsBalances({state, commit, rootState, dispatch}) {
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
       const lpBalances = {};
@@ -504,9 +504,27 @@ export default {
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
+      await dispatch('setupConcentratedLpUnderlyingBalances');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
       dataRefreshNotificationService.emitAssetBalancesDataRefresh();
       dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
+    },
+
+    async setupConcentratedLpUnderlyingBalances({state, commit, rootState}) {
+      const concentratedLpAssets = state.concentratedLpAssets;
+      Object.keys(state.concentratedLpAssets).forEach(async assetSymbol => {
+        const abi = ['function getUnderlyingAssets(uint256) public view returns (uint256, uint256)'];
+        const poolContract = await new ethers.Contract(concentratedLpAssets[assetSymbol].address, abi, provider.getSigner());
+        const poolBalance = toWei(state.concentratedLpBalances[assetSymbol].toString());
+
+        const balances = await poolContract.getUnderlyingAssets(poolBalance);
+
+        concentratedLpAssets[assetSymbol].primaryBalance = formatUnits(balances[0], state.assets[concentratedLpAssets[assetSymbol].primary].decimals);
+        concentratedLpAssets[assetSymbol].secondaryBalance = formatUnits(balances[1], state.assets[concentratedLpAssets[assetSymbol].secondary].decimals);
+
+        const lpService = rootState.serviceRegistry.lpService;
+        lpService.emitRefreshLp();
+      });
     },
 
     async getAllAssetsApys({state, commit, rootState}) {
@@ -554,7 +572,7 @@ export default {
           console.log(e);
         }
 
-        commit('setConcentratedLpAssets', concentratedLpAssets);
+      commit('setConcentratedLpAssets', concentratedLpAssets);
 
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
