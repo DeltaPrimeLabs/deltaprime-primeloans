@@ -298,9 +298,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
         _burn(msg.sender, _amount);
 
-        _transferFromPool(msg.sender, _amount);
-
         _updateRates();
+
+        _transferFromPool(msg.sender, _amount);
 
         if (address(poolRewarder) != address(0)) {
             poolRewarder.withdrawFor(_amount, msg.sender);
