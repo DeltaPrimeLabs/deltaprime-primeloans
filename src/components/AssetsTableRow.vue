@@ -717,8 +717,8 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
-      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
