@@ -28,6 +28,10 @@ export default new Router({
           name: 'Prime Account Farms',
           path: 'farms'
         },
+        {
+          name: 'Prime Account Stats',
+          path: 'stats'
+        },
       ]
     },
     {

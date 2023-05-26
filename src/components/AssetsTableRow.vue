@@ -29,6 +29,21 @@
         </template>
       </div>
 
+      <div class="table__cell table__cell--double-value farmed">
+        <template
+            v-if="totalStaked">
+          <div class="double-value__pieces">
+            {{ totalStaked | smartRound }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="totalStaked">{{ totalStaked * asset.price | usd }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         <template v-if="debtsPerAsset && debtsPerAsset[asset.symbol] && parseFloat(debtsPerAsset[asset.symbol].debt)">
           <div class="double-value__pieces">
@@ -157,6 +172,7 @@ export default {
     asset: {},
   },
   mounted() {
+    this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalAssetDebtUpdate();
@@ -167,6 +183,8 @@ export default {
     this.watchAssetApysRefreshScheduledEvent();
     this.watchProgressBarState();
     this.setupPoolsApy();
+    this.watchExternalTotalStakedUpdate();
+    this.watchFarmRefreshEvent();
   },
   data() {
     return {
@@ -178,6 +196,8 @@ export default {
       disableAllButtons: false,
       borrowApyPerPool: {},
       healthLoaded: false,
+      totalStaked: null,
+      availableFarms: [],
     };
   },
   computed: {
@@ -189,7 +209,9 @@ export default {
       'debtsPerAsset',
       'assets',
       'lpAssets',
+      'concentratedLpAssets',
       'lpBalances',
+      'concentratedLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -201,7 +223,9 @@ export default {
       'progressBarService',
       'assetDebtsExternalUpdateService',
       'poolService',
-      'healthService'
+      'healthService',
+      'stakedExternalUpdateService',
+      'farmService',
     ]),
 
     loanValue() {
@@ -457,7 +481,9 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
@@ -484,6 +510,7 @@ export default {
     },
 
     openSwapModal() {
+      console.log(this.assetBalances);
       const modalInstance = this.openModal(SwapModal);
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
@@ -494,7 +521,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -527,7 +556,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = BORROWABLE_ASSETS.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -561,7 +592,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -613,7 +646,7 @@ export default {
                 value: value,
                 asset: this.asset.symbol,
                 assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-                isLP: false,
+                type: 'ASSET',
               };
               this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
                 this.$forceUpdate();
@@ -635,7 +668,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -648,7 +683,7 @@ export default {
             asset: withdrawEvent.withdrawAsset,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-            isLP: false,
+            type: 'ASSET',
           };
           this.handleTransaction(this.withdrawNativeToken, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();
@@ -662,7 +697,7 @@ export default {
             asset: this.asset.symbol,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
-            isLP: false,
+            type: 'ASSET',
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();
@@ -683,6 +718,8 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -815,6 +852,32 @@ export default {
       });
     },
 
+    watchExternalTotalStakedUpdate() {
+      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.asset.symbol) {
+          if (updateEvent.action === 'STAKE') {
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+          } else if (updateEvent.action === 'UNSTAKE') {
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+          }
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchFarmRefreshEvent() {
+      console.log(this.availableFarms);
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        if (this.availableFarms) {
+          this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+        }
+      });
+    },
+
+    setupAvailableFarms() {
+      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.asset.symbol];
+    },
+
     scheduleHardRefresh() {
       this.progressBarService.emitProgressBarInProgressState();
       this.dataRefreshEventService.emitHardRefreshScheduledEvent();
@@ -912,7 +975,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(6, 1fr) 76px 102px;
+    grid-template-columns: repeat(6, 1fr) 90px 76px 102px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -948,6 +1011,10 @@ export default {
       }
 
       &.balance {
+        align-items: flex-end;
+      }
+
+      &.farmed {
         align-items: flex-end;
       }
 

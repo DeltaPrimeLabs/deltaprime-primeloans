@@ -92,13 +92,15 @@ export default {
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
 
-    async getWalletTokenBalance(account, assetSymbol, tokenContract, isLP) {
+    async getWalletTokenBalance(account, assetSymbol, tokenContract, type) {
       const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
       let walletAssetBalance;
-      if (!isLP) {
+      if (!type) {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
-      } else {
+      } else if (type === 'LP') {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
+      } else if (type === 'CONCENTRATED_LP') {
+        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.CONCENTRATED_LP_ASSETS_CONFIG[assetSymbol].decimals);
       }
       return walletAssetBalance;
     },

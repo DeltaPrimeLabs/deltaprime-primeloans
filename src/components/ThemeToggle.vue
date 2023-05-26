@@ -20,7 +20,7 @@ export default {
       document.documentElement.classList.remove(this.darkMode ? 'theme--light' : 'theme--dark')
       document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
       localStorage.setItem('VIEW_THEME', this.darkMode ? 'DARK' : 'LIGHT')
-      this.themeService.emitThemeChange();
+      this.themeService.emitThemeChange(this.darkMode ? 'DARK' : 'LIGHT');
     },
   },
   created() {
@@ -31,6 +31,7 @@ export default {
       this.darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
     }
     localStorage.setItem('VIEW_THEME', this.darkMode ? 'DARK' : 'LIGHT')
+    this.themeService.emitThemeChange(this.darkMode ? 'DARK' : 'LIGHT');
     document.documentElement.classList.add(this.darkMode ? 'theme--dark' : 'theme--light')
   },
   computed: {

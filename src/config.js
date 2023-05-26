@@ -21,6 +21,7 @@ export default {
     COMPETITION_START_BLOCK: 14858534,
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.01,
+    TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 43114,
     // chainId: 1337,
     //update leverage after every change in contracts
@@ -30,6 +31,7 @@ export default {
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
+      "USDT.e": {name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses.USDTe, isStableCoin: true, debtCoverage: 0.83333333333},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, swappableAssets: ['BTC', 'ETH', 'USDC']},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 7.2},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0},
@@ -68,6 +70,11 @@ export default {
         "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
         "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
     },
+    CONCENTRATED_LP_ASSETS_CONFIG: {
+        "SHLB_AVAX-USDC_B": { primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 1580000, debtCoverage: 0.83333333333},
+        "SHLB_BTC.b-AVAX_B": { primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 3670000, debtCoverage: 0.83333333333},
+        "SHLB_USDT.e-USDt_C": { primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 67000, debtCoverage: 0.83333333333},
+    },
     DEX_CONFIG: {
         'Pangolin': {
             intermediaryAddress: PANGOLIN_INTERMEDIARY_TUP.address,
@@ -80,7 +87,7 @@ export default {
         'TraderJoe': {
             intermediaryAddress: TRADERJOE_INTERMEDIARY_TUP.address,
             routerAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
-            swapMethod: 'swapTraderJoe',
+
             addLiquidityMethod: 'addLiquidityTraderJoe',
             removeLiquidityMethod: 'removeLiquidityTraderJoe',
             logo: 'joe.png'

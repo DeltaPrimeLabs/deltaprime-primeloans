@@ -5,7 +5,8 @@
         Withdraw collateral
       </div>
       <div class="modal-top-desc">
-        You can withdraw only if you have enough debt tokens to repay all borrows. <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
+        Please make sure that every asset's 'balance' is higher than that asset's 'borrowed', in order to withdraw.
+        <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -114,6 +115,8 @@ export default {
     debtsPerAsset: {},
     lpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
   },
 
   data() {
@@ -206,6 +209,16 @@ export default {
         tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        let balance = parseFloat(this.concentratedLpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -255,7 +268,7 @@ export default {
             );
 
             if (!canRepayAllDebts) {
-              return 'Missing AVAX/USDC in portfolio. Please make sure you can repay your debt before withdrawing.'
+              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw. Read more.'
             }
           }
         }

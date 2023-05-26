@@ -8,7 +8,7 @@ export default class accountService {
     return this.accountLoaded$.asObservable();
   }
 
-  emitAccountLoaded() {
-    this.accountLoaded$.next(null);
+  emitAccountLoaded(account) {
+    this.accountLoaded$.next(account);
   }
 }

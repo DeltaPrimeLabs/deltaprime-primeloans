@@ -1,11 +1,11 @@
 <template>
-  <div class="toggle-component">
+  <div class="toggle-component" ref="toggleComponent">
     <div class="toggle">
       <div class="toggle__options">
         <div class="option"
              v-for="option in options"
              v-bind:key="option"
-             v-bind:id="'option-' + option"
+             v-bind:id="`option-${option}-${uuid}`"
              v-bind:class="{'option--selected': option === selectedOption}"
              v-on:click="clickOption(option)">{{ option }}
         </div>
@@ -20,31 +20,37 @@
 export default {
   name: 'Toggle',
   props: {
-    options: Array
+    options: Array,
+    initialOption: Number
   },
   data() {
     return {
-      selectedOption: 'AVAX'
-    }
+      selectedOption: this.$props.initialOption ? this.$props.options[this.$props.initialOption] : this.$props.options[0],
+      uuid: crypto.randomUUID(),
+    };
   },
   mounted() {
     this.setup();
   },
   methods: {
     setup() {
-      const selectedOptionElement = document.getElementById(`option-${this.selectedOption}`);
-      const selectOptionRect = selectedOptionElement.getBoundingClientRect();
-      this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
+      setTimeout(() => {
+        const selectedOptionElement = document.getElementById(`option-${this.selectedOption}-${this.uuid}`);
+        const selectOptionRect = selectedOptionElement.getBoundingClientRect();
+        this.$refs.pointer.style.width = `${selectOptionRect.width}px`;
+        this.$refs.pointer.style.left = `${selectedOptionElement.offsetLeft}px`;
+      }, 100);
     },
 
     clickOption(option) {
-      this.selectedOption = option;
-      this.$emit('change', option);
-      const targetOptionElement = document.getElementById(`option-${option}`);
-      const targetOptionRect = targetOptionElement.getBoundingClientRect();
-      this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
-      this.$refs.pointer.style.width = `${targetOptionRect.width}px`;
-
+      if (option !== this.selectedOption) {
+        this.selectedOption = option;
+        this.$emit('change', option);
+        const targetOptionElement = document.getElementById(`option-${this.selectedOption}-${this.uuid}`);
+        const targetOptionRect = targetOptionElement.getBoundingClientRect();
+        this.$refs.pointer.style.left = `${targetOptionElement.offsetLeft}px`;
+        this.$refs.pointer.style.width = `${targetOptionRect.width}px`;
+      }
     }
   }
 };
@@ -67,6 +73,7 @@ export default {
       position: absolute;
       left: 0;
       height: 28px;
+      width: 50px;
       margin: 0 80px 0 0;
       padding: 4px 10px;
       box-shadow: var(--toggle__pointer-box-shadow);
@@ -117,9 +124,7 @@ export default {
 
     .toggle__background {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 131.5px;
+      inset: 0;
       height: 28px;
       background-color: var(--toggle__background);
       border: var(--toggle__border);

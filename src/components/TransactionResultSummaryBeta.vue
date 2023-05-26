@@ -40,7 +40,7 @@ export default {
       font-size: 14px;
       font-weight: 500;
       color: var(--transaction-result-summary-beta__title-color);
-      justify-content: space-around;
+      justify-content: center;
     }
 
     .summary__horizontal__divider {

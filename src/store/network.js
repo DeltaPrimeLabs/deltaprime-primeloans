@@ -52,7 +52,7 @@ export default {
       if (accounts.length > 0) {
         const mainAccount = accounts[0];
         commit('setAccount', mainAccount);
-        rootState.serviceRegistry.accountService.emitAccountLoaded();
+        rootState.serviceRegistry.accountService.emitAccountLoaded(mainAccount);
       } else {
         Vue.$toast.error("No accounts available");
       }
@@ -60,6 +60,7 @@ export default {
     async updateBalance({ state, commit }) {
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
+      console.log('rootState.balance', balance);
 
       commit('setAccountBalance', balance);
     },
