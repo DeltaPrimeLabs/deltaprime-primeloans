@@ -549,7 +549,7 @@ export default {
         try {
           concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
           concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
-          concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = apys['BTC.b_AVAX'].apy;
+          concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = apys['BTC.b_AVAX'].apy * 100;
         } catch (e) {
           console.log(e);
         }
