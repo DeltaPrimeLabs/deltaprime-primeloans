@@ -342,7 +342,7 @@ export default {
 
     setupConcentratedLpTableHeaderConfig() {
       this.concentratedLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(4, 1fr) 135px 60px 80px 22px',
+        gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 70px 60px 22px',
         cells: [
           {
             label: 'Concentrated LP',
@@ -358,6 +358,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },
+          {
+            label: 'Composition',
+            sortable: false,
+            class: 'balance',
+            id: 'COMPOSITION',
+            tooltip: `Underlying assets`
           },
           {
             label: 'TVL',
