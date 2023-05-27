@@ -371,7 +371,7 @@ export default {
             sortable: false,
             class: 'balance',
             id: 'tvl',
-            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+            tooltip: `The Total Value Locked (TVL) in the underlying pool. These numbers are regularly updated.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
