@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: a33c92df6b73b24f43fe2acf6c3faf2d4ed3e03c;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,7 +18,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
     /**
-     * Stakes in SteakHut AVAX/USDC pool
+     * Stakes in SteakHut AVAX/USDC balanced-wide pool
      * @param amount0Desired amount of AVAX to be staked
      * @param amount1Desired amount of USDC to be staked
      * @param amount0Min minimum amount of AVAX to be staked
@@ -28,7 +28,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC_LP",
+            vaultTokenSymbol: "SHLB_AVAX-USDC_B",
             amount0Desired: amount0Desired,
             amount1Desired: amount1Desired,
             amount0Min: amount0Min,
@@ -37,7 +37,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     /**
-     * Unstakes from SteakHut AVAX/USDC pool
+     * Unstakes from SteakHut AVAX/USDC balanced-wide pool
      * @param liquidity amount of shares to be unstaked
      * @param amount0Min minimum amount of AVAX to be unstaked
      * @param amount1Min minimum amount of USDC to be unstaked
@@ -46,7 +46,79 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
             token0Symbol: "AVAX",
             token1Symbol: "USDC",
-            vaultTokenSymbol: "SH_AVAX_USDC_LP",
+            vaultTokenSymbol: "SHLB_AVAX-USDC_B",
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Stakes in SteakHut BTC/AVAX balanced-wide pool
+     * @param amount0Desired amount of BTC to be staked
+     * @param amount1Desired amount of AVAX to be staked
+     * @param amount0Min minimum amount of BTC to be staked
+     * @param amount1Min minimum amount of AVAX to be staked
+     **/
+    function stakeSteakHutBTCAVAX(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
+        _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
+            token0Symbol: "BTC",
+            token1Symbol: "AVAX",
+            vaultTokenSymbol: "SHLB_BTC.b-AVAX_B",
+            amount0Desired: amount0Desired,
+            amount1Desired: amount1Desired,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Unstakes from SteakHut BTC/AVAX balanced-wide pool
+     * @param liquidity amount of shares to be unstaked
+     * @param amount0Min minimum amount of BTC to be unstaked
+     * @param amount1Min minimum amount of AVAX to be unstaked
+     **/
+    function unstakeSteakHutBTCAVAX(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
+        _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
+            token0Symbol: "BTC",
+            token1Symbol: "AVAX",
+            vaultTokenSymbol: "SHLB_BTC.b-AVAX_B",
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Stakes in SteakHut USDT.e/USDT concentrated pool
+     * @param amount0Desired amount of USDT.e to be staked
+     * @param amount1Desired amount of USDT to be staked
+     * @param amount0Min minimum amount of USDT.e to be staked
+     * @param amount1Min minimum amount of USDT to be staked
+     **/
+    function stakeSteakHutUSDTeUSDT(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
+        _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
+            token0Symbol: "USDT.e",
+            token1Symbol: "USDT",
+            vaultTokenSymbol: "SHLB_USDT.e-USDt_C",
+            amount0Desired: amount0Desired,
+            amount1Desired: amount1Desired,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Unstakes from SteakHut USDT.e/USDT concentrated pool
+     * @param liquidity amount of shares to be unstaked
+     * @param amount0Min minimum amount of USDT.e to be unstaked
+     * @param amount1Min minimum amount of USDT to be unstaked
+     **/
+    function unstakeSteakHutUSDTeUSDT(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
+        _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
+            token0Symbol: "USDT.e",
+            token1Symbol: "USDT",
+            vaultTokenSymbol: "SHLB_USDT.e-USDt_C",
             liquidity: liquidity,
             amount0Min: amount0Min,
             amount1Min: amount1Min

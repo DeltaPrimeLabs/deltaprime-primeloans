@@ -166,7 +166,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         tokenSymbols = [
             bytes32("DAIe"),
             bytes32("USDCe"),
-            bytes32("USDTe"),
+            bytes32("USDT.e"),
             bytes32("WBTCe"),
             bytes32("ETH")
         ];
