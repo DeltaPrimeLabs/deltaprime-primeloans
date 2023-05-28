@@ -143,6 +143,20 @@ describe('Smart loan', () => {
             expect(fromWei(await tokenContracts.get('MCKUSD')!.balanceOf(loan.address))).to.be.equal(0);
         });
 
+        it("should get loans length", async () => {
+            const length = await smartLoansFactory.getLoansLength();
+            expect(length).to.be.eq(2);
+        });
+
+        it("should get loans", async () => {
+            const loans = await smartLoansFactory.getLoans(0, 5);
+            expect(loans.length).to.be.eq(2);
+            const loanAddress1 = await smartLoansFactory.getLoanForOwner(borrower1.address);
+            const loanAddress2 = await smartLoansFactory.getLoanForOwner(borrower2.address);
+            expect(loans[0]).to.be.eq(loanAddress1);
+            expect(loans[1]).to.be.eq(loanAddress2);
+        });
+
         it("should not create a smart loan when wrong data is sent", async () => {
             const wrappedSmartLoansFactory = smartLoansFactory.connect(borrower3)
 
