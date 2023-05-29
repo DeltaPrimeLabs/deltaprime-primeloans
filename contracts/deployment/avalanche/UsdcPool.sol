@@ -10,4 +10,15 @@ import "../../Pool.sol";
  * @dev Contract allowing user to deposit to and borrow USDC from a dedicated user account
  */
 contract UsdcPool is Pool {
+    function name() public virtual override pure returns(string memory _name){
+        _name = "DeltaPrimeUSDCoin";
+    }
+
+    function symbol() public virtual override pure returns(string memory _symbol){
+        _symbol = "DPUSDC";
+    }
+
+    function decimals() public virtual override pure returns(uint8 decimals){
+        decimals = 6;
+    }
 }

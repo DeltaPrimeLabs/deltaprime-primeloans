@@ -115,6 +115,8 @@ export default {
       'assets',
       'lpAssets',
       'lpBalances',
+      'concentratedLpAssets',
+      'concentratedLpBalances',
       'fullLoanStatus',
       'noSmartLoan',
       'smartLoanContract',
@@ -286,6 +288,9 @@ export default {
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
+        console.log('watchHealthRefresh')
+        console.log(this.concentratedLpAssets)
+        console.log(this.concentratedLpBalances)
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
           this.noSmartLoanInternal,
           this.debtsPerAsset,
@@ -293,6 +298,8 @@ export default {
           this.assetBalances,
           this.lpAssets,
           this.lpBalances,
+          this.concentratedLpAssets,
+          this.concentratedLpBalances,
           this.farms
         );
         this.health = healthCalculatedDirectly;
