@@ -12,6 +12,8 @@ import "../interfaces/IStakingPositions.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
+import "../interfaces/joe-v2/ILBPair.sol";
+import "../TokenManager.sol";
 
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     struct AssetPrice {
@@ -393,7 +395,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
       * Returns list of owned assets that always included NativeToken at index 0
     **/
     function getOwnedAssetsWithNative() public view returns(bytes32[] memory){
-        bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
+        bytes32[] memory ownedAssets = DeploymentConstants.getAllOwcnedAssets();
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
         // If account already owns the native token the use ownedAssets.length; Otherwise add one element to account for additional native token.
@@ -429,11 +431,51 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
-                usdValue += stakedPositionsPrices[i].price * 10 ** 10 * balance / (10 ** token.decimals());
+                usdValue += stakedPositionsPrices[i].price * 10 ** 8 * balance / (10 ** token.decimals());
             }
         }
 
         return usdValue;
+    }
+
+    /**
+    **/
+    function _getTotalTraderJoeV2WithPricesBase(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
+        if (assetsPrices.length > 0) {
+            TraderJoeV2Bin[] storage ownedTraderJoeV2Bins = abi.decode(
+                proxyDelegateCalldata(
+                    DiamondHelper._getFacetAddress(TraderJoeV2Facet.getOwnedTraderJoeV2Bins.selector),
+                    abi.encodeWithSelector(TraderJoeV2Facet.getOwnedTraderJoeV2Bins.selector, cachedPrices)
+                ),
+                (TraderJoeV2Bin[])
+            );
+
+            for (uint256 i = 0; i < ownedTraderJoeV2Bins.length; i++) {
+                TraderJoeV2Bin bin = ownedTraderJoeV2Bins[i];
+                uint256 assetBalance = bin.balanceOf(address(this));
+
+                uint256 priceX;
+                uint256 priceY;
+
+                for (uint256 j; j < ownedAssetsPrices.length; j++) {
+                    if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(bin.pair.getTokenX())) {
+                        priceX = ownedAssetsPrices[j].price;
+                    } else if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(bin.pair.getTokenY())) {
+                        priceY = ownedAssetsPrices[j].price;
+                    }
+                }
+
+                uint256 price = bin.getPriceFromId(id); // how is it denominated (what precision)?
+                uint256 liquidity = price.mulDivRoundDown(x, 128) + y;
+
+                uint256 minBinValue = Math.min(liquidity * priceX / (price * 10 ** 10), liquidity * priceY / 10 ** 5);
+
+                total = total + minBinValue;
+            }
+            return total;
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -442,6 +484,14 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     **/
     function getStakedValueWithPrices(AssetPrice[] memory stakedPositionsPrices) public view returns (uint256) {
         return _getStakedValueBase(stakedPositionsPrices);
+    }
+
+    /**
+     * Returns the current value of Liquidity Book positions in USD.
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
+    function getTotalTraderJoeV2WithPrices(AssetPrice[] memory assetsPrices) public view returns (uint256) {
+        return _getTotalTraderJoeV2WithPricesBase(assetsPrices);
     }
 
     /**
@@ -465,8 +515,9 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
      * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
      * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
     **/
-    function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
-        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices);
+    function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory assetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
+        //TODO: it's a proposal where we add underlying assets of users LB positions to ownedAssetsPrices
+        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalTraderJoeV2WithPrices(ownedAssetsPrices);
     }
 
     function getFullLoanStatus() public view returns (uint256[5] memory) {
