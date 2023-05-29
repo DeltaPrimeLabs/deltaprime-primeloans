@@ -131,7 +131,7 @@ export default ({
 @import "~@/styles/notifi";
 
 .notifications-list {
-  height: 470px;
+  height: 420px;
 
   .notification-box {
     display: flex;

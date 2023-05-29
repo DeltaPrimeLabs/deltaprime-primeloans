@@ -36,12 +36,6 @@
             </a>
           </div>
         </div>
-
-        <div v-if="phoneInfo" class="contact-box">
-          <div class="notifi-modal__text-info contact-info">
-            {{ phoneInfo.phoneNumber }}
-          </div>
-        </div>
       </div>
 
       <div class="edit-button">
@@ -78,7 +72,6 @@ export default ({
   },
   props: {
     emailInfo: null,
-    phoneInfo: null,
     telegramInfo: null,
     notifiClient: null
   },

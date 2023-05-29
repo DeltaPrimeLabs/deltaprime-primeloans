@@ -10,7 +10,6 @@
     <template v-if="!screenLoading">
       <EditContact
         :emailInfo="emailInfo"
-        :phoneInfo="phoneInfo"
         :telegramInfo="telegramInfo"
         :notifiClient="client"
       ></EditContact>
@@ -118,9 +117,6 @@ export default ({
     return {
       emailInfo: this.targetGroups[0].emailTargets.length > 0
         ? this.targetGroups[0].emailTargets[0]
-        : null,
-      phoneInfo: this.targetGroups[0].smsTargets.length > 0
-        ? this.targetGroups[0].smsTargets[0]
         : null,
       telegramInfo: this.targetGroups[0].telegramTargets.length > 0
         ? this.targetGroups[0].telegramTargets[0]

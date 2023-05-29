@@ -54,7 +54,7 @@ export default ({
 @import "~@/styles/notifi";
 
 .notification-detail {
-  height: 470px;
+  height: 420px;
   padding: 24px 30px;
   display: flex;
   flex-direction: column;
