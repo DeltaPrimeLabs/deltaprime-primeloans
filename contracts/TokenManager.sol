@@ -31,11 +31,6 @@ contract TokenManager is OwnableUpgradeable {
         uint256 max; // Setting max to 0 means no exposure limitations.
     }
 
-    struct TraderJoeV2Bin {
-        ILBPair pair;
-        uint256 id;
-    }
-
     using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
 
     uint256 private constant _NOT_SUPPORTED = 0;
@@ -51,7 +46,6 @@ contract TokenManager is OwnableUpgradeable {
     // used for defining different leverage ratios for tokens
     mapping(address => uint256) public debtCoverage;
     address[] public supportedTokensList;
-    TraderJoeV2Bin[] public ownedTraderJoeV2Bins;
 
     mapping(address => uint256) public tokenToStatus;
     // used for defining different leverage ratios for staked assets

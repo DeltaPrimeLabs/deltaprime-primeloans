@@ -1,3 +1,5 @@
+import "./joe-v2/ILBPair.sol";
+
 interface ITokenManager {
     struct poolAsset {
         bytes32 asset;

@@ -9,13 +9,17 @@ import "../interfaces/ITokenManager.sol";
 import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
+import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
+import {Uint256x256Math} from "../lib/Uint256x256Math.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
-import "../interfaces/joe-v2/ILBPair.sol";
-import "../TokenManager.sol";
+//TODO: that probably can be removed later
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
-contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
+contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
+    using Uint256x256Math for uint256;
+
     struct AssetPrice {
         bytes32 asset;
         uint256 price;
@@ -395,7 +399,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
       * Returns list of owned assets that always included NativeToken at index 0
     **/
     function getOwnedAssetsWithNative() public view returns(bytes32[] memory){
-        bytes32[] memory ownedAssets = DeploymentConstants.getAllOwcnedAssets();
+        bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
 
         // If account already owns the native token the use ownedAssets.length; Otherwise add one element to account for additional native token.
@@ -441,36 +445,45 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     /**
     **/
     function _getTotalTraderJoeV2WithPricesBase(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
-        if (assetsPrices.length > 0) {
-            TraderJoeV2Bin[] storage ownedTraderJoeV2Bins = abi.decode(
-                proxyDelegateCalldata(
-                    DiamondHelper._getFacetAddress(TraderJoeV2Facet.getOwnedTraderJoeV2Bins.selector),
-                    abi.encodeWithSelector(TraderJoeV2Facet.getOwnedTraderJoeV2Bins.selector, cachedPrices)
-                ),
-                (TraderJoeV2Bin[])
-            );
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        uint256 total;
+
+        ITraderJoeV2Facet.TraderJoeV2Bin[] storage ownedTraderJoeV2Bins;
+
+        bytes32 slot = 'TRADERJOE_V2_BINS_1685370112';
+        assembly{
+            ownedTraderJoeV2Bins.slot := sload(slot)
+        }
+
+        if (ownedTraderJoeV2Bins.length > 0) {
 
             for (uint256 i = 0; i < ownedTraderJoeV2Bins.length; i++) {
-                TraderJoeV2Bin bin = ownedTraderJoeV2Bins[i];
-                uint256 assetBalance = bin.balanceOf(address(this));
+                ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
+
+                (uint128 binReserveX, uint128 binReserveY) = binInfo.pair.getBin(binInfo.id);
 
                 uint256 priceX;
                 uint256 priceY;
 
                 for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                    if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(bin.pair.getTokenX())) {
+                    if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
                         priceX = ownedAssetsPrices[j].price;
-                    } else if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(bin.pair.getTokenY())) {
+                    } else if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
                         priceY = ownedAssetsPrices[j].price;
                     }
                 }
 
-                uint256 price = bin.getPriceFromId(id); // how is it denominated (what precision)?
-                uint256 liquidity = price.mulDivRoundDown(x, 128) + y;
+                uint256 price = binInfo.pair.getPriceFromId(binInfo.id); // how is it denominated (what precision)?
+
+                //TODO: check what are limitations of this
+                uint256 liquidity = price.mulDivRoundDown(binReserveX, 128) + binReserveY;
 
                 uint256 minBinValue = Math.min(liquidity * priceX / (price * 10 ** 10), liquidity * priceY / 10 ** 5);
 
-                total = total + minBinValue;
+                uint256 userBinBalance = binInfo.pair.balanceOf(address(this), binInfo.id);
+
+                total = total + minBinValue * userBinBalance / binInfo.pair.totalSupply(binInfo.id);
             }
             return total;
         } else {
