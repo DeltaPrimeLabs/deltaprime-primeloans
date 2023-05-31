@@ -121,6 +121,7 @@ export default ({
         }
       }
     },
+
     handleClick() {
       Object.keys(this.targets).forEach(key => {
         if (!this.targets[key]) delete this.targets[key]
