@@ -22,7 +22,7 @@
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
     <Banner v-if="showDepositBanner" background="green" :closable="true">
-      Steak Hut incoming! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
+      Steak Hut is here! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
       Expect interest rates to be back up soon.
     </Banner>
     <Banner v-if="showPrimeAccountBanner" background="green" :closable="true">
