@@ -210,9 +210,9 @@ describe('ParaSwap', () => {
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
-            let usdtBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
+            let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
 
-            const swapData = await getSwapData('ETH', 'USDC', usdtBalance);
+            const swapData = await getSwapData('ETH', 'USDC', ethBalance);
             await wrappedLoan.paraSwap(swapData);
 
             expect(await loanOwnsAsset("ETH")).to.be.false;
