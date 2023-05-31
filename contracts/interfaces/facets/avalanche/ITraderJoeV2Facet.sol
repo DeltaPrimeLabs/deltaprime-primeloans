@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-import "../../joe-v2/ILBPair.sol";
+import "../../joe-v2/ILBRouter.sol";
 
 interface ITraderJoeV2Facet {
 
@@ -8,4 +8,7 @@ interface ITraderJoeV2Facet {
         ILBPair pair;
         uint24 id;
     }
+
+    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external;
+
 }

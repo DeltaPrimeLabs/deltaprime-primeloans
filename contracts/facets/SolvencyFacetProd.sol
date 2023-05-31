@@ -10,7 +10,9 @@ import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
-import {Uint256x256Math} from "../lib/Uint256x256Math.sol";
+import "hardhat/console.sol";
+import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
+import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -18,6 +20,7 @@ import "../lib/local/DeploymentConstants.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
+    using PriceHelper for uint256;
     using Uint256x256Math for uint256;
 
     struct AssetPrice {
@@ -443,22 +446,30 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     }
 
     /**
+     **/
+    function getTotalTraderJoeV2() public view virtual returns (uint256) {
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
+        return getTotalTraderJoeV2WithPrices(ownedAssetsPrices);
+    }
+
+    /**
     **/
     function _getTotalTraderJoeV2WithPricesBase(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
         uint256 total;
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] storage ownedTraderJoeV2Bins;
 
-        bytes32 slot = 'TRADERJOE_V2_BINS_1685370112';
+        bytes32 slot = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
         assembly{
             ownedTraderJoeV2Bins.slot := sload(slot)
         }
 
+        console.log('ownedTraderJoeV2Bins.length: ', ownedTraderJoeV2Bins.length);
+
         if (ownedTraderJoeV2Bins.length > 0) {
 
             for (uint256 i = 0; i < ownedTraderJoeV2Bins.length; i++) {
+                console.log('here');
                 ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
 
                 (uint128 binReserveX, uint128 binReserveY) = binInfo.pair.getBin(binInfo.id);
@@ -466,25 +477,37 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                 uint256 priceX;
                 uint256 priceY;
 
+                console.log('ownedAssetsPrices.length: ', ownedAssetsPrices.length);
+
                 for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                    if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
+                    if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
                         priceX = ownedAssetsPrices[j].price;
-                    } else if (ownedAssetsPrices[j].asset == tokenManager.tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
+                    } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
                         priceY = ownedAssetsPrices[j].price;
                     }
                 }
 
-                uint256 price = binInfo.pair.getPriceFromId(binInfo.id); // how is it denominated (what precision)?
+                uint256 price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
                 //TODO: check what are limitations of this
                 uint256 liquidity = price.mulDivRoundDown(binReserveX, 128) + binReserveY;
 
-                uint256 minBinValue = Math.min(liquidity * priceX / (price * 10 ** 10), liquidity * priceY / 10 ** 5);
+                //TODO: SHOULD BE WEIGHTED!!!!! 0.83333
+                total = total +
+                Math.min(
+//                    DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) *
+                    liquidity * priceX / (price * 10 ** 2),
+                    //                    / 10 ** 18
 
-                uint256 userBinBalance = binInfo.pair.balanceOf(address(this), binInfo.id);
-
-                total = total + minBinValue * userBinBalance / binInfo.pair.totalSupply(binInfo.id);
+                    //                    DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) *
+                    liquidity * priceY / 10 ** 8
+                    //                    / 10 ** 18
+                )
+                 / 10 ** 2 * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
             }
+
+            console.log('total: ', total);
+
             return total;
         } else {
             return 0;
@@ -521,7 +544,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * @dev This function uses the redstone-evm-connector
     **/
     function getTotalValue() public view virtual returns (uint256) {
-        return getTotalAssetsValue() + getStakedValue();
+        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2();
     }
 
     /**

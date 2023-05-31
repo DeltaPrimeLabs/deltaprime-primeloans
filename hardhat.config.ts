@@ -26,6 +26,7 @@ export default {
     hardhat: {
       chainId: 1337,
       gas: 8000000,
+      allowUnlimitedContractSize: true, //TODO: remove
       blockGasLimit: 0x1fffffffffffff,
       timeout: 1800000,
       settings: {

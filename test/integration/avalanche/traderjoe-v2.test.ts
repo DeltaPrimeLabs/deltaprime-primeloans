@@ -13,7 +13,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    erc20ABI,
+    erc20ABI, formatUnits,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -153,18 +153,40 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("300")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("300"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("300"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("5")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("5"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("5"));
 
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("50"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("2.5"), 0);
 
-            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(600 * tokensPrices.get('AVAX')!, 80);
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(6 * tokensPrices.get('AVAX')!, 3);
         });
 
         it("should fail to add LB as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.stakeSteakHutAVAXUSDC(toWei("9999"), toWei("9999"), 0, 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            await expect(nonOwnerWrappedLoan.addLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    8376120,
+                    16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    [0], //just one bin
+                    [addedAvax],
+                    [addedUSDC],
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+                )
+            ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake as a non-owner", async () => {
@@ -172,6 +194,31 @@ describe('Smart loan', () => {
         });
 
         it("should stake AVAX/USDC", async () => {
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    8376120,
+                    16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    [0], //just one bin
+                    [addedAvax],
+                    [addedUSDC],
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
+            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+
         });
 
         it("should unstake AVAX/USDC", async () => {

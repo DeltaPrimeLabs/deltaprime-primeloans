@@ -668,6 +668,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
+        await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2'], hardhatConfig)
         await deployFacet("YieldYakFacet", diamondAddress, [
             'stakeAVAXYak',
             'unstakeAVAXYak',
