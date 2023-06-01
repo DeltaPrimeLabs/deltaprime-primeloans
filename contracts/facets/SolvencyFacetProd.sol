@@ -299,7 +299,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     }
 
     function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
-        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices);
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(ownedAssetsPrices, true);
     }
 
     /**
@@ -454,7 +454,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
     /**
     **/
-    function _getTotalTraderJoeV2WithPricesBase(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
+    function _getTotalTraderJoeV2WithPricesBase(AssetPrice[] memory ownedAssetsPrices, bool weighted) internal view returns (uint256) {
         uint256 total;
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] storage ownedTraderJoeV2Bins;
@@ -464,49 +464,48 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
             ownedTraderJoeV2Bins.slot := sload(slot)
         }
 
-        console.log('ownedTraderJoeV2Bins.length: ', ownedTraderJoeV2Bins.length);
-
         if (ownedTraderJoeV2Bins.length > 0) {
 
             for (uint256 i = 0; i < ownedTraderJoeV2Bins.length; i++) {
-                console.log('here');
                 ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
-
-                (uint128 binReserveX, uint128 binReserveY) = binInfo.pair.getBin(binInfo.id);
 
                 uint256 priceX;
                 uint256 priceY;
+                uint256 price;
+                uint256 liquidity;
 
-                console.log('ownedAssetsPrices.length: ', ownedAssetsPrices.length);
+                {
+                    (uint128 binReserveX, uint128 binReserveY) = binInfo.pair.getBin(binInfo.id);
 
-                for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                    if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
-                        priceX = ownedAssetsPrices[j].price;
-                    } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
-                        priceY = ownedAssetsPrices[j].price;
+                    for (uint256 j; j < ownedAssetsPrices.length; j++) {
+                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
+                            priceX = ownedAssetsPrices[j].price;
+                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
+                            priceY = ownedAssetsPrices[j].price;
+                        }
                     }
+
+                    price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
+
+                    //TODO: check what are limitations of this
+
+                    liquidity = price * binReserveX
+                        / 10 ** (6 + IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() - IERC20Metadata(address(binInfo.pair.getTokenY())).decimals())
+                        + binReserveY;
+
                 }
 
-                uint256 price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-                //TODO: check what are limitations of this
-                uint256 liquidity = price.mulDivRoundDown(binReserveX, 128) + binReserveY;
-
-                //TODO: SHOULD BE WEIGHTED!!!!! 0.83333
                 total = total +
-                Math.min(
-//                    DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) *
-                    liquidity * priceX / (price * 10 ** 2),
-                    //                    / 10 ** 18
-
-                    //                    DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) *
-                    liquidity * priceY / 10 ** 8
-                    //                    / 10 ** 18
-                )
-                 / 10 ** 2 * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
+                    Math.min(
+                            (weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18)
+                        * liquidity / 1e18 * priceX / (price * 10 ** 2),
+                            (weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18)
+                        * liquidity / 1e18 * priceY / 10 ** 8
+                    )
+                    //TODO: this is a risky part and has to be reviewed
+                * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id) * 10 ** (18 - IERC20Metadata(address(binInfo.pair.getTokenY())).decimals());
             }
-
-            console.log('total: ', total);
 
             return total;
         } else {
@@ -527,7 +526,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getTotalTraderJoeV2WithPrices(AssetPrice[] memory assetsPrices) public view returns (uint256) {
-        return _getTotalTraderJoeV2WithPricesBase(assetsPrices);
+        return _getTotalTraderJoeV2WithPricesBase(assetsPrices, false);
     }
 
     /**
