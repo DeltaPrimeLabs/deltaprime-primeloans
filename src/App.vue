@@ -21,9 +21,11 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="false" background="green" :closable="true">
-      Steak Hut is here! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
-      Expect interest rates to be back up soon.
+    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
+      To incentivize borrowing, rates have temporarily dropped
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1113770698817683476" target="_blank">
+        <b>Read More</b>
+      </a>.
     </Banner>
     <Banner v-if="false" background="green" :closable="true">
       SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
