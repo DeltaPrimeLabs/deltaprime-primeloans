@@ -30,7 +30,7 @@
     <Banner v-if="false" background="green" :closable="true">
       SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
     </Banner>
-    <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
+    <Banner v-if="false" background="green-accent" :closable="true">
       All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
     </Banner>
     <div class="content">
