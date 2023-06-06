@@ -6,7 +6,6 @@ import "./lib/Bytes32EnumerableMap.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./interfaces/joe-v2/ILBPair.sol";
 
 contract TokenManager is OwnableUpgradeable {
     /**

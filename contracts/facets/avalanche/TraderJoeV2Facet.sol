@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 799a1765b64edc5c158198ef84f785af79e234ae;
 pragma solidity 0.8.17;
 
 import "../../ReentrancyGuardKeccak.sol";

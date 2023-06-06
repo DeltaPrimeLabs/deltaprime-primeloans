@@ -10,7 +10,6 @@ import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
-import "hardhat/console.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 
@@ -459,14 +458,17 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] storage ownedTraderJoeV2Bins;
 
-        bytes32 slot = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
-        assembly{
-            ownedTraderJoeV2Bins.slot := sload(slot)
+        // stack too deep
+        {
+            bytes32 slot = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
+            assembly{
+                ownedTraderJoeV2Bins.slot := sload(slot)
+            }
         }
 
         if (ownedTraderJoeV2Bins.length > 0) {
 
-            for (uint256 i = 0; i < ownedTraderJoeV2Bins.length; i++) {
+            for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
                 ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
 
                 uint256 priceX;
@@ -496,15 +498,18 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                 }
 
 
-                total = total +
+                {
+                    uint256 debtCoverageX = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18;
+                    uint256 debtCoverageY = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18;
+
+                    total = total +
                     Math.min(
-                            (weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18)
-                        * liquidity / 1e18 * priceX / (price * 10 ** 2),
-                            (weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18)
-                        * liquidity / 1e18 * priceY / 10 ** 8
+                        debtCoverageX * liquidity / 1e18 * priceX / (price * 10 ** 2),
+                        debtCoverageY * liquidity / 1e18 * priceY / 10 ** 8
                     )
                     //TODO: this is a risky part and has to be reviewed
-                * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id) * 10 ** (18 - IERC20Metadata(address(binInfo.pair.getTokenY())).decimals());
+                    * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
+                }
             }
 
             return total;
