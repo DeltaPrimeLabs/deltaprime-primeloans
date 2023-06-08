@@ -80,7 +80,7 @@ describe('ParaSwap', () => {
                 srcToken: priceRoute.srcToken,
                 destToken: priceRoute.destToken,
                 srcAmount: priceRoute.srcAmount,
-                destAmount: priceRoute.destAmount,
+                slippage: 300,
                 priceRoute,
                 userAddress: wrappedLoan.address,
                 partner: 'anon',
