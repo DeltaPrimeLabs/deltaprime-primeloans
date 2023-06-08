@@ -1,5 +1,5 @@
 <template>
-  <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="concentrated-lp-table-row-component" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
@@ -427,6 +427,7 @@ export default {
       modalInstance.lpTokenBalance = Number(this.concentratedLpTokenBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
+      modalInstance.tokenAvailableDecimals = this.lpToken.symbol === 'SHLB_USDT.e-USDt_C' ? 18 : 10;
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           value: removeEvent.amount,
@@ -440,6 +441,7 @@ export default {
           dex: this.lpToken.dex
         };
         this.handleTransaction(this.removeLiquidityConcentratedPool, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+          console.log(removeLiquidityRequest);
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -544,7 +546,7 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 
-.lp-table-row-component {
+.concentrated-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
 

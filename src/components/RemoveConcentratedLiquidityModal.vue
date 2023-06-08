@@ -7,7 +7,7 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, 10, true)}}</div>
+        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, tokenAvailableDecimals, true)}}</div>
         <span class="top-info__currency">
           {{lpToken.name}}
         </span>
@@ -78,6 +78,7 @@ export default {
     lpTokenBalance: Number,
     firstBalance: Number,
     secondBalance: Number,
+    tokenAvailableDecimals: Number,
   },
 
   data() {

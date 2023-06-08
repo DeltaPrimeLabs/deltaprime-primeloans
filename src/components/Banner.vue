@@ -87,6 +87,19 @@
     }
   }
 
+  &.green-accent {
+    background-color: var(--banner__banner-background--green-accent);
+    color: var(--banner__banner-color--green) !important;
+
+    .close-button {
+      background: var(--banner__banner-color--green);
+    }
+
+    a {
+      color: var(--banner__banner-color--green);
+    }
+  }
+
   &.font-white {
     color: var(--banner__banner-color--font-white);
   }
