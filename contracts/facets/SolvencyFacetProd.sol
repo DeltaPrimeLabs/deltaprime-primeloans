@@ -17,6 +17,7 @@ import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/local/DeploymentConstants.sol";
 //TODO: that probably can be removed later
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
+import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
     using PriceHelper for uint256;
@@ -509,6 +510,69 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     )
                     //TODO: this is a risky part and has to be reviewed
                     * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
+                }
+            }
+
+            return total;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+ **/
+    function getTotalUniswapV3() public view virtual returns (uint256) {
+        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
+        return getTotalUniswapV3WithPrices(ownedAssetsPrices);
+    }
+
+    /**
+    **/
+    function _getTotalUniswapV3WithPricesBase(AssetPrice[] memory ownedAssetsPrices, bool weighted) internal view returns (uint256) {
+        uint256 total;
+
+        IUniswapV3Facet.UniswapV3Position[] storage ownedUniswapV3Positions;
+
+        // stack too deep
+        {
+            bytes32 slot = bytes32(uint256(keccak256('UNISWAP_V3_POSITIONS_1685370112')) - 1);
+            assembly{
+                ownedUniswapV3Positions.slot := sload(slot)
+            }
+        }
+
+        if (ownedUniswapV3Positions.length > 0) {
+
+            for (uint256 i; i < ownedUniswapV3Positions.length; i++) {
+                IUniswapV3Facet.UniswapV3Position memory positionInfo = ownedUniswapV3Positions[i];
+
+                uint256 priceX;
+                uint256 priceY;
+                uint256 liquidity = positionInfo.pool.positions.get(address(this), positionInfo.tickLower, positionInfo.tickUpper).liquidity;
+
+                {
+                    for (uint256 j; j < ownedAssetsPrices.length; j++) {
+                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
+                            priceX = ownedAssetsPrices[j].price;
+                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
+                            priceY = ownedAssetsPrices[j].price;
+                        }
+                    }
+                }
+
+                {
+                    uint256 debtCoverageX = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18;
+                    uint256 debtCoverageY = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18;
+
+                    total = total +
+
+                    //TODO: there is an assumption here that the position value is the lowest at edges (x = 0 or y = 0). Need to confirm that!
+
+                    //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
+                    Math.min(
+                        debtCoverageX * liquidity * (Math.sqrt(positionInfo.tickUpper) - 1e18 / Math.sqrt(positionInfo.tickLower)) * priceX / 10 ** 8,
+                        debtCoverageY * liquidity * (Math.sqrt(positionInfo.tickLower) - 1e18 / Math.sqrt(positionInfo.tickUpper)) * priceX / 10 ** 8
+                    )
                 }
             }
 
