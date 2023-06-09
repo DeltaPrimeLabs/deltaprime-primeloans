@@ -669,6 +669,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
         await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2'], hardhatConfig)
+        await deployFacet("UniswapV3Facet", diamondAddress, ['addLiquidityUniswapV3'], hardhatConfig)
         await deployFacet("YieldYakFacet", diamondAddress, [
             'stakeAVAXYak',
             'unstakeAVAXYak',

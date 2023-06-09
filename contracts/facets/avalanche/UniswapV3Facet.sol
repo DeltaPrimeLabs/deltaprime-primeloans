@@ -9,58 +9,66 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
+import "../../lib/uniswap-v3/PoolAddress.sol";
+import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 
 contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
+    address private constant NONFUNGIBLE_POSITION_MANAGER_ADDRESS = 0xb18a6cf6833130c7A13076D96c7e3784b7F721D1;
+    address private constant UNISWAP_V3_FACTORY_ADDRESS = 0x0bD438cB54153C5418E91547de862F21Bc143Ae2;
+
     using TransferHelper for address;
 
-    bytes32 internal constant OWNED_UNISWAP_V3_POSITIONS_SLOT = bytes32(uint256(keccak256('UNISWAP_V3_POSITIONS_1685370112')) - 1);
+    //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
+    bytes32 internal constant OWNED_UNISWAP_V3_TOKEN_IDS_SLOT = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
 
     //TODO: kamilovsky please look into that if that is a good solution for storage
-    function getOwnedUniswapV3Positions() internal view returns (UniswapV3Position[] storage result){
-        bytes32 slot = OWNED_UNISWAP_V3_POSITIONS_SLOT;
+    function getOwnedUniswapV3TokenIds() internal view returns (uint256[] storage result){
+        bytes32 slot = OWNED_UNISWAP_V3_TOKEN_IDS_SLOT;
         assembly{
             result.slot := sload(slot)
         }
+        return result;
     }
 
-    function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[] memory pools){
+    function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[1] memory pools){
         return [
             //TODO: update to existing pool
-            IUniswapV3Pool(0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30)
+            IUniswapV3Pool(0xc79890C726fF34e43E16afA736847900e4fc9c37)
         ];
     }
 
     //TODO: optimize it (mapping?)
-    function isPoolWhitelisted(IUniswapV3Pool pool) internal view returns (bool){
-        IUniswapV3Pool[] memory pools = getWhitelistedUniswapV3Pools();
+    function isPoolWhitelisted(address pool) internal view returns (bool){
+        IUniswapV3Pool[1] memory pools = getWhitelistedUniswapV3Pools();
 
         for (uint i; i < pools.length; ++i) {
-            if (address(pool) == address(pools[i])) return true;
+            if (pool == address(pools[i])) return true;
         }
         return false;
     }
 
-    function addLiquidityUniswapV3(IUniswapV3Pool pool, int24 tickLower, int24 tickUpper, uint128 amount) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
-        if (!isPoolWhitelisted(pool)) revert UniswapV3PoolNotWhitelisted();
+    function addLiquidityUniswapV3(INonfungiblePositionManager.MintParams calldata params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
-        pool.mint(
-            address(this),
-            tickLower,
-            tickUpper,
-            amount
-        );
+        if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
-        getOwnedUniswapV3Positions().push(UniswapV3Position(pool, tickLower, tickUpper));
+        (uint256 tokenId,,,) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
+
+        getOwnedUniswapV3TokenIds().push(tokenId);
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         //TODO: not sure if that is the best solution
-        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(pool.token0()), pool.token0());
-        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(pool.token1()), pool.token1());
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token0), params.token0);
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token1), params.token1);
 
         //TODO: event
     }
 
+    //TODO: increase liquidity
     //TODO: withdraw liquidity
+    //TODO: burn?
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-pragma solidity 0.8.17;
+//TODO: is it safe?
+pragma solidity 0.7.6 || 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -10,8 +11,10 @@ import "../Pool.sol";
 import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
+import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
+import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -531,38 +534,53 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function _getTotalUniswapV3WithPricesBase(AssetPrice[] memory ownedAssetsPrices, bool weighted) internal view returns (uint256) {
         uint256 total;
 
-        IUniswapV3Facet.UniswapV3Position[] storage ownedUniswapV3Positions;
+        uint256[] storage ownedUniswapV3TokenIds;
 
         // stack too deep
         {
-            bytes32 slot = bytes32(uint256(keccak256('UNISWAP_V3_POSITIONS_1685370112')) - 1);
+            bytes32 slot = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
             assembly{
-                ownedUniswapV3Positions.slot := sload(slot)
+                ownedUniswapV3TokenIds.slot := sload(slot)
             }
         }
 
-        if (ownedUniswapV3Positions.length > 0) {
+        if (ownedUniswapV3TokenIds.length > 0) {
+            INonfungiblePositionManager manager = INonfungiblePositionManager(0x0bD438cB54153C5418E91547de862F21Bc143Ae2);
 
-            for (uint256 i; i < ownedUniswapV3Positions.length; i++) {
-                IUniswapV3Facet.UniswapV3Position memory positionInfo = ownedUniswapV3Positions[i];
+            for (uint256 i; i < ownedUniswapV3TokenIds.length; i++) {
+            (
+                ,
+                ,
+                address token0,
+                address token1,
+                ,
+                int24 tickLower,
+                int24 tickUpper,
+                uint128 liquidity,
+                ,
+                ,
+                ,
 
-                uint256 priceX;
-                uint256 priceY;
-                uint256 liquidity = positionInfo.pool.positions.get(address(this), positionInfo.tickLower, positionInfo.tickUpper).liquidity;
+            ) = manager.positions(ownedUniswapV3TokenIds[i]);
+                uint256 price0;
+                uint256 price1;
 
                 {
                     for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()))) {
-                            priceX = ownedAssetsPrices[j].price;
-                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()))) {
-                            priceY = ownedAssetsPrices[j].price;
+                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(token0)) {
+                            price0 = ownedAssetsPrices[j].price;
+                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(token1)) {
+                            price1 = ownedAssetsPrices[j].price;
                         }
                     }
                 }
 
                 {
-                    uint256 debtCoverageX = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18;
-                    uint256 debtCoverageY = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18;
+                    uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(token0) : 1e18;
+                    uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(token1) : 1e18;
+
+                    uint256 sqrt_p_a = TickMath.getSqrtRatioAtTick(tickLower);
+                    uint256 sqrt_p_b = TickMath.getSqrtRatioAtTick(tickUpper);
 
                     total = total +
 
@@ -570,10 +588,11 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
                     //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
                     //TODO: check for possible under/overflows
+
                     Math.min(
-                        debtCoverageX * liquidity * (Math.sqrt(positionInfo.tickUpper) - 1e18 / Math.sqrt(positionInfo.tickLower)) * priceX / 10 ** 8,
-                        debtCoverageY * liquidity * (Math.sqrt(positionInfo.tickLower) - 1e18 / Math.sqrt(positionInfo.tickUpper)) * priceX / 10 ** 8
-                    )
+                        debtCoverage0 * liquidity * (sqrt_p_b - 1e18 / sqrt_p_a) * price0 / 10 ** 8,
+                        debtCoverage1 * liquidity * (sqrt_p_a - 1e18 / sqrt_p_b) * price1 / 10 ** 8
+                    );
                 }
             }
 
@@ -597,6 +616,14 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     **/
     function getTotalTraderJoeV2WithPrices(AssetPrice[] memory assetsPrices) public view returns (uint256) {
         return _getTotalTraderJoeV2WithPricesBase(assetsPrices, false);
+    }
+
+    /**
+     * Returns the current value of Uniswap V3 positions in USD.
+     * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
+    **/
+    function getTotalUniswapV3WithPrices(AssetPrice[] memory assetsPrices) public view returns (uint256) {
+        return _getTotalUniswapV3WithPricesBase(assetsPrices, false);
     }
 
     /**
@@ -659,6 +686,22 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
             return type(uint256).max;
         } else {
             return thresholdWeightedValue * 1e18 / debt;
+        }
+    }
+
+
+    // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
+    //TODO: check what happens to signed
+    function sqrt(uint y) internal pure returns (uint z) {
+        if (y > 3) {
+            z = y;
+            uint x = y / 2 + 1;
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
+        } else if (y != 0) {
+            z = 1;
         }
     }
 }
