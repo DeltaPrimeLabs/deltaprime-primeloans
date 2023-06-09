@@ -569,6 +569,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     //TODO: there is an assumption here that the position value is the lowest at edges (x = 0 or y = 0). Need to confirm that!
 
                     //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
+                    //TODO: check for possible under/overflows
                     Math.min(
                         debtCoverageX * liquidity * (Math.sqrt(positionInfo.tickUpper) - 1e18 / Math.sqrt(positionInfo.tickLower)) * priceX / 10 ** 8,
                         debtCoverageY * liquidity * (Math.sqrt(positionInfo.tickLower) - 1e18 / Math.sqrt(positionInfo.tickUpper)) * priceX / 10 ** 8
