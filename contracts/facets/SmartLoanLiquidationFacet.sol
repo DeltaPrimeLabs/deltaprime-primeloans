@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 591f922090d65eb220427875697663e2d05267f6;
+// Last deployed from commit: 238badc31ae1a0b7573b2f51c2daf669cf50df96;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -210,7 +210,14 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
             for (uint256 i; i < assetsOwned.length; i++) {
                 IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
+                if(address(token) == 0x9e295B5B976a184B14aD8cd72413aD846C299660){
+                    token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+                }
                 uint256 balance = token.balanceOf(address(this));
+
+                if((balance * partToReturn / 10 ** 18) == 0){
+                    continue;
+                }
 
                 address(token).safeTransfer(msg.sender, balance * partToReturn / 10 ** 18);
                 emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturn / 10 ** 18, block.timestamp);
