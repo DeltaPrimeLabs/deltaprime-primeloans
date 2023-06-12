@@ -1,7 +1,7 @@
-const contractName = "contract_name";
-const contractAddress = "contract_address";
-const contractMethod = "method_name";
-const jsonRPC = "https_address";
+const contractName = "SmartLoansFactory";
+const contractAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
+const contractMethod = "getAllLoans";
+const jsonRPC = "https://rpc.ankr.com/avalanche";
 
 const ARTIFACT = require(`../../artifacts/contracts/${contractName}.sol/${contractName}.json`);
 const ethers = require("ethers");
