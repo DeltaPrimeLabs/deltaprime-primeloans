@@ -131,6 +131,8 @@ export default {
     debtsPerAsset: {},
     lpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
     farms: {},
     thresholdWeightedValue: Number,
     loan: Number,
@@ -232,6 +234,18 @@ export default {
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
         if (this.lpBalances) {
           let balance = parseFloat(this.lpBalances[symbol]);
+
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        if (this.concentratedLpBalances) {
+          let balance = parseFloat(this.concentratedLpBalances[symbol]);
 
           if (symbol === this.asset.symbol) {
             balance += added;

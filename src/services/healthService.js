@@ -17,7 +17,7 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, stakeStoreFarms) {
+  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, stakeStoreFarms) {
     if (noSmartLoan) return 1;
 
     const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
@@ -45,6 +45,16 @@ export default class HealthService {
           debtCoverage: data.debtCoverage,
           symbol: symbol
 
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(concentratedLpAssets)) {
+        tokens.push({
+          price: redstonePriceData[symbol][0].dataPoints[0].value,
+          balance: parseFloat(concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage,
+          symbol: symbol
         });
       }
 

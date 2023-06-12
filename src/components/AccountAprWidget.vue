@@ -84,7 +84,7 @@ export default {
           max: 1
         },
         {
-          text: 'GLP fee Hoardooor',
+          text: 'SteakHut Master',
           min: 1,
           max: 999999
         },

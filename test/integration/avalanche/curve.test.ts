@@ -68,7 +68,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['DAIe', 'USDCe', 'USDTe', 'WBTCe', 'ETH', 'AVAX', 'crvUSDBTCETH'];
+            let assetsList = ['DAIe', 'USDCe', "USDT.e", 'WBTCe', 'ETH', 'AVAX', 'crvUSDBTCETH'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -85,7 +85,7 @@ describe('Smart loan', () => {
                 [
                     {symbol: 'DAIe', value: 1},
                     {symbol: 'USDCe', value: 1},
-                    {symbol: 'USDTe', value: 1},
+                    {symbol: "USDT.e", value: 1},
                     {symbol: 'WBTCe', value: 28000},
                     {symbol: 'crvUSDBTCETH', value: 1012},
                 ]
@@ -184,7 +184,7 @@ describe('Smart loan', () => {
 
             await expect(wrappedLoan.stakeCurve([0, 0, 0, 0, 0])).to.be.revertedWith("Cannot stake 0 tokens");
 
-            const tokens = ['DAIe', 'USDCe', 'USDTe', 'WBTCe', 'ETH'];
+            const tokens = ['DAIe', 'USDCe', "USDT.e", 'WBTCe', 'ETH'];
             for (let i = 0; i < tokens.length; i++) {
                 await wrappedLoan.swapPangolin(
                     toBytes32('AVAX'),

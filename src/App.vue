@@ -7,9 +7,6 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
-    <Banner v-if="showUnwindedGlpBanner" class="banner-unwinded-glp">
-      Gm! Part of your position got unwinded by a liquidation bot due to a temporarily reduced GLP borrowing power. We will refund your Prime Account with any paid redemption and minting fees. <br/> Our apologies if this causes any inconvenience!
-    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
@@ -24,9 +21,17 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="showDepositBanner" background="green" :closable="true">
-      Steak Hut incoming! Interest rates are temporarily lowered as Prime Account holders migrate their strategies.
-      Expect interest rates to be back up this Friday.
+    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
+      To incentivize borrowing, rates have temporarily dropped
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1113770698817683476" target="_blank">
+        <b>Read More</b>
+      </a>.
+    </Banner>
+    <Banner v-if="false" background="green" :closable="true">
+      SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
+    </Banner>
+    <Banner v-if="false" background="green-accent" :closable="true">
+      All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -77,8 +82,8 @@ export default {
       highGasPrice: false,
       gasPriceIntervalId: null,
       showGlpBanner: false,
-      showUnwindedGlpBanner: false,
       showDepositBanner: false,
+      showPrimeAccountBanner: false,
       darkMode: false,
     };
   },
@@ -104,16 +109,16 @@ export default {
 
     this.initGasPrices();
 
-    if (window.location.href.includes('prime-account') && this.hasUnwindedGlp()) {
-      this.showUnwindedGlpBanner = true;
-    }
-
     if (window.location.href.includes('prime-account')) {
       this.showGlpBanner = true;
     }
 
     if (window.location.href.includes('pools')) {
       this.showDepositBanner = true;
+    }
+
+    if (window.location.href.includes('prime-account')) {
+      this.showPrimeAccountBanner = true;
     }
   },
 

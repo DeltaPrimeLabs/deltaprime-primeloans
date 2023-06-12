@@ -1,6 +1,7 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import { TransactionParams } from '@paraswap/sdk';
 import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
@@ -550,6 +551,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
+        "ParaSwapFacet",
+        diamondAddress,
+        [
+            'paraSwap',
+        ],
+        hardhatConfig
+    );
+    await deployFacet(
         "GLPFacet",
         diamondAddress,
         [
@@ -730,6 +739,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("SteakHutFinanceFacet", diamondAddress, [
                 'stakeSteakHutAVAXUSDC',
                 'unstakeSteakHutAVAXUSDC',
+                'stakeSteakHutBTCAVAX',
+                'unstakeSteakHutBTCAVAX',
+                'stakeSteakHutUSDTeUSDT',
+                'unstakeSteakHutUSDTeUSDT',
             ],
             hardhatConfig)
     }
@@ -1038,4 +1051,31 @@ export class StakedPosition {
         this.unstakeSelector = unstakeSelector;
     }
 }
+
+export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
+    const data = "0x" + txParams.data.substr(10);
+    const [
+        decoded,
+    ] = ethers.utils.defaultAbiCoder.decode(
+        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
+        data
+    );
+    return {
+        fromToken: decoded[0],
+        toToken: decoded[1],
+        fromAmount: decoded[2],
+        toAmount: decoded[3],
+        expectedAmount: decoded[4],
+        callees: decoded[5],
+        exchangeData: decoded[6],
+        startIndexes: decoded[7],
+        values: decoded[8],
+        beneficiary: decoded[9],
+        partner: decoded[10],
+        feePercent: decoded[11],
+        permit: decoded[12],
+        deadline: decoded[13],
+        uuid: decoded[14],
+    };
+};
 
