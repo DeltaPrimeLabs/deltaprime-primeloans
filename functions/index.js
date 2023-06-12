@@ -120,7 +120,7 @@ const getGlpApr = async () => {
   });
 
   console.log(glpApy);
-  if (glpApy) {
+  if (glpApy && Number(glpApy) != 0) {
     await db.collection('apys').doc('GLP').set({
       apy: glpApy
     }, { merge: true });
@@ -187,25 +187,25 @@ const getApysFromVector = async () => {
   console.log(avaxApy, savaxApy, usdcApy, usdtApy);
 
   // update APYs in db
-  if (avaxApy) {
+  if (avaxApy && Number(avaxApy) != 0) {
     await db.collection('apys').doc('AVAX').set({
       VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (savaxApy) {
+  if (savaxApy && Number(savaxApy) != 0) {
     await db.collection('apys').doc('sAVAX').set({
       VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (usdcApy) {
+  if (usdcApy && Number(usdcApy) != 0) {
     await db.collection('apys').doc('USDC').set({
       VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (usdtApy) {
+  if (usdtApy && Number(usdtApy) != 0) {
     await db.collection('apys').doc('USDT').set({
       VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
     }, { merge: true });
@@ -337,9 +337,11 @@ exports.lpAndFarmApyAggregator = functions
 
         console.log(asset, apy);
 
-        await db.collection('apys').doc(asset).set({
-          lp_apy: apy
-        }, { merge: true });
+        if (apy && Number(apy) != 0) {
+          await db.collection('apys').doc(asset).set({
+            lp_apy: apy
+          }, { merge: true });
+        }
       }
 
       functions.logger.info(`Fetching lp APYs finished.`);
@@ -689,7 +691,7 @@ const getApysFromSteakHut = async () => {
     console.log(apy)
 
     // update APY in db
-    if (apy) {
+    if (apy && Number(apy) != 0) {
       await db.collection('apys').doc(asset).set({
         apy: apy / 100
       });
