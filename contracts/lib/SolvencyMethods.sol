@@ -87,7 +87,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
-    function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
+    function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) internal virtual returns (uint256 health) {
         health = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatioWithPrices.selector),
@@ -98,7 +98,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getHealthRatio()
-    function _getHealthRatio() public virtual returns (uint256 health) {
+    function _getHealthRatio() internal virtual returns (uint256 health) {
         health = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatio.selector),
@@ -109,7 +109,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getPrices()
-    function getPrices(bytes32[] memory symbols) public virtual returns (uint256[] memory prices) {
+    function getPrices(bytes32[] memory symbols) internal virtual returns (uint256[] memory prices) {
         prices = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrices.selector),
@@ -120,7 +120,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getPrices()
-    function _getAllPricesForLiquidation(bytes32[] memory assetsToRepay) public virtual returns (SolvencyFacetProd.CachedPrices memory result) {
+    function _getAllPricesForLiquidation(bytes32[] memory assetsToRepay) internal virtual returns (SolvencyFacetProd.CachedPrices memory result) {
         result = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getAllPricesForLiquidation.selector),
@@ -175,7 +175,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getPrices()
-    function getPrice(bytes32 symbol) public virtual returns (uint256 price) {
+    function getPrice(bytes32 symbol) internal virtual returns (uint256 price) {
         price = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrice.selector),
@@ -186,7 +186,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes AssetsExposureController.decreaseAssetsExposure()
-    function _resetPrimeAccountAssetsExposure() public {
+    function _resetPrimeAccountAssetsExposure() internal {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountAssetsExposure.selector),
             abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountAssetsExposure.selector)
@@ -194,7 +194,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes AssetsExposureController.increaseAssetsExposure()
-    function _setPrimeAccountAssetsExposure() public {
+    function _setPrimeAccountAssetsExposure() internal {
         proxyDelegateCalldata(
             DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountAssetsExposure.selector),
             abi.encodeWithSelector(AssetsExposureController.setPrimeAccountAssetsExposure.selector)

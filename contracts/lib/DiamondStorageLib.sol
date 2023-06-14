@@ -8,6 +8,7 @@ pragma solidity 0.8.17;
 import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
 import "../lib/Bytes32EnumerableMap.sol";
 import "../interfaces/IStakingPositions.sol";
+import "../interfaces/IZapPositions.sol";
 
 // Remember to add the loupe functions from DiamondLoupeFacet to the diamond.
 // The loupe functions are required by the EIP2535 Diamonds standard
@@ -66,6 +67,10 @@ library DiamondStorageLib {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
         // Staked positions of the contract
         IStakingPositions.StakedPosition[] currentStakedPositions;
+        // Long positions
+        IZapPositions.Position[] longPositions;
+        // Short positions
+        IZapPositions.Position[] shortPositions;
     }
 
     struct LiquidationStorage {
@@ -184,6 +189,52 @@ library DiamondStorageLib {
                 positions.pop();
             }
         }
+    }
+
+    function longPositions() internal view returns (IZapPositions.Position[] storage _positions) {
+        _positions = smartLoanStorage().longPositions;
+    }
+
+    function shortPositions() internal view returns (IZapPositions.Position[] storage _positions) {
+        _positions = smartLoanStorage().shortPositions;
+    }
+
+    function getLongPosition(uint256 positionIndex) internal view returns (IZapPositions.Position memory) {
+        IZapPositions.Position[] storage positions = longPositions();
+        require(positionIndex < positions.length, "Invalid position index");
+        return positions[positionIndex];
+    }
+
+    function getShortPosition(uint256 positionIndex) internal view returns (IZapPositions.Position memory) {
+        IZapPositions.Position[] storage positions = shortPositions();
+        require(positionIndex < positions.length, "Invalid position index");
+        return positions[positionIndex];
+    }
+
+    function addLongPosition(IZapPositions.Position memory position) internal {
+        IZapPositions.Position[] storage positions = longPositions();
+        positions.push(position);
+    }
+
+    function addShortPosition(IZapPositions.Position memory position) internal {
+        IZapPositions.Position[] storage positions = shortPositions();
+        positions.push(position);
+    }
+
+    function remoteLongPosition(uint256 positionIndex) internal {
+        IZapPositions.Position[] storage positions = longPositions();
+        uint256 length = positions.length;
+        require(positionIndex < length, "Invalid position index");
+        positions[positionIndex] = positions[length - 1];
+        positions.pop();
+    }
+
+    function remoteShortPosition(uint256 positionIndex) internal {
+        IZapPositions.Position[] storage positions = shortPositions();
+        uint256 length = positions.length;
+        require(positionIndex < length, "Invalid position index");
+        positions[positionIndex] = positions[length - 1];
+        positions.pop();
     }
 
     function addOwnedAsset(bytes32 _symbol, address _address) internal {

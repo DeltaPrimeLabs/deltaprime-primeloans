@@ -10,11 +10,12 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "../helpers/AssetsOperationsHelper.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods, AssetsOperationsHelper {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -29,18 +30,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _amount to be funded
     **/
     function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
-        IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
-        _amount = Math.min(_amount, token.balanceOf(msg.sender));
-
-        address(token).safeTransferFrom(msg.sender, address(this), _amount);
-        if (token.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
-        }
-
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / 10 ** token.decimals());
-
-        emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
+        _fund(_fundedAsset, _amount);
     }
 
     /**
@@ -112,19 +102,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _amount of funds to borrow
     **/
     function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
-        DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
-        ds._lastBorrowTimestamp = block.timestamp;
-
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        Pool pool = Pool(tokenManager.getPoolAddress(_asset));
-        pool.borrow(_amount);
-
-        IERC20Metadata token = getERC20TokenInstance(_asset, false);
-        if (token.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_asset, address(token));
-        }
-
-        emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
+        _borrow(_asset, _amount);
     }
 
 
@@ -135,27 +113,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _amount of funds to repay
      **/
     function repay(bytes32 _asset, uint256 _amount) public payable {
-        IERC20Metadata token = getERC20TokenInstance(_asset, true);
-
-        if (_isSolvent()) {
-            DiamondStorageLib.enforceIsContractOwner();
-        }
-
-        Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
-
-        _amount = Math.min(_amount, pool.getBorrowed(address(this)));
-        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
-
-        address(token).safeApprove(address(pool), 0);
-        address(token).safeApprove(address(pool), _amount);
-
-        pool.repay(_amount);
-
-        if (token.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_asset);
-        }
-
-        emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+        _repay(_asset, _amount);
     }
 
     /**
@@ -217,7 +175,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _asset the code of an asset
     **/
     function getBalance(bytes32 _asset) internal view returns (uint256) {
-        IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset, true));
+        IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(_asset, true));
         return token.balanceOf(address(this));
     }
 
@@ -242,15 +200,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     event DebtSwap(address indexed user, address indexed fromToken, address indexed toToken, uint256 repayAmount, uint256 borrowAmount, uint256 timestamp);
 
     /**
-     * @dev emitted after a loan is funded
-     * @param user the address which funded the loan
-     * @param asset funded by a user
-     * @param amount the amount of funds
-     * @param timestamp time of funding
-     **/
-    event Funded(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
-
-    /**
      * @dev emitted after the funds are withdrawn from the loan
      * @param user the address which withdraws funds from the loan
      * @param asset withdrawn by a user
@@ -258,22 +207,4 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param timestamp of the withdrawal
      **/
     event Withdrawn(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
-
-    /**
-     * @dev emitted when funds are borrowed from the pool
-     * @param user the address of borrower
-     * @param asset borrowed by an= user
-     * @param amount of the borrowed funds
-     * @param timestamp time of the borrowing
-     **/
-    event Borrowed(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
-
-    /**
-     * @dev emitted when funds are repaid to the pool
-     * @param user the address initiating repayment
-     * @param asset asset repaid by a user
-     * @param amount of repaid funds
-     * @param timestamp of the repayment
-     **/
-    event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 }
