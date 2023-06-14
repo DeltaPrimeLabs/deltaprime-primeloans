@@ -9,7 +9,7 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
-import "../../lib/uniswap-v3/PoolAddress.sol";
+//import "../../lib/uniswap-v3/PoolAddress.sol";
 import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 
 contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
@@ -18,6 +18,8 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     address private constant UNISWAP_V3_FACTORY_ADDRESS = 0x0bD438cB54153C5418E91547de862F21Bc143Ae2;
 
     using TransferHelper for address;
+
+    uint256 constant MAX_OWNED_UNISWAP_V3_POSITIONS = 10; //TODO: dummy number, update after running gas tests
 
     //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
     bytes32 internal constant OWNED_UNISWAP_V3_TOKEN_IDS_SLOT = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
@@ -55,6 +57,7 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
         (uint256 tokenId,,,) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
 
+        if (getOwnedUniswapV3TokenIds().length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
         getOwnedUniswapV3TokenIds().push(tokenId);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -77,4 +80,6 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
     // pool must be whitelisted
     error UniswapV3PoolNotWhitelisted();
+
+    error TooManyUniswapV3Positions();
 }

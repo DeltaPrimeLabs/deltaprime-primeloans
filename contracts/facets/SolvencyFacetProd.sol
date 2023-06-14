@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
 //TODO: is it safe?
-pragma solidity 0.7.6 || 0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -523,7 +523,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     }
 
     /**
- **/
+    **/
     function getTotalUniswapV3() public view virtual returns (uint256) {
         AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
         return getTotalUniswapV3WithPrices(ownedAssetsPrices);
@@ -545,53 +545,41 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
         }
 
         if (ownedUniswapV3TokenIds.length > 0) {
-            INonfungiblePositionManager manager = INonfungiblePositionManager(0x0bD438cB54153C5418E91547de862F21Bc143Ae2);
 
             for (uint256 i; i < ownedUniswapV3TokenIds.length; i++) {
-            (
-                ,
-                ,
-                address token0,
-                address token1,
-                ,
-                int24 tickLower,
-                int24 tickUpper,
-                uint128 liquidity,
-                ,
-                ,
-                ,
 
-            ) = manager.positions(ownedUniswapV3TokenIds[i]);
+            IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0x0bD438cB54153C5418E91547de862F21Bc143Ae2), ownedUniswapV3TokenIds[0]);
+
                 uint256 price0;
                 uint256 price1;
 
                 {
                     for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(token0)) {
+                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token0)) {
                             price0 = ownedAssetsPrices[j].price;
-                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(token1)) {
+                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token1)) {
                             price1 = ownedAssetsPrices[j].price;
                         }
                     }
                 }
 
                 {
-                    uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(token0) : 1e18;
-                    uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(token1) : 1e18;
+                    uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token0) : 1e18;
+                    uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token1) : 1e18;
 
-                    uint256 sqrt_p_a = TickMath.getSqrtRatioAtTick(tickLower);
-                    uint256 sqrt_p_b = TickMath.getSqrtRatioAtTick(tickUpper);
+                    uint256 sqrt_p_a = TickMath.getSqrtRatioAtTick(position.tickLower);
+                    uint256 sqrt_p_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
                     total = total +
 
                     //TODO: there is an assumption here that the position value is the lowest at edges (x = 0 or y = 0). Need to confirm that!
 
                     //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
-                    //TODO: check for possible under/overflows
+                    //TODO: check for possible under/overflowsL557
 
                     Math.min(
-                        debtCoverage0 * liquidity * (sqrt_p_b - 1e18 / sqrt_p_a) * price0 / 10 ** 8,
-                        debtCoverage1 * liquidity * (sqrt_p_a - 1e18 / sqrt_p_b) * price1 / 10 ** 8
+                        debtCoverage0 * position.liquidity * (sqrt_p_b - 1e18 / sqrt_p_a) * price0 / 10 ** 8,
+                        debtCoverage1 * position.liquidity * (sqrt_p_a - 1e18 / sqrt_p_b) * price1 / 10 ** 8
                     );
                 }
             }
@@ -600,6 +588,15 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
         } else {
             return 0;
         }
+    }
+
+
+    function getUniswapV3Position(
+        INonfungiblePositionManager positionManager,
+        uint256 tokenId) internal view returns (IUniswapV3Facet.UniswapV3Position memory position) {
+        (, , address token0, address token1, , int24 tickLower, int24 tickUpper, uint128 liquidity) = positionManager.positions(tokenId);
+
+        position = IUniswapV3Facet.UniswapV3Position(token0, token1, tickLower, tickUpper, liquidity);
     }
 
     /**

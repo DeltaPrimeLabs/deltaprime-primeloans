@@ -33,7 +33,8 @@ library PoolAddress {
     function computeAddress(address factory, PoolKey memory key) internal pure returns (address pool) {
         require(key.token0 < key.token1);
         pool = address(
-            uint256(
+        //TODO: changed uint256 casting to uint160(uint)
+            uint160(uint(
                 keccak256(
                     abi.encodePacked(
                         hex'ff',
@@ -42,7 +43,7 @@ library PoolAddress {
                         POOL_INIT_CODE_HASH
                     )
                 )
-            )
+            ))
         );
     }
 }

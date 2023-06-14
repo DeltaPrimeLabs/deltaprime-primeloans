@@ -41,10 +41,11 @@ interface INonfungiblePositionManager
     /// @return tickLower The lower end of the tick range for the position
     /// @return tickUpper The higher end of the tick range for the position
     /// @return liquidity The liquidity of the position
-    /// @return feeGrowthInside0LastX128 The fee growth of token0 as of the last action on the individual position
-    /// @return feeGrowthInside1LastX128 The fee growth of token1 as of the last action on the individual position
-    /// @return tokensOwed0 The uncollected amount of token0 owed to the position as of the last computation
-    /// @return tokensOwed1 The uncollected amount of token1 owed to the position as of the last computation
+    //TODO: dirty hack here: removed the last 4 returned values
+    // feeGrowthInside0LastX128 The fee growth of token0 as of the last action on the individual position
+    // feeGrowthInside1LastX128 The fee growth of token1 as of the last action on the individual position
+    // tokensOwed0 The uncollected amount of token0 owed to the position as of the last computation
+    // tokensOwed1 The uncollected amount of token1 owed to the position as of the last computation
     function positions(uint256 tokenId)
         external
         view
@@ -56,11 +57,7 @@ interface INonfungiblePositionManager
             uint24 fee,
             int24 tickLower,
             int24 tickUpper,
-            uint128 liquidity,
-            uint256 feeGrowthInside0LastX128,
-            uint256 feeGrowthInside1LastX128,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
+            uint128 liquidity
         );
 
     struct MintParams {
