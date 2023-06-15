@@ -730,9 +730,18 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             hardhatConfig)
 
         await deployFacet("CurveFacet", diamondAddress, [
-            'stakeCurve',
-            'unstakeCurve',
-            'unstakeOneTokenCurve'
+            'curveStakeTokens',
+            'curveStakeDAI',
+            'curveStakeUSDC',
+            'curveStakeUSDT',
+            'curveStakeBTC',
+            'curveStakeETH',
+            'curveUnstakeTokens',
+            'curveUnstakeDAI',
+            'curveUnstakeUSDC',
+            'curveUnstakeUSDT',
+            'curveUnstakeBTC',
+            'curveUnstakeETH',
         ],
         hardhatConfig)
 

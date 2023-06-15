@@ -20,11 +20,11 @@ library DeploymentConstants {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x02df3a3F960393F5B349E40A599FEda91a7cc1A7;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x34B40BA116d5Dec75548a9e9A8f15411461E8c70;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0xfaAddC93baf78e89DCf37bA67943E1bE8F37Bb8c;
 
-    address private constant _TOKEN_MANAGER_ADDRESS = 0xdFdE6B33f13de2CA1A75A6F7169f50541B14f75b;
+    address private constant _TOKEN_MANAGER_ADDRESS = 0xab16A69A5a8c12C732e0DEFF4BE56A70bb64c926;
 
     //implementation-specific
 

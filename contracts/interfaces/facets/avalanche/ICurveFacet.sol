@@ -15,8 +15,6 @@ interface ICurveFacet {
 
     function curveUnstakeTokens(uint256 amount, uint256[5] memory min_amounts) external;
 
-    function unstakeOneTokenCurve(uint256 i, uint256 amount) external;
-
     function curveUnstakeDAI(uint256 amount, uint256 minAmount) external;
 
     function curveUnstakeUSDC(uint256 amount, uint256 minAmount) external;

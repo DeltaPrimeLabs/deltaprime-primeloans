@@ -116,7 +116,7 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes tokens from Curve atricrypto pool
      * @param amount amount of token to be unstaked
      **/
-    function curveUnstakeTokens(uint256 amount, uint256[5] memory min_amounts) internal nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function curveUnstakeTokens(uint256 amount, uint256[5] memory min_amounts) public nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
