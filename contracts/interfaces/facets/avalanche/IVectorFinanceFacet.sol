@@ -9,13 +9,13 @@ interface IVectorFinanceFacet {
 
     function vectorStakeSAVAX1Auto(uint256 amount) external;
 
-    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function vectorUnstakeUSDT1Auto(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeUSDT1Auto(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) external;
+    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) external returns (uint256);
 
     function vectorUSDC1BalanceAuto() external view returns(uint256);
 

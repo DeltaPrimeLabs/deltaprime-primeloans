@@ -17,21 +17,21 @@ interface IYieldYakFacet {
 
     function stakeTJAVAXSAVAXYak(uint256 amount) external;
 
-    function unstakeAVAXYak(uint256 amount) external;
+    function unstakeAVAXYak(uint256 amount) external returns (uint256);
 
-    function unstakeSAVAXYak(uint256 amount) external;
+    function unstakeSAVAXYak(uint256 amount) external returns (uint256);
 
-    function unstakeGLPYak(uint256 amount) external;
+    function unstakeGLPYak(uint256 amount) external returns (uint256);
 
-    function unstakePNGAVAXUSDCYak(uint256 amount) external;
+    function unstakePNGAVAXUSDCYak(uint256 amount) external returns (uint256);
 
-    function unstakePNGAVAXETHYak(uint256 amount) external;
+    function unstakePNGAVAXETHYak(uint256 amount) external returns (uint256);
 
-    function unstakeTJAVAXUSDCYak(uint256 amount) external;
+    function unstakeTJAVAXUSDCYak(uint256 amount) external returns (uint256);
 
-    function unstakeTJAVAXETHYak(uint256 amount) external;
+    function unstakeTJAVAXETHYak(uint256 amount) external returns (uint256);
 
-    function unstakeTJAVAXSAVAXYak(uint256 amount) external;
+    function unstakeTJAVAXSAVAXYak(uint256 amount) external returns (uint256);
 
     //deprecated
     event Staked(address indexed user, bytes32 indexed asset, address indexed vault, uint256 amount, uint256 timestamp);

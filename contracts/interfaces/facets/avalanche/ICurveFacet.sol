@@ -15,13 +15,13 @@ interface ICurveFacet {
 
     function curveUnstakeTokens(uint256 amount, uint256[5] memory min_amounts) external;
 
-    function curveUnstakeDAI(uint256 amount, uint256 minAmount) external;
+    function curveUnstakeDAI(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function curveUnstakeUSDC(uint256 amount, uint256 minAmount) external;
+    function curveUnstakeUSDC(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function curveUnstakeUSDT(uint256 amount, uint256 minAmount) external;
+    function curveUnstakeUSDT(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function curveUnstakeBTC(uint256 amount, uint256 minAmount) external;
+    function curveUnstakeBTC(uint256 amount, uint256 minAmount) external returns (uint256);
 
-    function curveUnstakeETH(uint256 amount, uint256 minAmount) external;
+    function curveUnstakeETH(uint256 amount, uint256 minAmount) external returns (uint256);
 }
