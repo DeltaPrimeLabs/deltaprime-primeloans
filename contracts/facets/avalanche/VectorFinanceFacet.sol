@@ -34,7 +34,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeUSDC1Auto(uint256 amount, uint256 minAmount) public returns (uint256) {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0x06f01502327De1c37076Bea4689a7e44279155e9,
             symbol : "USDC",
@@ -42,7 +42,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             balanceSelector : this.vectorUSDC1BalanceAuto.selector,
             unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
-        unstakeToken(amount, minAmount, position);
+        return unstakeToken(amount, minAmount, position);
     }
 
     function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
@@ -61,7 +61,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeUSDT1Auto(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeUSDT1Auto(uint256 amount, uint256 minAmount) public returns (uint256) {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774,
             symbol : "USDT",
@@ -69,7 +69,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             balanceSelector : this.vectorUSDT1BalanceAuto.selector,
             unstakeSelector : this.vectorUnstakeUSDT1Auto.selector
         });
-        unstakeToken(amount, minAmount, position);
+        return unstakeToken(amount, minAmount, position);
     }
 
     function vectorUSDT1BalanceAuto() public view returns (uint256 _stakedBalance) {
@@ -88,7 +88,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeWAVAX1Auto(uint256 amount, uint256 minAmount) public returns (uint256) {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7,
             symbol : "AVAX",
@@ -96,7 +96,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             balanceSelector : this.vectorWAVAX1BalanceAuto.selector,
             unstakeSelector : this.vectorUnstakeWAVAX1Auto.selector
         });
-        unstakeToken(amount, minAmount, position);
+        return unstakeToken(amount, minAmount, position);
     }
 
     function vectorWAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
@@ -115,7 +115,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakeToken(amount, position);
     }
 
-    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeSAVAX1Auto(uint256 amount, uint256 minAmount) public returns (uint256) {
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE,
             symbol : "sAVAX",
@@ -123,7 +123,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             balanceSelector : this.vectorSAVAX1BalanceAuto.selector,
             unstakeSelector : this.vectorUnstakeSAVAX1Auto.selector
         });
-        unstakeToken(amount, minAmount, position);
+        return unstakeToken(amount, minAmount, position);
     }
 
     function vectorSAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
