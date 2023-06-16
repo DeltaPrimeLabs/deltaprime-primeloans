@@ -155,36 +155,36 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
-    function curveUnstakeDAI(uint256 amount, uint256 minAmount) external {
-        _unstakeOneTokenCurve(0, amount, minAmount);
+    function curveUnstakeDAI(uint256 amount, uint256 minAmount) external returns (uint256) {
+        return _unstakeOneTokenCurve(0, amount, minAmount);
     }
 
-    function curveUnstakeUSDC(uint256 amount, uint256 minAmount) external {
-        _unstakeOneTokenCurve(1, amount, minAmount);
+    function curveUnstakeUSDC(uint256 amount, uint256 minAmount) external returns (uint256) {
+        return _unstakeOneTokenCurve(1, amount, minAmount);
     }
 
-    function curveUnstakeUSDT(uint256 amount, uint256 minAmount) external {
-        _unstakeOneTokenCurve(2, amount, minAmount);
+    function curveUnstakeUSDT(uint256 amount, uint256 minAmount) external returns (uint256) {
+        return _unstakeOneTokenCurve(2, amount, minAmount);
     }
 
-    function curveUnstakeBTC(uint256 amount, uint256 minAmount) external {
-        _unstakeOneTokenCurve(3, amount, minAmount);
+    function curveUnstakeBTC(uint256 amount, uint256 minAmount) external returns (uint256) {
+        return _unstakeOneTokenCurve(3, amount, minAmount);
     }
 
-    function curveUnstakeETH(uint256 amount, uint256 minAmount) external {
-        _unstakeOneTokenCurve(4, amount, minAmount);
+    function curveUnstakeETH(uint256 amount, uint256 minAmount) external returns (uint256) {
+        return _unstakeOneTokenCurve(4, amount, minAmount);
     }
 
     /**
      * Unstakes one token from Curve atricrypto pool
      * @param i index of token to be unstaked
      * @param amount amount of token to be unstaked
+     * @return unstakedAmount unstaked amount
      **/
-    function _unstakeOneTokenCurve(uint256 i, uint256 amount, uint256 minAmount) internal nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function _unstakeOneTokenCurve(uint256 i, uint256 amount, uint256 minAmount) internal nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure returns (uint256) {
         ICurvePool pool = ICurvePool(CURVE_POOL_ADDRESS);
         address curveTokenAddress;
         IERC20 depositToken;
-        IERC20 curveToken;
         uint256 initialDepositTokenBalance;
         uint256 curveTokenBalance;
         {
@@ -193,13 +193,15 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 curveTokenAddress = tokenManager.getAssetAddress(CURVE_TOKEN_SYMBOL, true);
                 depositToken = IERC20(tokenManager.getAssetAddress(getTokenSymbol(i), true));
             }
-            curveToken = IERC20(curveTokenAddress);
             initialDepositTokenBalance = depositToken.balanceOf(address(this));
-            curveTokenBalance = curveToken.balanceOf(address(this));
-            uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
-            amount = Math.min(maxWithdrawAmount, amount);
+            curveTokenBalance = IERC20(curveTokenAddress).balanceOf(address(this));
+            uint256 burnAmount;
+            {
+                uint256 maxWithdrawAmount = pool.calc_withdraw_one_coin(curveTokenBalance, i);
+                amount = Math.min(maxWithdrawAmount, amount);
 
-            uint256 burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
+                burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
+            }
             curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, 0);
             curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, burnAmount);
             pool.remove_liquidity_one_coin(burnAmount, i, minAmount);
@@ -208,19 +210,23 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DiamondStorageLib.addOwnedAsset(getTokenSymbol(i), address(depositToken));
         }
 
-        uint256 newCurveTokenBalance = curveToken.balanceOf(address(this));
+        uint256 newCurveTokenBalance = IERC20(curveTokenAddress).balanceOf(address(this));
         if (newCurveTokenBalance == 0) {
             DiamondStorageLib.removeOwnedAsset(CURVE_TOKEN_SYMBOL);
         }
+
+        uint256 unstakedAmount = depositToken.balanceOf(address(this)) - initialDepositTokenBalance;
 
         emit UnstakedOneToken(
             msg.sender,
             getTokenSymbol(i),
             curveTokenAddress,
-            depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
+            unstakedAmount,
             curveTokenBalance - newCurveTokenBalance,
             block.timestamp
         );
+
+        return unstakedAmount;
     }
 
     // INTERNAL FUNCTIONS
