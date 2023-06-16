@@ -193,8 +193,9 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         * Unstakes AVAX from Yield Yak protocol
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be unstaked
+        * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure returns (uint256 unstaked) {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
         uint256 initialDepositTokenBalance = address(this).balance;
 
@@ -214,11 +215,13 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
         }
 
+        unstaked = depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance;
+
         emit Unstaked(
             msg.sender,
             "AVAX",
             YY_AAVE_AVAX,
-            depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance,
+            unstaked,
             amount,
             block.timestamp
         );
@@ -228,9 +231,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     * Unstakes sAVAX from Yield Yak protocol
     * @dev This function uses the redstone-evm-connector
         * @param amount amount of sAVAX to be unstaked
+        * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakeSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: SAVAX_TOKEN,
         vaultAddress: YY_PTP_sAVAX,
         tokenSymbol: "sAVAX",
@@ -243,9 +247,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     * Unstakes GLP from Yield Yak protocol
     * @dev This function uses the redstone-evm-connector
         * @param amount amount of sAVAX to be unstaked
+        * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeGLPYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakeGLPYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: GLP_TOKEN,
         vaultAddress: YY_GLP,
         tokenSymbol: "GLP",
@@ -258,9 +263,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes PNG_AVAX_USDC_LP in Yield Yak protocol
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDC_LP to be staked
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakePNGAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakePNGAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: PNG_AVAX_USDC_LP,
         vaultAddress: YY_PNG_AVAX_USDC_LP,
         tokenSymbol: "PNG_AVAX_USDC_LP",
@@ -273,9 +279,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes PNG_AVAX_ETH_LP in Yield Yak protocol
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_ETH_LP to be unstaked
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakePNGAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakePNGAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: PNG_AVAX_ETH_LP,
         vaultAddress: YY_PNG_AVAX_ETH_LP,
         tokenSymbol: "PNG_AVAX_ETH_LP",
@@ -288,9 +295,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes TJ_AVAX_USDC in Yield Yak protocol
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_USDC to be unstaked
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakeTJAVAXUSDCYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_USDC_LP,
         vaultAddress: YY_TJ_AVAX_USDC_LP,
         tokenSymbol: "TJ_AVAX_USDC_LP",
@@ -303,9 +311,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes TJ_AVAX_ETH_LP in Yield Yak protocol
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_ETH_LP to be unstaked
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeTJAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakeTJAVAXETHYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_ETH_LP,
         vaultAddress: YY_TJ_AVAX_ETH_LP,
         tokenSymbol: "TJ_AVAX_ETH_LP",
@@ -318,9 +327,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes TJ_AVAX_sAVAX_LP in Yield Yak protocol
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_sAVAX_LP to be unstaked
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function unstakeTJAVAXSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
-        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+    function unstakeTJAVAXSAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant returns (uint256 unstaked) {
+        return _unstakeTokenYY(IYieldYak.YYStakingDetails({
         tokenAddress: TJ_AVAX_sAVAX_LP,
         vaultAddress: YY_TJ_AVAX_sAVAX_LP,
         tokenSymbol: "TJ_AVAX_sAVAX_LP",
@@ -370,8 +380,9 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * Unstakes {stakingDetails.tokenAddress} token in the YieldYak protocol
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
+      * @return unstaked amount of AVAX actually unstaked
     **/
-    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure returns (uint256 unstaked) {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         IERC20Metadata depositToken = IERC20Metadata(stakingDetails.tokenAddress);
         uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
@@ -385,13 +396,16 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
             DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
         }
 
+        unstaked = depositToken.balanceOf(address(this)) - initialDepositTokenBalance;
+
         emit Unstaked(
             msg.sender,
             stakingDetails.tokenSymbol,
             stakingDetails.vaultAddress,
-            depositToken.balanceOf(address(this)) - initialDepositTokenBalance,
+            unstaked,
             stakingDetails.amount,
-            block.timestamp);
+            block.timestamp
+        );
     }
 
 
