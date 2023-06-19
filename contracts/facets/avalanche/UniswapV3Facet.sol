@@ -35,7 +35,6 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
     function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[1] memory pools){
         return [
-            //TODO: update to existing pool
             IUniswapV3Pool(0xc79890C726fF34e43E16afA736847900e4fc9c37)
         ];
     }
@@ -50,10 +49,15 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         return false;
     }
 
-    function addLiquidityUniswapV3(INonfungiblePositionManager.MintParams calldata params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function addLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
+
+        params.recipient = address(this);
+
+        address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
+        address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
         (uint256 tokenId,,,) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
 

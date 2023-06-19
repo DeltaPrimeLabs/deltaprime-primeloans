@@ -23,7 +23,8 @@ import "./facets/avalanche/IBeefyFinanceFacet.sol";
 import "./facets/avalanche/ICurveFacet.sol";
 import "./facets/avalanche/ISteakHutFinanceFacet.sol";
 import "./facets/avalanche/ITraderJoeV2Facet.sol";
+import "./facets/avalanche/IUniswapV3Facet.sol";
 
-interface SmartLoanGigaChadInterface is IGMDFacet, IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet, ICurveFacet, ISteakHutFinanceFacet, ITraderJoeV2Facet {
+interface SmartLoanGigaChadInterface is IGMDFacet, IHealthMeterFacetProd, IGLPFacet, IYieldYakSwapFacet, IDiamondLoupe, IBeefyFinanceFacet, ISmartLoanWrappedNativeTokenFacet, IPangolinDEXFacet, IUniswapV2DEXFacet, IAssetsOperationsFacet, IOwnershipFacet, ISmartLoanLiquidationFacet, ISmartLoanViewFacet, ISolvencyFacetProd, IYieldYakFacet, IVectorFinanceFacet, IVectorFinanceFacetOld, IUbeswapDEXFacet, ITraderJoeDEXFacet, ICurveFacet, ISteakHutFinanceFacet, ITraderJoeV2Facet, IUniswapV3Facet {
 
 }

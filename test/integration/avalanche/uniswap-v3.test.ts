@@ -169,11 +169,20 @@ describe('Smart loan', () => {
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
             await expect(nonOwnerWrappedLoan.addLiquidityUniswapV3(
-                    '0xc79890C726fF34e43E16afA736847900e4fc9c37',
-                    toWei(10),
-                    toWei(20)
-                )
-            ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    3000,
+                    47640,
+                    61500,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake as a non-owner", async () => {
@@ -187,23 +196,20 @@ describe('Smart loan', () => {
             console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
             console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
 
-            await expect(wrappedLoan.addLiquidityTraderJoeV2(
+            await expect(wrappedLoan.addLiquidityUniswapV3(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-                    20,
+                    500,
+                    47640,
+                    61500,
                     addedAvax,
                     addedUSDC,
-                    0, // min AVAX
-                    0, // min USDC
-                    8376120,
-                    16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
-                    [0], //just one bin
-                    [addedAvax],
-                    [addedUSDC],
-                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
-                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
-                    Math.ceil((new Date().getTime() / 1000) + 100)]
+                    0,
+                    0,
+                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
             )).not.to.be.reverted;
 
             console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
