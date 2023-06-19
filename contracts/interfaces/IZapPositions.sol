@@ -8,10 +8,11 @@ pragma solidity 0.8.17;
  */
 interface IZapPositions {
     struct Position {
-        uint256 startAmount;
-        address asset;
-        bytes32 symbol;
-        bytes32 identifier;
-        uint256 amount;
+        bytes4 unstakeSelector;
+        address fromAsset;
+        bytes32 fromSymbol;
+        address toAsset;
+        uint256 fromAmount;
+        uint256 toAmount;
     }
 }

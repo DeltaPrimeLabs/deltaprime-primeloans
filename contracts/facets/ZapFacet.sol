@@ -7,126 +7,96 @@ import "../ReentrancyGuardKeccak.sol";
 import {AssetsOperationsHelper} from "../helpers/AssetsOperationsHelper.sol";
 import {YieldYakSwapHelper} from "../helpers/YieldYakSwapHelper.sol";
 import {ParaSwapHelper, IParaSwapRouter} from "../helpers/ParaSwapHelper.sol";
+import "../DiamondHelper.sol";
 
 contract ZapFacet is ReentrancyGuardKeccak, AssetsOperationsHelper, YieldYakSwapHelper, ParaSwapHelper {
-    bytes32 public constant STABLE_ASSET = "USDC";
-
     bytes1 public constant YIELD_YAK = 0x00;
     bytes1 public constant PARA_SWAP = 0x01;
 
-    function long(
-        uint256 _amount,
-        bytes32 _toAsset,
-        bytes32 _farmAsset,
-        bytes1 _selector,
-        bytes memory _data
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
-        _borrow(STABLE_ASSET, _amount);
-
-        IERC20Metadata fromToken = getERC20TokenInstance(STABLE_ASSET, false);
-        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
-        uint256 farmAmount = _swap(_selector, _data, address(fromToken), address(toToken), _amount);
-
-        _farm(_toAsset, farmAmount, _farmAsset);
-
-        DiamondStorageLib.addLongPosition(IZapPositions.Position({
-            startAmount: _amount,
-            asset: address(toToken),
-            symbol: _toAsset,
-            identifier: _farmAsset,
-            amount: farmAmount
-        }));
-
-        emit Long(
-            msg.sender,
-            _toAsset,
-            _farmAsset,
-            _amount,
-            farmAmount,
-            block.timestamp
-        );
-    }
-
-    function closeLongPosition(
-        uint256 _positionIndex,
-        bytes1 _selector,
-        bytes memory _data
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
-        IZapPositions.Position memory position = DiamondStorageLib.getLongPosition(_positionIndex);
-
-        uint256 positionAmount = position.amount;
-        positionAmount = _unfarm(position.symbol, positionAmount, position.identifier);
-
-        IERC20Metadata toToken = getERC20TokenInstance(STABLE_ASSET, false);
-        uint256 amount = _swap(_selector, _data, position.asset, address(toToken), positionAmount);
-
-        uint256 startAmount = position.startAmount;
-        if (amount > startAmount) {
-            uint256 profit = amount - startAmount;
-            amount = startAmount;
-            _fund(STABLE_ASSET, profit);
-        }
-        _repay(STABLE_ASSET, amount);
-
-        DiamondStorageLib.remoteLongPosition(_positionIndex);
-    }
-
-    function short(
+    function _openPosition(
+        bool _isLong,
         bytes32 _fromAsset,
         uint256 _amount,
-        bytes32 _farmAsset,
+        bytes32 _toAsset,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector,
         bytes1 _selector,
         bytes memory _data
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    ) internal nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         _borrow(_fromAsset, _amount);
 
         IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
-        IERC20Metadata toToken = getERC20TokenInstance(STABLE_ASSET, false);
-        uint256 farmAmount = _swap(_selector, _data, address(fromToken), address(toToken), _amount);
+        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
+        uint256 stakeAmount = _swap(_selector, _data, address(fromToken), address(toToken), _amount);
 
-        _farm(STABLE_ASSET, farmAmount, _farmAsset);
+        _stake(_stakeSelector, stakeAmount);
 
-        DiamondStorageLib.addShortPosition(IZapPositions.Position({
-            startAmount: _amount,
-            asset: address(fromToken),
-            symbol: _fromAsset,
-            identifier: _farmAsset,
-            amount: farmAmount
-        }));
+        if (_isLong) {
+            DiamondStorageLib.addLongPosition(IZapPositions.Position({
+                unstakeSelector: _unstakeSelector,
+                fromAsset: address(fromToken),
+                fromSymbol: _fromAsset,
+                toAsset: address(toToken),
+                fromAmount: _amount,
+                toAmount: stakeAmount
+            }));
 
-        emit Short(
-            msg.sender,
-            _fromAsset,
-            _farmAsset,
-            _amount,
-            farmAmount,
-            block.timestamp
-        );
+            emit Long(
+                msg.sender,
+                _fromAsset,
+                _toAsset,
+                _amount,
+                stakeAmount,
+                block.timestamp
+            );
+        } else {
+            DiamondStorageLib.addShortPosition(IZapPositions.Position({
+                unstakeSelector: _unstakeSelector,
+                fromAsset: address(fromToken),
+                fromSymbol: _fromAsset,
+                toAsset: address(toToken),
+                fromAmount: _amount,
+                toAmount: stakeAmount
+            }));
+
+            emit Short(
+                msg.sender,
+                _fromAsset,
+                _toAsset,
+                _amount,
+                stakeAmount,
+                block.timestamp
+            );
+        }
     }
 
-    function closeShortPosition(
+    function _closePosition(
+        bool _isLong,
         uint256 _positionIndex,
         bytes1 _selector,
-        bytes memory _data
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
-        IZapPositions.Position memory position = DiamondStorageLib.getShortPosition(_positionIndex);
-
-        uint256 positionAmount = position.amount;
-        bytes32 symbol = position.symbol;
-        _unfarm(symbol, positionAmount, position.identifier);
-
-        IERC20Metadata fromToken = getERC20TokenInstance(STABLE_ASSET, false);
-        uint256 amount = _swap(_selector, _data, address(fromToken), position.asset, positionAmount);
-
-        uint256 startAmount = position.startAmount;
-        if (amount > startAmount) {
-            uint256 profit = amount - startAmount;
-            amount = startAmount;
-            _fund(symbol, profit);
+        bytes memory _data,
+        uint256 _minAmount
+    ) internal nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+        IZapPositions.Position memory position;
+        if (_isLong) {
+            position = DiamondStorageLib.getLongPosition(_positionIndex);
+        } else {
+            position = DiamondStorageLib.getShortPosition(_positionIndex);
         }
-        _repay(symbol, amount);
 
-        DiamondStorageLib.remoteShortPosition(_positionIndex);
+        uint256 unstakedAmount = _unstake(position.unstakeSelector, position.toAmount, _minAmount);
+
+        IERC20 fromToken = IERC20(position.fromAsset);
+        IERC20 toToken = IERC20(position.toAsset);
+        uint256 amount = _swap(_selector, _data, address(toToken), address(fromToken), unstakedAmount);
+
+        _repay(position.fromSymbol, amount);
+
+        if (_isLong) {
+            DiamondStorageLib.removeLongPosition(_positionIndex);
+        } else {
+            DiamondStorageLib.removeShortPosition(_positionIndex);
+        }
     }
 
     function _swap(
@@ -159,10 +129,21 @@ contract ZapFacet is ReentrancyGuardKeccak, AssetsOperationsHelper, YieldYakSwap
         }
     }
 
-    function _farm(bytes32 _asset, uint256 _amount, bytes32 _farmAsset) internal {
+    function _stake(bytes4 _stakeSelector, uint256 _amount) internal {
+        proxyDelegateCalldata(
+            DiamondHelper._getFacetAddress(_stakeSelector),
+            abi.encodeWithSelector(_stakeSelector, _amount)
+        );
     }
 
-    function _unfarm(bytes32 _asset, uint256 _amount, bytes32 _farmAsset) internal returns (uint256) {
+    function _unstake(bytes4 _unstakeSelector, uint256 _amount, uint256 _minAmount) internal returns (uint256 unstaked) {
+        unstaked = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(_unstakeSelector),
+                abi.encodeWithSelector(_unstakeSelector, _amount, _minAmount)
+            ),
+            (uint256)
+        );
     }
 
     /* ========== MODIFIERS ========== */
@@ -177,22 +158,22 @@ contract ZapFacet is ReentrancyGuardKeccak, AssetsOperationsHelper, YieldYakSwap
     /**
         * @dev emitted when user stakes an asset
         * @param user the address executing long
-        * @param toAsset the asset that was used for farm
-        * @param farmAsset the asset that received after farm
+        * @param fromAsset the stable asset that is borrowed
+        * @param toAsset the asset that is staked
         * @param stableTokenAmount how much of stable token was borrowed
-        * @param toTokenAmount how much of to token was received and farmed
+        * @param toTokenAmount how much of to token was received and staked
         * @param timestamp of long
     **/
-    event Long(address indexed user, bytes32 indexed toAsset, bytes32 indexed farmAsset, uint256 stableTokenAmount, uint256 toTokenAmount, uint256 timestamp);
+    event Long(address indexed user, bytes32 indexed fromAsset, bytes32 indexed toAsset, uint256 stableTokenAmount, uint256 toTokenAmount, uint256 timestamp);
 
     /**
         * @dev emitted when user stakes an asset
         * @param user the address executing short
         * @param fromAsset the asset that is borrowed
-        * @param farmAsset the asset that received after farm
+        * @param toAsset the stable asset that is staked
         * @param fromTokenAmount how much of from token was borrowed
-        * @param stableTokenAmount how much of stable token was received and farmed
+        * @param stableTokenAmount how much of stable token was received and staked
         * @param timestamp of short
     **/
-    event Short(address indexed user, bytes32 indexed fromAsset, bytes32 indexed farmAsset, uint256 fromTokenAmount, uint256 stableTokenAmount, uint256 timestamp);
+    event Short(address indexed user, bytes32 indexed fromAsset, bytes32 indexed toAsset, uint256 fromTokenAmount, uint256 stableTokenAmount, uint256 timestamp);
 }

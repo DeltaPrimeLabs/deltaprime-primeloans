@@ -221,7 +221,7 @@ library DiamondStorageLib {
         positions.push(position);
     }
 
-    function remoteLongPosition(uint256 positionIndex) internal {
+    function removeLongPosition(uint256 positionIndex) internal {
         IZapPositions.Position[] storage positions = longPositions();
         uint256 length = positions.length;
         require(positionIndex < length, "Invalid position index");
@@ -229,7 +229,7 @@ library DiamondStorageLib {
         positions.pop();
     }
 
-    function remoteShortPosition(uint256 positionIndex) internal {
+    function removeShortPosition(uint256 positionIndex) internal {
         IZapPositions.Position[] storage positions = shortPositions();
         uint256 length = positions.length;
         require(positionIndex < length, "Invalid position index");
