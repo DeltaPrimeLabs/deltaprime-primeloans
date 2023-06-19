@@ -387,9 +387,19 @@ export default {
         console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
 
+        console.log('sourceAsset', sourceAsset);
+        console.log('targetAsset', targetAsset);
+        console.log('srcToken', TOKEN_ADDRESSES[sourceAsset]);
+        console.log('destToken', TOKEN_ADDRESSES[targetAsset]);
+        console.log('amount', amountIn);
+        console.log('userAddress', this.smartLoanContract.address);
+        console.log('side', SwapSide.SELL);
+
         const swapRate = await paraSwapSDK.swap.getRate({
           srcToken: TOKEN_ADDRESSES[sourceAsset],
+          srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
           destToken: TOKEN_ADDRESSES[targetAsset],
+          destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
           amount: amountIn,
           userAddress: this.smartLoanContract.address,
           side: SwapSide.SELL,
