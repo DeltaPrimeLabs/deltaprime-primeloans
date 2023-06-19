@@ -756,8 +756,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             hardhatConfig)
 
         await deployFacet("ZapFacet", diamondAddress, [
-                'long',
-                'short',
+                'longAVAXUSDC',
+                'shortAVAXUSDC',
+                'longAVAXUSDT',
+                'shortAVAXUSDT',
                 'closeLongPosition',
                 'closeShortPosition',
             ],

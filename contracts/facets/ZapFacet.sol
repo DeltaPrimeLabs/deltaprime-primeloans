@@ -13,15 +13,73 @@ contract ZapFacet is ReentrancyGuardKeccak, AssetsOperationsHelper, YieldYakSwap
     bytes1 public constant YIELD_YAK = 0x00;
     bytes1 public constant PARA_SWAP = 0x01;
 
+    function longAVAXUSDC(
+        uint256 _amount,
+        bytes1 _selector,
+        bytes memory _data,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector
+    ) external {
+        _openPosition(true, "USDC", _amount, "AVAX", _selector, _data, _stakeSelector, _unstakeSelector);
+    }
+
+    function shortAVAXUSDC(
+        uint256 _amount,
+        bytes1 _selector,
+        bytes memory _data,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector
+    ) external {
+        _openPosition(false, "AVAX", _amount, "USDC", _selector, _data, _stakeSelector, _unstakeSelector);
+    }
+
+    function longAVAXUSDT(
+        uint256 _amount,
+        bytes1 _selector,
+        bytes memory _data,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector
+    ) external {
+        _openPosition(true, "USDT", _amount, "AVAX", _selector, _data, _stakeSelector, _unstakeSelector);
+    }
+
+    function shortAVAXUSDT(
+        uint256 _amount,
+        bytes1 _selector,
+        bytes memory _data,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector
+    ) external {
+        _openPosition(false, "AVAX", _amount, "USDT", _selector, _data, _stakeSelector, _unstakeSelector);
+    }
+
+    function closeLongPosition(
+        uint256 _positionIndex,
+        bytes1 _selector,
+        bytes memory _data,
+        uint256 _minAmount
+    ) external {
+        _closePosition(true, _positionIndex, _selector, _data, _minAmount);
+    }
+
+    function closeShortPosition(
+        uint256 _positionIndex,
+        bytes1 _selector,
+        bytes memory _data,
+        uint256 _minAmount
+    ) external {
+        _closePosition(false, _positionIndex, _selector, _data, _minAmount);
+    }
+
     function _openPosition(
         bool _isLong,
         bytes32 _fromAsset,
         uint256 _amount,
         bytes32 _toAsset,
-        bytes4 _stakeSelector,
-        bytes4 _unstakeSelector,
         bytes1 _selector,
-        bytes memory _data
+        bytes memory _data,
+        bytes4 _stakeSelector,
+        bytes4 _unstakeSelector
     ) internal nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         _borrow(_fromAsset, _amount);
 
