@@ -23,7 +23,12 @@
           <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
         <div v-if="isBridge && !selectedAsset" class="placeholder">Select chain and token</div>
-        <DeltaIcon class="chevron" :icon-src="'src/assets/icons/chevron-down.svg'" :size="21" v-on:click.native="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1"></DeltaIcon>
+        <DeltaIcon class="chevron"
+                   :icon-src="'src/assets/icons/chevron-down.svg'"
+                   :size="21"
+                   v-on:click.native="toggleSelect()"
+                   v-if="displayedOptions && displayedOptions.length > 1">
+        </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div
           class="select-dropdown"
@@ -175,6 +180,10 @@ export default {
       } else {
         this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
         this.setSelectedAsset(this.defaultAsset, true);
+        if (!this.selectedAsset) {
+          this.selectOption(this.displayedOptions[0]);
+          this.emitValue();
+        }
       }
     },
 
@@ -205,8 +214,10 @@ export default {
 
     selectOption(option) {
       this.selectedAsset = option;
-      this.emitValue(true);
-      this.toggleSelect();
+      this.emitValue();
+      if (this.expanded) {
+        this.toggleSelect();
+      }
     },
 
     dropdownPanelClick() {
