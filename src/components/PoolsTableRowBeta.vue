@@ -66,6 +66,7 @@ import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
 import SwapModal from './SwapModal.vue';
+import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
 import addresses from '../../common/addresses/avax/token_addresses.json';
@@ -90,6 +91,7 @@ export default {
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
+    this.setupLifi();
   },
 
   data() {
@@ -99,6 +101,7 @@ export default {
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
+      lifiData: {}
     };
   },
 
@@ -113,7 +116,7 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService'])
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService'])
   },
 
   methods: {
@@ -122,8 +125,19 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Deposit',
-          iconButtonActionKey: 'DEPOSIT'
+          // tooltip: 'Deposit',
+          // iconButtonActionKey: 'DEPOSIT'
+          tooltip: 'Deposit / Bridge',
+          menuOptions: [
+            {
+              key: 'DEPOSIT',
+              name: 'Deposit'
+            },
+            {
+              key: 'BRIDGE_DEPOSIT',
+              name: 'Bridge'
+            },
+          ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
@@ -160,10 +174,20 @@ export default {
       })
     },
 
+    setupLifi() {
+      this.lifiService.setupLifi();
+      this.lifiService.observeLifi().subscribe(lifiData => {
+        this.lifiData = lifiData;
+      });
+    },
+
     actionClick(key) {
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
+          break;
+        case 'BRIDGE_DEPOSIT':
+          this.openBridgeModal();
           break;
         case 'WITHDRAW':
           this.openWithdrawModal();
@@ -194,6 +218,32 @@ export default {
         }, () => {
 
         }).then(() => {
+        });
+      });
+    },
+
+    openBridgeModal() {
+      const modalInstance = this.openModal(BridgeDepositModal);
+      modalInstance.account = this.account;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.targetAsset = this.pool.asset.symbol;
+      modalInstance.targetAssetAddress = this.pool.asset.address;
+      modalInstance.targetAssetPrice = this.pool.assetPrice;
+      modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
+      modalInstance.poolAddress = this.pool.contract.address;
+      modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
+        const bridgeRequest = {
+          lifi: this.lifiData.lifi,
+          chosenRoute: bridgeEvent.chosenRoute,
+          signer: this.provider.getSigner()
+        };
+        this.handleTransaction(this.lifiService.bridgeAndDeposit, {bridgeRequest: bridgeRequest}, () => {
+          ////
+          this.$forceUpdate();
+        }, () => {
+        }).then(() => {
+          this.closeModal();
         });
       });
     },

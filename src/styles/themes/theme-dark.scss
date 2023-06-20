@@ -166,6 +166,11 @@
   --currency-combo-input__select-dropdown-option-name-color: #{$washed-blue};
   --currency-combo-input__select-dropdown-border-color: #{$washed-space};
   --currency-combo-input__select-dropdown-background: #{$mist-navy};
+  --currency-combo-input__select-dropdown-select-title-color: #{$mist-blue};
+  --currency-combo-input__select-dropdown-chains-border: 2px solid #{$deep-space};
+  --currency-combo-input__select-dropdown-chain-item-border: 1px solid transparent;
+  --currency-combo-input__select-dropdown-chain-item-border-active: 2px solid #{$dark-lilac};
+  --currency-combo-input__select-dropdown-placeholder-font-color: #{$mist-blue};
   // endregion
 
   // region Bubble
@@ -350,5 +355,10 @@
   --stats-chart-section__point-color: #{$mist-blue};
   --stats-chart-section__toggle-metadata-separator-color: #{$washed-space};
   --stats-chart-section__no-data-color: #{$washed-blue};
+  // endregion
+
+  // region BridgeModal
+  --bridge-modal__slippage-bar-border: solid 2px #{$mist-space};
+  --bridge-modal__slippage-bar-color: #{$storm-blue};
   // endregion
 }
