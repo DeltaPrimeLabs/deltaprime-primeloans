@@ -1,6 +1,6 @@
 <template>
   <span class="colored-value-component">
-    <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}">
+    <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}" :style="styleObject">
       <span class="plus-sign" v-if="value > 0 && showSign">+</span>
       {{ formattedValue }}
     </span>
@@ -32,6 +32,14 @@ export default {
     big: {
       type: Boolean,
       default: false,
+    },
+    fontWeight: {
+      type: Number,
+      default: 400,
+    },
+    fontSize: {
+      type: Number,
+      default: 14,
     }
   },
   computed: {
@@ -42,6 +50,9 @@ export default {
         case 'percent':
           return this.$options.filters.percent(this.value, this.percentageRoundingPrecision);
       }
+    },
+    styleObject() {
+      return this.big ? {} : { 'font-weight': this.fontWeight, 'font-size': `${this.fontSize}px` }
     }
   }
 };
