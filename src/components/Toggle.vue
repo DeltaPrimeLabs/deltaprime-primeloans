@@ -1,5 +1,5 @@
 <template>
-  <div class="toggle-component" ref="toggleComponent">
+  <div class="toggle-component" ref="toggleComponent" v-bind:class="{'toggle-component--big': size === 'big'}">
     <div class="toggle">
       <div class="toggle__options">
         <div class="option"
@@ -21,7 +21,11 @@ export default {
   name: 'Toggle',
   props: {
     options: Array,
-    initialOption: Number
+    initialOption: Number,
+    size: {
+      type: String,
+      default: 'SMALL'
+    }
   },
   data() {
     return {
@@ -131,6 +135,24 @@ export default {
       z-index: 0;
       border-radius: 7px;
     }
+  }
+}
+
+.toggle-component--big {
+  .pointer {
+    height: 31px !important;
+  }
+
+  .toggle__background {
+    height: 31px !important;
+  }
+
+  .toggle__options {
+    font-size: $font-size-sm !important;
+  }
+
+  .option {
+    padding: 6px 12px !important;
   }
 }
 
