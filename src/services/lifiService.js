@@ -15,8 +15,6 @@ export default class LifiService {
     return this.lifi$.asObservable();
   }
 
-  cachedBalances = {};
-
   async setupLifi() {
     const lifiConfig = {
       integrator: "deltaprime"
@@ -56,7 +54,7 @@ export default class LifiService {
         return this.getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens, depth + 1);
       }
 
-      return tokenBalances[chainId];
+      return tokenBalances[chainId];;
     }
     catch (error) {
       console.log(`fetching token balances failed. ${chainId}. Error: ${error}`);
@@ -65,29 +63,23 @@ export default class LifiService {
 
   async fetchTokenBalancesForChain(lifi, address, chainId, tokens) {
     // return cached balances data if already exists
-    if (chainId in this.cachedBalances && this.cachedBalances[chainId].length == tokens.length) {
-      return this.cachedBalances[chainId];
-    }
+    // if (chainId in this.cachedBalances && this.cachedBalances[chainId].length == tokens.length) {
+    //   return this.cachedBalances[chainId];
+    // }
 
     const balances = await this.getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens);
     return balances;
-
-    // const balances = await lifi.getTokenBalancesForChains(
-    //   address,
-    //   { [chainId]: tokens }
-    // );
-    // console.log(balances[chainId]);
-    // return balances[chainId];
   }
 
-  async getBestRoute(lifi, routesRequest) {
-    const fromAmount = routesRequest.fromAmount.toFixed(18);
-
-    const result = await lifi.getRoutes({
+  async getBestRoute(lifi, routesRequest, assetDecimals) {
+    const fromAmount = routesRequest.fromAmount.toFixed(assetDecimals);
+    const request = {
       ...routesRequest,
-      fromAmount: parseUnits(fromAmount, 18).toString()
-    });
+      fromAmount: parseUnits(fromAmount, assetDecimals).toString()
+    };
+    console.log(request);
 
+    const result = await lifi.getRoutes(request);
     const routes = result.routes;
 
     return routes.length > 0 ? routes[0] : null;
@@ -97,8 +89,6 @@ export default class LifiService {
     const switchChainHook = async (requiredChainId) => {
       // this is where MetaMask lives
       const ethereum = window.ethereum
-      console.log(ethereum);
-      console.log(requiredChainId);
   
       // check if MetaMask is available
       if (typeof ethereum === 'undefined') return
@@ -111,7 +101,6 @@ export default class LifiService {
   
       // build a new provider for the new chain
       const newProvider = new ethers.providers.Web3Provider(window.ethereum)
-      console.log(newProvider);
   
       // return the associated Signer
       return newProvider.getSigner()

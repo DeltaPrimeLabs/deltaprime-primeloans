@@ -13,6 +13,7 @@
         :assets-balances="sourceAssetsBalances"
         :validators="sourceValidators"
         :disabled="!sourceAsset"
+        :max="sourceAssetBalance"
         :info="() => sourceAssetValue"
         :typingTimeout="2000"
         v-on:chainChange="sourceChainChange"
@@ -149,8 +150,27 @@ export default {
     setTimeout(() => {
       this.setupLifi();
       this.setupTargetAssetOptions();
-      this.setupValidators();
     });
+  },
+
+  watch: {
+    sourceAssetsBalances: {
+      handler(newBalances) {
+        if (!this.sourceAsset) return;
+
+        this.sourceAssetBalance = newBalances.find(asset => asset.symbol === this.sourceAsset).amount;
+        this.setSourceValidators();
+      }
+    },
+
+    sourceAsset: {
+      handler(newAsset) {
+        if (!this.sourceAssetsBalances) return;
+
+        this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === this.sourceAsset).amount;
+        this.setSourceValidators();
+      }
+    }
   },
 
   computed: {
@@ -212,10 +232,14 @@ export default {
         }
       };
 
-      this.chosenRoute = await this.lifiService.getBestRoute(this.lifi, routesRequest);
+      this.chosenRoute = await this.lifiService.getBestRoute(this.lifi, routesRequest, this.sourceAssetData.decimals);
       console.log(this.chosenRoute);
-      this.targetAssetAmount = formatUnits(BigNumber.from(this.chosenRoute.toAmountMin), this.chosenRoute.toToken.decimals);
-      this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
+
+      if (this.chosenRoute) {
+        this.targetAssetAmount = formatUnits(BigNumber.from(this.chosenRoute.toAmountMin), this.chosenRoute.toToken.decimals);
+        this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
+      }
+
       this.requestingRoute = false;
     },
 
@@ -243,6 +267,7 @@ export default {
           changeEvent.chainId,
           changeEvent.tokens
         );
+
         this.sourceAssetsBalances = balances;
 
         // this.$emit("chainChange", {
@@ -258,7 +283,9 @@ export default {
     //   let targetInputChangeEvent;
       if (this.sourceAsset !== changeEvent.asset) {        
         this.sourceAsset = changeEvent.asset;
-        this.sourceAssetData = this.availableAssets[changeEvent.chain.id].find(token => token.symbol === changeEvent.asset);
+        this.sourceAssetData = this.availableAssets[changeEvent.chain.id].find(asset => asset.symbol === changeEvent.asset);
+        // this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === changeEvent.asset).amount;
+        // this.setSourceValidators();
 
         await this.getBestRoute();
         // this.calculateSourceAssetBalance();
@@ -281,7 +308,7 @@ export default {
     //   this.checkingRoute = false;
     },
 
-    setupValidators() {
+    setSourceValidators() {
       this.sourceValidators = [
         {
           validate: async (value) => {
@@ -293,79 +320,10 @@ export default {
       ];
     },
 
-    // getProvider() {
-    //   const jsonRPC = "https://avalanche-mainnet.infura.io/v3/44a75435541f40cdac3945feaf38ba26"
-    //   const provider = new ethers.providers.JsonRpcProvider(jsonRPC);
-    //   return provider;
-    // },
-
-    // async calculateSourceAssetBalance() {
-    //   console.log(this.signer);
-    //   const contract = new ethers.Contract(this.sourceAssetData.address, erc20ABI, this.signer);
-    //   console.log(contract);
-    //   const balance = await contract.balanceOf(this.account);
-    //   console.log(balance);
-    // },
-
-    // getRoute() {
-    //   console.log('getRoute')
-    //   const routeOptions = {
-    //     slippage: this.userSlippage / 100, // 3%
-    //     order: 'RECOMMENDED'
-    //   }
-    //   //TODO: that should be "deposit onbehalf")
-    //   let calldata = web3Abi.encodeFunctionCall(
-    //       POOL.abi.find(method => method.name === 'deposit'),
-    //       [MAX_UINT256]
-    //   );
-    //   console.log('calldata');
-    //   console.log(calldata);
-    //   console.log('poolAddress');
-    //   console.log(this.poolAddress);
-    //   console.log('fromAmount');
-    //   console.log((this.sourceAssetAmount * 10**this.sourceAssetData.decimals).toFixed());
-    //   const quoteRequest = {
-    //     fromChain: this.sourceChain.id,
-    //     fromAddress: this.account,
-    //     fromToken: this.sourceAssetData.address,
-    //     toChain: config.chainId,
-    //     toToken: TOKEN_ADDRESSES[this.targetAsset.symbol],
-    //     toContractAddress: this.poolAddress,
-    //     toContractCallData: calldata,
-    //     toContractGasLimit: '2000000',
-    //     toAmount: this.minDepositValue
-    //   };
-    //   // const routesRequest = {
-    //   //   fromChainId: this.sourceChain.id,
-    //   //   fromAmount: (this.sourceAssetAmount * 10**this.sourceAssetData.decimals).toFixed(),
-    //   //   fromTokenAddress: this.sourceAssetData.address,
-    //   //   toChainId: config.chainId,
-    //   //   toTokenAddress: TOKEN_ADDRESSES[this.targetAsset.symbol],
-    //   //   options: routeOptions,
-    //   // }
-    //   // console.log('quoteRequest')
-    //   // console.log(quoteRequest)
-    //   // this.wait = true;
-    //   // const routesRequest = this.lifi.getRoutes(routesRequest).then(
-    //   //     response => {
-    //   //       console.log('response')
-    //   //       console.log(response)
-    //   //       this.routes = response.routes;
-    //   //       this.wait = false;
-    //   //     }
-    //   // )
-    //   // return this.lifi.getContractCallQuote(quoteRequest)
-    // },
-
     async userSlippageChange(changeEvent) {
       this.userSlippage = changeEvent.value ? changeEvent.value : 0;
       await this.updateAmounts();
     },
-
-    // async updateAmounts() {
-    //   this.receivedAccordingToOracle = this.sourceAssetAmount * parseFloat(this.sourceAssetData.priceUSD) / this.targetAssetPrice;
-    //   this.minDepositValue = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
-    // },
 
     ongoingTyping(event) {
       this.isTyping = event.typing;

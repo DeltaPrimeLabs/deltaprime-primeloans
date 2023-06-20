@@ -176,7 +176,7 @@ export default {
 
     setupLifi() {
       this.lifiService.setupLifi();
-      this.lifiService.observeLifi().subscribe(lifiData => {
+      this.lifiService.observeLifi().subscribe(async lifiData => {
         this.lifiData = lifiData;
       });
     },

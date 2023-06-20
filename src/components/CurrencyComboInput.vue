@@ -248,10 +248,10 @@ export default {
       this.$emit('ongoingTyping', {typing: event.typing});
     },
 
-    async emitValue(isBridge = false) {
+    async emitValue() {
       const error = await this.$refs.currencyInput.forceValidationCheck();
       this.$emit('valueChange', {
-        chain: isBridge ? this.selectedChain : null,
+        chain: this.isBridge ? this.selectedChain : null,
         asset: this.selectedAsset.symbol,
         value: Number(this.assetAmount),
         error: error,
