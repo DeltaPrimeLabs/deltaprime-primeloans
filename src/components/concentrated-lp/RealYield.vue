@@ -1,9 +1,9 @@
 <template>
   <div class="real-yield">
     <div class="real-yield__header">
-      <Toggle :options="['APR', 'Weekly']" :size="'big'"></Toggle>
+      <Toggle v-on:change="intervalChange" :options="['Weekly', 'APR']" :size="'big'"></Toggle>
       <div class="real-yield__header-text">
-        Choose APR or Weekly data. Select/deselect positions you want to be count into Real Yield
+        Choose APR or Weekly data. Select/deselect positions you want to be count into Real Yield.
       </div>
     </div>
     <div class="real-yield__content">
@@ -15,16 +15,16 @@
         <div class="token-section__toggles">
 
           <div class="toggles__toggle-row" v-for="row in lpTokenDetails.primaryTokenDetails">
-            <div class="toggle-row__label">
+            <div class="toggle-row__label" :class="{ 'active': row.countInRealYield }">
               <div class="label__part label__part--name">
                 {{ row.name }}
               </div>
               <div class="label__part label__part--trend">
-                <ColoredValueBeta :value="row.trend" :formatting="'percent'"
+                <ColoredValueBeta :value="row.value / lastWeekUserValue * multiplier" :formatting="'percent'"
                                   :percentage-rounding-precision="2" :font-weight="500"></ColoredValueBeta>
               </div>
               <div class="label__part label__part--value">
-                {{ row.value | nonAbsoluteUsd }}
+                {{ row.value * multiplier | nonAbsoluteUsd }}
               </div>
             </div>
             <div class="toggle-row__toggle">
@@ -43,16 +43,16 @@
         <div class="token-section__toggles">
 
           <div class="toggles__toggle-row" v-for="row in lpTokenDetails.secondaryTokenDetails">
-            <div class="toggle-row__label">
+            <div class="toggle-row__label" :class="{ 'active': row.countInRealYield }">
               <div class="label__part label__part--name">
                 {{ row.name }}
               </div>
               <div class="label__part label__part--trend">
-                <ColoredValueBeta :value="row.trend" :formatting="'percent'"
+                <ColoredValueBeta :value="row.value / lastWeekUserValue * multiplier" :formatting="'percent'"
                                   :percentage-rounding-precision="2" :font-weight="500"></ColoredValueBeta>
               </div>
               <div class="label__part label__part--value">
-                {{ row.value | nonAbsoluteUsd }}
+                {{ row.value * multiplier | nonAbsoluteUsd }}
               </div>
             </div>
             <div class="toggle-row__toggle">
@@ -68,23 +68,23 @@
           <div class="impermanent-loss__label">
             Impermanent loss
           </div>
-          <ColoredValueBeta :value="impermanentLoss.trend" :formatting="'percent'"
+          <ColoredValueBeta :value="impermanentLoss / lastWeekUserValue * multiplier" :formatting="'percent'"
                             :percentage-rounding-precision="2" :font-weight="500"></ColoredValueBeta>
           <div class="impermanent-loss__value">
-            {{ impermanentLoss.value | nonAbsoluteUsd }}
+            {{ impermanentLoss * multiplier | nonAbsoluteUsd }}
           </div>
         </div>
         <div class="real-yield-section__border">
           <div class="real-yield-section__content">
             <div class="real-yield-content__title">
-              Real Yield
+              Real Yield <span class="real-yield-content__title-interval">({{interval}})</span>
             </div>
             <div class="real-yield-content__data">
-              <ColoredValueBeta :value="realYield.trend" :formatting="'percent'"
+              <ColoredValueBeta :value="realYield / lastWeekUserValue * multiplier" :formatting="'percent'"
                                 :percentage-rounding-precision="2" :font-weight="600"
                                 :font-size="16"></ColoredValueBeta>
               <div class="real-yield-content__data--value">
-                {{ realYield.value | nonAbsoluteUsd }}
+                {{ realYield * multiplier | nonAbsoluteUsd }}
               </div>
             </div>
           </div>
@@ -98,12 +98,26 @@
 import Toggle from "../Toggle.vue";
 import ColoredValueBeta from "../ColoredValueBeta.vue";
 import SlideSwitch from "../SlideSwitch.vue";
+import {mapState} from "vuex";
+import {toWei} from "../../utils/calculate";
+import {formatUnits} from "ethers/lib/utils";
+import redstone from "redstone-api";
+const ethers = require('ethers');
+const EthDater = require('ethereum-block-by-date');
 
 export default {
   name: "RealYield",
   components: {SlideSwitch, ColoredValueBeta, Toggle},
   props: {
-    lpToken: null,
+    lpToken: null
+  },
+
+  computed: {
+    ...mapState('fundsStore', [
+      'concentratedLpBalances',
+      'assets',
+    ]),
+    ...mapState('network', ['provider']),
   },
   data() {
     return {
@@ -111,88 +125,114 @@ export default {
         primaryTokenDetails: [
           {
             name: 'Rebalance',
-            trend: 0.0234,
-            value: 0.35,
-            countInRealYield: false,
+            value: 0,
+            countInRealYield: true,
           },
           {
             name: 'Fees',
-            trend: 0.0181,
-            value: 0.15,
-            countInRealYield: false,
+            value: 0,
+            countInRealYield: true,
           },
           {
-            name: 'PriceChange',
-            trend: 0.0354,
-            value: 0.48,
+            name: 'Price change',
+            value: 0,
             countInRealYield: false,
           },
         ],
         secondaryTokenDetails: [
           {
             name: 'Rebalance',
-            trend: 0.0234,
-            value: 0.35,
-            countInRealYield: false,
+            value: 0,
+            countInRealYield: true,
           },
           {
             name: 'Fees',
-            trend: 0.0181,
-            value: 0.15,
-            countInRealYield: false,
+            value: 0,
+            countInRealYield: true,
           },
           {
-            name: 'PriceChange',
-            trend: 0.0354,
-            value: 0.48,
+            name: 'Price change',
+            value: 0,
             countInRealYield: false,
           },
         ],
       },
-      impermanentLoss: {
-        trend: -12,
-        value: -0.23,
-      },
-      realYield: {
-        trend: 2,
-        value: 3.12,
-      }
+      impermanentLoss: 0,
+      realYield: 0,
+      lastWeekUserValue: 0.001,
+      multiplier: 1,
+      interval: 'weekly'
     }
   },
-  mounted() {
+  async mounted() {
+    await this.prepareRealYieldData();
     this.recalculateRealYield();
   },
   methods: {
     recalculateRealYield() {
-      const newImpermanentLoss = {
-        trend: 0,
-        value: 0,
-      }
-      const newRealYield = {
-        trend: 0,
-        value: 0,
-      }
+      let newRealYield = 0;
       this.lpTokenDetails.primaryTokenDetails
         .filter(primaryTokenDetail => primaryTokenDetail.countInRealYield)
         .forEach(primaryTokenDetail => {
-          newImpermanentLoss.trend -= primaryTokenDetail.trend;
-          newRealYield.trend += primaryTokenDetail.trend;
-          newImpermanentLoss.value -= primaryTokenDetail.value;
-          newRealYield.value += primaryTokenDetail.value;
+          newRealYield += primaryTokenDetail.value;
         })
 
       this.lpTokenDetails.secondaryTokenDetails
         .filter(secondaryTokenDetail => secondaryTokenDetail.countInRealYield)
         .forEach(secondaryTokenDetail => {
-          newImpermanentLoss.trend -= secondaryTokenDetail.trend;
-          newRealYield.trend += secondaryTokenDetail.trend;
-          newImpermanentLoss.value -= secondaryTokenDetail.value;
-          newRealYield.value += secondaryTokenDetail.value;
+          newRealYield += secondaryTokenDetail.value;
         })
 
       this.realYield = newRealYield;
-      this.impermanentLoss = newImpermanentLoss;
-    }
+    },
+    async prepareRealYieldData() {
+      const abi = ['function getUnderlyingAssets(uint256) public view returns (uint256, uint256)'];
+      const poolContract = await new ethers.Contract(this.lpToken.address, abi, provider.getSigner());
+      const poolBalance = toWei(this.concentratedLpBalances[this.lpToken.symbol].toString());
+
+      const dater = new EthDater(
+          this.provider // ethers provider, required.
+      );
+
+      let blockData = await dater.getDate(
+          Date.now() - 7 * 24 * 3600 * 1000, // Date, required. Any valid moment.js value: string, milliseconds, Date() object, moment() object.
+          true // Block after, optional. Search for the nearest block before or after the given date. By default true.
+      );
+
+      const weiBalances = await poolContract.getUnderlyingAssets(poolBalance, {
+        blockTag: blockData.block,
+      });
+
+      const primaryPreviousBalance = formatUnits(weiBalances[0], this.assets[this.lpToken.primary].decimals);
+      const secondaryPreviousBalance = formatUnits(weiBalances[1], this.assets[this.lpToken.secondary].decimals);
+
+      const lastWeekPrices = await redstone.getHistoricalPrice([this.lpToken.primary, this.lpToken.secondary], {date: Date.now() - 7 * 1000 * 3600 * 24});
+
+      this.lastWeekUserValue = primaryPreviousBalance * lastWeekPrices[this.lpToken.primary].value
+                              + secondaryPreviousBalance * lastWeekPrices[this.lpToken.secondary].value;
+
+      //TODO: get fees
+      // this.lpTokenDetails.primaryTokenDetails[1].value =
+      // this.lpTokenDetails.primaryTokenDetails[1].value =
+      this.lpTokenDetails.primaryTokenDetails[0].value = (this.lpToken.primaryBalance - primaryPreviousBalance) * this.lpToken.firstPrice - this.lpTokenDetails.primaryTokenDetails[1].value;
+      this.lpTokenDetails.secondaryTokenDetails[0].value = (this.lpToken.secondaryBalance - secondaryPreviousBalance) * this.lpToken.secondPrice - this.lpTokenDetails.secondaryTokenDetails[1].value;
+
+
+      const firstPriceChange = lastWeekPrices[this.lpToken.primary].value - this.lpToken.firstPrice;
+      const secondPriceChange = lastWeekPrices[this.lpToken.secondary].value - this.lpToken.secondPrice;
+      this.lpTokenDetails.primaryTokenDetails[2].value = this.lpToken.primaryBalance * firstPriceChange;
+      this.lpTokenDetails.secondaryTokenDetails[2].value = this.lpToken.secondaryBalance * secondPriceChange;
+
+      this.impermanentLoss = (this.lpTokenDetails.primaryTokenDetails[0].value - this.lpTokenDetails.primaryTokenDetails[1].value
+                            + this.lpTokenDetails.secondaryTokenDetails[0].value - this.lpTokenDetails.secondaryTokenDetails[1].value)
+                            / (primaryPreviousBalance * this.lpToken.firstPrice
+                            + secondaryPreviousBalance * this.lpToken.secondPrice);
+
+    },
+    intervalChange(interval) {
+      if (interval === 'APR') { this.multiplier = 365 / 7; this.interval = 'projected APR' }
+      else { this.multiplier = 1; this.interval = 'weekly' }
+    },
   },
 }
 </script>
@@ -270,8 +310,13 @@ export default {
 }
 
 .toggle-row__label {
+  opacity: 50%;
   display: flex;
   flex-direction: row;
+
+  &.active {
+    opacity: 100%;
+  }
 }
 
 .label__part {
@@ -332,6 +377,10 @@ export default {
   font-size: $font-size-sm;
   font-weight: 700;
   margin-bottom: 6px;
+
+  .real-yield-content__title-interval {
+    font-weight: 500;
+  }
 }
 
 .real-yield-content__data--value {
