@@ -22,7 +22,7 @@
     <div class="tab-window" v-bind:style="`min-height: ${tabHeight + 2}px;`">
       <div class="window-shade-left"></div>
       <div class="window-shade-right"></div>
-      <div id="tab-bodies" class="tab-bodies" v-bind:style="`left: ${tabsShift}px;`">
+      <div id="tab-bodies" class="tab-bodies" v-bind:style="`transform: translateX(${tabsShift}px);`">
         <slot></slot>
       </div>
     </div>
@@ -70,6 +70,10 @@ export default {
         let tabRect = this.tabs[this.selectedIndex].$el.getBoundingClientRect();
         this.tabHeight = tabRect.height;
         this.$emit('tabChange', this.selectedIndex);
+        this.tabs[this.selectedIndex].$el.style.height = 'fit-content';
+        this.tabs.filter((_, index) => index !== this.selectedIndex).forEach(tab => {
+          tab.$el.style.height = `${tabRect.height}px`;
+        })
       });
 
     },
@@ -240,8 +244,7 @@ li:not(.tab-selected):hover {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  position: absolute;
-  left: 0;
+  position: relative;
   transition: all 300ms;
 }
 
@@ -252,7 +255,7 @@ li:not(.tab-selected):hover {
   left: 0;
   z-index: 2;
   width: 30px;
-  background: linear-gradient(90deg, var(--block__background-color) 0%, rgba(0,0,0,0) 50%);
+  background: linear-gradient(90deg, var(--block__background-color) 0%, rgba(0, 0, 0, 0) 50%);
 }
 
 .window-shade-right {
@@ -262,7 +265,7 @@ li:not(.tab-selected):hover {
   right: 0;
   z-index: 2;
   width: 30px;
-  background: linear-gradient(90deg, rgba(0,0,0,0) 50%, var(--block__background-color) 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 50%, var(--block__background-color) 100%);
 }
 
 </style>
