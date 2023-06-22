@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b3c868b6e0064e1f95c0918de156437d0ec26c80;
+// Last deployed from commit: 6d7066f60ada99f38d30366e1744ac9979433ec9;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -47,7 +47,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9).compounder();
-        _stakedBalance = compounder.depositTracking(address(this));
+        uint256 shares = compounder.balanceOf(address(this));
+        _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
 
     function vectorStakeUSDT1Auto(uint256 amount) public {
@@ -74,7 +75,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorUSDT1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774).compounder();
-        _stakedBalance = compounder.depositTracking(address(this));
+        uint256 shares = compounder.balanceOf(address(this));
+        _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
 
     function vectorStakeWAVAX1Auto(uint256 amount) public {
@@ -101,7 +103,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorWAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).compounder();
-        _stakedBalance = compounder.depositTracking(address(this));
+        uint256 shares = compounder.balanceOf(address(this));
+        _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
 
     function vectorStakeSAVAX1Auto(uint256 amount) public {
@@ -128,7 +131,8 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function vectorSAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
         IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
-        _stakedBalance = compounder.depositTracking(address(this));
+        uint256 shares = compounder.balanceOf(address(this));
+        _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
 
     function vectorMigrateAvax() public {

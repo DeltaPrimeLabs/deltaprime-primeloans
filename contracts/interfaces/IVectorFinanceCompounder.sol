@@ -16,4 +16,6 @@ interface IVectorFinanceCompounder {
     function depositTracking(address) external view returns (uint256);
 
     function migrateAllUserDepositsFromManual() external;
+
+    function getDepositTokensForShares(uint256 amount) external view returns (uint256);
 }
