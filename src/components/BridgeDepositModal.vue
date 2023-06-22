@@ -73,11 +73,18 @@
         </TransactionResultSummaryBeta>
       </div>
 
+      <Alert
+        v-if="!requestingRoute && routes && routes.length == 0"
+        class="alert-wrapper"
+      >
+        No routes available
+      </Alert>
+
       <div class="button-wrapper">
         <Button
           :label="'Bridge'"
           v-on:click="submit()"
-          :disabled="sourceInputError || !chosenRoute"
+          :disabled="sourceInputError || !chosenRoute || (routes && routes.length == 0)"
           :waiting="transactionOngoing || isTyping || requestingRoute">
         ></Button>
       </div>
@@ -93,6 +100,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import CurrencyComboInput from './CurrencyComboInput';
 import SimpleInput from './SimpleInput';
+import Alert from './Alert.vue';
 import config from "../config";
 import { formatUnits } from '../utils/calculate';
 import { BigNumber } from 'ethers';
@@ -107,12 +115,12 @@ export default {
     Modal,
     Toggle,
     CurrencyComboInput,
-    SimpleInput
+    SimpleInput,
+    Alert
   },
 
   props: {
     lifiData: null,
-    lifiService: null,
     account: null,
     targetAsset: null,
     targetAssetAddress: null,
@@ -136,12 +144,13 @@ export default {
       sourceInputError: true,
       targetAssetOptions: null,
       targetAssetAmount: null,
-      userSlippage: 3,
+      userSlippage: 0.5,
       wait: true,
       minDepositValue: 0,
       isTyping: false,
       transactionOngoing: false,
       chosenRoute: null,
+      routes: null,
       requestingRoute: false
     };
   },
@@ -167,7 +176,7 @@ export default {
       handler(newAsset) {
         if (!this.sourceAssetsBalances) return;
 
-        this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === this.sourceAsset).amount;
+        this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === newAsset).amount;
         this.setSourceValidators();
       }
     }
@@ -232,8 +241,12 @@ export default {
         }
       };
 
-      this.chosenRoute = await this.lifiService.getBestRoute(this.lifi, routesRequest, this.sourceAssetData.decimals);
-      console.log(this.chosenRoute);
+      this.routes = await this.lifiService.getBestRoute(this.lifi, routesRequest, this.sourceAssetData.decimals);
+      // To-Do: allows to choose desired route option
+      if (this.routes.length > 0) {
+        this.chosenRoute = this.routes[0];
+        console.log(this.chosenRoute);
+      }
 
       if (this.chosenRoute) {
         this.targetAssetAmount = formatUnits(BigNumber.from(this.chosenRoute.toAmountMin), this.chosenRoute.toToken.decimals);
@@ -258,7 +271,6 @@ export default {
 
     async sourceChainChange(changeEvent) {
       if (this.sourceChain !== changeEvent.chainId) {
-        this.balancesReceived = false;
         this.sourceChain = changeEvent.chainId;
 
         const balances = await this.lifiService.fetchTokenBalancesForChain(
@@ -407,6 +419,10 @@ export default {
     background-color: var(--swap-modal__slippage-divider-color);
     margin: 0 10px;
   }
+}
+
+.alert-wrapper {
+  margin-top: 30px;
 }
 
 </style>

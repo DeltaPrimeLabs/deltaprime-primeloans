@@ -91,7 +91,7 @@ export default {
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
-    this.setupLifi();
+    this.watchLifi();
   },
 
   data() {
@@ -174,8 +174,7 @@ export default {
       })
     },
 
-    setupLifi() {
-      this.lifiService.setupLifi();
+    watchLifi() {
       this.lifiService.observeLifi().subscribe(async lifiData => {
         this.lifiData = lifiData;
       });

@@ -163,10 +163,12 @@ export default {
 
     setupDisplayedAssetOptions() {
       if (this.isBridge && this.availableChains && this.availableChains.length > 0) {
-        let assetOptions = this.assetOptions[Object.keys(this.assetOptions)[0]];
+        let assetOptions;
 
         if (this.selectedChain && Object.hasOwn(this.assetOptions, this.selectedChain.id)) {
           assetOptions = this.assetOptions[this.selectedChain.id];
+        } else {
+          assetOptions = this.assetOptions[Object.keys(this.assetOptions)[0]];
         }
 
         this.displayedOptions = JSON.parse(JSON.stringify(assetOptions));

@@ -15,6 +15,8 @@ export default class LifiService {
     return this.lifi$.asObservable();
   }
 
+  cachedBalances = {};
+
   async setupLifi() {
     const lifiConfig = {
       integrator: "deltaprime"
@@ -22,16 +24,20 @@ export default class LifiService {
 
     const lifi = new LiFi(lifiConfig);
 
-    const [chains, tokens] = await Promise.all([
-      axios.get('https://li.quest/v1/chains'),
-      axios.get('https://li.quest/v1/tokens')
-    ]);
+    try {
+      const [chains, tokens] = await Promise.all([
+        axios.get('https://li.quest/v1/chains'),
+        axios.get('https://li.quest/v1/tokens')
+      ]);
 
-    this.emitLifi({
-      lifi,
-      chains: chains.data.chains,
-      tokens: tokens.data.tokens
-    });
+      this.emitLifi({
+        lifi,
+        chains: chains.data.chains,
+        tokens: tokens.data.tokens
+      });
+    } catch(error) {
+      console.log(`lifi - fetching chains and tokens failed. Error: ${error}`);
+    }
   }
 
   async getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens, depth = 0) {
@@ -61,52 +67,68 @@ export default class LifiService {
     }
   };
 
-  async fetchTokenBalancesForChain(lifi, address, chainId, tokens) {
+  async fetchTokenBalancesForChain(lifi, address, chainId, tokens, refresh = false) {
     // return cached balances data if already exists
-    // if (chainId in this.cachedBalances && this.cachedBalances[chainId].length == tokens.length) {
-    //   return this.cachedBalances[chainId];
-    // }
+    if (!refresh && chainId in this.cachedBalances && this.cachedBalances[chainId].length == tokens.length) {
+      return this.cachedBalances[chainId];
+    }
 
     const balances = await this.getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens);
     return balances;
   }
 
   async getBestRoute(lifi, routesRequest, assetDecimals) {
-    const fromAmount = routesRequest.fromAmount.toFixed(assetDecimals);
-    const request = {
-      ...routesRequest,
-      fromAmount: parseUnits(fromAmount, assetDecimals).toString()
-    };
-    console.log(request);
+    try {
+      const fromAmount = routesRequest.fromAmount.toFixed(assetDecimals);
+      const request = {
+        ...routesRequest,
+        fromAmount: parseUnits(fromAmount, assetDecimals).toString()
+      };
+      console.log(request);
 
-    const result = await lifi.getRoutes(request);
-    const routes = result.routes;
+      const result = await lifi.getRoutes(request);
+      console.log(result.routes);
 
-    return routes.length > 0 ? routes[0] : null;
+      return result.routes;
+    } catch(error) {
+      console.log(`lifi - fetching routes failed. Error: ${error}`);
+      return;
+    }
   }
 
   async bridgeAndDeposit({ bridgeRequest: { lifi, chosenRoute, signer } }) {
-    const switchChainHook = async (requiredChainId) => {
-      // this is where MetaMask lives
-      const ethereum = window.ethereum
-  
-      // check if MetaMask is available
-      if (typeof ethereum === 'undefined') return
-  
-      // use the MetaMask RPC API to switch chains automatically
-      await ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x' + requiredChainId.toString(16) }],
-      })
-  
-      // build a new provider for the new chain
-      const newProvider = new ethers.providers.Web3Provider(window.ethereum)
-  
-      // return the associated Signer
-      return newProvider.getSigner()
+
+    const updateRouteHook = (updatedRoute) => {
+      console.log(updatedRoute);
     }
 
-    const route = await lifi.executeRoute(signer, chosenRoute, {switchChainHook});
+    const switchChainHook = async (requiredChainId) => {
+      if (!signer) {
+        return signer;
+      }
+
+      const currentChainId = await signer.getChainId();
+      console.log(currentChainId);
+  
+      if (currentChainId !== requiredChainId) {
+        const ethereum = window.ethereum;
+        if (typeof ethereum === 'undefined') return;
+
+        await ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x' + requiredChainId.toString(16) }],
+        });
+
+        const newProvider = new ethers.providers.Web3Provider(window.ethereum);
+
+        return newProvider.getSigner();
+      }
+    }
+
+    const route = await lifi.executeRoute(signer, chosenRoute, {
+      updateRouteHook,
+      switchChainHook
+    });
     console.log(route);
   }
 }
