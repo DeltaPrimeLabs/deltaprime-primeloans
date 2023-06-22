@@ -68,13 +68,17 @@ describe('Zap', () => {
             depositor: SignerWithAddress,
             paraSwapMin: SimpleFetchSDK,
             MOCK_PRICES: any,
-            farmAmount: BigNumber,
+            stakeAmount: BigNumber,
             diamondAddress: any;
 
         const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcAmount: any) => {
+            const srcDecimals = await tokenContracts.get(srcToken)!.decimals();
+            const destDecimals = await tokenContracts.get(destToken)!.decimals();
             const priceRoute = await paraSwapMin.swap.getRate({
                 srcToken: TOKEN_ADDRESSES[srcToken],
                 destToken: TOKEN_ADDRESSES[destToken],
+                srcDecimals,
+                destDecimals,
                 amount: srcAmount.toString(),
                 userAddress: wrappedLoan.address,
                 side: SwapSide.SELL,
@@ -237,36 +241,36 @@ describe('Zap', () => {
         });
 
         it("should fail to long as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.long(parseUnits("500", 6), toBytes32("ETH"), toBytes32("crvUSDBTCETH"), 0, "0x")).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.longAVAXUSDC(parseUnits("500", 6), 0, "0x", "0x00000000", "0x00000000")).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it('should long and farm to curve', async () => {
+        it('should long AVAX-USDC and stake to vector finance', async () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             let amount = parseUnits("100", 6);
-            const swapData = await getSwapData('USDC', 'ETH', amount);
-            const tx = await wrappedLoan.long(amount, toBytes32("ETH"), toBytes32("crvUSDBTCETH"), 1, encodeParaSwapData(swapData));
+            const swapData = await getSwapData('USDC', 'AVAX', amount);
+            const tx = await wrappedLoan.longAVAXUSDC(amount, 1, encodeParaSwapData(swapData), "0x9157b6f6", "0xc208fa5e");
             const receipt = await tx.wait();
             const topic = ethers.utils.solidityKeccak256(["string"], ["Long(address,bytes32,bytes32,uint256,uint256,uint256)"])
             const log = receipt.logs.find((_log: any) => _log.topics[0] == topic);
-            [, farmAmount, ] = ethers.utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], log.data);
+            [, stakeAmount, ] = ethers.utils.defaultAbiCoder.decode(["uint256", "uint256", "uint256"], log.data);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 100);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 100);
         });
 
         it("should fail to close long position as a non-owner", async () => {
-            await expect(nonOwnerWrappedLoan.closeLongPosition(0, 0, "0x")).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.closeLongPosition(0, 0, "0x", 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it('should close long position', async () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            let amount = farmAmount;
-            const swapData = await getSwapData('ETH', 'USDC', amount);
-            await wrappedLoan.closeLongPosition(0, 1, encodeParaSwapData(swapData));
+            let amount = stakeAmount;
+            const swapData = await getSwapData('AVAX', 'USDC', amount);
+            await wrappedLoan.closeLongPosition(0, 1, encodeParaSwapData(swapData), parseUnits("90", 6));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 100);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 100);
