@@ -413,80 +413,83 @@ exports.lpAndFarmApyAggregator = functions
     return null;
   });
 
-const uploadLoanStatus = async () => {
+const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
+  const timestamps = [1687262400000, 1687348800000, 1687435200000];
+  const addresses = [loanAddresses[0]];
 
-  for (const loanAddress of loanAddresses) {
-    const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
-    const loanHistoryRef = db
-      .collection('loansHistory')
-      .doc(loanAddress.toLowerCase())
-      .collection('loanStatus');
-    const loanHistorySnap = await loanHistoryRef.get();
-    const loanHistory = {};
+  await Promise.all(
+    addresses.map(async loanAddress => {
+      // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      // const loanHistorySnap = await loanHistoryRef.get();
+      // const loanHistory = {};
 
-    loanHistorySnap.forEach(doc => {
-      loanHistory[doc.id] = doc.data();
-    });
+      // loanHistorySnap.forEach(doc => {
+      //   loanHistory[doc.id] = doc.data();
+      // });
 
-    const timestamps = [];
-    let timestamp;
+      // const timestamps = [];
+      // let timestamp;
 
-    if (Object.keys(loanHistory).length === 0) {
-      // loan's single history is not saved yet, we create from 30 days ago
-      timestamp = defaultTimestamp;
-    } else {
-      // we add new history after the latest timestamp
-      timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
-                + timestampInterval; // next timestamp where we get loan status
-    }
+      // if (Object.keys(loanHistory).length === 0) {
+      //   // loan's single history is not saved yet, we create from 30 days ago
+      //   timestamp = defaultTimestamp;
+      // } else {
+      //   // we add new history after the latest timestamp
+      //   timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
+      //             + timestampInterval; // next timestamp where we get loan status
+      // }
 
-    // const limitTimestamp = timestamp + 30 * timestampInterval;
+      // // const limitTimestamp = timestamp + 30 * timestampInterval;
 
-    // get timestamps
-    while (timestamp < Date.now()) {
-      timestamps.push(timestamp);
-      timestamp += timestampInterval;
-    }
-    console.log(timestamps);
+      // // get timestamps
+      // while (timestamp < Date.now()) {
+      //   timestamps.push(timestamp);
+      //   timestamp += timestampInterval;
+      // }
+      // console.log(timestamps);
 
-    if (timestamps.length > 0) {
-      return await Promise.all(
-        timestamps.map(async (timestamp) => {
-          const status = await loanHistoryRef.doc(timestamp.toString()).get();
+      if (timestamps.length > 0) {
+        await Promise.all(
+          timestamps.map(async (timestamp) => {
+            const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
-          if (!status.exists) {
-            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+            if (!status.exists) {
+              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
 
-            await loanHistoryRef.doc(timestamp.toString()).set({
-              totalValue: loanStatus.totalValue,
-              borrowed: loanStatus.borrowed,
-              collateral: loanStatus.totalValue - loanStatus.borrowed,
-              twv: loanStatus.twv,
-              health: loanStatus.health,
-              solvent: loanStatus.solvent === 1e-18,
-              timestamp: timestamp
-            });
-          }
-        })
-      );
-    }
-  }
+              await loanHistoryRef.doc(timestamp.toString()).set({
+                totalValue: loanStatus.totalValue,
+                borrowed: loanStatus.borrowed,
+                collateral: loanStatus.totalValue - loanStatus.borrowed,
+                twv: loanStatus.twv,
+                health: loanStatus.health,
+                solvent: loanStatus.solvent === 1e-18,
+                timestamp: timestamp
+              });
+            }
+          })
+        );
+      }
+    })
+  );
 }
 
-// exports.saveLoansStatusHourly = functions
+// exports.saveLoansStatusCustom = functions
 //   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//   .pubsub.schedule('*/1 * * * *')
+//   .pubsub.schedule('*/5 * * * *')
 //   .onRun(async (context) => {
 //     functions.logger.info("Getting Loans Status.");
-//     return uploadLoanStatus()
+//     return uploadLoanStatusCustom()
 //       .then(() => {
 //         functions.logger.info("Loans Status upload success.");
 //       }).catch((err) => {
 //         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
 //       });
 //   });
-
 
 const uploadLiveLoansStatus = async () => {
   const loanAddresses = await factory.getAllLoans();
