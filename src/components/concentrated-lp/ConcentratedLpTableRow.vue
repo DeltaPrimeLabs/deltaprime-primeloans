@@ -145,9 +145,7 @@ export default {
       disableAllButtons: false,
       healthLoaded: false,
       totalFirstAmount: 0,
-      totalSecondAmount: 0,
-      firstPrice: 0,
-      secondPrice: 0,
+      totalSecondAmount: 0
     };
   },
 
@@ -288,8 +286,8 @@ export default {
             const vault = resp.data.vaults[0];
             this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
             this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
-            this.firstPrice = vault.tokenX.priceUSD;
-            this.secondPrice = vault.tokenY.priceUSD;
+            this.lpToken.firstPrice = vault.tokenX.priceUSD;
+            this.lpToken.secondPrice = vault.tokenY.priceUSD;
           }
       )
 

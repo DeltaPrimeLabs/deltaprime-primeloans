@@ -375,7 +375,7 @@ export default {
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
-            label: 'Min. APR',
+            label: 'Real Yield',
             sortable: false,
             class: 'apr',
             id: 'APR',
