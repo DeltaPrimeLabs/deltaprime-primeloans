@@ -87,7 +87,6 @@ export default class LifiService {
       console.log(request);
 
       const result = await lifi.getRoutes(request);
-      console.log(result.routes);
 
       return result.routes;
     } catch(error) {
@@ -108,7 +107,6 @@ export default class LifiService {
       }
 
       const currentChainId = await signer.getChainId();
-      console.log(currentChainId);
   
       if (currentChainId !== requiredChainId) {
         const ethereum = window.ethereum;
