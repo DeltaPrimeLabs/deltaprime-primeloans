@@ -476,20 +476,19 @@ const uploadLoanStatusCustom = async () => {
     })
   );
 }
-uploadLoanStatusCustom()
 
-exports.saveLoansStatusCustom = functions
-  .runWith({ timeoutSeconds: 120, memory: "2GB" })
-  .pubsub.schedule('*/5 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting Loans Status.");
-    return uploadLoanStatusCustom()
-      .then(() => {
-        functions.logger.info("Loans Status upload success.");
-      }).catch((err) => {
-        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-      });
-  });
+// exports.saveLoansStatusCustom = functions
+//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//   .pubsub.schedule('*/5 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting Loans Status.");
+//     return uploadLoanStatusCustom()
+//       .then(() => {
+//         functions.logger.info("Loans Status upload success.");
+//       }).catch((err) => {
+//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//       });
+//   });
 
 const uploadLiveLoansStatus = async () => {
   const loanAddresses = await factory.getAllLoans();
@@ -553,6 +552,7 @@ exports.saveLoansStatusFromFile = functions
 // }
 
 exports.loanhistory = functions
+  .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .https
   .onRequest((req, res) => {
     cors(req, res, async () => {
