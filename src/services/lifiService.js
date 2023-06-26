@@ -123,9 +123,20 @@ export default class LifiService {
       }
     }
 
+    const updateGasConfig = async (txRequest) => {
+      console.log(txRequest);
+      const updatedTxRequest = {
+        ...txRequest,
+      }
+      console.log(updatedTxRequest);
+
+      return updatedTxRequest;
+    }
+
     const route = await lifi.executeRoute(signer, chosenRoute, {
       updateRouteHook,
-      switchChainHook
+      switchChainHook,
+      updateTransactionRequestHook: updateGasConfig
     });
     console.log(route);
   }
