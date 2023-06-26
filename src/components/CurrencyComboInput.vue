@@ -22,7 +22,12 @@
           <img class="selected-asset__icon" :src="selectedAsset.logo">
           <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
         </div>
-        <DeltaIcon class="chevron" :icon-src="'src/assets/icons/chevron-down.svg'" :size="21" v-on:click.native="toggleSelect()" v-if="displayedOptions && displayedOptions.length > 1"></DeltaIcon>
+        <DeltaIcon class="chevron"
+                   :icon-src="'src/assets/icons/chevron-down.svg'"
+                   :size="21"
+                   v-on:click.native="toggleSelect()"
+                   v-if="displayedOptions && displayedOptions.length > 1">
+        </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div class="select-dropdown">
           <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
@@ -113,6 +118,10 @@ export default {
     setupDisplayedAssetOptions() {
       this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
       this.setSelectedAsset(this.defaultAsset, true);
+      if (!this.selectedAsset) {
+        this.selectOption(this.displayedOptions[0]);
+        this.emitValue();
+      }
     },
 
     searchOptions(searchPhrase) {
@@ -132,7 +141,9 @@ export default {
     selectOption(option) {
       this.selectedAsset = option;
       this.emitValue();
-      this.toggleSelect();
+      if (this.expanded) {
+        this.toggleSelect();
+      }
     },
 
     dropdownPanelClick() {

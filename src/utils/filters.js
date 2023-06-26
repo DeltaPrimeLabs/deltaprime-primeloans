@@ -19,6 +19,16 @@ export default function setupFilters() {
       }
     );
   });
+  Vue.filter('nonAbsoluteUsd', function (value, precision = 2) {
+    if (value == null) return null;
+    return '$ ' + value.toLocaleString(
+      undefined, // use the visitor's browser
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: precision
+      }
+    );
+  });
 
   Vue.filter('usd-precise', function (value) {
     if (value == null) return null;

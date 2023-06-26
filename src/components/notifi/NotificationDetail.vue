@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-detail">
+  <div class="notification-detail notifi-modal__scroll">
     <div v-if="screenLoading" class="loader">
       <VueLoadersBallBeat color="#A6A3FF" scale="1"></VueLoadersBallBeat>
     </div>

@@ -434,4 +434,23 @@
   --apy-input__background-image: linear-gradient(to right, #{$deep-navy} 9%, #{$deep-teal} 50%, #{$eggplant} 92%);
   --apy-input__box-shadow: inset 3px 3px 8px 0 #{$dark-space}80;
   // endregion
+
+  // region RealYield
+  --real-yield__header-text-color: #{$washed-blue};
+  --real-yield__token-name-color: #{$mist-blue};
+  --real-yield__token-logo-opacity: 0.95;
+  --real-yield__label-part-name-color: #{$mist-blue};
+  --real-yield__label-part-value-color: #{$washed-blue};
+  --real-yield__toggle-row-divider-background: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --real-yield__real-yield-section-content-border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --real-yield__real-yield-section-content-background: #{$navy};
+  // endregion
+
+  // region SlideSwitch
+  --slide-switch__background-color--on: #{$dark-lilac};
+  --slide-switch__background-color--off: #{$mist-navy};
+  --slide-switch__indicator-color--on: #{$delta-secondary};
+  --slide-switch__indicator-color--off: #{$mist-fuchsia};
+  --slide-switch__indicator-box-shadow: 1px 1px 3px 0 #{$dark-lapis}7f;
+  // endregion
 }
