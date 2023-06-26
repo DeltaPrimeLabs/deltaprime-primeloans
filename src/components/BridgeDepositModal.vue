@@ -233,7 +233,7 @@ export default {
         fromAddress: this.account.toLowerCase(),
         toChainId: config.chainId,
         toTokenAddress: this.targetAssetAddress.toLowerCase(),
-        toAddress: this.poolAddress.toLowerCase(),
+        toAddress: this.account.toLowerCase(),
         options: {
           order: 'RECOMMENDED',
           slippage: this.userSlippage / 100,

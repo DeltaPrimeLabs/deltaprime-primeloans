@@ -95,10 +95,10 @@ export default class LifiService {
     }
   }
 
-  async bridgeAndDeposit({ bridgeRequest: { lifi, chosenRoute, signer } }) {
+  async bridgeAndDeposit({ bridgeRequest: { lifi, chosenRoute, signer, depositFunc } }) {
 
     const updateRouteHook = (updatedRoute) => {
-      console.log(updatedRoute);
+      console.log('Route updated', updatedRoute);
     }
 
     const switchChainHook = async (requiredChainId) => {
@@ -124,20 +124,27 @@ export default class LifiService {
     }
 
     const updateGasConfig = async (txRequest) => {
-      console.log(txRequest);
-      const updatedTxRequest = {
-        ...txRequest,
-      }
-      console.log(updatedTxRequest);
+      return txRequest;
+    }
 
-      return updatedTxRequest;
+    const acceptExchangeRateUpdate = async (params) => {
+      return params;
     }
 
     const route = await lifi.executeRoute(signer, chosenRoute, {
       updateRouteHook,
       switchChainHook,
-      updateTransactionRequestHook: updateGasConfig
+      updateTransactionRequestHook: updateGasConfig,
+      acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
     });
     console.log(route);
+
+    // const depositRequest = {
+    //   assetSymbol: this.pool.asset.symbol,
+    //   amount: depositEvent.value,
+    //   depositNativeToken: depositEvent.depositNativeToken
+    // };
+
+    // await depositFunc({ depositRequest: depositRequest });
   }
 }

@@ -235,14 +235,15 @@ export default {
         const bridgeRequest = {
           lifi: this.lifiData.lifi,
           chosenRoute: bridgeEvent.chosenRoute,
-          signer: this.provider.getSigner()
+          signer: this.provider.getSigner(),
+          depositFunc: this.deposit
         };
+
         this.handleTransaction(this.lifiService.bridgeAndDeposit, {bridgeRequest: bridgeRequest}, () => {
           ////
           this.$forceUpdate();
         }, () => {
         }).then(() => {
-          this.closeModal();
         });
       });
     },
