@@ -415,11 +415,10 @@ exports.lpAndFarmApyAggregator = functions
 
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
-  const timestamps = [1687262400000, 1687348800000, 1687435200000];
-  const addresses = [loanAddresses[0]];
+  const timestamps = [1687262400000, 1687348800000, 1687435200000, 1687550400000, 1687636800000];
 
   await Promise.all(
-    addresses.map(async loanAddress => {
+    loanAddresses.map(async loanAddress => {
       // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
       const loanHistoryRef = db
         .collection('loansHistory')
@@ -477,19 +476,20 @@ const uploadLoanStatusCustom = async () => {
     })
   );
 }
+uploadLoanStatusCustom()
 
-// exports.saveLoansStatusCustom = functions
-//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//   .pubsub.schedule('*/5 * * * *')
-//   .onRun(async (context) => {
-//     functions.logger.info("Getting Loans Status.");
-//     return uploadLoanStatusCustom()
-//       .then(() => {
-//         functions.logger.info("Loans Status upload success.");
-//       }).catch((err) => {
-//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-//       });
-//   });
+exports.saveLoansStatusCustom = functions
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .pubsub.schedule('*/5 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting Loans Status.");
+    return uploadLoanStatusCustom()
+      .then(() => {
+        functions.logger.info("Loans Status upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+      });
+  });
 
 const uploadLiveLoansStatus = async () => {
   const loanAddresses = await factory.getAllLoans();
