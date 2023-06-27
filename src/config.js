@@ -68,7 +68,7 @@ export default {
       decimals: 18,
       address: addresses.sAVAX,
       debtCoverage: 0.83333333333,
-      apy: 7.2
+      apy: 6.06
     },
     'QI': {name: 'QI', symbol: 'QI', decimals: 18, address: addresses.QI, debtCoverage: 0},
     'PNG': {name: 'PNG', symbol: 'PNG', logoExt: 'png', decimals: 18, address: addresses.PNG, debtCoverage: 0},
