@@ -245,7 +245,6 @@ export default {
       // To-Do: allows to choose desired route option
       if (this.routes.length > 0) {
         this.chosenRoute = this.routes[0];
-        console.log(this.chosenRoute);
       }
 
       if (this.chosenRoute) {
@@ -259,7 +258,8 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const bridgeEvent = {
-        chosenRoute: this.chosenRoute
+        chosenRoute: this.chosenRoute,
+        depositNativeToken: this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX'
       };
       
       this.$emit('BRIDGE_DEPOSIT', bridgeEvent);

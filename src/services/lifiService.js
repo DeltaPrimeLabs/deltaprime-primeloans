@@ -1,8 +1,10 @@
 import { Subject } from 'rxjs';
 import { LiFi } from "@lifi/sdk";
-import { parseUnits } from '@/utils/calculate';
+import { formatUnits, parseUnits } from '@/utils/calculate';
 import { ethers } from 'ethers';
 import axios from 'axios';
+import config from '../config';
+import { switchChain } from '../utils/blockchain';
 
 export default class LifiService {
   lifi$ = new Subject();
@@ -74,6 +76,8 @@ export default class LifiService {
     }
 
     const balances = await this.getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens);
+    this.cachedBalances[chainId] = balances;
+
     return balances;
   }
 
@@ -84,9 +88,9 @@ export default class LifiService {
         ...routesRequest,
         fromAmount: parseUnits(fromAmount, assetDecimals).toString()
       };
-      console.log(request);
 
       const result = await lifi.getRoutes(request);
+      console.log(result.routes);
 
       return result.routes;
     } catch(error) {
@@ -95,7 +99,14 @@ export default class LifiService {
     }
   }
 
-  async bridgeAndDeposit({ bridgeRequest: { lifi, chosenRoute, signer, depositFunc } }) {
+  async bridgeAndDeposit({ bridgeRequest: {
+    lifi,
+    chosenRoute,
+    depositNativeToken,
+    signer,
+    depositFunc,
+    targetSymbol
+  } }) {
 
     const updateRouteHook = (updatedRoute) => {
       console.log('Route updated', updatedRoute);
@@ -117,7 +128,7 @@ export default class LifiService {
           params: [{ chainId: '0x' + requiredChainId.toString(16) }],
         });
 
-        const newProvider = new ethers.providers.Web3Provider(window.ethereum);
+        const newProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
 
         return newProvider.getSigner();
       }
@@ -137,14 +148,25 @@ export default class LifiService {
       updateTransactionRequestHook: updateGasConfig,
       acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
     });
-    console.log(route);
+    console.log('bridge completed.');
 
-    // const depositRequest = {
-    //   assetSymbol: this.pool.asset.symbol,
-    //   amount: depositEvent.value,
-    //   depositNativeToken: depositEvent.depositNativeToken
-    // };
+    if (!route.steps || route.steps.length === 0) {
+      console.log("something wrong with bridge.");
+      return;
+    }
 
-    // await depositFunc({ depositRequest: depositRequest });
+    await switchChain(config.chainId, signer);
+
+    const executionStep = route.steps[0];
+
+    const depositRequest = {
+      assetSymbol: targetSymbol,
+      amount: formatUnits(executionStep.execution.toAmount, executionStep.execution.toToken.decimals),
+      depositNativeToken: depositNativeToken
+    };
+
+    console.log(depositRequest);
+
+    await depositFunc({ depositRequest: depositRequest });
   }
 }

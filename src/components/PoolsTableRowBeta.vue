@@ -234,9 +234,10 @@ export default {
       modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
         const bridgeRequest = {
           lifi: this.lifiData.lifi,
-          chosenRoute: bridgeEvent.chosenRoute,
+          ...bridgeEvent,
           signer: this.provider.getSigner(),
-          depositFunc: this.deposit
+          depositFunc: this.deposit,
+          targetSymbol: this.pool.asset.symbol
         };
 
         this.handleTransaction(this.lifiService.bridgeAndDeposit, {bridgeRequest: bridgeRequest}, () => {
@@ -244,6 +245,7 @@ export default {
           this.$forceUpdate();
         }, () => {
         }).then(() => {
+          this.closeModal();
         });
       });
     },

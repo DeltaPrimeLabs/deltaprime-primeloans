@@ -144,7 +144,7 @@ export default {
         const chainId = await ethereum.request({method: 'eth_chainId'});
 
         if (chainId == this.toHex(config.chainId)) {
-          window.location.reload();
+          this.showNetworkBanner = false;
         } else {
           this.showNetworkBanner = true;
         }
