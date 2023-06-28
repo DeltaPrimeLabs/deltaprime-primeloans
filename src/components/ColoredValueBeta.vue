@@ -2,14 +2,17 @@
   <span class="colored-value-component">
     <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}" :style="styleObject">
       <span class="plus-sign" v-if="value > 0 && showSign">+</span>
-      {{ formattedValue }}
+        <LoadedValue :value="!isUndefined ? formattedValue : null"></LoadedValue>
     </span>
   </span>
 </template>
 
 <script>
+import LoadedValue from "./LoadedValue.vue";
+
 export default {
   name: 'ColoredValueBeta',
+  components: {LoadedValue},
 
   props: {
     formatting: {
@@ -53,6 +56,9 @@ export default {
     },
     styleObject() {
       return this.big ? {} : { 'font-weight': this.fontWeight, 'font-size': `${this.fontSize}px` }
+    },
+    isUndefined() {
+      return isNaN(this.value) || this.value == null;
     }
   }
 };
@@ -80,4 +86,12 @@ export default {
   }
 }
 
+</style>
+
+<style lang="scss">
+.colored-value {
+  .loaded-value-component {
+    height: 20px;
+  }
+}
 </style>
