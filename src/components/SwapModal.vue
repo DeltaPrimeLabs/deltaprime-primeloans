@@ -511,6 +511,13 @@ export default {
                 return 'Amount exceeds the current debt.';
               }
             }
+          },
+        },
+        {
+          validate: async (value) => {
+            if (value + this.sourceAsset.currentExposure > this.sourceAsset.maxExposure) {
+              return 'Amount exceeds the max. allowed in the protocol.';
+            }
           }
         },
       ];
@@ -522,6 +529,15 @@ export default {
             }
           }
         },
+        {
+          validate: async (value) => {
+            const allowed = this.assets[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
+
+            if (value > allowed) {
+              return `Max. allowed ${this.targetAsset} amount is ${allowed}.`;
+            }
+          }
+        }
       ];
     },
 
