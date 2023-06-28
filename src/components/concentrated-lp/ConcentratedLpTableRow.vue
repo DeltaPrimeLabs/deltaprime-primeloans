@@ -29,8 +29,8 @@
       </div>
 
       <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance, 8, true) }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance != null ? lpToken.primaryBalance : 0, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance != null ? lpToken.secondaryBalance : 0, 8, true) }}
       </div>
 
       <div class="table__cell table__cell--double-value loan">
