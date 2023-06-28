@@ -35,6 +35,7 @@
     "@ubeswap/core": "^1.0.2",
     "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
     "apollo-boost": "^0.4.9",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",

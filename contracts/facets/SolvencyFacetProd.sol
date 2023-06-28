@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: ;
-//TODO: is it safe?
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -15,12 +14,15 @@ import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
+import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 //TODO: that probably can be removed later
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
+
+import "hardhat/console.sol";
 
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
     using PriceHelper for uint256;
@@ -569,8 +571,25 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token0) : 1e18;
                     uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token1) : 1e18;
 
-                    uint256 sqrt_p_a = TickMath.getSqrtRatioAtTick(position.tickLower);
-                    uint256 sqrt_p_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
+                    uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
+                    uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
+
+                    uint256 sqrtPrice_a = sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_b = sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
+
+                    console.log('price 0: ', price0);
+                    console.log('price 1: ', price1);
+                    console.log('sqrtPrice_a: ', sqrtPrice_a);
+                    console.log('sqrtPrice_b: ', sqrtPrice_b);
+                    console.log('price a: ', sqrtPrice_a * sqrtPrice_a / 1e18);
+                    console.log('price b: ', sqrtPrice_b * sqrtPrice_b / 1e18);
+                    console.log('a: ', debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * price0 / 10 ** 8);
+                    console.log('b: ', debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * price1 / 10 ** 8);
+
+                    console.log('debtCoverage0: ', debtCoverage0);
+                    console.log('debtCoverage1: ', debtCoverage1);
+                    console.log('1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b: ', 1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b);
+                    console.log('sqrtPrice_b - sqrtPrice_a: ', sqrtPrice_b - sqrtPrice_a);
 
                     total = total +
 
@@ -579,9 +598,10 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
                     //TODO: check for possible under/overflowsL557
 
+
                     Math.min(
-                        debtCoverage0 * position.liquidity * (sqrt_p_b - 1e18 / sqrt_p_a) * price0 / 10 ** 8,
-                        debtCoverage1 * position.liquidity * (sqrt_p_a - 1e18 / sqrt_p_b) * price1 / 10 ** 8
+                        debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * price0 / 10 ** 8,
+                        debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * price1 / 10 ** 8
                     );
                 }
             }
@@ -639,7 +659,9 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * @dev This function uses the redstone-evm-connector
     **/
     function getTotalValue() public view virtual returns (uint256) {
-        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
+        //TODO: TraderJoe
+//        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
+        return getTotalAssetsValue() + getStakedValue() + getTotalUniswapV3();
     }
 
     /**
@@ -648,7 +670,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     **/
     function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory assetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         //TODO: it's a proposal where we add underlying assets of users LB positions to ownedAssetsPrices
-        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalTraderJoeV2WithPrices(ownedAssetsPrices);
+//        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalTraderJoeV2WithPrices(ownedAssetsPrices);
+        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalUniswapV3WithPrices(ownedAssetsPrices);
     }
 
     function getFullLoanStatus() public view returns (uint256[5] memory) {
@@ -702,5 +725,26 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
         } else if (y != 0) {
             z = 1;
         }
+    }
+
+  //source: https://ethereum.stackexchange.com/questions/98685/computing-the-uniswap-v3-pair-price-from-q64-96-number
+    function sqrtPriceX96ToUint(uint160 sqrtPriceX96, uint8 decimalsToken0)
+    internal
+    view  //TODO: pure
+    returns (uint256)
+    {
+
+        //TODO: remove
+        {
+            uint256 numerator1 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96);
+            uint256 numerator2 = 10**decimalsToken0;
+            console.log('price from method: ', FullMath.mulDiv(numerator1, numerator2, 1 << 192));
+        }
+
+
+//        uint256 numerator1 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96);
+        uint256 numerator1 = uint256(sqrtPriceX96);
+        uint256 numerator2 = 10**decimalsToken0;
+        return FullMath.mulDiv(numerator1, numerator2, 2 ** 96);
     }
 }

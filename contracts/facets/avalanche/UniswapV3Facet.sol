@@ -59,7 +59,12 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
         address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
-        (uint256 tokenId,,,) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
+        (uint256 tokenId,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+        ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
+
 
         if (getOwnedUniswapV3TokenIds().length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
         getOwnedUniswapV3TokenIds().push(tokenId);
