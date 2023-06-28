@@ -183,6 +183,7 @@ export default {
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
         rootState.serviceRegistry.aprService.emitRefreshApr();
+        await dispatch('setupAssetExposures');
         try {
           await dispatch('getFullLoanStatus');
         } catch (e) {
@@ -211,6 +212,7 @@ export default {
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+        await dispatch('setupAssetExposures');
         setTimeout(async () => {
           await dispatch('getFullLoanStatus');
         }, 5000);
@@ -268,6 +270,26 @@ export default {
       commit('setAssets', assets);
 
       rootState.serviceRegistry.priceService.emitRefreshPrices();
+    },
+
+    async setupAssetExposures({state, commit}) {
+      const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
+      let assets = state.assets;
+
+      for (let symbol of Object.keys(assets)) {
+        let asset = assets[symbol];
+
+        if (asset.groupIdentifier) {
+          const decimals = asset.decimals;
+
+          const exposure = await tokenManager.groupToExposure(toBytes32(asset.groupIdentifier));
+
+          asset.currentExposure = parseFloat(formatUnits(exposure.current, decimals));
+          asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
+        }
+      }
+
+      commit('setAssets', assets);
     },
 
     async setupLpAssets({state, rootState, commit}) {
