@@ -203,45 +203,23 @@ export default {
     async updateFunds({state, dispatch, commit, rootState}) {
       console.log('updateFunds')
       try {
-        console.log(0)
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
         }
-        console.log(1)
 
-        await dispatch('setupApys');
-        console.log(2)
-        await dispatch('setupAssets');
-        console.log(3)
-
+        await dispatch('setupApys');await dispatch('setupAssets');
         await dispatch('setupLpAssets');
-        console.log(4)
-
         await dispatch('setupConcentratedLpAssets');
-        console.log(5)
-
         await dispatch('getAllAssetsBalances');
-        console.log(6)
-
         await dispatch('getAllAssetsApys');
-
-        console.log(7)
-
         await dispatch('getDebtsPerAsset');
-        console.log(8)
-
         await dispatch('getFullLoanStatus');
-        console.log(9)
-
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
-        console.log(10)
 
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
-        console.log(11)
 
         await dispatch('setupAssetExposures');
-        console.log(12)
 
         setTimeout(async () => {
           await dispatch('getFullLoanStatus');
@@ -303,21 +281,16 @@ export default {
     },
 
     async setupAssetExposures({state, commit}) {
-      console.log('setup exposure!')
       const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
       let assets = state.assets;
 
       for (let symbol of Object.keys(assets)) {
         let asset = assets[symbol];
-        console.log('asset: ', asset)
 
         if (asset.groupIdentifier) {
           const decimals = asset.decimals;
 
           const exposure = await tokenManager.groupToExposure(toBytes32(asset.groupIdentifier));
-
-          console.log('exposure: ')
-          console.log(exposure)
 
           asset.currentExposure = parseFloat(formatUnits(exposure.current, decimals));
           asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
