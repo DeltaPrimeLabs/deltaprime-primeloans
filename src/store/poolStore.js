@@ -154,27 +154,19 @@ export default {
 
     async swapDeposit({state, rootState, dispatch}, {swapDepositRequest}) {
       const provider = rootState.network.provider;
-      console.log('swapDepositRequest', swapDepositRequest);
-      console.log(DEPOSIT_SWAP);
 
       const depositSwapContract = new ethers.Contract(DEPOSIT_SWAP_CONTRACT_ADDRESS, DEPOSIT_SWAP.abi, provider.getSigner());
       const sourceAmountInWei = parseUnits(swapDepositRequest.sourceAmount, config.ASSETS_CONFIG[swapDepositRequest.sourceAsset].decimals);
       const targetAmountInWei = parseUnits(swapDepositRequest.targetAmount, config.ASSETS_CONFIG[swapDepositRequest.targetAsset].decimals);
-      console.log(sourceAmountInWei);
-      console.log(depositSwapContract);
 
       const approveTransaction = await swapDepositRequest.sourcePoolContract
         .connect(provider.getSigner())
         .approve(DEPOSIT_SWAP_CONTRACT_ADDRESS, sourceAmountInWei, {gasLimit: 100000});
 
-      console.log('after approve TX');
-
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
       await awaitConfirmation(approveTransaction, provider, 'approve');
-
-      console.log('after await confirmation');
 
 
       const depositSwapTransaction = await depositSwapContract.depositSwap(
@@ -183,13 +175,6 @@ export default {
         swapDepositRequest.path,
         swapDepositRequest.adapters,
       );
-
-      console.log('swapDepositRequest.path', swapDepositRequest.path);
-      console.log('swapDepositRequest.adapters', swapDepositRequest.adapters);
-      console.log('swapDepositRequest.sourceAsset', swapDepositRequest.sourceAsset);
-      console.log('swapDepositRequest.targetAsset', swapDepositRequest.targetAsset);
-      console.log('sourceAmountInWei', sourceAmountInWei);
-      console.log('targetAmountInWei', targetAmountInWei);
 
       await awaitConfirmation(depositSwapTransaction, provider, 'depositSwap');
 

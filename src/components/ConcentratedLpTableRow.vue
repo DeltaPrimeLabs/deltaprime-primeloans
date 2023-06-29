@@ -441,7 +441,6 @@ export default {
           dex: this.lpToken.dex
         };
         this.handleTransaction(this.removeLiquidityConcentratedPool, {removeLiquidityRequest: removeLiquidityRequest}, () => {
-          console.log(removeLiquidityRequest);
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);

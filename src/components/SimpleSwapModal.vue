@@ -197,7 +197,6 @@ export default {
 
   computed: {
     sourceAssetValue() {
-      console.log(this.sourceAssetData);
       const sourceAssetUsdPrice = Number(this.sourceAssetAmount) * this.assetPrices[this.sourceAssetData.symbol];
       return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
     },
@@ -317,13 +316,11 @@ export default {
 
     setupSourceAsset() {
       this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
-      console.log('this.sourceAssetData', this.sourceAssetData);
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
         this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
-        console.log('this.targetAssetData', this.targetAssetData);
       }
     },
 
