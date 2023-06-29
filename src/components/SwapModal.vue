@@ -512,14 +512,7 @@ export default {
               }
             }
           },
-        },
-        {
-          validate: async (value) => {
-            if (value + this.sourceAsset.currentExposure > this.sourceAsset.maxExposure) {
-              return 'Amount exceeds the max. allowed in the protocol.';
-            }
-          }
-        },
+        }
       ];
       this.targetValidators = [
         {
@@ -534,7 +527,7 @@ export default {
             const allowed = this.assets[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
 
             if (value > allowed) {
-              return `Max. allowed ${this.targetAsset} amount is ${allowed}.`;
+              return `Max. allowed ${this.targetAsset} amount is ${allowed.toFixed(0)}.`;
             }
           }
         }

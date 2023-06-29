@@ -283,7 +283,7 @@ export default {
             const allowed = this.asset.maxExposure - this.asset.currentExposure;
 
             if (value > allowed) {
-              return `Max. allowed ${this.asset.symbol} amount is ${allowed}.`;
+              return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
             }
           }
         }
