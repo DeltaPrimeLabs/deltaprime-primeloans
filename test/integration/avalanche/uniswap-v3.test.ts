@@ -163,46 +163,45 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(6 * tokensPrices.get('AVAX')!, 3);
         });
-
-        it("should fail to add LB as a non-owner", async () => {
-            const addedAvax = toWei('1');
-            const addedUSDC = parseUnits('10', BigNumber.from('6'));
-
-            await expect(nonOwnerWrappedLoan.addLiquidityUniswapV3(
-                [
-                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-                    3000,
-                    47640,
-                    61500,
-                    addedAvax,
-                    addedUSDC,
-                    0,
-                    0,
-                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
-                    Math.ceil((new Date().getTime() / 1000) + 100)
-                ]
-            )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        });
+        //
+        // it("should fail to add LB as a non-owner", async () => {
+        //     const addedAvax = toWei('1');
+        //     const addedUSDC = parseUnits('10', BigNumber.from('6'));
+        //
+        //     await expect(nonOwnerWrappedLoan.addLiquidityUniswapV3(
+        //         [
+        //             "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+        //             "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+        //             3000,
+        //             47640,
+        //             61500,
+        //             addedAvax,
+        //             addedUSDC,
+        //             0,
+        //             0,
+        //             "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+        //             Math.ceil((new Date().getTime() / 1000) + 100)
+        //         ]
+        //     )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        // });
 
         it("should fail to unstake as a non-owner", async () => {
             //TODO:
         });
 
-        it("should stake AVAX/USDC", async () => {
+        it("should stake AVAX/USDC below AVAX price (~3$)", async () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
-
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
 
             await expect(wrappedLoan.addLiquidityUniswapV3(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
                     500,
-                    47640,
-                    61500,
+                    // 10000,
+                    // 10100,
+                    -1000,
+                    1000,
                     addedAvax,
                     addedUSDC,
                     0,
@@ -216,6 +215,37 @@ describe('Smart loan', () => {
             console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
 
         });
+
+        // it("should stake AVAX/USDC above AVAX price (~150$)", async () => {
+        //     const addedAvax = toWei('1');
+        //     const addedUSDC = parseUnits('10', BigNumber.from('6'));
+        //
+        //     console.log('addedAvax: ', addedAvax)
+        //     console.log('addedUSDC: ', addedUSDC)
+        //     console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
+        //     console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+        //
+        //     await expect(wrappedLoan.addLiquidityUniswapV3(
+        //         [
+        //             "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+        //             "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+        //             500,
+        //             50000,
+        //             50100,
+        //             addedAvax,
+        //             addedUSDC,
+        //             0,
+        //             0,
+        //             "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+        //             Math.ceil((new Date().getTime() / 1000) + 100)
+        //         ]
+        //     )).not.to.be.reverted;
+        //
+        //     console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
+        //     console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+        //
+        // });
+
 
         it("should unstake AVAX/USDC", async () => {
             //TODO

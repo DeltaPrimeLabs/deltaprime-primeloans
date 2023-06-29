@@ -14,6 +14,11 @@ interface IUniswapV3Facet {
         uint128 liquidity;
     }
 
-    function addLiquidityUniswapV3(INonfungiblePositionManager.MintParams calldata params) external;
+
+    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams calldata params) external;
+
+    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams calldata params) external;
+
+    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams calldata params) external;
 
 }

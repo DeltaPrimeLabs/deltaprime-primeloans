@@ -49,13 +49,14 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         return false;
     }
 
-    function addLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
         params.recipient = address(this);
 
+        //TODO: check for max and min ticks
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
         address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
@@ -72,15 +73,58 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         //TODO: not sure if that is the best solution
+        //TODO: remember that we can't remove these owned assets in other parts of the code!!!
         DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token0), params.token0);
         DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token1), params.token1);
 
-        //TODO: event
+        //TODO: check amount0 and amount1
+        emit AddLiquidityUniswapV3(msg.sender, poolAddress, tokenId, tokenManager.tokenAddressToSymbol(params.token0), tokenManager.tokenAddressToSymbol(params.token1), liquidity, amount0, amount1, block.timestamp);
     }
 
-    //TODO: increase liquidity
-    //TODO: withdraw liquidity
-    //TODO: burn?
+    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
+
+        if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
+
+        params.recipient = address(this);
+
+        address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
+        address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
+
+        (
+        uint256 amount0,
+        uint256 amount1
+        ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).increaseLiquidity(params);
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        //TODO: not sure if that is the best solution
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token0), params.token0);
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token1), params.token1);
+
+        emit IncreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, tokenManager.tokenAddressToSymbol(params.token0), tokenManager.tokenAddressToSymbol(params.token1), amount0, amount1, block.timestamp);
+    }
+
+    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
+        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
+
+        params.recipient = address(this);
+
+        (
+        uint256 amount0,
+        uint256 amount1
+        ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).decreaseLiquidity(params);
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        //TODO: not sure if that is the best solution
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token0), params.token0);
+        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(params.token1), params.token1);
+
+        emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, tokenManager.tokenAddressToSymbol(params.token0), tokenManager.tokenAddressToSymbol(params.token1), amount0, amount1, block.timestamp);
+    }
+
+    //TODO: burn method
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
@@ -91,4 +135,47 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     error UniswapV3PoolNotWhitelisted();
 
     error TooManyUniswapV3Positions();
+
+    /**
+     * @dev emitted after minting liquidity
+     * @param user the address of user providing liquidity
+     * @param pool UniswapV3 pool
+     * @param tokenId the if of NFT LP position
+     * @param firstAsset first asset provided for liquidity
+     * @param secondAsset second asset provided for liquidity
+     * @param liquidity amount of liquidity (LP token) added
+     * @param firstAmount amount of the first asset used
+     * @param secondAmount amount of the second asset used
+     * @param timestamp time of the transaction
+     **/
+    event AddLiquidityUniswapV3(address indexed user, address indexed pool, uint256 indexed tokenId, bytes32 firstAsset, bytes32 secondAsset, uint liquidity, uint firstAmount, uint secondAmount, uint256 timestamp);
+
+    /**
+     * @dev emitted after increasing liquidity
+     * @param user the address of user providing liquidity
+     * @param pool UniswapV3 pool
+     * @param tokenId the if of NFT LP position
+     * @param firstAsset first asset provided for liquidity
+     * @param secondAsset second asset provided for liquidity
+     * @param firstAmount amount of the first asset used
+     * @param secondAmount amount of the second asset used
+     * @param timestamp time of the transaction
+     **/
+    event IncreaseLiquidityUniswapV3(address indexed user, address indexed pool, uint256 indexed tokenId, bytes32 firstAsset, bytes32 secondAsset, uint firstAmount, uint secondAmount, uint256 timestamp);
+
+    /**
+     * @dev emitted after decreasing liquidity
+     * @param user the address of user decreasing liquidity
+     * @param pool UniswapV3 pool
+     * @param tokenId the if of NFT LP position
+     * @param firstAsset first asset received
+     * @param secondAsset second asset received
+     * @param firstAmount amount of the first asset received
+     * @param secondAmount amount of the second asset received
+     * @param timestamp time of the transaction
+     **/
+    event DecreaseLiquidityUniswapV3(address indexed user, address indexed pool, uint256 indexed tokenId, bytes32 firstAsset, bytes32 secondAsset, uint firstAmount, uint secondAmount, uint256 timestamp);
+
+
+    //TODO: burn??
 }
