@@ -18,6 +18,8 @@ import ThemeService from "../services/themeService";
 import StatsService from '../services/statsService';
 import LoanHistoryService from "../services/loanHistoryService";
 import NotifiService from '../services/notifiService';
+import WalletAssetBalancesService from '../services/walletAssetBalancesService';
+import LifiService from '../services/lifiService';
 
 export default {
   namespaced: true,
@@ -42,5 +44,7 @@ export default {
     statsService: new StatsService(),
     loanHistoryService: new LoanHistoryService(),
     notifiService: new NotifiService(),
+    walletAssetBalancesService: new WalletAssetBalancesService(),
+    lifiService: new LifiService(),
   },
 };

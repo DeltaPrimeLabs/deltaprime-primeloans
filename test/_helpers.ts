@@ -1,12 +1,14 @@
 import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import { TransactionParams } from '@paraswap/sdk';
 import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
+import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import fetch from "node-fetch";
@@ -18,6 +20,8 @@ import addresses from "../common/addresses/avax/token_addresses.json";
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
 export const erc20ABI = require('./abis/ERC20.json');
+
+export const GMDVaultABI = require('./abis/GMDVaultAbi.json');
 export const LPAbi = require('./abis/LP.json');
 export const wavaxAbi = require('./abis/WAVAX.json');
 export const yakRouterAbi = require('./abis/YakRouter.json');
@@ -547,6 +551,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
+        "ParaSwapFacet",
+        diamondAddress,
+        [
+            'paraSwap',
+        ],
+        hardhatConfig
+    );
+    await deployFacet(
         "GLPFacet",
         diamondAddress,
         [
@@ -556,6 +568,21 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+    await deployFacet(
+    "GMDFacet",
+        diamondAddress,
+        [
+            'gmdStakeUSDC',
+            'gmdStakeAVAX',
+            'gmdStakeBTCb',
+            'gmdStakeWETHe',
+            'gmdUnstakeUSDC',
+            'gmdUnstakeAVAX',
+            'gmdUnstakeBTCb',
+            'gmdUnstakeWETHe',
+        ],
+        hardhatConfig
+)
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,
@@ -702,6 +729,22 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig)
 
+        await deployFacet("CurveFacet", diamondAddress, [
+            'stakeCurve',
+            'unstakeCurve',
+            'unstakeOneTokenCurve'
+        ],
+        hardhatConfig)
+
+        await deployFacet("SteakHutFinanceFacet", diamondAddress, [
+                'stakeSteakHutAVAXUSDC',
+                'unstakeSteakHutAVAXUSDC',
+                'stakeSteakHutBTCAVAX',
+                'unstakeSteakHutBTCAVAX',
+                'stakeSteakHutUSDTeUSDT',
+                'unstakeSteakHutUSDTeUSDT',
+            ],
+            hardhatConfig)
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
@@ -838,7 +881,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
                 break;
             case 'USDC':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+            case 'BTC':
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['BTC'], erc20ABI, provider);
                 break;
         }
     } else if (chain === 'CELO') {
@@ -1004,4 +1051,31 @@ export class StakedPosition {
         this.unstakeSelector = unstakeSelector;
     }
 }
+
+export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
+    const data = "0x" + txParams.data.substr(10);
+    const [
+        decoded,
+    ] = ethers.utils.defaultAbiCoder.decode(
+        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
+        data
+    );
+    return {
+        fromToken: decoded[0],
+        toToken: decoded[1],
+        fromAmount: decoded[2],
+        toAmount: decoded[3],
+        expectedAmount: decoded[4],
+        callees: decoded[5],
+        exchangeData: decoded[6],
+        startIndexes: decoded[7],
+        values: decoded[8],
+        beneficiary: decoded[9],
+        partner: decoded[10],
+        feePercent: decoded[11],
+        permit: decoded[12],
+        deadline: decoded[13],
+        uuid: decoded[14],
+    };
+};
 

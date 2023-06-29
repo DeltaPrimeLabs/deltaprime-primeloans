@@ -209,6 +209,10 @@ export default {
       return {value: this.value, error: hasError};
     },
 
+    clearInput() {
+      this.setValue(0);
+    },
+
     setupDefaultValidators() {
       const positiveValidator = {
         validate: (value) => {

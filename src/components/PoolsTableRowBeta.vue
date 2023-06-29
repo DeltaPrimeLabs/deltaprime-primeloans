@@ -11,7 +11,8 @@
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.deposit != null" :value="pool.deposit | smartRound(5, false) | formatWithSpaces"></LoadedValue>
+            <LoadedValue :check="() => pool.deposit != null"
+                         :value="pool.deposit | smartRound(5, false) | formatWithSpaces"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
@@ -29,7 +30,8 @@
 
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.tvl != null" :value="pool.tvl | smartRound(5, false) | formatWithSpaces"></LoadedValue>
+          <LoadedValue :check="() => pool.tvl != null"
+                       :value="pool.tvl | smartRound(5, false) | formatWithSpaces"></LoadedValue>
         </div>
         <div class="double-value__usd">
           <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
@@ -44,12 +46,12 @@
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          v-for="(actionConfig, index) of actionsConfig"
-          :disabled="!pool.contract"
-          v-bind:key="index"
-          :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+            class="actions__icon-button"
+            v-for="(actionConfig, index) of actionsConfig"
+            :disabled="!pool.contract"
+            v-bind:key="index"
+            :config="actionConfig"
+            v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -63,48 +65,119 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
+import SwapModal from './SwapModal.vue';
+import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
+import SimpleSwapModal from './SimpleSwapModal.vue';
+import {forkJoin} from 'rxjs';
+import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import config from '../config';
+import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
+import YAK_WRAP_ROUTER from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 
+const DEPOSIT_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
 
 export default {
   name: 'PoolsTableRowBeta',
   components: {LoadedValue, IconButtonMenuBeta},
   props: {
-    pool: {}
+    pool: {},
   },
 
   mounted() {
     this.setupActionsConfiguration();
+    this.setupWalletAssetBalances();
+    this.setupPoolsAssetsData();
+    this.watchLifi();
   },
 
   data() {
     return {
       actionsConfig: null,
+      walletAssetBalances: {},
+      poolDepositBalances: {},
+      poolAssetsPrices: {},
+      poolContracts: {},
+      lifiData: {}
     };
   },
 
   computed: {
-    ...mapState('network', ['account', 'accountBalance', 'provider'])
+    ...mapState('network', ['account', 'accountBalance', 'provider']),
+    ...mapState('fundsStore', [
+      'assetBalances',
+      'fullLoanStatus',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'noSmartLoan'
+    ]),
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService'])
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw']),
+    ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Deposit',
-          iconButtonActionKey: 'DEPOSIT'
+          // tooltip: 'Deposit',
+          // iconButtonActionKey: 'DEPOSIT'
+          tooltip: 'Deposit / Bridge',
+          menuOptions: [
+            {
+              key: 'DEPOSIT',
+              name: 'Deposit'
+            },
+            {
+              key: 'BRIDGE_DEPOSIT',
+              name: 'Bridge'
+            },
+          ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
+        {
+          iconSrc: 'src/assets/icons/swap.svg',
+          tooltip: 'Swap',
+          iconButtonActionKey: 'SWAP_DEPOSIT'
+        },
       ];
+    },
+
+    setupWalletAssetBalances() {
+      this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
+        this.walletAssetBalances = balances;
+      });
+    },
+
+    setupPoolsAssetsData() {
+      const poolDepositBalances = {};
+      const poolAssetsPrices = {};
+      const poolContracts = {};
+      this.poolService.observePools().subscribe(pools => {
+        pools.forEach(pool => {
+          poolDepositBalances[pool.asset.symbol] = pool.deposit;
+          poolAssetsPrices[pool.asset.symbol] = pool.assetPrice;
+          poolContracts[pool.asset.symbol] = pool.contract;
+        })
+        this.poolDepositBalances = poolDepositBalances;
+        this.poolAssetsPrices = poolAssetsPrices;
+        this.poolContracts = poolContracts;
+      })
+    },
+
+    watchLifi() {
+      this.lifiService.observeLifi().subscribe(async lifiData => {
+        this.lifiData = lifiData;
+      });
     },
 
     actionClick(key) {
@@ -112,21 +185,22 @@ export default {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
+        case 'BRIDGE_DEPOSIT':
+          this.openBridgeModal();
+          break;
         case 'WITHDRAW':
           this.openWithdrawModal();
           break;
+        case 'SWAP_DEPOSIT':
+          this.openSwapDepositModal();
+          break;
       }
-    },
-
-    async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(addresses[this.pool.asset.symbol], erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.pool.asset.symbol, tokenContract, false);
     },
 
     async openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
       modalInstance.apy = this.pool.apy;
-      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.walletAssetBalance = this.walletAssetBalances[this.pool.asset.symbol];
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
@@ -142,6 +216,34 @@ export default {
           this.$forceUpdate();
         }, () => {
 
+        }).then(() => {
+        });
+      });
+    },
+
+    openBridgeModal() {
+      const modalInstance = this.openModal(BridgeDepositModal);
+      modalInstance.account = this.account;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.targetAsset = this.pool.asset.symbol;
+      modalInstance.targetAssetAddress = this.pool.asset.address;
+      modalInstance.targetAssetPrice = this.pool.assetPrice;
+      modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
+      modalInstance.poolAddress = this.pool.contract.address;
+      modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
+        const bridgeRequest = {
+          lifi: this.lifiData.lifi,
+          ...bridgeEvent,
+          signer: this.provider.getSigner(),
+          depositFunc: this.deposit,
+          targetSymbol: this.pool.asset.symbol
+        };
+
+        this.handleTransaction(this.lifiService.bridgeAndDeposit, {bridgeRequest: bridgeRequest}, () => {
+          ////
+          this.$forceUpdate();
+        }, () => {
         }).then(() => {
           this.closeModal();
         });
@@ -166,11 +268,69 @@ export default {
         }, () => {
 
         }).then(() => {
-          this.closeModal();
         });
       });
     },
 
+    openSwapDepositModal() {
+      const modalInstance = this.openModal(SimpleSwapModal);
+      modalInstance.sourceAsset = this.pool.asset.symbol;
+      modalInstance.sourceAssetBalance = this.pool.deposit;
+      modalInstance.sourceAssets = DEPOSIT_ASSETS;
+      modalInstance.targetAssets = DEPOSIT_ASSETS;
+      modalInstance.assetBalances = this.poolDepositBalances;
+      modalInstance.assetPrices = this.poolAssetsPrices;
+      modalInstance.targetAsset = DEPOSIT_ASSETS.filter(asset => asset !== this.pool.asset.symbol)[0];
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.queryMethod = this.swapDepositQueryMethod();
+
+
+      modalInstance.$on('SWAP', swapEvent => {
+        const sourceAssetDecimals = config.ASSETS_CONFIG[swapEvent.sourceAsset].decimals;
+        const targetAssetDecimals = config.ASSETS_CONFIG[swapEvent.targetAsset].decimals;
+        const swapDepositRequest = {
+          ...swapEvent,
+          sourceAmount: swapEvent.sourceAmount.toFixed(sourceAssetDecimals),
+          targetAmount: swapEvent.targetAmount.toFixed(targetAssetDecimals),
+          sourcePoolContract: this.poolContracts[swapEvent.sourceAsset],
+        };
+
+        this.handleTransaction(this.swapDeposit, {swapDepositRequest: swapDepositRequest}, () => {
+          console.log('SUCCESSADO');
+          this.$forceUpdate();
+        }, () => {
+
+        }).then(() => {
+        })
+      })
+    },
+
+    swapDepositQueryMethod() {
+      return async (sourceAsset, targetAsset, amountIn) => {
+        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
+        const tknTo = TOKEN_ADDRESSES[targetAsset];
+
+        const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
+
+        const maxHops = 1;
+        const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+
+        try {
+          return await yakRouter.findBestPathWithGas(
+            amountIn,
+            tknFrom,
+            tknTo,
+            maxHops,
+            gasPrice,
+            {gasLimit: 1e9}
+          );
+        } catch (e) {
+          this.handleTransactionError(e);
+        }
+      };
+    },
   }
 };
 </script>
@@ -184,7 +344,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 120px 76px 22px;
+    grid-template-columns: repeat(3, 1fr) 20% 1fr 90px 110px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

@@ -308,7 +308,7 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            isLP: true,
+            type: 'LP',
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
@@ -328,7 +328,9 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -338,7 +340,7 @@ export default {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-          isLP: true,
+          type: 'LP',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.$forceUpdate();
@@ -426,7 +428,7 @@ export default {
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, true);
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, "LP");
     },
 
     watchAssetBalancesDataRefreshEvent() {

@@ -8,15 +8,17 @@ import redstone from 'redstone-api';
 const ethers = require('ethers');
 
 export default class PoolService {
-  refreshPools$ = new Subject();
+  pools$ = new Subject();
+  pools = [];
 
   emitPools(pools) {
     console.log('emitting pools', pools);
-    this.refreshPools$.next(pools);
+    this.pools = pools;
+    this.pools$.next(pools);
   }
 
   observePools() {
-    return this.refreshPools$.asObservable();
+    return this.pools$.asObservable();
   }
 
   setupPools(provider, account, redstonePriceData) {
@@ -56,7 +58,14 @@ export default class PoolService {
     )
   }
 
-  fetchPoolData(poolAsset, callback) {
-
+  emitPoolDepositChange(amount, poolAssetSymbol, operation) {
+    console.log(`emitting ${poolAssetSymbol} deposit change: ${amount}, ${operation}`);
+    const pool = this.pools.find(pool => pool.asset.symbol === poolAssetSymbol);
+    if (operation === 'DEPOSIT') {
+      pool.deposit = Number(pool.deposit) + Number(amount);
+    } else if (operation === 'WITHDRAW') {
+      pool.deposit = Math.max(pool.deposit - amount, 0);
+    }
+    this.emitPools(this.pools);
   }
 };

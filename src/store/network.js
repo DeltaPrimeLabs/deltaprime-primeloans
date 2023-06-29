@@ -35,7 +35,7 @@ export default {
     },
     async initProvider({ commit, rootState }) {
       await ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
       window.provider = provider;
 
       await commit('setProvider', provider);
@@ -60,6 +60,7 @@ export default {
     async updateBalance({ state, commit }) {
       const mainAccount = state.account;
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
+      console.log('rootState.balance', balance);
 
       commit('setAccountBalance', balance);
     },

@@ -8,6 +8,10 @@
         Swap debt
       </div>
 
+      <div class="dex-toggle">
+        <Toggle v-on:change="swapDexChange" :options="['YakSwap', 'ParaSwap']"></Toggle>
+      </div>
+
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
@@ -173,12 +177,14 @@ import SimpleInput from './SimpleInput';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
+import Toggle from './Toggle.vue';
 
 const ethers = require('ethers');
 
 export default {
   name: 'SwapModal',
   components: {
+    Toggle,
     InfoIcon,
     DeltaIcon,
     SimpleInput,
@@ -228,6 +234,8 @@ export default {
       debtsPerAsset: {},
       lpAssets: {},
       lpBalances: {},
+      concentratedLpAssets: {},
+      concentratedLpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -239,6 +247,9 @@ export default {
       adapters: null,
       maxButtonUsed: false,
       valueAsset: "USDC",
+      paraSwapRate: {},
+      swapDex: 'YakSwap',
+      currentSourceInputChangeEvent: {},
     };
   },
 
@@ -284,15 +295,28 @@ export default {
         sourceAmount: sourceAssetAmount,
         targetAmount: this.targetAssetAmount,
         path: this.path,
-        adapters: this.adapters
+        adapters: this.adapters,
+        paraSwapRate: this.paraSwapRate,
+        swapDex: this.swapDex
       });
+    },
+
+    swapDexChange(dex) {
+      console.log(this.currentSourceInputChangeEvent);
+      this.swapDex = dex;
+      console.log(this.swapDex);
+      this.setupSourceAssetOptions();
+      this.setupTargetAssetOptions();
+      if (this.currentSourceInputChangeEvent.value) {
+        this.sourceInputChange(this.currentSourceInputChangeEvent);
+      }
     },
 
     async query(sourceAsset, targetAsset, amountIn) {
       if (this.swapDebtMode) {
         return await this.queryMethod(sourceAsset, targetAsset, amountIn);
       } else {
-        return await this.queryMethod(sourceAsset, targetAsset, amountIn);
+        return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
     },
 
@@ -308,15 +332,22 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
+      console.warn('QUERY RESPONSE YAK SWAP');
+      console.log(queryResponse);
 
       let estimated;
       if (queryResponse) {
-        if (queryResponse instanceof BigNumber) {
-          estimated = queryResponse;
-        } else {
-          this.path = queryResponse.path;
-          this.adapters = queryResponse.adapters;
+        if (queryResponse.dex === 'PARA_SWAP') {
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+          this.paraSwapRate = queryResponse.swapRate;
+        } else {
+          if (queryResponse instanceof BigNumber) {
+            estimated = queryResponse;
+          } else {
+            this.path = queryResponse.path;
+            this.adapters = queryResponse.adapters;
+            estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+          }
         }
 
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
@@ -364,7 +395,7 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      this.sourceAssets.forEach(assetSymbol => {
+      this.sourceAssets[this.swapDex].forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -377,7 +408,7 @@ export default {
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
-      this.targetAssets.forEach(assetSymbol => {
+      this.targetAssets[this.swapDex].forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -401,6 +432,8 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      console.log(changeEvent);
+      this.currentSourceInputChangeEvent = changeEvent;
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
@@ -458,6 +491,7 @@ export default {
     },
 
     ongoingTyping(event) {
+      console.log('TYPING EVENT', event);
       this.isTyping = event.typing;
     },
 
@@ -562,6 +596,16 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage,
+          symbol: symbol
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -623,7 +667,7 @@ export default {
   .reverse-swap-button {
     position: relative;
     cursor: pointer;
-    margin: 14px auto;
+    margin: 28px auto;
     height: 40px;
     width: 40px;
     border: var(--swap-modal__reverse-swap-button-border);
@@ -712,6 +756,10 @@ export default {
     height: 20px;
     transform: translateY(-1px);
   }
+}
+
+.dex-toggle {
+  margin-bottom: 30px;
 }
 
 </style>

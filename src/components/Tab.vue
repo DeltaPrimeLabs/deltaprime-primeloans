@@ -35,6 +35,9 @@ export default {
   align-items: flex-start;
   width: 1126px;
   margin: 20px 52px 0 52px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: all 200ms ease-in-out;
 
   @media screen and (min-width: $md) {
     margin-top: 0;

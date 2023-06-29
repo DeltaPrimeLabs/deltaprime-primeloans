@@ -139,7 +139,6 @@ export default {
 
     async getTransactionHistory(accountAddress, page, pageSize) {
       const response = await this.statsService.getUserTransactionHistory(accountAddress, page, pageSize);
-      console.log(response);
       this.transactionHistory = response.data.user.transactions;
       this.totalTransactions = response.data.user.numTransactions;
       this.$forceUpdate();
@@ -147,13 +146,14 @@ export default {
     },
 
     parseToken: function (transactionAsset) {
-      if (transactionAsset) {
-        if (config.ASSETS_CONFIG[transactionAsset]) {
-          return transactionAsset;
-        } else if (config.LP_ASSETS_CONFIG[transactionAsset]) {
-          return config.LP_ASSETS_CONFIG[transactionAsset].name;
+      const parsedTokenSymbol = this.parseTokenSymbol(transactionAsset);
+      if (parsedTokenSymbol) {
+        if (config.ASSETS_CONFIG[parsedTokenSymbol]) {
+          return parsedTokenSymbol;
+        } else if (config.LP_ASSETS_CONFIG[parsedTokenSymbol]) {
+          return config.LP_ASSETS_CONFIG[parsedTokenSymbol].name;
         } else {
-          const protocol = Object.values(config.FARMED_TOKENS_CONFIG).flat().find(protocol => protocol.protocolIdentifier === transactionAsset);
+          const protocol = Object.values(config.FARMED_TOKENS_CONFIG).flat().find(protocol => protocol.protocolIdentifier === parsedTokenSymbol);
           if (!protocol.isTokenLp) {
             return protocol.token;
           } else {
@@ -162,6 +162,15 @@ export default {
         }
       } else {
         return 'AVAX';
+      }
+    },
+
+    parseTokenSymbol(tokenSymol) {
+      switch (tokenSymol) {
+        case 'USDTE':
+          return 'USDT.e'
+        default:
+          return tokenSymol
       }
     },
 
@@ -187,6 +196,7 @@ export default {
     },
 
     parseTransactionData(transaction) {
+      console.log(transaction);
       const date = new Date(Number(transaction.timestamp) * 1000);
       const fromAssetDecimals = transaction.fromAsset && config.ASSETS_CONFIG[transaction.fromAsset] ? config.ASSETS_CONFIG[transaction.fromAsset].decimals : 18;
       const fromAmountNumber = fromAssetDecimals && transaction.fromAmount ? formatUnits(transaction.fromAmount, fromAssetDecimals) : null;
