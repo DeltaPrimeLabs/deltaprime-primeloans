@@ -116,6 +116,10 @@ export default {
       state.assetBalances[assetBalanceChange.asset] = assetBalanceChange.balance;
     },
 
+    setSingleAssetCurrentExposure(state, assetExposureChange) {
+      state.assets[assetExposureChange.asset].currentExposure += assetExposureChange.exposureChange;
+    },
+
     setLpBalances(state, lpBalances) {
       state.lpBalances = lpBalances;
     },
@@ -197,22 +201,48 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
+      console.log('updateFunds')
       try {
+        console.log(0)
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
         }
+        console.log(1)
+
         await dispatch('setupApys');
+        console.log(2)
         await dispatch('setupAssets');
+        console.log(3)
+
         await dispatch('setupLpAssets');
+        console.log(4)
+
         await dispatch('setupConcentratedLpAssets');
+        console.log(5)
+
         await dispatch('getAllAssetsBalances');
+        console.log(6)
+
         await dispatch('getAllAssetsApys');
+
+        console.log(7)
+
         await dispatch('getDebtsPerAsset');
+        console.log(8)
+
         await dispatch('getFullLoanStatus');
+        console.log(9)
+
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
+        console.log(10)
+
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+        console.log(11)
+
         await dispatch('setupAssetExposures');
+        console.log(12)
+
         setTimeout(async () => {
           await dispatch('getFullLoanStatus');
         }, 5000);
@@ -273,16 +303,21 @@ export default {
     },
 
     async setupAssetExposures({state, commit}) {
+      console.log('setup exposure!')
       const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
       let assets = state.assets;
 
       for (let symbol of Object.keys(assets)) {
         let asset = assets[symbol];
+        console.log('asset: ', asset)
 
         if (asset.groupIdentifier) {
           const decimals = asset.decimals;
 
           const exposure = await tokenManager.groupToExposure(toBytes32(asset.groupIdentifier));
+
+          console.log('exposure: ')
+          console.log(exposure)
 
           asset.currentExposure = parseFloat(formatUnits(exposure.current, decimals));
           asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
@@ -801,6 +836,7 @@ export default {
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
       await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
+      commit('setSingleAssetCurrentExposure', {asset: fundRequest.asset, exposureChange: Number(depositAmount)});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
@@ -918,6 +954,8 @@ export default {
 
 
       await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
+      commit('setSingleAssetCurrentExposure', {asset: withdrawRequest.asset, exposureChange: -Number(withdrawAmount)});
+
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
@@ -1332,6 +1370,8 @@ export default {
 
       commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
       commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
+      commit('setSingleAssetCurrentExposure', {asset: swapRequest.sourceAsset, exposureChange: -Number(amountSold)});
+      commit('setSingleAssetCurrentExposure', {asset: swapRequest.targetAsset, exposureChange: Number(amountBought)});
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);

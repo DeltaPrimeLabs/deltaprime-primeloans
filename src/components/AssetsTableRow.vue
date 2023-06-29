@@ -57,8 +57,7 @@
       </div>
 
       <div class="table__cell impact">
-        <span v-if="asset.debtCoverage > 0">5x</span>
-        <span v-else>0x</span>
+        <span>{{ Math.round((1 / (1 - asset.debtCoverage) - 1)) }}x</span>
       </div>
 
       <div class="table__cell trend">
