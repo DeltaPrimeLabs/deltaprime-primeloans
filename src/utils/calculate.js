@@ -129,7 +129,6 @@ export async function yieldYakStaked(address) {
   const client = new ApolloClient({
     uri: config.subgraph
   });
-  console.log(await client.query({query: gql(query)}))
 
   return (await client.query({query: gql(query)})).data.smartLoan;
 }

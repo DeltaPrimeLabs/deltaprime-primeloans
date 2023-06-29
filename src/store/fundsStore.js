@@ -40,8 +40,6 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 const HARD_REFRESH_DELAY = 60000;
 
-console.log('fundsStore')
-console.log(firebaseConfig)
 const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
@@ -296,6 +294,8 @@ export default {
           asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
         }
       }
+
+      console.log(assets)
 
       commit('setAssets', assets);
     },
@@ -748,9 +748,6 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
-      console.log('state.smartLoanContract.address', state.smartLoanContract.address);
-      console.log(state.smartLoanContract.address);
-
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
         const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
         await awaitConfirmation(approveTransaction, provider, 'approve');
@@ -1123,8 +1120,6 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create concentrated LP token');
 
-      console.log('firstDecimals: ', firstDecimals)
-      console.log('secondDecimals: ', secondDecimals)
       const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount0, firstDecimals); // how much of tokenA was used
       const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount1, secondDecimals); //how much of tokenB was used
       const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
@@ -1133,10 +1128,6 @@ export default {
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.concentratedLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-
-      console.log('firstAssetBalanceAfterTransaction: ', firstAssetBalanceAfterTransaction)
-      console.log('secondAssetBalanceAfterTransaction: ', secondAssetBalanceAfterTransaction)
-      console.log('lpTokenBalanceAfterTransaction: ', lpTokenBalanceAfterTransaction)
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
@@ -1158,10 +1149,6 @@ export default {
     async removeLiquidityConcentratedPool({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
 
       const provider = rootState.network.provider;
-
-      console.log('here')
-      console.log('firstAsset: ', removeLiquidityRequest.firstAsset)
-      console.log('secondAsset: ', removeLiquidityRequest.secondAsset)
 
       const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
       const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
