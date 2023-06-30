@@ -2,10 +2,10 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /// @title DeltaPrime Address Provider
-contract AddressProvider is Ownable {
+contract AddressProvider is OwnableUpgradeable {
     mapping(bytes32 => address) private addresses;
 
     bytes32 public constant RECOVERY_CONTRACT = "RECOVERY_CONTRACT";
