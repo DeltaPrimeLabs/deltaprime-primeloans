@@ -1,12 +1,12 @@
 const paths = require('./paths')
-const { merge } = require('webpack-merge')
+const { merge, mergeWithRules } = require('webpack-merge')
 const common = require('./webpack.common.js')
 const webpack = require('webpack')
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 
-module.exports = merge(common, {
+const prodConfig = {
     mode: 'production',
     devtool: false,
 
@@ -34,12 +34,13 @@ module.exports = merge(common, {
     module: {
         rules: [
             {
-                test: /\.s[ac]ss$/i,
+                test: /\.(scss|css)$/,
                 use: [
-                    // fallback to style-loader in development
+                    'style-loader',
                     MiniCssExtractPlugin.loader,
-                    "css-loader",
-                    "sass-loader",
+                    'css-loader',
+                    'postcss-loader',
+                    'sass-loader',
                 ],
             },
         ],
@@ -59,4 +60,15 @@ module.exports = merge(common, {
         maxEntrypointSize: 512000,
         maxAssetSize: 512000,
     },
-})
+};
+
+const mergedConfig = mergeWithRules({
+    module: {
+        rules: {
+            test: 'match',
+            use: 'replace',
+        },
+    },
+})(common, prodConfig);
+
+module.exports = mergedConfig;
