@@ -1,10 +1,10 @@
 <template>
-  <span class="colored-value-component">
-    <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}" :style="styleObject">
-      <span class="plus-sign" v-if="value > 0 && showSign">+</span>
+  <div class="colored-value-component">
+    <div class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}" :style="styleObject">
+      <div class="plus-sign" v-if="value > 0 && showSign">+</div>
         <LoadedValue :value="!isUndefined ? formattedValue : null"></LoadedValue>
-    </span>
-  </span>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -90,6 +90,10 @@ export default {
 
 <style lang="scss">
 .colored-value {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+
   .loaded-value-component {
     height: 20px;
   }
