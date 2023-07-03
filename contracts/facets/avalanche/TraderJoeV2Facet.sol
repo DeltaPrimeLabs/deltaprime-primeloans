@@ -43,10 +43,6 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
             ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
 
             getOwnedTraderJoeV2Bins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
-
-            //TODO: proposal
-            DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(address(liquidityParameters.tokenX)), address(liquidityParameters.tokenX));
-            DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(address(liquidityParameters.tokenY)), address(liquidityParameters.tokenY));
         }
     }
 
