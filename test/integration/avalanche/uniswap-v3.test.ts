@@ -41,6 +41,7 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 chai.use(solidity);
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const NONFUNGIBLE_POSITION_MANAGER_ADDRESS = '0xb18a6cf6833130c7A13076D96c7e3784b7F721D1';
 
 const {deployContract, provider} = waffle;
 describe('Smart loan', () => {
@@ -189,11 +190,14 @@ describe('Smart loan', () => {
             //TODO:
         });
 
-        it("should stake AVAX/USDC below AVAX price (~3$)", async () => {
+        it("should mint AVAX/USDC UniswapV3 liquidity", async () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
-            await expect(wrappedLoan.addLiquidityUniswapV3(
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.mintLiquidityUniswapV3(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
@@ -207,48 +211,107 @@ describe('Smart loan', () => {
                     0,
                     0,
                     "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 1000)
+                ]
+            );
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+        });
+
+
+
+        it("should increase AVAX/USDC UniswapV3 liquidity", async () => {
+            let id = (await wrappedLoan.getOwnedUniswapV3TokenIds())[0];
+            const addedAvax = toWei('0.5');
+            const addedUSDC = parseUnits('5', BigNumber.from('6'));
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await expect(wrappedLoan.increaseLiquidityUniswapV3(
+                [
+                    id,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
                     Math.ceil((new Date().getTime() / 1000) + 100)
                 ]
             )).not.to.be.reverted;
 
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
         });
 
-        // it("should stake AVAX/USDC above AVAX price (~150$)", async () => {
-        //     const addedAvax = toWei('1');
-        //     const addedUSDC = parseUnits('10', BigNumber.from('6'));
-        //
-        //     console.log('addedAvax: ', addedAvax)
-        //     console.log('addedUSDC: ', addedUSDC)
-        //     console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-        //     console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
-        //
-        //     await expect(wrappedLoan.addLiquidityUniswapV3(
-        //         [
-        //             "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-        //             "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-        //             500,
-        //             50000,
-        //             50100,
-        //             addedAvax,
-        //             addedUSDC,
-        //             0,
-        //             0,
-        //             "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
-        //             Math.ceil((new Date().getTime() / 1000) + 100)
-        //         ]
-        //     )).not.to.be.reverted;
-        //
-        //     console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-        //     console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
-        //
-        // });
+        it("should decrease AVAX/USDC UniswapV3 liquidity", async () => {
+            let id = (await wrappedLoan.getOwnedUniswapV3TokenIds())[0];
 
+            const manager = await ethers.getContractAt("INonfungiblePositionManager", NONFUNGIBLE_POSITION_MANAGER_ADDRESS, owner);
 
-        it("should unstake AVAX/USDC", async () => {
-            //TODO
+            const liquidityBefore = (await manager.positions(id)).liquidity;
+            const decreasedLiquidity = liquidityBefore.div(3);
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await expect(wrappedLoan.decreaseLiquidityUniswapV3(
+                [
+                    id,
+                    decreasedLiquidity,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).not.to.be.reverted;
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            const liquidityAfter = (await manager.positions(id)).liquidity;
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+            expect(fromWei(liquidityAfter)).to.be.closeTo(fromWei(liquidityBefore) - fromWei(decreasedLiquidity), 0.0001);
+        });
+
+        it("should withdraw rest and burn UniswapV3 token", async () => {
+            let id = (await wrappedLoan.getOwnedUniswapV3TokenIds())[0];
+
+            const manager = await ethers.getContractAt("INonfungiblePositionManager", NONFUNGIBLE_POSITION_MANAGER_ADDRESS, owner);
+
+            const liquidity = (await manager.positions(id)).liquidity;
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await expect(wrappedLoan.decreaseLiquidityUniswapV3(
+                [
+                    id,
+                    liquidity,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).not.to.be.reverted;
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            const newLiquidity = (await manager.positions(id)).liquidity;
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+            expect(fromWei(newLiquidity)).to.be.equal(0);
+
+            await expect(wrappedLoan.burnLiquidityUniswapV3(id)).not.to.be.reverted;
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(0);
         });
     });
 });

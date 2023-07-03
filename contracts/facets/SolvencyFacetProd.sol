@@ -22,8 +22,6 @@ import "../lib/local/DeploymentConstants.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
-import "hardhat/console.sol";
-
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
@@ -306,7 +304,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
         // TODO: for some reason TraderJoe bin array is not empty
 //        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(ownedAssetsPrices, true);
-        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalUniswapV3WithPricesBase(ownedAssetsPrices, true);
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalUniswapV3WithPricesBase(true);
     }
 
     /**
@@ -529,13 +527,12 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     /**
     **/
     function getTotalUniswapV3() public view virtual returns (uint256) {
-        AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
-        return getTotalUniswapV3WithPrices(ownedAssetsPrices);
+        return getTotalUniswapV3WithPrices();
     }
 
     /**
     **/
-    function _getTotalUniswapV3WithPricesBase(AssetPrice[] memory ownedAssetsPrices, bool weighted) internal view returns (uint256) {
+    function _getTotalUniswapV3WithPricesBase(bool weighted) internal view returns (uint256) {
         uint256 total;
 
         uint256[] storage ownedUniswapV3TokenIds;
@@ -554,17 +551,15 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
             IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0xb18a6cf6833130c7A13076D96c7e3784b7F721D1), ownedUniswapV3TokenIds[0]);
 
-                uint256 price0;
-                uint256 price1;
+            uint256[] memory prices = new uint256[](2);
 
-                {
-                    for (uint256 j; j < ownedAssetsPrices.length; j++) {
-                        if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token0)) {
-                            price0 = ownedAssetsPrices[j].price;
-                        } else if (ownedAssetsPrices[j].asset == DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token1)) {
-                            price1 = ownedAssetsPrices[j].price;
-                        }
-                    }
+            {
+                    bytes32[] memory symbols = new bytes32[](2);
+
+                    symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token0);
+                    symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token1);
+
+                    prices = getOracleNumericValuesFromTxMsg(symbols);
                 }
 
                 {
@@ -577,20 +572,6 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     uint256 sqrtPrice_a = sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
                     uint256 sqrtPrice_b = sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
 
-                    console.log('price 0: ', price0);
-                    console.log('price 1: ', price1);
-                    console.log('sqrtPrice_a: ', sqrtPrice_a);
-                    console.log('sqrtPrice_b: ', sqrtPrice_b);
-                    console.log('price a: ', sqrtPrice_a * sqrtPrice_a / 1e18);
-                    console.log('price b: ', sqrtPrice_b * sqrtPrice_b / 1e18);
-                    console.log('a: ', debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * price0 / 10 ** 8);
-                    console.log('b: ', debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * price1 / 10 ** 8);
-
-                    console.log('debtCoverage0: ', debtCoverage0);
-                    console.log('debtCoverage1: ', debtCoverage1);
-                    console.log('1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b: ', 1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b);
-                    console.log('sqrtPrice_b - sqrtPrice_a: ', sqrtPrice_b - sqrtPrice_a);
-
                     total = total +
 
                     //TODO: there is an assumption here that the position value is the lowest at edges (x = 0 or y = 0). Need to confirm that!
@@ -600,8 +581,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
 
                     Math.min(
-                        debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * price0 / 10 ** 8,
-                        debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * price1 / 10 ** 8
+                        debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8,
+                        debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8
                     );
                 }
             }
@@ -641,8 +622,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * Returns the current value of Uniswap V3 positions in USD.
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
-    function getTotalUniswapV3WithPrices(AssetPrice[] memory assetsPrices) public view returns (uint256) {
-        return _getTotalUniswapV3WithPricesBase(assetsPrices, false);
+    function getTotalUniswapV3WithPrices() public view returns (uint256) {
+        return _getTotalUniswapV3WithPricesBase(false);
     }
 
     /**
@@ -671,7 +652,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory assetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         //TODO: it's a proposal where we add underlying assets of users LB positions to ownedAssetsPrices
 //        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalTraderJoeV2WithPrices(ownedAssetsPrices);
-        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalUniswapV3WithPrices(ownedAssetsPrices);
+        return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalUniswapV3WithPrices();
     }
 
     function getFullLoanStatus() public view returns (uint256[5] memory) {
@@ -733,16 +714,11 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     view  //TODO: pure
     returns (uint256)
     {
-
-        //TODO: remove
         {
             uint256 numerator1 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96);
             uint256 numerator2 = 10**decimalsToken0;
-            console.log('price from method: ', FullMath.mulDiv(numerator1, numerator2, 1 << 192));
         }
 
-
-//        uint256 numerator1 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96);
         uint256 numerator1 = uint256(sqrtPriceX96);
         uint256 numerator2 = 10**decimalsToken0;
         return FullMath.mulDiv(numerator1, numerator2, 2 ** 96);

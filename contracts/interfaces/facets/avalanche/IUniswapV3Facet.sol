@@ -21,4 +21,8 @@ interface IUniswapV3Facet {
 
     function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams calldata params) external;
 
-}
+    function burnLiquidityUniswapV3(uint256 tokenId) external;
+
+    function getOwnedUniswapV3TokenIds() external view returns (uint256[] memory result);
+
+    }
