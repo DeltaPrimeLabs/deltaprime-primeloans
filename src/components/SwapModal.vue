@@ -372,10 +372,24 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = this.swapDebtMode ? 0.2 : 0.1;
+      let slippageMargin = this.swapDebtMode ? 0.2 : 0.1;
+
+      console.log(this.dex);
+      if (this.swapDebtMode) {
+        slippageMargin = 0.2
+      } else {
+        if (this.swapDex === 'ParaSwap') {
+          slippageMargin = 1;
+        } else {
+          slippageMargin = 0.1
+        }
+      }
+
+      console.log('slippageMargin', slippageMargin);
+
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
-      let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;
+      let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
       this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
 
