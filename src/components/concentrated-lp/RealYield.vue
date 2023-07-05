@@ -210,11 +210,6 @@ export default {
           this.recentUserAction = true;
       }
 
-      console.log('this.lpTokenDetails before')
-      console.log(this.lpTokenDetails.primaryTokenDetails[0].apr)
-      console.log(this.lpTokenDetails.primaryTokenDetails[1].apr)
-      console.log(this.lpTokenDetails.primaryTokenDetails[2].apr)
-
       let primaryRebalance = 0;
       let primaryFees = 0;
       let primaryPriceChange = 0;

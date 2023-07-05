@@ -297,20 +297,17 @@ export default {
 
       client.query({query: gql(query)}).then(
           resp => {
-            console.log(resp.data.vaults[0])
             const vault = resp.data.vaults[0];
             this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
             this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
             this.lpToken.firstPrice = vault.tokenX.priceUSD;
             this.lpToken.secondPrice = vault.tokenY.priceUSD;
             this.lpToken.harvests = vault.strategy.harvests;
-            console.log(this.lpToken)
           }
       )
     },
 
     toggleRealYield() {
-      console.log(this.lpToken);
       if (this.rowExpanded) {
         this.showRealYield = false;
         this.rowExpanded = false;

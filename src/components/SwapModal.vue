@@ -8,7 +8,13 @@
         Swap debt
       </div>
 
-      <div class="dex-toggle">
+      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap'">
+        <div>
+          <b>When using ParaSwap actual slippage might exceed the calculated</b>
+        </div>
+      </div>
+
+      <div class="dex-toggle" v-if="!swapDebtMode">
         <Toggle v-on:change="swapDexChange" :options="['YakSwap', 'ParaSwap']"></Toggle>
       </div>
 
@@ -31,7 +37,7 @@
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
-                          :max="swapDebtMode ? sourceAssetDebt : sourceAssetBalance"
+                          :max="maxSourceValue"
                           :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -255,6 +261,9 @@ export default {
 
   mounted() {
     setTimeout(() => {
+      if (this.swapDebtMode) {
+        this.swapDex = 'YakSwap'
+      }
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       this.setupSourceAsset();
@@ -282,7 +291,19 @@ export default {
       if (this.valueAsset === "USDC") return `~ $${targetAssetUsdPrice.toFixed(2)}`;
       // otherwise return amount in AVAX 
       return `~ ${(targetAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    }
+    },
+
+    maxSourceValue() {
+      if (this.swapDex === 'ParaSwap') {
+        return null;
+      } else {
+        if (this.swapDebtMode) {
+          return this.sourceAssetDebt;
+        } else {
+          return this.sourceAssetBalance;
+        }
+      }
+    },
   },
 
   methods: {
@@ -409,7 +430,8 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      this.sourceAssets[this.swapDex].forEach(assetSymbol => {
+      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
+      sourceAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -422,7 +444,8 @@ export default {
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
-      this.targetAssets[this.swapDex].forEach(assetSymbol => {
+      const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
+      targetAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,

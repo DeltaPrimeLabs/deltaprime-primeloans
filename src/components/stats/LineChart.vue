@@ -49,9 +49,6 @@ export default {
   },
   methods: {
     rerender() {
-      setTimeout(() => {
-        console.log(this.chartData);
-      }, 2000)
       const newData = {...this.chartData}
       newData.datasets[0].borderColor = this.getGradient()
       this.renderChart(this.chartData, this.chartOptions)
