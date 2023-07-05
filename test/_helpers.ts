@@ -2,14 +2,14 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
-import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
+import {MockToken, Pool, MockVariableUtilisationRatesCalculator, LinearIndex} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
-import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import fetch from "node-fetch";
 import {execSync} from "child_process";
@@ -908,8 +908,10 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
 
     rewarder = rewarder !== '' ? rewarder : ethers.constants.AddressZero;
 
-    const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-    const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+    const depositIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+    await depositIndex.initialize(pool.address);
+    const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+    await borrowingIndex.initialize(pool.address);
     await pool.initialize(
         mockVariableUtilisationRatesCalculator.address,
         smartLoansFactoryAddress,
