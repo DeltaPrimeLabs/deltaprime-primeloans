@@ -974,7 +974,7 @@ export default {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
-          this.progressBarService.emitProgressBarErrorState('Actual slippage exceeded the calculated. You can try again')
+          this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }
