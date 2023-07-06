@@ -3,23 +3,81 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./interfaces/SmartLoanGigaChadInterface.sol";
+import "./interfaces/facets/avalanche/IRecoveryFacet.sol";
 
 /// @title DeltaPrime Recovery Manager
 contract RecoveryManager is Ownable {
-    mapping(address => mapping(bytes32 => uint256)) public recovered;
+    using SafeERC20 for IERC20;
 
-    function withdrawAssets(address[] memory _accounts, bytes32[][] memory _assets) external onlyOwner {
-        uint256 length = _accounts.length;
-        require(length == _assets.length, "input array length mismatch");
+    struct RecoverData {
+        bytes32 asset;
+        address underlying;
+        address[] accounts;
+        uint256 minAmount;
+    }
+
+    struct Helper {
+        address helper;
+        bytes4 selector;
+    }
+
+    mapping(bytes32 => Helper) public helpers;
+
+    event HelperAdded(bytes32 asset, address helper, bytes4 selector);
+
+    function addHelper(bytes32 _asset, address _helper, bytes4 _selector) external onlyOwner {
+        helpers[_asset] = Helper({
+            helper: _helper,
+            selector: _selector
+        });
+
+        emit HelperAdded(_asset, _helper, _selector);
+    }
+
+    function recoverAssets(RecoverData[] memory _data) external onlyOwner {
+        uint256 length = _data.length;
+        require(length > 0, "empty array");
 
         for (uint256 i; i != length; ++i) {
-            SmartLoanGigaChadInterface account = SmartLoanGigaChadInterface(_accounts[i]);
-            uint256[] memory amounts = account.emergencyWithdraw(_assets[i]);
-            uint256 assetsLength = _assets[i].length;
-            for (uint256 j; j != assetsLength; ++j) {
-                recovered[address(account)][_assets[i][j]] = amounts[j];
+            RecoverData memory data = _data[i];
+            Helper memory helper = helpers[data.asset];
+            require(helper.helper != address(0), "helper not found");
+
+            uint256 userLength = data.accounts.length;
+            uint256[] memory recovered = new uint256[](userLength);
+            uint256 totalRecovered;
+
+            for (uint256 j; j != userLength; ++j) {
+                recovered[j] = IRecoveryFacet(data.accounts[j]).emergencyWithdraw(
+                    data.asset
+                );
+                totalRecovered += recovered[j];
+            }
+
+            require(totalRecovered > 0, "nothing to recover");
+
+            uint256 beforeBalance = IERC20(data.underlying).balanceOf(address(this));
+
+            (bool success, ) = helper.helper.delegatecall(
+                abi.encodeWithSelector(
+                    helper.selector,
+                    totalRecovered,
+                    data.minAmount
+                )
+            );
+            require(success, "failed to unstake");
+
+            uint256 recoveredBalance = IERC20(data.underlying).balanceOf(address(this)) - beforeBalance;
+
+            for (uint256 j; j != userLength; ++j) {
+                address account = data.accounts[j];
+                uint256 refundAmount = recoveredBalance * recovered[j] / totalRecovered;
+                IERC20(data.underlying).safeApprove(account, 0);
+                IERC20(data.underlying).safeApprove(account, refundAmount);
+                IRecoveryFacet(account).notifyRefund(data.underlying, refundAmount);
             }
         }
     }
