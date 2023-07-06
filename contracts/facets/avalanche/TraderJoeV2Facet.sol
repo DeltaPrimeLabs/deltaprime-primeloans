@@ -18,11 +18,15 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
     bytes32 internal constant OWNED_TRADERJOE_V2_BINS_SLOT = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
 
-    function getOwnedTraderJoeV2Bins() internal view returns (TraderJoeV2Bin[] storage result){
+    function getOwnedBins() internal view returns (TraderJoeV2Bin[] storage result){
         bytes32 slot = OWNED_TRADERJOE_V2_BINS_SLOT;
         assembly{
             result.slot := sload(slot)
         }
+    }
+
+    function getOwnedTraderJoeV2Bins() public view returns (TraderJoeV2Bin[] memory result){
+        return getOwnedBins();
     }
 
     function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
@@ -43,12 +47,14 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
             ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
 
             //TODO: first check if wasn't added before...
-            getOwnedTraderJoeV2Bins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
+            getOwnedBins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
         }
     }
 
     function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
+
+        ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair).approveForAll(address(traderJoeV2Router), true);
 
         traderJoeV2Router.removeLiquidity(
             parameters.tokenX, parameters.tokenY, parameters.binStep, parameters.amountXMin, parameters.amountYMin, parameters.ids, parameters.amounts, address(this), parameters.deadline
@@ -61,14 +67,14 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
         TraderJoeV2Bin storage bin;
 
-        for (uint256 i; i < getOwnedTraderJoeV2Bins().length; i++) {
-            if (address(getOwnedTraderJoeV2Bins()[i].pair) == address(pairInfo.LBPair)) {
-                bin = getOwnedTraderJoeV2Bins()[i];
+        for (uint256 i; i < getOwnedBins().length; i++) {
+            if (address(getOwnedBins()[i].pair) == address(pairInfo.LBPair)) {
+                bin = getOwnedBins()[i];
 
                 if (bin.pair.balanceOf(address(this), bin.id) == 0) {
-                    bin = getOwnedTraderJoeV2Bins()[getOwnedTraderJoeV2Bins().length - 1];
+                    bin = getOwnedBins()[getOwnedBins().length - 1];
                     i--;
-                    getOwnedTraderJoeV2Bins().pop();
+                    getOwnedBins().pop();
                 }
 
                 break;

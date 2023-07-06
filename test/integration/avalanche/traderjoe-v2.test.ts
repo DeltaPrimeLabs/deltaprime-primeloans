@@ -42,6 +42,10 @@ chai.use(solidity);
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 
+const LBTokenAbi = [
+    'function balanceOf(address account, uint256 id) external view returns (uint256)'
+]
+
 const {deployContract, provider} = waffle;
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -231,17 +235,20 @@ describe('Smart loan', () => {
             console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
             console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
 
+            const bin = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            const lbToken = await ethers.getContractAt(LBTokenAbi, bin[0].pair, owner);
+            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bin[0].id);
+
             await expect(wrappedLoan.removeLiquidityTraderJoeV2(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
                     20,
-                    addedAvax,
-                    addedUSDC,
                     0, // min AVAX
                     0, // min USDC
-                    [0], //just one bin
-                    [addedAvax, addedUSDC],
+                    [bin[0].id], //just one bin
+                    [binBalance.div(2)],
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).not.to.be.reverted;
 

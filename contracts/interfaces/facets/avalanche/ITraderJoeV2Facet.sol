@@ -24,4 +24,6 @@ interface ITraderJoeV2Facet {
 
     function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external;
 
+    function getOwnedTraderJoeV2Bins() external view returns (TraderJoeV2Bin[] memory result);
+
 }
