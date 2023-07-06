@@ -20,22 +20,34 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
+     * Get refunds from the recovery contract
+     * @param _token token to be refunded
+     * @param _amount amount refunded
+     **/
+    function notifyRefund(address _token, uint256 _amount) external onlyRC {
+        IERC20Metadata token = IERC20Metadata(_token);
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
+        DiamondStorageLib.addOwnedAsset(asset, _token);
+
+        tokenManager.increaseProtocolExposure(asset, _amount * 1e18 / 10 ** token.decimals());
+    }
+
+    /**
      * Emergency withdraws given assets from the loan
      * @dev This function uses the redstone-evm-connector
-     * @param _assets assets to be withdrawn
-     * @return _amounts amounts withdrawn
+     * @param _asset asset to be withdrawn
+     * @return _amount amount withdrawn
      **/
     function emergencyWithdraw(
-        bytes32[] memory _assets
-    ) public onlyRC returns (uint256[] memory _amounts) {
-        uint256 length = _assets.length;
-        for (uint256 i; i != length; ++i) {
-            bytes32 asset = _assets[i];
-            if (asset == "GLP") {
-                _amounts[i] = _withdrawGLP();
-            } else {
-                _amounts[i] = _withdraw(asset);
-            }
+        bytes32 _asset
+    ) external onlyRC returns (uint256 _amount) {
+        if (_asset == "GLP") {
+            _amount = _withdrawGLP();
+        } else {
+            _amount = _withdraw(_asset);
         }
     }
 
