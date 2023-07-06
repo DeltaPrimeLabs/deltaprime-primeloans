@@ -1491,22 +1491,22 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@lifi/sdk@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@lifi/sdk/-/sdk-2.0.1.tgz#ce360b33785fb9359fedd62f8baf19332b3eb038"
-  integrity sha512-g7BG4815LsjI/333EEPW10u80fjxQnoWRkC4xQDuAKhb/JEZFONZeBXBWbUfqwtbngw8s14yhXLCVNP/o1aM2w==
+"@lifi/sdk@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@lifi/sdk/-/sdk-2.1.1.tgz#1f2cd57e52b1370ffea49c85d8e6921f3cf1d56e"
+  integrity sha512-hCTfYBW0bws0me5G6OXwC6nWh+DfWfI6rXBwJ9jbiI4c6QKDlXNovrSnNsgaUO50WiNCQmy/8/+8I7xo4GGzEg==
   dependencies:
     "@ethersproject/abi" "^5.7.0"
     "@ethersproject/contracts" "^5.7.0"
-    "@lifi/types" "^6.0.0"
+    "@lifi/types" "^8.0.2"
     bignumber.js "^9.1.1"
     eth-rpc-errors "^4.0.3"
     ethers "^5.7.2"
 
-"@lifi/types@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@lifi/types/-/types-6.0.0.tgz#39b7c9401dd152f69aa7a5a74c98fc4fcd7da3c4"
-  integrity sha512-D9Av13XKNEguELN3DpKnLupLrtTePVVRl0H4bFdP0Jca3AlAmuYFZu4NJj/UkEajmcuEEr5wOthMZN4VeZq/gQ==
+"@lifi/types@^8.0.2":
+  version "8.0.2"
+  resolved "https://registry.yarnpkg.com/@lifi/types/-/types-8.0.2.tgz#629ebf947c47158ca9d25cbc493d1287db30a65a"
+  integrity sha512-/bAHPz2Lsi39wpzgHXbcQvhftxAHQ5A3yGZ9MYqgImz6Rt3pQwKu5G3UeEUbGigbIhrqVk2UjoVMim5QfYpw4Q==
   dependencies:
     ethers "^5.7.2"
 
