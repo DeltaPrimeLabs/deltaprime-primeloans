@@ -9,6 +9,7 @@ const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 const gql = require("graphql-tag");
 const cors = require('cors')({origin: true});
+const retry = require('async-retry');
 
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
@@ -519,6 +520,17 @@ const uploadLiveLoansStatus = async () => {
       }
     })
   );
+
+  return true
+}
+
+const uploadLiveLoansStatusWithRetry = async () => {
+  return retry(async () => uploadLiveLoansStatus(), {
+    retries: 5,
+    onRetry: (e) => {
+      functions.logger.info(`Retrying upload live loan status. Error: ${e.message}`);
+    }
+  })
 }
 
 exports.saveLiveLoansStatus = functions
@@ -526,7 +538,7 @@ exports.saveLiveLoansStatus = functions
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLiveLoansStatus()
+    return uploadLiveLoansStatusWithRetry()
       .then(() => {
         functions.logger.info("Live Loans Status upload success.");
       }).catch((err) => {
