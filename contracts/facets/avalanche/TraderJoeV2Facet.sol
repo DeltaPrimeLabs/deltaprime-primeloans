@@ -42,7 +42,37 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         for (uint256 i; i < depositIds.length; i++) {
             ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
 
+            //TODO: first check if wasn't added before...
             getOwnedTraderJoeV2Bins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
+        }
+    }
+
+    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+        ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
+
+        traderJoeV2Router.removeLiquidity(
+            parameters.tokenX, parameters.tokenY, parameters.binStep, parameters.amountXMin, parameters.amountYMin, parameters.ids, parameters.amounts, address(this), parameters.deadline
+        );
+
+        ILBFactory lbFactory = traderJoeV2Router.getFactory();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep);
+
+        TraderJoeV2Bin storage bin;
+
+        for (uint256 i; i < getOwnedTraderJoeV2Bins().length; i++) {
+            if (address(getOwnedTraderJoeV2Bins()[i].pair) == address(pairInfo.LBPair)) {
+                bin = getOwnedTraderJoeV2Bins()[i];
+
+                if (bin.pair.balanceOf(address(this), bin.id) == 0) {
+                    bin = getOwnedTraderJoeV2Bins()[getOwnedTraderJoeV2Bins().length - 1];
+                    i--;
+                    getOwnedTraderJoeV2Bins().pop();
+                }
+
+                break;
+            }
         }
     }
 

@@ -193,7 +193,7 @@ describe('Smart loan', () => {
             //TODO:
         });
 
-        it("should stake AVAX/USDC", async () => {
+        it("should add liquidity to AVAX/USDC pair", async () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
@@ -224,8 +224,29 @@ describe('Smart loan', () => {
 
         });
 
-        it("should unstake AVAX/USDC", async () => {
-            //TODO
+        it("should remove liquidity from AVAX/USDC pair", async () => {
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
+            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+
+            await expect(wrappedLoan.removeLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    [0], //just one bin
+                    [addedAvax, addedUSDC],
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
+            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
         });
     });
 });
