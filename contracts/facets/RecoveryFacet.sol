@@ -25,11 +25,13 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _amount amount refunded
      **/
     function notifyRefund(address _token, uint256 _amount) external onlyRC {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
+        require(asset != bytes32(0), "Asset not supported.");
+
         IERC20Metadata token = IERC20Metadata(_token);
         _token.safeTransferFrom(msg.sender, address(this), _amount);
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
         DiamondStorageLib.addOwnedAsset(asset, _token);
 
         tokenManager.increaseProtocolExposure(asset, _amount * 1e18 / 10 ** token.decimals());

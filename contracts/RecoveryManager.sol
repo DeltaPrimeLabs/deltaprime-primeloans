@@ -26,8 +26,6 @@ contract RecoveryManager is Ownable {
 
     mapping(bytes32 => Helper) public helpers;
 
-    event HelperAdded(bytes32 asset, address helper, bytes4 selector);
-
     function addHelper(bytes32 _asset, address _helper, bytes4 _selector) external onlyOwner {
         helpers[_asset] = Helper({
             helper: _helper,
@@ -44,7 +42,7 @@ contract RecoveryManager is Ownable {
         for (uint256 i; i != length; ++i) {
             RecoverData memory data = _data[i];
             Helper memory helper = helpers[data.asset];
-            require(helper.helper != address(0), "helper not found");
+            require(helper.helper != address(0), "Helper not found");
 
             uint256 userLength = data.accounts.length;
             uint256[] memory recovered = new uint256[](userLength);
@@ -57,7 +55,7 @@ contract RecoveryManager is Ownable {
                 totalRecovered += recovered[j];
             }
 
-            require(totalRecovered > 0, "nothing to recover");
+            require(totalRecovered > 0, "Nothing to recover");
 
             uint256 beforeBalance = IERC20(data.underlying).balanceOf(address(this));
 
@@ -81,4 +79,6 @@ contract RecoveryManager is Ownable {
             }
         }
     }
+
+    event HelperAdded(bytes32 asset, address helper, bytes4 selector);
 }
