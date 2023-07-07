@@ -26,7 +26,7 @@
     "@apollo/client": "^3.7.2",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@growthbunker/vuetimeline": "^0.1.17",
-    "@lifi/sdk": "^2.0.1",
+    "@lifi/sdk": "^2.1.1",
     "@nomiclabs/hardhat-etherscan": "^3.0.1",
     "@notifi-network/notifi-frontend-client": "^0.63.0",
     "@openzeppelin/contracts": "^4.1.0",
