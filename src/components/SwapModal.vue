@@ -10,7 +10,7 @@
 
       <div class="modal-top-desc" v-if="swapDex === 'ParaSwap'">
         <div>
-          <b>When using ParaSwap actual slippage might exceed the calculated</b>
+          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
       </div>
 
