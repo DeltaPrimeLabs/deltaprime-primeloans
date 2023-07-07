@@ -8,7 +8,7 @@ const ApolloClient = require("apollo-client").ApolloClient;
 const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 const gql = require("graphql-tag");
-const cors = require('cors')({origin: true});
+const cors = require('cors')({ origin: true });
 const retry = require('async-retry');
 
 const vectorApyConfig = require('./vectorApy.json');
@@ -62,6 +62,7 @@ function wrap(contract) {
   );
 }
 
+// fetch status of all the loans
 exports.scheduledFunction = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -130,6 +131,7 @@ const getGlpApr = async () => {
   await browser.close();
 };
 
+// scrape GLP APY(Assets) from GMX
 exports.gmxScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -163,7 +165,7 @@ const getApysFromVector = async () => {
       const assetPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith(keyword));
       const assetColumns = assetPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
       const assetApy = parseFloat(assetColumns[2].innerText.split('%')[0].trim());
-    
+
       return assetApy;
     }
 
@@ -216,6 +218,7 @@ const getApysFromVector = async () => {
   await browser.close();
 }
 
+// scrape apys for AVAX, sAVAX, USDC, and USDT(Farms) from Vector Finance
 exports.vectorScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -320,6 +323,7 @@ const getTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
   return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
 
+// fetch LP and Farm token APYs using APIs
 exports.lpAndFarmApyAggregator = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -414,44 +418,62 @@ exports.lpAndFarmApyAggregator = functions
     return null;
   });
 
+const getApysFromSteakHut = async () => {
+  functions.logger.info("parsing APYs from SteakHut");
+  const URL = "https://app.steakhut.finance/pool/";
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
+
+    // navigate pools page and wait till javascript fully load.
+    await page.goto(URL + address, {
+      waitUntil: "networkidle0",
+    });
+
+    functions.logger.info("parsing APR (7-Day)...");
+
+    const apy = await page.evaluate(() => {
+      const fields = document.querySelectorAll(".chakra-heading");
+      return fields[0].innerText.replace("%", "").trim();
+    });
+
+    console.log(apy)
+
+    // update APY in db
+    if (apy && Number(apy) != 0) {
+      await db.collection('apys').doc(asset).set({
+        apy: apy / 100
+      });
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.steakhutScrapper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromSteakHut()
+      .then(() => {
+        functions.logger.info("SteakHut APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
+      });
+  });
+
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
   const timestamps = [1687262400000, 1687348800000, 1687435200000, 1687550400000, 1687636800000];
 
   await Promise.all(
     loanAddresses.map(async loanAddress => {
-      // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
       const loanHistoryRef = db
         .collection('loansHistory')
         .doc(loanAddress.toLowerCase())
         .collection('loanStatus');
-      // const loanHistorySnap = await loanHistoryRef.get();
-      // const loanHistory = {};
-
-      // loanHistorySnap.forEach(doc => {
-      //   loanHistory[doc.id] = doc.data();
-      // });
-
-      // const timestamps = [];
-      // let timestamp;
-
-      // if (Object.keys(loanHistory).length === 0) {
-      //   // loan's single history is not saved yet, we create from 30 days ago
-      //   timestamp = defaultTimestamp;
-      // } else {
-      //   // we add new history after the latest timestamp
-      //   timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
-      //             + timestampInterval; // next timestamp where we get loan status
-      // }
-
-      // // const limitTimestamp = timestamp + 30 * timestampInterval;
-
-      // // get timestamps
-      // while (timestamp < Date.now()) {
-      //   timestamps.push(timestamp);
-      //   timestamp += timestampInterval;
-      // }
-      // console.log(timestamps);
 
       if (timestamps.length > 0) {
         await Promise.all(
@@ -478,18 +500,27 @@ const uploadLoanStatusCustom = async () => {
   );
 }
 
-// exports.saveLoansStatusCustom = functions
-//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//   .pubsub.schedule('*/5 * * * *')
-//   .onRun(async (context) => {
-//     functions.logger.info("Getting Loans Status.");
-//     return uploadLoanStatusCustom()
-//       .then(() => {
-//         functions.logger.info("Loans Status upload success.");
-//       }).catch((err) => {
-//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-//       });
-//   });
+const uploadLoanStatusCustomWithRetry = async () => {
+  return retry(async () => uploadLoanStatusCustom(), {
+    retries: 5,
+    onRetry: (e) => {
+      functions.logger.info(`Retrying upload loan status custom. Error: ${e.message}`);
+    }
+  })
+}
+
+exports.saveLoansStatusCustom = functions
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .pubsub.schedule('*/15 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting Loans Status.");
+    return uploadLoanStatusCustomWithRetry()
+      .then(() => {
+        functions.logger.info("Loans Status upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+      });
+  });
 
 const uploadLiveLoansStatus = async () => {
   const loanAddresses = await factory.getAllLoans();
@@ -547,17 +578,17 @@ exports.saveLiveLoansStatus = functions
   });
 
 exports.saveLoansStatusFromFile = functions
-    .runWith({ timeoutSeconds: 120, memory: "2GB" })
-    .pubsub.schedule('*/5 * * * *')
-    .onRun(async (context) => {
-      functions.logger.info("Getting Loans Status.");
-      return uploadLoanStatusFromFile()
-          .then(() => {
-            functions.logger.info("Loans Status upload success.");
-          }).catch((err) => {
-            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-          });
-    });
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .pubsub.schedule('*/5 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting Loans Status.");
+    return uploadLoanStatusFromFile()
+      .then(() => {
+        functions.logger.info("Loans Status upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+      });
+  });
 
 
 // const getEventsForPeriod = (from, to) => {
@@ -614,26 +645,26 @@ exports.loanhistory = functions
         const events = [];
         console.log(loanHistory);
 
-          timestamps.map((timestamp) => {
-            data.push({
-              timestamp: timestamp,
-              totalValue: loanHistory[timestamp].totalValue,
-              borrowed: loanHistory[timestamp].debtValue,
-              collateral: loanHistory[timestamp].collateral,
-              health: loanHistory[timestamp].health,
-              solvent: loanHistory[timestamp].solvent,
-              events
-            });
+        timestamps.map((timestamp) => {
+          data.push({
+            timestamp: timestamp,
+            totalValue: loanHistory[timestamp].totalValue,
+            borrowed: loanHistory[timestamp].debtValue,
+            collateral: loanHistory[timestamp].collateral,
+            health: loanHistory[timestamp].health,
+            solvent: loanHistory[timestamp].solvent,
+            events
           });
+        });
 
-          res.status(200).send({
-            success: true,
-            data,
-          })
-        }      
+        res.status(200).send({
+          success: true,
+          data,
+        })
+      }
     });
   }
-)
+  )
 
 const uploadLoanStatusFromFile = async () => {
   // const loanAddresses = await factory.getAllLoans();
@@ -645,9 +676,9 @@ const uploadLoanStatusFromFile = async () => {
 
   for (const loanAddress of loanAddresses) {
     const loanHistoryRef = db
-        .collection('loansHistory')
-        .doc(loanAddress.toLowerCase())
-        .collection('loanStatus');
+      .collection('loansHistory')
+      .doc(loanAddress.toLowerCase())
+      .collection('loanStatus');
     const loanHistorySnap = await loanHistoryRef.get();
     const loanHistory = [];
 
@@ -675,56 +706,10 @@ const uploadLoanStatusFromFile = async () => {
           solvent: dataPoint.solvent === 1e-18,
           timestamp: dataPoint.timestamp
         });
-      } catch(e) {
+      } catch (e) {
         console.log('ERRRORRRR')
         console.log(e)
       }
     }
   }
 }
-
-const getApysFromSteakHut = async () => {
-  functions.logger.info("parsing APYs from SteakHut");
-  const URL = "https://app.steakhut.finance/pool/";
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
-
-    // navigate pools page and wait till javascript fully load.
-    await page.goto(URL + address, {
-      waitUntil: "networkidle0",
-    });
-
-    functions.logger.info("parsing APR (7-Day)...");
-
-    const apy = await page.evaluate(() => {
-      const fields = document.querySelectorAll(".chakra-heading");
-      return fields[0].innerText.replace("%", "").trim();
-    });
-
-    console.log(apy)
-
-    // update APY in db
-    if (apy && Number(apy) != 0) {
-      await db.collection('apys').doc(asset).set({
-        apy: apy / 100
-      });
-    }
-  }
-
-  // close browser
-  await browser.close();
-}
-
-exports.steakhutScrapper = functions
-  .runWith({ timeoutSeconds: 300, memory: "2GB" })
-  .pubsub.schedule('*/1 * * * *')
-  .onRun(async (context) => {
-    return getApysFromSteakHut()
-      .then(() => {
-        functions.logger.info("SteakHut APYs scrapped and updated.");
-      }).catch((err) => {
-        functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
-      });
-  });
