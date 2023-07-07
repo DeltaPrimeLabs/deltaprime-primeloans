@@ -10,7 +10,6 @@
     <template v-if="!screenLoading">
       <EditContact
         :emailInfo="emailInfo"
-        :phoneInfo="phoneInfo"
         :telegramInfo="telegramInfo"
         :notifiClient="client"
       ></EditContact>
@@ -76,7 +75,7 @@
                 <span class="rate__asset-name">{{ addressToPoolName(option.poolAddress) }}</span>
                 <span
                   class="remove-icon"
-                  @click="handleRemoveBorrowRate(option.id)"
+                  @click.stop="handleRemoveBorrowRate(option.id)"
                 >
                   &times;
                 </span>
@@ -118,9 +117,6 @@ export default ({
     return {
       emailInfo: this.targetGroups[0].emailTargets.length > 0
         ? this.targetGroups[0].emailTargets[0]
-        : null,
-      phoneInfo: this.targetGroups[0].smsTargets.length > 0
-        ? this.targetGroups[0].smsTargets[0]
         : null,
       telegramInfo: this.targetGroups[0].telegramTargets.length > 0
         ? this.targetGroups[0].telegramTargets[0]
@@ -237,12 +233,10 @@ export default ({
   flex-direction: column;
 
   .alert-settings {
+    margin-bottom: 20px;
+
     .alert-box {
       padding: 0 30px;
-
-      &:last-child {
-        margin-bottom: 80px;
-      }
 
       .alert-option {
         display: flex;

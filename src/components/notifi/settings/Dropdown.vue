@@ -2,7 +2,7 @@
   <div class="custom-dropdown">
     <div
       class="select"
-      @click="open = !open"
+      @click.stop="open = !open"
     >
       <input
         disabled
@@ -24,7 +24,7 @@
         v-for="option in options"
         class="dropdown-option notifi-modal__text notifi-modal__text-label"
         v-bind:key="option.name"
-        @click="handleSelect(option)"
+        @click.stop="handleSelect(option)"
       >
         {{ option.name }}
       </div>

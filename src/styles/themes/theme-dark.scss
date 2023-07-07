@@ -386,6 +386,8 @@
   --edit-contact__contact-info-color: #{$washed-blue};
   --edit-contact__contact-verify-color: #{$light-purple};
   --edit-contact__contact-box-top-border: 1px solid #{$deep-space};
+  --edit-contact__edit-container-box-shadow: 1px 1px 8px 0 #{$dark-space}cc;
+  --edit-contact__edit-container-background-color: #{$space};
   // endregion
 
   // region ToggleButton

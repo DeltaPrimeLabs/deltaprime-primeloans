@@ -26,26 +26,24 @@ Vue.use(VTooltip, {
 
 Vue.mixin(globalMixin);
 
-// notifi modal open/close on outside click
+// notifi modal close on outside click
 let handleOutsideClick
 Vue.directive('closable', {
   bind(el, binding, vnode, prevVnode) {
     handleOutsideClick = (e) => {
       e.stopPropagation();
 
-      const { handler, exclude, currentScreen } = vnode.context[binding.arg];
+      const { handler, exclude } = binding.value;
       let clickedOnExcludedEl = false;
 
       exclude.forEach(refName => {
         if (!clickedOnExcludedEl) {
           const excludedEl = vnode.context.$refs[refName];
-          // console.log(excludedEl.$el);
           clickedOnExcludedEl = excludedEl && excludedEl.$el.contains(e.target);
         }
       });
 
-      if (!currentScreen && !el.contains(e.target) && !clickedOnExcludedEl ||
-          currentScreen && !el.contains(e.target) && !clickedOnExcludedEl && !currentScreen.contains(e.target)) {
+      if (!el.contains(e.target) && !clickedOnExcludedEl) {
         vnode.context[handler]();
       }
     }

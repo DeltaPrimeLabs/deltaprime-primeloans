@@ -33,16 +33,6 @@
     ></FormInput>
 
     <FormInput
-      :inputType="'number'"
-      :type="'phone'"
-      :placeholder="'xxx-xx-xxx'"
-      :leftIconSrc="'src/assets/icons/icon_phone.svg'"
-      :noSpace="true"
-      :validators="phoneValidators"
-      @valueChange="handleChange"
-    ></FormInput>
-
-    <FormInput
       :type="'telegram'"
       :placeholder="'Telegram ID'"
       :leftIconSrc="'src/assets/icons/icon_telegram.svg'"
@@ -53,9 +43,9 @@
     <div class="next-button">
       <Button
         :label="'Next'"
-        @click.once="handleClick"
+        @click.stop.native="handleClick"
         :customStyle="customStyles.button"
-        :disabled="invalid || !targets.emailAddress && !targets.phoneNumber && !targets.telegramId"
+        :disabled="invalid || !targets.emailAddress && !targets.telegramId"
         :waiting="screenLoading"
         :rightIconSrc="'src/assets/icons/icon_arrow_s_white.svg'"
       ></Button>
@@ -85,8 +75,7 @@ export default ({
       alerts: notifiConfig.ALERTS_CONFIG,
       targets: {},
       invalid: null,
-      emailValidators: [],
-      phoneValidators: []
+      emailValidators: []
     }
   },
   mounted() {
@@ -103,15 +92,6 @@ export default ({
           }
         }
       ]
-      this.phoneValidators = [
-        {
-          validate: (value) => {
-            if (!/^\d+$/.test(value)) {
-              return 'Your phone number is invalid';
-            }
-          }
-        }        
-      ]
     },
 
     handleChange(event) {
@@ -120,7 +100,7 @@ export default ({
         return;
       }
 
-      const inputName = event.type === 'email' ? 'emailAddress' : event.type === 'phone' ? 'phoneNumber' : 'telegramId';
+      const inputName = event.type === 'email' ? 'emailAddress' : 'telegramId';
 
       this.invalid = false;
 
@@ -133,8 +113,6 @@ export default ({
         let value = event.value;
         if (inputName === 'telegramId' && event.value[0] === '@') {
           value = event.value.substring(1)
-        } else if (inputName === 'phoneNumber') {
-          value = '+' + event.value;
         }
 
         this.targets = {
@@ -143,6 +121,7 @@ export default ({
         }
       }
     },
+
     handleClick() {
       Object.keys(this.targets).forEach(key => {
         if (!this.targets[key]) delete this.targets[key]
@@ -160,7 +139,7 @@ export default ({
 @import "~@/styles/notifi";
 
 .notifi-target-setup {
-  height: 470px;
+  height: 420px;
   padding: 24px 30px;
 
   .alert-option {

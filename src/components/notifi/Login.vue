@@ -11,7 +11,7 @@
     <div class="login__button-wrapper">
       <Button
         :label="'Connect to notifi'"
-        @click.once="handleClick"
+        @click.stop.native="handleClick"
         :customStyle="customStyles.button"
         :waiting="screenLoading"
       ></Button>

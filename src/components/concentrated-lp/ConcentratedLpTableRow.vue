@@ -29,8 +29,8 @@
       </div>
 
       <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance, 8, true) }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance != null ? lpToken.primaryBalance : 0, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance != null ? lpToken.secondaryBalance : 0, 8, true) }}
       </div>
 
       <div class="table__cell table__cell--double-value loan">
@@ -38,7 +38,7 @@
       </div>
 
       <div class="table__cell real-yield">
-        <FlatButton v-on:buttonClick="toggleRealYield()">
+        <FlatButton v-on:buttonClick="toggleRealYield()" :active="concentratedLpTokenBalances[lpToken.symbol] > 0">
           {{ rowExpanded ? 'HIDE' : 'SHOW' }}
         </FlatButton>
       </div>
@@ -256,6 +256,8 @@ export default {
     },
 
     async setupPoolData() {
+      const startBlockTimestamp = parseInt(((Date.now() - 7 * 24 * 3600 * 1000) / 1000).toString());
+
       let query = `{
           vaults(where: {id: "${this.lpToken.address}"}) {
           id
@@ -274,6 +276,18 @@ export default {
             priceUSD
             symbol
           }
+          strategy {
+            id
+            harvests(orderBy: blockTimestamp, orderDirection: desc, first:500, where:{blockTimestamp_gte:${startBlockTimestamp}}) {
+              id
+              amountX
+              amountY
+              amountXBefore
+              amountYBefore
+              blockTimestamp
+              lastHarvest
+            }
+          }
           }
         }`;
 
@@ -288,14 +302,12 @@ export default {
             this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
             this.lpToken.firstPrice = vault.tokenX.priceUSD;
             this.lpToken.secondPrice = vault.tokenY.priceUSD;
+            this.lpToken.harvests = vault.strategy.harvests;
           }
       )
-
-
     },
 
     toggleRealYield() {
-      console.log(this.lpToken);
       if (this.rowExpanded) {
         this.showRealYield = false;
         this.rowExpanded = false;
@@ -555,7 +567,7 @@ export default {
   border-image-slice: 1;
 
   &.expanded {
-    height: 384px;
+    height: 404px;
   }
 
   .table__row {

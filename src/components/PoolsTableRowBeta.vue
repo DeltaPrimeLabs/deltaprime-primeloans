@@ -298,7 +298,6 @@ export default {
         };
 
         this.handleTransaction(this.swapDeposit, {swapDepositRequest: swapDepositRequest}, () => {
-          console.log('SUCCESSADO');
           this.$forceUpdate();
         }, () => {
 

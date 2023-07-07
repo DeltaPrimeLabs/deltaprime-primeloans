@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-detail">
+  <div class="notification-detail notifi-modal__scroll">
     <div v-if="screenLoading" class="loader">
       <VueLoadersBallBeat color="#A6A3FF" scale="1"></VueLoadersBallBeat>
     </div>
@@ -54,7 +54,7 @@ export default ({
 @import "~@/styles/notifi";
 
 .notification-detail {
-  height: 470px;
+  height: 420px;
   padding: 24px 30px;
   display: flex;
   flex-direction: column;

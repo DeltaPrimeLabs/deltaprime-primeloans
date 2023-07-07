@@ -196,7 +196,6 @@ export default {
     },
 
     parseTransactionData(transaction) {
-      console.log(transaction);
       const date = new Date(Number(transaction.timestamp) * 1000);
       const fromAssetDecimals = transaction.fromAsset && config.ASSETS_CONFIG[transaction.fromAsset] ? config.ASSETS_CONFIG[transaction.fromAsset].decimals : 18;
       const fromAmountNumber = fromAssetDecimals && transaction.fromAmount ? formatUnits(transaction.fromAmount, fromAssetDecimals) : null;

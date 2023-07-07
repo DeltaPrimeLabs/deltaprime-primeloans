@@ -525,7 +525,6 @@ export default {
     },
 
     watchFarmRefreshEvent() {
-      console.log(this.availableFarms);
       this.farmService.observeRefreshFarm().subscribe(async () => {
         if (this.availableFarms) {
           this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);

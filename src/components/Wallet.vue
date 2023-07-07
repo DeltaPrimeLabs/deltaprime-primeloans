@@ -25,8 +25,10 @@
     </IconButton>
     <NotifiModal
       :show="showModal"
-      @currentScreen="handleCurrentScreen"
-      v-closable:dirArg
+      v-closable="{
+        exclude: ['notifiBtn'],
+        handler: 'handleClose'
+      }"
     >
     </NotifiModal>
   </div>
@@ -60,12 +62,7 @@
       return {
         showModal: false,
         notifiScreenLoaded: false,
-        notifi: null,
-        dirArg: {
-          exclude: ['notifiBtn'],
-          handler: 'handleClose',
-          currentScreen: null
-        }
+        notifi: null
       }
     },
     mounted() {
@@ -88,10 +85,6 @@
         this.notifiService.observeCurrentScreen().subscribe(() => {
           this.notifiScreenLoaded = true;
         });
-      },
-
-      handleCurrentScreen(screen) {
-        this.dirArg.currentScreen = screen;
       }
     }
   }

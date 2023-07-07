@@ -8,7 +8,7 @@
       v-if="notification.detail"
       v-bind:key="id"
       class="notification-box"
-      @click="handleDetail(notification)"
+      @click.stop="handleDetail(notification)"
     >
       <div class="box-icon">
         <img :src="getBoxIcon(notification)">
@@ -131,7 +131,7 @@ export default ({
 @import "~@/styles/notifi";
 
 .notifications-list {
-  height: 470px;
+  height: 420px;
 
   .notification-box {
     display: flex;
