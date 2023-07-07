@@ -1113,7 +1113,7 @@ export default {
           parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
           parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
           parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 4000000}
+          {gasLimit: 5000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1168,7 +1168,7 @@ export default {
           parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
           parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
           parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 6000000}
+          {gasLimit: 7000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
