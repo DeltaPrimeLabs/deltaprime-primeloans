@@ -31,20 +31,20 @@ const prodConfig = {
             'process.env.NODE_DEBUG': JSON.stringify('false')
         })
     ],
-    // module: {
-    //     rules: [
-    //         {
-    //             test: /\.(scss|css)$/,
-    //             use: [
-    //                 'style-loader',
-    //                 MiniCssExtractPlugin.loader,
-    //                 'css-loader',
-    //                 'postcss-loader',
-    //                 'sass-loader',
-    //             ],
-    //         },
-    //     ],
-    // },
+    module: {
+        rules: [
+            {
+                test: /\.(scss|css)$/,
+                use: [
+                    'style-loader',
+                    MiniCssExtractPlugin.loader,
+                    'css-loader',
+                    'postcss-loader',
+                    'sass-loader',
+                ],
+            },
+        ],
+    },
     optimization: {
         minimize: true,
         minimizer: [new CssMinimizerPlugin(), "..."],
