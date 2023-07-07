@@ -4,6 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import IYakWrapRouterArtifact from '../../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -13,7 +14,7 @@ import {
     deployAllFacets,
     deployAndInitExchangeContract,
     deployPools,
-    erc20ABI,
+    erc20ABI, formatUnits,
     fromWei,
     getFixedGasSigners,
     getRedstonePrices,
@@ -28,6 +29,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    IYakWrapRouter,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -58,6 +60,8 @@ describe('Smart loan', () => {
             steakhutAvaxUsdcLpToken: Contract,
             steakhutBtcAvaxLpToken: Contract,
             steakhutUsdteUsdtLpToken: Contract,
+            steakhutEurocUsdcLpToken: Contract,
+            steakhutJoeAvaxLpToken: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -74,7 +78,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'BTC', "USDT.e", 'USDT', 'SHLB_AVAX-USDC_B', 'SHLB_BTC.b-AVAX_B', 'SHLB_USDT.e-USDt_C'];
+            let assetsList = ['AVAX', 'USDC', 'EUROC', 'JOE', 'BTC', "USDT.e", 'USDT', 'SHLB_AVAX-USDC_B', 'SHLB_BTC.b-AVAX_B', 'SHLB_USDT.e-USDt_C', 'SHLB_EUROC-USDC_V2_1_B', 'SHLB_JOE-AVAX_B'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
@@ -94,10 +98,13 @@ describe('Smart loan', () => {
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));
+            supportedAssets
 
-            steakhutAvaxUsdcLpToken = await new ethers.Contract(SteakHutAvaxUsdcLP, erc20ABI, provider);
-            steakhutBtcAvaxLpToken = await new ethers.Contract(SteakHutBtcAvaxLP, erc20ABI, provider);
-            steakhutUsdteUsdtLpToken = await new ethers.Contract(SteakHutUsdteUsdtLP, erc20ABI, provider);
+            steakhutAvaxUsdcLpToken = await new ethers.Contract(TOKEN_ADDRESSES["SHLB_AVAX-USDC_B"], erc20ABI, provider);
+            steakhutBtcAvaxLpToken = await new ethers.Contract(TOKEN_ADDRESSES["SHLB_BTC.b-AVAX_B"], erc20ABI, provider);
+            steakhutUsdteUsdtLpToken = await new ethers.Contract(TOKEN_ADDRESSES["SHLB_USDT.e-USDt_C"], erc20ABI, provider);
+            steakhutEurocUsdcLpToken = await new ethers.Contract(TOKEN_ADDRESSES["SHLB_EUROC-USDC_V2_1_B"], erc20ABI, provider);
+            steakhutJoeAvaxLpToken = await new ethers.Contract(TOKEN_ADDRESSES["SHLB_JOE-AVAX_B"], erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,
@@ -302,6 +309,100 @@ describe('Smart loan', () => {
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             await wrappedLoan.unstakeSteakHutUSDTeUSDT(toWei("99999999"), 0, 0);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 5);
+        });
+
+
+        it("should stake EUROC/USDC", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await steakhutUsdteUsdtLpToken.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await expect(wrappedLoan.stakeSteakHutEUROCUSDC(0, 0, 0, 0)).to.be.revertedWith("Cannot stake 0 tokens");
+
+            const yieldYakWrapRouterAddress = '0x44f4737C3Bb4E5C1401AE421Bd34F135E0BB8394';
+            let yieldYakWrapRouter = new ethers.Contract(yieldYakWrapRouterAddress, IYakWrapRouterArtifact.abi, provider) as IYakWrapRouter;
+            const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+            // TODO: Resolve problem with yakswap local query
+            let queryRes = await yieldYakWrapRouter.findBestPathAndWrap(toWei("20"), TOKEN_ADDRESSES["AVAX"], TOKEN_ADDRESSES["EUROC"], 1, gasPrice);
+
+            const minGlpAmount = parseUnits(String(20 * tokensPrices.get("AVAX")! / tokensPrices.get("EUROC")! * 95 / 100), BigNumber.from("6"));
+
+            await wrappedLoan.yakSwap(
+                queryRes.amounts[0],
+                minGlpAmount,
+                queryRes.path,
+                queryRes.adapters
+            );
+            expect(await wrappedLoan.getBalance(toBytes32("EUROC"))).to.be.gt(0);
+
+            await wrappedLoan.swapPangolin(
+                toBytes32('AVAX'),
+                toBytes32('USDC'),
+                toWei('20'),
+                0,
+            );
+            expect(await wrappedLoan.getBalance(toBytes32('USDC'))).to.be.gt(0);
+
+            // Should stake max if amount > balance
+            await wrappedLoan.stakeSteakHutEUROCUSDC(toWei("99999999"), toWei("99999999"), 0, 0);
+
+            expect(await steakhutEurocUsdcLpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 5);
+        });
+
+        it("should unstake EUROC/USDC", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeSteakHutEUROCUSDC(toWei("99999999"), 0, 0);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 5);
+        });
+
+
+        it("should stake JOE/AVAX", async () => {
+
+            let initialStakedBalance = await steakhutUsdteUsdtLpToken.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await expect(wrappedLoan.stakeSteakHutJOEAVAX(0, 0, 0, 0)).to.be.revertedWith("Cannot stake 0 tokens");
+
+            await wrappedLoan.swapPangolin(
+                toBytes32('AVAX'),
+                toBytes32("JOE"),
+                toWei('20'),
+                0,
+            );
+            expect(await wrappedLoan.getBalance(toBytes32("JOE"))).to.be.gt(0);
+
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+            // Should stake max if amount > balance
+            await wrappedLoan.stakeSteakHutJOEAVAX(toWei("99999999"), toWei("99999999"), 0, 0);
+
+            expect(await steakhutJoeAvaxLpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 5);
+        });
+
+        it("should unstake JOE/AVAX", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeSteakHutJOEAVAX(toWei("99999999"), 0, 0);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
