@@ -30,6 +30,78 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
     }
     /**
+     * Stakes in SteakHut JOE/AVAX balanced-wide pool
+     * @param amount0Desired amount of JOE to be staked
+     * @param amount1Desired amount of AVAX to be staked
+     * @param amount0Min minimum amount of JOE to be staked
+     * @param amount1Min minimum amount of AVAX to be staked
+     **/
+    function stakeSteakHutJOEAVAX(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
+        _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
+            token0Symbol: "JOE",
+            token1Symbol: "AVAX",
+            vaultTokenSymbol: "SHLB_JOE-AVAX_B",
+            amount0Desired: amount0Desired,
+            amount1Desired: amount1Desired,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Unstakes from SteakHut JOE/AVAX balanced-wide pool
+     * @param liquidity amount of shares to be unstaked
+     * @param amount0Min minimum amount of JOE to be unstaked
+     * @param amount1Min minimum amount of AVAX to be unstaked
+     **/
+    function unstakeSteakHutJOEAVAX(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
+        _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
+            token0Symbol: "JOE",
+            token1Symbol: "AVAX",
+            vaultTokenSymbol: "SHLB_JOE-AVAX_B",
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Stakes in SteakHut EUROC/USDC balanced-wide pool
+     * @param amount0Desired amount of EUROC to be staked
+     * @param amount1Desired amount of USDC to be staked
+     * @param amount0Min minimum amount of EUROC to be staked
+     * @param amount1Min minimum amount of USDC to be staked
+     **/
+    function stakeSteakHutEUROCUSDC(uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external {
+        _stakeTokenSteakHut(ISteakHutPool.StakingDetails({
+            token0Symbol: "EUROC",
+            token1Symbol: "USDC",
+            vaultTokenSymbol: "SHLB_EUROC-USDC_V2_1_B",
+            amount0Desired: amount0Desired,
+            amount1Desired: amount1Desired,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
+     * Unstakes from SteakHut EUROC/USDC balanced-wide pool
+     * @param liquidity amount of shares to be unstaked
+     * @param amount0Min minimum amount of EUROC to be unstaked
+     * @param amount1Min minimum amount of USDC to be unstaked
+     **/
+    function unstakeSteakHutEUROCUSDC(uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external {
+        _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails({
+            token0Symbol: "EUROC",
+            token1Symbol: "USDC",
+            vaultTokenSymbol: "SHLB_EUROC-USDC_V2_1_B",
+            liquidity: liquidity,
+            amount0Min: amount0Min,
+            amount1Min: amount1Min
+        }));
+    }
+
+    /**
      * Stakes in SteakHut AVAX/USDC balanced-wide pool
      * @param amount0Desired amount of AVAX to be staked
      * @param amount1Desired amount of USDC to be staked

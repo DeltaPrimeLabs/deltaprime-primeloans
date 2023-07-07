@@ -515,10 +515,12 @@ export const convertTokenPricesMapToMockPrices = function(tokensPrices: Map<stri
 }
 
 export const convertAssetsListToSupportedAssets = function(assetsList: Array<string>, customTokensAddresses: any = [], chain = 'AVAX') {
+
     const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
     return assetsList.map(asset => {
+        let debtCoverage = ['JOE', 'SHLB_JOE-AVAX_B'].includes(asset) ? '0.8' : '0.8333333333333333';
         // @ts-ignore
-        return new Asset(toBytes32(asset), tokenAddresses[asset] === undefined ? customTokensAddresses[asset] : tokenAddresses[asset]);
+        return new Asset(toBytes32(asset), tokenAddresses[asset] === undefined ? customTokensAddresses[asset] : tokenAddresses[asset], debtCoverage);
     });
 }
 
@@ -734,6 +736,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'unstakeSteakHutBTCAVAX',
                 'stakeSteakHutUSDTeUSDT',
                 'unstakeSteakHutUSDTeUSDT',
+                'stakeSteakHutJOEAVAX',
+                'unstakeSteakHutJOEAVAX',
+                'stakeSteakHutEUROCUSDC',
+                'unstakeSteakHutEUROCUSDC',
             ],
             hardhatConfig)
     }
