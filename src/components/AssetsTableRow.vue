@@ -325,8 +325,6 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.warn('YAK SWAP QUERY METHOD');
-        console.log('amountIn', amountIn);
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
@@ -588,7 +586,6 @@ export default {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
-        console.log(swapRequest);
         this.handleTransaction(swapDexSwapMethodMap[swapRequest.swapDex], {swapRequest: swapRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -967,12 +964,17 @@ export default {
     handleTransactionError(error) {
       console.error('handleTransactionError');
       console.error(error);
+      if (error && error.data && error.data.message) {
+        console.error(error.data.message)
+      }
       if (!error) {
         return;
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
+        } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
+          this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }

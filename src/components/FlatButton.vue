@@ -1,5 +1,5 @@
 <template>
-  <div class="flat-button-component" v-on:click="buttonClick()">
+  <div class="flat-button-component" v-on:click="buttonClick()" :class="`${active ? '' : 'disabled'}`">
     <slot></slot>
     <InfoIcon
         v-if="tooltip"
@@ -18,9 +18,11 @@ export default {
   components: {InfoIcon},
   props: {
     tooltip: null,
+    active: true
   },
   methods: {
     buttonClick() {
+      if (!this.active) return;
       this.$emit('buttonClick', null);
     },
   }
@@ -50,6 +52,13 @@ export default {
   &:hover {
     background-color: var(--flat-button__background-color--hover);
     color: var(--flat-button__color--hover);
+  }
+
+  &.disabled {
+    color: var(--icon-button__icon-color--disabled);
+    border: solid 1px var(--icon-button__icon-color--disabled);
+    cursor: initial;
+    background-color: transparent;
   }
 
   .info__icon {

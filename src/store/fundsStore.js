@@ -721,8 +721,6 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
-      console.log('state.smartLoanContract.address', state.smartLoanContract.address);
-      console.log(state.smartLoanContract.address);
 
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
         const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
@@ -1093,8 +1091,6 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create concentrated LP token');
 
-      console.log('firstDecimals: ', firstDecimals)
-      console.log('secondDecimals: ', secondDecimals)
       const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount0, firstDecimals); // how much of tokenA was used
       const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount1, secondDecimals); //how much of tokenB was used
       const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
@@ -1103,10 +1099,6 @@ export default {
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.concentratedLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-
-      console.log('firstAssetBalanceAfterTransaction: ', firstAssetBalanceAfterTransaction)
-      console.log('secondAssetBalanceAfterTransaction: ', secondAssetBalanceAfterTransaction)
-      console.log('lpTokenBalanceAfterTransaction: ', lpTokenBalanceAfterTransaction)
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);

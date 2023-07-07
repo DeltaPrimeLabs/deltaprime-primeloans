@@ -288,9 +288,6 @@ export default {
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
-        console.log('watchHealthRefresh')
-        console.log(this.concentratedLpAssets)
-        console.log(this.concentratedLpBalances)
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
           this.noSmartLoanInternal,
           this.debtsPerAsset,
