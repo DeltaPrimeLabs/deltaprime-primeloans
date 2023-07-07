@@ -5,8 +5,6 @@ import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "hardhat-interface-generator";
-import * as tdly from "@tenderly/hardhat-tenderly";
-tdly.setup({ automaticVerifications: false });
 require('hardhat-deploy');
 
 const fs = require('fs');
