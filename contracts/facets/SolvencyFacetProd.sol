@@ -22,8 +22,6 @@ import "../lib/local/DeploymentConstants.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
-import "hardhat/console.sol";
-
 contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
@@ -305,7 +303,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
     function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
         // TODO: for some reason TraderJoe bin array is not empty
-        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true) + _getTotalUniswapV3WithPricesBase(true);
+//        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true) + _getTotalUniswapV3WithPricesBase(true);
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true);
     }
 
     /**
@@ -475,9 +474,6 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
         uint256[] memory prices = new uint256[](2);
 
     if (ownedTraderJoeV2Bins.length > 0) {
-        console.log('here');
-        console.log('ownedTraderJoeV2Bins: ', ownedTraderJoeV2Bins.length);
-
             for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
                 ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
 
@@ -501,7 +497,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     //TODO: check what are limitations of this
 
                     liquidity = price * binReserveX
-                        / 10 ** (6 + IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() - IERC20Metadata(address(binInfo.pair.getTokenY())).decimals())
+                        / 10 ** (6 + IERC20Metadata(address(binInfo.pair.getTokenX())).decimals())
+                        * 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()
                         + binReserveY;
                 }
 
@@ -512,10 +509,9 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity / 1e18 * prices[0] / (price * 10 ** 2),
-                        debtCoverageY * liquidity / 1e18 * prices[1] / 10 ** 8
+                        debtCoverageX * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[0] / (price * 10 ** 2),
+                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
                     )
-                    //TODO: this is a risky part and has to be reviewed
                     * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
                 }
             }
@@ -642,7 +638,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * @dev This function uses the redstone-evm-connector
     **/
     function getTotalValue() public view virtual returns (uint256) {
-        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
+//        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
+        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2();
     }
 
     /**

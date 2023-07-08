@@ -67,12 +67,12 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
         TraderJoeV2Bin storage bin;
 
-        for (uint256 i; i < getOwnedBins().length; i++) {
-            if (address(getOwnedBins()[i].pair) == address(pairInfo.LBPair)) {
-                bin = getOwnedBins()[i];
+        for (int256 i; uint(i) < getOwnedBins().length; i++) {
+            if (address(getOwnedBins()[uint(i)].pair) == address(pairInfo.LBPair)) {
+                bin = getOwnedBins()[uint(i)];
 
                 if (bin.pair.balanceOf(address(this), bin.id) == 0) {
-                    bin = getOwnedBins()[getOwnedBins().length - 1];
+                    getOwnedBins()[uint(i)] = getOwnedBins()[getOwnedBins().length - 1];
                     i--;
                     getOwnedBins().pop();
                 }

@@ -52,7 +52,7 @@ describe('Smart loan', () => {
         await syncTime();
     });
 
-    describe('A loan with SteakHut staking operations', () => {
+    describe('A loan with TraderJoe LB positions', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
@@ -201,8 +201,8 @@ describe('Smart loan', () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
 
             await expect(wrappedLoan.addLiquidityTraderJoeV2(
                 [
@@ -223,22 +223,26 @@ describe('Smart loan', () => {
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).not.to.be.reverted;
 
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
+            console.log('first bin')
+            console.log(bins)
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
         });
 
-        it("should remove liquidity from AVAX/USDC pair", async () => {
-            const addedAvax = toWei('1');
-            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+        it("should remove a part of liquidity from AVAX/USDC pair", async () => {
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
 
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
-            const bin = await wrappedLoan.getOwnedTraderJoeV2Bins();
-
-            const lbToken = await ethers.getContractAt(LBTokenAbi, bin[0].pair, owner);
-            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bin[0].id);
+            const lbToken = await ethers.getContractAt(LBTokenAbi, bins[0].pair, owner);
+            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[0].id);
 
             await expect(wrappedLoan.removeLiquidityTraderJoeV2(
                 [
@@ -247,13 +251,119 @@ describe('Smart loan', () => {
                     20,
                     0, // min AVAX
                     0, // min USDC
-                    [bin[0].id], //just one bin
+                    [bins[0].id], //just one bin
                     [binBalance.div(2)],
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).not.to.be.reverted;
 
-            console.log('tv: ', fromWei(await wrappedLoan.getTotalValue()));
-            console.log('hr: ', fromWei(await wrappedLoan.getHealthRatio()));
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+        });
+
+        it("should add liquidity to a different bin", async () => {
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    8376121,
+                    16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    [1], //just one bin
+                    [addedAvax],
+                    [addedUSDC],
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            expect(bins.length).to.equal(2);
+        });
+
+        it("should remove all liquidity from the first bin", async () => {
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            const lbToken = await ethers.getContractAt(LBTokenAbi, bins[0].pair, owner);
+            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[0].id);
+
+            console.log(bins)
+
+            await expect(wrappedLoan.removeLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    0, // min AVAX
+                    0, // min USDC
+                    [bins[0].id], //just one bin
+                    [binBalance],
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            const binsAfterUnstake = await wrappedLoan.getOwnedTraderJoeV2Bins();
+            console.log(binsAfterUnstake)
+
+            console.log('tvBefore: ', tvBefore);
+            console.log('tvAfter: ', tvAfter);
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            expect(binsAfterUnstake.length).to.equal(1);
+        });
+
+        it("should remove all liquidity from the second bin", async () => {
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            const lbToken = await ethers.getContractAt(LBTokenAbi, bins[0].pair, owner);
+            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[0].id);
+
+            await expect(wrappedLoan.removeLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    0, // min AVAX
+                    0, // min USDC
+                    [bins[0].id], //just one bin
+                    [binBalance],
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            const binsAfterUnstake = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            expect(binsAfterUnstake.length).to.equal(0);
         });
     });
 });
