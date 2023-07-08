@@ -61,7 +61,7 @@ export default {
       this.onThemeChange(theme)
     });
     if (this.smartLoanContract) {
-      this.setupData();
+      // this.setupData();
     }
   },
   computed: {
@@ -298,7 +298,7 @@ export default {
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.setupData();
+          // this.setupData();
         }
       },
     },

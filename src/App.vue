@@ -7,6 +7,9 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
+    <Banner v-if="showMissingApyBanner">
+      Due to a Firebase error, we are currently unable to show external yield. This will be fixed asap.
+    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
@@ -84,6 +87,7 @@ export default {
       showGlpBanner: false,
       showDepositBanner: false,
       showPrimeAccountBanner: false,
+      showMissingApyBanner: false,
       darkMode: false,
     };
   },
@@ -118,7 +122,7 @@ export default {
     }
 
     if (window.location.href.includes('prime-account')) {
-      this.showPrimeAccountBanner = true;
+      this.showMissingApyBanner = true;
     }
   },
 

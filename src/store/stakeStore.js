@@ -260,7 +260,7 @@ export default {
       const farmService = rootState.serviceRegistry.farmService;
       let farms = state.farms;
 
-      const apys = rootState.fundsStore.apys;
+      // const apys = rootState.fundsStore.apys;
 
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -281,7 +281,7 @@ export default {
               of(farm.protocol),
               farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
                 .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))): farm.balance(smartLoanContractAddress),
-              of(apys[farm.token][farm.protocolIdentifier]),
+              // of(apys[farm.token][farm.protocolIdentifier]),
               farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress) :
                 farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
                   vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)

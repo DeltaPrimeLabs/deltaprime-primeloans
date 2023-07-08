@@ -144,7 +144,7 @@ export default {
       async handler(factory) {
         if (factory) {
           this.loanAddresses = await factory.getAllLoans();
-          await this.fetchLoansFromFireBase();
+          // await this.fetchLoansFromFireBase();
         }
       }
     },

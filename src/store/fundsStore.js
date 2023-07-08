@@ -167,7 +167,7 @@ export default {
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
-      await dispatch('setupApys');
+      // await dispatch('setupApys');
       await dispatch('setupAssets');
       await dispatch('setupLpAssets');
       await dispatch('setupConcentratedLpAssets');
@@ -180,7 +180,7 @@ export default {
 
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
-        await dispatch('getAllAssetsApys');
+        // await dispatch('getAllAssetsApys');
         await dispatch('getAllAssetsBalances');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
@@ -205,11 +205,12 @@ export default {
           commit('setNoSmartLoan', false);
         }
 
-        await dispatch('setupApys');await dispatch('setupAssets');
+        // await dispatch('setupApys');
+        await dispatch('setupAssets');
         await dispatch('setupLpAssets');
         await dispatch('setupConcentratedLpAssets');
         await dispatch('getAllAssetsBalances');
-        await dispatch('getAllAssetsApys');
+        // await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
         await dispatch('getFullLoanStatus');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
