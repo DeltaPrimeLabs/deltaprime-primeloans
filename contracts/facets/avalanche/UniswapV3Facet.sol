@@ -24,16 +24,12 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     bytes32 internal constant OWNED_UNISWAP_V3_TOKEN_IDS_SLOT = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
 
     //TODO: kamilovsky please look into that if that is a good solution for storage
-    function getTokenIds() internal view returns (uint256[] storage result){
-        bytes32 slot = OWNED_UNISWAP_V3_TOKEN_IDS_SLOT;
-        assembly{
-            result.slot := sload(slot)
-        }
-        return result;
+    function getTokenIds() internal returns (uint256[] storage result){
+        return DiamondStorageLib.getUV3OwnedTokenIds();
     }
 
     function getOwnedUniswapV3TokenIds() public view returns (uint256[] memory result){
-        return getTokenIds();
+        return DiamondStorageLib.getUV3OwnedTokenIdsView();
     }
 
     function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[1] memory pools){
@@ -69,8 +65,11 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         uint256 amount1
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
 
-        if (getTokenIds().length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
-        getTokenIds().push(tokenId);
+        {
+            uint256[] storage tokenIds = DiamondStorageLib.getUV3OwnedTokenIds();
+            if (tokenIds.length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
+            tokenIds.push(tokenId);
+        }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
@@ -131,11 +130,12 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     }
 
     function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
-        for (uint256 i; i < getTokenIds().length; i++) {
-            if (getTokenIds()[i] == tokenId) {
+        uint256[] storage tokenIds = getTokenIds();
+        for (uint256 i; i < tokenIds.length; i++) {
+            if (tokenIds[i] == tokenId) {
                 INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).burn(tokenId);
-                getTokenIds()[i] = getTokenIds()[getTokenIds().length - 1];
-                getTokenIds().pop();
+                tokenIds[i] = tokenIds[tokenIds.length - 1];
+                tokenIds.pop();
                 emit BurnLiquidityUniswapV3(msg.sender, tokenId, block.timestamp);
 
                 break;

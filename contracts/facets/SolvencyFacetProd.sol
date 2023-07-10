@@ -303,8 +303,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
     function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
         // TODO: for some reason TraderJoe bin array is not empty
-//        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true) + _getTotalUniswapV3WithPricesBase(true);
-        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true);
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true) + _getTotalUniswapV3WithPricesBase(true);
+//        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true);
     }
 
     /**
@@ -525,15 +525,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function _getTotalUniswapV3WithPricesBase(bool weighted) internal view returns (uint256) {
         uint256 total;
 
-        uint256[] storage ownedUniswapV3TokenIds;
-
-        // stack too deep
-        {
-            bytes32 slot = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
-            assembly{
-                ownedUniswapV3TokenIds.slot := sload(slot)
-            }
-        }
+        uint256[] memory ownedUniswapV3TokenIds = DiamondStorageLib.getUV3OwnedTokenIdsView();
 
         if (ownedUniswapV3TokenIds.length > 0) {
 
@@ -630,8 +622,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * @dev This function uses the redstone-evm-connector
     **/
     function getTotalValue() public view virtual returns (uint256) {
-//        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
-        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2();
+        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
+//        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2();
     }
 
     /**
