@@ -16,22 +16,17 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
     address private constant JOE_V2_ROUTER_ADDRESS = 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
 
-    bytes32 internal constant OWNED_TRADERJOE_V2_BINS_SLOT = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
-
-    function getOwnedBins() internal view returns (TraderJoeV2Bin[] storage result){
-        bytes32 slot = OWNED_TRADERJOE_V2_BINS_SLOT;
-        assembly{
-            result.slot := sload(slot)
-        }
+    function getOwnedTraderJoeV2Bins() public view returns (TraderJoeV2Bin[] memory result){
+        return DiamondStorageLib.getTjV2OwnedBinsView();
     }
 
-    function getOwnedTraderJoeV2Bins() public view returns (TraderJoeV2Bin[] memory result){
-        return getOwnedBins();
+    function getOwnedTraderJoeV2BinsStorage() internal returns (TraderJoeV2Bin[] storage result){
+        return DiamondStorageLib.getTjV2OwnedBins();
     }
 
     function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
-        TraderJoeV2Bin[] memory ownedBins = getOwnedBins();
+        TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
 
         liquidityParameters.to = address(this);
         liquidityParameters.refundTo = address(this);
@@ -59,7 +54,7 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
             }
 
             if (!userHadBin) {
-                getOwnedBins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
+                getOwnedTraderJoeV2BinsStorage().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
             }
         }
     }
@@ -79,15 +74,16 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep);
 
         TraderJoeV2Bin storage bin;
+        TraderJoeV2Bin[] storage binsStorage = getOwnedTraderJoeV2BinsStorage();
 
-        for (int256 i; uint(i) < getOwnedBins().length; i++) {
-            if (address(getOwnedBins()[uint(i)].pair) == address(pairInfo.LBPair)) {
-                bin = getOwnedBins()[uint(i)];
+        for (int256 i; uint(i) < binsStorage.length; i++) {
+            if (address(binsStorage[uint(i)].pair) == address(pairInfo.LBPair)) {
+                bin = binsStorage[uint(i)];
 
                 if (bin.pair.balanceOf(address(this), bin.id) == 0) {
-                    getOwnedBins()[uint(i)] = getOwnedBins()[getOwnedBins().length - 1];
+                    binsStorage[uint(i)] = binsStorage[binsStorage.length - 1];
                     i--;
-                    getOwnedBins().pop();
+                    binsStorage.pop();
                 }
 
                 break;

@@ -194,6 +194,8 @@ describe('Smart loan', () => {
         });
 
         it("should add liquidity to AVAX/USDC pair", async () => {
+            let bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+            expect(bins.length).to.be.equal(0);
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
@@ -219,7 +221,7 @@ describe('Smart loan', () => {
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).not.to.be.reverted;
 
-            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+            bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());

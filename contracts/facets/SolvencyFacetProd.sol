@@ -443,7 +443,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
             if (success) {
                 uint256 balance = abi.decode(result, (uint256));
                 IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
-                usdValue += stakedPositionsPrices[i].price * 10 ** 8 * balance / (10 ** token.decimals());
+                usdValue += stakedPositionsPrices[i].price * 10 ** 10 * balance / (10 ** token.decimals());
             }
         }
 
@@ -461,19 +461,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function _getTotalTraderJoeV2WithPricesBase(bool weighted) internal view returns (uint256) {
         uint256 total;
 
-        ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins;
-
-        // stack too deep
-        {
-            ITraderJoeV2Facet.TraderJoeV2Bin[] storage storedOwnedTraderJoeV2Bins;
-
-            bytes32 slot = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
-            assembly{
-                storedOwnedTraderJoeV2Bins.slot := sload(slot)
-            }
-
-            ownedTraderJoeV2Bins = storedOwnedTraderJoeV2Bins;
-        }
+        ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins = DiamondStorageLib.getTjV2OwnedBinsView();
 
         uint256[] memory prices = new uint256[](2);
 
