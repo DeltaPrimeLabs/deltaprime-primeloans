@@ -31,6 +31,7 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
     function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
+        TraderJoeV2Bin[] memory ownedBins = getOwnedBins();
 
         liquidityParameters.to = address(this);
         liquidityParameters.refundTo = address(this);
@@ -43,11 +44,23 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        for (uint256 i; i < depositIds.length; i++) {
+        for (uint256 i; i < depositIds.length; ++i) {
             ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
 
-            //TODO: first check if wasn't added before...
-            getOwnedBins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
+            bool userHadBin;
+
+            for (int256 j; uint(j) < ownedBins.length; ++j) {
+                if (address(ownedBins[uint(j)].pair) == address(pairInfo.LBPair)
+                && ownedBins[uint(j)].id == depositIds[i]
+                ) {
+                    userHadBin = true;
+                    break;
+                }
+            }
+
+            if (!userHadBin) {
+                getOwnedBins().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
+            }
         }
     }
 

@@ -461,19 +461,23 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function _getTotalTraderJoeV2WithPricesBase(bool weighted) internal view returns (uint256) {
         uint256 total;
 
-        ITraderJoeV2Facet.TraderJoeV2Bin[] storage ownedTraderJoeV2Bins;
+        ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins;
 
         // stack too deep
         {
+            ITraderJoeV2Facet.TraderJoeV2Bin[] storage storedOwnedTraderJoeV2Bins;
+
             bytes32 slot = bytes32(uint256(keccak256('TRADERJOE_V2_BINS_1685370112')) - 1);
             assembly{
-                ownedTraderJoeV2Bins.slot := sload(slot)
+                storedOwnedTraderJoeV2Bins.slot := sload(slot)
             }
+
+            ownedTraderJoeV2Bins = storedOwnedTraderJoeV2Bins;
         }
 
         uint256[] memory prices = new uint256[](2);
 
-    if (ownedTraderJoeV2Bins.length > 0) {
+        if (ownedTraderJoeV2Bins.length > 0) {
             for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
                 ITraderJoeV2Facet.TraderJoeV2Bin memory binInfo = ownedTraderJoeV2Bins[i];
 

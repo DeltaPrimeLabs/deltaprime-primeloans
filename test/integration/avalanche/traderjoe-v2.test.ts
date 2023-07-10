@@ -193,10 +193,6 @@ describe('Smart loan', () => {
             ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should fail to unstake as a non-owner", async () => {
-            //TODO:
-        });
-
         it("should add liquidity to AVAX/USDC pair", async () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
@@ -225,14 +221,48 @@ describe('Smart loan', () => {
 
             const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
-            console.log('first bin')
-            console.log(bins)
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            expect(bins.length).to.be.equal(1);
+        });
+
+        it("should add liquidity to the same bin", async () => {
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    8376120,
+                    16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    [0], //just one bin
+                    [addedAvax],
+                    [addedUSDC],
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
             expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
             expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            expect(bins.length).to.be.equal(1);
         });
 
         it("should remove a part of liquidity from AVAX/USDC pair", async () => {
@@ -308,8 +338,6 @@ describe('Smart loan', () => {
             const lbToken = await ethers.getContractAt(LBTokenAbi, bins[0].pair, owner);
             const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[0].id);
 
-            console.log(bins)
-
             await expect(wrappedLoan.removeLiquidityTraderJoeV2(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
@@ -326,10 +354,7 @@ describe('Smart loan', () => {
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
             const binsAfterUnstake = await wrappedLoan.getOwnedTraderJoeV2Bins();
-            console.log(binsAfterUnstake)
 
-            console.log('tvBefore: ', tvBefore);
-            console.log('tvAfter: ', tvAfter);
             expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
             expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
             expect(binsAfterUnstake.length).to.equal(1);
