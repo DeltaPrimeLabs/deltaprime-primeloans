@@ -33,6 +33,9 @@
     <Banner v-if="false" background="green-accent" :closable="true">
       All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
     </Banner>
+    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
+      Reminder: max utilization for borrowers = 90%, keep utilization below 90% to keep room for growth
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
