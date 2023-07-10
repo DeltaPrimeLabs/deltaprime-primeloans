@@ -20,9 +20,6 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
     uint256 constant MAX_OWNED_UNISWAP_V3_POSITIONS = 10; //TODO: dummy number, update after running gas tests
 
-    //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
-    bytes32 internal constant OWNED_UNISWAP_V3_TOKEN_IDS_SLOT = bytes32(uint256(keccak256('UNISWAP_V3_TOKEN_IDS_1685370112')) - 1);
-
     //TODO: kamilovsky please look into that if that is a good solution for storage
     function getTokenIds() internal returns (uint256[] storage result){
         return DiamondStorageLib.getUV3OwnedTokenIds();

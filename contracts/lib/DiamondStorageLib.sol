@@ -21,6 +21,7 @@ library DiamondStorageLib {
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
     bytes32 constant REENTRANCY_GUARD_STORAGE_POSITION = keccak256("diamond.standard.reentrancy.guard.storage");
     bytes32 constant OWNED_TRADERJOE_V2_BINS_POSITION = keccak256("diamond.standard.traderjoe_v2_bins_1685370112");
+    //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
     bytes32 constant OWNED_UNISWAP_V3_TOKEN_IDS_POSITION = keccak256("diamond.standard.uniswap_v3_token_ids_1685370112");
 
     struct FacetAddressAndPosition {
