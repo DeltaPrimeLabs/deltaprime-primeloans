@@ -502,15 +502,11 @@ describe('Safety tests of pool', () => {
 
             await mockToken.connect(user2).approve(pool.address, toWei("2.4"));
             await pool.connect(user2).repay(toWei("2.4"));
-            console.log('1')
 
             await pool.connect(user1).withdraw(toWei("2.19"));
-            console.log('2')
 
             await pool.connect(user2).borrow(toWei("0.03"));
-            console.log('3')
             await pool.connect(user1).withdraw(toWei("0.01999999999"));
-            console.log('4')
 
             depositUser1 = fromWei(await pool.balanceOf(user1.address));
 
