@@ -698,7 +698,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeTJAVAXSAVAXYak'
 
         ], hardhatConfig)
-        // await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
+        await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1Auto',
                 'vectorUnstakeUSDC1Auto',
