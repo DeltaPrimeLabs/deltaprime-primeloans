@@ -246,6 +246,7 @@ describe('Smart loan', () => {
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(1);
             expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
             expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
         });
@@ -278,6 +279,7 @@ describe('Smart loan', () => {
 
             expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
             expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(1);
             expect(fromWei(liquidityAfter)).to.be.closeTo(fromWei(liquidityBefore) - fromWei(decreasedLiquidity), 0.0001);
         });
 

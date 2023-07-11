@@ -50,9 +50,17 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        bytes32 token0 = tokenManager.tokenAddressToSymbol(address(params.token0));
+        bytes32 token1 = tokenManager.tokenAddressToSymbol(address(params.token1));
+
         params.recipient = address(this);
 
         //TODO: check for max and min ticks
+        address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
+        address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
+
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
         address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
@@ -68,27 +76,40 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
             tokenIds.push(tokenId);
         }
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        if (IERC20(params.token0).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(token0);
+        }
 
-        //TODO: check amount0 and amount1
-        emit AddLiquidityUniswapV3(msg.sender, poolAddress, tokenId, tokenManager.tokenAddressToSymbol(params.token0), tokenManager.tokenAddressToSymbol(params.token1), liquidity, amount0, amount1, block.timestamp);
+        if (IERC20(params.token1).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(token1);
+        }
+
+        emit AddLiquidityUniswapV3(msg.sender, poolAddress, tokenId, token0, token1, liquidity, amount0, amount1, block.timestamp);
     }
 
     function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         (
         ,,
-        address token0,
-        address token1,
+        address token0Address,
+        address token1Address,
         uint24 fee,
         ,,
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).positions(params.tokenId);
 
-        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0, token1, fee));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        bytes32 token0 = tokenManager.tokenAddressToSymbol(token0Address);
+        bytes32 token1 = tokenManager.tokenAddressToSymbol(token1Address);
+
+        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0Address, token1Address, fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
-        address(token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
-        address(token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
+        token0Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
+        token1Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
+
+        token0Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
+        token1Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
         (
         ,
@@ -96,20 +117,31 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         uint256 amount1
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).increaseLiquidity(params);
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        if (IERC20(token0Address).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(token0);
+        }
 
-        emit IncreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, tokenManager.tokenAddressToSymbol(token0), tokenManager.tokenAddressToSymbol(token1), amount0, amount1, block.timestamp);
+        if (IERC20(token1Address).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(token1);
+        }
+
+        emit IncreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
     function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
         (
         ,,
-        address token0,
-        address token1,
+        address token0Address,
+        address token1Address,
         uint24 fee,
         ,,
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).positions(params.tokenId);
-        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0, token1, fee));
+        address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0Address, token1Address, fee));
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        bytes32 token0 = tokenManager.tokenAddressToSymbol(token0Address);
+        bytes32 token1 = tokenManager.tokenAddressToSymbol(token1Address);
 
         (
             uint256 amount0,
@@ -121,9 +153,15 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
         INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).collect(collectParams);
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        if (IERC20(token0Address).balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(token0, token0Address);
+        }
 
-        emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, tokenManager.tokenAddressToSymbol(token0), tokenManager.tokenAddressToSymbol(token1), amount0, amount1, block.timestamp);
+        if (IERC20(token1Address).balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(token1, token1Address);
+        }
+
+        emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
     function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
