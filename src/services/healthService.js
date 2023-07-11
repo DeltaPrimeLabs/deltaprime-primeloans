@@ -63,7 +63,7 @@ export default class HealthService {
           let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
           tokens.push({
-            price: redstonePriceData[feedSymbol][0].dataPoints[0].value,
+            price: redstonePriceData[feedSymbol] ? redstonePriceData[feedSymbol][0].dataPoints[0].value : 0,
             balance: parseFloat(farm.totalBalance),
             borrowed: 0,
             debtCoverage: farm.debtCoverage,

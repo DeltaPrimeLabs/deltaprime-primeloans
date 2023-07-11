@@ -333,9 +333,14 @@ export default {
 
         if (asset) {
           for (let farm of tokenFarms) {
-            let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
+            try {
+              let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
-            farm.price = redstonePriceData[feedSymbol][0].dataPoints[0].value;
+              farm.price = redstonePriceData[feedSymbol][0].dataPoints[0].value;
+            } catch (e){
+              console.log('farm price error')
+            }
+
           }
         }
       }

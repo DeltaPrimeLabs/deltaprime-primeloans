@@ -104,10 +104,17 @@ export async function yieldYakRewards(stakingContractAddress, address) {
 }
 
 export async function yieldYakBalance(stakingContractAddress, address) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
-  const stakedYrtWei = await tokenContract.balanceOf(address);
+  try {
+    console.log('try yieldYakBalance')
+    const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
+    const stakedYrtWei = await tokenContract.balanceOf(address);
 
-  return formatUnits(stakedYrtWei, 18);
+    return formatUnits(stakedYrtWei, 18);
+  } catch (e) {
+    console.log('yieldYakBalance error')
+    return 0;
+  }
+
 }
 
 export async function yieldYakStaked(address) {
@@ -134,9 +141,17 @@ export async function yieldYakStaked(address) {
 }
 
 export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
+  let result = 0;
+  try {
+    const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
 
-  return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+    result = formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+  } catch (e) {
+    console.log('vector balance error')
+  }
+
+  return result;
+
 }
 
 export async function vectorFinanceRewards(stakingContractAddress, loanAddress) {
@@ -177,18 +192,31 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 }
 
 export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
-  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
-  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
-  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+  try {
+    const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
+    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
 
-  return loanBalance / totalSupply * totalDeposits;
+    return loanBalance / totalSupply * totalDeposits;
+  } catch (e) {
+    console.log('yieldYakMaxUnstaked error');
+    return 0;
+  }
+
+
 }
 
 export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
   const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
-  const stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  let stakedBalance = 0;
+  try {
+    stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  } catch (e) {
+
+  }
+
   return stakedBalance;
 }
 

@@ -218,7 +218,6 @@ export default {
                 stakingContractAddress: '0x1636bE3843E86826cB6aDC141B5d40d782763B85',
                 stakeMethod: 'vectorStakeSAVAX1Auto',
                 unstakeMethod: 'vectorUnstakeSAVAX1Auto',
-                balanceMethod: 'vectorSAVAX1BalanceAuto',
                 minAmount: 0.8,
                 token: 'sAVAX',
                 isTokenLp: false,
