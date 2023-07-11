@@ -50,7 +50,13 @@ contract YieldYakHelper {
 
     // PUBLIC FUNCTIONS
 
-    function unstakeAVAXYak(uint256 amount, uint256 minAmount) external {
+    function unstakeAVAXYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
@@ -62,31 +68,73 @@ contract YieldYakHelper {
         IWrappedNativeToken(AVAX_TOKEN).deposit{value: address(this).balance}();
     }
 
-    function unstakeSAVAXYak(uint256 amount, uint256 minAmount) external {
+    function unstakeSAVAXYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(SAVAX_TOKEN, YY_PTP_sAVAX, amount, minAmount);
     }
 
-    function unstakeGLPYak(uint256 amount, uint256 minAmount) external {
+    function unstakeGLPYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(GLP_TOKEN, YY_GLP, amount, minAmount);
     }
 
-    function unstakePNGAVAXUSDCYak(uint256 amount, uint256 minAmount) external {
+    function unstakePNGAVAXUSDCYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(PNG_AVAX_USDC_LP, YY_PNG_AVAX_USDC_LP, amount, minAmount);
     }
 
-    function unstakePNGAVAXETHYak(uint256 amount, uint256 minAmount) external {
+    function unstakePNGAVAXETHYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(PNG_AVAX_ETH_LP, YY_PNG_AVAX_ETH_LP, amount, minAmount);
     }
 
-    function unstakeTJAVAXUSDCYak(uint256 amount, uint256 minAmount) external {
+    function unstakeTJAVAXUSDCYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(TJ_AVAX_USDC_LP, YY_TJ_AVAX_USDC_LP, amount, minAmount);
     }
 
-    function unstakeTJAVAXETHYak(uint256 amount, uint256 minAmount) external {
+    function unstakeTJAVAXETHYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(TJ_AVAX_ETH_LP, YY_TJ_AVAX_ETH_LP, amount, minAmount);
     }
 
-    function unstakeTJAVAXSAVAXYak(uint256 amount, uint256 minAmount) external {
+    function unstakeTJAVAXSAVAXYak(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) external {
         _unstakeTokenYY(TJ_AVAX_sAVAX_LP, YY_TJ_AVAX_sAVAX_LP, amount, minAmount);
     }
 
