@@ -197,8 +197,8 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 partToReturn = 10 ** 18; // 1
 
         uint256 assetsValue = _getTotalAssetsValue() -
-        (IERC20Metadata(0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977).balanceOf(address(this)) * 1547 / 1e20);
-        // 1e18 because of decimals() of sAVAX YY valut, 1e2 because of price being 15.47
+        (IERC20Metadata(0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977).balanceOf(address(this)) * 1547 / 1e18);
+        // 1e2 because of price being 15.47
 
 
 
