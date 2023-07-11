@@ -302,9 +302,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     }
 
     function _getThresholdWeightedValueBase(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) internal view virtual returns (uint256) {
-        // TODO: for some reason TraderJoe bin array is not empty
-        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true) + _getTotalUniswapV3WithPricesBase(true);
-//        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2WithPricesBase(true);
+        return _getTWVOwnedAssets(ownedAssetsPrices) + _getTWVStakedPositions(stakedPositionsPrices) + _getTotalTraderJoeV2(true) + _getTotalUniswapV3(true);
     }
 
     /**
@@ -458,7 +456,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
     /**
     **/
-    function _getTotalTraderJoeV2WithPricesBase(bool weighted) internal view returns (uint256) {
+    function _getTotalTraderJoeV2(bool weighted) internal view returns (uint256) {
         uint256 total;
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins = DiamondStorageLib.getTjV2OwnedBinsView();
@@ -486,11 +484,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
                     price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-                    //TODO: check what are limitations of this
-
                     liquidity = price * binReserveX
-                        / 10 ** (6 + IERC20Metadata(address(binInfo.pair.getTokenX())).decimals())
-                        * 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()
+                        / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals()
                         + binReserveY;
                 }
 
@@ -501,7 +496,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[0] / (price * 10 ** 2),
+                        debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
                         debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
                     )
                     * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
@@ -522,7 +517,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
     /**
     **/
-    function _getTotalUniswapV3WithPricesBase(bool weighted) internal view returns (uint256) {
+    function _getTotalUniswapV3(bool weighted) internal view returns (uint256) {
         uint256 total;
 
         uint256[] memory ownedUniswapV3TokenIds = DiamondStorageLib.getUV3OwnedTokenIdsView();
@@ -597,7 +592,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getTotalTraderJoeV2WithPrices() public view returns (uint256) {
-        return _getTotalTraderJoeV2WithPricesBase(false);
+        return _getTotalTraderJoeV2(false);
     }
 
     /**
@@ -605,7 +600,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
     function getTotalUniswapV3WithPrices() public view returns (uint256) {
-        return _getTotalUniswapV3WithPricesBase(false);
+        return _getTotalUniswapV3(false);
     }
 
     /**
@@ -623,7 +618,6 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     **/
     function getTotalValue() public view virtual returns (uint256) {
         return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2() + getTotalUniswapV3();
-//        return getTotalAssetsValue() + getStakedValue() + getTotalTraderJoeV2();
     }
 
     /**

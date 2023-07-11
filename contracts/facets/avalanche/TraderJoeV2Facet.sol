@@ -24,11 +24,31 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         return DiamondStorageLib.getTjV2OwnedBins();
     }
 
+    function getWhitelistedTraderJoeV2Pairs() internal view returns (ILBPair[2] memory pools){
+        return [
+            ILBPair(0xD446eb1660F766d533BeCeEf890Df7A69d26f7d1),
+            ILBPair(0x1901011a39B11271578a1283D620373aBeD66faA)
+        ];
+    }
+
+    function isPairWhitelisted(address pair) internal view returns (bool){
+        ILBPair[2] memory pairs = getWhitelistedTraderJoeV2Pairs();
+
+        for (uint i; i < pairs.length; ++i) {
+            if (pair == address(pairs[i])) return true;
+        }
+        return false;
+    }
+
+
     function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
         TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
+
+        if (!isPairWhitelisted(address(pairInfo.LBPair))) revert TraderJoeV2PoolNotWhitelisted();
+
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         bytes32 tokenX = tokenManager.tokenAddressToSymbol(address(liquidityParameters.tokenX));
@@ -151,4 +171,6 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
      * @param timestamp time of the transaction
      **/
     event RemoveLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, bytes32 firstAsset, bytes32 secondAsset, uint256 timestamp);
+
+    error TraderJoeV2PoolNotWhitelisted();
 }
