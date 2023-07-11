@@ -30,8 +30,8 @@
     <Banner v-if="false" background="green-accent" :closable="true">
       All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
     </Banner>
-    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
-      Reminder: max utilization for borrowers = 90%, keep utilization below 90% to keep room for growth
+    <Banner v-if="showDepositBanner" :closable="true">
+      DeltaPrime pools are unaffected by the recent Platypus exploit. Read more in our Discord.
     </Banner>
     <div class="content">
       <div class="top-bar">
