@@ -195,7 +195,12 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         //meaning returning all tokens
         uint256 partToReturn = 10 ** 18; // 1
-        uint256 assetsValue = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
+
+        uint256 assetsValue = _getTotalAssetsValue() -
+        (IERC20Metadata(0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977).balanceOf(address(this)) * 1547 / 1e20);
+        // 1e18 because of decimals() of sAVAX YY valut, 1e2 because of price being 15.47
+
+
 
         if (!healingLoan && assetsValue >= suppliedInUSD + bonusInUSD) {
             //in that scenario we calculate how big part of token to return
@@ -210,6 +215,9 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
             for (uint256 i; i < assetsOwned.length; i++) {
                 IERC20Metadata token = getERC20TokenInstance(assetsOwned[i], true);
+                if(address(token) == 0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977){ // YY_PTP_sAVAX
+                    continue;
+                }
                 if(address(token) == 0x9e295B5B976a184B14aD8cd72413aD846C299660){
                     token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
                 }
