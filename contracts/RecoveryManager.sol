@@ -16,7 +16,10 @@ contract RecoveryManager is Ownable {
         bytes32 asset;
         address underlying;
         address[] accounts;
-        uint256 minAmount;
+        address token0;
+        address token1;
+        uint256 minAmount0;
+        uint256 minAmount1;
     }
 
     struct Helper {
@@ -62,8 +65,11 @@ contract RecoveryManager is Ownable {
             (bool success, ) = helper.helper.delegatecall(
                 abi.encodeWithSelector(
                     helper.selector,
+                    data.token0,
+                    data.token1,
                     totalRecovered,
-                    data.minAmount
+                    data.minAmount0,
+                    data.minAmount1
                 )
             );
             require(success, "failed to unstake");

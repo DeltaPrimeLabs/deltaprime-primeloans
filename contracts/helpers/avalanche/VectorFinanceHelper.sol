@@ -17,7 +17,13 @@ contract VectorFinanceHelper {
 
     // PUBLIC FUNCTIONS
 
-    function vectorUnstakeUSDC(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeUSDC(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) public {
         _unstakeToken(
             amount,
             minAmount,
@@ -25,7 +31,13 @@ contract VectorFinanceHelper {
         );
     }
 
-    function vectorUnstakeUSDT(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeUSDT(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) public {
         _unstakeToken(
             amount,
             minAmount,
@@ -33,7 +45,13 @@ contract VectorFinanceHelper {
         );
     }
 
-    function vectorUnstakeWAVAX(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeWAVAX(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) public {
         _unstakeToken(
             amount,
             minAmount,
@@ -41,7 +59,13 @@ contract VectorFinanceHelper {
         );
     }
 
-    function vectorUnstakeSAVAX(uint256 amount, uint256 minAmount) public {
+    function vectorUnstakeSAVAX(
+        address,
+        address,
+        uint256 amount,
+        uint256 minAmount,
+        uint256
+    ) public {
         _unstakeToken(
             amount,
             minAmount,
