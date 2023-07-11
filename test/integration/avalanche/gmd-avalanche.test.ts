@@ -233,7 +233,7 @@ describe('Smart loan', () => {
             await wrappedLoan.gmdStakeUSDC(parseUnits(stakedAmount.toString(), 6), expectedSharesReceived.mul("995").div("1000"));
 
             let sharesAfterStaking = fromWei(await GMDTokensContracts.get('gmdUSDC')!.balanceOf(wrappedLoan.address));
-            expect(formatUnits(initialUSDCBalance, 6) - formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(10);
+            expect(formatUnits(initialUSDCBalance, 6) - formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), 6)).to.be.closeTo(10, 1e-8);
             expect(toWei(sharesAfterStaking.toString())).to.be.gte(toWei(expectedSharesReceived.toString()))
 
             // Should stake max if amount > balance
