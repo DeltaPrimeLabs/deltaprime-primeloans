@@ -72,7 +72,7 @@ export default ({
   },
   data() {
     return {
-      alerts: notifiConfig.ALERTS_CONFIG,
+      alerts: notifiConfig.ALERTS_CONFIG[this.$route.name === 'Pools' ? 'pools' : 'primeAccount'],
       targets: {},
       invalid: null,
       emailValidators: []
