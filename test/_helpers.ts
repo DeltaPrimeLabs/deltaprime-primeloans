@@ -542,39 +542,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     console.log('Pausing')
     await diamondCut.pause();
     await deployFacet(
-        "YieldYakSwapFacet",
-        diamondAddress,
-        [
-            'yakSwap',
-        ],
-        hardhatConfig
-    )
-    await deployFacet(
-        "GLPFacet",
-        diamondAddress,
-        [
-            'claimGLpFees',
-            'mintAndStakeGlp',
-            'unstakeAndRedeemGlp',
-        ],
-        hardhatConfig
-    )
-    await deployFacet(
-    "GMDFacet",
-        diamondAddress,
-        [
-            'gmdStakeUSDC',
-            'gmdStakeAVAX',
-            'gmdStakeBTCb',
-            'gmdStakeWETHe',
-            'gmdUnstakeUSDC',
-            'gmdUnstakeAVAX',
-            'gmdUnstakeBTCb',
-            'gmdUnstakeWETHe',
-        ],
-        hardhatConfig
-)
-    await deployFacet(
         "OwnershipFacet",
         diamondAddress,
         [
@@ -738,6 +705,45 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'unstakeSteakHutUSDTeUSDT',
             ],
             hardhatConfig)
+
+        await deployFacet(
+            "YieldYakSwapFacet",
+            diamondAddress,
+            [
+                'yakSwap',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "GLPFacet",
+            diamondAddress,
+            [
+                'claimGLpFees',
+                'mintAndStakeGlp',
+                'unstakeAndRedeemGlp',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "GMDFacet",
+            diamondAddress,
+            [
+                'gmdStakeUSDC',
+                'gmdStakeAVAX',
+                'gmdStakeBTCb',
+                'gmdStakeWETHe',
+                'gmdUnstakeUSDC',
+                'gmdUnstakeAVAX',
+                'gmdUnstakeBTCb',
+                'gmdUnstakeWETHe',
+            ],
+            hardhatConfig
+        )
+    }
+    if (chain == 'ARBITRUM') {
+        await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
+        await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
+        await deployFacet("UniswapV3Facet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
