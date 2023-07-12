@@ -4,12 +4,14 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
+import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
+import IDiamondCutArtifact from "../artifacts/contracts/interfaces/IDiamondCut.sol/IDiamondCut.json";
 import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
@@ -537,10 +539,13 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX', hardhatConfig = undefined) {
-    const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig = undefined, provider = undefined) {
+    const diamondCut = provider ?
+        new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
+        : await ethers.getContractAt('IDiamondCut', diamondAddress);
     console.log('Pausing')
     await diamondCut.pause();
+    console.log('after pause')
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,
@@ -741,9 +746,18 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         )
     }
     if (chain == 'ARBITRUM') {
-        await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
-        await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
-        await deployFacet("UniswapV3Facet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
+        console.log('here')
+        // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
+        // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
+        // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
+        await deployFacet(
+            "YieldYakSwapFacet",
+            diamondAddress,
+            [
+                'yakSwap',
+            ],
+            hardhatConfig
+        )
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
@@ -901,6 +915,19 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 break;
             case 'ETH':
                 tokenContract = new ethers.Contract(CELO_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
+                break;
+        }
+    } else if (chain === "ARBITRUM") {
+        switch (tokenName) {
+            case 'ETH':
+                tokenContract = new ethers.Contract(ARBITRUM_TOKEN_ADDRESSES['ETH'], wavaxAbi, provider);
+                for (const user of tokenAirdropList) {
+                    await tokenContract.connect(user).deposit({value: toWei("5000")});
+                }
+                break;
+            case 'USDC':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
                 break;
         }
     }

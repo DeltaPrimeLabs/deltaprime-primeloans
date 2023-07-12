@@ -49,7 +49,7 @@ describe('Smart loan', () => {
         await syncTime();
     });
 
-    describe('A loan with SteakHut staking operations', () => {
+    describe('A loan with Uniswap V3 operations', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
