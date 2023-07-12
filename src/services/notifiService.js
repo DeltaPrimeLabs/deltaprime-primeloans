@@ -1,7 +1,6 @@
 import { Subject } from 'rxjs';
 const { newEvmClient, newEvmConfig } = require('@notifi-network/notifi-frontend-client');
 import { signMessageForNotifi } from '../utils/blockchain';
-import notifiConfig from '../components/notifi/notifiConfig';
 
 export default class notifiService {
   notifi$ = new Subject();
@@ -43,7 +42,7 @@ export default class notifiService {
   }
 
   // we call this only once to set up notifi client
-  async setupNotifi(account) {
+  async setupNotifi(account, alertsConfig) {
 
     const walletBlockchain = 'AVALANCHE';
     const walletPublicKey = account;
@@ -60,24 +59,26 @@ export default class notifiService {
     const notifi = await this.refreshClientInfo(client);
 
     // alerts states for setting screen
-    this.alertSettings = notifiConfig.ALERTS_CONFIG;
+    this.alertSettings = alertsConfig;
 
     if (notifi.alerts) {
       for (const alert of notifi.alerts) {
         // get alerts statuses for initialization on settings screen
-        this.alertSettings[alert.filter.filterType]['created'] = true;
+        if (this.alertSettings[alert.filter.filterType]) {
+          this.alertSettings[alert.filter.filterType]['created'] = true;
 
-        if (alert.filter.filterType === 'DELTA_PRIME_BORROW_RATE_EVENTS') {
-          // we can have multiple borrow rate alerts with differnt thresholds
-          if (!this.alertSettings[alert.filter.filterType]['filterOptions']) this.alertSettings[alert.filter.filterType]['filterOptions'] = [];
-          this.alertSettings[alert.filter.filterType]['filterOptions'].push({
-            ...JSON.parse(alert.filterOptions),
-            poolAddress: alert.sourceGroup.sources[0].blockchainAddress,
-            id: alert.id
-          });
-        } else {
-          this.alertSettings[alert.filter.filterType]['id'] = alert.id;
-          this.alertSettings[alert.filter.filterType]['filterOptions'] = JSON.parse(alert.filterOptions);
+          if (alert.filter.filterType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.filter.filterType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
+            // we can have multiple borrow rate alerts with differnt thresholds
+            if (!this.alertSettings[alert.filter.filterType]['filterOptions']) this.alertSettings[alert.filter.filterType]['filterOptions'] = [];
+            this.alertSettings[alert.filter.filterType]['filterOptions'].push({
+              ...JSON.parse(alert.filterOptions),
+              poolAddress: alert.sourceGroup.sources[0].blockchainAddress,
+              id: alert.id
+            });
+          } else {
+            this.alertSettings[alert.filter.filterType]['id'] = alert.id;
+            this.alertSettings[alert.filter.filterType]['filterOptions'] = JSON.parse(alert.filterOptions);
+          }
         }
       }
     }
@@ -142,7 +143,7 @@ export default class notifiService {
     this.alertSettings[alert.alertType]['created'] = alert.toggle;
 
     if (!alert.toggle) {
-      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS') {
+      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.alertType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
         this.alertSettings[alert.alertType]['filterOptions'] =
           this.alertSettings[alert.alertType]['filterOptions'].filter((option) => option.id != alert.alertId);
       }
@@ -154,7 +155,7 @@ export default class notifiService {
       if (!alertRes.id) return;
 
       // update alerts states for settings screen
-      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS') {
+      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.alertType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
         if (!this.alertSettings[alert.alertType]['filterOptions']) this.alertSettings[alert.alertType]['filterOptions'] = [];
         this.alertSettings[alert.alertType]['filterOptions'].push({
           ...JSON.parse(alertRes.filterOptions),

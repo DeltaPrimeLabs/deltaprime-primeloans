@@ -62,8 +62,11 @@
             </div>
           </div>
 
-          <div v-if="alert.type === 'DELTA_PRIME_BORROW_RATE_EVENTS'">
-            <AddBorrowRate :notifiClient="client"></AddBorrowRate>
+          <div v-if="alert.type === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.type === 'DELTA_PRIME_SUPPLY_RATE_EVENTS'">
+            <AddInterestRate
+              :notifiClient="client"
+              :alertType="alert.type"
+            ></AddInterestRate>
             <div>
               <div
                 v-for="(option, id) in alert.filterOptions"
@@ -75,7 +78,7 @@
                 <span class="rate__asset-name">{{ addressToPoolName(option.poolAddress) }}</span>
                 <span
                   class="remove-icon"
-                  @click.stop="handleRemoveBorrowRate(option.id)"
+                  @click.stop="handleRemoveInterestRate(option.id, alert.type)"
                 >
                   &times;
                 </span>
@@ -94,7 +97,7 @@ import EditContact from './settings/EditContact.vue';
 import HealthRateButton from './settings/HealthRateButton.vue';
 import InfoIcon from '../InfoIcon.vue';
 import ToggleButton from './settings/ToggleButton.vue';
-import AddBorrowRate from './settings/AddBorrowRate.vue';
+import AddInterestRate from './settings/AddInterestRate.vue';
 import notifiConfig from './notifiConfig';
 
 export default ({
@@ -104,7 +107,7 @@ export default ({
     HealthRateButton,
     InfoIcon,
     ToggleButton,
-    AddBorrowRate
+    AddInterestRate
   },
   props: {
     screenLoading: { type: Boolean, default: false },
@@ -132,6 +135,9 @@ export default ({
     ...mapState('serviceRegistry', ['notifiService'])
   },
   mounted() {
+    console.log(this.alertSettings);
+    if (this.$route.name === 'Pools') return;
+
     const currentHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'];
     const healthRates = notifiConfig.HEALTH_RATES_CONFIG;
     this.selectedHealthRate = healthRates[1]; // default health rate: 70%
@@ -202,9 +208,9 @@ export default ({
       this.notifiService.handleCreateAlert(alert, payload);
     },
 
-    handleRemoveBorrowRate(alertId) {
+    handleRemoveInterestRate(alertId, alertType) {
       const alert = {
-        alertType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
+        alertType,
         toggle: false,
         alertId
       };

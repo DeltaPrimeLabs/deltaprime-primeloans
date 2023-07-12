@@ -67,7 +67,7 @@ import notifiConfig from '../notifiConfig';
 import { mapState } from 'vuex';
 
 export default ({
-  name: 'AddBorrowRate',
+  name: 'AddInterestRate',
   components: {
     ApyInput,
     Button,
@@ -76,7 +76,8 @@ export default ({
     RoundToggle
   },
   props: {
-    notifiClient: null
+    notifiClient: null,
+    alertType: null
   },
   computed: {
     ...mapState('serviceRegistry', ['notifiService'])
@@ -114,7 +115,7 @@ export default ({
     async handleSave() {
       this.saving = true;
       const alert = {
-        alertType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
+        alertType: this.alertType,
         toggle: true
       };
       const payload = {
