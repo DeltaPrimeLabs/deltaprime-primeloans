@@ -13,7 +13,7 @@ export default class ProgressBarService {
 
   emitProgressBarErrorState(additionalInfo) {
     this.requestProgressBar();
-    this.progressBarState$.next({state: 'ERROR', additionalInfo: additionalInfo});
+    this.progressBarState$.next({state: 'ERROR', additionalInfo});
   }
 
   emitProgressBarCancelledState() {
@@ -25,9 +25,9 @@ export default class ProgressBarService {
     this.progressBarState$.next({state: 'SUCCESS'});
   }
 
-  emitProgressBarInProgressState() {
+  emitProgressBarInProgressState(statusInfo = {}) {
     console.log('emit bar in progress');
-    this.progressBarState$.next({state: 'IN_PROGRESS'});
+    this.progressBarState$.next({state: 'IN_PROGRESS', statusInfo});
   }
 
   emitProgressBarState(state) {

@@ -116,7 +116,7 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService'])
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService'])
   },
 
   methods: {
@@ -214,8 +214,8 @@ export default {
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -240,10 +240,14 @@ export default {
           targetSymbol: this.pool.asset.symbol
         };
 
-        this.handleTransaction(this.lifiService.bridgeAndDeposit, {bridgeRequest: bridgeRequest}, () => {
-          ////
+        this.handleTransaction(this.lifiService.bridgeAndDeposit, {
+          bridgeRequest: bridgeRequest,
+          progressBarService: this.progressBarService
+        }, (res) => {
+          this.pool.deposit = Number(this.pool.deposit) + Number(res.amount);
           this.$forceUpdate();
-        }, () => {
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
           this.closeModal();
         });
@@ -265,8 +269,8 @@ export default {
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -300,8 +304,8 @@ export default {
         this.handleTransaction(this.swapDeposit, {swapDepositRequest: swapDepositRequest}, () => {
           console.log('SUCCESSADO');
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         })
       })
@@ -330,6 +334,17 @@ export default {
           this.handleTransactionError(e);
         }
       };
+    },
+
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
     },
   }
 };
