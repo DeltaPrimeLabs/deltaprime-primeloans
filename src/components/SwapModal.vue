@@ -580,8 +580,8 @@ export default {
                 return 'Amount exceeds the current debt.';
               }
             }
-          }
-        },
+          },
+        }
       ];
       this.targetValidators = [
         {
@@ -591,6 +591,15 @@ export default {
             }
           }
         },
+        {
+          validate: async (value) => {
+            const allowed = this.assets[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
+
+            if (value > allowed) {
+              return `Max. allowed ${this.targetAsset} amount is ${allowed.toFixed(0)}.`;
+            }
+          }
+        }
       ];
     },
 

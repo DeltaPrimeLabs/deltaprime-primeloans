@@ -5,6 +5,9 @@
       temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
+    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_TJ_AVAX_sAVAX_LP'">
+      Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.
+    </div>
 
     <div class="table__row">
       <div class="table__cell farm-cell">
@@ -356,7 +359,7 @@ export default {
           iconSrc: 'src/assets/icons/plus.svg',
           tooltip: 'Stake',
           iconButtonActionKey: 'STAKE',
-          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
+          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN' || this.farm.protocolIdentifier === 'YY_TJ_AVAX_sAVAX_LP'
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
