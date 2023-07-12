@@ -60,8 +60,6 @@ export default class HealthService {
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
         farms.forEach(farm => {
-          console.log(farm.protocolIdentifier, farm.totalBalance);
-
           let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
           tokens.push({
@@ -73,8 +71,6 @@ export default class HealthService {
           });
         });
       }
-
-      console.log(tokens);
 
       const health = calculateHealth(tokens);
       this.health$.next(health >= 0 ? health : 0);

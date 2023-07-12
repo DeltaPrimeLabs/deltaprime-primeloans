@@ -1421,11 +1421,6 @@
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.1.1.tgz#076d78ce99822258cf813ecc1e7fa460fa74d052"
   integrity sha512-NQ17ii0rK1b34VZonlmT2QMJFI70m0TRwbknO/ihlbatXyaktDhN/98vBiUU6kNBPljqGqyIrl2T4nY2RpFANg==
 
-"@graphql-typed-document-node/core@^3.2.0":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.2.0.tgz#5f3d96ec6b2354ad6d8a28bf216a1d97b5426861"
-  integrity sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==
-
 "@growthbunker/vuedarkmode@0.5.48":
   version "0.5.48"
   resolved "https://registry.yarnpkg.com/@growthbunker/vuedarkmode/-/vuedarkmode-0.5.48.tgz#097749d3033c5927e949276f664cc81b618e1ec5"
@@ -1733,17 +1728,17 @@
   dependencies:
     hardhat-tracer "^1.0.0-alpha.5"
 
-"@paraswap/core@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.4.tgz#421f35893c9bdb934881b87436c20fff685fe25b"
-  integrity sha512-8/UkGJwftOFghSmeG1raSwEsXZTveVVo69duCNIWoeBbAj4vxy2KOJ5VugRkfvKbtNeDxR3MZ64QY5yqWYg82w==
+"@paraswap/core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
+  integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
 "@paraswap/sdk@^6.2.0":
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.0.tgz#3e393f0b9a550617148ddd617c7a1a57962204de"
-  integrity sha512-tHl8jWP4mC7nEVyPXshsGXwXLbxFR5sYGW/O6Vs1J+oa6kBVr32EO632Hgs1Dg5j8dMN9CooZi/KAxep++DZ/A==
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1.tgz#cbac091ae1a8f080edd64234465ef127fdbd21f6"
+  integrity sha512-PW0pw676Oyy6129gqLKU/o7JNFVurCnA6AJ3NAKmZ6zAbPrYLWJV+zl/pWqja5MZkst2QzbDhd40gGjIeEKaPg==
   dependencies:
-    "@paraswap/core" "^1.0.4"
+    "@paraswap/core" "1.1.0"
     bignumber.js "^9.0.2"
     ts-essentials "^9.1.2"
 
@@ -5593,13 +5588,6 @@ cross-fetch@^2.1.0, cross-fetch@^2.1.1:
     node-fetch "2.6.1"
     whatwg-fetch "2.0.4"
 
-cross-fetch@^3.1.5:
-  version "3.1.5"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.5.tgz#e1389f44d9e7ba767907f7af8454787952ab534f"
-  integrity sha512-lvb1SBsI0Z7GDwmuid+mU3kWVBwTVUbe7S0H52yaaAdQOXq2YktTCZdlAcNKFzE6QtRz0snpw9bNiPeOIkkQvw==
-  dependencies:
-    node-fetch "2.6.7"
-
 cross-spawn@^5.0.1:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.1.0.tgz#e8bd0efee58fcff6f8f94510a0a554bbfa235449"
@@ -6794,13 +6782,6 @@ ethashjs@~0.0.7:
     buffer-xor "^2.0.1"
     ethereumjs-util "^7.0.2"
     miller-rabin "^4.0.0"
-
-ethereum-block-by-date@^1.4.7:
-  version "1.4.7"
-  resolved "https://registry.yarnpkg.com/ethereum-block-by-date/-/ethereum-block-by-date-1.4.7.tgz#c203c195538a779ceef6697e514cc0ab31cbc738"
-  integrity sha512-gWlztYC+jovu6i23U0ylNrBEeG3M14Qs1JEaW4oG5JfVMMY8AlNI3bmNBLFePoXGoM4a+3utQCYGE9iMIB73sA==
-  dependencies:
-    moment "^2.29.4"
 
 ethereum-bloom-filters@^1.0.6:
   version "1.0.10"
@@ -10911,6 +10892,11 @@ mock-fs@^4.1.0:
   resolved "https://registry.yarnpkg.com/mock-fs/-/mock-fs-4.14.0.tgz#ce5124d2c601421255985e6e94da80a7357b1b18"
   integrity sha512-qYvlv/exQ4+svI3UOvPUpLDF0OMX5euvUH0Ny4N5QyRyhNdgAgUrVH3iUINSzEPLvx0kbo/Bp28GJKIqvE7URw==
 
+moment-duration-format@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/moment-duration-format/-/moment-duration-format-2.3.2.tgz#5fa2b19b941b8d277122ff3f87a12895ec0d6212"
+  integrity sha512-cBMXjSW+fjOb4tyaVHuaVE/A5TqkukDWiOfxxAjY+PEqmmBQlLwn+8OzwPiG3brouXKY5Un4pBjAeB6UToXHaQ==
+
 moment-timezone@^0.5.10:
   version "0.5.34"
   resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.34.tgz#a75938f7476b88f155d3504a9343f7519d9a405c"
@@ -10922,11 +10908,6 @@ moment-timezone@^0.5.10:
   version "2.29.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
   integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
-
-moment@^2.29.4:
-  version "2.29.4"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.4.tgz#3dbe052889fe7c1b2ed966fcb3a77328964ef108"
-  integrity sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==
 
 move-concurrently@^1.0.1:
   version "1.0.1"
@@ -13332,7 +13313,7 @@ redstone-protocol@*:
   dependencies:
     ethers "^5.6.8"
 
-redstone-protocol@1.0.5, redstone-protocol@^1.0.5:
+redstone-protocol@1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/redstone-protocol/-/redstone-protocol-1.0.5.tgz#c8555e9a9e3ee49d11b6586bf7090e59404e3395"
   integrity sha512-62qHSb9jF5875a/gc8MbDcHH1n4dZsBXxlIxpk3vx/MeykAMB6nLd1174Qukvupkr69cneeRQiVqqALkQpmRlg==

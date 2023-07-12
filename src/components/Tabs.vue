@@ -236,7 +236,8 @@ li:not(.tab-selected):hover {
 
 .tab-window {
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   transition: all 50ms;
 }
 

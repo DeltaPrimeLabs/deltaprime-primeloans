@@ -5,6 +5,13 @@
         Bridge deposit
       </div>
 
+      <div class="asset-info" v-if="sourceAssetBalance">
+        Available:
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{
+            Number(sourceAssetBalance) | smartRound(10, true)
+          }}</span>
+      </div>
+
       <CurrencyComboInput
         ref="sourceInput"
         :isBridge="true"
@@ -79,6 +86,12 @@
       >
         No routes available
       </Alert>
+      <div
+        v-if="chosenRoute"
+        class="bridge-info"
+      >
+        Estimated Duration: {{ estimatedDuration }}
+      </div>
 
       <div class="button-wrapper">
         <Button
@@ -104,6 +117,10 @@ import Alert from './Alert.vue';
 import config from "../config";
 import { formatUnits } from '../utils/calculate';
 import { BigNumber } from 'ethers';
+import moment from 'moment';
+import momentDurationFormatSetup from "moment-duration-format";
+
+momentDurationFormatSetup(moment);
 
 export default {
   name: 'BridgeDepositModal',
@@ -196,6 +213,11 @@ export default {
     sourceAmountPerTarget() {
       if (!this.sourceAssetAmount || !this.targetAssetAmount) return ;
       return Number(this.sourceAssetAmount) / Number(this.targetAssetAmount);
+    },
+
+    estimatedDuration() {
+      const duration = moment.duration(this.chosenRoute.steps[0].estimate.executionDuration, 'seconds');
+      return duration.format('D [days], H [hours], m [minutes], s [seconds]');
     }
   },
 
@@ -325,7 +347,7 @@ export default {
         {
           validate: async (value) => {
             if (value > parseFloat(this.sourceAssetBalance)) {
-              return 'Amount exceeds the current deposit.';
+              return 'Amount exceeds available funds.';
             }
           }
         },
@@ -347,6 +369,20 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+
+.asset-info {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  font-size: $font-size-xsm;
+  color: var(--swap-modal__asset-info-color);
+  padding-right: 8px;
+
+  .asset-info__value {
+    font-weight: 600;
+    margin-left: 5px;
+  }
+}
 
 .target-input {
   margin-top: 56px;
@@ -423,6 +459,12 @@ export default {
 
 .alert-wrapper {
   margin-top: 30px;
+}
+
+.bridge-info {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
 }
 
 </style>

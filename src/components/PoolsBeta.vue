@@ -50,7 +50,7 @@ export default {
     this.initPools();
     this.watchPools();
     this.initStoresWhenProviderAndAccountCreated();
-    this.lifiService.setupLifi();
+    this.lifiService.setupLifi(this.progressBarService);
   },
 
   data() {
@@ -63,7 +63,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
     ...mapState('network', ['account', 'accountBalance', 'provider']),
   },
 
