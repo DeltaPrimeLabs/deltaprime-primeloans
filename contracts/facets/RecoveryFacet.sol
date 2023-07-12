@@ -34,7 +34,12 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         DiamondStorageLib.addOwnedAsset(asset, _token);
 
-        tokenManager.increaseProtocolExposure(asset, _amount * 1e18 / 10 ** token.decimals());
+        tokenManager.increaseProtocolExposure(
+            asset,
+            (_amount * 1e18) / 10 ** token.decimals()
+        );
+
+        emit RefundReceived(_token, _amount);
     }
 
     /**
@@ -65,6 +70,8 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
             _asset,
             (_amount * 1e18) / 10 ** token.decimals()
         );
+
+        emit EmergencyWithdrawn(_asset, _amount, block.timestamp);
     }
 
     function _withdrawGLP() internal returns (uint256 _amount) {
@@ -84,16 +91,41 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
             "GLP",
             (_amount * 1e18) / 10 ** token.decimals()
         );
+
+        emit EmergencyWithdrawn("GLP", _amount, block.timestamp);
     }
 
     /* ========== MODIFIERS ========== */
 
     modifier onlyRC() {
-        IAddressProvider addressProvider = IAddressProvider(DeploymentConstants.getAddressProvider());
+        IAddressProvider addressProvider = IAddressProvider(
+            DeploymentConstants.getAddressProvider()
+        );
         require(
             msg.sender == addressProvider.getRecoveryContract(),
             "msg.sender != RC"
         );
         _;
     }
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @dev emitted after the funds are withdrawn from the loan
+     * @param asset withdrawn by a user
+     * @param amount of funds withdrawn
+     * @param timestamp of the withdrawal
+     **/
+    event EmergencyWithdrawn(
+        bytes32 indexed asset,
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted after refund is received
+     * @param token that is refunded
+     * @param amount of the refund
+     */
+    event RefundReceived(address token, uint256 amount);
 }
