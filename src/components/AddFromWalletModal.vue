@@ -277,6 +277,15 @@ export default {
               return 'Exceeds account balance';
             }
           }
+        },
+        {
+          validate: async (value) => {
+            const allowed = this.asset.maxExposure - this.asset.currentExposure;
+
+            if (value > allowed) {
+              return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
+            }
+          }
         }
       ];
     },

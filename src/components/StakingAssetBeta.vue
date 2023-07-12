@@ -197,7 +197,7 @@ export default {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     calculateStakingProtocolsHeight() {
-      const headerHeight = 53;
+      const headerHeight = this.asset.symbol === 'TJ_AVAX_sAVAX_LP' ? 63 : 53;
       if (this.availableFarms) {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
         let heightOfRows = 0;

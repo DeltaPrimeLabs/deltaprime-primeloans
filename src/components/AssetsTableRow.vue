@@ -57,8 +57,7 @@
       </div>
 
       <div class="table__cell impact">
-        <span v-if="asset.debtCoverage > 0">5x</span>
-        <span v-else>0x</span>
+        <span>{{ Math.round((1 / (1 - asset.debtCoverage) - 1)) }}x</span>
       </div>
 
       <div class="table__cell trend">
@@ -325,8 +324,6 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.warn('YAK SWAP QUERY METHOD');
-        console.log('amountIn', amountIn);
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
@@ -479,7 +476,6 @@ export default {
 
     actionClick(key) {
       if (!this.disableAllButtons && this.healthLoaded || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
-        console.log('actionclick');
         switch (key) {
           case 'BORROW':
             this.openBorrowModal();
@@ -591,7 +587,6 @@ export default {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
-        console.log(swapRequest);
         this.handleTransaction(swapDexSwapMethodMap[swapRequest.swapDex], {swapRequest: swapRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -947,7 +942,6 @@ export default {
     },
 
     watchFarmRefreshEvent() {
-      console.log(this.availableFarms);
       this.farmService.observeRefreshFarm().subscribe(async () => {
         if (this.availableFarms) {
           this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
@@ -994,12 +988,17 @@ export default {
     handleTransactionError(error) {
       console.error('handleTransactionError');
       console.error(error);
+      if (error && error.data && error.data.message) {
+        console.error(error.data.message)
+      }
       if (!error) {
         return;
       }
       if (error && error.code && error.code === 4001 || error.code === -32603) {
         if (error.message.toLowerCase().includes('insufficient output amount')) {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
+        } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
+          this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }

@@ -43,8 +43,6 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 const HARD_REFRESH_DELAY = 60000;
 
-console.log('fundsStore')
-console.log(firebaseConfig)
 const fireStore = getFirestore(initializeApp(firebaseConfig));
 
 export default {
@@ -119,6 +117,10 @@ export default {
       state.assetBalances[assetBalanceChange.asset] = assetBalanceChange.balance;
     },
 
+    setSingleAssetCurrentExposure(state, assetExposureChange) {
+      state.assets[assetExposureChange.asset].currentExposure += assetExposureChange.exposureChange;
+    },
+
     setLpBalances(state, lpBalances) {
       state.lpBalances = lpBalances;
     },
@@ -186,6 +188,7 @@ export default {
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
         rootState.serviceRegistry.aprService.emitRefreshApr();
+        await dispatch('setupAssetExposures');
         try {
           await dispatch('getFullLoanStatus');
         } catch (e) {
@@ -199,12 +202,13 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
+      console.log('updateFunds')
       try {
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
         }
-        await dispatch('setupApys');
-        await dispatch('setupAssets');
+
+        await dispatch('setupApys');await dispatch('setupAssets');
         await dispatch('setupLpAssets');
         await dispatch('setupConcentratedLpAssets');
         await dispatch('getAllAssetsBalances');
@@ -212,8 +216,12 @@ export default {
         await dispatch('getDebtsPerAsset');
         await dispatch('getFullLoanStatus');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
+
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+
+        await dispatch('setupAssetExposures');
+
         setTimeout(async () => {
           await dispatch('getFullLoanStatus');
         }, 5000);
@@ -271,6 +279,28 @@ export default {
       commit('setAssets', assets);
 
       rootState.serviceRegistry.priceService.emitRefreshPrices();
+    },
+
+    async setupAssetExposures({state, commit}) {
+      const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
+      let assets = state.assets;
+
+      for (let symbol of Object.keys(assets)) {
+        let asset = assets[symbol];
+
+        if (asset.groupIdentifier) {
+          const decimals = asset.decimals;
+
+          const exposure = await tokenManager.groupToExposure(toBytes32(asset.groupIdentifier));
+
+          asset.currentExposure = parseFloat(formatUnits(exposure.current, decimals));
+          asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
+        }
+      }
+
+      console.log(assets)
+
+      commit('setAssets', assets);
     },
 
     async setupLpAssets({state, rootState, commit}) {
@@ -570,7 +600,8 @@ export default {
         try {
           concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
           concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
-          concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = apys['BTC.b_AVAX'].apy * 100;
+          concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = 0;
+          concentratedLpAssets['SHLB_EUROC-USDC_V2_1_B'].apy = apys['EUROC_USDC'].apy * 100;
         } catch (e) {
           console.log(e);
         }
@@ -721,9 +752,6 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
-      console.log('state.smartLoanContract.address', state.smartLoanContract.address);
-      console.log(state.smartLoanContract.address);
-
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
         const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei, {gasLimit: 100000});
         await awaitConfirmation(approveTransaction, provider, 'approve');
@@ -782,6 +810,7 @@ export default {
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
       await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
+      commit('setSingleAssetCurrentExposure', {asset: fundRequest.asset, exposureChange: Number(depositAmount)});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
@@ -899,6 +928,8 @@ export default {
 
 
       await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
+      commit('setSingleAssetCurrentExposure', {asset: withdrawRequest.asset, exposureChange: -Number(withdrawAmount)});
+
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
@@ -1085,7 +1116,7 @@ export default {
           parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
           parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
           parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 4000000}
+          {gasLimit: 5000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1093,8 +1124,6 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create concentrated LP token');
 
-      console.log('firstDecimals: ', firstDecimals)
-      console.log('secondDecimals: ', secondDecimals)
       const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount0, firstDecimals); // how much of tokenA was used
       const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount1, secondDecimals); //how much of tokenB was used
       const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
@@ -1103,10 +1132,6 @@ export default {
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.concentratedLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-
-      console.log('firstAssetBalanceAfterTransaction: ', firstAssetBalanceAfterTransaction)
-      console.log('secondAssetBalanceAfterTransaction: ', secondAssetBalanceAfterTransaction)
-      console.log('lpTokenBalanceAfterTransaction: ', lpTokenBalanceAfterTransaction)
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
@@ -1129,10 +1154,6 @@ export default {
 
       const provider = rootState.network.provider;
 
-      console.log('here')
-      console.log('firstAsset: ', removeLiquidityRequest.firstAsset)
-      console.log('secondAsset: ', removeLiquidityRequest.secondAsset)
-
       const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
       const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
       const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
@@ -1150,7 +1171,7 @@ export default {
           parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
           parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
           parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 6000000}
+          {gasLimit: 7000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1313,6 +1334,8 @@ export default {
 
       commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
       commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
+      commit('setSingleAssetCurrentExposure', {asset: swapRequest.sourceAsset, exposureChange: -Number(amountSold)});
+      commit('setSingleAssetCurrentExposure', {asset: swapRequest.targetAsset, exposureChange: Number(amountBought)});
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);

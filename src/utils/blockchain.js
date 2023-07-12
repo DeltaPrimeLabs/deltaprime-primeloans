@@ -165,29 +165,14 @@ export async function signMessage(provider, message, wallet, depositor = false) 
 export const loanTermsToSign =
   `
 By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
- 
-
-I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited, licensed, restricted or taxed by applicable state, territorial, provincial or local laws, rules or regulations e.g. United States of America (including its territories: American Samoa, Guam, Puerto Rico, the Northern Mariana Islands and the U.S. Virgin Islands) or any other restricted jurisdiction. It is my responsibility to ensure that I am legally eligible to enter the DeltaPrime and use DeltaPrime protocol under any laws applicable to me in my jurisdiction of residence or otherwise.
-
-I am not a person nor acting on behalf of a person residing in any country embargoed by the European Union or person listed in “Specially Designated Nationals and Blocked Persons List” published by the Office of Foreign Assets Control ("OFAC") of the US Department of the Treasury and/or subject to European Union or USA export controls or sanctions (including without limitation Iran, Cuba, Sudan, Syria and North Korea), or any other sanctioned jurisdiction or sanction list.
-
-I understand that sufficient collateral is required when using DeltaPrime, and that my credit accounts may be terminated if I do not maintain one, in which case I may be charged penalty by the protocol.
-
-I also understand that notorious not collateralized positions from one account may result in termination of my account or accounts, in which case I may be charged penalty by the protocol as well.
-
-I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
+I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital
+tokens or virtual assets are prohibited [full text available at https://arweave.net/Py7QApLEFqocjTg_rRWUsgjSdq6MT3AJf8lwmunkio4.
 `;
 
 export const depositTermsToSign =
   `
 By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
- 
-
-I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited, licensed, restricted or taxed by applicable state, territorial, provincial or local laws, rules or regulations e.g. United States of America (including its territories: American Samoa, Guam, Puerto Rico, the Northern Mariana Islands and the U.S. Virgin Islands) or any other restricted jurisdiction. It is my responsibility to ensure that I am legally eligible to enter the DeltaPrime and use DeltaPrime protocol under any laws applicable to me in my jurisdiction of residence or otherwise.
-
-I am not a person nor acting on behalf of a person residing in any country embargoed by the European Union or person listed in “Specially Designated Nationals and Blocked Persons List” published by the Office of Foreign Assets Control ("OFAC") of the US Department of the Treasury and/or subject to European Union or USA export controls or sanctions (including without limitation Iran, Cuba, Sudan, Syria and North Korea), or any other sanctioned jurisdiction or sanction list.
-
-I understand that my funds can be loaned to other accounts and are under risk of protocol failure.
-
-I understand and accept that DeltaPrime concept, the underlying or related software application and software protocol are still in an early development stage and offered "as is", and that the use of experimental software may result in complete loss of my funds.
+I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation
+in the country or territory where transactions with digital tokens or virtual assets are prohibited [full text available
+at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8
 `;

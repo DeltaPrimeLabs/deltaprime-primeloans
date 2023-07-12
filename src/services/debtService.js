@@ -5,7 +5,6 @@ export default class DebtService {
   debt$ = new Subject();
 
   emitDebt(debt) {
-    console.log('emitting new debt:', debt);
     this.debt$.next(debt);
   }
 
