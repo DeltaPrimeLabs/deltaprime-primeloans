@@ -9,6 +9,8 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IAddressProvider.sol";
+import "../interfaces/IVectorFinanceStaking.sol";
+import "../interfaces/IVectorFinanceMainStaking.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -16,6 +18,11 @@ import "../lib/local/DeploymentConstants.sol";
 contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
+
+    // CONSTANTS
+
+    address private constant VectorMainStaking =
+        0x8B3d9F0017FA369cD8C164D0Cc078bf4cA588aE5;
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -59,17 +66,49 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     function _withdraw(bytes32 _asset) internal returns (uint256 _amount) {
-        IERC20Metadata token = getERC20TokenInstance(_asset, true);
-        _amount = token.balanceOf(address(this));
-
-        address(token).safeTransfer(msg.sender, _amount);
-        DiamondStorageLib.removeOwnedAsset(_asset);
-
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(
-            _asset,
-            (_amount * 1e18) / 10 ** token.decimals()
-        );
+
+        if (
+            _asset == "VF_USDC_MAIN_AUTO" ||
+            _asset == "VF_USDT_MAIN_AUTO" ||
+            _asset == "VF_AVAX_SAVAX_AUTO" ||
+            _asset == "VF_SAVAX_MAIN_AUTO"
+        ) {
+            IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib
+                .stakedPositions();
+            uint256 positionsLength = positions.length;
+            for (uint256 i; i != positionsLength; ++i) {
+                IStakingPositions.StakedPosition memory position = positions[i];
+                if (position.identifier != _asset) continue;
+
+                positions[i] = positions[positionsLength - 1];
+                positions.pop();
+
+                IVectorFinanceCompounder compounder = _getAssetPoolHelper(
+                    position.asset
+                ).compounder();
+                uint256 shares = compounder.balanceOf(address(this));
+                uint256 stakedBalance = compounder.getDepositTokensForShares(shares);
+
+                _amount = compounder.depositTracking(address(this));
+                address(compounder).safeTransfer(msg.sender, _amount);
+
+                uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
+                tokenManager.decreaseProtocolExposure(positions[i].identifier, stakedBalance * 1e18 / 10**decimals);
+
+                break;
+            }
+        } else {
+            IERC20Metadata token = getERC20TokenInstance(_asset, true);
+            _amount = token.balanceOf(address(this));
+
+            address(token).safeTransfer(msg.sender, _amount);
+            DiamondStorageLib.removeOwnedAsset(_asset);
+            tokenManager.decreaseProtocolExposure(
+                _asset,
+                (_amount * 1e18) / 10 ** token.decimals()
+            );
+        }
 
         emit EmergencyWithdrawn(_asset, _amount, block.timestamp);
     }
@@ -93,6 +132,15 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         );
 
         emit EmergencyWithdrawn("GLP", _amount, block.timestamp);
+    }
+
+    function _getAssetPoolHelper(
+        address asset
+    ) internal view returns (IVectorFinanceStaking) {
+        IVectorFinanceMainStaking mainStaking = IVectorFinanceMainStaking(
+            VectorMainStaking
+        );
+        return IVectorFinanceStaking(mainStaking.getPoolInfo(asset).helper);
     }
 
     /* ========== MODIFIERS ========== */

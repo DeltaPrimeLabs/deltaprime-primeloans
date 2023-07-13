@@ -12,6 +12,10 @@ contract AddressProvider is OwnableUpgradeable {
 
     event RecoveryContractUpdated(address indexed rc);
 
+    function initialize() external initializer {
+        __Ownable_init();
+    }
+
     /// @notice Set recovery contract address
     /// @param rc New recovery contract address
     function setRecoveryContract(address rc) external onlyOwner {
