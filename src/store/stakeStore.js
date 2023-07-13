@@ -302,6 +302,11 @@ export default {
             } else if (farm.protocol === 'VECTOR_FINANCE') {
               if (farm.autoCompounding) {
                 farm.totalStaked = farmData[5];
+
+                if (farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO') {
+                  farm.totalBalance = farm.totalStaked;
+                }
+
               } else {
                 farm.rewards = farmData[5];
                 farm.totalStaked = farm.totalBalance;
