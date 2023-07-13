@@ -19,7 +19,7 @@
         </div>
       </li>
     </ul>
-    <div class="tab-window" v-bind:style="`min-height: ${tabHeight + 2}px;`">
+    <div class="tab-window">
       <div class="window-shade-left"></div>
       <div class="window-shade-right"></div>
       <div id="tab-bodies" class="tab-bodies" v-bind:style="`transform: translateX(${tabsShift}px);`">
