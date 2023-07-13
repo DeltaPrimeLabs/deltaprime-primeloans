@@ -188,7 +188,7 @@ export default {
                 strategy: 'Platypus',
                 refreshDelay: 60000,
                 gasStake: 6000000,
-                gasUnstake: 6000000
+                gasUnstake: 8000000
             },
             {
                 protocol: 'VECTOR_FINANCE',

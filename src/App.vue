@@ -124,7 +124,6 @@ export default {
     }
 
     if (window.location.href.includes('pools')) {
-      this.showDepositBanner = true;
     }
 
     if (window.location.href.includes('prime-account')) {
