@@ -30,14 +30,6 @@
     <Banner v-if="false" background="green-accent" :closable="true">
       All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
     </Banner>
-    <Banner v-if="showDepositBanner" :closable="true">
-      DeltaPrime pools are unaffected by the recent Platypus exploit. Read more in our
-      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060" target="_blank">
-        <b>
-          Discord.
-        </b>
-      </a>
-    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
