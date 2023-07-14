@@ -11,6 +11,7 @@ import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
+import "../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
@@ -526,7 +527,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
 
             for (uint256 i; i < ownedUniswapV3TokenIds.length; i++) {
 
-            IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0xb18a6cf6833130c7A13076D96c7e3784b7F721D1), ownedUniswapV3TokenIds[0]);
+            IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0x655C406EBFa14EE2006250925e54ec43AD184f8B), ownedUniswapV3TokenIds[0]);
 
             uint256[] memory prices = new uint256[](2);
 
@@ -539,6 +540,7 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     prices = getOracleNumericValuesFromTxMsg(symbols);
                 }
 
+                //TODO: check if this approach is not too harsh for Market Maker (Prime Account)
                 {
                     uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token0) : 1e18;
                     uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token1) : 1e18;
@@ -546,8 +548,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                     uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
                     uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint256 sqrtPrice_a = sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
-                    uint256 sqrtPrice_b = sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
 
                     total = total +
 
@@ -663,37 +665,5 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
         } else {
             return thresholdWeightedValue * 1e18 / debt;
         }
-    }
-
-
-    // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
-    //TODO: check what happens to signed
-    function sqrt(uint y) internal pure returns (uint z) {
-        if (y > 3) {
-            z = y;
-            uint x = y / 2 + 1;
-            while (x < z) {
-                z = x;
-                x = (y / x + x) / 2;
-            }
-        } else if (y != 0) {
-            z = 1;
-        }
-    }
-
-  //source: https://ethereum.stackexchange.com/questions/98685/computing-the-uniswap-v3-pair-price-from-q64-96-number
-    function sqrtPriceX96ToUint(uint160 sqrtPriceX96, uint8 decimalsToken0)
-    internal
-    view  //TODO: pure
-    returns (uint256)
-    {
-        {
-            uint256 numerator1 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96);
-            uint256 numerator2 = 10**decimalsToken0;
-        }
-
-        uint256 numerator1 = uint256(sqrtPriceX96);
-        uint256 numerator2 = 10**decimalsToken0;
-        return FullMath.mulDiv(numerator1, numerator2, 2 ** 96);
     }
 }

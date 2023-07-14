@@ -6,6 +6,7 @@ import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/joe-v2/ILBRouter.sol";
 import "../../interfaces/joe-v2/ILBFactory.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
+import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -13,8 +14,8 @@ import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 
 contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
-    address private constant NONFUNGIBLE_POSITION_MANAGER_ADDRESS = 0xb18a6cf6833130c7A13076D96c7e3784b7F721D1;
-    address private constant UNISWAP_V3_FACTORY_ADDRESS = 0x0bD438cB54153C5418E91547de862F21Bc143Ae2;
+    address private constant NONFUNGIBLE_POSITION_MANAGER_ADDRESS = 0x655C406EBFa14EE2006250925e54ec43AD184f8B;
+    address private constant UNISWAP_V3_FACTORY_ADDRESS = 0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD;
 
     using TransferHelper for address;
 
@@ -31,7 +32,7 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
     function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[1] memory pools){
         return [
-            IUniswapV3Pool(0xc79890C726fF34e43E16afA736847900e4fc9c37)
+            IUniswapV3Pool(0x0E663593657B064e1baE76d28625Df5D0eBd4421)
         ];
     }
 
@@ -48,6 +49,11 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
+        console.log('UNISWAP_V3_FACTORY_ADDRESS: ', UNISWAP_V3_FACTORY_ADDRESS);
+        console.log('params.token0: ', params.token0);
+        console.log('params.token1: ', params.token1);
+        console.log('params.fee: ', params.fee);
+        console.log('poolAddress: ', poolAddress);
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -56,6 +62,13 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         bytes32 token1 = tokenManager.tokenAddressToSymbol(address(params.token1));
 
         params.recipient = address(this);
+
+        {
+            //TODO: finish
+            //checking the price against the oracle value
+            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+            uint256 poolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
+        }
 
         //TODO: check for max and min ticks
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);

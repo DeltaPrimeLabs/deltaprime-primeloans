@@ -3,8 +3,7 @@ pragma solidity >=0.5.0;
 
 /// @title Provides functions for deriving a pool address from the factory, tokens, and the fee
 library PoolAddress {
-    //Pangolin Elixir init code hash, can differ between Uniswap V3 deployments
-    bytes32 internal constant POOL_INIT_CODE_HASH = 0x41a723f9e6457830b1b7a44df4435fab88581d073226894b33131815dd674c22;
+    bytes32 internal constant POOL_INIT_CODE_HASH = 0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54;
 
     /// @notice The identifying key of the pool
     struct PoolKey {

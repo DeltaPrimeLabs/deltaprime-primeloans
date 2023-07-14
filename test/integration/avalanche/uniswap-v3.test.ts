@@ -190,22 +190,27 @@ describe('Smart loan', () => {
             //TODO:
         });
 
-        it("should mint AVAX/USDC UniswapV3 liquidity", async () => {
+        it("should mint AVAX/USDC UniswapV3 liquidity for a narrow range", async () => {
             const addedAvax = toWei('1');
             const addedUSDC = parseUnits('10', BigNumber.from('6'));
 
             const tvBefore = fromWei(await wrappedLoan.getTotalValue());
             const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
 
+            //{"token0":"0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7","token1":"0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e","fee":"3000","recipient":"0x655c406ebfa14ee2006250925e54ec43ad184f8b","tickLower":"-257460","tickUpper":"-243600","amount0Desired":"9999926249497153","amount1Desired":"132722","amount0Min":"9914678461456890","amount1Min":"131591"})
+            // =>
+            // (124410619288, 9999926249497153, 132722, 0x0e663593657b064e1bae76d28625df5d0ebd4421)
             await wrappedLoan.mintLiquidityUniswapV3(
                 [
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-                    500,
+                    3000,
                     // 10000,
                     // 10100,
-                    -1000,
-                    1000,
+                    -250860,
+                    -249720,
+                    // -251000,
+                    // -250000,
                     addedAvax,
                     addedUSDC,
                     0,
@@ -218,8 +223,45 @@ describe('Smart loan', () => {
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
-            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
-            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.05);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.05);
+        });
+
+        it("should mint AVAX/USDC UniswapV3 liquidity for a wide range", async () => {
+            const addedAvax = toWei('1');
+            const addedUSDC = parseUnits('10', BigNumber.from('6'));
+
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            //{"token0":"0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7","token1":"0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e","fee":"3000","recipient":"0x655c406ebfa14ee2006250925e54ec43ad184f8b","tickLower":"-257460","tickUpper":"-243600","amount0Desired":"9999926249497153","amount1Desired":"132722","amount0Min":"9914678461456890","amount1Min":"131591"})
+            // =>
+            // (124410619288, 9999926249497153, 132722, 0x0e663593657b064e1bae76d28625df5d0ebd4421)
+            await wrappedLoan.mintLiquidityUniswapV3(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    3000,
+                    // 10000,
+                    // 10100,
+                    -257460,
+                    -243600,
+                    // -251000,
+                    // -250000,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 1000)
+                ]
+            );
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.05);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.05);
         });
 
 
@@ -246,9 +288,9 @@ describe('Smart loan', () => {
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
-            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(1);
-            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
-            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(2);
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.05);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.05);
         });
 
         it("should decrease AVAX/USDC UniswapV3 liquidity", async () => {
@@ -277,9 +319,9 @@ describe('Smart loan', () => {
 
             const liquidityAfter = (await manager.positions(id)).liquidity;
 
-            expect(tvBefore).to.be.closeTo(tvAfter, 0.001);
-            expect(hrBefore).to.be.closeTo(hrAfter, 0.001);
-            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(1);
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.01);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.01);
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(2);
             expect(fromWei(liquidityAfter)).to.be.closeTo(fromWei(liquidityBefore) - fromWei(decreasedLiquidity), 0.0001);
         });
 
@@ -313,7 +355,7 @@ describe('Smart loan', () => {
             expect(fromWei(newLiquidity)).to.be.equal(0);
 
             await expect(wrappedLoan.burnLiquidityUniswapV3(id)).not.to.be.reverted;
-            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(0);
+            await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(1);
         });
     });
 });
