@@ -49,11 +49,6 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
-        console.log('UNISWAP_V3_FACTORY_ADDRESS: ', UNISWAP_V3_FACTORY_ADDRESS);
-        console.log('params.token0: ', params.token0);
-        console.log('params.token1: ', params.token1);
-        console.log('params.fee: ', params.fee);
-        console.log('poolAddress: ', poolAddress);
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
