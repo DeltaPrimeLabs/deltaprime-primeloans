@@ -65,18 +65,13 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
-import SwapModal from './SwapModal.vue';
 import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
-import addresses from '../../common/addresses/avax/token_addresses.json';
-import erc20ABI from '../../test/abis/ERC20.json';
 import SimpleSwapModal from './SimpleSwapModal.vue';
-import {forkJoin} from 'rxjs';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
-import YAK_WRAP_ROUTER from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 
 const DEPOSIT_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
 
