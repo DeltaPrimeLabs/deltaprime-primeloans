@@ -143,7 +143,7 @@ export default {
       modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
         const pools = this.poolsList.map(pool => {
           if (pool.asset.symbol === targetSymbol) {
-            pool.deposit = Number(this.pool.deposit) + Number(res.amount);
+            pool.deposit = Number(this.pool.deposit) + Number(transferRes.amount);
           }
         })
 
