@@ -123,7 +123,6 @@ export default {
         this.lifiData = lifiData;
 
         const activeTransfer = localStorage.getItem('active-bridge-deposit');
-        console.log(JSON.parse(activeTransfer));
 
         if (activeTransfer) {
           this.openResumeBridgeModal(JSON.parse(activeTransfer));
