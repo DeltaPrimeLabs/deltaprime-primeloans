@@ -19,6 +19,9 @@ export default {
         version: "0.4.18",
       },
       {
+        version: "0.7.6",
+      },
+      {
         version: "0.8.17",
         settings: {
           optimizer: {
@@ -34,6 +37,7 @@ export default {
     hardhat: {
       chainId: 1337,
       gas: 8000000,
+      allowUnlimitedContractSize: true, //TODO: remove
       blockGasLimit: 0x1fffffffffffff,
       timeout: 1800000,
       settings: {
