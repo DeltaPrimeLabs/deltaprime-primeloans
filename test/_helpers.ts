@@ -2,7 +2,15 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
-import {MockToken, Pool, MockVariableUtilisationRatesCalculator, LinearIndex} from "../typechain";
+import {
+    MockToken,
+    Pool,
+    MockVariableUtilisationRatesCalculator,
+    LinearIndex,
+    RecoveryManager,
+    VectorFinanceHelper,
+    YieldYakHelper,
+} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
@@ -14,11 +22,15 @@ import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPo
 import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import IDiamondCutArtifact from "../artifacts/contracts/interfaces/IDiamondCut.sol/IDiamondCut.json";
+import RecoveryManagerArtifact from '../artifacts/contracts/RecoveryManager.sol/RecoveryManager.json';
+import VectorFinanceHelperArtifact from '../artifacts/contracts/helpers/avalanche/VectorFinanceHelper.sol/VectorFinanceHelper.json';
+import YieldYakHelperArtifact from '../artifacts/contracts/helpers/avalanche/YieldYakHelper.sol/YieldYakHelper.json';
 import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
+import { getSelectors } from "../tools/diamond/selectors";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
@@ -444,6 +456,69 @@ export const getDeliveredAmounts = function (
     return deliveredAmounts;
 }
 
+export const deployRecoveryManager = async function (
+    owner: SignerWithAddress | JsonRpcSigner,
+) {
+    let recoveryManager = await deployContract(
+        owner,
+        RecoveryManagerArtifact,
+        []
+    ) as RecoveryManager;
+
+    let vectorFinanceHelper = await deployContract(owner, VectorFinanceHelperArtifact, []) as VectorFinanceHelper;
+    let yieldYakHelper = await deployContract(owner, YieldYakHelperArtifact, []) as YieldYakHelper;
+
+    let assets = [
+        "VF_USDC_MAIN_AUTO",
+        "VF_USDT_MAIN_AUTO",
+        "VF_AVAX_SAVAX_AUTO",
+        "VF_SAVAX_MAIN_AUTO",
+    ];
+    let functions = [
+        "vectorUnstakeUSDC",
+        "vectorUnstakeUSDT",
+        "vectorUnstakeWAVAX",
+        "vectorUnstakeSAVAX",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addHelper(
+            toBytes32(assets[i]),
+            vectorFinanceHelper.address,
+            (getSelectors(vectorFinanceHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    assets = [
+        "YY_AAVE_AVAX",
+        "YY_PTP_sAVAX",
+        "YY_GLP",
+        "YY_PNG_AVAX_USDC_LP",
+        "YY_PNG_AVAX_ETH_LP",
+        "YY_TJ_AVAX_USDC_LP",
+        "YY_TJ_AVAX_ETH_LP",
+        "YY_TJ_AVAX_sAVAX_LP",
+    ];
+    functions = [
+        "unstakeAVAXYak",
+        "unstakeSAVAXYak",
+        "unstakeGLPYak",
+        "unstakePNGAVAXUSDCYak",
+        "unstakePNGAVAXETHYak",
+        "unstakeTJAVAXUSDCYak",
+        "unstakeTJAVAXETHYak",
+        "unstakeTJAVAXSAVAXYak",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addHelper(
+            toBytes32(assets[i]),
+            yieldYakHelper.address,
+            (getSelectors(yieldYakHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    return recoveryManager;
+}
+
 export const deployPools = async function(
     smartLoansFactory: Contract,
     tokens: Array<PoolInitializationObject>,
@@ -800,6 +875,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
+        "RecoveryFacet",
+        diamondAddress,
+        [
+            'notifyRefund',
+            'emergencyWithdraw',
+        ],
+        hardhatConfig
+    )
+    await deployFacet(
         "SmartLoanViewFacet",
         diamondAddress,
         [
@@ -987,11 +1071,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateConstants(chain, exchanges, tokenManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
+    await updateConstants(chain, exchanges, tokenManagerAddress, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
     execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }

@@ -26,6 +26,8 @@ library DeploymentConstants {
 
     address private constant _TOKEN_MANAGER_ADDRESS = 0xB0f05d25e41FbC2b52013099ED9616f1206Ae21B;
 
+    address private constant _ADDRESS_PROVIDER = address(0);
+
     //implementation-specific
 
     function getPercentagePrecision() internal pure returns (uint256) {
@@ -54,6 +56,10 @@ library DeploymentConstants {
 
     function getTokenManager() internal pure returns (ITokenManager) {
         return ITokenManager(_TOKEN_MANAGER_ADDRESS);
+    }
+
+    function getAddressProvider() internal pure returns (address) {
+        return _ADDRESS_PROVIDER;
     }
 
     /**

@@ -6,6 +6,7 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import SmartLoanGigaChadInterfaceArtifact
     from '../../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -20,7 +21,7 @@ import {
     toWei,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
-import {MockTokenManager, SmartLoansFactory} from "../../../typechain";
+import {AddressProvider, MockTokenManager, SmartLoansFactory} from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {Contract} from "ethers";
 
@@ -76,11 +77,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner1).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner1).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner1,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
