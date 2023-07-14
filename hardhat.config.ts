@@ -35,24 +35,9 @@ export default {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337,
-      gas: 8000000,
-      allowUnlimitedContractSize: true, //TODO: remove
-      blockGasLimit: 0x1fffffffffffff,
-      timeout: 1800000,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200
-        }
+      forking: {
+        url: "https://api.avax.network/ext/bc/C/rpc",
       },
-      accounts: {
-        accountsBalance: "1000000000000000000000000" // 1000.000 ETH
-      },
-      // mining: {
-      //   auto: false,
-      //   interval: 1000
-      // }
     },
     localhost: {
       timeout: 1800000,
