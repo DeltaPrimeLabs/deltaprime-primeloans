@@ -281,7 +281,7 @@ export default {
       this.transactionOngoing = true;
       const bridgeEvent = {
         chosenRoute: this.chosenRoute,
-        depositNativeToken: this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX'
+        depositNativeToken: this.targetAsset === 'AVAX'
       };
       
       this.$emit('BRIDGE_DEPOSIT', bridgeEvent);

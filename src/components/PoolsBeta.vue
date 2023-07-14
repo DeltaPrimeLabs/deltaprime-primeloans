@@ -122,20 +122,33 @@ export default {
       this.lifiService.observeLifi().subscribe(async lifiData => {
         this.lifiData = lifiData;
 
-        const activeRoute = localStorage.getItem('bridge-active-route');
+        const activeTransfer = localStorage.getItem('active-bridge-deposit');
+        console.log(JSON.parse(activeTransfer));
 
-        if (activeRoute) {
-          this.openResumeBridgeModal(JSON.parse(activeRoute));
+        if (activeTransfer) {
+          this.openResumeBridgeModal(JSON.parse(activeTransfer));
         }
       });
     },
 
-    openResumeBridgeModal(activeRoute) {
+    openResumeBridgeModal({ route, targetSymbol, depositNativeToken }) {
       const modalInstance = this.openModal(ResumeBridgeModal);
-      modalInstance.route = activeRoute;
+      modalInstance.route = route;
+      modalInstance.targetSymbol = targetSymbol;
+      modalInstance.depositNativeToken = depositNativeToken;
       modalInstance.lifiData = this.lifiData;
       modalInstance.lifiService = this.lifiService;
       modalInstance.progressBarService = this.progressBarService;
+      modalInstance.depositFunc = this.deposit;
+      modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
+        const pools = this.poolsList.map(pool => {
+          if (pool.asset.symbol === targetSymbol) {
+            pool.deposit = Number(this.pool.deposit) + Number(res.amount);
+          }
+        })
+
+        this.poolsList = pools;
+      });
     },
 
     setupWalletDepositAssetBalances(pools) {

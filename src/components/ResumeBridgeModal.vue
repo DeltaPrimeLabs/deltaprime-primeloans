@@ -47,7 +47,10 @@ export default {
 
   props: {
     route: null,
+    targetSymbol: null,
+    depositNativeToken: null,
     lifiData: null,
+    depositFunc: null
   },
 
   data() {
@@ -104,7 +107,12 @@ export default {
       if (!inProgress) this.closeModal();
 
       try {
-        await this.lifiService.resumeRoute(this.lifiData.lifi, this.activeRoute, this.progressBarService);
+        const transferRes = await this.lifiService.resumeRoute(this.lifiData.lifi, this.activeRoute, this.progressBarService, this.depositFunc, {
+          targetSymbol: this.targetSymbol,
+          depositNativeToken: this.depositNativeToken
+        });
+
+        this.$emit('BRIDGE_DEPOSIT_RESUME', transferRes);
       } catch (error) {
         if (error.code === 4001 || error.code === -32603) {
           this.progressBarService.emitProgressBarCancelledState();
@@ -115,7 +123,8 @@ export default {
     },
 
     deleteTransfer() {
-      localStorage.setItem('bridge-active-route', '');
+      localStorage.setItem('active-bridge-deposit', '');
+      this.lifiService.removeRoute(this.lifiData.lifi, this.activeRoute);
       this.closeModal();
     },
   }
