@@ -38,14 +38,6 @@
         </b>
       </a>
     </Banner>
-    <Banner v-if="showPrimeAccountBanner" :closable="true">
-      Important message to Platypus USDC farmers before interacting with the pool:
-      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1129034316941377616" target="_blank">
-        <b>
-          Read More.
-        </b>
-      </a>
-    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
