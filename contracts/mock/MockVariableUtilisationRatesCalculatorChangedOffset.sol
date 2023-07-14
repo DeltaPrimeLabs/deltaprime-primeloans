@@ -32,8 +32,8 @@ contract MockVariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator
     // BREAKPOINT must be lower than 1e18
     uint256 public constant MAX_RATE = 0.75e18;
 
-    //accuracy of 1e18
-    uint256 public depositRateFactor = 1e18 - 1e12;
+    //20% of spread goes to vesting participants
+    uint256 public spread = 2e17;
 
     /* ========== VIEW FUNCTIONS ========== */
 
@@ -60,9 +60,9 @@ contract MockVariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator
         if (_totalDeposits == 0) return 0;
 
         if (_totalLoans >= _totalDeposits) {
-            return MAX_RATE * depositRateFactor / 1e18;
+            return MAX_RATE * (1e18 - spread) / 1e18;
         } else {
-            uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * depositRateFactor * _totalLoans / (_totalDeposits * 1e18);
+            uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
             return rate;
         }
     }
@@ -93,15 +93,5 @@ contract MockVariableUtilisationRatesCalculatorChangedOffset is IRatesCalculator
             // unsigned integer safety check)
             return (poolUtilisation * SLOPE_3) / 1e18 - OFFSET_3;
         }
-    }
-
-    /* ========== SETTERS ========== */
-    /**
-     * Sets deposit rate factor
-     * This factor is needed to account for arithmetic inaccuracy and keep pool balanced. Should be close to 1000
-     * @param factor total value of loans
-     **/
-    function setDepositRateFactor(uint256 factor) external onlyOwner {
-        depositRateFactor = factor;
     }
 }

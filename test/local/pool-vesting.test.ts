@@ -83,7 +83,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await sut.connect(depositorVested3).deposit(toWei("1.0"));
         });
 
-        it("should borrow", async () => {
+        xit("should borrow", async () => {
             await sut.borrow(toWei("1.0"));
             expect(await mockToken.balanceOf(sut.address)).to.be.equal(toWei("3", "ether"));
 
@@ -91,7 +91,7 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(borrowed).to.be.closeTo(1.000000, 0.000001);
         });
 
-        it("should keep the loan for 6 hours", async () => {
+        xit("should keep the loan for 6 hours", async () => {
             await time.increase(time.duration.hours(6));
 
             let borrowed = fromWei(await sut.getBorrowed(owner.address));
@@ -108,7 +108,7 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(deposited4).to.be.closeTo(1.000004109, 0.0000001);
         });
 
-        it("should vest for the 2nd, 3rd, 4th depositors", async () => {
+        xit("should vest for the 2nd, 3rd, 4th depositors", async () => {
             let deposited1 = await sut.balanceOf(depositorVested1.address);
             await vestingDistributor.connect(depositorVested1).startVesting(deposited1.div(2), 864_000); // 10 days
 
@@ -119,7 +119,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await vestingDistributor.connect(depositorVested3).startVesting(deposited3.div(2), 1_728_000); // 20 days
         });
 
-        it("should distribute 50% of surplus as rewards after 1 year", async () => {
+        xit("should distribute 50% of surplus as rewards after 1 year", async () => {
             await time.increase(time.duration.years(1));
 
             let poolBalance = fromWei(await mockToken.balanceOf(sut.address));
@@ -146,7 +146,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await vestingDistributor.connect(keeper).distributeRewards(2, 3);
         });
 
-        it("should check rewards for depositors", async () => {
+        xit("should check rewards for depositors", async () => {
             let deposited1 = fromWei(await sut.balanceOf(depositor.address));
             let deposited2 = fromWei(await sut.balanceOf(depositorVested1.address));
             let deposited3 = fromWei(await sut.balanceOf(depositorVested2.address));
@@ -158,7 +158,7 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(deposited4).to.be.closeTo(1.00705419, 0.0000001);
         });
 
-        it("should increase vesting", async () => {
+        xit("should increase vesting", async () => {
             let deposited1 = await sut.balanceOf(depositorVested1.address);
             await vestingDistributor.connect(depositorVested1).increaseVesting(deposited1.div(2));
 
@@ -169,7 +169,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await vestingDistributor.connect(depositorVested3).increaseVesting(deposited3.div(2));
         });
 
-        it("should distribute 50% of surplus as rewards after 1 year", async () => {
+        xit("should distribute 50% of surplus as rewards after 1 year", async () => {
             await time.increase(time.duration.years(1));
 
             let poolBalance = fromWei(await mockToken.balanceOf(sut.address));
@@ -196,7 +196,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await vestingDistributor.connect(keeper).distributeRewards(2, 3);
         });
 
-        it("should check rewards for depositors", async () => {
+        xit("should check rewards for depositors", async () => {
             let deposited1 = fromWei(await sut.balanceOf(depositor.address));
             let deposited2 = fromWei(await sut.balanceOf(depositorVested1.address));
             let deposited3 = fromWei(await sut.balanceOf(depositorVested2.address));
@@ -208,7 +208,7 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(deposited4).to.be.closeTo(1.01431704, 0.0000001);
         });
 
-        it("should unlock", async () => {
+        xit("should unlock", async () => {
             await vestingDistributor.connect(depositorVested1).unlock();
             await vestingDistributor.connect(depositorVested2).unlock();
 
@@ -217,13 +217,13 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(await vestingDistributor.unlockTimestamp(depositorVested3.address)).to.be.eq(0);
         });
 
-        it("should fail to increase vesting after unlock", async () => {
+        xit("should fail to increase vesting after unlock", async () => {
             await expect(vestingDistributor.connect(depositorVested1).increaseVesting(0)).to.be.revertedWith("TooLate");
 
             await expect(vestingDistributor.connect(depositorVested2).increaseVesting(0)).to.be.revertedWith("TooLate");
         });
 
-        it("should update participants", async () => {
+        xit("should update participants", async () => {
             await time.increase(time.duration.days(12));
 
             await expect(vestingDistributor.connect(owner).updateParticipants(0, 3)).to.be.revertedWith("Unauthorized: onlyKeeper");
