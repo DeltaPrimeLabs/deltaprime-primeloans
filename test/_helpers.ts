@@ -838,6 +838,11 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+        await deployFacet("TraderJoeV2AutopoolsFacet", diamondAddress, [
+            'stakeTraderJoeV2AutopoolAVAXUSDC',
+            'unstakeTraderJoeV2AutopoolAVAXUSDC'
+        ],
+        hardhatConfig)
     }
     if (chain == 'ARBITRUM') {
         // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
@@ -854,9 +859,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     }
     if (chain == 'ETHEREUM') {
         console.log('here')
-        // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
-        // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
-        // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
