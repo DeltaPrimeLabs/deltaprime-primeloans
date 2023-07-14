@@ -19,7 +19,7 @@ export default class LifiService {
 
   cachedBalances = {};
 
-  async setupLifi(progressBarService) {
+  async setupLifi() {
     const lifiConfig = {
       integrator: "deltaprime"
     }
@@ -42,11 +42,10 @@ export default class LifiService {
     }
 
     // resume active route in background
-    const activeRoute = localStorage.getItem('bridge-active-route');
 
-    if (!activeRoute) return;
+    // if (!activeRoute) return;
 
-    this.resumeRoute(lifi, JSON.parse(activeRoute), progressBarService);
+    // this.resumeRoute(lifi, JSON.parse(activeRoute), progressBarService);
   }
 
   async getTokenBalancesForChainWithRetry(lifi, address, chainId, tokens, depth = 0) {

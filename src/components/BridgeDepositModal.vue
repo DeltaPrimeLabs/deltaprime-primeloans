@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="deposit-modal-component modal-component">
+  <div id="modal" class="bridge-deposit-modal-component modal-component">
     <Modal height="561px">
       <div class="modal__title">
         Bridge deposit
@@ -296,7 +296,7 @@ export default {
         this.sourceChain = changeEvent.chainId;
 
         const balances = await this.lifiService.fetchTokenBalancesForChain(
-          this.lifiData.lifi,
+          this.lifi,
           this.account,
           changeEvent.chainId,
           changeEvent.tokens

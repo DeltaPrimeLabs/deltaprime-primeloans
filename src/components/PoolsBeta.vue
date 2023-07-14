@@ -34,6 +34,7 @@ import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
+import ResumeBridgeModal from './ResumeBridgeModal';
 
 const ethers = require('ethers');
 
@@ -50,7 +51,8 @@ export default {
     this.initPools();
     this.watchPools();
     this.initStoresWhenProviderAndAccountCreated();
-    this.lifiService.setupLifi(this.progressBarService);
+    this.lifiService.setupLifi();
+    this.watchActiveRoute();
   },
 
   data() {
@@ -114,6 +116,26 @@ export default {
         this.$forceUpdate();
         this.setupWalletDepositAssetBalances(pools);
       });
+    },
+
+    watchActiveRoute() {
+      this.lifiService.observeLifi().subscribe(async lifiData => {
+        this.lifiData = lifiData;
+
+        const activeRoute = localStorage.getItem('bridge-active-route');
+
+        if (activeRoute) {
+          this.openResumeBridgeModal(JSON.parse(activeRoute));
+        }
+      });
+    },
+
+    openResumeBridgeModal(activeRoute) {
+      const modalInstance = this.openModal(ResumeBridgeModal);
+      modalInstance.route = activeRoute;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.progressBarService = this.progressBarService;
     },
 
     setupWalletDepositAssetBalances(pools) {
