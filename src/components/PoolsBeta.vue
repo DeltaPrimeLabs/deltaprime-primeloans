@@ -70,7 +70,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('poolStore', ['poolStoreSetup', 'deposit']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
@@ -119,30 +119,31 @@ export default {
     },
 
     watchActiveRoute() {
-      this.lifiService.observeLifi().subscribe(async lifiData => {
-        this.lifiData = lifiData;
+      combineLatest([this.lifiService.observeLifi(), this.poolService.observePools()])
+        .subscribe(async ([lifiData, pools]) => {
+          this.lifiData = lifiData;
 
-        const activeTransfer = localStorage.getItem('active-bridge-deposit');
+          const activeTransfer = localStorage.getItem('active-bridge-deposit');
 
-        if (activeTransfer) {
-          this.openResumeBridgeModal(JSON.parse(activeTransfer));
-        }
-      });
+          if (activeTransfer) {
+            this.openResumeBridgeModal(JSON.parse(activeTransfer));
+          }
+        });
     },
 
-    openResumeBridgeModal({ route, targetSymbol, depositNativeToken }) {
+    openResumeBridgeModal({ targetSymbol }) {
       const modalInstance = this.openModal(ResumeBridgeModal);
-      modalInstance.route = route;
-      modalInstance.targetSymbol = targetSymbol;
-      modalInstance.depositNativeToken = depositNativeToken;
       modalInstance.lifiData = this.lifiData;
       modalInstance.lifiService = this.lifiService;
       modalInstance.progressBarService = this.progressBarService;
       modalInstance.depositFunc = this.deposit;
       modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
         const pools = this.poolsList.map(pool => {
-          if (pool.asset.symbol === targetSymbol) {
-            pool.deposit = Number(this.pool.deposit) + Number(transferRes.amount);
+          return {
+            ...pool,
+            deposit: pool.asset.symbol === targetSymbol
+                    ? Number(pool.deposit) + Number(transferRes.amount)
+                    : pool.deposit
           }
         })
 

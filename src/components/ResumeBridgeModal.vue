@@ -5,7 +5,7 @@
         Active Bridge Transfer 
       </div>
       <div class="modal-top-desc">
-        <b>You have uncompleted Bridge Transactions<span v-if="execution && execution.status !== 'FAILED'"> in progress</span>.</b>
+        <b>You have uncompleted Bridge Transactions<span v-if="!cancelled && execution && execution.status !== 'FAILED'"> in progress</span>.</b>
       </div>
       <div class="modal-top-info">
         {{ fromTokenData }}
@@ -17,13 +17,17 @@
         {{ toTokenData }}
       </div>
 
-      <template v-if="execution && execution.status === 'FAILED'">
+      <template v-if="cancelled || execution && execution.status === 'FAILED'">
         <div class="button-wrapper button-group">
           <Button
-            :label="'Resume'" v-on:click="resumeTransfer()"
+            :label="'Resume'"
+            v-on:click="resumeTransfer()"
+            :disabled="isLoading"
           ></Button>
           <Button
-            :label="'Delete'" v-on:click="deleteTransfer()"
+            :label="'Delete'"
+            v-on:click="deleteTransfer()"
+            :disabled="isLoading"
           ></Button>
         </div>
       </template>
@@ -46,19 +50,20 @@ export default {
   },
 
   props: {
-    route: null,
-    targetSymbol: null,
-    depositNativeToken: null,
     lifiData: null,
     depositFunc: null
   },
 
   data() {
     return {
-      activeRoute: null,
+      route: null,
+      targetSymbol: null,
+      depositNativeToken: null,
+      cancelled: false,
       execution: null,
       fromData: null,
-      toData: null
+      toData: null,
+      isLoading: false
     };
   },
 
@@ -71,43 +76,49 @@ export default {
   computed: {
     fromTokenData() {
       if (!this.fromData) return;
-      return `${this.fromData.fromAmount} ${this.fromData.fromToken.symbol} on ${this.fromData.fromChain.name}`;
+      return `${Number(this.fromData.fromAmount).toFixed(4)} ${this.fromData.fromToken.symbol} on ${this.fromData.fromChain.name}`;
     },
 
     toTokenData() {
       if (!this.toData) return;
-      return `${this.toData.toAmount} ${this.toData.toToken.symbol} on ${this.toData.toChain.name}`;
+      return `${Number(this.toData.toAmount).toFixed(4)} ${this.toData.toToken.symbol} on ${this.toData.toChain.name}`;
     }
   },
 
   methods: {
     setupRoute() {
-      this.activeRoute = this.route;
-      this.execution = this.route.steps[0].execution;
+      const activeTransfer = localStorage.getItem('active-bridge-deposit');
+      const { route, targetSymbol, depositNativeToken, cancelled } = JSON.parse(activeTransfer);
+
+      this.route = route;
+      this.targetSymbol = targetSymbol;
+      this.depositNativeToken = depositNativeToken;
+      this.cancelled = cancelled;      
+      this.execution = route.steps[0].execution;
 
       this.fromData = {
-        fromAmount: formatUnits(this.route.fromAmount, this.route.fromToken.decimals),
-        fromAmountUSD: this.route.fromAmountUSD,
-        fromChain: this.lifiData.chains.find((chain => chain.id === Number(this.route.fromChainId))),
-        fromToken: this.route.fromToken,
+        fromAmount: formatUnits(route.fromAmount, route.fromToken.decimals),
+        fromAmountUSD: route.fromAmountUSD,
+        fromChain: this.lifiData.chains.find((chain => chain.id === Number(route.fromChainId))),
+        fromToken: route.fromToken,
       };
       this.toData = {
-        toAmount: formatUnits(this.route.toAmount, this.route.toToken.decimals),
-        toAmountUSD: this.route.toAmountUSD,
-        toChain: this.lifiData.chains.find((chain => chain.id === Number(this.route.toChainId))),
-        toToken: this.route.toToken,
+        toAmount: formatUnits(route.toAmount, route.toToken.decimals),
+        toAmountUSD: route.toAmountUSD,
+        toChain: this.lifiData.chains.find((chain => chain.id === Number(route.toChainId))),
+        toToken: route.toToken,
       };
 
-      if (this.execution && this.execution.status !== 'FAILED') {
-        this.resumeTransfer(true);
+      if (!cancelled && this.execution && this.execution.status !== 'FAILED') {
+        this.resumeTransfer();
       }
     },
 
-    async resumeTransfer(inProgress = false) {
-      if (!inProgress) this.closeModal();
+    async resumeTransfer() {
+      this.isLoading = true;
 
       try {
-        const transferRes = await this.lifiService.resumeRoute(this.lifiData.lifi, this.activeRoute, this.progressBarService, this.depositFunc, {
+        const transferRes = await this.lifiService.resumeRoute(this.lifiData.lifi, this.route, this.progressBarService, this.depositFunc, {
           targetSymbol: this.targetSymbol,
           depositNativeToken: this.depositNativeToken
         });
@@ -116,15 +127,24 @@ export default {
       } catch (error) {
         if (error.code === 4001 || error.code === -32603) {
           this.progressBarService.emitProgressBarCancelledState();
+
+          const activeBridge = localStorage.getItem('active-bridge-deposit');
+          localStorage.setItem('active-bridge-deposit', JSON.stringify({
+            ...JSON.parse(activeBridge),
+            cancelled: true
+          }));
         } else {
           this.progressBarService.emitProgressBarErrorState();
         }
       }
+
+      this.closeModal();
+      this.isLoading = false;
     },
 
     deleteTransfer() {
       localStorage.setItem('active-bridge-deposit', '');
-      this.lifiService.removeRoute(this.lifiData.lifi, this.activeRoute);
+      this.lifiService.removeRoute(this.lifiData.lifi, this.route);
       this.closeModal();
     },
   }

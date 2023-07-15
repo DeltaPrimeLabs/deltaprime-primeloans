@@ -170,8 +170,16 @@ export default class LifiService {
       acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
     });
 
-    localStorage.setItem('active-bridge-deposit', '');
-    progressBarService.emitProgressBarSuccessState();
+    const processes = route.steps[0].execution.process;
+    const lastStep = processes[processes.length - 1];
+    const statusInfo = {};
+
+    if (lastStep.status === 'DONE') {
+      statusInfo.message = lastStep.message;
+      if (lastStep.txLink) statusInfo.txLink = lastStep.txLink;
+    }
+
+    progressBarService.emitProgressBarInProgressState(statusInfo);
     await switchChain(config.chainId, signer);
 
     if (!route.steps || route.steps.length === 0) {
@@ -188,6 +196,7 @@ export default class LifiService {
     };
 
     await depositFunc({ depositRequest: depositRequest });
+    localStorage.setItem('active-bridge-deposit', '');
 
     return {
       amount: depositAmount
@@ -278,8 +287,16 @@ export default class LifiService {
     });
     console.log('bridge transactions completed.');
 
-    localStorage.setItem('active-bridge-deposit', '');
-    progressBarService.emitProgressBarSuccessState();
+    const processes = route.steps[0].execution.process;
+    const lastStep = processes[processes.length - 1];
+    const statusInfo = {};
+
+    if (lastStep.status === 'DONE') {
+      statusInfo.message = lastStep.message;
+      if (lastStep.txLink) statusInfo.txLink = lastStep.txLink;
+    }
+
+    progressBarService.emitProgressBarInProgressState(statusInfo);
     await switchChain(config.chainId, signer);
 
     if (!route.steps || route.steps.length === 0) {
@@ -296,6 +313,7 @@ export default class LifiService {
     };
 
     await depositFunc({ depositRequest: depositRequest });
+    localStorage.setItem('active-bridge-deposit', '');
 
     return {
       amount: depositAmount
