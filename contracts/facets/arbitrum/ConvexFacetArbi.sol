@@ -33,60 +33,75 @@ contract ConvexFacetArbi is ReentrancyGuardKeccak, SolvencyMethods {
     uint256 public constant USD_BTC_ETH_POOL_ID = 8;
 
     function depositAndStakeUsdBtcEth(uint256 lpTokensAmount) external returns (uint256){
-        return _depositAndStake(lpTokensAmount, USD_BTC_ETH_POOL_ID, DEPOSIT_CONTRACT_USD_BTC_ETH_ADDRESS, CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS, "CRV_USD_BTC_ETH", CVX_USD_BTC_ETH_LP_TOKEN_ADDRESS, "CVX_USD_BTC_ETH");
+        return _depositAndStake(IConvexPool.DepositDetails({
+            crvLpTokenAmount: lpTokensAmount,
+            depositPoolId: USD_BTC_ETH_POOL_ID,
+            depositPoolAddress: DEPOSIT_CONTRACT_USD_BTC_ETH_ADDRESS,
+            crvLpTokenAddress: CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS,
+            crvLpTokenIdentifier: "CRV_USD_BTC_ETH",
+            cvxPoolLPTokenAddress: CVX_USD_BTC_ETH_LP_TOKEN_ADDRESS,
+            cvxPoolIdentifier: "CVX_USD_BTC_ETH"
+        }));
+
     }
 
     function withdrawAndClaimUsdBtcEth(uint256 receiptTokenAmount) external returns(uint256){
-        return _withdrawAndClaim(receiptTokenAmount, CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS, "CRV_USD_BTC_ETH", CVX_USD_BTC_ETH_LP_TOKEN_ADDRESS, "CVX_USD_BTC_ETH");
+        return _withdrawAndClaim(IConvexPool.WithdrawalDetails({
+            receiptTokenAmount: receiptTokenAmount,
+            crvLpTokenAddress: CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS,
+            crvLpTokenIdentifier: "CRV_USD_BTC_ETH",
+            cvxPoolLPTokenAddress: CVX_USD_BTC_ETH_LP_TOKEN_ADDRESS,
+            cvxPoolIdentifier: "CVX_USD_BTC_ETH"
+        }));
     }
 
-    function _depositAndStake(uint256 _crvLpTokenAmount, uint256 _depositPoolId, address _depositPoolAddress, address crvLpTokenAddress, bytes32 crvLpTokenIdentifier, address cvxPoolLPTokenAddress, bytes32 cvxPoolIdentifier) internal onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256){
-        IERC20Metadata crvLpToken = IERC20Metadata(CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS);
-        IERC20Metadata cvxLpToken = IERC20Metadata(cvxPoolLPTokenAddress);
-        IConvexPool cvxPool = IConvexPool(_depositPoolAddress);
+    function _depositAndStake(IConvexPool.DepositDetails memory depositDetails) internal onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256){
+        IERC20Metadata crvLpToken = IERC20Metadata(depositDetails.crvLpTokenAddress);
+        IERC20Metadata cvxLpToken = IERC20Metadata(depositDetails.cvxPoolLPTokenAddress);
+        IConvexPool cvxPool = IConvexPool(depositDetails.depositPoolAddress);
 
         uint256 initialReceiptTokenBalance = cvxLpToken.balanceOf(address(this));
 
-        _crvLpTokenAmount = Math.min(crvLpToken.balanceOf(address(this)), _crvLpTokenAmount);
-        require(_crvLpTokenAmount > 0, "Cannot stake 0 tokens");
+        depositDetails.crvLpTokenAmount = Math.min(crvLpToken.balanceOf(address(this)), depositDetails.crvLpTokenAmount);
+        require(depositDetails.crvLpTokenAmount > 0, "Cannot stake 0 tokens");
 
         address(crvLpToken).safeApprove(address(cvxPool), 0);
-        address(crvLpToken).safeApprove(address(cvxPool), _crvLpTokenAmount);
+        address(crvLpToken).safeApprove(address(cvxPool), depositDetails.crvLpTokenAmount);
 
-        cvxPool.deposit(_depositPoolId, _crvLpTokenAmount);
+        cvxPool.deposit(depositDetails.depositPoolId, depositDetails.crvLpTokenAmount);
 
         // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(cvxPoolIdentifier, cvxLpToken);
+        DiamondStorageLib.addOwnedAsset(depositDetails.cvxPoolIdentifier, depositDetails.cvxPoolLPTokenAddress);
         if(crvLpToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(crvLpTokenIdentifier);
+            DiamondStorageLib.removeOwnedAsset(depositDetails.crvLpTokenIdentifier);
         }
 
         uint256 receiptTokenReceivedAmount = cvxLpToken.balanceOf(address(this)) - initialReceiptTokenBalance;
         emit Staked(
             msg.sender,
-            crvLpTokenIdentifier,
-            _depositPoolAddress,
-            _crvLpTokenAmount,
+            depositDetails.crvLpTokenIdentifier,
+            depositDetails.depositPoolAddress,
+            depositDetails.crvLpTokenAmount,
             receiptTokenReceivedAmount,
             block.timestamp);
 
         return receiptTokenReceivedAmount;
     }
 
-    function _withdrawAndClaim(uint256 _receiptTokenAmount, address crvLpTokenAddress, bytes32 crvLpTokenIdentifier, address cvxPoolLPTokenAddress, bytes32 cvxPoolIdentifier) internal onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256){
-        IERC20Metadata crvLpToken = IERC20Metadata(CRV_USD_BTC_ETH_LP_TOKEN_ADDRESS);
+    function _withdrawAndClaim(IConvexPool.WithdrawalDetails memory withdrawalDetails) internal onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256){
+        IERC20Metadata crvLpToken = IERC20Metadata(withdrawalDetails.crvLpTokenAddress);
+        IConvexRewarder cvxRewarder = IConvexRewarder(withdrawalDetails.cvxPoolLPTokenAddress);
         IERC20Metadata crvToken = IERC20Metadata(CRV_TOKEN_ADDRESS);
         IERC20Metadata cvxToken = IERC20Metadata(CVX_TOKEN_ADDRESS);
-        IConvexRewarder cvxRewarder = IConvexRewarder(cvxPoolLPTokenAddress);
 
         uint256 initialDepositTokenBalance = crvLpToken.balanceOf(address(this));
-        _receiptTokenAmount = Math.min(cvxRewarder.balanceOf(address(this)), _receiptTokenAmount);
+        withdrawalDetails.receiptTokenAmount = Math.min(cvxRewarder.balanceOf(address(this)), withdrawalDetails.receiptTokenAmount);
 
         // Always claim (true) rewards upon withdrawal
-        cvxRewarder.withdraw(_receiptTokenAmount, true);
+        cvxRewarder.withdraw(withdrawalDetails.receiptTokenAmount, true);
 
         // Curve LP token
-        DiamondStorageLib.addOwnedAsset(crvLpTokenIdentifier, crvLpTokenAddress);
+        DiamondStorageLib.addOwnedAsset(withdrawalDetails.crvLpTokenIdentifier, withdrawalDetails.crvLpTokenAddress);
 
         // Add reward tokens if any were claimed
         if(crvToken.balanceOf(address(this)) > 0) {
@@ -96,18 +111,28 @@ contract ConvexFacetArbi is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.addOwnedAsset("CVX", CVX_TOKEN_ADDRESS);
         }
 
+        // Convex LP token and rewarder are the same contract
+        if(cvxRewarder.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(withdrawalDetails.cvxPoolIdentifier);
+        }
+
         uint256 depositTokenReceivedAmount = crvLpToken.balanceOf(address(this)) - initialDepositTokenBalance;
 
         emit Unstaked(
             msg.sender,
-            crvLpTokenIdentifier,
-            cvxPoolLPTokenAddress,
+            withdrawalDetails.crvLpTokenIdentifier,
+            withdrawalDetails.cvxPoolLPTokenAddress,
             depositTokenReceivedAmount,
-            _receiptTokenAmount,
+            withdrawalDetails.receiptTokenAmount,
             block.timestamp);
 
 
         return depositTokenReceivedAmount;
+    }
+
+    modifier onlyOwner() {
+        DiamondStorageLib.enforceIsContractOwner();
+        _;
     }
 
     /**
