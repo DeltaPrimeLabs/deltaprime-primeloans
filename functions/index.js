@@ -466,7 +466,7 @@ exports.steakhutScrapper = functions
 
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
-  const timestamps = [1687262400000, 1687348800000, 1687435200000, 1687550400000, 1687636800000];
+  const timestamps = [1688932800000, 1689019200000, 1689105600000, 1689192000000, 1689278400000, 1689364800000];
 
   await Promise.all(
     loanAddresses.map(async loanAddress => {
