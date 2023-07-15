@@ -96,7 +96,8 @@ export default {
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
-      lifiData: {}
+      lifiData: {},
+      hasActiveBridge: false
     };
   },
 
@@ -130,7 +131,8 @@ export default {
             },
             {
               key: 'BRIDGE_DEPOSIT',
-              name: 'Bridge'
+              name: 'Bridge',
+              disabled: this.hasActiveBridge
             },
           ]
         },
@@ -172,6 +174,8 @@ export default {
     watchLifi() {
       this.lifiService.observeLifi().subscribe(async lifiData => {
         this.lifiData = lifiData;
+
+        this.hasActiveBridge = localStorage.getItem('active-bridge-deposit');
       });
     },
 
@@ -210,7 +214,7 @@ export default {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
           this.$forceUpdate();
         }, (error) => {
-          this.handleTransactionError(error);
+          this.handleTransactionError(error, true);
         }).then(() => {
         });
       });
@@ -330,9 +334,17 @@ export default {
       };
     },
 
-    handleTransactionError(error) {
+    handleTransactionError(error, isBridge = false) {
       if (error.code === 4001 || error.code === -32603) {
         this.progressBarService.emitProgressBarCancelledState();
+
+        if (isBridge) {
+          const activeBridge = localStorage.getItem('active-bridge-deposit');
+          localStorage.setItem('active-bridge-deposit', JSON.stringify({
+            ...JSON.parse(activeBridge),
+            cancelled: true
+          }));
+        }
       } else {
         this.progressBarService.emitProgressBarErrorState();
       }
