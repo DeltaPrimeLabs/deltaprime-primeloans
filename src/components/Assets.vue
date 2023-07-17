@@ -342,7 +342,8 @@ export default {
 
     setupConcentratedLpTableHeaderConfig() {
       this.concentratedLpTableHeaderConfig = {
-        gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 65px 80px',
+        // gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 65px 80px',
+        gridTemplateColumns: '160px 150px 260px 150px repeat(1, 1fr) 65px 80px',
         cells: [
           {
             label: 'Concentrated LP',
@@ -374,13 +375,13 @@ export default {
             tooltip: `The Total Value Locked (TVL) in the underlying pool. These numbers are regularly updated.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
-          {
+/*          {
             label: 'Real Yield',
             sortable: false,
             class: 'apr',
             id: 'APR',
             tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
-          },
+          },*/
           {
             label: 'Max. APR',
             sortable: false,
