@@ -42,7 +42,7 @@ export default {
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'GLP', 'sAVAX', 'QI', 'PNG', 'PTP', 'EUROC', 'GMX', 'JOE'],
+        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
         ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'sAVAX', 'QI', 'PNG', 'PTP']
     },
     POOLS_CONFIG: {
