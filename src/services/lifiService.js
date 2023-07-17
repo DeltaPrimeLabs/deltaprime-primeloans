@@ -105,22 +105,26 @@ export default class LifiService {
 
     const updateRouteHook = (updatedRoute) => {
       // save route state to local storage
-      const processes = updatedRoute.steps[0].execution.process;
       const statusInfo = {};
 
-      processes.map(process => {
-        if (process.status !== 'DONE' && process.message) {
-          statusInfo.message = process.message;
+      updatedRoute.steps.map((step) => {
+        if (!step.execution) return;
+        const processes = step.execution.process;
 
-          if (process.substatusMessage) {
-            statusInfo.message = ` ${process.substatusMessage}`;
-          }
+        processes.map(process => {
+          if (process.status !== 'DONE' && process.message) {
+            statusInfo.message = process.message;
 
-          if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
-            statusInfo.txLink = process.txLink;
+            if (process.substatusMessage) {
+              statusInfo.message = ` ${process.substatusMessage}`;
+            }
+
+            if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
+              statusInfo.txLink = process.txLink;
+            }
           }
-        }
-      })
+        })
+      });
 
       progressBarService.emitProgressBarInProgressState(statusInfo);
       localStorage.setItem('active-bridge-deposit', JSON.stringify({
@@ -229,22 +233,26 @@ export default class LifiService {
 
     const updateRouteHook = (updatedRoute) => {
       // save route state to local storage
-      const processes = updatedRoute.steps[0].execution.process;
       const statusInfo = {};
 
-      processes.map(process => {
-        if (process.status !== 'DONE' && process.message) {
-          statusInfo.message = process.message;
+      updatedRoute.steps.map((step) => {
+        if (!step.execution) return;
+        const processes = step.execution.process;
 
-          if (process.substatusMessage) {
-            statusInfo.message = ` ${process.substatusMessage}`;
-          }
+        processes.map(process => {
+          if (process.status !== 'DONE' && process.message) {
+            statusInfo.message = process.message;
 
-          if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
-            statusInfo.txLink = process.txLink;
+            if (process.substatusMessage) {
+              statusInfo.message = ` ${process.substatusMessage}`;
+            }
+
+            if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
+              statusInfo.txLink = process.txLink;
+            }
           }
-        }
-      })
+        })
+      });
 
       progressBarService.emitProgressBarInProgressState(statusInfo);
       localStorage.setItem('active-bridge-deposit', JSON.stringify({

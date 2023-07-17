@@ -148,6 +148,7 @@ export default {
     deleteTransfer() {
       localStorage.setItem('active-bridge-deposit', '');
       this.lifiService.removeRoute(this.lifiData.lifi, this.route);
+      this.$forceUpdate();
       this.closeModal();
     },
   }

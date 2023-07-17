@@ -11,6 +11,7 @@
               <div class="pools-table__body">
                 <PoolsTableRowBeta v-for="pool in poolsList"
                                    v-bind:key="pool.asset.symbol"
+                                   v-on:openResumeBridge="openResumeBridgeModal"
                                    :pool="pool"
                                    :depositAssetsWalletBalancesStream="depositAssetsWalletBalances$">
                 </PoolsTableRowBeta>
