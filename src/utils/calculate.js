@@ -14,6 +14,7 @@ import gql from "graphql-tag";
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import redstone from 'redstone-api';
 import erc20ABI from '../../test/abis/ERC20.json';
+import {TransactionParams} from '@paraswap/sdk';
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
@@ -306,6 +307,33 @@ export async function getTraderJoeLpApr(lpAddress, assetAppreciation = 0) {
 
   return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
+
+export const paraSwapRouteToSimpleData = (txParams) => {
+  const data = "0x" + txParams.data.substr(10);
+  const [
+    decoded,
+  ] = ethers.utils.defaultAbiCoder.decode(
+    ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
+    data
+  );
+  return {
+    fromToken: decoded[0],
+    toToken: decoded[1],
+    fromAmount: decoded[2],
+    toAmount: decoded[3],
+    expectedAmount: decoded[4],
+    callees: decoded[5],
+    exchangeData: decoded[6],
+    startIndexes: decoded[7],
+    values: decoded[8],
+    beneficiary: decoded[9],
+    partner: decoded[10],
+    feePercent: decoded[11],
+    permit: decoded[12],
+    deadline: decoded[13],
+    uuid: decoded[14],
+  };
+};
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;

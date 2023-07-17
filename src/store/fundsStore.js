@@ -19,10 +19,13 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, query, getDocs } from 'firebase/firestore/lite';
 import firebaseConfig from '../../.secrets/firebaseConfig.json';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import {mergeArrays, removePaddedTrailingZeros} from '../utils/calculate';
+import {mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router';
+
+import { constructSimpleSDK, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
+import axios from 'axios';
 
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
@@ -1347,6 +1350,76 @@ export default {
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
+    },
+
+    async paraSwap({state, rootState, commit, dispatch}, {swapRequest}) {
+      const provider = rootState.network.provider;
+
+      console.log(swapRequest);
+
+      const loanAssets = mergeArrays([(
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [swapRequest.targetAsset]
+      ]);
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+
+      let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
+      let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
+
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+
+      const transactionParams = await paraSwapSDK.swap.buildTx({
+        srcToken: swapRequest.paraSwapRate.srcToken,
+        destToken: swapRequest.paraSwapRate.destToken,
+        srcAmount: swapRequest.paraSwapRate.srcAmount,
+        destAmount: swapRequest.paraSwapRate.destAmount,
+        priceRoute: swapRequest.paraSwapRate,
+        userAddress: wrappedLoan.address,
+        partner: 'anon',
+      }, {
+        ignoreChecks: true,
+      });
+      console.log(transactionParams);
+      const swapData = paraSwapRouteToSimpleData(transactionParams);
+
+
+      console.log(swapData);
+
+      const transaction = await wrappedLoan.paraSwap(swapData);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      const tx = await awaitConfirmation(transaction, provider, 'paraSwap');
+
+      console.log('SWAP LOG');
+      console.log(getLog(tx, SMART_LOAN.abi, 'Swap'));
+
+      const amountSold = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.maximumSold, config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
+      const amountBought = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.minimumBought, config.ASSETS_CONFIG[swapRequest.targetAsset].decimals);
+      const sourceBalanceAfterSwap = Number(state.assetBalances[swapRequest.sourceAsset]) - Number(amountSold);
+      const targetBalanceAfterSwap = Number(state.assetBalances[swapRequest.targetAsset]) + Number(amountBought);
+
+      commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
+      commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterSwap, false, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      console.log(tx);
     },
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {

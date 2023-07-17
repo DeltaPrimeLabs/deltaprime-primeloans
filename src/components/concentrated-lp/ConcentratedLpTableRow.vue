@@ -29,16 +29,18 @@
       </div>
 
       <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance, 8, true) }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance != null ? lpToken.primaryBalance : 0, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance != null ? lpToken.secondaryBalance : 0, 8, true) }}
       </div>
 
       <div class="table__cell table__cell--double-value loan">
         {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
-        {{ apr / 100 | percent }}
+      <div class="table__cell real-yield">
+        <FlatButton v-on:buttonClick="toggleRealYield()" :active="concentratedLpTokenBalances[lpToken.symbol] > 0">
+          {{ rowExpanded ? 'HIDE' : 'SHOW' }}
+        </FlatButton>
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -62,48 +64,47 @@
         </IconButtonMenuBeta>
       </div>
     </div>
-    <div class="chart-container" v-if="showChart">
-      <SmallBlock v-on:close="toggleChart()">
-        <Chart :data-points="lpToken.priceGraphData"
-               :line-width="3"
-               :min-y="lpToken.minPrice"
-               :max-y="lpToken.maxPrice"
-               :positive-change="lpToken.todayPriceChange > 0">
-        </Chart>
+    <div class="chart-container" v-if="showRealYield">
+      <SmallBlock v-on:close="toggleRealYield()">
+        <RealYield :lp-token="lpToken"></RealYield>
       </SmallBlock>
     </div>
   </div>
 </template>
 
 <script>
-import DoubleAssetIcon from './DoubleAssetIcon';
-import LoadedValue from './LoadedValue';
-import SmallBlock from './SmallBlock';
-import Chart from './Chart';
-import IconButtonMenuBeta from './IconButtonMenuBeta';
-import ColoredValueBeta from './ColoredValueBeta';
-import SmallChartBeta from './SmallChartBeta';
-import AddFromWalletModal from './AddFromWalletModal';
-import config from '../config';
+import DoubleAssetIcon from '../DoubleAssetIcon.vue';
+import LoadedValue from '../LoadedValue.vue';
+import SmallBlock from '../SmallBlock.vue';
+import Chart from '../Chart.vue';
+import IconButtonMenuBeta from '../IconButtonMenuBeta.vue';
+import ColoredValueBeta from '../ColoredValueBeta.vue';
+import SmallChartBeta from '../SmallChartBeta.vue';
+import AddFromWalletModal from '../AddFromWalletModal.vue';
+import config from '../../config';
 import {mapActions, mapState} from 'vuex';
-import ProvideConcentratedLiquidityModal from "./ProvideConcentratedLiquidityModal.vue";
-import RemoveConcentratedLiquidityModal from './RemoveConcentratedLiquidityModal';
-import WithdrawModal from './WithdrawModal';
+import ProvideConcentratedLiquidityModal from "../ProvideConcentratedLiquidityModal.vue";
+import RemoveConcentratedLiquidityModal from '../RemoveConcentratedLiquidityModal.vue';
+import WithdrawModal from '../WithdrawModal.vue';
 
 const ethers = require('ethers');
-import erc20ABI from '../../test/abis/ERC20.json';
-import {calculateMaxApy, fromWei} from '../utils/calculate';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import erc20ABI from '../../../test/abis/ERC20.json';
+import {calculateMaxApy, fromWei} from '../../utils/calculate';
+import addresses from '../../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
-import DeltaIcon from "./DeltaIcon.vue";
+import DeltaIcon from "../DeltaIcon.vue";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
+import FlatButton from "../FlatButton.vue";
+import RealYield from "./RealYield.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'ConcentratedLpTableRow',
   components: {
+    RealYield,
+    FlatButton,
     DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
@@ -133,7 +134,7 @@ export default {
   data() {
     return {
       moreActionsConfig: null,
-      showChart: false,
+      showRealYield: false,
       rowExpanded: false,
       poolBalance: 0,
       apr: 0,
@@ -144,9 +145,7 @@ export default {
       disableAllButtons: false,
       healthLoaded: false,
       totalFirstAmount: 0,
-      totalSecondAmount: 0,
-      firstPrice: 0,
-      secondPrice: 0,
+      totalSecondAmount: 0
     };
   },
 
@@ -257,6 +256,8 @@ export default {
     },
 
     async setupPoolData() {
+      const startBlockTimestamp = parseInt(((Date.now() - 7 * 24 * 3600 * 1000) / 1000).toString());
+
       let query = `{
           vaults(where: {id: "${this.lpToken.address}"}) {
           id
@@ -275,6 +276,18 @@ export default {
             priceUSD
             symbol
           }
+          strategy {
+            id
+            harvests(orderBy: blockTimestamp, orderDirection: desc, first:500, where:{blockTimestamp_gte:${startBlockTimestamp}}) {
+              id
+              amountX
+              amountY
+              amountXBefore
+              amountYBefore
+              blockTimestamp
+              lastHarvest
+            }
+          }
           }
         }`;
 
@@ -287,22 +300,21 @@ export default {
             const vault = resp.data.vaults[0];
             this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
             this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
-            this.firstPrice = vault.tokenX.priceUSD;
-            this.secondPrice = vault.tokenY.priceUSD;
+            this.lpToken.firstPrice = vault.tokenX.priceUSD;
+            this.lpToken.secondPrice = vault.tokenY.priceUSD;
+            this.lpToken.harvests = vault.strategy.harvests;
           }
       )
-
-
     },
 
-    toggleChart() {
+    toggleRealYield() {
       if (this.rowExpanded) {
-        this.showChart = false;
+        this.showRealYield = false;
         this.rowExpanded = false;
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
-          this.showChart = true;
+          this.showRealYield = true;
         }, 200);
       }
     },
@@ -548,19 +560,19 @@ export default {
 .concentrated-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
+  border-style: solid;
+  border-width: 0 0 2px 0;
+  border-image-source: var(--asset-table-row__border);
+  border-image-slice: 1;
 
   &.expanded {
-    height: 387px;
+    height: 404px;
   }
 
   .table__row {
     display: grid;
-    grid-template-columns: 160px 150px 260px 150px repeat(2, 1fr) 70px 60px 22px;
+    grid-template-columns: 173px 150px 260px 150px repeat(2, 1fr) 65px 80px;
     height: 60px;
-    border-style: solid;
-    border-width: 0 0 2px 0;
-    border-image-source: var(--asset-table-row__border);
-    border-image-slice: 1;
     padding-left: 6px;
 
     .table__cell {
@@ -681,8 +693,6 @@ export default {
   }
 
   .chart-container {
-    margin: 2rem 0;
-
     .small-block-wrapper {
       height: unset;
     }
@@ -713,6 +723,11 @@ export default {
     cursor: default;
     pointer-events: none;
   }
+}
+
+.real-yield {
+  align-items: center;
+  justify-content: end;
 }
 
 </style>

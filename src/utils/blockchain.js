@@ -24,16 +24,30 @@ export const wrapContract = async function wrapContract(contract, assets) {
   );
 };
 
+export const switchChain = async (chainId, signer) => {
+  const currentChainId = await signer.getChainId();
+
+  if (currentChainId !== chainId) {
+    const ethereum = window.ethereum;
+    if (typeof ethereum === 'undefined') return;
+
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + chainId.toString(16) }],
+    });
+  }
+}
+
 export async function handleTransaction(fun, args, onSuccess, onFail) {
   try {
-    const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
-    if (tx) {
-      await provider.waitForTransaction(tx.hash);
-    }
+    const res = Array.isArray(args) ? await fun(...args) : await fun(args);
+    // if (tx) {
+    //   await provider.waitForTransaction(tx.hash);
+    // }
 
     if (onSuccess) {
       console.log('BLOCKCHAIN.js onSuccess');
-      onSuccess();
+      onSuccess(res);
     }
 
   } catch (error) {

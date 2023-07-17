@@ -8,6 +8,16 @@
         Swap debt
       </div>
 
+      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap'">
+        <div>
+          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
+        </div>
+      </div>
+
+      <div class="dex-toggle" v-if="!swapDebtMode">
+        <Toggle v-on:change="swapDexChange" :options="['YakSwap', 'ParaSwap']"></Toggle>
+      </div>
+
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
@@ -27,7 +37,7 @@
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
-                          :max="swapDebtMode ? sourceAssetDebt : sourceAssetBalance"
+                          :max="maxSourceValue"
                           :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -173,12 +183,14 @@ import SimpleInput from './SimpleInput';
 import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
+import Toggle from './Toggle.vue';
 
 const ethers = require('ethers');
 
 export default {
   name: 'SwapModal',
   components: {
+    Toggle,
     InfoIcon,
     DeltaIcon,
     SimpleInput,
@@ -241,11 +253,17 @@ export default {
       adapters: null,
       maxButtonUsed: false,
       valueAsset: "USDC",
+      paraSwapRate: {},
+      swapDex: 'YakSwap',
+      currentSourceInputChangeEvent: {},
     };
   },
 
   mounted() {
     setTimeout(() => {
+      if (this.swapDebtMode) {
+        this.swapDex = 'YakSwap'
+      }
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       this.setupSourceAsset();
@@ -273,7 +291,19 @@ export default {
       if (this.valueAsset === "USDC") return `~ $${targetAssetUsdPrice.toFixed(2)}`;
       // otherwise return amount in AVAX 
       return `~ ${(targetAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    }
+    },
+
+    maxSourceValue() {
+      if (this.swapDex === 'ParaSwap') {
+        return null;
+      } else {
+        if (this.swapDebtMode) {
+          return this.sourceAssetDebt;
+        } else {
+          return this.sourceAssetBalance;
+        }
+      }
+    },
   },
 
   methods: {
@@ -286,15 +316,28 @@ export default {
         sourceAmount: sourceAssetAmount,
         targetAmount: this.targetAssetAmount,
         path: this.path,
-        adapters: this.adapters
+        adapters: this.adapters,
+        paraSwapRate: this.paraSwapRate,
+        swapDex: this.swapDex
       });
+    },
+
+    swapDexChange(dex) {
+      console.log(this.currentSourceInputChangeEvent);
+      this.swapDex = dex;
+      console.log(this.swapDex);
+      this.setupSourceAssetOptions();
+      this.setupTargetAssetOptions();
+      if (this.currentSourceInputChangeEvent.value) {
+        this.sourceInputChange(this.currentSourceInputChangeEvent);
+      }
     },
 
     async query(sourceAsset, targetAsset, amountIn) {
       if (this.swapDebtMode) {
         return await this.queryMethod(sourceAsset, targetAsset, amountIn);
       } else {
-        return await this.queryMethod(sourceAsset, targetAsset, amountIn);
+        return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
     },
 
@@ -310,15 +353,22 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
+      console.warn('QUERY RESPONSE YAK SWAP');
+      console.log(queryResponse);
 
       let estimated;
       if (queryResponse) {
-        if (queryResponse instanceof BigNumber) {
-          estimated = queryResponse;
-        } else {
-          this.path = queryResponse.path;
-          this.adapters = queryResponse.adapters;
+        if (queryResponse.dex === 'PARA_SWAP') {
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+          this.paraSwapRate = queryResponse.swapRate;
+        } else {
+          if (queryResponse instanceof BigNumber) {
+            estimated = queryResponse;
+          } else {
+            this.path = queryResponse.path;
+            this.adapters = queryResponse.adapters;
+            estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+          }
         }
 
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
@@ -343,10 +393,24 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = this.swapDebtMode ? 0.2 : 0.1;
+      let slippageMargin = this.swapDebtMode ? 0.2 : 0.1;
+
+      console.log(this.dex);
+      if (this.swapDebtMode) {
+        slippageMargin = 0.2
+      } else {
+        if (this.swapDex === 'ParaSwap') {
+          slippageMargin = 1;
+        } else {
+          slippageMargin = 0.1
+        }
+      }
+
+      console.log('slippageMargin', slippageMargin);
+
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
-      let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;
+      let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
       this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
 
@@ -366,7 +430,8 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      this.sourceAssets.forEach(assetSymbol => {
+      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
+      sourceAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -379,7 +444,8 @@ export default {
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
-      this.targetAssets.forEach(assetSymbol => {
+      const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
+      targetAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -403,6 +469,8 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      console.log(changeEvent);
+      this.currentSourceInputChangeEvent = changeEvent;
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
@@ -460,6 +528,7 @@ export default {
     },
 
     ongoingTyping(event) {
+      console.log('TYPING EVENT', event);
       this.isTyping = event.typing;
     },
 
@@ -733,6 +802,10 @@ export default {
     height: 20px;
     transform: translateY(-1px);
   }
+}
+
+.dex-toggle {
+  margin-bottom: 30px;
 }
 
 </style>

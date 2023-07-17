@@ -1,15 +1,18 @@
 <template>
-  <span class="colored-value-component">
-    <span class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}">
-      <span class="plus-sign" v-if="value > 0 && showSign">+</span>
-      {{ formattedValue }}
-    </span>
-  </span>
+  <div class="colored-value-component">
+    <div class="colored-value" v-bind:class="{ positive: value > 0, negative: value < 0 , big: big}" :style="styleObject">
+      <div class="plus-sign" v-if="value > 0 && showSign">+</div>
+        <LoadedValue :value="!isUndefined ? formattedValue : null"></LoadedValue>
+    </div>
+  </div>
 </template>
 
 <script>
+import LoadedValue from "./LoadedValue.vue";
+
 export default {
   name: 'ColoredValueBeta',
+  components: {LoadedValue},
 
   props: {
     formatting: {
@@ -32,6 +35,14 @@ export default {
     big: {
       type: Boolean,
       default: false,
+    },
+    fontWeight: {
+      type: Number,
+      default: 400,
+    },
+    fontSize: {
+      type: Number,
+      default: 14,
     }
   },
   computed: {
@@ -42,6 +53,12 @@ export default {
         case 'percent':
           return this.$options.filters.percent(this.value, this.percentageRoundingPrecision);
       }
+    },
+    styleObject() {
+      return this.big ? {} : { 'font-weight': this.fontWeight, 'font-size': `${this.fontSize}px` }
+    },
+    isUndefined() {
+      return isNaN(this.value) || this.value == null;
     }
   }
 };
@@ -69,4 +86,16 @@ export default {
   }
 }
 
+</style>
+
+<style lang="scss">
+.colored-value {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+
+  .loaded-value-component {
+    height: 20px;
+  }
+}
 </style>

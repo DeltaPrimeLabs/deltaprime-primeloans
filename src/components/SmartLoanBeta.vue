@@ -288,7 +288,6 @@ export default {
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
-
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
           this.noSmartLoanInternal,
           this.debtsPerAsset,

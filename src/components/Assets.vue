@@ -60,7 +60,7 @@ import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import LpTableRow from './LpTableRow';
-import ConcentratedLpTableRow from './ConcentratedLpTableRow';
+import ConcentratedLpTableRow from './concentrated-lp/ConcentratedLpTableRow.vue';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
@@ -342,7 +342,7 @@ export default {
 
     setupConcentratedLpTableHeaderConfig() {
       this.concentratedLpTableHeaderConfig = {
-        gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 70px 60px 22px',
+        gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 65px 80px',
         cells: [
           {
             label: 'Concentrated LP',
@@ -375,7 +375,7 @@ export default {
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
-            label: 'Min. APR',
+            label: 'Real Yield',
             sortable: false,
             class: 'apr',
             id: 'APR',
