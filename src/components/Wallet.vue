@@ -92,7 +92,7 @@
           <span>Notifications</span>
           <div class='tooltip-extra'>
             <img class="tooltip-extra__icon" src="src/assets/icons/rating.png"/>
-            <span>This is a prime feature</span>
+            <span>This is a Prime feature</span>
           </div>
         `;
       }
