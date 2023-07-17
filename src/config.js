@@ -41,6 +41,10 @@ export default {
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0},
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0},
     },
+    AVAILABLE_ASSETS_PER_DEX: {
+        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'GLP', 'sAVAX', 'QI', 'PNG', 'PTP'],
+        ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'sAVAX', 'QI', 'PNG', 'PTP']
+    },
     POOLS_CONFIG: {
         AVAX: {
             address: WAVAX_POOL_TUP.address,
