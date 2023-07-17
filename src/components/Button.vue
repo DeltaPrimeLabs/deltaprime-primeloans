@@ -1,21 +1,40 @@
 <template>
   <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']"
-          @click="clicked()">
+          @click="clicked()"
+          :style="customStyle">
     <div class="btn-label">
+      <img
+        v-if="leftIconSrc"
+        class="btn-label__icon-left"
+        :src="leftIconSrc"
+      >
       {{ label }}
+      <DeltaIcon
+        v-if="rightIconSrc"
+        class="btn-label__icon btn-label__icon-right"
+        :icon-src="rightIconSrc"
+        :size="16"
+      ></DeltaIcon>
     </div>
-    <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
+    <vue-loaders-ball-beat :style="customStyle ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
 </template>
 
 
 <script>
+import DeltaIcon from './DeltaIcon.vue';
 export default {
   name: 'Button',
+  components: {
+    DeltaIcon
+  },
   props: {
     disabled: false,
     waiting: false,
-    label: ''
+    label: '',
+    customStyle: { type: Object, default: null },
+    leftIconSrc: { type: String, default: null },
+    rightIconSrc: { type: String, default: null }
   },
   methods: {
     clicked() {
@@ -56,7 +75,27 @@ export default {
   }
 
   .btn-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-width: 57px;
+
+    .btn-label__icon {
+      background: var(--button__purple-color);
+    }
+
+    .btn-label__icon-left, .btn-label__icon-right {
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .btn-label__icon-left {
+      margin-right: 8px;
+    }
+
+    .btn-label__icon-right {
+      margin-left: 8px;
+    }
   }
 
   .ball-beat {
@@ -97,6 +136,12 @@ export default {
     color: var(--button__purple-color--disabled);
     background-image: var(--button__purple-background--disabled);
     box-shadow: none;
+
+    .btn-label {
+      .btn-label__icon {
+        background: var(--button__purple-color--disabled);        
+      }
+    }
   }
 }
 </style>

@@ -357,6 +357,89 @@
   --stats-chart-section__no-data-color: #{$washed-blue};
   // endregion
 
+  // region NotifiModal
+  --notifi-modal__container-box-shadow: 2px 2px 8px 0 #{$dark-space}7F;
+  --notifi-modal__container-border: solid 2px #{$washed-space};
+  --notifi-modal__container-background-color: #{$space};
+  --notifi-modal__container-info-color: #{$storm-blue};
+  --notifi-modal__container-footer-font-color: #{$storm-blue};
+  --notifi-modal__container-inner-border-color: #{$deep-space};
+  --notifi-modal__container-separator: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --notifi-modal__container-common-color: #{$mist-blue};
+  --notifi-modal__container-text-small: #{$washed-blue};
+  --notifi-modal__container-notification-box-hover-color: #{$mist-navy};
+  --notifi-modal__container-header-box-shadow: 0 2px 6px 0 #{$dark-space}4d;
+  --notifi-modal__container-footer-box-shadow: 0 -2px 6px 0 #{$dark-space}4d;
+  --notifi-modal__scroll-bar-background: #{$pale-space};
+  --notifi-modal__scroll-bar-hover-background: #{$dark-space};
+  // endregion
+
+  // region FromInput
+  --form-input__border: solid 2px #{$deep-space};
+  --form-input__background-color: #{$shallow-space};
+  --form-input__error-color: #{$pale-red};
+  // endregion
+
+  // region EditContact
+  --edit-contact__border: solid 2px #{$deep-space};
+  --edit-contact__background-color: #{$shallow-space};
+  --edit-contact__contact-info-color: #{$washed-blue};
+  --edit-contact__contact-verify-color: #{$light-purple};
+  --edit-contact__contact-box-top-border: 1px solid #{$deep-space};
+  --edit-contact__edit-container-box-shadow: 1px 1px 8px 0 #{$dark-space}cc;
+  --edit-contact__edit-container-background-color: #{$space};
+  // endregion
+
+  // region ToggleButton
+  --toggle-button__background: #{$mist-navy};
+  --toggle-button__toggle-on-background: #{$dark-lilac};
+  --toggle-button__switch-box-shadow: 1px 1px 4px 0 #{$dark-space}99;
+  --toggle-button__switch-background: #{$mist-fuchsia};
+  --toggle-button__switch-on-background: #{$delta-secondary};
+  // endregion
+
+  // region HealthRateButton
+  --health-rate-button__border-color: #{$washed-space};
+  --health-rate-button__background-color: #{$space};
+  --health-rate-button__rate-inactive-color: #{$storm-blue};
+  --health-rate-button__active-border-color: #{$light-navy};
+  --health-rate-button__active-background-color: #{$light-fuchsia};
+  // endregion
+
+  // region Settings (Notifi)
+  --notifi-settings__borrow-rate-border: 1px solid #{$pale-space};
+  --notifi-settings__box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
+  --notifi-settings__active-option-font-color: #{$mist-blue};
+  // endregion
+
+  // region AddInterestRate
+  --add-borrow-rate__container-box-shadow: 1px 1px 8px 0 #{$dark-space}cc;
+  --add-borrow-rate__container-background-color: #{$space};
+  // endregion
+
+  // region Dropdown (Notifi)
+  --notifi-dropdown__border-color: #{$washed-space};
+  --notifi-dropdown__background-color: #{$space};
+  --notifi-dropdown__hover-background-color: #{$mist-navy};
+  --notifi-dropdown__chevron-color: #{$pale-lilac};
+  --notifi-dropdown__select-font-color: #{$mist-blue};
+  --notifi-dropdown__dropdown-box-shadow: 2px 2px 8px 0 #{$dark-space}80;
+  // endregion
+
+  // region RoundToggle (Notifi)
+  --notifi-round-toggle__pointer-background-color: #{$light-fuchsia};
+  --notifi-round-toggle__pointer-border: solid 2px #{$pale-fuchsia};
+  --notifi-round-toggle__background-border: solid 2px #{$deep-space};
+  --notifi-round-toggle__background-color: #{$shallow-space};
+  // endregion
+
+  // region ApyInput
+  --apy-input__font-color: #{$mist-blue};
+  --apy-input__unit-font-color: #{$storm-blue};
+  --apy-input__background-image: linear-gradient(to right, #{$deep-navy} 9%, #{$deep-teal} 50%, #{$eggplant} 92%);
+  --apy-input__box-shadow: inset 3px 3px 8px 0 #{$dark-space}80;
+  // endregion
+
   // region RealYield
   --real-yield__header-text-color: #{$washed-blue};
   --real-yield__token-name-color: #{$mist-blue};

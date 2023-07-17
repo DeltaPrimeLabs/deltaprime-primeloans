@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en.json';
+import moment from 'moment';
 import {removePaddedTrailingZeros} from './calculate';
 
 TimeAgo.addDefaultLocale(en);
@@ -107,5 +108,15 @@ export default function setupFilters() {
         return result;
       }
     }
+  });
+
+  Vue.filter('notificationTime', function (value) {
+    return moment(value).format('DD.MM.YYYY | HH:mm');
+  });
+
+  Vue.filter('title', function(value) {
+    return value.toLowerCase().split(' ').map(function (word) {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
   });
 }
