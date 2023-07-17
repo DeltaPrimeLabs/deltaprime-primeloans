@@ -29,18 +29,16 @@
       </div>
 
       <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance != null ? lpToken.primaryBalance : 0, 8, true) }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance != null ? lpToken.secondaryBalance : 0, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance, 8, true) }}
       </div>
 
       <div class="table__cell table__cell--double-value loan">
         {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell real-yield">
-        <FlatButton v-on:buttonClick="toggleRealYield()" :active="concentratedLpTokenBalances[lpToken.symbol] > 0">
-          {{ rowExpanded ? 'HIDE' : 'SHOW' }}
-        </FlatButton>
+      <div class="table__cell table__cell--double-value apr">
+        {{ apr / 100 | percent }}
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -64,9 +62,14 @@
         </IconButtonMenuBeta>
       </div>
     </div>
-    <div class="chart-container" v-if="showRealYield">
-      <SmallBlock v-on:close="toggleRealYield()">
-        <RealYield :lp-token="lpToken"></RealYield>
+    <div class="chart-container" v-if="showChart">
+      <SmallBlock v-on:close="toggleChart()">
+        <Chart :data-points="lpToken.priceGraphData"
+               :line-width="3"
+               :min-y="lpToken.minPrice"
+               :max-y="lpToken.maxPrice"
+               :positive-change="lpToken.todayPriceChange > 0">
+        </Chart>
       </SmallBlock>
     </div>
   </div>
@@ -92,19 +95,15 @@ import erc20ABI from '../../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../../utils/calculate';
 import addresses from '../../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
-import DeltaIcon from "../DeltaIcon.vue";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
-import FlatButton from "../FlatButton.vue";
-import RealYield from "./RealYield.vue";
+import DeltaIcon from '../DeltaIcon.vue';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'ConcentratedLpTableRow',
   components: {
-    RealYield,
-    FlatButton,
     DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
@@ -134,7 +133,7 @@ export default {
   data() {
     return {
       moreActionsConfig: null,
-      showRealYield: false,
+      showChart: false,
       rowExpanded: false,
       poolBalance: 0,
       apr: 0,
@@ -145,7 +144,9 @@ export default {
       disableAllButtons: false,
       healthLoaded: false,
       totalFirstAmount: 0,
-      totalSecondAmount: 0
+      totalSecondAmount: 0,
+      firstPrice: 0,
+      secondPrice: 0,
     };
   },
 
@@ -221,28 +222,28 @@ export default {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidityConcentratedPool', 'removeLiquidityConcentratedPool']),
     setupActionsConfiguration() {
       this.moreActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/icon_a_more.svg',
-            tooltip: 'More',
-            menuOptions: [
-              {
-                key: 'PROVIDE_LIQUIDITY',
-                name: 'Create Concentrated LP token',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'REMOVE_LIQUIDITY',
-                name: 'Unwind Concentrated LP token',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-              },
-              {
-                key: 'WITHDRAW',
-                name: 'Withdraw LP to wallet',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/icon_a_more.svg',
+          tooltip: 'More',
+          menuOptions: [
+            {
+              key: 'PROVIDE_LIQUIDITY',
+              name: 'Create Concentrated LP token',
+              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+            },
+            {
+              key: 'REMOVE_LIQUIDITY',
+              name: 'Unwind Concentrated LP token',
+              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+            },
+            {
+              key: 'WITHDRAW',
+              name: 'Withdraw LP to wallet',
+              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+            }
+          ]
+        }
     },
 
     async setupApr() {
@@ -256,8 +257,6 @@ export default {
     },
 
     async setupPoolData() {
-      const startBlockTimestamp = parseInt(((Date.now() - 7 * 24 * 3600 * 1000) / 1000).toString());
-
       let query = `{
           vaults(where: {id: "${this.lpToken.address}"}) {
           id
@@ -276,18 +275,6 @@ export default {
             priceUSD
             symbol
           }
-          strategy {
-            id
-            harvests(orderBy: blockTimestamp, orderDirection: desc, first:500, where:{blockTimestamp_gte:${startBlockTimestamp}}) {
-              id
-              amountX
-              amountY
-              amountXBefore
-              amountYBefore
-              blockTimestamp
-              lastHarvest
-            }
-          }
           }
         }`;
 
@@ -296,25 +283,26 @@ export default {
       });
 
       client.query({query: gql(query)}).then(
-          resp => {
-            const vault = resp.data.vaults[0];
-            this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
-            this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
-            this.lpToken.firstPrice = vault.tokenX.priceUSD;
-            this.lpToken.secondPrice = vault.tokenY.priceUSD;
-            this.lpToken.harvests = vault.strategy.harvests;
-          }
+        resp => {
+          const vault = resp.data.vaults[0];
+          this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
+          this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
+          this.firstPrice = vault.tokenX.priceUSD;
+          this.secondPrice = vault.tokenY.priceUSD;
+        }
       )
+
+
     },
 
-    toggleRealYield() {
+    toggleChart() {
       if (this.rowExpanded) {
-        this.showRealYield = false;
+        this.showChart = false;
         this.rowExpanded = false;
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
-          this.showRealYield = true;
+          this.showChart = true;
         }, 200);
       }
     },
@@ -560,19 +548,19 @@ export default {
 .concentrated-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
-  border-style: solid;
-  border-width: 0 0 2px 0;
-  border-image-source: var(--asset-table-row__border);
-  border-image-slice: 1;
 
   &.expanded {
-    height: 404px;
+    height: 387px;
   }
 
   .table__row {
     display: grid;
-    grid-template-columns: 173px 150px 260px 150px repeat(2, 1fr) 65px 80px;
+    grid-template-columns: 160px 150px 260px 150px repeat(2, 1fr) 70px 60px 22px;
     height: 60px;
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-image-source: var(--asset-table-row__border);
+    border-image-slice: 1;
     padding-left: 6px;
 
     .table__cell {
@@ -693,6 +681,8 @@ export default {
   }
 
   .chart-container {
+    margin: 2rem 0;
+
     .small-block-wrapper {
       height: unset;
     }
@@ -723,11 +713,6 @@ export default {
     cursor: default;
     pointer-events: none;
   }
-}
-
-.real-yield {
-  align-items: center;
-  justify-content: end;
 }
 
 </style>
