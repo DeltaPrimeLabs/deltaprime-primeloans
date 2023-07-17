@@ -129,16 +129,16 @@ export default {
               key: 'DEPOSIT',
               name: 'Deposit'
             },
-            {
+            ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
               name: 'Bridge',
               disabled: this.hasActiveBridge
-            },
-            ...(this.pool.asset.symbol === 'AVAX' ? [{
+            }] : []),
+            {
               key: 'BRIDGE_DEPOSIT',
               name: 'Bridge and deposit',
               disabled: this.hasActiveBridge
-            }] : [])
+            },
           ]
         },
         {
