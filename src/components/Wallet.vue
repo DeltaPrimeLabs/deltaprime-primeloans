@@ -20,7 +20,7 @@
                 ref="notifiBtn"
                 class="alert-icon"
                 :icon-src="'src/assets/icons/alert_icon.svg'" :size="20"
-                v-tooltip="{content: 'Notifications', classes: 'info-tooltip'}"
+                v-tooltip="{content: notificationTooltip, classes: 'info-tooltip'}"
                 @click="showModal = !showModal">
     </IconButton>
     <NotifiModal
@@ -85,6 +85,16 @@
         this.notifiService.observeCurrentScreen().subscribe(() => {
           this.notifiScreenLoaded = true;
         });
+      },
+
+      notificationTooltip() {
+        return `
+          <span>Notifications</span>
+          <div class='tooltip-extra'>
+            <img class="tooltip-extra__icon" src="src/assets/icons/rating.png"/>
+            <span>This is a prime feature</span>
+          </div>
+        `;
       }
     }
   }
