@@ -140,14 +140,14 @@ export default ({
 
     const currentHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'];
     const healthRates = notifiConfig.HEALTH_RATES_CONFIG;
-    this.selectedHealthRate = healthRates[1]; // default health rate: 70%
+    this.selectedHealthRate = healthRates[1]; // default health rate: 20%
 
     if (currentHealthRate.filterOptions && currentHealthRate.filterOptions.threshold) {
       switch (currentHealthRate.filterOptions.threshold) {
-        case 0.6:
+        case 0.1: // 10%
           this.selectedHealthRate = healthRates[0];
           break;
-        case 0.7:
+        case 0.2: // 20%
           this.selectedHealthRate = healthRates[1];
           break;
         default:
