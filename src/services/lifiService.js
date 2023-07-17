@@ -188,6 +188,12 @@ export default class LifiService {
       return;
     }
 
+    // if bridge only without deposit, don't execute deposit and return here
+    if (disableDeposit) {
+      localStorage.setItem('active-bridge-deposit', '');
+      return;
+    }
+
     const bridgeExecution = route.steps[0].execution;
     const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
     const depositRequest = {
@@ -308,7 +314,10 @@ export default class LifiService {
     }
 
     // if bridge only without deposit, don't execute deposit and return here
-    if (disableDeposit) return;
+    if (disableDeposit) {
+      localStorage.setItem('active-bridge-deposit', '');
+      return;
+    }
 
     const bridgeExecution = route.steps[0].execution;
     const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
