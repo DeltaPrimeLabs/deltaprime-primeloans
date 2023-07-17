@@ -59,6 +59,7 @@ export default {
       route: null,
       targetSymbol: null,
       depositNativeToken: null,
+      disableDeposit: false,
       cancelled: false,
       execution: null,
       fromData: null,
@@ -88,11 +89,12 @@ export default {
   methods: {
     setupRoute() {
       const activeTransfer = localStorage.getItem('active-bridge-deposit');
-      const { route, targetSymbol, depositNativeToken, cancelled } = JSON.parse(activeTransfer);
+      const { route, targetSymbol, depositNativeToken, disableDeposit, cancelled } = JSON.parse(activeTransfer);
 
       this.route = route;
       this.targetSymbol = targetSymbol;
       this.depositNativeToken = depositNativeToken;
+      this.disableDeposit = disableDeposit;
       this.cancelled = cancelled;      
       this.execution = route.steps[0].execution;
 
@@ -120,7 +122,8 @@ export default {
       try {
         const transferRes = await this.lifiService.resumeRoute(this.lifiData.lifi, this.route, this.progressBarService, this.depositFunc, {
           targetSymbol: this.targetSymbol,
-          depositNativeToken: this.depositNativeToken
+          depositNativeToken: this.depositNativeToken,
+          disableDeposit: this.disableDeposit
         });
 
         this.$emit('BRIDGE_DEPOSIT_RESUME', transferRes);

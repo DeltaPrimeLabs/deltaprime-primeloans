@@ -130,10 +130,15 @@ export default {
               name: 'Deposit'
             },
             {
-              key: 'BRIDGE_DEPOSIT',
+              key: 'BRIDGE',
               name: 'Bridge',
               disabled: this.hasActiveBridge
             },
+            ...(this.pool.asset.symbol === 'AVAX' ? [{
+              key: 'BRIDGE_DEPOSIT',
+              name: 'Bridge and deposit',
+              disabled: this.hasActiveBridge
+            }] : [])
           ]
         },
         {
@@ -184,6 +189,9 @@ export default {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
+        case 'BRIDGE':
+          this.openBridgeModal(true);
+          break;
         case 'BRIDGE_DEPOSIT':
           this.openBridgeModal();
           break;
@@ -220,7 +228,7 @@ export default {
       });
     },
 
-    openBridgeModal() {
+    openBridgeModal(disableDeposit = false) {
       const modalInstance = this.openModal(BridgeDepositModal);
       modalInstance.account = this.account;
       modalInstance.lifiData = this.lifiData;
@@ -230,13 +238,15 @@ export default {
       modalInstance.targetAssetPrice = this.pool.assetPrice;
       modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
       modalInstance.poolAddress = this.pool.contract.address;
+      modalInstance.disableDeposit = disableDeposit;
       modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
         const bridgeRequest = {
           lifi: this.lifiData.lifi,
           ...bridgeEvent,
           signer: this.provider.getSigner(),
           depositFunc: this.deposit,
-          targetSymbol: this.pool.asset.symbol
+          targetSymbol: this.pool.asset.symbol,
+          disableDeposit
         };
 
         this.handleTransaction(this.lifiService.bridgeAndDeposit, {

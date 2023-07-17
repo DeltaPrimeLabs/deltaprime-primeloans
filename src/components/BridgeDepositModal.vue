@@ -2,7 +2,7 @@
   <div id="modal" class="bridge-deposit-modal-component modal-component">
     <Modal height="561px">
       <div class="modal__title">
-        Bridge deposit
+        {{ title }}
       </div>
 
       <div class="asset-info" v-if="sourceAssetBalance">
@@ -144,10 +144,12 @@ export default {
     targetAssetPrice: 0,
     targetBalance: null,
     poolAddress: null,
+    disableDeposit: false
   },
 
   data() {
     return {
+      title: null,
       lifi: null,
       availableChains: null,
       availableAssets: null,
@@ -176,6 +178,7 @@ export default {
     setTimeout(() => {
       this.setupLifi();
       this.setupTargetAssetOptions();
+      this.title = this.disableDeposit ? "Bridge" : "Bridge deposit";
     });
   },
 

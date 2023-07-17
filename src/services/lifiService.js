@@ -98,7 +98,7 @@ export default class LifiService {
     }
   }
 
-  async resumeRoute(lifi, chosenRoute, progressBarService, depositFunc, { targetSymbol, depositNativeToken }) {
+  async resumeRoute(lifi, chosenRoute, progressBarService, depositFunc, { targetSymbol, depositNativeToken, disableDeposit }) {
     console.log('resuming lifi bridge...');
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
     const signer= provider.getSigner();
@@ -126,7 +126,8 @@ export default class LifiService {
       localStorage.setItem('active-bridge-deposit', JSON.stringify({
         route: updatedRoute,
         targetSymbol,
-        depositNativeToken
+        depositNativeToken,
+        disableDeposit
       }));
       console.log('Route updated', updatedRoute);
     }
@@ -214,7 +215,8 @@ export default class LifiService {
       depositNativeToken,
       signer,
       depositFunc,
-      targetSymbol
+      targetSymbol,
+      disableDeposit
     },
     progressBarService
   }) {
@@ -242,7 +244,8 @@ export default class LifiService {
       localStorage.setItem('active-bridge-deposit', JSON.stringify({
         route: updatedRoute,
         targetSymbol,
-        depositNativeToken
+        depositNativeToken,
+        disableDeposit
       }));
       console.log('Route updated', updatedRoute);
     }
@@ -303,6 +306,9 @@ export default class LifiService {
       console.log("something wrong with bridge.");
       return;
     }
+
+    // if bridge only without deposit, don't execute deposit and return here
+    if (disableDeposit) return;
 
     const bridgeExecution = route.steps[0].execution;
     const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
