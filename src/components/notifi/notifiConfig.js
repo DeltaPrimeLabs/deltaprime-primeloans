@@ -61,7 +61,7 @@ export default {
         toggle: true,
         createMethod: "createLoanHealthAlerts",
         thresholdOptions: true,
-        settingsNote: "Alert me when my loan health score goes below Health threshold"
+        settingsNote: "Alert me when my loan health score goes below this threshold"
       },
       "DELTA_PRIME_BORROW_RATE_EVENTS": {
         type: "DELTA_PRIME_BORROW_RATE_EVENTS",
@@ -109,12 +109,12 @@ export default {
   },
   HEALTH_RATES_CONFIG: [
     {
-      id: "fifty",
-      value: 50
+      id: "first",
+      value: 10
     },
     {//default
-      id: "hundred",
-      value: 100,
+      id: "second",
+      value: 20,
     },
     {
       id: "custom",
