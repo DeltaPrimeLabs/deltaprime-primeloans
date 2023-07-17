@@ -138,6 +138,7 @@ export default {
       modalInstance.progressBarService = this.progressBarService;
       modalInstance.depositFunc = this.deposit;
       modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
+        if (!transferRes) return;
         const pools = this.poolsList.map(pool => {
           return {
             ...pool,

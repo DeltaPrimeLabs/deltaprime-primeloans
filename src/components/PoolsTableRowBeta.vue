@@ -253,6 +253,7 @@ export default {
           bridgeRequest: bridgeRequest,
           progressBarService: this.progressBarService
         }, (res) => {
+          if (!res) return;
           this.pool.deposit = Number(this.pool.deposit) + Number(res.amount);
           this.$forceUpdate();
         }, (error) => {
