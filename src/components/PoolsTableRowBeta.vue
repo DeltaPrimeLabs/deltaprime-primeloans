@@ -96,8 +96,7 @@ export default {
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
-      lifiData: {},
-      hasActiveBridge: false
+      lifiData: {}
     };
   },
 
@@ -118,6 +117,8 @@ export default {
   methods: {
     ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
     setupActionsConfiguration() {
+      const activeTransfer = localStorage.getItem('active-bridge-deposit');
+
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
@@ -131,13 +132,11 @@ export default {
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
-              name: 'Bridge',
-              disabled: this.hasActiveBridge
+              name: `Bridge${activeTransfer ? ' (Resume)' : ''}`
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
-              name: 'Bridge and deposit',
-              disabled: this.hasActiveBridge
+              name: `Bridge and deposit${activeTransfer ? ' (Resume)' : ''}`
             },
           ]
         },
@@ -179,21 +178,29 @@ export default {
     watchLifi() {
       this.lifiService.observeLifi().subscribe(async lifiData => {
         this.lifiData = lifiData;
-
-        this.hasActiveBridge = localStorage.getItem('active-bridge-deposit');
       });
     },
 
     actionClick(key) {
+      const activeTransfer = localStorage.getItem('active-bridge-deposit');
+
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
         case 'BRIDGE':
-          this.openBridgeModal(true);
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', activeTransfer);
+          } else {
+            this.openBridgeModal(true);
+          }
           break;
         case 'BRIDGE_DEPOSIT':
-          this.openBridgeModal();
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', JSON.parse(activeTransfer));
+          } else {
+            this.openBridgeModal();
+          }
           break;
         case 'WITHDRAW':
           this.openWithdrawModal();
