@@ -343,7 +343,7 @@ export default {
     setupConcentratedLpTableHeaderConfig() {
       this.concentratedLpTableHeaderConfig = {
         // gridTemplateColumns: '160px 150px 260px 150px repeat(2, 1fr) 65px 80px',
-        gridTemplateColumns: '160px 150px 260px 150px repeat(1, 1fr) 65px 80px',
+        gridTemplateColumns: '216px 150px 299px 174px repeat(1, 1fr) 65px 80px',
         cells: [
           {
             label: 'Concentrated LP',

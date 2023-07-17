@@ -572,7 +572,7 @@ export default {
   .table__row {
     display: grid;
     //grid-template-columns: 173px 150px 260px 150px repeat(2, 1fr) 65px 80px;
-    grid-template-columns: 173px 150px 260px 150px repeat(1, 1fr) 65px 80px;
+    grid-template-columns: 216px 150px 299px 174px repeat(1, 1fr) 65px 80px;
     height: 60px;
     padding-left: 6px;
 
