@@ -77,6 +77,7 @@ export default ({
   mounted() {
     this.watchHistory();
     this.watchThemeChange();
+    console.log(this.notifications);
   },
   methods: {
     watchHistory() {
@@ -110,7 +111,7 @@ export default ({
     getBoxMessage(notification) {
       return notification.category === 'CREATOR_MESSAGE'
             ? notification.detail.message
-            : notification.detail.genericMessage
+            : notification.detail.genericMessage.replace('Loan Health score', 'Health');
     },
 
     handleDetail(notification) {
