@@ -94,131 +94,56 @@ export default class LifiService {
       return result.routes;
     } catch(error) {
       console.log(`lifi - fetching routes failed. Error: ${error}`);
-      return;
+      return {
+        error: true,
+        message: error.message
+      };
     }
   }
 
-  async resumeRoute(lifi, chosenRoute, progressBarService, depositFunc, { targetSymbol, depositNativeToken, disableDeposit }) {
-    console.log('resuming lifi bridge...');
-    const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
-    const signer= provider.getSigner();
+  getStatusInfo(route) {
+    const statusInfo = {};
+    route.steps.map((step) => {
+      if (!step.execution) return;
+      const processes = step.execution.process;
 
-    const updateRouteHook = (updatedRoute) => {
-      // save route state to local storage
-      const statusInfo = {};
+      processes.map(process => {
+        if (process.status === 'DONE' || process.status === 'FAILED') return;
 
-      updatedRoute.steps.map((step) => {
-        if (!step.execution) return;
-        const processes = step.execution.process;
+        if (process.message) {
+          statusInfo.message = process.message;
 
-        processes.map(process => {
-          if (process.status !== 'DONE' && process.message) {
-            statusInfo.message = process.message;
-
-            if (process.substatusMessage) {
-              statusInfo.message = ` ${process.substatusMessage}`;
-            }
-
-            if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
-              statusInfo.txLink = process.txLink;
-            }
+          if (process.substatusMessage) {
+            statusInfo.message = ` ${process.substatusMessage}`;
           }
-        })
-      });
 
-      progressBarService.emitProgressBarInProgressState(statusInfo);
-      localStorage.setItem('active-bridge-deposit', JSON.stringify({
-        route: updatedRoute,
-        targetSymbol,
-        depositNativeToken,
-        disableDeposit
-      }));
-      console.log('Route updated', updatedRoute);
-    }
-
-    const switchChainHook = async (requiredChainId) => {
-      if (!signer) {
-        return signer;
-      }
-
-      const currentChainId = await signer.getChainId();
-  
-      if (currentChainId !== requiredChainId) {
-        const ethereum = window.ethereum;
-        if (typeof ethereum === 'undefined') return;
-
-        await ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x' + requiredChainId.toString(16) }],
-        });
-
-        const newProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
-
-        return newProvider.getSigner();
-      }
-    }
-
-    const updateGasConfig = async (txRequest) => {
-      return txRequest;
-    }
-
-    const acceptExchangeRateUpdate = async (params) => {
-      return params;
-    }
-
-    progressBarService.requestProgressBar(chosenRoute.steps[0].estimate.executionDuration);
-
-    const route = await lifi.resumeRoute(signer, chosenRoute, {
-      updateRouteHook,
-      switchChainHook,
-      updateTransactionRequestHook: updateGasConfig,
-      acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
+          if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
+            statusInfo.txLink = process.txLink;
+          }
+        } else if (process.type === 'SWITCH_CHAIN') {
+          statusInfo.message = 'Switching chain.';
+        } else if (process.error) {
+          statusInfo.message = process.error.htmlMessage;
+        }
+      })
     });
 
-    const processes = route.steps[0].execution.process;
-    const lastStep = processes[processes.length - 1];
-    const statusInfo = {};
+    return statusInfo;
+  }
 
-    if (lastStep.status === 'DONE') {
-      statusInfo.message = lastStep.message;
-      if (lastStep.txLink) statusInfo.txLink = lastStep.txLink;
-    }
+  getEstimatedDuration(route) {
+    let duration = 0;
+    route.steps.map((step) => duration += step.estimate.executionDuration);
 
-    progressBarService.emitProgressBarInProgressState(statusInfo);
-    await switchChain(config.chainId, signer);
-
-    if (!route.steps || route.steps.length === 0) {
-      console.log("something wrong with bridge.");
-      return;
-    }
-
-    // if bridge only without deposit, don't execute deposit and return here
-    if (disableDeposit) {
-      localStorage.setItem('active-bridge-deposit', '');
-      return;
-    }
-
-    const bridgeExecution = route.steps[0].execution;
-    const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
-    const depositRequest = {
-      assetSymbol: targetSymbol,
-      amount: depositAmount,
-      depositNativeToken: depositNativeToken
-    };
-
-    await depositFunc({ depositRequest: depositRequest });
-    localStorage.setItem('active-bridge-deposit', '');
-
-    return {
-      amount: depositAmount
-    };
+    return duration;
   }
 
   removeRoute(lifi, activeRoute) {
+    localStorage.setItem('active-bridge-deposit', '');
     lifi.stopExecution(activeRoute);
   }
 
-  async bridgeAndDeposit({
+  bridgeAndDeposit = async ({
     bridgeRequest: {
       lifi,
       chosenRoute,
@@ -228,32 +153,15 @@ export default class LifiService {
       targetSymbol,
       disableDeposit
     },
-    progressBarService
-  }) {
+    progressBarService,
+    resume
+  }) => {
 
     const updateRouteHook = (updatedRoute) => {
       // save route state to local storage
-      const statusInfo = {};
+      if (!updatedRoute) return;
 
-      updatedRoute.steps.map((step) => {
-        if (!step.execution) return;
-        const processes = step.execution.process;
-
-        processes.map(process => {
-          if (process.status !== 'DONE' && process.message) {
-            statusInfo.message = process.message;
-
-            if (process.substatusMessage) {
-              statusInfo.message = ` ${process.substatusMessage}`;
-            }
-
-            if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
-              statusInfo.txLink = process.txLink;
-            }
-          }
-        })
-      });
-
+      const statusInfo = this.getStatusInfo(updatedRoute);
       progressBarService.emitProgressBarInProgressState(statusInfo);
       localStorage.setItem('active-bridge-deposit', JSON.stringify({
         route: updatedRoute,
@@ -294,17 +202,25 @@ export default class LifiService {
       return params;
     }
 
-    progressBarService.requestProgressBar(chosenRoute.steps[0].estimate.executionDuration);
+    const estimatedDuration = this.getEstimatedDuration(chosenRoute);
+    progressBarService.requestProgressBar(estimatedDuration);
 
-    const route = await lifi.executeRoute(signer, chosenRoute, {
+    const routeOptions = {
       updateRouteHook,
       switchChainHook,
       updateTransactionRequestHook: updateGasConfig,
       acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
-    });
+    };
+    let route;
+
+    if (!resume) {
+      route = await lifi.resumeRoute(signer, chosenRoute, routeOptions);
+    } else {
+      route = await lifi.executeRoute(signer, chosenRoute, routeOptions);
+    }
     console.log('bridge transactions completed.');
 
-    const processes = route.steps[0].execution.process;
+    const processes = route.steps[route.steps.length - 1].execution.process;
     const lastStep = processes[processes.length - 1];
     const statusInfo = {};
 
@@ -327,7 +243,7 @@ export default class LifiService {
       return;
     }
 
-    const bridgeExecution = route.steps[0].execution;
+    const bridgeExecution = route.steps[route.steps.length - 1].execution;
     const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
     const depositRequest = {
       assetSymbol: targetSymbol,

@@ -86,6 +86,14 @@
       >
         No routes available
       </Alert>
+
+      <Alert
+        v-if="!requestingRoute && routeValidationError"
+        class="alert-wrapper"
+      >
+        {{ routeValidationError }}
+      </Alert>
+
       <div
         v-if="chosenRoute"
         class="bridge-info"
@@ -158,7 +166,7 @@ export default {
       sourceAsset: null,
       sourceAssetAmount: null,
       sourceAssetBalance: null,
-      sourceAssetsBalances: null,
+      sourceAssetsBalances: {},
       sourceValidators: [],
       sourceInputError: true,
       targetAssetOptions: null,
@@ -170,7 +178,8 @@ export default {
       transactionOngoing: false,
       chosenRoute: null,
       routes: null,
-      requestingRoute: false
+      requestingRoute: false,
+      routeValidationError: null
     };
   },
 
@@ -187,17 +196,24 @@ export default {
       handler(newBalances) {
         if (!this.sourceAsset) return;
 
-        this.sourceAssetBalance = newBalances.find(asset => asset.symbol === this.sourceAsset).amount;
-        this.setSourceValidators();
-      }
+        const assetData = newBalances[this.sourceChain].find(asset => asset.symbol === this.sourceAsset);
+        if (assetData) {
+          this.sourceAssetBalance = assetData.amount
+          this.setSourceValidators();
+        }
+      },
+      deep: true
     },
 
     sourceAsset: {
       handler(newAsset) {
-        if (!this.sourceAssetsBalances) return;
+        if (!this.sourceAssetsBalances[this.sourceChain]) return;
 
-        this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === newAsset).amount;
-        this.setSourceValidators();
+        const assetData = this.sourceAssetsBalances[this.sourceChain].find(asset => asset.symbol === newAsset);
+        if (assetData) {
+          this.sourceAssetBalance = assetData.amount;
+          this.setSourceValidators();
+        }
       }
     }
   },
@@ -219,8 +235,10 @@ export default {
     },
 
     estimatedDuration() {
-      const duration = moment.duration(this.chosenRoute.steps[0].estimate.executionDuration, 'seconds');
-      return duration.format('D [days], H [hours], m [minutes], s [seconds]');
+      const formatString = 'D [days], H [hours], m [minutes], s [seconds]';
+      const estimatedDuration = this.lifiService.getEstimatedDuration(this.chosenRoute);
+
+      return moment.duration(estimatedDuration, 'seconds').format(formatString);
     }
   },
 
@@ -242,7 +260,7 @@ export default {
       }];
     },
 
-    async getBestRoute() {
+    async getBestRoute(sourceAssetData) {
       if (this.sourceAssetAmount == null) return;
       if (this.sourceAssetAmount == 0) {
         this.targetAssetAmount = 0;
@@ -254,7 +272,7 @@ export default {
       const routesRequest = {
         fromChainId: this.sourceChain,
         fromAmount: this.sourceAssetAmount,
-        fromTokenAddress: this.sourceAssetData.address.toLowerCase(),
+        fromTokenAddress: sourceAssetData.address.toLowerCase(),
         fromAddress: this.account.toLowerCase(),
         toChainId: config.chainId,
         toTokenAddress: this.targetAssetAddress.toLowerCase(),
@@ -266,10 +284,18 @@ export default {
         }
       };
 
-      this.routes = await this.lifiService.getBestRoute(this.lifi, routesRequest, this.sourceAssetData.decimals);
+      const routes = await this.lifiService.getBestRoute(this.lifi, routesRequest, sourceAssetData.decimals);
+
+      if (routes.error) {
+        this.routeValidationError = routes.message;
+        this.requestingRoute = false;
+        return;
+      }
+
+      this.routes = routes;
       // To-Do: allows to choose desired route option
-      if (this.routes.length > 0) {
-        this.chosenRoute = this.routes[0];
+      if (routes.length > 0) {
+        this.chosenRoute = routes[0];
       }
 
       if (this.chosenRoute) {
@@ -305,44 +331,38 @@ export default {
           changeEvent.tokens
         );
 
-        this.sourceAssetsBalances = balances;
-
-        // this.$emit("chainChange", {
-        //   chainId: changeEvent.chainId,
-        //   tokens: changeEvent.tokens
-        // });
+        this.sourceAssetsBalances = {
+          ...this.sourceAssetsBalances,
+          [changeEvent.chainId]: balances
+        };
       }
     },
 
     async sourceInputChange(changeEvent) {
-    //   this.maxButtonUsed = changeEvent.maxButtonUsed;
-    //   this.checkingRoute = true;
-    //   let targetInputChangeEvent;
+      const sourceAssetData = this.availableAssets[changeEvent.chain.id].find(asset => asset.symbol === changeEvent.asset);
       if (this.sourceAsset !== changeEvent.asset) {        
         this.sourceAsset = changeEvent.asset;
-        this.sourceAssetData = this.availableAssets[changeEvent.chain.id].find(asset => asset.symbol === changeEvent.asset);
-        // this.sourceAssetBalance = this.sourceAssetsBalances.find(asset => asset.symbol === changeEvent.asset).amount;
-        // this.setSourceValidators();
 
-        await this.getBestRoute();
-        // this.calculateSourceAssetBalance();
+        if (this.sourceChain === config.chainId &&
+            sourceAssetData.address.toLowerCase() === this.targetAssetAddress.toLowerCase()) {
+          this.routeValidationError = 'The same token cannot be used as both the source and destination token.';
+          return;
+        } else if (this.routeValidationError) {
+          this.routeValidationError = null;
+        }
+
+        await this.getBestRoute(sourceAssetData);
       } else {
         let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
         this.sourceAssetAmount = value;
 
         if (value != 0) {
-          await this.getBestRoute();
+          await this.getBestRoute(sourceAssetData);
         } else {
           this.targetAssetAmount = 0;
         }
-        // this.updateAmounts();
-        // this.getRoute();
       }
       this.sourceInputError = changeEvent.error;
-    //   if (targetInputChangeEvent) {
-    //     this.targetInputError = targetInputChangeEvent.error;
-    //   }
-    //   this.checkingRoute = false;
     },
 
     setSourceValidators() {

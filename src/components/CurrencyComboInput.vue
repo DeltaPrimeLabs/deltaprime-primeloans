@@ -64,18 +64,28 @@
               >{{ assetOption.name.charAt(0) }}</div>
               <div class="option__symbol">{{ assetOption.symbol }}</div>
               <div class="option__name">{{ assetOption.name }}</div>
+              <ContentLoader
+                v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
+                class="content-loader"
+                :width="40"
+                :height="8"
+                :primaryColor="'#9eacdf'"
+                :secondaryColor="'#9eacdf'"
+                :primaryOpacity="0.4"
+                :secondaryOpacity="0.2"
+              ></ContentLoader>
               <div
-                v-if="isBridge && assetsBalances && assetsBalances.length == displayedOptions.length"
+                v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === displayedOptions.length"
                 class="option__balance"
               >
                 <div
-                  v-if="Number(assetsBalances[key].amount) > 0"
+                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
                   class="balance__amount"
-                >{{ assetsBalances[key].amount|smartRound(4) }}</div>
+                >{{ assetsBalances[selectedChain.id][key].amount|smartRound(4) }}</div>
                 <div
-                  v-if="Number(assetsBalances[key].amount) > 0"
+                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
                   class="balance__usd"
-                >{{ assetsBalances[key].amount * assetsBalances[key].priceUSD|usd }}</div>
+                >{{ assetsBalances[selectedChain.id][key].amount * assetsBalances[selectedChain.id][key].priceUSD|usd }}</div>
               </div>
             </div>
           </div>
@@ -90,12 +100,14 @@
 import CurrencyInput from './CurrencyInput';
 import config from '../config';
 import DeltaIcon from "./DeltaIcon.vue";
+import { ContentLoader } from 'vue-content-loader'
 
 export default {
   name: 'CurrencyComboInput',
   components: {
     DeltaIcon,
-    CurrencyInput
+    CurrencyInput,
+    ContentLoader
   },
   props: {
     isBridge: {
@@ -106,7 +118,7 @@ export default {
     },
     assetOptions: {},
     assetsBalances: {
-      type: Array, default: () => []
+      type: Object, default: () => {}
     },
     defaultAsset: null,
     max: {},
@@ -487,6 +499,13 @@ export default {
               flex: 1;
               font-size: $font-size-sm;
               color: var(--currency-combo-input__select-dropdown-option-name-color);
+            }
+
+            .content-loader {
+              display: flex;
+              width: 40px;
+              height: 8px;
+              border-radius: 10px;
             }
 
             .option__balance {
