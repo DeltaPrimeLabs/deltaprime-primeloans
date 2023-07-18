@@ -73,7 +73,7 @@
                 <span class="currency">{{ targetAsset }}</span> deposit:
               </div>
               <div class="summary__value">
-                {{ formatTokenBalance(Number(targetBalance) + !disableDeposit ? Number(targetAssetAmount) : 0) }} 
+                {{ formatTokenBalance(Number(targetBalance) + Number(!disableDeposit ? targetAssetAmount : 0)) }}
               </div>
             </div>
           </div>
@@ -149,10 +149,8 @@ export default {
     account: null,
     targetAsset: null,
     targetAssetAddress: null,
-    targetAssetPrice: 0,
     targetBalance: null,
-    poolAddress: null,
-    disableDeposit: false
+    disableDeposit: null
   },
 
   data() {
