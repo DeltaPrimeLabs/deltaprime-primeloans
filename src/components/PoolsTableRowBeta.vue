@@ -117,13 +117,9 @@ export default {
   methods: {
     ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
     setupActionsConfiguration() {
-      const activeTransfer = localStorage.getItem('active-bridge-deposit');
-
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          // tooltip: 'Deposit',
-          // iconButtonActionKey: 'DEPOSIT'
           tooltip: 'Deposit / Bridge',
           menuOptions: [
             {
@@ -132,11 +128,11 @@ export default {
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
-              name: `Bridge${activeTransfer ? ' (Resume)' : ''}`
+              name: 'Bridge'
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
-              name: `Bridge and deposit${activeTransfer ? ' (Resume)' : ''}`
+              name: 'Bridge and deposit'
             },
           ]
         },
@@ -258,7 +254,8 @@ export default {
 
         this.handleTransaction(this.lifiService.bridgeAndDeposit, {
           bridgeRequest: bridgeRequest,
-          progressBarService: this.progressBarService
+          progressBarService: this.progressBarService,
+          resume: false
         }, (res) => {
           if (!res) return;
           this.pool.deposit = Number(this.pool.deposit) + Number(res.amount);

@@ -40,6 +40,7 @@ import Modal from './Modal';
 import Button from './Button';
 import { formatUnits } from 'ethers/lib/utils';
 import DeltaIcon from './DeltaIcon';
+import { ethers } from 'ethers';
 
 export default {
   name: 'DepositModal',
@@ -96,7 +97,12 @@ export default {
       this.depositNativeToken = depositNativeToken;
       this.disableDeposit = disableDeposit;
       this.cancelled = cancelled;      
-      this.execution = route.steps[0].execution;
+
+      let execution;
+      route.steps.map((step) => {
+        if (step.execution) execution = step.execution;
+      })
+      this.execution = execution;
 
       this.fromData = {
         fromAmount: formatUnits(route.fromAmount, route.fromToken.decimals),
@@ -120,24 +126,39 @@ export default {
       this.isLoading = true;
 
       try {
-        const transferRes = await this.lifiService.resumeRoute(this.lifiData.lifi, this.route, this.progressBarService, this.depositFunc, {
-          targetSymbol: this.targetSymbol,
+        const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+        const signer= provider.getSigner();
+        const bridgeRequest = {
+          lifi: this.lifiData.lifi,
+          chosenRoute: this.route,
           depositNativeToken: this.depositNativeToken,
+          signer: signer,
+          depositFunc: this.depositFunc,
+          targetSymbol: this.targetSymbol,
           disableDeposit: this.disableDeposit
+        }
+        const transferRes = await this.lifiService.bridgeAndDeposit({
+          bridgeRequest,
+          progressBarService: this.progressBarService,
+          resume: true
         });
 
         this.$emit('BRIDGE_DEPOSIT_RESUME', transferRes);
       } catch (error) {
+        console.log(error);
         if (error.code === 4001 || error.code === -32603) {
           this.progressBarService.emitProgressBarCancelledState();
 
-          const activeBridge = localStorage.getItem('active-bridge-deposit');
+          const activeTransfer = localStorage.getItem('active-bridge-deposit');
           localStorage.setItem('active-bridge-deposit', JSON.stringify({
-            ...JSON.parse(activeBridge),
+            ...JSON.parse(activeTransfer),
             cancelled: true
           }));
         } else {
-          this.progressBarService.emitProgressBarErrorState();
+          const activeTransfer = localStorage.getItem('active-bridge-deposit');
+          const { route } = JSON.parse(activeTransfer);
+          const statusInfo = this.lifiService.getStatusInfo(route);
+          this.progressBarService.emitProgressBarErrorState(statusInfo);
         }
       }
 
@@ -146,7 +167,6 @@ export default {
     },
 
     deleteTransfer() {
-      localStorage.setItem('active-bridge-deposit', '');
       this.lifiService.removeRoute(this.lifiData.lifi, this.route);
       this.$forceUpdate();
       this.closeModal();
