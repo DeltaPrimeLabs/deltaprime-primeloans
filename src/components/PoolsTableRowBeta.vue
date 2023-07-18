@@ -186,7 +186,7 @@ export default {
           break;
         case 'BRIDGE':
           if (activeTransfer) {
-            this.$emit('openResumeBridge', activeTransfer);
+            this.$emit('openResumeBridge', JSON.parse(activeTransfer));
           } else {
             this.openBridgeModal(true);
           }
@@ -195,7 +195,7 @@ export default {
           if (activeTransfer) {
             this.$emit('openResumeBridge', JSON.parse(activeTransfer));
           } else {
-            this.openBridgeModal();
+            this.openBridgeModal(false);
           }
           break;
         case 'WITHDRAW':
@@ -238,9 +238,7 @@ export default {
       modalInstance.lifiService = this.lifiService;
       modalInstance.targetAsset = this.pool.asset.symbol;
       modalInstance.targetAssetAddress = this.pool.asset.address;
-      modalInstance.targetAssetPrice = this.pool.assetPrice;
       modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
-      modalInstance.poolAddress = this.pool.contract.address;
       modalInstance.disableDeposit = disableDeposit;
       modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
         const bridgeRequest = {
