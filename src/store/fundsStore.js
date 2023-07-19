@@ -1217,7 +1217,7 @@ export default {
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(
         toBytes32(borrowRequest.asset),
         parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
-        {gasLimit: 3000000});
+        {gasLimit: 4000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
