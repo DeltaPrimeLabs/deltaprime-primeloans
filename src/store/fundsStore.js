@@ -884,12 +884,12 @@ export default {
       const transaction = withdrawRequest.asset === 'GLP' ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
           parseUnits(String(withdrawRequest.value)),
-          {gasLimit: 3000000})
+          {gasLimit: 3500000})
         :
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
           toBytes32(withdrawRequest.asset),
           parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
-          {gasLimit: 3000000});
+          {gasLimit: 3500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1217,7 +1217,7 @@ export default {
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(
         toBytes32(borrowRequest.asset),
         parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
-        {gasLimit: 4000000});
+        {gasLimit: 3500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1261,7 +1261,7 @@ export default {
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(
         toBytes32(repayRequest.asset),
         parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)),
-        {gasLimit: 3000000});
+        {gasLimit: 3500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1591,7 +1591,7 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).wrapNativeToken(
         parseUnits(parseFloat(wrapRequest.amount).toFixed(wrapRequest.decimals)),
-        {gasLimit: 3000000});
+        {gasLimit: 3500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1612,7 +1612,7 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimGLpFees({gasLimit: 3000000});
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimGLpFees({gasLimit: 3500000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
 
