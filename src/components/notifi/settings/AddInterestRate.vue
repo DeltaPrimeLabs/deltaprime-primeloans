@@ -47,7 +47,7 @@
               :label="'Save'"
               :disabled="!poolAddress || !thresholdDirection || !threshold"
               @click.stop.native="handleSave"
-              :customStyle="buttonStyles"
+              :variant="'slim'"
               :waiting="saving"
             ></Button>
           </div>
@@ -93,10 +93,6 @@ export default ({
       thresholdDirection: 'above',
       threshold: 0,
       saving: false,
-      buttonStyles: {
-        fontSize: "15px",
-        padding: "7px 8px"
-      }
     }
   },
   methods: {

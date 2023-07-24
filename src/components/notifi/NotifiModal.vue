@@ -45,7 +45,6 @@
           v-bind="{...currentScreen, ...notifi}"
           :screenLoading="screenLoading"
           :notification="selectedNotification"
-          :customStyles="customStyles"
           :alertSettings="alertSettings"
           @loginNotifi="handleLogin"
           @createTargets="handleCreateTargets"
@@ -92,7 +91,6 @@ export default {
       currentScreen: null,
       screenLoading: false,
       selectedNotification: null,
-      customStyles: notifiConfig.customStyles,
       alertSettings: null,
       notifiImgSrc: null
     }
