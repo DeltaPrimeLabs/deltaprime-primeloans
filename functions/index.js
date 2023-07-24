@@ -466,7 +466,20 @@ exports.steakhutScrapper = functions
 
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
-  const timestamps = [1688932800000, 1689019200000, 1689105600000, 1689192000000, 1689278400000, 1689364800000];
+  const timestamps = [
+    1688932800000,
+    1689019200000,
+    1689105600000,
+    1689192000000,
+    1689278400000,
+    1689364800000,
+    1689451200000,
+    1689537600000,
+    1689624000000,
+    1689710400000,
+    1689796800000,
+    1689883200000
+  ];
 
   await Promise.all(
     loanAddresses.map(async loanAddress => {
@@ -498,6 +511,8 @@ const uploadLoanStatusCustom = async () => {
       }
     })
   );
+
+  return true;
 }
 
 const uploadLoanStatusCustomWithRetry = async () => {
@@ -514,7 +529,7 @@ exports.saveLoansStatusCustom = functions
   .pubsub.schedule('*/15 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLoanStatusCustomWithRetry()
+    return uploadLoanStatusCustom()
       .then(() => {
         functions.logger.info("Loans Status upload success.");
       }).catch((err) => {
@@ -577,19 +592,18 @@ exports.saveLiveLoansStatus = functions
       });
   });
 
-exports.saveLoansStatusFromFile = functions
-  .runWith({ timeoutSeconds: 120, memory: "2GB" })
-  .pubsub.schedule('*/5 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting Loans Status.");
-    return uploadLoanStatusFromFile()
-      .then(() => {
-        functions.logger.info("Loans Status upload success.");
-      }).catch((err) => {
-        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-      });
-  });
-
+// exports.saveLoansStatusFromFile = functions
+//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//   .pubsub.schedule('*/5 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting Loans Status.");
+//     return uploadLoanStatusFromFile()
+//       .then(() => {
+//         functions.logger.info("Loans Status upload success.");
+//       }).catch((err) => {
+//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//       });
+//   });
 
 // const getEventsForPeriod = (from, to) => {
 // }

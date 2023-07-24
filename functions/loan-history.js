@@ -104,18 +104,19 @@ async function getData(loanAddress, timestamp) {
     return status;
   } catch (e) {
     console.log('-----------------getLoanStatusAtTimestamp------------------------')
+    console.log('loanAddress: ', loanAddress)
     console.log(e)
-    const file = fs.readFileSync("./failed-loans.json", "utf-8");
-    let data = JSON.parse(file);
+    // const file = fs.readFileSync("./failed-loans.json", "utf-8");
+    // let data = JSON.parse(file);
 
-    if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
+    // if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
 
-    data.failed[loanAddress].push(timestamp);
-    data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
+    // data.failed[loanAddress].push(timestamp);
+    // data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
 
-    data = JSON.stringify(data);
+    // data = JSON.stringify(data);
 
-    fs.writeFileSync("./failed-loans.json", data);
+    // fs.writeFileSync("./failed-loans.json", data);
   }
 }
 
