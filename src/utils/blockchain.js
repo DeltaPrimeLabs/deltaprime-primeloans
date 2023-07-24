@@ -41,9 +41,6 @@ export const switchChain = async (chainId, signer) => {
 export async function handleTransaction(fun, args, onSuccess, onFail) {
   try {
     const res = Array.isArray(args) ? await fun(...args) : await fun(args);
-    // if (tx) {
-    //   await provider.waitForTransaction(tx.hash);
-    // }
 
     if (onSuccess) {
       console.log('BLOCKCHAIN.js onSuccess');

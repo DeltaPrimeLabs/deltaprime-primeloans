@@ -315,7 +315,6 @@ export default {
     border-radius: 15px;
 
     .currency-input {
-      // flex: 1;
       width: 386px;
     }
 
