@@ -97,8 +97,8 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
                 IERC20Metadata(address(compounder)).transfer(msg.sender, _amount);
 
-                uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
-                tokenManager.decreaseProtocolExposure(positions[i].identifier, stakedBalance * 1e18 / 10**decimals);
+                uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(position.symbol, true)).decimals();
+                tokenManager.decreaseProtocolExposure(position.identifier, stakedBalance * 1e18 / 10**decimals);
 
                 break;
             }
