@@ -86,8 +86,13 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
                 address account = data.accounts[j];
                 uint256 refundAmount = (recoveredBalance * recovered[j]) /
                     totalRecovered;
-                IERC20(data.underlying).safeApprove(account, 0);
-                IERC20(data.underlying).safeApprove(account, refundAmount);
+                if (data.underlying == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+                    IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, 0);
+                    IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, refundAmount);
+                } else {
+                    IERC20(data.underlying).safeApprove(account, 0);
+                    IERC20(data.underlying).safeApprove(account, refundAmount);
+                }
                 IRecoveryFacet(account).notifyRefund(data.underlying, refundAmount);
             }
 

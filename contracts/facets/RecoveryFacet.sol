@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
@@ -16,8 +16,7 @@ import "../interfaces/IVectorFinanceMainStaking.sol";
 import "../lib/local/DeploymentConstants.sol";
 
 contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
-    using TransferHelper for address payable;
-    using TransferHelper for address;
+    using SafeERC20 for IERC20Metadata;
 
     // CONSTANTS
 
@@ -36,8 +35,14 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
         require(asset != bytes32(0), "Asset not supported.");
 
-        IERC20Metadata token = IERC20Metadata(_token);
-        _token.safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20Metadata token;
+        if (_token == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+            token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+            token.safeTransferFrom(msg.sender, address(this), _amount);
+        } else {
+            token = IERC20Metadata(_token);
+            token.safeTransferFrom(msg.sender, address(this), _amount);
+        }
 
         DiamondStorageLib.addOwnedAsset(asset, _token);
 
@@ -87,11 +92,10 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 IVectorFinanceCompounder compounder = _getAssetPoolHelper(
                     position.asset
                 ).compounder();
-                uint256 shares = compounder.balanceOf(address(this));
-                uint256 stakedBalance = compounder.getDepositTokensForShares(shares);
+                _amount = compounder.balanceOf(address(this));
+                uint256 stakedBalance = compounder.getDepositTokensForShares(_amount);
 
-                _amount = compounder.depositTracking(address(this));
-                address(compounder).safeTransfer(msg.sender, _amount);
+                IERC20Metadata(address(compounder)).transfer(msg.sender, _amount);
 
                 uint256 decimals = IERC20Metadata(tokenManager.getAssetAddress(positions[i].symbol, true)).decimals();
                 tokenManager.decreaseProtocolExposure(positions[i].identifier, stakedBalance * 1e18 / 10**decimals);
@@ -102,7 +106,7 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
             IERC20Metadata token = getERC20TokenInstance(_asset, true);
             _amount = token.balanceOf(address(this));
 
-            address(token).safeTransfer(msg.sender, _amount);
+            token.safeTransfer(msg.sender, _amount);
             DiamondStorageLib.removeOwnedAsset(_asset);
             tokenManager.decreaseProtocolExposure(
                 _asset,
@@ -120,7 +124,7 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         );
         _amount = token.balanceOf(address(this));
 
-        address(stakedGlpToken).safeTransfer(msg.sender, _amount);
+        stakedGlpToken.safeTransfer(msg.sender, _amount);
         if (token.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset("GLP");
         }

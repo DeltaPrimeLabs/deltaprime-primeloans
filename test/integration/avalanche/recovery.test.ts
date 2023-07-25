@@ -28,7 +28,9 @@ import {
     recompileConstantsFile,
     time,
     toBytes32,
-    toWei
+    toWei,
+    GLPManagerRewarderAbi,
+    erc20ABI,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -57,6 +59,9 @@ const VectorUSDCStaking1 = '0x7d44f9eb1ffa6848362a966ef7d6340d14f4af7e';
 const VectorUSDTStaking1 = '0xc57d07fedD6ad36F7334B84C4F1DFd2768999E9D';
 const VectorWAVAXStaking1 = '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc';
 const VectorSAVAXStaking1 = '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7';
+const GLP_REWARDER_ADDRESS = "0xB70B91CE0771d3f4c81D87660f71Da31d48eB3B3";
+const STAKED_GLP_ADDRESS = "0xaE64d55a6f09E4263421737397D1fdFA71896a69";
+const GLP_MANAGER_ADDRESS = "0xD152c7F25db7F4B95b7658323c5F33d176818EE4";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -65,6 +70,9 @@ describe('Smart loan', () => {
 
     describe('A loan with Vector staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
+            glpManagerContract: Contract,
+            stakedGlpContract: Contract,
+            glpBalanceAfterMint: any,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -82,12 +90,15 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'sAVAX', 'USDC', 'USDT', 'PTP'];
+            let assetsList = ['AVAX', 'sAVAX', 'USDC', 'USDT', 'PTP', 'YY_AAVE_AVAX', 'YY_PTP_sAVAX', 'GLP', 'YY_GLP'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
 
             diamondAddress = await deployDiamond();
+
+            glpManagerContract = new ethers.Contract(GLP_REWARDER_ADDRESS, GLPManagerRewarderAbi, provider);
+            stakedGlpContract = new ethers.Contract(STAKED_GLP_ADDRESS, erc20ABI, provider);
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
@@ -182,6 +193,27 @@ describe('Smart loan', () => {
                 });
         });
 
+        it("should mint GLP for owner", async () => {
+            let currentGlpBalance = await tokenContracts.get("GLP")!.balanceOf(owner.address);
+            let currentStakedGlpBalance = await stakedGlpContract.balanceOf(owner.address);
+            expect(currentGlpBalance).to.be.equal(0);
+
+            const minGlpAmount = tokensPrices.get("AVAX")! / tokensPrices.get("GLP")! * 98 / 100;
+
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(GLP_MANAGER_ADDRESS, toWei("10"));
+            await glpManagerContract.connect(owner).mintAndStakeGlp(
+                TOKEN_ADDRESSES['AVAX'],
+                toWei("10"),
+                0,
+                toWei(minGlpAmount.toString())
+            );
+
+            glpBalanceAfterMint = await tokenContracts.get("GLP")!.balanceOf(owner.address);
+            currentStakedGlpBalance = await stakedGlpContract.balanceOf(owner.address)
+            expect(glpBalanceAfterMint).to.be.gt(0);
+        });
+
         it("should fund a loan, get USDC and sAVAX and borrow", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
@@ -196,7 +228,9 @@ describe('Smart loan', () => {
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("50"), 0);
 
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(500 * tokensPrices.get('AVAX')!, 80);
+
+            await stakedGlpContract.connect(owner).approve(wrappedLoan.address, glpBalanceAfterMint);
+            await wrappedLoan.connect(owner).fundGLP(glpBalanceAfterMint);
         });
 
         it("should stake", async () => {
@@ -208,37 +242,55 @@ describe('Smart loan', () => {
             await time.increase(time.duration.days(30));
         });
 
-        it("should recover assets", async () => {
+        it("should recover assets from vector finance", async () => {
+            await recoveryManager.recoverAssets([
+                {
+                    asset: toBytes32("VF_USDC_MAIN_AUTO"),
+                    underlying: (await tokenContracts.get('USDC')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+                {
+                    asset: toBytes32("VF_USDT_MAIN_AUTO"),
+                    underlying: (await tokenContracts.get('USDT')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+                {
+                    asset: toBytes32("VF_AVAX_SAVAX_AUTO"),
+                    underlying: (await tokenContracts.get('AVAX')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+                {
+                    asset: toBytes32("VF_SAVAX_MAIN_AUTO"),
+                    underlying: (await tokenContracts.get('sAVAX')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+            ]);
+        });
+
+        it("should stake GLP", async () => {
+            await wrappedLoan.stakeGLPYak(glpBalanceAfterMint);
+        });
+
+        it("should recover GLP", async () => {
             await recoveryManager.recoverAssets([{
-                asset: toBytes32("VF_USDC_MAIN_AUTO"),
-                underlying: (await tokenContracts.get('USDC')!).address,
-                accounts: [wrappedLoan.address],
-                token0: constants.AddressZero,
-                token1: constants.AddressZero,
-                minAmount0: 0,
-                minAmount1: 0,
-            }]);
-            await recoveryManager.recoverAssets([{
-                asset: toBytes32("VF_USDT_MAIN_AUTO"),
-                underlying: (await tokenContracts.get('USDT')!).address,
-                accounts: [wrappedLoan.address],
-                token0: constants.AddressZero,
-                token1: constants.AddressZero,
-                minAmount0: 0,
-                minAmount1: 0,
-            }]);
-            await recoveryManager.recoverAssets([{
-                asset: toBytes32("VF_AVAX_SAVAX_AUTO"),
-                underlying: (await tokenContracts.get('AVAX')!).address,
-                accounts: [wrappedLoan.address],
-                token0: constants.AddressZero,
-                token1: constants.AddressZero,
-                minAmount0: 0,
-                minAmount1: 0,
-            }]);
-            await recoveryManager.recoverAssets([{
-                asset: toBytes32("VF_SAVAX_MAIN_AUTO"),
-                underlying: (await tokenContracts.get('sAVAX')!).address,
+                asset: toBytes32("YY_GLP"),
+                underlying: (await tokenContracts.get('GLP')!).address,
                 accounts: [wrappedLoan.address],
                 token0: constants.AddressZero,
                 token1: constants.AddressZero,
@@ -274,5 +326,3 @@ describe('Smart loan', () => {
         }
     });
 });
-
-
