@@ -494,17 +494,22 @@ const uploadLoanStatusCustom = async () => {
             const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
             if (!status.exists) {
-              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+              try {
+                const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+                if (!loanStatus) return;
 
-              await loanHistoryRef.doc(timestamp.toString()).set({
-                totalValue: loanStatus.totalValue,
-                borrowed: loanStatus.borrowed,
-                collateral: loanStatus.totalValue - loanStatus.borrowed,
-                twv: loanStatus.twv,
-                health: loanStatus.health,
-                solvent: loanStatus.solvent === 1e-18,
-                timestamp: timestamp
-              });
+                await loanHistoryRef.doc(timestamp.toString()).set({
+                  totalValue: loanStatus.totalValue,
+                  borrowed: loanStatus.borrowed,
+                  collateral: loanStatus.totalValue - loanStatus.borrowed,
+                  twv: loanStatus.twv,
+                  health: loanStatus.health,
+                  solvent: loanStatus.solvent === 1e-18,
+                  timestamp: timestamp
+                });
+              } catch(error) {
+                functions.logger.info(`Upload loan status failed. loan address: ${loanAddress}, timestamp:${timestamp}`)
+              }
             }
           })
         );
