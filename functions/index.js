@@ -152,12 +152,18 @@ const getApysFromVector = async () => {
 
   // navigate pools page and wait till javascript fully load.
   await page.goto(URL);
-  const vtxPriceSelector = "div.price-and-gas div[title='VTX']";
-  await page.mainFrame().waitForFunction(
-    selector => !!document.querySelector(selector).innerText,
-    {},
-    vtxPriceSelector
-  )
+
+  const vtxPriceSelector = "div.MuiBox-root[title='VTX']";
+
+  try {
+    await page.waitForFunction(
+      vtxPriceSelector => !!document.querySelector(vtxPriceSelector).innerText,
+      {},
+      vtxPriceSelector
+    );
+  } catch(e) {
+    console.log(`The element "${vtxPriceSelector}" was not found on the page`);
+  }
 
   functions.logger.info("parsing auto compounding APYs...");
   const [avaxApy, savaxApy, usdcApy, usdtApy] = await page.evaluate(() => {
@@ -172,10 +178,10 @@ const getApysFromVector = async () => {
     // select the pools with the class and find relevant records
     const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
 
-    // parsing USDT main auto APY
+    // parsing AVAX main auto APY
     const avaxApy = parseApyFromTable(pools, "avaxautopairedwithsavax");
 
-    // parsing USDT main auto APY
+    // parsing sAVAX main auto APY
     const savaxApy = parseApyFromTable(pools, "savaxautopairedwithavax");
 
     // parsing USDC main auto APY
@@ -467,18 +473,21 @@ exports.steakhutScrapper = functions
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
   const timestamps = [
-    1688932800000,
-    1689019200000,
-    1689105600000,
-    1689192000000,
-    1689278400000,
-    1689364800000,
-    1689451200000,
-    1689537600000,
-    1689624000000,
-    1689710400000,
-    1689796800000,
-    1689883200000
+    // 1688932800000,
+    // 1689019200000,
+    // 1689105600000,
+    // 1689192000000,
+    // 1689278400000,
+    // 1689364800000,
+    // 1689451200000,
+    // 1689537600000,
+    // 1689624000000,
+    // 1689710400000,
+    // 1689796800000,
+    // 1689883200000,
+    // 1690200000000,
+    1690286400000,
+    // 1690372800000
   ];
 
   await Promise.all(
@@ -496,18 +505,20 @@ const uploadLoanStatusCustom = async () => {
             if (!status.exists) {
               try {
                 const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-                if (!loanStatus) return;
-
-                await loanHistoryRef.doc(timestamp.toString()).set({
-                  totalValue: loanStatus.totalValue,
-                  borrowed: loanStatus.borrowed,
-                  collateral: loanStatus.totalValue - loanStatus.borrowed,
-                  twv: loanStatus.twv,
-                  health: loanStatus.health,
-                  solvent: loanStatus.solvent === 1e-18,
-                  timestamp: timestamp
-                });
+                if (loanStatus) {
+                  await loanHistoryRef.doc(timestamp.toString()).set({
+                    totalValue: loanStatus.totalValue,
+                    borrowed: loanStatus.borrowed,
+                    collateral: loanStatus.totalValue - loanStatus.borrowed,
+                    twv: loanStatus.twv,
+                    health: loanStatus.health,
+                    solvent: loanStatus.solvent === 1e-18,
+                    timestamp: timestamp
+                  });
+                  functions.logger.info(`Upload loan status success. loan address: ${loanAddress}, timestamp:${timestamp}`)
+                }
               } catch(error) {
+                console.log(error);
                 functions.logger.info(`Upload loan status failed. loan address: ${loanAddress}, timestamp:${timestamp}`)
               }
             }
@@ -530,7 +541,7 @@ const uploadLoanStatusCustomWithRetry = async () => {
 }
 
 exports.saveLoansStatusCustom = functions
-  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .runWith({ timeoutSeconds: 540, memory: "2GB" })
   .pubsub.schedule('*/15 * * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
@@ -585,7 +596,7 @@ const uploadLiveLoansStatusWithRetry = async () => {
 }
 
 exports.saveLiveLoansStatus = functions
-  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .runWith({ timeoutSeconds: 540, memory: "2GB" })
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");

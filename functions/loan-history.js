@@ -45,14 +45,16 @@ const fetchHistoricalPrices = async (timestamp) => {
 
   const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-  for (let obj of feeds) {
+  if (feeds && feeds.length > 0) {
+    for (let obj of feeds) {
 
-      let txId = obj.node.id;
-      let url = `https://arweave.net/${txId}`;
+        let txId = obj.node.id;
+        let url = `https://arweave.net/${txId}`;
 
-      const response = await fetch(url);
+        const response = await fetch(url);
 
-      json.push(await response.json());
+        json.push(await response.json());
+    }
   }
 
   // console.log(json)
@@ -106,6 +108,7 @@ async function getData(loanAddress, timestamp) {
     console.log('-----------------getLoanStatusAtTimestamp------------------------')
     console.log('loanAddress: ', loanAddress)
     console.log(e)
+    throw e;
     // const file = fs.readFileSync("./failed-loans.json", "utf-8");
     // let data = JSON.parse(file);
 
