@@ -51,6 +51,8 @@ export default {
   },
 
   props: {
+    account: null,
+    activeTransfer: null,
     lifiData: null,
     depositFunc: null
   },
@@ -89,8 +91,7 @@ export default {
 
   methods: {
     setupRoute() {
-      const activeTransfer = localStorage.getItem('active-bridge-deposit');
-      const { route, targetSymbol, depositNativeToken, disableDeposit, cancelled } = JSON.parse(activeTransfer);
+      const { route, targetSymbol, depositNativeToken, disableDeposit, cancelled } = this.activeTransfer;
 
       this.route = route;
       this.targetSymbol = targetSymbol;
@@ -149,14 +150,19 @@ export default {
         if (error.code === 4001 || error.code === -32603) {
           this.progressBarService.emitProgressBarCancelledState();
 
-          const activeTransfer = localStorage.getItem('active-bridge-deposit');
-          localStorage.setItem('active-bridge-deposit', JSON.stringify({
-            ...JSON.parse(activeTransfer),
-            cancelled: true
-          }));
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const userKey = this.account.toLowerCase();
+          const updatedHistory = {
+            ...history,
+            [userKey]: {
+              ...history[userKey],
+              cancelled: true
+            }
+          };
+
+          localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
         } else {
-          const activeTransfer = localStorage.getItem('active-bridge-deposit');
-          const { route } = JSON.parse(activeTransfer);
+          const { route } = JSON.parse(this.activeTransfer);
           const statusInfo = this.lifiService.getStatusInfo(route);
           this.progressBarService.emitProgressBarErrorState(statusInfo);
         }
@@ -168,7 +174,6 @@ export default {
 
     deleteTransfer() {
       this.lifiService.removeRoute(this.lifiData.lifi, this.route);
-      this.$forceUpdate();
       this.closeModal();
     },
   }

@@ -178,22 +178,22 @@ export default {
     },
 
     actionClick(key) {
-      const activeTransfer = JSON.parse(localStorage.getItem('active-bridge-deposit'));
-      const canResume = activeTransfer.route.fromAddress.toLowerCase() === this.account.toLowerCase();
+      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      const activeTransfer = history ? history[this.account.toLowerCase()] : null;
 
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
         case 'BRIDGE':
-          if (canResume) {
+          if (activeTransfer) {
             this.$emit('openResumeBridge', activeTransfer);
           } else {
             this.openBridgeModal(true);
           }
           break;
         case 'BRIDGE_DEPOSIT':
-          if (canResume) {
+          if (activeTransfer) {
             this.$emit('openResumeBridge', activeTransfer);
           } else {
             this.openBridgeModal(false);
@@ -353,11 +353,17 @@ export default {
         this.progressBarService.emitProgressBarCancelledState();
 
         if (isBridge) {
-          const activeBridge = localStorage.getItem('active-bridge-deposit');
-          localStorage.setItem('active-bridge-deposit', JSON.stringify({
-            ...JSON.parse(activeBridge),
-            cancelled: true
-          }));
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const userKey = this.account.toLowerCase();
+          const updatedHistory = {
+            ...history,
+            [userKey]: {
+              ...history[userKey],
+              cancelled: true
+            }
+          };
+
+          localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
         }
       } else {
         this.progressBarService.emitProgressBarErrorState();
