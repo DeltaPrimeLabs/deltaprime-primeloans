@@ -124,17 +124,19 @@ export default {
         .subscribe(async ([lifiData, pools]) => {
           this.lifiData = lifiData;
 
-          const activeTransfer = JSON.parse(localStorage.getItem('active-bridge-deposit'));
-          const canResume = activeTransfer.route.fromAddress.toLowerCase() === this.account.toLowerCase();
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const activeTransfer = history && history[this.account.toLowerCase()];
 
-          if (canResume) {
+          if (activeTransfer) {
             this.openResumeBridgeModal(activeTransfer);
           }
         });
     },
 
-    openResumeBridgeModal({ targetSymbol }) {
+    openResumeBridgeModal(activeTransfer) {
       const modalInstance = this.openModal(ResumeBridgeModal);
+      modalInstance.account = this.account;
+      modalInstance.activeTransfer = activeTransfer;
       modalInstance.lifiData = this.lifiData;
       modalInstance.lifiService = this.lifiService;
       modalInstance.progressBarService = this.progressBarService;
@@ -144,7 +146,7 @@ export default {
         const pools = this.poolsList.map(pool => {
           return {
             ...pool,
-            deposit: pool.asset.symbol === targetSymbol
+            deposit: pool.asset.symbol === activeTransfer.targetSymbol
                     ? Number(pool.deposit) + Number(transferRes.amount)
                     : pool.deposit
           }

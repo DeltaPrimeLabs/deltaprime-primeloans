@@ -139,7 +139,10 @@ export default class LifiService {
   }
 
   removeRoute(lifi, activeRoute) {
-    localStorage.setItem('active-bridge-deposit', '');
+    // remove transfer status for wallet address(equal to from address) from local storage
+    const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+    delete history[activeRoute.fromAddress.toLowerCase()];
+    localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
     lifi.stopExecution(activeRoute);
   }
 
@@ -158,17 +161,23 @@ export default class LifiService {
   }) => {
 
     const updateRouteHook = (updatedRoute) => {
-      // save route state to local storage
+      // save route state to local storage for different wallet address
       if (!updatedRoute) return;
 
       const statusInfo = this.getStatusInfo(updatedRoute);
       progressBarService.emitProgressBarInProgressState(statusInfo);
-      localStorage.setItem('active-bridge-deposit', JSON.stringify({
-        route: updatedRoute,
-        targetSymbol,
-        depositNativeToken,
-        disableDeposit
-      }));
+
+      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      const updatedHistory = {
+        ...history,
+        [updatedRoute.fromAddress.toLowerCase()]: {
+          route: updatedRoute,
+          targetSymbol,
+          depositNativeToken,
+          disableDeposit
+        }
+      }
+      localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
       console.log('Route updated', updatedRoute);
     }
 
@@ -239,7 +248,9 @@ export default class LifiService {
 
     // if bridge only without deposit, don't execute deposit and return here
     if (disableDeposit) {
-      localStorage.setItem('active-bridge-deposit', '');
+      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      delete history[route.fromAddress.toLowerCase()];
+      localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
       return;
     }
 
@@ -252,7 +263,9 @@ export default class LifiService {
     };
 
     await depositFunc({ depositRequest: depositRequest });
-    localStorage.setItem('active-bridge-deposit', '');
+    const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+    delete history[route.fromAddress.toLowerCase()];
+    localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
 
     return {
       amount: depositAmount
