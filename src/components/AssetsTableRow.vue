@@ -483,6 +483,9 @@ export default {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
             break;
+          case 'BRIDGE_COLLATERAL':
+            this.openBridgeModal();
+            break;
           case 'WITHDRAW':
             this.openWithdrawModal();
             break;
@@ -755,6 +758,16 @@ export default {
           })
             .then(() => {
             });
+        }
+      });
+    },
+
+    async openBridgeModal() {
+      const modalInstance = this.openModal(BridgeModal);
+      modalInstance.noSmartLoan = this.noSmartLoan;
+      modalInstance.$on('BRIDGE', bridgeEvent => {
+        if (this.smartLoanContract) {
+          // To-Do: Lifi Bridge for prime account page
         }
       });
     },

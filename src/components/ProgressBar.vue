@@ -8,7 +8,11 @@
          v-bind:style="state === 'IN_PROGRESS' ? {'transition': `width ${duration}ms linear`} : {'transition': `width 0s linear`}"></div>
     <div class="text-overlay">
       <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
-      <div v-if="state === 'IN_PROGRESS'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
+      <div v-if="state === 'IN_PROGRESS' && !statusInfo" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
+      <div v-if="state === 'IN_PROGRESS' && statusInfo && statusInfo.message" class="text-overlay__text text-overlay__in-progress">
+        <div v-if="statusInfo.message">{{ statusInfo.message }}&nbsp;</div>
+        <a v-if="statusInfo.txLink" :href='statusInfo.txLink' target='_blank'>See transaction here.</a>
+      </div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success
         <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/tick-white.svg'" :size="20"></DeltaIcon>
@@ -43,6 +47,7 @@ export default {
       state: 'IN_PROGRESS',
       duration: 0,
       additionalInfo: null,
+      statusInfo: null
     };
   },
   computed: {
@@ -67,6 +72,7 @@ export default {
       this.progressBarService.progressBarState$.subscribe((stateChangeEvent) => {
         this.state = stateChangeEvent.state;
         this.additionalInfo = stateChangeEvent.additionalInfo;
+        this.statusInfo = stateChangeEvent.statusInfo;
         if (this.progressBarVisible) {
           if (this.state === 'SUCCESS' || this.state === 'ERROR' || this.state === 'CANCELLED') {
             timer(3000).subscribe(() => {
@@ -96,7 +102,7 @@ export default {
 
 .progress-bar-component {
   position: fixed;
-  z-index: 2;
+  z-index: 3;
   bottom: 0;
   left: 0;
   height: 36px;

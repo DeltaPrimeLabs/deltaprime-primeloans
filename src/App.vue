@@ -140,8 +140,14 @@ export default {
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
-      ethereum.on('chainChanged', () => {
-        window.location.reload();
+      ethereum.on('chainChanged', async () => {
+        const chainId = await ethereum.request({method: 'eth_chainId'});
+
+        if (chainId == this.toHex(config.chainId)) {
+          this.showNetworkBanner = false;
+        } else {
+          this.showNetworkBanner = true;
+        }
       });
 
       return this.toDec(chainId);

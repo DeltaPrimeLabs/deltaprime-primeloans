@@ -11,6 +11,7 @@
               <div class="pools-table__body">
                 <PoolsTableRowBeta v-for="pool in poolsList"
                                    v-bind:key="pool.asset.symbol"
+                                   v-on:openResumeBridge="openResumeBridgeModal"
                                    :pool="pool"
                                    :depositAssetsWalletBalancesStream="depositAssetsWalletBalances$">
                 </PoolsTableRowBeta>
@@ -34,6 +35,7 @@ import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
 import addresses from '../../common/addresses/avax/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
+import ResumeBridgeModal from './ResumeBridgeModal';
 
 const ethers = require('ethers');
 
@@ -50,6 +52,8 @@ export default {
     this.initPools();
     this.watchPools();
     this.initStoresWhenProviderAndAccountCreated();
+    this.lifiService.setupLifi();
+    this.watchActiveRoute();
   },
 
   data() {
@@ -62,12 +66,12 @@ export default {
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
     ...mapState('network', ['account', 'accountBalance', 'provider']),
   },
 
   methods: {
-    ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('poolStore', ['poolStoreSetup', 'deposit']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
@@ -112,6 +116,43 @@ export default {
         this.setupTotalDeposit();
         this.$forceUpdate();
         this.setupWalletDepositAssetBalances(pools);
+      });
+    },
+
+    watchActiveRoute() {
+      combineLatest([this.lifiService.observeLifi(), this.poolService.observePools()])
+        .subscribe(async ([lifiData, pools]) => {
+          this.lifiData = lifiData;
+
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const activeTransfer = history && history[this.account.toLowerCase()];
+
+          if (activeTransfer) {
+            this.openResumeBridgeModal(activeTransfer);
+          }
+        });
+    },
+
+    openResumeBridgeModal(activeTransfer) {
+      const modalInstance = this.openModal(ResumeBridgeModal);
+      modalInstance.account = this.account;
+      modalInstance.activeTransfer = activeTransfer;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.progressBarService = this.progressBarService;
+      modalInstance.depositFunc = this.deposit;
+      modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
+        if (!transferRes) return;
+        const pools = this.poolsList.map(pool => {
+          return {
+            ...pool,
+            deposit: pool.asset.symbol === activeTransfer.targetSymbol
+                    ? Number(pool.deposit) + Number(transferRes.amount)
+                    : pool.deposit
+          }
+        })
+
+        this.poolsList = pools;
       });
     },
 
