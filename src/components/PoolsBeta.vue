@@ -124,10 +124,11 @@ export default {
         .subscribe(async ([lifiData, pools]) => {
           this.lifiData = lifiData;
 
-          const activeTransfer = localStorage.getItem('active-bridge-deposit');
+          const activeTransfer = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const canResume = activeTransfer.route.fromAddress.toLowerCase() === this.account.toLowerCase();
 
-          if (activeTransfer) {
-            this.openResumeBridgeModal(JSON.parse(activeTransfer));
+          if (canResume) {
+            this.openResumeBridgeModal(activeTransfer);
           }
         });
     },
