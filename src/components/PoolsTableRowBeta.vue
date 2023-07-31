@@ -178,22 +178,23 @@ export default {
     },
 
     actionClick(key) {
-      const activeTransfer = localStorage.getItem('active-bridge-deposit');
+      const activeTransfer = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      const canResume = activeTransfer.route.fromAddress.toLowerCase() === this.account.toLowerCase();
 
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
         case 'BRIDGE':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', JSON.parse(activeTransfer));
+          if (canResume) {
+            this.$emit('openResumeBridge', activeTransfer);
           } else {
             this.openBridgeModal(true);
           }
           break;
         case 'BRIDGE_DEPOSIT':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', JSON.parse(activeTransfer));
+          if (canResume) {
+            this.$emit('openResumeBridge', activeTransfer);
           } else {
             this.openBridgeModal(false);
           }

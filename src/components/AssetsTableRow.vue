@@ -767,21 +767,7 @@ export default {
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('BRIDGE', bridgeEvent => {
         if (this.smartLoanContract) {
-          const value = bridgeEvent.value;
-          //
-          // if (this.smartLoanContract.address === NULL_ADDRESS || this.noSmartLoan) {
-          //   this.handleTransaction(this.createAndFundLoan, {
-          //         asset: addFromWalletEvent.asset,
-          //         value: value,
-          //         isLP: false
-          //       }, () => {
-          //         this.scheduleHardRefresh();
-          //         this.$forceUpdate();
-          //       },
-          //       (error) => {
-          //         this.handleTransactionError(error);
-          //       });
-          //   }
+          // To-Do: Lifi Bridge for prime account page
         }
       });
     },
