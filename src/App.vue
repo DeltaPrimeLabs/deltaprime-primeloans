@@ -21,14 +21,8 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="false" background="green-accent" :closable="true">
-      Reminder: max. utilization for borrowers = 90%, keep utilization below 90% to keep room for growth.
-    </Banner>
-    <Banner v-if="false" background="green" :closable="true">
-      SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
-    </Banner>
-    <Banner v-if="false" background="green-accent" :closable="true">
-      All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
+    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
+      DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -111,6 +105,7 @@ export default {
     }
 
     if (window.location.href.includes('pools')) {
+      this.showDepositBanner = true;
     }
 
     if (window.location.href.includes('prime-account')) {
