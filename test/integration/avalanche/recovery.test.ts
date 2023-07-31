@@ -233,7 +233,7 @@ describe('Smart loan', () => {
             await wrappedLoan.connect(owner).fundGLP(glpBalanceAfterMint);
         });
 
-        it("should stake", async () => {
+        it("should stake on VF", async () => {
             await testStake("vectorStakeUSDC1Auto", "vectorUSDC1BalanceAuto", VectorUSDCStaking1, parseUnits('100', BigNumber.from("6")));
             await testStake("vectorStakeUSDT1Auto", "vectorUSDT1BalanceAuto", VectorUSDTStaking1, parseUnits('100', BigNumber.from("6")));
             await testStake("vectorStakeWAVAX1Auto", "vectorWAVAX1BalanceAuto", VectorWAVAXStaking1, toWei('10'));
@@ -242,7 +242,7 @@ describe('Smart loan', () => {
             await time.increase(time.duration.days(30));
         });
 
-        it("should recover assets from vector finance", async () => {
+        it("should recover assets from VF", async () => {
             await recoveryManager.recoverAssets([
                 {
                     asset: toBytes32("VF_USDC_MAIN_AUTO"),
@@ -297,6 +297,34 @@ describe('Smart loan', () => {
                 minAmount0: 0,
                 minAmount1: 0,
             }]);
+        });
+
+        it("should stake on YY", async () => {
+            await wrappedLoan.stakeAVAXYak(toWei("10"));
+            await wrappedLoan.stakeSAVAXYak(toWei('10'));
+        });
+
+        it("should recover assets from YY", async () => {
+            await recoveryManager.recoverAssets([
+                {
+                    asset: toBytes32("YY_AAVE_AVAX"),
+                    underlying: (await tokenContracts.get('AVAX')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+                {
+                    asset: toBytes32("YY_PTP_sAVAX"),
+                    underlying: (await tokenContracts.get('sAVAX')!).address,
+                    accounts: [wrappedLoan.address],
+                    token0: constants.AddressZero,
+                    token1: constants.AddressZero,
+                    minAmount0: 0,
+                    minAmount1: 0,
+                },
+            ]);
         });
 
         async function testStake(stakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {

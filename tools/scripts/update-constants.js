@@ -86,7 +86,7 @@ export default function updateConstants(chain, exchanges, tokenManager, addressP
         let exchangeContract = fs.readFileSync(exchange.facetPath, 'utf8');
         let fileArray = exchangeContract.split('\n');
         lineWithFunctionDeclaration = fileArray.findIndex(
-            line => line.includes('getExchangeIntermediary')
+            line => line.includes('function getExchangeIntermediary')
         );
 
         newLine = `        return ${exchange.contractAddress};`;

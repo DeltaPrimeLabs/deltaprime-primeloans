@@ -105,6 +105,9 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
         }
     }
 
+    /* ========== RECEIVE AVAX FUNCTION ========== */
+    receive() external payable {}
+
     event HelperAdded(bytes32 asset, address helper, bytes4 selector);
 
     event AssetRecovered(
