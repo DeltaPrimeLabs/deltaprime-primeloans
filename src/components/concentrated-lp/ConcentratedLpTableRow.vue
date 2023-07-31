@@ -37,8 +37,10 @@
         {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
-        {{ apr / 100 | percent }}
+      <div class="table__cell real-yield">
+        <FlatButton v-on:buttonClick="toggleRealYield()" :active="concentratedLpTokenBalances[lpToken.symbol] > 0">
+          {{ rowExpanded ? 'HIDE' : 'SHOW' }}
+        </FlatButton>
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -62,14 +64,9 @@
         </IconButtonMenuBeta>
       </div>
     </div>
-    <div class="chart-container" v-if="showChart">
-      <SmallBlock v-on:close="toggleChart()">
-        <Chart :data-points="lpToken.priceGraphData"
-               :line-width="3"
-               :min-y="lpToken.minPrice"
-               :max-y="lpToken.maxPrice"
-               :positive-change="lpToken.todayPriceChange > 0">
-        </Chart>
+    <div class="chart-container" v-if="showRealYield">
+      <SmallBlock v-on:close="toggleRealYield()">
+        <RealYield :lp-token="lpToken"></RealYield>
       </SmallBlock>
     </div>
   </div>
@@ -98,12 +95,16 @@ import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
 import DeltaIcon from '../DeltaIcon.vue';
+import FlatButton from "../FlatButton.vue";
+import RealYield from "./RealYield.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'ConcentratedLpTableRow',
   components: {
+    RealYield,
+    FlatButton,
     DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
@@ -133,6 +134,7 @@ export default {
   data() {
     return {
       moreActionsConfig: null,
+      showRealYield: false,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -257,6 +259,8 @@ export default {
     },
 
     async setupPoolData() {
+      const startBlockTimestamp = parseInt(((Date.now() - 7 * 24 * 3600 * 1000) / 1000).toString());
+
       let query = `{
           vaults(where: {id: "${this.lpToken.address}"}) {
           id
@@ -275,6 +279,18 @@ export default {
             priceUSD
             symbol
           }
+          strategy {
+            id
+            harvests(orderBy: blockTimestamp, orderDirection: desc, first:500, where:{blockTimestamp_gte:${startBlockTimestamp}}) {
+              id
+              amountX
+              amountY
+              amountXBefore
+              amountYBefore
+              blockTimestamp
+              lastHarvest
+            }
+          }
           }
         }`;
 
@@ -283,16 +299,27 @@ export default {
       });
 
       client.query({query: gql(query)}).then(
-        resp => {
-          const vault = resp.data.vaults[0];
-          this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
-          this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
-          this.firstPrice = vault.tokenX.priceUSD;
-          this.secondPrice = vault.tokenY.priceUSD;
-        }
+          resp => {
+            const vault = resp.data.vaults[0];
+            this.totalFirstAmount = vault.underlyingX / 10 ** vault.tokenX.decimals;
+            this.totalSecondAmount = vault.underlyingY / 10 ** vault.tokenY.decimals;
+            this.lpToken.firstPrice = vault.tokenX.priceUSD;
+            this.lpToken.secondPrice = vault.tokenY.priceUSD;
+            this.lpToken.harvests = vault.strategy.harvests;
+          }
       )
+    },
 
-
+    toggleRealYield() {
+      if (this.rowExpanded) {
+        this.showRealYield = false;
+        this.rowExpanded = false;
+      } else {
+        this.rowExpanded = true;
+        setTimeout(() => {
+          this.showRealYield = true;
+        }, 200);
+      }
     },
 
     toggleChart() {
@@ -713,6 +740,11 @@ export default {
     cursor: default;
     pointer-events: none;
   }
+}
+
+.real-yield {
+  align-items: center;
+  justify-content: end;
 }
 
 </style>
