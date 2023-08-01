@@ -560,25 +560,29 @@ const uploadLiveLoansStatus = async () => {
 
   await Promise.all(
     loanAddresses.map(async (loanAddress) => {
-      console.log(loanAddress, timestamp);
-      const loanHistoryRef = db
-        .collection('loansHistory')
-        .doc(loanAddress.toLowerCase())
-        .collection('loanStatus');
-      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-      const wrappedContract = wrap(loanContract);
-      const status = await wrappedContract.getFullLoanStatus();
+      try {
+        const loanHistoryRef = db
+          .collection('loansHistory')
+          .doc(loanAddress.toLowerCase())
+          .collection('loanStatus');
+        const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+        const wrappedContract = wrap(loanContract);
+        const status = await wrappedContract.getFullLoanStatus();
 
-      if (status) {
-        await loanHistoryRef.doc(timestamp.toString()).set({
-          totalValue: fromWei(status[0]),
-          borrowed: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          twv: fromWei(status[2]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18,
-          timestamp
-        });
+        if (status) {
+          await loanHistoryRef.doc(timestamp.toString()).set({
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        functions.logger.info(`Upload live loan status failed. loan address: ${loanAddress}, timestamp:${timestamp}`)
       }
     })
   );
