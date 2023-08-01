@@ -243,6 +243,10 @@ describe('Smart loan', () => {
         });
 
         it("should recover assets from VF", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await recoveryManager.recoverAssets([
                 {
                     asset: toBytes32("VF_USDC_MAIN_AUTO"),
@@ -281,13 +285,29 @@ describe('Smart loan', () => {
                     minAmount1: 0,
                 },
             ]);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
         it("should stake GLP", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await wrappedLoan.stakeGLPYak(glpBalanceAfterMint);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
         it("should recover GLP", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await recoveryManager.recoverAssets([{
                 asset: toBytes32("YY_GLP"),
                 underlying: (await tokenContracts.get('GLP')!).address,
@@ -297,14 +317,30 @@ describe('Smart loan', () => {
                 minAmount0: 0,
                 minAmount1: 0,
             }]);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
         it("should stake on YY", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await wrappedLoan.stakeAVAXYak(toWei("10"));
             await wrappedLoan.stakeSAVAXYak(toWei('10'));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
         });
 
         it("should recover assets from YY", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
             await recoveryManager.recoverAssets([
                 {
                     asset: toBytes32("YY_AAVE_AVAX"),
@@ -325,6 +361,10 @@ describe('Smart loan', () => {
                     minAmount1: 0,
                 },
             ]);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
         });
 
         async function testStake(stakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {
