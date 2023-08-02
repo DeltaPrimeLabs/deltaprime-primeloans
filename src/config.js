@@ -80,6 +80,12 @@ export default {
         "SHLB_USDT.e-USDt_C": { primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 704000, debtCoverage: 0.83333333333},
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1050000, debtCoverage: 0.83333333333},
     },
+    TRADERJOE_LP_ASSETS_CONFIG: {
+        'TJ_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'AVAX_USDC', decimals: 18},
+        'TJ_BTC.b-USDC': { primary: 'BTC', secondary: 'USDC', name: 'BTC.b-USDC', dex: 'TraderJoe', symbol: 'TJ_BTC.b-USDC', decimals: 18},
+        'TJ_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC.b-AVAX', dex: 'TraderJoe', symbol: 'TJ_BTC.b-AVAX', decimals: 18},
+        'TJ_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJ_ETH-AVAX', decimals: 18},
+    },
     DEX_CONFIG: {
         'Pangolin': {
             intermediaryAddress: PANGOLIN_INTERMEDIARY_TUP.address,

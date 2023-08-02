@@ -31,6 +31,12 @@
       </div>
     </div>
     <div class="lp-tokens">
+      <div class="lp-table" v-if="traderJoeLpTokens">
+        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
+        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :lp-token="lpToken"></TraderJoeLpTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens">
       <div class="filters" v-if="assetFilterGroups">
         <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
                      v-on:filterChange="setLpFilter"></AssetFilter>
@@ -61,6 +67,7 @@ import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
 import LpTableRow from './LpTableRow';
 import ConcentratedLpTableRow from './concentrated-lp/ConcentratedLpTableRow.vue';
+import TraderJoeLpTableRow from './TraderJoeLpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
@@ -72,18 +79,21 @@ export default {
     Checkbox,
     Paginator,
     LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta,
-    ConcentratedLpTableRow
+    ConcentratedLpTableRow,
+    TraderJoeLpTableRow
   },
   data() {
     return {
       funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,
+      traderJoeLpTokens: config.TRADERJOE_LP_ASSETS_CONFIG,
       selectedLpTokens: [] = [],
       selectedDexes: [] = [],
       fundsTableHeaderConfig: null,
       lpTableHeaderConfig: null,
       concentratedLpTableHeaderConfig: null,
+      traderJoeLpTableHeaderConfig: null,
       lpAssetsFilterOptions: null,
       lpDexFilterOptions: null,
       assetFilterGroups: null,
@@ -117,6 +127,7 @@ export default {
     this.setupFundsTableHeaderConfig();
     this.setupLpTableHeaderConfig();
     this.setupConcentratedLpTableHeaderConfig();
+    this.setupTraderJoeLpTableHeaderConfig();
     this.setupAssetFilterGroups();
     this.updateLpPriceData();
   },
@@ -376,6 +387,76 @@ export default {
           },
           {
             label: 'Real Yield',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
+
+    setupTraderJoeLpTableHeaderConfig() {
+      this.traderJoeLpTableHeaderConfig = {
+        gridTemplateColumns: '140px 150px 150px 170px 140px repeat(2, 1fr) 35px 80px',
+        cells: [
+          {
+            label: 'TraderJoe V2',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The TraderJoe V2 LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Your Liquidity',
+            sortable: false,
+            class: 'balance',
+            id: 'LIQUIDITY',
+            tooltip: `The prices of your bins in liquidity pool.`
+          },
+          {
+            label: 'Fees Claimable',
+            sortable: false,
+            class: 'balance',
+            id: 'FEES-CLAIMABLE',
+            tooltip: `Fees claimable from your liquidity pool.`
+          },
+          {
+            label: 'Composition',
+            sortable: false,
+            class: 'balance',
+            id: 'COMPOSITION',
+            tooltip: `Underlying assets`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool. These numbers are regularly updated.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Min. APR',
             sortable: false,
             class: 'apr',
             id: 'APR',
