@@ -20,8 +20,6 @@ contract DepositSwap {
     address public constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
     address public constant BTC = 0x152b9d0FdC40C096757F570A51E494bd4b943E50;
 
-    address private constant YY_ROUTER = 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
-
     function _isTokenSupported(address token) private pure returns (bool) {
         if(
             token == WAVAX ||
@@ -86,9 +84,9 @@ contract DepositSwap {
     }
 
     function _yakSwap(address[] calldata path, address[] calldata adapters, uint256 amountIn, uint256 amountOut) private {
-        IERC20(path[0]).approve(YY_ROUTER, amountIn);
+        IERC20(path[0]).approve(YY_ROUTER(), amountIn);
 
-        IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+        IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
 
 
         IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
@@ -121,5 +119,9 @@ contract DepositSwap {
         _yakSwap(path, adapters, amountFromToken, minAmountToToken);
 
         _depositToPool(toPool, IERC20(toToken), IERC20(toToken).balanceOf(address(this)), user);
+    }
+
+    function YY_ROUTER() internal virtual pure returns (address) {
+        return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
 }

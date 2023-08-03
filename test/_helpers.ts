@@ -676,20 +676,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
-    await deployFacet(
-        "AssetsOperationsFacet",
-        diamondAddress,
-        [
-            'borrow',
-            'repay',
-            'fund',
-            'fundGLP',
-            'withdrawGLP',
-            'withdraw',
-            'swapDebt',
-        ],
-        hardhatConfig
-    )
     console.log(2)
 
     await deployFacet(
@@ -758,6 +744,20 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     }
 
     if (chain == 'AVAX') {
+        await deployFacet(
+            "AssetsOperationsFacet",
+            diamondAddress,
+            [
+                'borrow',
+                'repay',
+                'fund',
+                'fundGLP',
+                'withdrawGLP',
+                'withdraw',
+                'swapDebt',
+            ],
+            hardhatConfig
+        )
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
@@ -855,7 +855,21 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
         // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
         await deployFacet(
-            "YieldYakSwapFacet",
+            "AssetsOperationsArbitrumFacet",
+            diamondAddress,
+            [
+                'borrow',
+                'repay',
+                'fund',
+                'fundGLP',
+                'withdrawGLP',
+                'withdraw',
+                'swapDebt',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "YieldYakSwapArbitrumFacet",
             diamondAddress,
             [
                 'yakSwap',

@@ -9,11 +9,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  embedCommitHash("LiquidationFlashloan");
+  embedCommitHash("LiquidationFlashloanArbitrum");
 
   let diamondBeacon = await ethers.getContract("SmartLoanDiamondBeacon");
 
-  let result = await deploy("LiquidationFlashloan", {
+  let result = await deploy("LiquidationFlashloanArbitrum", {
     from: deployer,
     gasLimit: 8000000,
     args: [
@@ -23,7 +23,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ],
   });
 
-  console.log(`Deployed LiquidationFlashloan at address: ${result.address}`);
+  console.log(`Deployed LiquidationFlashloanArbitrum at address: ${result.address}`);
 
   let liquidationFacet = await ethers.getContractAt(
     "SmartLoanLiquidationFacet",
