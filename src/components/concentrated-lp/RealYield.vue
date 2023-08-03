@@ -288,9 +288,6 @@ export default {
       this.lpTokenDetails.secondaryTokenDetails[2].value = secondaryPriceChange;
       this.lpTokenDetails.secondaryTokenDetails[2].apr = secondaryPriceChangeApr;
 
-      console.log('this.lpTokenDetails')
-      console.log(this.lpTokenDetails)
-
       this.impermanentLoss = impermanentLoss;
       this.impermanentLossApr = impermanentLossApr;
     },
@@ -345,17 +342,16 @@ export default {
         uri: "https://api.thegraph.com/subgraphs/name/0xsirloin/steakhutlb"
       });
 
-      client.query({query: gql(query)}).then(
-          resp => {
-            this.userEvents.push(...resp.data.deposits);
-            this.userEvents.push(...resp.data.withdraws);
-            this.userEvents.sort((a, b) => a.blockTimestamp - b.blockTimestamp);
-          }
-      )
+      const resp = await client.query({query: gql(query)});
+
+      resp.data.deposits.forEach(el => el.type = 'deposit');
+      resp.data.withdraws.forEach(el => el.type = 'withdraw');
+
+      this.userEvents.push(...resp.data.deposits);
+      this.userEvents.push(...resp.data.withdraws);
+      this.userEvents.sort((a, b) => a.blockTimestamp - b.blockTimestamp);
     },
     async getUserDataForInterval(startTimestamp, endTimestamp) {
-      const poolBalance = toWei(this.concentratedLpBalances[this.lpToken.symbol].toString());
-
       const startPrices = await redstone.getHistoricalPrice([this.lpToken.primary, this.lpToken.secondary], {date: startTimestamp});
       const endPrices = await redstone.getHistoricalPrice([this.lpToken.primary, this.lpToken.secondary], {date: endTimestamp});
 
@@ -369,14 +365,21 @@ export default {
       );
       let endBlockData = await dater.getDate(
           endTimestamp, // Date, required. Any valid moment.js value: string, milliseconds, Date() object, moment() object.
-          true // Block after, optional. Search for the nearest block before or after the given date. By default true.
+          false // Block after, optional. Search for the nearest block before or after the given date. By default true.
       );
 
-      const weiStartBalances = await this.poolContract.getUnderlyingAssets(poolBalance, {
+      const poolInitialBalance = await this.poolContract.balanceOf(this.smartLoanContract.address, {
+        blockTag: startBlockData.block,
+      });
+      const poolEndBalance = await this.poolContract.balanceOf(this.smartLoanContract.address, {
+        blockTag: endBlockData.block,
+      });
+
+      const weiStartBalances = await this.poolContract.getUnderlyingAssets(poolInitialBalance, {
         blockTag: startBlockData.block,
       });
 
-      const weiEndBalances = await this.poolContract.getUnderlyingAssets(poolBalance, {
+      const weiEndBalances = await this.poolContract.getUnderlyingAssets(poolEndBalance, {
         blockTag: endBlockData.block,
       });
 
@@ -416,8 +419,8 @@ export default {
       const firstPriceChange = endPrices[this.lpToken.primary].value - startPrices[this.lpToken.primary].value;
       const secondPriceChange = endPrices[this.lpToken.secondary].value - startPrices[this.lpToken.secondary].value;
 
-      result.primaryPriceChange = primaryEndBalance * firstPriceChange;
-      result.secondaryPriceChange = secondaryEndBalance * secondPriceChange;
+      result.primaryPriceChange = primaryStartBalance * firstPriceChange;
+      result.secondaryPriceChange = secondaryStartBalance * secondPriceChange;
 
       result.impermanentLoss = (result.primaryRebalance - result.primaryFees
               + result.secondaryRebalance - result.secondaryFees)
