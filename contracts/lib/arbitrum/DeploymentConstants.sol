@@ -58,6 +58,10 @@ library DeploymentConstants {
         return ITokenManager(_TOKEN_MANAGER_ADDRESS);
     }
 
+    function getAddressProvider() internal pure returns (address) {
+        return _ADDRESS_PROVIDER;
+    }
+
     /**
     * Returns all owned assets keys
     **/

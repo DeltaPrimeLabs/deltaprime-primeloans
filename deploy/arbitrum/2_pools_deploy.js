@@ -40,6 +40,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
 async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   await deploy(poolFactory, {
+    contract: `contracts/deployment/arbitrum/${poolFactory}.sol:${poolFactory}`,
     from: deployer,
     gasLimit: 8000000,
     args: [],
@@ -63,6 +64,7 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   );
 
   let result = await deploy(tup, {
+    contract: `contracts/proxies/tup/arbitrum/${tup}.sol:${tup}`,
     from: deployer,
     gasLimit: 8000000,
     args: [poolAddress, admin, []],

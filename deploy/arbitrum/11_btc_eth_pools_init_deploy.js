@@ -170,7 +170,7 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   );
 
   let result = await deploy(tup, {
-    contract: `contracts/deployment/arbitrum/${tup}.sol:${tup}`,
+    contract: `contracts/proxies/tup/arbitrum/${tup}.sol:${tup}`,
     from: deployer,
     gasLimit: 8000000,
     args: [poolAddress, admin, []],
