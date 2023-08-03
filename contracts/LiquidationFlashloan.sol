@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IWrappedNativeToken.sol";
-import "./interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "./interfaces/facets/IYieldYakRouter.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;

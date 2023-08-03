@@ -30,6 +30,7 @@ import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
+import addresses_arb from "../common/addresses/arbitrum/token_addresses.json";
 import { getSelectors } from "../tools/diamond/selectors";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
@@ -44,9 +45,14 @@ export const GLPManagerRewarderAbi = require('./abis/GLPManagerRewarder.json');
 
 export const ZERO = ethers.constants.AddressZero;
 
-export function asset(symbol: string, debtCoverage: string = '0.83333333333333333') {
+const token_addresses = {
+    avax: addresses,
+    arb: addresses_arb,
+};
+
+export function asset(symbol: string, chain: string = 'avax', debtCoverage: string = '0.83333333333333333') {
     //@ts-ignore
-    return new Asset(toBytes32(symbol), addresses[symbol], debtCoverage);
+    return new Asset(toBytes32(symbol), token_addresses[chain][symbol], debtCoverage);
 }
 
 export function pool(symbol: string, address: string) {

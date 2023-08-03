@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "./interfaces/facets/IYieldYakRouter.sol";
 import "./Pool.sol";
 
 contract DepositSwap {
