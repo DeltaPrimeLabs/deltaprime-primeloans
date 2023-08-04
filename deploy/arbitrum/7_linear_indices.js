@@ -37,7 +37,7 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     console.log(`Deployed linear index at address: ${resultIndex.address}`);
 
     let result = await deploy(`${name}TUP`, {
-        contract: `contracts/deployment/arbitrum/${name}TUP.sol:${name}TUP`,
+        contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
         from: deployer,
         gasLimit: 8000000,
         args: [resultIndex.address, admin, []],
@@ -47,7 +47,7 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 
     renameSync(`./deployments/${networkName}/${name}TUP.json`, `./deployments/${networkName}/${name}TUP.json`);
 
-    const index = await ethers.getContractFactory(name);
+    const index = await ethers.getContractFactory(`./contracts/deployment/arbitrum/${name}.sol:${name}`);
 
     let initializeTx = await index.attach(result.address).initialize(
         poolTUP.address,

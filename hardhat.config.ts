@@ -5,8 +5,8 @@ import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "hardhat-interface-generator";
-import * as tdly from "@tenderly/hardhat-tenderly";
-tdly.setup({ automaticVerifications: false });
+// import * as tdly from "@tenderly/hardhat-tenderly";
+// tdly.setup({ automaticVerifications: false });
 require('hardhat-deploy');
 
 const fs = require('fs');
@@ -42,7 +42,7 @@ export default {
     localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
-      chainId: 1337,
+      chainId: 31337,
       // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     fuji: {

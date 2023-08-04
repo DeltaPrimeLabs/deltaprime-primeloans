@@ -5,7 +5,7 @@ import hre from "hardhat";
 const networkName = hre.network.name;
 import createMigrationFile from "../../tools/scripts/create-migration-file";
 import { deployLinearIndex } from "./7_linear_indices";
-import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
 import { initPool } from "./8_pools_init";
 import { pool } from "../../test/_helpers";
 
@@ -15,22 +15,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   embedCommitHash("Pool", "./contracts");
 
-  embedCommitHash("EthPool", "./contracts/deployment/arbitrum");
-  embedCommitHash("EthPoolFactory", "./contracts/deployment/arbitrum");
-  embedCommitHash("EthPoolTUP", "./contracts/proxies/tup/arbitrum");
-
   embedCommitHash("BtcPool", "./contracts/deployment/arbitrum");
   embedCommitHash("BtcPoolFactory", "./contracts/deployment/arbitrum");
   embedCommitHash("BtcPoolTUP", "./contracts/proxies/tup/arbitrum");
 
-  await deployPool(
-    deploy,
-    deployer,
-    admin,
-    "EthPool",
-    "EthPoolFactory",
-    "EthPoolTUP"
-  );
   await deployPool(
     deploy,
     deployer,
@@ -40,25 +28,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     "BtcPoolTUP"
   );
 
-  embedCommitHash("EthBorrowIndex", "./contracts/deployment/arbitrum");
-  embedCommitHash("EthDepositIndex", "./contracts/deployment/arbitrum");
   embedCommitHash("BtcBorrowIndex", "./contracts/deployment/arbitrum");
   embedCommitHash("BtcDepositIndex", "./contracts/deployment/arbitrum");
 
-  await deployLinearIndex(
-    "EthBorrowIndex",
-    "EthPoolTUP",
-    deploy,
-    deployer,
-    admin
-  );
-  await deployLinearIndex(
-    "EthDepositIndex",
-    "EthPoolTUP",
-    deploy,
-    deployer,
-    admin
-  );
   await deployLinearIndex(
     "BtcBorrowIndex",
     "BtcPoolTUP",
@@ -75,28 +47,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 
   embedCommitHash(
-    "EthVariableUtilisationRatesCalculator",
-    "./contracts/deployment/arbitrum"
-  );
-
-  let result = await deploy("EthVariableUtilisationRatesCalculator", {
-    contract:
-      "contracts/deployment/arbitrum/EthVariableUtilisationRatesCalculator.sol:EthVariableUtilisationRatesCalculator",
-    from: deployer,
-    gasLimit: 8000000,
-    args: [],
-  });
-
-  console.log(
-    `Deployed EthVariableUtilisationRatesCalculator at address: ${result.address}`
-  );
-
-  embedCommitHash(
     "BtcVariableUtilisationRatesCalculator",
     "./contracts/deployment/arbitrum"
   );
 
-  result = await deploy("BtcVariableUtilisationRatesCalculator", {
+  let result = await deploy("BtcVariableUtilisationRatesCalculator", {
     contract:
       "contracts/deployment/arbitrum/BtcVariableUtilisationRatesCalculator.sol:BtcVariableUtilisationRatesCalculator",
     from: deployer,
@@ -108,15 +63,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     `Deployed BtcVariableUtilisationRatesCalculator at address: ${result.address}`
   );
 
-  await initPool(
-    deploy,
-    deployer,
-    "EthVariableUtilisationRatesCalculator",
-    "EthPoolTUP",
-    "EthDepositIndexTUP",
-    "EthBorrowIndexTUP",
-    TOKEN_ADDRESSES["ETH"]
-  );
   await initPool(
     deploy,
     deployer,
@@ -134,11 +80,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 
   const btcPoolTUP = await ethers.getContract("BtcPoolTUP");
-  const ethPoolTUP = await ethers.getContract("EthPoolTUP");
 
   let newLendingPools = [
     pool("BTC", btcPoolTUP.address),
-    pool("ETH", ethPoolTUP.address),
   ];
 
   await tokenManager.addPoolAssets(newLendingPools);
@@ -179,4 +123,4 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   console.log(`${tup} deployed at address: ${result.address}`);
 }
 
-module.exports.tags = ["arbitrum-btc-eth-pool"];
+module.exports.tags = ["arbitrum-2"];

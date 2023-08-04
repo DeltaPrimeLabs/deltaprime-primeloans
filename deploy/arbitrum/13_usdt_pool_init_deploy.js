@@ -51,7 +51,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     "./contracts/deployment/arbitrum"
   );
 
-  const result = await deploy("UsdtVariableUtilisationRatesCalculator", {
+  const result = await deploy("contracts/deployment/arbitrum/UsdtVariableUtilisationRatesCalculator.sol:UsdtVariableUtilisationRatesCalculator", {
     from: deployer,
     gasLimit: 8000000,
     args: [],
@@ -124,4 +124,4 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   console.log(`${tup} deployed at address: ${result.address}`);
 }
 
-module.exports.tags = ["usdt-pool"];
+module.exports.tags = ["arbitrum-3"];

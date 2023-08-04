@@ -69,11 +69,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     "lib"
   );
 
+
   //TODO: verify code
   await deployAllFacets(diamondAddress, false, "ARBITRUM", {
     deployer: deployer,
     deploy: deploy,
   });
+
 
   //TODO: verify contracts
   console.log(`Deployed SmartLoanDiamondBeacon at address: ${diamondAddress}`);
