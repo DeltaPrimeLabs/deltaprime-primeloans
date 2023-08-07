@@ -66,7 +66,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     addressProvider.address,
     diamondAddress,
     resultTup.address,
-    "lib"
+    "lib",
+    5000,
+    "1.042e18",
+    100,
+    "ARBI"
   );
 
 
