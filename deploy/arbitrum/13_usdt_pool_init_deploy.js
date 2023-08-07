@@ -51,7 +51,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     "./contracts/deployment/arbitrum"
   );
 
-  const result = await deploy("contracts/deployment/arbitrum/UsdtVariableUtilisationRatesCalculator.sol:UsdtVariableUtilisationRatesCalculator", {
+  const result = await deploy("UsdtVariableUtilisationRatesCalculator", {
+    contract: "contracts/deployment/arbitrum/UsdtVariableUtilisationRatesCalculator.sol:UsdtVariableUtilisationRatesCalculator",
     from: deployer,
     gasLimit: 8000000,
     args: [],
@@ -79,12 +80,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   const usdtPoolTUP = await ethers.getContract("UsdtPoolTUP");
 
-  let oldLendingPools = [toBytes32("USDT")];
-
   let newLendingPools = [pool("USDT", usdtPoolTUP.address)];
 
-  await tokenManager.removePoolAssets(oldLendingPools);
-  console.log("Removed old pool USDT");
   await tokenManager.addPoolAssets(newLendingPools);
   console.log(`Added new USDT pool ${usdtPoolTUP.address}`);
 };
