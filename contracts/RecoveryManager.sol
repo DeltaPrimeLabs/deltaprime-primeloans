@@ -15,7 +15,6 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
 
     struct RecoverData {
         bytes32 asset;
-        address underlying;
         address[] accounts;
         address token0;
         address token1;
@@ -64,7 +63,8 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
 
             require(totalRecovered > 0, "Nothing to recover");
 
-            uint256 beforeBalance = IERC20(data.underlying).balanceOf(address(this));
+            uint256 beforeBalance0 = IERC20(data.token0).balanceOf(address(this));
+            uint256 beforeBalance1 = IERC20(data.token1).balanceOf(address(this));
 
             (bool success, ) = helper.helper.delegatecall(
                 abi.encodeWithSelector(
@@ -78,31 +78,45 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
             );
             require(success, "failed to unstake");
 
-            uint256 recoveredBalance = IERC20(data.underlying).balanceOf(
+            uint256 recoveredBalance0 = IERC20(data.token0).balanceOf(
                 address(this)
-            ) - beforeBalance;
+            ) - beforeBalance0;
+            uint256 recoveredBalance1 = IERC20(data.token1).balanceOf(
+                address(this)
+            ) - beforeBalance1;
 
             for (uint256 j; j != userLength; ++j) {
                 address account = data.accounts[j];
-                uint256 refundAmount = (recoveredBalance * recovered[j]) /
+                uint256 refundAmount0 = (recoveredBalance0 * recovered[j]) /
                     totalRecovered;
-                if (data.underlying == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
-                    IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, 0);
-                    IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, refundAmount);
-                } else {
-                    IERC20(data.underlying).safeApprove(account, 0);
-                    IERC20(data.underlying).safeApprove(account, refundAmount);
+                uint256 refundAmount1 = (recoveredBalance1 * recovered[j]) /
+                    totalRecovered;
+                _refundAsset(account, data.token0, refundAmount0);
+                if (refundAmount1 > 0) {
+                    _refundAsset(account, data.token1, refundAmount1);
                 }
-                IRecoveryFacet(account).notifyRefund(data.underlying, refundAmount);
             }
 
             emit AssetRecovered(
                 data.asset,
                 totalRecovered,
-                data.underlying,
-                recoveredBalance
+                data.token0,
+                recoveredBalance0,
+                data.token1,
+                recoveredBalance1
             );
         }
+    }
+
+    function _refundAsset(address account, address token, uint256 refundAmount) internal {
+        if (token == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+            IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, 0);
+            IERC20(0xaE64d55a6f09E4263421737397D1fdFA71896a69).safeApprove(account, refundAmount);
+        } else {
+            IERC20(token).safeApprove(account, 0);
+            IERC20(token).safeApprove(account, refundAmount);
+        }
+        IRecoveryFacet(account).notifyRefund(token, refundAmount);
     }
 
     /* ========== RECEIVE AVAX FUNCTION ========== */
@@ -113,7 +127,9 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
     event AssetRecovered(
         bytes32 asset,
         uint256 assetRecovered,
-        address underlying,
-        uint256 underlyingRecovered
+        address token0,
+        uint256 token0Recovered,
+        address token1,
+        uint256 token1Recovered
     );
 }

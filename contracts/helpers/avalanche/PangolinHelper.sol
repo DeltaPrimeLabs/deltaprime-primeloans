@@ -2,7 +2,7 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -20,9 +20,6 @@ contract PangolinHelper {
         uint256 minAmount0,
         uint256 minAmount1
     ) external {
-        IERC20Metadata tokenA = IERC20Metadata(token0);
-        IERC20Metadata tokenB = IERC20Metadata(token1);
-
         IAssetsExchange exchange = IAssetsExchange(
             getExchangeIntermediaryContract()
         );
@@ -33,8 +30,8 @@ contract PangolinHelper {
         lpTokenAddress.safeTransfer(address(exchange), amount);
 
         exchange.removeLiquidity(
-            address(tokenA),
-            address(tokenB),
+            token0,
+            token1,
             amount,
             minAmount0,
             minAmount1
