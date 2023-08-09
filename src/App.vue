@@ -114,6 +114,7 @@ export default {
   },
 
   mounted() {
+    window.testProperty = 'test value'
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Escape') {
         this.closeModal();
@@ -133,6 +134,8 @@ export default {
 
       ethereum.on('chainChanged', async () => {
         const chainId = await ethereum.request({method: 'eth_chainId'});
+        console.log('chain changed');
+        location.reload();
 
         if (chainId == this.toHex(config.chainId)) {
           this.showNetworkBanner = false;
