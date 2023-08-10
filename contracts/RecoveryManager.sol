@@ -63,8 +63,14 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
 
             require(totalRecovered > 0, "Nothing to recover");
 
-            uint256 beforeBalance0 = IERC20(data.token0).balanceOf(address(this));
-            uint256 beforeBalance1 = IERC20(data.token1).balanceOf(address(this));
+            uint256 beforeBalance0;
+            uint256 beforeBalance1;
+            if (data.token0 != address(0)) {
+                beforeBalance0 = IERC20(data.token0).balanceOf(address(this));
+            }
+            if (data.token1 != address(0)) {
+                beforeBalance1 = IERC20(data.token1).balanceOf(address(this));
+            }
 
             (bool success, ) = helper.helper.delegatecall(
                 abi.encodeWithSelector(
@@ -78,12 +84,18 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
             );
             require(success, "failed to unstake");
 
-            uint256 recoveredBalance0 = IERC20(data.token0).balanceOf(
-                address(this)
-            ) - beforeBalance0;
-            uint256 recoveredBalance1 = IERC20(data.token1).balanceOf(
-                address(this)
-            ) - beforeBalance1;
+            uint256 recoveredBalance0;
+            uint256 recoveredBalance1;
+            if (data.token0 != address(0)) {
+                recoveredBalance0 = IERC20(data.token0).balanceOf(
+                    address(this)
+                ) - beforeBalance0;
+            }
+            if (data.token1 != address(0)) {
+                recoveredBalance1 = IERC20(data.token1).balanceOf(
+                    address(this)
+                ) - beforeBalance1;
+            }
 
             for (uint256 j; j != userLength; ++j) {
                 address account = data.accounts[j];
