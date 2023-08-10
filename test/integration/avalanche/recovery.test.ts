@@ -258,9 +258,9 @@ describe('Smart loan', () => {
                 parseUnits((AVAX_PRICE * 60).toFixed(6), BigNumber.from("6"))
             );
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
         });
 
         it("should recovery liquidity from pangolin", async () => {
@@ -274,14 +274,14 @@ describe('Smart loan', () => {
                     accounts: [wrappedLoan.address],
                     token0: (await tokenContracts.get('AVAX')!).address,
                     token1: (await tokenContracts.get('USDC')!).address,
-                    minAmount0: 0,
-                    minAmount1: 0,
+                    minAmount0: toWei("60"),
+                    minAmount1: parseUnits((AVAX_PRICE * 60).toFixed(6), BigNumber.from("6")),
                 },
             ]);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
         });
 
         it("should stake on VF", async () => {

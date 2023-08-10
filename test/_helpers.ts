@@ -20,7 +20,6 @@ import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
 import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
-import RecoveryManagerArtifact from '../artifacts/contracts/RecoveryManager.sol/RecoveryManager.json';
 import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
@@ -455,11 +454,9 @@ export const getDeliveredAmounts = function (
 export const deployRecoveryManager = async function (
     owner: SignerWithAddress | JsonRpcSigner,
 ) {
-    let recoveryManager = await deployContract(
-        owner,
-        RecoveryManagerArtifact,
-        []
-    ) as RecoveryManager;
+    let recoveryManagerFactory = await ethers.getContractFactory("RecoveryManager");
+    let recoveryManager = await recoveryManagerFactory.connect(owner).deploy() as RecoveryManager;
+    await recoveryManager.deployed();
 
     let VectorFinanceHelperFactory = await ethers.getContractFactory("VectorFinanceHelper");
     let vectorFinanceHelper = await VectorFinanceHelperFactory.connect(owner).deploy([]) as VectorFinanceHelper;
