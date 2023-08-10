@@ -1,4 +1,5 @@
 const { embedCommitHash } = require("../../tools/scripts/embed-commit-hash");
+const {ethers} = require("hardhat");
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
@@ -36,4 +37,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 };
 
-module.exports.tags = ["arbitrum"];
+module.exports.tags = ["arbitrum-x1"];

@@ -30,7 +30,7 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     let resultIndex = await deploy(name, {
         contract: `contracts/deployment/arbitrum/${name}.sol:${name}`,
         from: deployer,
-        gasLimit: 8000000,
+        gasLimit: 50000000,
         args: [],
     });
 
@@ -39,7 +39,7 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     let result = await deploy(`${name}TUP`, {
         contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
         from: deployer,
-        gasLimit: 8000000,
+        gasLimit: 50000000,
         args: [resultIndex.address, admin, []],
     });
 
@@ -51,11 +51,11 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 
     let initializeTx = await index.attach(result.address).initialize(
         poolTUP.address,
-        { gasLimit: 8000000 }
+        { gasLimit: 50000000 }
     );
 
     await initializeTx.wait();
 }
 
-module.exports.tags = ['arbitrum'];
+module.exports.tags = ['arbitrum-x7'];
 module.exports.deployLinearIndex = deployLinearIndex;

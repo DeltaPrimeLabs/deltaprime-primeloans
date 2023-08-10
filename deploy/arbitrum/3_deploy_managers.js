@@ -22,7 +22,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   await deploy("TokenManager", {
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 50000000,
     args: [],
   });
 
@@ -37,7 +37,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   let deployedTokenManagerTUP = await deploy("TokenManagerTUP", {
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 50000000,
     args: [tokenManager.address, admin, calldata],
   });
 
@@ -51,4 +51,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 };
 
-module.exports.tags = ["arbitrum"];
+module.exports.tags = ["arbitrum-x3"];

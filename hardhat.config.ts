@@ -45,6 +45,18 @@ export default {
       chainId: 31337,
       // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
+    arbitrum_devnet: {
+      timeout: 1800000,
+      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/4b9a3889-7e26-4e5c-b84f-9016e7caefc4',
+      chainId: 42161,
+      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
+    },
+    arbitrum: {
+      timeout: 1800000,
+      url: 'https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4',
+      chainId: 42161,
+      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
+    },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,

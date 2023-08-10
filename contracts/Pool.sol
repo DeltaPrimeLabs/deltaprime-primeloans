@@ -44,6 +44,26 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     uint8 internal _decimals;
 
+    modifier onlyWhitelistedAccounts {
+        if(
+            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
+            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
+            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
+            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
+            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
+            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
+            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
+
+        ){
+            _;
+        } else {
+            revert("Not whitelisted");
+        }
+    }
+
+
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
             && AddressUpgradeable.isContract(address(borrowersRegistry_))
@@ -240,7 +260,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual  {
+    function deposit(uint256 _amount) public virtual onlyWhitelistedAccounts{
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -248,7 +268,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount on behalf of `_of` user.
      * It updates `_of` user deposited balance, total deposited and rates
      **/
-    function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant {
+    function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant onlyWhitelistedAccounts {
         if(_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
@@ -286,7 +306,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdraw(uint256 _amount) external nonReentrant {
+    function withdraw(uint256 _amount) external nonReentrant onlyWhitelistedAccounts {
         if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);

@@ -18,15 +18,15 @@ library DeploymentConstants {
 
     bytes32 private constant _NATIVE_TOKEN_SYMBOL = 'ARBI';
 
-    address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+    address private constant _NATIVE_ADDRESS = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x2916B3bf7C35bd21e63D01C93C62FB0d4994e56D;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x62Cf82FB0484aF382714cD09296260edc1DC0c6c;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20;
 
-    address private constant _TOKEN_MANAGER_ADDRESS = 0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e;
+    address private constant _TOKEN_MANAGER_ADDRESS = 0x0a0D954d4b0F0b47a5990C0abd179A90fF74E255;
 
-    address private constant _ADDRESS_PROVIDER = address(0);
+    address private constant _ADDRESS_PROVIDER = 0x6Aa0Fe94731aDD419897f5783712eBc13E8F3982;
 
     //implementation-specific
 

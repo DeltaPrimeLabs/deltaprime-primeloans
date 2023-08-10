@@ -19,11 +19,9 @@ import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
-//TODO: that probably can be removed later
-import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
-contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
+contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
 
