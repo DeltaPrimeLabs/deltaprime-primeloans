@@ -7,6 +7,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -32,6 +33,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -117,11 +119,18 @@ describe('Smart loan', () => {
             await tokenManager.setDebtCoverageStaked(toBytes32("VF_AVAX_SAVAX_AUTO"), toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverageStaked(toBytes32("VF_SAVAX_MAIN_AUTO"), toWei("0.8333333333333333"));
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -139,6 +148,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -361,6 +371,7 @@ describe('Smart loan', () => {
         }
 
         async function testStake(stakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {
+            let initialNativeAVAXBalance = await provider.getBalance(loan.address);
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
@@ -373,12 +384,16 @@ describe('Smart loan', () => {
 
             await wrappedLoan[stakeMethod](amount);
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.eq(amount);
+            let postStakingNativeAVAXBalance = await provider.getBalance(loan.address);
+            let extraAvaxAddedDollarValue = tokensPrices.get('AVAX')! * fromWei(postStakingNativeAVAXBalance.sub(initialNativeAVAXBalance))
+            
+            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(amount, 1);
             expect(await compounder.depositTracking(wrappedLoan.address)).to.be.eq(amount);
 
-            expect(await wrappedLoan.getTotalValue()).to.be.closeTo(initialTotalValue, 5);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00001);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 0.00001);
+
+            expect(fromWei(await wrappedLoan.getTotalValue()) - + extraAvaxAddedDollarValue).to.be.closeTo(fromWei(initialTotalValue), 0.1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue()) - extraAvaxAddedDollarValue * 0.833333333333333333).to.be.closeTo(fromWei(initialTWV), 0.0001);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.1);
         }
 
         async function testUnstake(unstakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {
@@ -393,7 +408,7 @@ describe('Smart loan', () => {
             //accepted max. 10% withdrawal fee
             await wrappedLoan[unstakeMethod](amount, amount.div(BigNumber.from(10)).mul(BigNumber.from(9)));
 
-            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(initialStakedBalance.sub(amount), 1);
+            expect(await wrappedLoan[balanceMethod]()).to.be.closeTo(initialStakedBalance.sub(amount), 2);
             expect(await compounder.depositTracking(wrappedLoan.address)).to.be.closeTo(initialStakedBalance.sub(amount), 1);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 5);

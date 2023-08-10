@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8c36e18a206b9e6649c00da51c54b92171ce3413;
+// Last deployed from commit: dcb19937650464dc2dd61f4775a367c64670c3ac;
 pragma solidity 0.8.17;
 
 import "./lib/Bytes32EnumerableMap.sol";
@@ -118,6 +118,13 @@ contract TokenManager is OwnableUpgradeable {
         }
     }
 
+    function setCurrentProtocolExposure(bytes32[] memory groupIdentifiers, uint256[] memory currentExposures) external onlyOwner {
+        require(groupIdentifiers.length == currentExposures.length, "Arrays lengths mismatch");
+        for (uint256 i = 0; i < groupIdentifiers.length; i++) {
+            _setCurrentProtocolExposure(groupIdentifiers[i], currentExposures[i]);
+        }
+    }
+
     function setMaxProtocolsExposure(bytes32[] memory groupIdentifiers, uint256[] memory maxExposures) public onlyOwner {
         require(groupIdentifiers.length == maxExposures.length, "Arrays lengths mismatch");
         for (uint256 i = 0; i < groupIdentifiers.length; i++) {
@@ -131,6 +138,14 @@ contract TokenManager is OwnableUpgradeable {
         groupToExposure[groupIdentifier].max = maxExposure;
 
         emit ProtocolExposureSet(msg.sender, groupIdentifier, prevExposure, maxExposure, groupToExposure[groupIdentifier].current , block.timestamp);
+    }
+
+    function _setCurrentProtocolExposure(bytes32 groupIdentifier, uint256 currentExposure) internal {
+        require(groupIdentifier != "", "Cannot set an empty string asset.");
+        uint256 prevExposure = groupToExposure[groupIdentifier].current;
+        groupToExposure[groupIdentifier].current = currentExposure;
+
+        emit ProtocolCurrentExposureSet(msg.sender, groupIdentifier, prevExposure, currentExposure, block.timestamp);
     }
 
     function setIdentifiersToExposureGroups(bytes32[] memory identifiers, bytes32[] memory exposureGroups) public onlyOwner {
@@ -162,7 +177,7 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function isTokenAssetActive(address token) external view returns(bool) {
-        return tokenToStatus[token] == 2;
+        return tokenToStatus[token] == _ACTIVE;
     }
 
     function activateToken(address token) public onlyOwner {
@@ -294,6 +309,19 @@ contract TokenManager is OwnableUpgradeable {
      * @param timestamp time of setting max exposure
      **/
     event ProtocolExposureSet(address indexed performer, bytes32 indexed groupIdentifier, uint256 prevMaxExposure, uint256 newMaxExposure, uint256 currentExposure, uint256 timestamp);
+
+
+    /**
+         * @dev emitted after setting max exposure for a given protocol.
+     * @param performer an address of the wallet setting max exposure
+     * @param groupIdentifier exposure group identifier
+     * @param prevCurrentExposure previous max protocol exposure
+     * @param newCurrentExposure new max protocol exposure
+     * @param timestamp time of setting max exposure
+     **/
+    event ProtocolCurrentExposureSet(address indexed performer, bytes32 indexed groupIdentifier, uint256 prevCurrentExposure, uint256 newCurrentExposure, uint256 timestamp);
+
+
 
     /**
      * @dev emitted after adding a token asset

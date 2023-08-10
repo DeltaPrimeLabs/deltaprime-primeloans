@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 
 const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
-const traderJoeRouter = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
 import AVAX_TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 
 module.exports = async ({
@@ -22,7 +21,6 @@ module.exports = async ({
         gasLimit: 8000000,
         args: [
             aavePoolAddressesProviderAdress,
-            traderJoeRouter,
             AVAX_TOKEN_ADDRESSES.AVAX,
             diamondBeacon.address
         ]
