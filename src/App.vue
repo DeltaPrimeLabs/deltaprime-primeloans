@@ -21,7 +21,7 @@
     <Banner v-if="oracleError">
       The protocol detected unusual market behavior. Some functions might be not available.
     </Banner>
-    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
+    <Banner v-if="false" background="green-accent" :closable="true">
       DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.
     </Banner>
     <div class="content">
