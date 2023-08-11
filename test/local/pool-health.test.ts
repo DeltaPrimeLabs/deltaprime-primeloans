@@ -23,7 +23,7 @@ import {
     MockVariableUtilisationRatesCalculator,
 } from "../../typechain";
 import {BigNumber, Contract} from "ethers";
-import addresses from "../../common/addresses/avax/token_addresses.json";
+import addresses from "../../common/addresses/avalanche/token_addresses.json";
 
 chai.use(solidity);
 const ZERO = ethers.constants.AddressZero;

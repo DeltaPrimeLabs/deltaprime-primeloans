@@ -6,7 +6,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei} from "../../_helpers";
 import {Contract} from "ethers";
-const addresses = require("../../../common/addresses/avax/token_addresses.json");
+const addresses = require("../../../common/addresses/avalanche/token_addresses.json");
 
 const {deployContract} = waffle;
 chai.use(solidity);

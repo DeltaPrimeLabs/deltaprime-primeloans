@@ -9,7 +9,7 @@ import {customError, fromWei, getFixedGasSigners, time, toWei, wavaxAbi, yakRout
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, DepositSwap} from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 
 chai.use(solidity);
 const ZERO = ethers.constants.AddressZero;

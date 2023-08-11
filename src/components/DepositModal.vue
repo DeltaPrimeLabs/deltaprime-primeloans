@@ -76,7 +76,7 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import ethers from 'ethers';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 
 export default {

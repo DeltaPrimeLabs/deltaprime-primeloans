@@ -11,7 +11,7 @@ import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVect
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import redstone from 'redstone-api';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {TransactionParams} from '@paraswap/sdk';

@@ -33,7 +33,7 @@ import PoolsTableRowBeta from './PoolsTableRowBeta';
 import TableHeader from './TableHeader';
 import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import ResumeBridgeModal from './ResumeBridgeModal';
 

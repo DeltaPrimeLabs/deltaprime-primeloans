@@ -44,7 +44,7 @@ import {
 import { IVectorFinanceCompounder__factory } from './../../../typechain/factories/IVectorFinanceCompounder__factory';
 import {BigNumber, Contract, constants} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 
 chai.use(solidity);
 

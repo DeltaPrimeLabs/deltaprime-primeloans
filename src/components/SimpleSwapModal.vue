@@ -121,7 +121,7 @@ import config from '../config';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import DeltaIcon from './DeltaIcon.vue';
 import InfoIcon from './InfoIcon.vue';
 

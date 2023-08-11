@@ -36,7 +36,7 @@ import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 

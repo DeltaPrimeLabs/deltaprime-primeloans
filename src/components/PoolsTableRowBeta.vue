@@ -69,7 +69,7 @@ import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
 import SimpleSwapModal from './SimpleSwapModal.vue';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 

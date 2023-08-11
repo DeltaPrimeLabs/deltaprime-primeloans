@@ -31,7 +31,7 @@ import {
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 
 chai.use(solidity);
 

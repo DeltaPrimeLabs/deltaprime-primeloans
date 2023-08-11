@@ -1,7 +1,7 @@
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
-import addresses from '../../common/addresses/avax/token_addresses.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {
     fromBytes32,
     getLiquidationAmounts,

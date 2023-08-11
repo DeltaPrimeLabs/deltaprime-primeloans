@@ -28,7 +28,7 @@ import {ethers} from "hardhat";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import CACHE_LAYER_URLS from "../../../common/redstone-cache-layer-urls.json";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 import { Contract, BigNumber } from "ethers";
 
 chai.use(solidity);

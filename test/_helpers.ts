@@ -11,7 +11,7 @@ import {
     VectorFinanceHelper,
     YieldYakHelper,
 } from "../typechain";
-import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../common/addresses/avalanche/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
 import ETHEREUM_TOKEN_ADDRESSES from '../common/addresses/ethereum/token_addresses.json';
@@ -29,7 +29,7 @@ import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
-import addresses from "../common/addresses/avax/token_addresses.json";
+import addresses from "../common/addresses/avalanche/token_addresses.json";
 import addresses_arb from "../common/addresses/arbitrum/token_addresses.json";
 import { getSelectors } from "../tools/diamond/selectors";
 

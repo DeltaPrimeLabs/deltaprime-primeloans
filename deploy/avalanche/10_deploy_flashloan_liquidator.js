@@ -2,7 +2,7 @@ import {ethers} from "hardhat";
 
 const {embedCommitHash} = require("../../tools/scripts/embed-commit-hash");
 const aavePoolAddressesProviderAdress = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
-import AVAX_TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 
 module.exports = async ({
                             getNamedAccounts,
