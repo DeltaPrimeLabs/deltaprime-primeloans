@@ -18,7 +18,7 @@ import {BigNumber, utils} from 'ethers';
 import {initializeApp} from 'firebase/app';
 import {getFirestore, collection, query, getDocs} from 'firebase/firestore/lite';
 import firebaseConfig from '../../.secrets/firebaseConfig.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';

@@ -6,7 +6,7 @@ import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinIntermediary, TokenManager} from '../../../typechain';
 import {Asset, erc20ABI, fromWei, getFixedGasSigners, syncTime, toBytes32, toWei} from "../../_helpers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 import redstone from "redstone-api";
 
 chai.use(solidity);

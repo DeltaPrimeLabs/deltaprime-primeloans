@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 import {
     Asset,
     deployAllFacets,

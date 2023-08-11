@@ -8,7 +8,7 @@ import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockToke
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import CACHE_LAYER_URLS from "../../../common/redstone-cache-layer-urls.json";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 import {
     addMissingTokenContracts,
     Asset,

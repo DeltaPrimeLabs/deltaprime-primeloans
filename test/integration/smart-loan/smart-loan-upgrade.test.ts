@@ -5,7 +5,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 import {
     addMissingTokenContracts,
     Asset,

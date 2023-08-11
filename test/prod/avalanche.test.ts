@@ -40,8 +40,8 @@ import {
     wavaxAbi,
     ZERO
 } from "../_helpers";
-import {pangolinAssets} from "../../common/addresses/avax/pangolin_supported_assets";
-import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_assets";
+import {pangolinAssets} from "../../common/addresses/avalanche/pangolin_supported_assets";
+import {traderJoeAssets} from "../../common/addresses/avalanche/traderjoe_supported_assets";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {JsonRpcSigner} from "@ethersproject/providers";
 import VariableUtilisationRatesCalculatorArtifact
@@ -49,9 +49,9 @@ import VariableUtilisationRatesCalculatorArtifact
 import {parseUnits} from "ethers/lib/utils";
 import web3Abi from "web3-eth-abi";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
-import {supportedAssetsAvax} from '../../common/addresses/avax/avalanche_supported_assets';
-import addresses from "../../common/addresses/avax/token_addresses.json";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import {supportedAssetsAvax} from '../../common/addresses/avalanche/avalanche_supported_assets';
+import addresses from "../../common/addresses/avalanche/token_addresses.json";
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';

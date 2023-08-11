@@ -2,7 +2,7 @@ import {ZERO_ADDRESS} from "@openzeppelin/test-helpers/src/constants";
 
 const {ethers} = require("hardhat");
 
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 
 module.exports = async ({
     getNamedAccounts,

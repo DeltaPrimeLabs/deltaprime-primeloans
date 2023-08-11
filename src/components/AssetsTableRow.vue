@@ -137,14 +137,14 @@ import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
 import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';

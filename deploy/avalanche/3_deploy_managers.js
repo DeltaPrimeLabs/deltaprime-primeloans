@@ -2,7 +2,7 @@ import {embedCommitHash} from "../../tools/scripts/embed-commit-hash";
 import {pool, toWei} from "../../test/_helpers";
 import web3Abi from "web3-eth-abi";
 import TokenManagerArtifact from "../../artifacts/contracts/TokenManager.sol/TokenManager.json";
-import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
+import {supportedAssetsAvax} from "../../common/addresses/avalanche/avalanche_supported_assets";
 
 const {ethers} = require("hardhat");
 

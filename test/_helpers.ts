@@ -3,7 +3,7 @@ import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
 import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
-import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../common/addresses/avalanche/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
@@ -15,7 +15,7 @@ import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
-import addresses from "../common/addresses/avax/token_addresses.json";
+import addresses from "../common/addresses/avalanche/token_addresses.json";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 

@@ -1,4 +1,4 @@
-import addresses from '../common/addresses/avax/token_addresses.json';
+import addresses from '../common/addresses/avalanche/token_addresses.json';
 import {
     getPangolinLpApr, getTraderJoeLpApr,
     vectorFinanceApy,
