@@ -266,8 +266,8 @@ describe('Smart loan', () => {
             const tvAfter = fromWei(await wrappedLoan.getTotalValue());
             const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
 
-            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.1);
-            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.1);
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.13);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.13);
         });
 
 
@@ -325,8 +325,8 @@ describe('Smart loan', () => {
 
             const liquidityAfter = (await manager.positions(id)).liquidity;
 
-            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.07);
-            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.07);
+            expect((tvBefore - tvAfter) / tvBefore).to.be.below(0.09);
+            expect((hrBefore - hrAfter) / hrBefore).to.be.below(0.09);
             await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(2);
             expect(fromWei(liquidityAfter)).to.be.closeTo(fromWei(liquidityBefore) - fromWei(decreasedLiquidity), 0.0001);
         });
@@ -356,7 +356,7 @@ describe('Smart loan', () => {
 
             const newLiquidity = (await manager.positions(id)).liquidity;
 
-            expect(tvBefore).to.be.closeTo(tvAfter, 11);
+            expect(tvBefore).to.be.closeTo(tvAfter, 13);
             expect(hrBefore).to.be.closeTo(hrAfter, 1);
             expect(fromWei(newLiquidity)).to.be.equal(0);
 

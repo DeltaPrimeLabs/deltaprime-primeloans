@@ -62,7 +62,7 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
             //TODO: finish
             //checking the price against the oracle value
             (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 poolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
+            uint256 poolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
         }
 
         //TODO: check for max and min ticks
