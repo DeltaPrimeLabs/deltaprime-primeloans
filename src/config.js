@@ -420,5 +420,5 @@ export default {
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
+    subgraph: "http://18.219.93.3/subgraphs/name/mbare0/deltaprime"
 }
