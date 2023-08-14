@@ -131,9 +131,6 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
         IRecoveryFacet(account).notifyRefund(token, refundAmount);
     }
 
-    /* ========== RECEIVE AVAX FUNCTION ========== */
-    receive() external payable {}
-
     event RecoveryHelperAdded(bytes32 indexed asset, address helper, bytes4 selector);
 
     event AssetRecovered(
