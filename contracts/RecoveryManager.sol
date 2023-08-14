@@ -13,7 +13,7 @@ import "./interfaces/facets/avalanche/IRecoveryFacet.sol";
 contract RecoveryManager is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    struct RecoverData {
+    struct RecoveryData {
         bytes32 asset;
         address[] accounts;
         address token0;
@@ -22,33 +22,33 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
         uint256 minAmount1;
     }
 
-    struct Helper {
+    struct RecoveryHelper {
         address helper;
         bytes4 selector;
     }
 
-    mapping(bytes32 => Helper) public helpers;
+    mapping(bytes32 => RecoveryHelper) public recoveryHelpers;
 
-    function addHelper(
+    function addRecoveryHelper(
         bytes32 _asset,
         address _helper,
         bytes4 _selector
     ) external onlyOwner {
-        helpers[_asset] = Helper({helper: _helper, selector: _selector});
+        recoveryHelpers[_asset] = RecoveryHelper({helper: _helper, selector: _selector});
 
-        emit HelperAdded(_asset, _helper, _selector);
+        emit RecoveryHelperAdded(_asset, _helper, _selector);
     }
 
     function recoverAssets(
-        RecoverData[] memory _data
+        RecoveryData[] memory _data
     ) external nonReentrant onlyOwner {
         uint256 length = _data.length;
         require(length > 0, "empty array");
 
         for (uint256 i; i != length; ++i) {
-            RecoverData memory data = _data[i];
-            Helper memory helper = helpers[data.asset];
-            require(helper.helper != address(0), "Helper not found");
+            RecoveryData memory data = _data[i];
+            RecoveryHelper memory recoveryHelper = recoveryHelpers[data.asset];
+            require(recoveryHelper.helper != address(0), "RecoveryHelper not found");
 
             uint256 userLength = data.accounts.length;
             uint256[] memory recovered = new uint256[](userLength);
@@ -72,9 +72,9 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
                 beforeBalance1 = IERC20(data.token1).balanceOf(address(this));
             }
 
-            (bool success, ) = helper.helper.delegatecall(
+            (bool success, ) = recoveryHelper.helper.delegatecall(
                 abi.encodeWithSelector(
-                    helper.selector,
+                    recoveryHelper.selector,
                     data.token0,
                     data.token1,
                     totalRecovered,
@@ -134,14 +134,14 @@ contract RecoveryManager is Ownable, ReentrancyGuard {
     /* ========== RECEIVE AVAX FUNCTION ========== */
     receive() external payable {}
 
-    event HelperAdded(bytes32 asset, address helper, bytes4 selector);
+    event RecoveryHelperAdded(bytes32 indexed asset, address helper, bytes4 selector);
 
     event AssetRecovered(
-        bytes32 asset,
+        bytes32 indexed asset,
         uint256 assetRecovered,
-        address token0,
+        address indexed token0,
         uint256 token0Recovered,
-        address token1,
+        address indexed token1,
         uint256 token1Recovered
     );
 }

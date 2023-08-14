@@ -4,16 +4,16 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../ReentrancyGuardKeccak.sol";
-import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
-import "../lib/SolvencyMethods.sol";
-import "../interfaces/ITokenManager.sol";
-import "../interfaces/IAddressProvider.sol";
-import "../interfaces/IVectorFinanceStaking.sol";
-import "../interfaces/IVectorFinanceMainStaking.sol";
+import "../../ReentrancyGuardKeccak.sol";
+import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
+import "../../lib/SolvencyMethods.sol";
+import "../../interfaces/ITokenManager.sol";
+import "../../interfaces/IAddressProvider.sol";
+import "../../interfaces/IVectorFinanceStaking.sol";
+import "../../interfaces/IVectorFinanceMainStaking.sol";
 
 //this path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
 contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using SafeERC20 for IERC20Metadata;
@@ -35,14 +35,8 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
         require(asset != bytes32(0), "Asset not supported.");
 
-        IERC20Metadata token;
-        if (_token == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
-            token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
-            token.safeTransferFrom(msg.sender, address(this), _amount);
-        } else {
-            token = IERC20Metadata(_token);
-            token.safeTransferFrom(msg.sender, address(this), _amount);
-        }
+        IERC20Metadata token = IERC20Metadata(_token);
+        token.safeTransferFrom(msg.sender, address(this), _amount);
 
         DiamondStorageLib.addOwnedAsset(asset, _token);
 
@@ -179,5 +173,5 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param token that is refunded
      * @param amount of the refund
      */
-    event RefundReceived(address token, uint256 amount);
+    event RefundReceived(address indexed token, uint256 amount);
 }

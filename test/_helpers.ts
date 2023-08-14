@@ -478,7 +478,7 @@ export const deployRecoveryManager = async function (
         "vectorUnstakeSAVAX",
     ];
     for (let i = 0; i < assets.length; i++) {
-        await recoveryManager.connect(owner).addHelper(
+        await recoveryManager.connect(owner).addRecoveryHelper(
             toBytes32(assets[i]),
             vectorFinanceHelper.address,
             (getSelectors(vectorFinanceHelper) as any).get([functions[i]])[0],
@@ -506,7 +506,7 @@ export const deployRecoveryManager = async function (
         "unstakeTJAVAXSAVAXYak",
     ];
     for (let i = 0; i < assets.length; i++) {
-        await recoveryManager.connect(owner).addHelper(
+        await recoveryManager.connect(owner).addRecoveryHelper(
             toBytes32(assets[i]),
             yieldYakHelper.address,
             (getSelectors(yieldYakHelper) as any).get([functions[i]])[0],
@@ -519,10 +519,10 @@ export const deployRecoveryManager = async function (
         "PNG_AVAX_ETH_LP",
     ];
     for (let i = 0; i < assets.length; i++) {
-        await recoveryManager.connect(owner).addHelper(
+        await recoveryManager.connect(owner).addRecoveryHelper(
             toBytes32(assets[i]),
             pangolinHelper.address,
-            (getSelectors(pangolinHelper) as any).get(["removeLiquidityPangolin"])[0],
+            (getSelectors(pangolinHelper) as any).get(["removeLiquidity"])[0],
         );
     }
 
