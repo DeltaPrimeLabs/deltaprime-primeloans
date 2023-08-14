@@ -1,4 +1,4 @@
-export default function updateConstants(chain, exchanges, tokenManager, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
+export default function updateConstants(chain, exchanges, tokenManager, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
     var fs = require('fs')
     const replace = require('replace-in-file');
 
@@ -34,6 +34,15 @@ export default function updateConstants(chain, exchanges, tokenManager, diamondB
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
+    // Address Provider
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_ADDRESS_PROVIDER')
+    );
+
+    newLine = `    address private constant _ADDRESS_PROVIDER = ${addressProviderAddress};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 
     //SmartLoansFactory address
 
@@ -77,7 +86,7 @@ export default function updateConstants(chain, exchanges, tokenManager, diamondB
         let exchangeContract = fs.readFileSync(exchange.facetPath, 'utf8');
         let fileArray = exchangeContract.split('\n');
         lineWithFunctionDeclaration = fileArray.findIndex(
-            line => line.includes('getExchangeIntermediary')
+            line => line.includes('function getExchangeIntermediary')
         );
 
         newLine = `        return ${exchange.contractAddress};`;

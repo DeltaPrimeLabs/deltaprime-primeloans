@@ -60,6 +60,7 @@ module.exports = async ({
     const pangolinIntermediary = await ethers.getContract("PangolinIntermediaryTUP");
     const traderJoeIntermediary = await ethers.getContract("TraderJoeIntermediaryTUP");
     const tokenManager = await ethers.getContract("TokenManagerTUP");
+    const addressProvider = await ethers.getContract("AddressProviderTUP");
 
     await recompileConstantsFile(
         'avalanche',
@@ -75,6 +76,7 @@ module.exports = async ({
             }
         ],
         tokenManager.address,
+        addressProvider.address,
         diamondAddress,
         resultTup.address,
         'lib'

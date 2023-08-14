@@ -2,7 +2,16 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
-import {MockToken, Pool, MockVariableUtilisationRatesCalculator, LinearIndex} from "../typechain";
+import {
+    LinearIndex,
+    MockToken,
+    Pool,
+    MockVariableUtilisationRatesCalculator,
+    RecoveryManager,
+    VectorFinanceHelper,
+    YieldYakHelper,
+    PangolinHelper,
+} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
@@ -16,6 +25,7 @@ import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
+import { getSelectors } from "../tools/diamond/selectors";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
@@ -441,6 +451,84 @@ export const getDeliveredAmounts = function (
     return deliveredAmounts;
 }
 
+export const deployRecoveryManager = async function (
+    owner: SignerWithAddress | JsonRpcSigner,
+) {
+    let recoveryManagerFactory = await ethers.getContractFactory("RecoveryManager");
+    let recoveryManager = await recoveryManagerFactory.connect(owner).deploy() as RecoveryManager;
+    await recoveryManager.deployed();
+
+    let VectorFinanceHelperFactory = await ethers.getContractFactory("VectorFinanceHelper");
+    let vectorFinanceHelper = await VectorFinanceHelperFactory.connect(owner).deploy([]) as VectorFinanceHelper;
+    let YieldYakHelperFactory = await ethers.getContractFactory("YieldYakHelper");
+    let yieldYakHelper = await YieldYakHelperFactory.connect(owner).deploy() as YieldYakHelper;
+    let PangolinHelperFactory = await ethers.getContractFactory("PangolinHelper");
+    let pangolinHelper = await PangolinHelperFactory.connect(owner).deploy() as PangolinHelper;
+
+    let assets = [
+        "VF_USDC_MAIN_AUTO",
+        "VF_USDT_MAIN_AUTO",
+        "VF_AVAX_SAVAX_AUTO",
+        "VF_SAVAX_MAIN_AUTO",
+    ];
+    let functions = [
+        "vectorUnstakeUSDC",
+        "vectorUnstakeUSDT",
+        "vectorUnstakeWAVAX",
+        "vectorUnstakeSAVAX",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addRecoveryHelper(
+            toBytes32(assets[i]),
+            vectorFinanceHelper.address,
+            (getSelectors(vectorFinanceHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    assets = [
+        "YY_AAVE_AVAX",
+        "YY_PTP_sAVAX",
+        "YY_GLP",
+        "YY_PNG_AVAX_USDC_LP",
+        "YY_PNG_AVAX_ETH_LP",
+        "YY_TJ_AVAX_USDC_LP",
+        "YY_TJ_AVAX_ETH_LP",
+        "YY_TJ_AVAX_sAVAX_LP",
+    ];
+    functions = [
+        "unstakeAVAXYak",
+        "unstakeSAVAXYak",
+        "unstakeGLPYak",
+        "unstakePNGAVAXUSDCYak",
+        "unstakePNGAVAXETHYak",
+        "unstakeTJAVAXUSDCYak",
+        "unstakeTJAVAXETHYak",
+        "unstakeTJAVAXSAVAXYak",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addRecoveryHelper(
+            toBytes32(assets[i]),
+            yieldYakHelper.address,
+            (getSelectors(yieldYakHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    assets = [
+        "PNG_AVAX_USDC_LP",
+        "PNG_AVAX_USDT_LP",
+        "PNG_AVAX_ETH_LP",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addRecoveryHelper(
+            toBytes32(assets[i]),
+            pangolinHelper.address,
+            (getSelectors(pangolinHelper) as any).get(["removeLiquidity"])[0],
+        );
+    }
+
+    return recoveryManager;
+}
+
 export const deployPools = async function(
     smartLoansFactory: Contract,
     tokens: Array<PoolInitializationObject>,
@@ -769,6 +857,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
+        "RecoveryFacet",
+        diamondAddress,
+        [
+            'notifyRefund',
+            'emergencyWithdraw',
+        ],
+        hardhatConfig
+    )
+    await deployFacet(
         "SmartLoanViewFacet",
         diamondAddress,
         [
@@ -930,11 +1027,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateConstants(chain, exchanges, tokenManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
+    await updateConstants(chain, exchanges, tokenManagerAddress, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
     execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }

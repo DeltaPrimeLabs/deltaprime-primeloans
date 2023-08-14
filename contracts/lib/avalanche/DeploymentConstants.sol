@@ -26,6 +26,8 @@ library DeploymentConstants {
 
     address private constant _TOKEN_MANAGER_ADDRESS = 0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e;
 
+    address private constant _ADDRESS_PROVIDER = address(0);
+
     //implementation-specific
 
     function getPercentagePrecision() internal pure returns (uint256) {
