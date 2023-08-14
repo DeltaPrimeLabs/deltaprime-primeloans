@@ -35,8 +35,14 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes32 asset = tokenManager.tokenAddressToSymbol(_token);
         require(asset != bytes32(0), "Asset not supported.");
 
-        IERC20Metadata token = IERC20Metadata(_token);
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20Metadata token;
+        if (_token == 0x9e295B5B976a184B14aD8cd72413aD846C299660) {
+            token = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
+            token.safeTransferFrom(msg.sender, address(this), _amount);
+        } else {
+            token = IERC20Metadata(_token);
+            token.safeTransferFrom(msg.sender, address(this), _amount);
+        }
 
         DiamondStorageLib.addOwnedAsset(asset, _token);
 

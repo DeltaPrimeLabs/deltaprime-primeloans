@@ -20,6 +20,7 @@ import {
     deployRecoveryManager,
     fromBytes32,
     fromWei,
+    formatUnits,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
@@ -268,6 +269,11 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
+            let beforeAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeUsdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            let beforeLpBalance = await tokenContracts.get('PNG_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+            expect(beforeLpBalance).to.be.gt(0);
+
             await recoveryManager.recoverAssets([
                 {
                     asset: toBytes32("PNG_AVAX_USDC_LP"),
@@ -282,6 +288,13 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.1);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
+
+            let afterAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterUsdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            let afterLpBalance = await tokenContracts.get('PNG_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+            expect(afterLpBalance).to.be.eq(0);
+            expect(fromWei(afterAvaxBalance)).to.be.closeTo(fromWei(beforeAvaxBalance.add(toWei("80"))), 0.1);
+            expect(formatUnits(afterUsdcBalance, 6)).to.be.closeTo(formatUnits(beforeUsdcBalance.add(parseUnits((AVAX_PRICE * 80).toFixed(6), BigNumber.from("6"))), 6), 5);
         });
 
         it("should stake on VF", async () => {
@@ -297,6 +310,11 @@ describe('Smart loan', () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
+            let beforeUsdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            let beforeUsdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
+            let beforeAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeSavaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
 
             await recoveryManager.recoverAssets([
                 {
@@ -336,6 +354,15 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+
+            let afterUsdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            let afterUsdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
+            let afterAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterSavaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
+            expect(formatUnits(afterUsdcBalance, 6)).to.be.closeTo(formatUnits(beforeUsdcBalance, 6) + 100, 1);
+            expect(formatUnits(afterUsdtBalance, 6)).to.be.closeTo(formatUnits(beforeUsdtBalance, 6) + 100, 1);
+            expect(fromWei(afterAvaxBalance)).to.be.closeTo(fromWei(beforeAvaxBalance) + 10, 0.1);
+            expect(fromWei(afterSavaxBalance)).to.be.closeTo(fromWei(beforeSavaxBalance) + 10, 0.1);
         });
 
         it("should stake GLP", async () => {
@@ -355,6 +382,11 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
+            let beforeGlpBalance = await tokenContracts.get('GLP')!.balanceOf(wrappedLoan.address);
+            let beforeLpBalance = await tokenContracts.get('YY_GLP')!.balanceOf(wrappedLoan.address);
+            expect(beforeGlpBalance).to.be.eq(0);
+            expect(beforeLpBalance).to.be.gt(0);
+
             await recoveryManager.recoverAssets([{
                 asset: toBytes32("YY_GLP"),
                 accounts: [wrappedLoan.address],
@@ -367,6 +399,11 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.2);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.1);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 2);
+
+            let afterGlpBalance = await tokenContracts.get('GLP')!.balanceOf(wrappedLoan.address);
+            let afterLpBalance = await tokenContracts.get('YY_GLP')!.balanceOf(wrappedLoan.address);
+            expect(afterGlpBalance).to.be.gt(0);
+            expect(afterLpBalance).to.be.eq(0);
         });
 
         it("should stake on YY", async () => {
@@ -386,6 +423,13 @@ describe('Smart loan', () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
+            let beforeAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeSavaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
+            let beforeAvaxLpBalance = await tokenContracts.get('YY_AAVE_AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeSavaxLpBalance = await tokenContracts.get('YY_PTP_sAVAX')!.balanceOf(wrappedLoan.address);
+            expect(beforeAvaxLpBalance).to.be.gt(0);
+            expect(beforeSavaxLpBalance).to.be.gt(0);
 
             await recoveryManager.recoverAssets([
                 {
@@ -409,6 +453,15 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+
+            let afterAvaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterSavaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
+            let afterAvaxLpBalance = await tokenContracts.get('YY_AAVE_AVAX')!.balanceOf(wrappedLoan.address);
+            let afterSavaxLpBalance = await tokenContracts.get('YY_PTP_sAVAX')!.balanceOf(wrappedLoan.address);
+            expect(afterAvaxLpBalance).to.be.eq(0);
+            expect(afterSavaxLpBalance).to.be.eq(0);
+            expect(fromWei(afterAvaxBalance)).to.be.closeTo(fromWei(beforeAvaxBalance) + 10, 0.1);
+            expect(fromWei(afterSavaxBalance)).to.be.closeTo(fromWei(beforeSavaxBalance) + 10, 0.1);
         });
 
         async function testStake(stakeMethod: string, balanceMethod: string, stakingContractAddress: string, amount: BigNumber) {
