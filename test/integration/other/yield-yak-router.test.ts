@@ -2,6 +2,7 @@ import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -10,6 +11,7 @@ import {
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {
     Asset,
     calculateStakingTokensAmountBasedOnAvaxValue,
@@ -67,11 +69,18 @@ describe('Yield Yak test stake AVAX', () => {
         await tokenManager.connect(owner).initialize(supportedAssets, []);
         await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
-        await recompileConstantsFile(
+        let addressProvider = await deployContract(
+            owner,
+            AddressProviderArtifact,
+            []
+        ) as AddressProvider;
+
+    await recompileConstantsFile(
             'local',
             "DeploymentConstants",
             [],
             tokenManager.address,
+            addressProvider.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -188,11 +197,18 @@ describe('Yield Yak test stake sAVAX', () => {
         await tokenManager.connect(owner).initialize(supportedAssets, []);
         await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+        let addressProvider = await deployContract(
+            owner,
+            AddressProviderArtifact,
+            []
+        ) as AddressProvider;
+
         await recompileConstantsFile(
             'local',
             "DeploymentConstants",
             [],
             tokenManager.address,
+            addressProvider.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -212,6 +228,7 @@ describe('Yield Yak test stake sAVAX', () => {
                 }
             ],
             tokenManager.address,
+            addressProvider.address,
             diamondAddress,
             smartLoansFactory.address,
             'lib'

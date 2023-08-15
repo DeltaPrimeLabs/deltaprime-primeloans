@@ -5,6 +5,7 @@ import { parseUnits } from "ethers/lib/utils";
 
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import CACHE_LAYER_URLS from "../../../common/redstone-cache-layer-urls.json";
@@ -29,6 +30,7 @@ import {
 } from "../../_helpers";
 import { syncTime } from "../../_syncTime";
 import {
+    AddressProvider,
     TraderJoeIntermediary,
     PangolinIntermediary,
     MockTokenManager,
@@ -133,11 +135,18 @@ describe("Smart loan", () => {
                     .connect(owner)
                     .setFactoryAddress(smartLoansFactory.address);
 
+                let addressProvider = await deployContract(
+                    owner,
+                    AddressProviderArtifact,
+                    []
+                ) as AddressProvider;
+
                 await recompileConstantsFile(
                     "local",
                     "DeploymentConstants",
                     [],
                     tokenManager.address,
+                    addressProvider.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     "lib"
@@ -174,6 +183,7 @@ describe("Smart loan", () => {
                         },
                     ],
                     tokenManager.address,
+                    addressProvider.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     "lib"
