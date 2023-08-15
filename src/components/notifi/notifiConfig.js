@@ -1,9 +1,3 @@
-import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
-import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
-import USDT_POOL_TUP from '@contracts/UsdtPoolTUP.json';
-import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
-import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
-
 export default {
   customStyles: {
     button: {
@@ -121,26 +115,4 @@ export default {
       value: null,
     }
   ],
-  POOLS_CONFIG: [
-    {
-      name: "AVAX",
-      address: WAVAX_POOL_TUP.address,
-    },
-    {
-      name: "USDC",
-      address: USDC_POOL_TUP.address,
-    },
-    {
-      name: "USDT",
-      address: USDT_POOL_TUP.address,
-    },
-    {
-      name: "BTC",
-      address: BTC_POOL_TUP.address,
-    },
-    {
-      name: "ETH",
-      address: ETH_POOL_TUP.address,
-    }
-  ]
 }

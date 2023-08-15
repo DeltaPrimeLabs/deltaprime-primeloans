@@ -28,6 +28,25 @@
 
       gtag('config', 'G-8R5EETFPEP');
     </script>
+
+    <script>
+        window.ethereum.request({method: 'eth_chainId'}).then((id) => {
+            const chainId = parseInt(id, 16);
+            console.log(chainId);
+
+            switch (chainId) {
+                case 43114: {
+                    window.chain = 'avalanche';
+                    break;
+                }
+                case 42161: {
+                    window.chain = 'arbitrum';
+                    break;
+                }
+            }
+            console.log(window.chain);
+        });
+    </script>
 </head>
 
 <body>

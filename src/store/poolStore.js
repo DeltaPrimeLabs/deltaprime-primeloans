@@ -1,5 +1,4 @@
 import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
-import POOL from '@artifacts/contracts/WrappedNativeTokenPool.sol/WrappedNativeTokenPool.json';
 import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -21,22 +20,6 @@ export default {
   },
   getters: {},
   mutations: {
-    setPoolContract(state, poolContract) {
-      state.poolContract = poolContract;
-    },
-
-    setUsdcPoolContract(state, poolContract) {
-      state.usdcPoolContract = poolContract;
-    },
-
-    setAvaxPool(state, pool) {
-      state.avaxPool = pool;
-    },
-
-    setUsdcPool(state, pool) {
-      state.usdcPool = pool;
-    },
-
     setPools(state, pools) {
       state.pools = pools;
     },
@@ -74,6 +57,7 @@ export default {
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
+        console.log('deposit native token');
         depositTransaction = await poolContract
           .connect(provider.getSigner())
           .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});
@@ -81,12 +65,17 @@ export default {
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();
       } else {
+        console.log('deposit NOT native token');
         const allowance = formatUnits(await tokenContract.allowance(rootState.network.account, poolContract.address), decimals);
+        console.log('allowance', allowance);
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(poolContract.address,
-              parseUnits(String(depositRequest.amount), decimals), {gasLimit: 100000});
+              parseUnits(String(depositRequest.amount), decimals));
+
+          console.log(approveTransaction);
+          console.log('after approve');
 
           rootState.serviceRegistry.progressBarService.requestProgressBar();
           rootState.serviceRegistry.modalService.closeModal();

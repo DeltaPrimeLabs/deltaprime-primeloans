@@ -1,22 +1,17 @@
 import addresses from '../common/addresses/avalanche/token_addresses.json';
 import {
-    getPangolinLpApr, getTraderJoeLpApr,
-    vectorFinanceApy,
     vectorFinanceBalance,
-    yieldYakApy,
     yieldYakBalance
 } from "./utils/calculate";
-import WAVAX_POOL_TUP from '@contracts/WavaxPoolTUP.json';
-import USDC_POOL_TUP from '@contracts/UsdcPoolTUP.json';
-import USDT_POOL_TUP from '@contracts/UsdtPoolTUP.json';
-import BTC_POOL_TUP from '@contracts/BtcPoolTUP.json';
-import ETH_POOL_TUP from '@contracts/EthPoolTUP.json';
-import PANGOLIN_INTERMEDIARY_TUP from '@contracts/PangolinIntermediaryTUP.json';
-import TRADERJOE_INTERMEDIARY_TUP from '@contracts/TraderJoeIntermediaryTUP.json';
-import {glpApy} from "./utils/blockchain";
+import WAVAX_POOL_TUP from '/deployments/avalanche/WavaxPoolTUP.json';
+import USDC_POOL_TUP from '/deployments/avalanche/UsdcPoolTUP.json';
+import USDT_POOL_TUP from '/deployments/avalanche/UsdtPoolTUP.json';
+import BTC_POOL_TUP from '/deployments/avalanche/BtcPoolTUP.json';
+import ETH_POOL_TUP from '/deployments/avalanche/EthPoolTUP.json';
+import PANGOLIN_INTERMEDIARY_TUP from '/deployments/avalanche/PangolinIntermediaryTUP.json';
+import TRADERJOE_INTERMEDIARY_TUP from '/deployments/avalanche/TraderJoeIntermediaryTUP.json';
 
 export default {
-    MAX_COLLATERAL: 500,
     MIN_ALLOWED_HEALTH: 0.0182,
     COMPETITION_START_BLOCK: 14858534,
     DECIMALS_PRECISION: 8,
