@@ -6,11 +6,6 @@ import {
   wrapContract, getLog
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
-import DIAMOND_BEACON from '@contracts/SmartLoanDiamondBeacon.json';
-import SMART_LOAN_FACTORY_TUP from '@contracts/SmartLoansFactoryTUP.json';
-import SMART_LOAN_FACTORY from '@contracts/SmartLoansFactory.json';
-import TOKEN_MANANGER from '@contracts/TokenManager.json';
-import TOKEN_MANANGER_TUP from '@contracts/TokenManagerTUP.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
@@ -18,7 +13,6 @@ import {BigNumber, utils} from 'ethers';
 import {initializeApp} from 'firebase/app';
 import {getFirestore, collection, query, getDocs} from 'firebase/firestore/lite';
 import firebaseConfig from '../../.secrets/firebaseConfig.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wavaxAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -28,6 +22,23 @@ import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 
 
+let SMART_LOAN_FACTORY_TUP;
+let DIAMOND_BEACON;
+let SMART_LOAN_FACTORY;
+let TOKEN_MANAGER;
+let TOKEN_MANAGER_TUP;
+let TOKEN_ADDRESSES;
+(async () => {
+  SMART_LOAN_FACTORY_TUP = await import(`/deployments/${window.chain}/SmartLoansFactoryTUP.json`);
+  DIAMOND_BEACON = await import(`/deployments/${window.chain}/SmartLoanDiamondBeacon.json`);
+  SMART_LOAN_FACTORY = await import(`/deployments/${window.chain}/SmartLoansFactory.json`);
+  TOKEN_MANAGER = await import(`/deployments/${window.chain}/TokenManager.json`);
+  TOKEN_MANAGER_TUP = await import(`/deployments/${window.chain}/TokenManagerTUP.json`);
+  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+  console.log(TOKEN_ADDRESSES);
+})();
+
+
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
 
@@ -35,8 +46,6 @@ const ethers = require('ethers');
 
 const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
-
-const tokenAddresses = TOKEN_ADDRESSES;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -238,10 +247,10 @@ export default {
 
 
     async setupSupportedAssets({commit}) {
-      const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
+      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
 
-      const supported = whiteListedTokenAddresses.map(address => Object.keys(tokenAddresses).find(symbol => tokenAddresses[symbol].toLowerCase() === address.toLowerCase()));
+      const supported = whiteListedTokenAddresses.map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
 
       commit('setSupportedAssets', supported);
     },
@@ -283,7 +292,7 @@ export default {
     },
 
     async setupAssetExposures({state, commit}) {
-      const tokenManager = new ethers.Contract(TOKEN_MANANGER_TUP.address, TOKEN_MANANGER.abi, provider.getSigner());
+      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       let assets = state.assets;
 
       for (let symbol of Object.keys(assets)) {
@@ -352,7 +361,7 @@ export default {
 
     async setupContracts({rootState, commit}) {
       const provider = rootState.network.provider;
-
+      console.log(SMART_LOAN_FACTORY_TUP);
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
       const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
@@ -468,7 +477,7 @@ export default {
 
       const decimals = config.ASSETS_CONFIG[asset.symbol].decimals;
       const amount = parseUnits(String(value), decimals);
-      const fundTokenContract = new ethers.Contract(tokenAddresses[asset.symbol], erc20ABI, provider.getSigner());
+      const fundTokenContract = new ethers.Contract(TOKEN_ADDRESSES[asset.symbol], erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
@@ -748,7 +757,7 @@ export default {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
 
-      const tokenForApprove = fundRequest.asset === 'GLP' ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : tokenAddresses[fundRequest.asset];
+      const tokenForApprove = fundRequest.asset === 'GLP' ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : TOKEN_ADDRESSES[fundRequest.asset];
       const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);

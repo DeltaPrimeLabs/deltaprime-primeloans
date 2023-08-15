@@ -23,10 +23,12 @@ window.ethereum.request({method: 'eth_chainId'}).then((id) => {
 
   switch (chainId) {
     case 43114: {
+      window.chain = 'avalanche';
       Object.assign(config, configAvalanche);
       break;
     }
     case 42161: {
+      window.chain = 'arbitrum';
       Object.assign(config, ConfigArbitrum);
       break;
     }

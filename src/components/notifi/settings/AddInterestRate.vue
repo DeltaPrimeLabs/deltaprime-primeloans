@@ -63,8 +63,8 @@ import Dropdown from './Dropdown.vue';
 import RoundToggle from './RoundToggle.vue';
 import ApyInput from './ApyInput.vue';
 import Button from '../../Button.vue';
-import notifiConfig from '../notifiConfig';
 import { mapState } from 'vuex';
+import config from '@/config';
 
 export default ({
   name: 'AddInterestRate',
@@ -85,7 +85,11 @@ export default ({
   data() {
     return {
       addWindow: false,
-      pools: notifiConfig.POOLS_CONFIG.map(pool => ({
+      // TODO possible to simplify
+      pools: Object.values(config.POOLS_CONFIG).map((pool, index) => ({
+        name: Object.keys(config.POOLS_CONFIG)[index],
+        address: pool.address
+      })).map(pool => ({
         name: pool.name,
         value: pool.address
       })),
@@ -94,10 +98,10 @@ export default ({
       threshold: null,
       saving: false,
       buttonStyles: {
-        fontSize: "15px",
-        padding: "7px 8px"
+        fontSize: '15px',
+        padding: '7px 8px'
       }
-    }
+    };
   },
   methods: {
     handleDropdownOption(option) {
