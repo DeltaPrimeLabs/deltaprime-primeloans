@@ -216,6 +216,7 @@ export default {
     setupDefaultValidators() {
       const positiveValidator = {
         validate: (value) => {
+          if (this.disabled) return;
           if (this.internalValue <= 0) {
             return `Value must be higher than 0`;
           }
@@ -223,6 +224,7 @@ export default {
       };
       const wrongFormatValidator = {
         validate: (value) => {
+          if (this.disabled) return;
           if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting.`;
           }

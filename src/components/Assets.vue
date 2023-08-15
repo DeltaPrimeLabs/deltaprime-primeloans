@@ -87,7 +87,7 @@ export default {
       funds: null,
       lpTokens: config.LP_ASSETS_CONFIG,
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,
-      traderJoeLpTokens: config.TRADERJOE_LP_ASSETS_CONFIG,
+      traderJoeLpTokens: config.TRADERJOEV2_LP_ASSETS_CONFIG,
       selectedLpTokens: [] = [],
       selectedDexes: [] = [],
       fundsTableHeaderConfig: null,

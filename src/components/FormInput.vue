@@ -14,6 +14,8 @@
         v-bind:placeholder="placeholder"
         v-model="inputValue"
         @input="handleInput"
+        :style="{ fontSize: fontSize + 'px' }"
+        :disabled="disabled"
       >
     </div>
 
@@ -39,7 +41,9 @@ export default ({
     defaultValue: null,
     placeholder: { type: String, default: 'Input Here' },
     noSpace: Boolean,
-    validators: { type: Array, default: () => [] }
+    validators: { type: Array, default: () => [] },
+    fontSize: { type: Number, default: 14 },
+    disabled: { type: Boolean, default: false }
   },
   data() {
     return {
@@ -51,6 +55,9 @@ export default ({
     inputValue(value) {
       if (!this.noSpace) return;
       this.inputValue = value.replace(/ +/g, '');
+    },
+    defaultValue(value) {
+      this.inputValue = value;
     }
   },
   methods: {
@@ -118,7 +125,6 @@ export default ({
       border: none;
       color: var(--notifi-modal__container-common-color);
       font-family: 'Montserrat';
-      font-size: 14px;
       font-weight: 500;
       font-style: normal;
       line-height: normal;

@@ -1,8 +1,8 @@
 <template>
-  <div id="modal" v-if="lpToken" class="provide-liquidity-modal-component modal-component">
+  <div id="modal" v-if="lpToken" class="add-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Create Concentrated LP token
+        Add liquidity
       </div>
 
       <div class="modal-top-info">
@@ -16,6 +16,7 @@
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
+                     :disabled="maxBelowActive"
                      :validators="firstInputValidators">
       </CurrencyInput>
       <div class="modal-top-info">
@@ -29,40 +30,67 @@
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
+                     :disabled="minAboveActive"
                      :validators="secondInputValidators">
       </CurrencyInput>
 
-      <div class="transaction-summary-wrapper">
-        <TransactionResultSummaryBeta>
-          <div class="summary__title">
-            Values after transaction:
-          </div>
-          <div class="summary__horizontal__divider"></div>
-          <div class="summary__values">
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                {{ firstAsset.symbol }} balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(firstAssetBalance) - Number(firstAmount)) }}
-              </div>
+      <div class="liquidity-option shape">
+        <div class="label-with-separator">
+          Choose liquidity Shape
+          <InfoIcon
+            class="label__info-icon"
+            :tooltip="{ content: 'Choose your desired liquidity shape below', placement: 'top', classes: 'info-tooltip' }"
+          ></InfoIcon>
+        </div>
+        <div class="liquidity-option__content">
+          <div
+            v-for="(shape, key) in liquidityShapes"
+            :key="key"
+            :class="['liquidity-shape', selectedShape === key ? 'active' : '']"
+            v-on:click="() => handleShapeClick(key)"
+          >
+            <img class="shape-icon" :src="shape.imgSrc" />
+            <div class="shape-label">
+              {{ shape.name }}
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div class="summary__divider divider--long"></div>
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                {{ secondAsset.symbol }} balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(secondAssetBalance) - Number(secondAmount)) }}
-              </div>
+      <div class="liquidity-option">
+        <div class="label-with-separator">
+          Price range
+        </div>
+        <div class="liquidity-option__content price-slider-wrapper">
+          <RangeSlider
+            :min="activeId - maxPriceRadius"
+            :max="activeId + maxPriceRadius"
+            :value="binRange"
+            @input="updateBinRange"
+          ></RangeSlider>
+          <div class="price-range-inputs">
+            <div class="price__input">
+              <div class="input-label"><b>Min Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
+              <FormInput
+                :default-value="binRange && getBinPrice(binRange[0])"
+                :fontSize="18"
+                :disabled="true"
+              ></FormInput>
+            </div>
+            <div class="price__input">
+              <div class="input-label"><b>Max Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
+              <FormInput
+                :default-value="binRange && getBinPrice(binRange[1])"
+                :fontSize="18"
+                :disabled="true"
+              ></FormInput>
             </div>
           </div>
-        </TransactionResultSummaryBeta>
+        </div>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Create LP token'"
+        <Button :label="'Add Liquidity'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError">
@@ -80,6 +108,9 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
+import InfoIcon from './InfoIcon.vue';
+import RangeSlider from './RangeSlider';
+import FormInput from './FormInput';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {fromWei} from '../utils/calculate';
 import {formatUnits} from "ethers/lib/utils";
@@ -89,23 +120,27 @@ const ethers = require('ethers');
 
 
 export default {
-  name: 'ProvideLiquidityModal',
+  name: 'AddLiquidityModal',
   components: {
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
     Modal,
     BarGaugeBeta,
-    Toggle
+    Toggle,
+    InfoIcon,
+    RangeSlider,
+    FormInput
   },
 
   props: {
     lpToken: {},
-    lpTokenBalance: Number,
+    firstAsset: null,
+    secondAsset: null,
     firstAssetBalance: Number,
     secondAssetBalance: Number,
-    totalFirstAmount: Number,
-    totalSecondAmount: Number,
+    activeId: null,
+    binStep: null
   },
 
   data() {
@@ -114,55 +149,74 @@ export default {
       secondAmount: null,
       firstInputValidators: [],
       secondInputValidators: [],
-      addedLiquidity: 0,
+      liquidityShapes: config.liquidityShapes,
+      selectedShape: Object.keys(config.liquidityShapes)[0],
+      binRange: [],
       transactionOngoing: false,
       firstInputError: true,
       secondInputError: false,
+      priceRadius: 5,
+      maxPriceRadius: 29,
+      minAboveActive: false,
+      maxBelowActive: false
     };
   },
 
   mounted() {
     setTimeout(() => {
       this.setupValidators();
+      this.setupSlider();
     });
   },
 
-  computed: {
-    firstAsset() {
-      return config.ASSETS_CONFIG[this.lpToken.primary];
-    },
-    secondAsset() {
-      return config.ASSETS_CONFIG[this.lpToken.secondary];
-    }
-  },
-
   methods: {
+    setupSlider() {
+      this.binRange = [this.activeId - this.priceRadius, this.activeId + this.priceRadius];
+    },
+
+    getBinPrice(binId) {
+      const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
+      return binPrice.toFixed(5);
+    },
+
     submit() {
       this.transactionOngoing = true;
-      const provideLiquidityEvent = {
-        firstAsset: this.firstAsset,
-        secondAsset: this.secondAsset,
-        firstAmount: this.firstAmount,
-        secondAmount: this.secondAmount,
-        addedLiquidity: this.addedLiquidity
+      const addLiquidityEvent = {
+        tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
+        tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
+        distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
+        binRange: this.binRange
       };
-      this.$emit('PROVIDE_LIQUIDITY', provideLiquidityEvent);
+      this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
 
     async firstInputChange(change) {
       this.firstAmount = change;
-      this.secondAmount = this.firstAmount * this.totalSecondAmount / this.totalFirstAmount;
-      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
-      this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
     },
 
     async secondInputChange(change) {
       this.secondAmount = change;
-      this.firstAmount = (this.secondAmount * this.totalFirstAmount) / (this.totalSecondAmount);
-      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(this.firstAsset.decimals) : 0);
-      this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
+    },
+
+    updateBinRange(newRange) {
+      this.binRange = newRange;
+      if (this.activeId < newRange[0] && this.minAboveActive === false) {
+        this.minAboveActive = true;
+      } else if (this.activeId >= newRange[0] && this.minAboveActive === true) {
+        this.minAboveActive = false;
+      }
+
+      if(newRange[1] < this.activeId && this.maxBelowActive === false) {
+        this.maxBelowActive = true;
+      } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
+        this.maxBelowActive = false; 
+      }
+    },
+
+    handleShapeClick(key) {
+      this.selectedShape = key;
     },
 
     setupValidators() {
@@ -195,8 +249,114 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.provide-liquidity-modal-component {
-
+.add-liquidity-modal-component {
+  .modal__title {
+    margin-bottom: 43px;
+  }
+  .modal-top-info {
+    margin-top: 5px;
+  }
+  .liquidity-option {
+    display: flex;
+    flex-direction: column;
+    &.shape {
+      margin-top: 10px;
+    }
+    .label-with-separator {
+      font-family: Montserrat;
+      font-size: $font-size-sm;
+      font-weight: 600;
+      font-stretch: normal;
+      font-style: normal;
+      line-height: normal;
+      letter-spacing: normal;
+      text-align: left;
+      color: var(--traderjoe-add-liquidity-modal__label-with-separator);
+      display: flex;
+      align-items: center;
+      &:after {
+        content: "";
+        display: block;
+        background-color: var(--traderjoe-add-liquidity-modal__label-with-separator-background);
+        height: 2px;
+        flex-grow: 1;
+        margin-left: 10px;
+      }
+      .label__info-icon {
+        margin-left: 8px;;
+      }
+    }
+    .liquidity-option__content {
+      width: 100%;
+      margin: 30px 0;
+      display: flex;
+      justify-content: space-between;
+      .liquidity-shape {
+        width: 170px;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 18px 0 6px;
+        border-radius: 15px;
+        border: var(--traderjoe-add-liquidity-modal__liquidity-shape-border);
+        cursor: pointer;
+        .shape-icon {
+          margin: 0 37px;
+          filter: grayscale(1);
+          opacity: 0.75;
+        }
+        .shape-label {
+          margin-top: 6px;
+          font-family: Montserrat;
+          font-size: $font-size-sm;
+          font-weight: 500;
+          font-stretch: normal;
+          font-style: normal;
+          line-height: normal;
+          letter-spacing: normal;
+          text-align: left;
+        }
+        &.active {
+          border: var(--traderjoe-add-liquidity-modal__liquidity-shape-border-active);
+          box-shadow: var(--traderjoe-add-liquidity-modal__liquidity-shape-box-shadow);
+          background-color: var(--traderjoe-add-liquidity-modal__liquidity-shape-background);
+          .shape-icon {
+            filter: grayscale(0);
+            opacity: 1;
+          }
+          .shape-label {
+            font-weight: 600;
+          }
+        }
+        &:hover {
+          border-color: var(--traderjoe-add-liquidity-modal__liquidity-shape-border-hover);
+        }
+      }
+      &.price-slider-wrapper {
+        display: flex;
+        flex-direction: column;
+        margin-top: 20px;
+        .price-range-inputs {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          .price__input {
+            width: 260px;
+            .input-label {
+              font-family: Montserrat;
+              font-size: $font-size-xsm;
+              color: var(--traderjoe-add-liquidity-modal__price-slider-input-color);
+            }
+          }
+        }
+      }
+    }
+  }
+  .button-wrapper {
+    margin-top: 20px;
+  }
 }
 
 

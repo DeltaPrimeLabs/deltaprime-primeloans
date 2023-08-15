@@ -20,6 +20,7 @@ import LoanHistoryService from "../services/loanHistoryService";
 import WalletAssetBalancesService from '../services/walletAssetBalancesService';
 import NotifiService from '../services/notifiService';
 import LifiService from '../services/lifiService';
+import TraderJoeService from '../services/traderJoeService';
 
 export default {
   namespaced: true,
@@ -46,5 +47,6 @@ export default {
     walletAssetBalancesService: new WalletAssetBalancesService(),
     notifiService: new NotifiService(),
     lifiService: new LifiService(),
+    traderJoeService: new TraderJoeService()
   },
 };

@@ -80,11 +80,12 @@ export default {
         "SHLB_USDT.e-USDt_C": { primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 704000, debtCoverage: 0.83333333333},
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1050000, debtCoverage: 0.83333333333},
     },
-    TRADERJOE_LP_ASSETS_CONFIG: {
-        'TJ_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'AVAX_USDC', decimals: 18},
-        'TJ_BTC.b-USDC': { primary: 'BTC', secondary: 'USDC', name: 'BTC.b-USDC', dex: 'TraderJoe', symbol: 'TJ_BTC.b-USDC', decimals: 18},
-        'TJ_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC.b-AVAX', dex: 'TraderJoe', symbol: 'TJ_BTC.b-AVAX', decimals: 18},
-        'TJ_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJ_ETH-AVAX', decimals: 18},
+    TRADERJOEV2_LP_ASSETS_CONFIG: {
+        'TJ_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJ_AVAX-USDC', decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20},
+        'TJ_BTC.b-USDC': { primary: 'BTC', secondary: 'USDC', name: 'BTC.b-USDC', dex: 'TraderJoe', symbol: 'TJ_BTC.b-USDC', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC.b-USDC'], binStep: 10},
+        'TJ_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC.b-AVAX', dex: 'TraderJoe', symbol: 'TJ_BTC.b-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10},
+        'TJ_USDT-USDC': { primary: 'USDT', secondary: 'USDC', name: 'USDT-USDC', dex: 'TraderJoe', symbol: 'TJ_USDT-USDC', decimals: 18, baseFee: '0.0002', address: addresses['TJLB_USDT-USDC'], binStep: 1},
+        'TJ_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJ_ETH-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10},
     },
     DEX_CONFIG: {
         'Pangolin': {
@@ -424,5 +425,22 @@ export default {
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
+    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
+    liquidityShapes: {
+        spot: {
+            name: "Spot",
+            imgSrc: "src/assets/icons/liquidity_shape_spot_on.svg",
+            distributionMethod: "getUniformDistributionFromBinRange"
+        },
+        curve: {
+            name: "Curve",
+            imgSrc: "src/assets/icons/liquidity_shape_curve_on.svg",
+            distributionMethod: "getCurveDistributionFromBinRange"
+        },
+        bidAsk: {
+            name: "Bid-Ask",
+            imgSrc: "src/assets/icons/liquidity_shape_bid-ask_on.svg",
+            distributionMethod: "getBidAskDistributionFromBinRange"
+        },
+    }
 }
