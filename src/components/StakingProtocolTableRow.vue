@@ -5,6 +5,12 @@
       temporarily disabled. Read more in our
       <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
     </div>
+    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_PNG_AVAX_USDC_LP'">
+      The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.
+    </div>
+    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_PNG_AVAX_ETH_LP'">
+      The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.
+    </div>
     <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_TJ_AVAX_sAVAX_LP'">
       Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.
     </div>

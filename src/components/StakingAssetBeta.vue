@@ -197,13 +197,18 @@ export default {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     calculateStakingProtocolsHeight() {
-      const headerHeight = this.asset.symbol === 'TJ_AVAX_sAVAX_LP' ? 63 : 53;
+      const simpleProtocolsWithBanner = ['YY_PNG_AVAX_USDC_LP', 'YY_PNG_AVAX_ETH_LP', 'YY_TJ_AVAX_sAVAX_LP']
+      // const headerHeight = this.asset.symbol === 'TJ_AVAX_sAVAX_LP' ? 63 : 53;
+      const headerHeight = 53;
       if (this.availableFarms) {
         const numberOfProtocols = Object.keys(this.availableFarms).length;
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 26;
+          }
+          if (simpleProtocolsWithBanner.includes(farm.protocolIdentifier)) {
+            heightOfRows += 10;
           }
           heightOfRows += 102;
         });

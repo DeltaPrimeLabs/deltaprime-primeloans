@@ -47,8 +47,11 @@
         {{ lpToken.tvl | usd }}
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
+      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
+        <div class="apr-warning" v-if="lpToken.aprWarning">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+        </div>
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -597,6 +600,15 @@ export default {
 
       &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.apr.apr--with-warning {
+        position: relative;
+
+        .apr-warning {
+          position: absolute;
+          right: -25px;
+        }
       }
 
       &.max-apr {
