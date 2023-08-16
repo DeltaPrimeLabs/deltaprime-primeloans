@@ -38,7 +38,7 @@
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <span>
         <img src="src/assets/icons/error.svg"/>
-        {{ error }}
+        <span v-html="error" class="error-message"></span>
       </span>
     </div>
     <div class="warning"
