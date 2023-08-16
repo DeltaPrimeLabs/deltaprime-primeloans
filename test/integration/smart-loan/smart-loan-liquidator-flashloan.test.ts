@@ -127,7 +127,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             await recompileConstantsFile(
                 'local',
@@ -306,7 +306,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             await recompileConstantsFile(
                 'local',
@@ -472,7 +472,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             await recompileConstantsFile(
                 'local',
@@ -649,7 +649,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             await recompileConstantsFile(
                 'local',
@@ -837,7 +837,8 @@ describe('Test liquidator with a flashloan', () => {
             diamondAddress = await deployDiamond();
 
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
-            await smartLoansFactory.initialize(diamondAddress);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 owner,
@@ -1024,7 +1025,7 @@ describe('Test liquidator with a flashloan', () => {
 
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 owner,
@@ -1230,7 +1231,7 @@ describe('Test liquidator with a flashloan', () => {
                 'lib'
             );
 
-            await smartLoansFactory.initialize(diamondAddress);
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             await recompileConstantsFile(
                 'local',

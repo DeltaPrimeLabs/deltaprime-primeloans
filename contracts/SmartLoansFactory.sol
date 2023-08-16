@@ -11,6 +11,7 @@ import "./proxies/SmartLoanDiamondProxy.sol";
 import "./facets/AssetsOperationsFacet.sol";
 import "./facets/OwnershipFacet.sol";
 import "./facets/SmartLoanViewFacet.sol";
+import "./interfaces/ITokenManager.sol";
 
 /**
  * @title SmartLoansFactory
@@ -38,6 +39,8 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
     address[] loans;
 
+    ITokenManager public tokenManager;
+
     function _hasLoan(address user) internal view returns (bool) {
         return ownersToLoans[user] != address(0);
     }
@@ -54,8 +57,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         loansToOwners[loan] = _newOwner;
     }
 
-    function initialize(address payable _smartLoanDiamond) external initializer {
+    function initialize(address payable _smartLoanDiamond, address _tokenManager) external initializer {
         smartLoanDiamond = SmartLoanDiamondBeacon(_smartLoanDiamond);
+        tokenManager = ITokenManager(_tokenManager);
         __Ownable_init();
     }
 
@@ -75,14 +79,15 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, address _assetAddress, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+        address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
             abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
         //Fund account with own funds and credit
-        IERC20Metadata token = IERC20Metadata(_assetAddress);
+        IERC20Metadata token = IERC20Metadata(asset);
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
         address(token).safeApprove(address(smartLoan), _amount);
 

@@ -167,7 +167,7 @@ describe("Smart loan", () => {
                     "PangolinIntermediary"
                 )) as PangolinIntermediary;
 
-                await smartLoansFactory.initialize(diamondAddress);
+                await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
                 await recompileConstantsFile(
                     "local",

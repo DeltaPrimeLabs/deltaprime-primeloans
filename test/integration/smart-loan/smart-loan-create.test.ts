@@ -71,7 +71,6 @@ describe('Smart loan', () => {
             let diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
@@ -87,6 +86,8 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, []);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 owner,
@@ -133,7 +134,7 @@ describe('Smart loan', () => {
 
             await tokenContracts.get('AVAX')!.connect(borrower2).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
-            await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), TOKEN_ADDRESSES['AVAX'], toWei("1"));
+            await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1"));
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(borrower2.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower2);
@@ -175,10 +176,10 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(borrower3).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower3).approve(smartLoansFactory.address, toWei("1"));
 
-            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), tokenContracts.get('MCKUSD')!.address, toWei("1")))
+            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1")))
                 .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
 
-            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("MCKUSD"), tokenContracts.get('MCKUSD')!.address, toWei("1")))
+            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("MCKUSD"), toWei("1")))
                 .not.to.be.reverted;
         });
     });

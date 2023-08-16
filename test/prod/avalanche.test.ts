@@ -154,22 +154,18 @@ describe('Test deployed contracts on Avalanche', () => {
 
             await expect(smartLoansFactory.connect(USER_1).createLoan()).to.be.revertedWith('Only one loan per owner is allowed');
             await expect(smartLoansFactory.connect(USER_1).createAndFundLoan(
-                toBytes32('USDC'), usdcTokenContract.address, parseUnits('1', await usdcTokenContract.decimals()))
+                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals()))
             ).to.be.revertedWith('Only one loan per owner is allowed');
 
             await usdcTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await usdcTokenContract.decimals()));
             await wavaxTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await wavaxTokenContract.decimals()));
-            //provided wrong token address
-            await expect(smartLoansFactory.connect(USER_2).createAndFundLoan(
-                toBytes32('USDC'), wavaxTokenContract.address, parseUnits('1', await usdcTokenContract.decimals()))
-            ).to.be.reverted;
 
             loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
             await usdcTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await usdcTokenContract.decimals()));
 
             await smartLoansFactory.connect(USER_2).createAndFundLoan(
-                toBytes32('USDC'), usdcTokenContract.address, parseUnits('1', await usdcTokenContract.decimals()));
+                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals()));
 
             loansAfterCreate = await smartLoansFactory.getAllLoans();
             newLoan = await smartLoansFactory.getLoanForOwner(USER_2.address);
