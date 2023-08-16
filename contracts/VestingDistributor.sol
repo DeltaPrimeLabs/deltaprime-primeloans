@@ -76,9 +76,10 @@ contract VestingDistributor {
         participants.push(msg.sender);
         locked[msg.sender] = amount;
         unvestingTime[msg.sender] = time;
-        multiplier[msg.sender] = getMultiplier(time);
+        uint256 _multiplier = getMultiplier(time);
+        multiplier[msg.sender] = _multiplier;
 
-        totalLockedMultiplied += amount * multiplier[msg.sender] / 1e18;
+        totalLockedMultiplied += amount * _multiplier / 1e18;
     }
 
     /**
@@ -217,7 +218,7 @@ contract VestingDistributor {
         if (time >= 2 * ONE_DAY) return 1.32e18; // min. 2 days
         if (time >= 1 * ONE_DAY) return 1.2e18; // min. 1 day
 
-        return 1;
+        return 1e18;
     }
 
 
