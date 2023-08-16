@@ -102,7 +102,7 @@ contract TokenManager is OwnableUpgradeable {
             if(exposure.max != 0){
                 exposure.current += exposureIncrease;
                 require(exposure.current <= exposure.max, "Max asset exposure breached");
-                emit ProtocolExposureChanged(msg.sender, group, exposureIncrease, block.timestamp);
+                emit ProtocolExposureChanged(msg.sender, group, exposure.current, block.timestamp);
             }
         }
     }
@@ -113,7 +113,7 @@ contract TokenManager is OwnableUpgradeable {
             Exposure storage exposure = groupToExposure[group];
             if(exposure.max != 0){
                 exposure.current = exposure.current <= exposureDecrease ? 0 : exposure.current - exposureDecrease;
-                emit ProtocolExposureChanged(msg.sender, group, exposureDecrease, block.timestamp);
+                emit ProtocolExposureChanged(msg.sender, group, exposure.current, block.timestamp);
             }
         }
     }
