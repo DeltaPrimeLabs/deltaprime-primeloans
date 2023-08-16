@@ -33,11 +33,16 @@ import PoolsTableRowBeta from './PoolsTableRowBeta';
 import TableHeader from './TableHeader';
 import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
-import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import ResumeBridgeModal from './ResumeBridgeModal';
 
 const ethers = require('ethers');
+
+let TOKEN_ADDRESSES;
+(async () => {
+  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+})();
+
 
 export default {
   name: 'PoolsBeta',
@@ -160,7 +165,7 @@ export default {
       const depositAssetsWalletBalances = {};
       combineLatest(
         pools.map(pool => {
-            const contract = new ethers.Contract(addresses[pool.asset.symbol], erc20ABI, this.provider.getSigner());
+            const contract = new ethers.Contract(TOKEN_ADDRESSES[pool.asset.symbol], erc20ABI, this.provider.getSigner());
             return this.getWalletTokenBalance(
               this.account,
               pool.asset.symbol,

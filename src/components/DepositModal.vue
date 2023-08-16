@@ -19,7 +19,7 @@
       <CurrencyInput v-on:newValue="depositValueChange"
                      :symbol="assetSymbol"
                      :validators="validators"
-                     :max="assetSymbol === 'AVAX' && selectedDepositAsset === 'AVAX' ? null : walletAssetBalance">
+                     :max="assetSymbol === config.nativeToken && selectedDepositAsset === config.native ? null : walletAssetBalance">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -58,8 +58,8 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="assetSymbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
+      <div class="toggle-container" v-if="assetSymbol === config.nativeToken">
+        <Toggle v-on:change="assetToggleChange" :options="[config.nativeToken, `W${config.nativeToken}`]"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -78,6 +78,7 @@ import Toggle from './Toggle';
 import ethers from 'ethers';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
+import config from '../config';
 
 export default {
   name: 'DepositModal',
@@ -100,7 +101,7 @@ export default {
   data() {
     return {
       depositValue: 0,
-      selectedDepositAsset: 'AVAX',
+      selectedDepositAsset: config.nativeToken,
       validators: [],
       transactionOngoing: false,
     };
@@ -111,20 +112,23 @@ export default {
   },
 
   computed: {
+    config() {
+      return config
+    },
     calculateDailyInterest() {
       return this.apy / 365 * (Number(this.deposit) + this.depositValue);
     },
 
     getModalHeight() {
-      return this.assetSymbol === 'AVAX' ? '561px' : null;
+      return this.assetSymbol === config.nativeToken ? '561px' : null;
     },
 
     available() {
-      return (this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX') ? this.accountBalance : this.walletAssetBalance;
+      return (this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken) ? this.accountBalance : this.walletAssetBalance;
     },
 
     symbol() {
-      return this.assetSymbol === 'AVAX' ? this.selectedDepositAsset : this.assetSymbol;
+      return this.assetSymbol === config.nativeToken ? this.selectedDepositAsset : this.assetSymbol;
     }
   },
 
@@ -133,7 +137,7 @@ export default {
       this.transactionOngoing = true;
       const depositEvent = {
         value: this.depositValue,
-        depositNativeToken: this.assetSymbol === 'AVAX' && this.selectedDepositAsset === 'AVAX',
+        depositNativeToken: this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken,
       };
       this.$emit('DEPOSIT', depositEvent);
     },
