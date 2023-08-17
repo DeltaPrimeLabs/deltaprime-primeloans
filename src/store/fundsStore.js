@@ -1061,7 +1061,7 @@ export default {
         parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
         parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
         parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 4000000}
+        {gasLimit: 5000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
