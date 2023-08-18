@@ -97,7 +97,7 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
                 weightedCollateralMinus = weightedCollateralMinus + (ownedAssetsPrices[i].price * (_borrowed - _balance) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
             weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) / 1e8);
+            borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * 1e10 / (10 ** token.decimals()));
         }
         if (weightedCollateralPlus > weightedCollateralMinus) {
             weightedCollateral = weightedCollateralPlus - weightedCollateralMinus;
