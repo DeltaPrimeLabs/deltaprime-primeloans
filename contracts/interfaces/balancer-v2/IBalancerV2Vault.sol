@@ -16,7 +16,7 @@ pragma experimental ABIEncoderV2;
 
 import "./IAsset.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../lib/WETH9.sol";
+//import "../../lib/WETH9.sol";
 
 pragma solidity >=0.7.0 <0.9.0;
 
@@ -389,6 +389,6 @@ interface IVault {
     /**
      * @dev Returns the Vault's WETH instance.
      */
-    function WETH() external view returns (WETH9);
+//    function WETH() external view returns (WETH9);
     // solhint-disable-previous-line func-name-mixedcase
 }

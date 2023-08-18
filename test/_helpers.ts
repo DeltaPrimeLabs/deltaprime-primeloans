@@ -843,6 +843,12 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeTraderJoeV2AutopoolAVAXUSDC'
         ],
         hardhatConfig)
+
+        await deployFacet("BalancerV2Facet", diamondAddress, [
+                'joinPoolAndStakeBalancerV2',
+                'unstakeAndExitPoolBalancerV2'
+        ],
+        hardhatConfig)
     }
     if (chain == 'ARBITRUM') {
         // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
