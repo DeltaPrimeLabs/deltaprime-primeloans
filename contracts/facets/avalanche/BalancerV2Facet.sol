@@ -14,6 +14,9 @@ import "../../interfaces/balancer-v2/IBalancerV2Gauge.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
+import "../../interfaces/balancer-v2/IBalancerV2Vault.sol";
+
+import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
 
 contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
@@ -24,47 +27,72 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
      * Joins a pool and stakes in a gauge
      * @param poolId id of a balancer pool
-     * @param request Balancer request for joining a pool
+     * @param stakedTokens tokens to stake
+     * @param stakedAmounts amounts to stake
+     * @param minBptAmount min. receipt token / slippage protection
      **/
-    function joinPoolAndStakeBalancerV2(bytes32 poolId, bytes32 stakedToken, IVault.JoinPoolRequest memory request) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function joinPoolAndStakeBalancerV2(bytes32 poolId, address[] memory stakedTokens, uint256[] memory stakedAmounts, uint256 minBptAmount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+        if (stakedTokens.length != stakedAmounts.length) revert ArgArrayLengthsDiffer();
+
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         IVault vault = IVault(VAULT_ADDRESS);
 
         (address pool,) = vault.getPool(poolId);
 
-        bool allZero = true;
+        //poolToGauge checks as well if the pool is whitelisted
+        IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
 
-        uint256[] memory initialDepositTokenBalances = new uint256[](request.assets.length);
-
-        for (uint256 i; i < request.assets.length; ++i) {
-            IERC20 depositToken = IERC20Metadata(address(request.assets[i]));
-            initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+        for (uint256 i; i < stakedTokens.length; i++) {
+            if (stakedAmounts[i] > 0 && !tokenManager.isTokenAssetActive(stakedTokens[i])) revert DepositingInactiveToken();
+            if (stakedTokens[i] == address(pool) || stakedTokens[i] == address(gauge)) revert DepositingWrongToken();
         }
 
-        for (uint256 i; i < request.maxAmountsIn.length; ++i ) {
-            if (request.maxAmountsIn[i] > 0) {
+        bool allZero = true;
+
+        uint256[] memory initialDepositTokenBalances = new uint256[](stakedAmounts.length);
+
+        for (uint256 i; i < stakedTokens.length; ++i) {
+            if (tokenManager.isTokenAssetActive(stakedTokens[i])) {
+                IERC20 depositToken = IERC20Metadata(stakedTokens[i]);
+                initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+            }
+        }
+
+        for (uint256 i; i < stakedAmounts.length; ++i ) {
+            if (stakedAmounts[i] > 0) {
                 allZero = false;
-                address(request.assets[i]).safeApprove(VAULT_ADDRESS, 0);
-                address(request.assets[i]).safeApprove(VAULT_ADDRESS, request.maxAmountsIn[i]);
+                stakedTokens[i].safeApprove(VAULT_ADDRESS, 0);
+                stakedTokens[i].safeApprove(VAULT_ADDRESS, stakedAmounts[i]);
             }
         }
         require(!allZero, "Cannot joinPoolAndStakeBalancerV2 0 tokens");
 
-        bytes32[] memory stakedAssets = new bytes32[](request.assets.length);
-        uint256[] memory stakedAmounts = new uint256[](request.assets.length);
+        {
+            IAsset[] memory tokens = new IAsset[](stakedTokens.length + 1);
+            uint256[] memory amounts = new uint256[](stakedAmounts.length + 1);
 
-        for (uint256 i; i < request.assets.length; ++i ) {
-            IERC20 depositToken = IERC20Metadata(address(request.assets[i]));
-            stakedAssets[i] = tokenManager.tokenAddressToSymbol(address(request.assets[i]));
-            stakedAmounts[i] = depositToken.balanceOf(address(this)) - initialDepositTokenBalances[i];
+            for (uint256 i; i < tokens.length - 1; i++) {
+                tokens[i] = IAsset(stakedTokens[i]);
+                amounts[i] = stakedAmounts[i];
+            }
+
+            tokens[tokens.length - 1] = IAsset(pool);
+            amounts[amounts.length - 1] = 0;
+
+            IVault.JoinPoolRequest memory request = IVault.JoinPoolRequest(
+                tokens,
+                amounts,
+                //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html
+                abi.encode(1, stakedAmounts, minBptAmount),
+                false
+            );
+
+            //joins the pools
+            IVault(VAULT_ADDRESS).joinPool(poolId, address(this), address(this), request);
         }
 
-        //joins the pools
-        IVault(VAULT_ADDRESS).joinPool(poolId, address(this), address(this), request);
 
-        //poolToGauge checks as well if the pool is whitelisted
-        IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
 
         uint256 initialGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
@@ -76,81 +104,105 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(address(gauge)), address(gauge));
 
         // Remove deposit tokens if empty
-        for (uint256 i; i < request.assets.length; ++i ) {
-            if (address(request.assets[i]) != pool) {
-                IERC20Metadata token = IERC20Metadata(address(request.assets[i]));
+        for (uint256 i; i < stakedTokens.length; ++i ) {
+            if (stakedTokens[i] != pool) {
+                IERC20Metadata token = IERC20Metadata(stakedTokens[i]);
+
                 if (token.balanceOf(address(this)) == 0) {
                     DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(address(token)));
                 }
             }
         }
 
-        emit Staked(
-            msg.sender,
-            stakedAssets,
-            pool,
-            stakedAmounts,
-            IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance,
-            block.timestamp
-        );
+        {
+            bytes32[] memory stakedAssets = new bytes32[](stakedTokens.length);
+
+            for (uint256 i; i < stakedTokens.length; ++i ) {
+                if (tokenManager.isTokenAssetActive(stakedTokens[i])) {
+                    IERC20 depositToken = IERC20Metadata(stakedTokens[i]);
+                    stakedAssets[i] = tokenManager.tokenAddressToSymbol(stakedTokens[i]);
+
+                    stakedAmounts[i] = initialDepositTokenBalances[i] - depositToken.balanceOf(address(this));
+                }
+            }
+
+            emit Staked(
+                msg.sender,
+                stakedAssets,
+                pool,
+                stakedAmounts,
+                IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance,
+                block.timestamp
+            );
+        }
     }
 
     /**
      * Unstakes tokens a gauge and exits a pool
-     * @param poolId id of a balancer pool
-     * @param request Balancer request for exiting pool
+     * @param request unstake request
     **/
-    function unstakeAndExitPoolBalancerV2(bytes32 poolId, IVault.ExitPoolRequest memory request) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
-        uint256[] memory unstakedAmounts = new uint256[](request.assets.length);
+    function unstakeAndExitPoolBalancerV2(IBalancerV2Facet.UnstakeRequest memory request) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+        (address pool,) = IVault(VAULT_ADDRESS).getPool(request.poolId);
 
-        IVault vault = IVault(VAULT_ADDRESS);
-
-        (address pool,) = vault.getPool(poolId);
-
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
-        uint256[] memory initialDepositTokenBalances = new uint256[](request.assets.length);
-
-        for (uint256 i; i < request.assets.length; ++i) {
-            IERC20 depositToken = IERC20Metadata(address(request.assets[i]));
-            initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
-        }
-
-        //checks as well if the pool is whitelisted
         IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
 
+        if (!DeploymentConstants.getTokenManager().isTokenAssetActive(request.unstakedToken)) revert UnstakingToInactiveToken();
+        if (request.unstakedToken == address(pool) || request.unstakedToken == address(gauge)) revert UnstakingWrongToken();
+
+        uint256 initialDepositTokenBalance = IERC20(request.unstakedToken).balanceOf(address(this));
+
+        //checks as well if the pool is whitelisted
         uint256 initialGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
         //unstakes from the gauge
-        gauge.withdraw(gauge.balanceOf(address(this)));
+        gauge.withdraw(request.bptAmount);
+
+        IVault.ExitPoolRequest memory exitRequest;
 
         //exit pool to basic assets
-        IVault(VAULT_ADDRESS).exitPool(poolId, address(this), payable(address(this)), request);
+        {
+            IAsset[] memory assets;
+            uint256[] memory amounts;
 
-        bytes32[] memory unstakedAssets = new bytes32[](request.assets.length);
+            uint256 unstakedIndex;
+            {
+                (IERC20[] memory tokens,,) = IVault(VAULT_ADDRESS).getPoolTokens(request.poolId);
 
-        // Add/remove owned tokens
-        for (uint256 i; i < request.assets.length; ++i) {
-            //request.assets can contain the pool token, we skip it here
-            if (address(request.assets[i]) != pool) {
-                IERC20 depositToken = IERC20(address(request.assets[i]));
-                unstakedAssets[i] = tokenManager.tokenAddressToSymbol(address(request.assets[i]));
-                unstakedAmounts[i] = depositToken.balanceOf(address(this)) - initialDepositTokenBalances[i];
+                assets = new IAsset[](tokens.length);
+                amounts = new uint256[](tokens.length);
 
-                if (unstakedAssets[i] != "") {
-                    DiamondStorageLib.addOwnedAsset(unstakedAssets[i], address(depositToken));
+                for (uint256 i; i < amounts.length; ++i) {
+                    assets[i] = IAsset(address(tokens[i]));
+                    if (address(tokens[i]) == request.unstakedToken) {
+                        amounts[i] = request.unstakedAmount;
+                        unstakedIndex = i;
+                    }
                 }
             }
+
+            exitRequest = IVault.ExitPoolRequest(
+                assets,
+                amounts,
+                //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html
+                abi.encode(0, request.bptAmount, unstakedIndex),
+                false
+            );
         }
 
-        console.log('newGaugeBalance: ', newGaugeBalance);
+        //joins the pools
+        IVault(VAULT_ADDRESS).exitPool(request.poolId, address(this), payable(address(this)), exitRequest);
+
+        bytes32[] memory unstakedAssets = new bytes32[](1);
+        uint256[] memory unstakedAmounts = new uint256[](1);
+
+        unstakedAssets[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(request.unstakedToken);
+        unstakedAmounts[0] = IERC20(request.unstakedToken).balanceOf(address(this)) - initialDepositTokenBalance;
+        DiamondStorageLib.addOwnedAsset(unstakedAssets[0], address(request.unstakedToken));
 
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
-        console.log('newGaugeBalance: ', newGaugeBalance);
-
         if (newGaugeBalance == 0) {
-            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(address(gauge)));
+            DiamondStorageLib.removeOwnedAsset(DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(gauge)));
         }
 
         emit Unstaked(
@@ -173,17 +225,6 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         revert BalancerV2PoolNotWhitelisted();
     }
 
-    //Balancer pools can consists of various tokens, some unsupported by DeltaPrime. That is why it is checked
-    //whether a token that user wants deposits from/to is whitelisted
-    function poolToAcceptedTokens(address pool) internal returns (bytes32[]) {
-        if (pool == 0xA154009870E9B6431305F19b09F9cfD7284d4E7A) {
-            return ['sAVAX'];
-        }
-
-        revert BalancerV2PoolNotWhitelisted();
-    }
-
-
     // MODIFIERS
 
     modifier onlyOwner() {
@@ -194,6 +235,16 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // ERRORS
     error BalancerV2PoolNotWhitelisted();
+
+    error ArgArrayLengthsDiffer();
+
+    error DepositingInactiveToken();
+
+    error DepositingWrongToken();
+
+    error UnstakingToInactiveToken();
+
+    error UnstakingWrongToken();
 
     // EVENTS
 

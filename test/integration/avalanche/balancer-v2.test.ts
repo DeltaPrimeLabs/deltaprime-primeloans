@@ -192,18 +192,15 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.joinPoolAndStakeBalancerV2(
                 "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
                 [
-                    [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
-                        "0xa154009870e9b6431305f19b09f9cfd7284d4e7a"
-                    ],
-                    [
-                        toWei("10"), //try with no
-                        0 //2 ELEMENTS INSTEAD OF 3!
-                    ],
-                    userData,
-                    false
-                ]
+                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                    "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                ],
+                [
+                    toWei("10"), //try with no
+                    0
+                ],
+                //TODO: check slippage
+                toWei('0.0001')
             )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -228,26 +225,25 @@ describe('Smart loan', () => {
                 ]
             );
 
+            console.log('encoded')
+            console.log(userData)
+
             console.log('owned assets before join pool: ')
             console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
 
             await wrappedLoan.joinPoolAndStakeBalancerV2(
                 "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
                 [
-                    [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
-                        "0xa154009870e9b6431305f19b09f9cfd7284d4e7a"
-                    ],
-                    [
-                        toWei("10"), //try with no
-                        0,
-                        0
-                    ],
-                    userData,
-                    false
-                ]
-            );
+                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                    "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                ],
+                [
+                    toWei("10"), //try with no
+                    0
+                ],
+                //TODO: check slippage
+                toWei('0.0001')
+        );
 
             console.log('owned assets after join pool: ')
             console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
@@ -260,37 +256,6 @@ describe('Smart loan', () => {
             // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
         });
 
-        // it("should stake AVAX, sAVAX and AAVE receipt token", async () => {
-        //     let initialHR = fromWei(await wrappedLoan.getHealthRatio());
-        //     let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
-        //
-        //     let initialStakedBalance = await balancerTokenContract.balanceOf(wrappedLoan.address);
-        //     expect(initialStakedBalance).to.be.equal(0);
-        //
-        //     await expect(wrappedLoan.stakeBalancer([0, 0, 0, 0, 0])).to.be.revertedWith("Cannot stake 0 tokens");
-        //
-        //     //TODO: change
-        //     const tokens = ['DAIe', 'USDCe', "USDT.e", 'WBTCe', 'ETH'];
-        //     for (let i = 0; i < tokens.length; i++) {
-        //         await wrappedLoan.swapPangolin(
-        //             toBytes32('AVAX'),
-        //             toBytes32(tokens[i]),
-        //             toWei('20'),
-        //             0,
-        //         );
-        //         expect(await wrappedLoan.getBalance(toBytes32(tokens[i]))).to.be.gt(0);
-        //     };
-        //
-        //     // Should stake max if amount > balance
-        //     await wrappedLoan.stakeBalancer([toWei("99999999"), toWei("99999999"), toWei("99999999"), toWei("99999999"), toWei("99999999")]);
-        //     for (let i = 0; i < tokens.length; i++) {
-        //         expect(await wrappedLoan.getBalance(toBytes32(tokens[i]))).to.be.eq(0);
-        //     };
-        //
-        //     expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
-        //     expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
-        // });
-        //
         it("should unstake sAVAX", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
@@ -305,46 +270,19 @@ describe('Smart loan', () => {
                 ]
             );
 
-            console.log('owned assets before exit pool: ')
-            console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
-
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
-                "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
                 [
-                    [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
-                        "0xa154009870e9b6431305f19b09f9cfd7284d4e7a"
-                    ],
-                    [
-                        toWei("9"), //10 % max. slippage
-                        0,
-                        0
-                    ],
-                    userData,
-                    false
+                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                    toWei("9"), //max. slippage = 10%,
+                    await balancerTokenContract.balanceOf(wrappedLoan.address)
                 ]
-            );
-
-            console.log('owned assets after exit pool: ')
-            console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
+        );
 
             //TODO: uncomment after RS feed is ready
             // expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 25);
             // expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 4);
             // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
         });
-        //
-        // it("should unstake all tokens", async () => {
-        //     let initialTotalValue = await wrappedLoan.getTotalValue();
-        //     let initialHR = fromWei(await wrappedLoan.getHealthRatio());
-        //     let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
-        //
-        //     await wrappedLoan.unstakeBalancer(toWei("99999999"), [0, 0, 0, 0, 0]);
-        //
-        //     expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
-        //     expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
-        //     expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
-        // });
     });
 });
