@@ -1,26 +1,21 @@
-import { Subject } from 'rxjs';
-import { 
-  LB_ROUTER_V21_ADDRESS,
-  LBRouterV21ABI,
-  PairV2,
-  RouteV2,
-  TradeV2,
-  Bin,
-  LiquidityDistribution,
-  getLiquidityConfig,
-  getDistributionFromTargetBin,
-  getUniformDistributionFromBinRange,
-  getBidAskDistributionFromBinRange,
-  getCurveDistributionFromBinRange
+import {
+  LB_ROUTER_V21_ADDRESS, 
+  LBRouterV21ABI
 } from '@traderjoe-xyz/sdk-v2';
 import * as traderJoeSdk from '@traderjoe-xyz/sdk-v2';
-import { ERC20ABI, JSBI } from '@traderjoe-xyz/sdk';
-import { ChainId, Token, TokenAmount, WNATIVE, CurrencyAmount } from '@traderjoe-xyz/sdk-core';
+import { JSBI, ERC20ABI } from '@traderjoe-xyz/sdk';
+import { Token, TokenAmount } from '@traderjoe-xyz/sdk-core';
 import { ethers, BigNumber, utils } from 'ethers';
-import { MaxUint256 } from '@ethersproject/constants'
 import config from '../config';
 
 const CHAIN_ID = config.chainId;
+const LBPairABI = [
+  'function getReserves() public view returns (uint128, uint128)',
+  'function getActiveId() public view returns (uint24)',
+  'function balanceOf(address, uint256) public view returns (uint256)',
+  'function getBin(uint24) public view returns (uint128, uint128)',
+  'function totalSupply(uint256) public view returns (uint256)'
+];
 
 export default class TraderJoeService {
   calculateGasMargin(value, margin = 1000) {
@@ -42,15 +37,15 @@ export default class TraderJoeService {
     return token;
   }
 
-  // To-do: fetchLBPair 3rd argument error. contact TJ team for updated doc or guide.
-  // async getLBPairReservesAndActiveBin(tokenX, tokenY, binStep, provider) {
-  //   const pair = new PairV2(tokenX, tokenY);
-  //   const isV21 = true; // set to true if it's a V2.1 pair
-  //   const lbPair = await pair.fetchLBPair(Number(binStep), isV21, PROVIDER, CHAIN_ID);
-  //   const lbPairData = await PairV2.getLBPairReservesAndId(lbPair.LBPair, isV21, PROVIDER);
+  async getLBPairReservesAndActiveBin(lbPairAddress, provider) {
+    const lbPairContract = new ethers.Contract(lbPairAddress, LBPairABI, provider);
+    const res = await Promise.all([
+      lbPairContract.getReserves(),
+      lbPairContract.getActiveId()
+    ]);
 
-  //   return lbPairData;
-  // }
+    return res;
+  }
 
   getIdSlippageFromPriceSlippage(priceSlippage, binStep) {
     return Math.floor(
@@ -148,16 +143,14 @@ export default class TraderJoeService {
       await this.approveLBRouter(addLiquidityInput.tokenX, addLiquidityInput.amountX, addLiquidityInput.to, provider);
       await this.approveLBRouter(addLiquidityInput.tokenY, addLiquidityInput.amountY, addLiquidityInput.to, provider);
       // init router contract
-      const router = new ethers.Contract(
+      const routerContract = new ethers.Contract(
         LB_ROUTER_V21_ADDRESS[CHAIN_ID],
         LBRouterV21ABI,
         provider.getSigner()
-      )
+      );
 
-      // await router.addLiquidity(addLiquidityInput);
-
-      const estimate = router.estimateGas.addLiquidity // 'addLiquidityAVAX' if one of the tokens is AVAX
-      const method = router.addLiquidity
+      const estimate = routerContract.estimateGas.addLiquidity // 'addLiquidityAVAX' if one of the tokens is AVAX
+      const method = routerContract.addLiquidity
 
       // set AVAX amount, such as tokenAmountAVAX.raw.toString(), when one of the tokens is AVAX; otherwise, set to null
       const value = null 
@@ -177,11 +170,69 @@ export default class TraderJoeService {
     }
   }
 
-  getRemoveLiquidityParameters() {
+  async getRemoveLiquidityParameters(
+    smartLoanAddress,
+    lbPairAddress,
+    provider,
+    tokenX,
+    tokenY,
+    binStep,
+    binRangeToRemove
+  ) {
+    const lbPairContract = new ethers.Contract(lbPairAddress, LBPairABI, provider);
+    const amounts = [];
+    const ids = [];
+    let totalXBalanceWithdrawn = BigNumber.from(0);
+    let totalYBalanceWithdrawn = BigNumber.from(0);
     
-  }
+    for (let binId = binRangeToRemove[0]; binId <= binRangeToRemove[1]; binId++) {
+      const [lbTokenAmount, binReserves, totalSupply] = await Promise.all([
+        lbPairContract.balanceOf(smartLoanAddress, binId),
+        lbPairContract.getBin(binId),
+        lbPairContract.totalSupply(binId)
+      ]);
 
-  async removeLiquidity() {
+      ids.push(binId);
+      amounts.push(lbTokenAmount);
 
+      totalXBalanceWithdrawn = totalXBalanceWithdrawn
+        .add(BigNumber.from(lbTokenAmount)
+          .mul(BigNumber.from(binReserves[0]))
+          .div(BigNumber.from(totalSupply))
+        );
+      totalYBalanceWithdrawn = totalYBalanceWithdrawn
+        .add(BigNumber.from(lbTokenAmount)
+          .mul(BigNumber.from(binReserves[1]))
+          .div(BigNumber.from(totalSupply))
+        );
+    }
+
+    // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
+    const allowedAmountsSlippage = 50;
+    const minTokenXAmount = totalXBalanceWithdrawn
+      .mul(BigNumber.from(10000 - allowedAmountsSlippage))
+      .div(BigNumber.from(10000));
+    const minTokenYAmount = totalYBalanceWithdrawn
+      .mul(BigNumber.from(10000 - allowedAmountsSlippage))
+      .div(BigNumber.from(10000));
+
+    // set transaction deadline
+    const currenTimeInSec =  Math.floor((new Date().getTime()) / 1000);
+    const deadline = currenTimeInSec + 3600;
+
+    // set array of remove liquidity parameters
+    const removeLiquidityParams = [
+      tokenX.address,
+      tokenY.address,
+      binStep,
+      minTokenXAmount.toString(),
+      minTokenYAmount.toString(),
+      ids,
+      amounts,
+      smartLoanAddress,
+      deadline
+    ];
+
+    return removeLiquidityParams;
   }
 }

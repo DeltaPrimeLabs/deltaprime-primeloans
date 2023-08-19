@@ -19,8 +19,8 @@
       </div>
 
       <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 8, true) }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 8, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{ formatTokenBalance(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 4, true) }}
+        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{ formatTokenBalance(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 4, true) }}
       </div>
 
       <div class="table__cell table__cell--double-value loan">
@@ -63,7 +63,7 @@ import TraderJoeAddLiquidityModal from './TraderJoeAddLiquidityModal.vue';
 import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
 import { calculateMaxApy, formatUnits, fromWei, parseUnits } from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
-import { ethers } from 'ethers';
+import { ethers, BigNumber } from 'ethers';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -80,11 +80,11 @@ export default {
 
   async mounted() {
     this.setupActionsConfiguration();
+    this.watchRefreshLP();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHealth();
     this.watchAssetApysRefresh();
     this.watchHardRefreshScheduledEvent();
-    this.setupApr();
   },
 
   data() {
@@ -98,7 +98,8 @@ export default {
       inProcess: false,
       healthLoaded: false,
       feesClaimable: 0,
-      activeId: null
+      activeId: null,
+      hasBinsInPool: false
     };
   },
 
@@ -115,6 +116,7 @@ export default {
       'dataRefreshEventService',
       'progressBarService',
       'healthService',
+      'lpService',
       'traderJoeService'
     ]),
 
@@ -135,25 +137,17 @@ export default {
     }
   },
 
-  watch: {
-    smartLoanContract: {
-      handler(smartLoanContract) {
-        if (smartLoanContract) {
-          this.setupActionsConfiguration();
-        }
-      },
-    },
-    assets: {
-      handler(assets) {
-        if (assets) {
-          this.setupTvlAndActiveId();
-        }
-      },
-      immediate: true
-    },
-  },
-
   methods: {
+    ...mapActions('fundsStore', ['addLiquidityTraderJoeV2Pool', 'removeLiquidityTraderJoeV2Pool']),
+    watchRefreshLP() {
+      this.lpService.observeRefreshLp().subscribe(async (lpType) => {
+        if (lpType !== 'TJV2') return;
+        await this.setupPool();
+        this.setupActionsConfiguration();
+        this.setupApr();
+      })
+    },
+
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
@@ -168,7 +162,7 @@ export default {
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove Liquidity',
-            disabled: !this.hasSmartLoanContract || this.inProcess
+            disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool
           },
           {
             key: 'WITHDRAW',
@@ -215,27 +209,36 @@ export default {
       modalInstance.binStep = this.lpToken.binStep;
       modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
         if (this.smartLoanContract) {
-          const addLiquidityRequest = this.traderJoeService.getAddLiquidityParameters(
+          const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
             this.account,
             this.tokenX,
             this.tokenY,
             parseUnits(addLiquidityEvent.tokenXAmount.toString(), this.firstAsset.decimals).toString(),
             parseUnits(addLiquidityEvent.tokenYAmount.toString(), this.secondAsset.decimals).toString(),
-            // String(addLiquidityEvent.tokenXAmount),
-            // String(addLiquidityEvent.tokenYAmount),
             addLiquidityEvent.distributionMethod,
             this.lpToken.binStep,
             this.activeId,
             addLiquidityEvent.binRange
           );
-          this.traderJoeService.addLiquidity({ provider: this.provider, addLiquidityInput: addLiquidityRequest });
-          // this.handleTransaction(this.traderJoeService.addLiquidityTraderJoeV2Pool, { addLiquidityInput: addLiquidityRequest }, () => {
-          //   this.$forceUpdate();
-          // }, (error) => {
-          //   this.handleTransactionError(error);
-          // }).then(() => {
-          //   this.closeModal();
-          // });
+          const addLiquidityRequest = {
+            symbol: this.lpToken.symbol,
+            method: this.lpToken.addMethod,
+            firstAsset: this.lpToken.primary,
+            secondAsset: this.lpToken.secondary,
+            firstAmount: addLiquidityEvent.tokenXAmount.toString(),
+            secondAmount: addLiquidityEvent.tokenYAmount.toString(),
+            addLiquidityInput,
+          };
+
+          // this.traderJoeService.addLiquidity({provider: this.provider, addLiquidityInput});
+
+          this.handleTransaction(this.addLiquidityTraderJoeV2Pool, { addLiquidityRequest }, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+            this.closeModal();
+          });
         }
       });
     },
@@ -243,28 +246,40 @@ export default {
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(TraderJoeRemoveLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.lpTokenBalance = Number(this.traderJoeV2LpTokenBalances[this.lpToken.symbol]);
-      modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
-      modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
-      modalInstance.tokenAvailableDecimals = this.lpToken.symbol === 'SHLB_USDT.e-USDt_C' ? 18 : 10;
-      modalInstance.$on('REMOVE_LIQUIDITY', removeLiquidityEvent => {
+      modalInstance.firstAsset = this.firstAsset;
+      modalInstance.secondAsset = this.secondAsset;
+      modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
+      modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.activeId = this.activeId;
+      modalInstance.binStep = this.lpToken.binStep;
+      modalInstance.userBinIds = this.lpToken.userBinIds;
+      modalInstance.$on('REMOVE_LIQUIDITY', async removeLiquidityEvent => {
         if (this.smartLoanContract) {
+          const removeLiquidityInput = await this.traderJoeService.getRemoveLiquidityParameters(
+            this.smartLoanContract.address,
+            this.lpToken.address,
+            this.provider,
+            this.tokenX,
+            this.tokenY,
+            this.lpToken.binStep,
+            removeLiquidityEvent.binRangeToRemove
+          );
           const removeLiquidityRequest = {
-            value: removeLiquidityEvent.amount,
             symbol: this.lpToken.symbol,
+            lbPairAddress: this.lpToken.address,
             method: this.lpToken.removeMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            minFirstAmount: removeLiquidityEvent.minReceivedFirst.toString(),
-            minSecondAmount: removeLiquidityEvent.minReceivedSecond.toString(),
-            assetDecimals: config.TRADERJOEV2_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            dex: this.lpToken.dex
+            remainingBinRange: removeLiquidityEvent.remainingBinRange,
+            removeLiquidityInput,
           };
-          this.handleTransaction(this.removeLiquidityTraderJoeV2Pool, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+
+          this.handleTransaction(this.removeLiquidityTraderJoeV2Pool, { removeLiquidityRequest }, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
           }).then(() => {
+            this.closeModal();
           });
         }
       });
@@ -296,31 +311,23 @@ export default {
       })
     },
 
-    async setupTvlAndActiveId() {
+    async setupPool() {
       const tokenX = this.traderJoeService.initializeToken(this.firstAsset);
       const tokenY = this.traderJoeService.initializeToken(this.secondAsset);
 
       this.tokenX = tokenX;
       this.tokenY = tokenY;
 
-      const LBPairABI = [
-        'function getReserves() public view returns (uint128, uint128)',
-        'function getActiveId() public view returns (uint24)',
-        'function getTokenX() public view returns (address)'
-      ];
-      const poolContract = new ethers.Contract(this.lpToken.address, LBPairABI, this.provider);
-      const [reserves, activeId, firstAsset] = await Promise.all([
-        poolContract.getReserves(),
-        poolContract.getActiveId(),
-        poolContract.getTokenX()
-      ]);
-      console.log(this.lpToken.symbol, firstAsset);
+      const [reserves, activeId] = await this
+        .traderJoeService
+        .getLBPairReservesAndActiveBin(this.lpToken.address, this.provider);
 
       const tokenXTVL = formatUnits(reserves[0], this.firstAsset.decimals) * this.firstAsset.price;
       const tokenYTVL = formatUnits(reserves[1], this.secondAsset.decimals) * this.secondAsset.price;
 
       this.lpToken.tvl = tokenXTVL + tokenYTVL;
       this.activeId = activeId;
+      this.hasBinsInPool = this.lpToken.userBinIds && this.lpToken.userBinIds.length > 0;
     },
 
     setupApr() {
@@ -359,7 +366,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 153px 150px 150px 170px 140px repeat(2, 1fr) 35px 80px;
+    grid-template-columns: 153px 150px 120px 200px 140px repeat(2, 1fr) 35px 80px;
     height: 60px;
     padding-left: 6px;
 

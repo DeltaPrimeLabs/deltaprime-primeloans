@@ -370,13 +370,6 @@ export default {
       );
 
       // To-do: request price of TJLB token prices from Redstone
-      // const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
-      // const redstonePriceData = await redstonePriceDataRequest.json();
-
-      // Object.keys(lpTokens).forEach(async assetSymbol => {
-      //   lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
-      //   lpService.emitRefreshLp();
-      // });
 
       commit('setTraderJoeV2LpAssets', lpTokens);
     },
@@ -571,7 +564,7 @@ export default {
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
-      await dispatch('setupTraderJoeV2LpUnderlyingBalances');
+      await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
       dataRefreshNotificationService.emitAssetBalancesDataRefresh();
       dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
@@ -594,16 +587,65 @@ export default {
       });
     },
 
-    async setupTraderJoeV2LpUnderlyingBalances({state, commit, rootState}) {
-      const traderJoeV2LpAssets = state.traderJoeV2LpAssets;
-      // To-do: get balances of tokens deposited
-      // Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
-      //   traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(reserveX, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
-      //   traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(reserveY, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
+    async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds}) {
+      const LBPAIR_ABI = [
+        'function balanceOf(address, uint256) public view returns (uint256)',
+        'function getBin(uint24) public view returns (uint128, uint128)',
+        'function totalSupply(uint256) public view returns (uint256)'
+      ];
+      const poolContract = new ethers.Contract(lbPairAddress, LBPAIR_ABI, provider.getSigner());
 
-      //   const lpService = rootState.serviceRegistry.lpService;
-      //   lpService.emitRefreshLp();
-      // });
+      let tokenXAmount = BigNumber.from(0);
+      let tokenYAmount = BigNumber.from(0);
+
+      await Promise.all(
+        binIds.map(async (binId) => {
+          const [lbTokenAmount, reserves, totalSupply] = await Promise.all([
+            poolContract.balanceOf(state.smartLoanContract.address, binId),
+            poolContract.getBin(binId),
+            poolContract.totalSupply(binId)
+          ]);
+
+          tokenXAmount = tokenXAmount.add(BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply)));
+          tokenYAmount = tokenYAmount.add(BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply)));
+
+          return {
+            lbTokenAmount,
+            reserveX: reserves[0],
+            reserveY: reserves[1]
+          };
+        })
+      );
+
+      return {
+        tokenXAmount,
+        tokenYAmount
+      }
+    },
+
+    async setupTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}) {
+      const traderJoeV2LpAssets = state.traderJoeV2LpAssets;
+
+      Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
+        const loanAllBins = await state.smartLoanContract.getOwnedTraderJoeV2Bins();
+        const loanBinsForPair = loanAllBins.filter(bin =>
+          bin.pair.toLowerCase() === traderJoeV2LpAssets[assetSymbol].address.toLowerCase()
+        );
+        const loanBinIds = loanBinsForPair.map(bin => bin.id);
+        loanBinIds.sort((a, b) => a - b);
+
+        const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+          lbPairAddress: traderJoeV2LpAssets[assetSymbol].address,
+          binIds: loanBinIds
+        });
+
+        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(tokenXAmount, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
+        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(tokenYAmount, state.assets[traderJoeV2LpAssets[assetSymbol].secondary].decimals);
+        traderJoeV2LpAssets[assetSymbol].userBinIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
+
+        const lpService = rootState.serviceRegistry.lpService;
+        lpService.emitRefreshLp('TJV2');
+      });
     },
 
     async getAllAssetsApys({state, commit, rootState}) {
@@ -1249,52 +1291,36 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
+    async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log(addLiquidityRequest.addLiquidityInput);
       const provider = rootState.network.provider;
-
-      const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
-      const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
-      const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
-
-      let minAmount = 0;
 
       const loanAssets = mergeArrays([(
           await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
-        [provideLiquidityRequest.symbol]
+        [addLiquidityRequest.symbol]
       ]);
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      const transaction = await wrappedContract[provideLiquidityRequest.method](
-          parseUnits(parseFloat(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
-          parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-          parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
-          parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 5000000}
+      const transaction = await wrappedContract[addLiquidityRequest.method](
+        addLiquidityRequest.addLiquidityInput,
+        {gasLimit: 5000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'create concentrated LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'create traderjoe v2 LP token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount0, firstDecimals); // how much of tokenA was used
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmount1, secondDecimals); //how much of tokenB was used
-      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
-
-
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
-      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
-      const lpTokenBalanceAfterTransaction = Number(state.concentratedLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.firstAsset]) - Number(addLiquidityRequest.firstAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.secondAsset]) - Number(addLiquidityRequest.secondAmount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1306,16 +1332,12 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
-    async removeLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
-
+    async removeLiquidityTraderJoeV2Pool({state, rootState, dispatch}, {removeLiquidityRequest}) {
+      console.log(removeLiquidityRequest);
       const provider = rootState.network.provider;
 
-      const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
-      const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
-      const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
-
       const loanAssets = mergeArrays([(
-          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
@@ -1324,30 +1346,26 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
-          parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
-          parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
-          parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-          {gasLimit: 7000000}
+        removeLiquidityRequest.removeLiquidityInput,
+        {gasLimit: 5000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'unwind traderjoe v2 token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount0, firstDecimals); // how much of tokenA was received
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmount1, secondDecimals); //how much of tokenB was received
-      const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was removed
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(firstAssetAmount);
-      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(secondAssetAmount);
-      const lpTokenBalanceAfterTransaction = Number(state.concentratedLpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenRemoved);
+      const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+        lbPairAddress: removeLiquidityRequest.lbPairAddress,
+        binIds: removeLiquidityRequest.remainingBinRange
+      });
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(tokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(tokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {

@@ -2,47 +2,50 @@
   <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Unwind Concentrated LP token
+        Remove liquidity
       </div>
 
-      <div class="modal-top-info">
-        <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, tokenAvailableDecimals, true)}}</div>
-        <span class="top-info__currency">
-          {{lpToken.name}}
-        </span>
-      </div>
-
-      <CurrencyInput :symbol="lpToken.primary"
-                     :symbol-secondary="lpToken.secondary"
-                     v-on:newValue="inputChange"
-                     :validators="validators">
-      </CurrencyInput>
-
-      <div class="transaction-summary-wrapper">
-        <TransactionResultSummaryBeta>
-          <div class="summary__title">
-            Values after transaction:
-          </div>
-          <div class="summary__horizontal__divider"></div>
-          <div class="summary__values">
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                LP token balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(((lpTokenBalance - amount) > 0 ? lpTokenBalance - amount : 0), 10, true) }}
-              </div>
+      <div class="liquidity-option">
+        <div class="label-with-separator">
+          Price range
+        </div>
+        <div class="liquidity-option__content price-slider-wrapper">
+          <RangeSlider
+            :min="minMaxRange[0]"
+            :max="minMaxRange[1]"
+            :value="binRange"
+            @input="updateBinRange"
+          ></RangeSlider>
+          <div class="price-range-inputs">
+            <div class="price__input">
+              <div class="input-label"><b>Min Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
+              <FormInput
+                :default-value="binRange && getBinPrice(binRange[0])"
+                :fontSize="18"
+                :disabled="true"
+              ></FormInput>
+            </div>
+            <div class="price__input">
+              <div class="input-label"><b>Max Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
+              <FormInput
+                :default-value="binRange && getBinPrice(binRange[1])"
+                :fontSize="18"
+                :disabled="true"
+              ></FormInput>
             </div>
           </div>
-        </TransactionResultSummaryBeta>
+        </div>
       </div>
 
+      <Alert v-if="!hasLiquidityInRange">
+        Liquidity not found in the range
+      </Alert>
+
       <div class="button-wrapper">
-        <Button :label="'Unwind LP token'"
+        <Button :label="'Remove Liquidity'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
-                :disabled="currencyInputError">
+                :disabled="!hasLiquidityInRange">
         </Button>
       </div>
     </Modal>
@@ -56,11 +59,10 @@ import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
-import config from '../config';
-import erc20ABI from '../../test/abis/ERC20.json';
-import {parseUnits, formatUnits} from 'ethers/lib/utils';
-
-const ethers = require('ethers');
+import InfoIcon from './InfoIcon.vue';
+import RangeSlider from './RangeSlider';
+import FormInput from './FormInput';
+import Alert from './Alert.vue';
 
 export default {
   name: 'RemoveLiquidityModal',
@@ -70,82 +72,87 @@ export default {
     TransactionResultSummaryBeta,
     Modal,
     BarGaugeBeta,
-    Toggle
+    Toggle,
+    InfoIcon,
+    RangeSlider,
+    FormInput,
+    Alert
   },
 
   props: {
     lpToken: {},
-    lpTokenBalance: Number,
-    firstBalance: Number,
-    secondBalance: Number,
-    tokenAvailableDecimals: Number,
+    firstAsset: null,
+    secondAsset: null,
+    firstAssetBalance: Number,
+    secondAssetBalance: Number,
+    activeId: null,
+    binStep: null,
+    userBinIds: []
   },
 
   data() {
     return {
-      amount: null,
-      validators: [],
-      minReceivedFirst: 0,
-      minReceivedSecond: 0,
+      binRange: [],
+      minMaxRange: [],
       transactionOngoing: false,
-      currencyInputError: true,
+      priceRadius: 5,
+      maxPriceRadius: 29,
+      minAboveActive: false,
+      maxBelowActive: false,
+      hasLiquidityInRange: false
     };
   },
 
   mounted() {
     setTimeout(() => {
-      this.setupValidators();
+      this.setupSlider();
     });
   },
 
-  computed: {
-    firstAsset() {
-      return config.ASSETS_CONFIG[this.lpToken.primary];
-    },
-    secondAsset() {
-      return config.ASSETS_CONFIG[this.lpToken.secondary];
-    },
-    minBalanceAfterRemoveFirst() {
-      return this.firstBalance + this.minReceivedFirst;
-    },
-    minBalanceAfterRemoveSecond() {
-      return this.secondBalance + this.minReceivedSecond;
+  watch: {
+    binRange: {
+      handler(newRange) {
+        if (!this.userBinIds) return;
+        this.hasLiquidityInRange = this.userBinIds.some(binId => binId >= newRange[0] && binId <= newRange[1]);
+      },
+      immediate: true
     }
   },
 
   methods: {
-    async submit() {
-      const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
+    setupSlider() {
+      this.minMaxRange = [this.userBinIds[0], this.userBinIds[this.userBinIds.length - 1]];
+      this.binRange = [this.userBinIds[0], this.userBinIds[this.userBinIds.length - 1]];
+    },
+
+    getBinPrice(binId) {
+      const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
+      return binPrice.toFixed(5);
+    },
+
+    submit() {
       this.transactionOngoing = true;
-      // const minReceivedAmounts = await this.calculateReceivedAmounts(this.amount);
-      this.$emit('REMOVE_LIQUIDITY', {
-        asset: this.lpToken.symbol,
-        amount: Number(this.amount).toFixed(lpTokenDecimals),
-        minReceivedFirst: 0,
-        minReceivedSecond: 0
-      });
+      const removeLiquidityEvent = {
+        binRangeToRemove: this.binRange,
+        remainingBinRange: this.userBinIds.filter((binId) => binId < this.binRange[0] || binId > this.binRange[1])
+      };
+
+      this.$emit('REMOVE_LIQUIDITY', removeLiquidityEvent);
     },
 
-    async inputChange(event) {
-      this.amount = event.value;
-      this.currencyInputError = event.error;
-      this.$forceUpdate();
-      setTimeout(() => {
-        this.$forceUpdate();
-      }, 100);
-      // await this.calculateReceivedAmounts(this.amount);
-    },
+    updateBinRange(newRange) {
+      this.binRange = newRange;
+      if (this.activeId < newRange[0] && this.minAboveActive === false) {
+        this.minAboveActive = true;
+      } else if (this.activeId >= newRange[0] && this.minAboveActive === true) {
+        this.minAboveActive = false;
+      }
 
-    setupValidators() {
-      this.validators = [
-        {
-          validate: (value) => {
-            if (value > this.lpTokenBalance) {
-              return 'Exceeds account balance';
-            }
-          }
-        }
-      ];
+      if(newRange[1] < this.activeId && this.maxBelowActive === false) {
+        this.maxBelowActive = true;
+      } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
+        this.maxBelowActive = false; 
+      }
     },
   }
 };
@@ -156,7 +163,113 @@ export default {
 @import "~@/styles/modal";
 
 .remove-liquidity-modal-component {
-
+  .modal__title {
+    margin-bottom: 43px;
+  }
+  .modal-top-info {
+    margin-top: 5px;
+  }
+  .liquidity-option {
+    display: flex;
+    flex-direction: column;
+    &.shape {
+      margin-top: 10px;
+    }
+    .label-with-separator {
+      font-family: Montserrat;
+      font-size: $font-size-sm;
+      font-weight: 600;
+      font-stretch: normal;
+      font-style: normal;
+      line-height: normal;
+      letter-spacing: normal;
+      text-align: left;
+      color: var(--traderjoe-remove-liquidity-modal__label-with-separator);
+      display: flex;
+      align-items: center;
+      &:after {
+        content: "";
+        display: block;
+        background-color: var(--traderjoe-remove-liquidity-modal__label-with-separator-background);
+        height: 2px;
+        flex-grow: 1;
+        margin-left: 10px;
+      }
+      .label__info-icon {
+        margin-left: 8px;;
+      }
+    }
+    .liquidity-option__content {
+      width: 100%;
+      margin: 30px 0;
+      display: flex;
+      justify-content: space-between;
+      .liquidity-shape {
+        width: 170px;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 18px 0 6px;
+        border-radius: 15px;
+        border: var(--traderjoe-remove-liquidity-modal__liquidity-shape-border);
+        cursor: pointer;
+        .shape-icon {
+          margin: 0 37px;
+          filter: grayscale(1);
+          opacity: 0.75;
+        }
+        .shape-label {
+          margin-top: 6px;
+          font-family: Montserrat;
+          font-size: $font-size-sm;
+          font-weight: 500;
+          font-stretch: normal;
+          font-style: normal;
+          line-height: normal;
+          letter-spacing: normal;
+          text-align: left;
+        }
+        &.active {
+          border: var(--traderjoe-remove-liquidity-modal__liquidity-shape-border-active);
+          box-shadow: var(--traderjoe-remove-liquidity-modal__liquidity-shape-box-shadow);
+          background-color: var(--traderjoe-remove-liquidity-modal__liquidity-shape-background);
+          .shape-icon {
+            filter: grayscale(0);
+            opacity: 1;
+          }
+          .shape-label {
+            font-weight: 600;
+          }
+        }
+        &:hover {
+          border-color: var(--traderjoe-remove-liquidity-modal__liquidity-shape-border-hover);
+        }
+      }
+      &.price-slider-wrapper {
+        display: flex;
+        flex-direction: column;
+        margin-top: 20px;
+        .price-range-inputs {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-around;
+          .price__input {
+            width: 260px;
+            .input-label {
+              font-family: Montserrat;
+              font-size: $font-size-xsm;
+              color: var(--traderjoe-remove-liquidity-modal__price-slider-input-color);
+            }
+          }
+        }
+      }
+    }
+  }
+  .button-wrapper {
+    margin-top: 20px;
+  }
 }
 
 

@@ -81,11 +81,8 @@ export default {
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1050000, debtCoverage: 0.83333333333},
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
-        'TJ_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJ_AVAX-USDC', decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20},
-        'TJ_BTC.b-USDC': { primary: 'BTC', secondary: 'USDC', name: 'BTC.b-USDC', dex: 'TraderJoe', symbol: 'TJ_BTC.b-USDC', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC.b-USDC'], binStep: 10},
-        'TJ_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC.b-AVAX', dex: 'TraderJoe', symbol: 'TJ_BTC.b-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10},
-        'TJ_USDT-USDC': { primary: 'USDT', secondary: 'USDC', name: 'USDT-USDC', dex: 'TraderJoe', symbol: 'TJ_USDT-USDC', decimals: 18, baseFee: '0.0002', address: addresses['TJLB_USDT-USDC'], binStep: 1},
-        'TJ_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJ_ETH-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10},
+        'TJ_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJ_AVAX-USDC', decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJ_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJ_ETH-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
     },
     DEX_CONFIG: {
         'Pangolin': {

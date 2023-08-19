@@ -478,6 +478,17 @@
   --traderjoe-add-liquidity-modal__label-with-separator-background: #{$goose-gray};
   // endregion
 
+  // region TraderJoeRemoveLiquidityModal
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border: solid 2px #{$goose-gray};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-active: solid 2px #{$delta-primary};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-hover: #{$delta-primary};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$delta-steel}80;
+  --traderjoe-remove-liquidity-modal__liquidity-shape-background: #{$delta-burnt-out};
+  --traderjoe-remove-liquidity-modal__price-slider-input-color: #{$steel-gray};
+  --traderjoe-remove-liquidity-modal__label-with-separator: #{$dark-gray};
+  --traderjoe-remove-liquidity-modal__label-with-separator-background: #{$goose-gray};
+  // endregion
+
   // region RangeSlider
   --range-slider__container-box-shadow: inset 0 1px 3px 0 #{$delta-steel}b3;
   --range-slider__container-box-background: #{$delta-steel}33;

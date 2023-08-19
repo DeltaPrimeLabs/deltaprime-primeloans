@@ -89,6 +89,35 @@
         </div>
       </div>
 
+      <div class="transaction-summary-wrapper summary">
+        <TransactionResultSummaryBeta>
+          <div class="summary__title">
+            Values after transaction:
+          </div>
+          <div class="summary__horizontal__divider"></div>
+          <div class="summary__values">
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ firstAsset.symbol }} balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(firstAssetBalance) - Number(firstAmount ? firstAmount : 0)) }}
+              </div>
+            </div>
+
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
+              <div class="summary__label">
+                {{ secondAsset.symbol }} balance:
+              </div>
+              <div class="summary__value">
+                {{ formatTokenBalance(Number(secondAssetBalance) - Number(secondAmount ? secondAmount : 0)) }}
+              </div>
+            </div>
+          </div>
+        </TransactionResultSummaryBeta>
+      </div>
+
       <div class="button-wrapper">
         <Button :label="'Add Liquidity'"
                 v-on:click="submit()"
@@ -153,7 +182,7 @@ export default {
       selectedShape: Object.keys(config.liquidityShapes)[0],
       binRange: [],
       transactionOngoing: false,
-      firstInputError: true,
+      firstInputError: false,
       secondInputError: false,
       priceRadius: 5,
       maxPriceRadius: 29,
@@ -182,6 +211,8 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const addLiquidityEvent = {
+        firstAsset: this.firstAsset,
+        secondAsset: this.secondAsset,
         tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
         tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
         distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
@@ -353,6 +384,9 @@ export default {
         }
       }
     }
+  }
+  .summary {
+    margin-top: 5px;
   }
   .button-wrapper {
     margin-top: 20px;

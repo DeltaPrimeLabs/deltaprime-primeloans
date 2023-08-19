@@ -416,7 +416,7 @@ export default {
 
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '140px 150px 150px 170px 140px repeat(2, 1fr) 35px 80px',
+        gridTemplateColumns: '140px 150px 120px 200px 140px repeat(2, 1fr) 35px 80px',
         cells: [
           {
             label: 'TraderJoe V2',
@@ -434,7 +434,7 @@ export default {
             tooltip: `The prices of your bins in liquidity pool.`
           },
           {
-            label: 'Fees Claimable',
+            label: 'Fees',
             sortable: false,
             class: 'balance',
             id: 'FEES-CLAIMABLE',
