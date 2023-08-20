@@ -10,7 +10,14 @@ interface IBalancerV2Facet {
         uint256 bptAmount;
     }
 
-    function joinPoolAndStakeBalancerV2(bytes32 poolId, IAsset[] memory stakedTokens, uint256[] memory stakedAmounts, uint256 minBptAmount) external;
+    struct StakeRequest {
+        bytes32 poolId;
+        address[] stakedTokens;
+        uint256[] stakedAmounts;
+        uint256 minBptAmount;
+    }
+
+    function joinPoolAndStakeBalancerV2(StakeRequest memory request) external;
 
     function unstakeAndExitPoolBalancerV2(UnstakeRequest memory request) external;
 

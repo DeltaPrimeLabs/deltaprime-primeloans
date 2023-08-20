@@ -190,17 +190,20 @@ describe('Smart loan', () => {
 
             //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html#userdata
             await expect(nonOwnerWrappedLoan.joinPoolAndStakeBalancerV2(
-                "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
                 [
-                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                    "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
-                ],
-                [
-                    toWei("10"), //try with no
-                    0
-                ],
-                //TODO: check slippage
-                toWei('0.0001')
+                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    [
+                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                    ],
+                    [
+                        toWei("10"), //try with no
+                        0
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+
             )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -225,28 +228,21 @@ describe('Smart loan', () => {
                 ]
             );
 
-            console.log('encoded')
-            console.log(userData)
-
-            console.log('owned assets before join pool: ')
-            console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
-
             await wrappedLoan.joinPoolAndStakeBalancerV2(
-                "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
                 [
-                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                    "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
-                ],
-                [
-                    toWei("10"), //try with no
-                    0
-                ],
-                //TODO: check slippage
-                toWei('0.0001')
+                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    [
+                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                    ],
+                    [
+                        toWei("10"), //try with no
+                        0
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
         );
-
-            console.log('owned assets after join pool: ')
-            console.log((await wrappedLoan.getAllOwnedAssets()).map((el: any) => fromBytes32(el)))
 
             let balanceAfterStake = fromWei(await balancerTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
@@ -256,7 +252,43 @@ describe('Smart loan', () => {
             // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
         });
 
-        it("should unstake sAVAX", async () => {
+        it("should not allow staking in a non-whitelisted Balancer vault", async () => {
+            await expect(wrappedLoan.joinPoolAndStakeBalancerV2(
+                [
+                    "0xb06fdbd2941d2f42d60accee85086198ac72923600020000000000000000001a",
+                    [
+                        "0x502580fc390606b47FC3b741d6D49909383c28a9",
+                        "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    ],
+                    [
+                        0,
+                        toWei("10")
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+            )).to.be.revertedWith('BalancerV2PoolNotWhitelisted()');
+        });
+
+        it("should not allow staking a non-whitelisted asset", async () => {
+            await expect(wrappedLoan.joinPoolAndStakeBalancerV2(
+                [
+                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    [
+                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                    ],
+                    [
+                        0,
+                        toWei("10")
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+            )).to.be.revertedWith('DepositingInactiveToken()');
+        });
+
+        it("should unstake part of sAVAX", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
@@ -265,7 +297,7 @@ describe('Smart loan', () => {
                 ['uint256', 'uint256', 'uint256'],
                 [
                     0, // first exit strat - just one token
-                    await balancerTokenContract.balanceOf(wrappedLoan.address),
+                    (await balancerTokenContract.balanceOf(wrappedLoan.address)).div(2),
                     0 //index of the token- sAVAX
                 ]
             );
