@@ -89,9 +89,13 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Add funds'"
+<!--        <Button :label="'Add funds'"
                 v-on:click="submit()"
                 :disabled="validationError || (!getAvailableAssetAmount && getAvailableAssetAmount !== 0)"
+                :waiting="transactionOngoing">
+        </Button>-->
+        <Button :label="'Add funds'"
+                v-on:click="submit()"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -190,21 +194,22 @@ export default {
 
     sourceAssetValue() {
       const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
 
-      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+      if (this.valueAsset === "USDC") {
+        return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      }
     },
 
   },
 
   methods: {
     submit() {
+      console.log('AddFromWallet.submit()');
       this.transactionOngoing = true;
       if (this.asset.symbol === 'AVAX') {
         this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
+        console.log('emit ADD_FROM_WALLET');
         this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.asset});
       }
     },
@@ -271,22 +276,22 @@ export default {
 
     setupValidators() {
       this.validators = [
-        {
-          validate: (value) => {
-            if (value > this.getAvailableAssetAmount) {
-              return 'Exceeds account balance';
-            }
-          }
-        },
-        {
-          validate: async (value) => {
-            const allowed = this.asset.maxExposure - this.asset.currentExposure;
-
-            if (value > allowed) {
-              return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
-            }
-          }
-        }
+        // {
+        //   validate: (value) => {
+        //     if (value > this.getAvailableAssetAmount) {
+        //       return 'Exceeds account balance';
+        //     }
+        //   }
+        // },
+        // {
+        //   validate: async (value) => {
+        //     const allowed = this.asset.maxExposure - this.asset.currentExposure;
+        //
+        //     if (value > allowed) {
+        //       return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
+        //     }
+        //   }
+        // }
       ];
     },
 

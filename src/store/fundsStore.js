@@ -143,6 +143,7 @@ export default {
     },
 
     setNoSmartLoan(state, noSmartLoan) {
+      console.log('has no smart loan: ', noSmartLoan);
       state.noSmartLoan = noSmartLoan;
     },
 
@@ -249,8 +250,10 @@ export default {
     async setupSupportedAssets({commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
+      console.log(whiteListedTokenAddresses);
 
-      const supported = whiteListedTokenAddresses.map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
+      const supported = whiteListedTokenAddresses
+        .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
 
       commit('setSupportedAssets', supported);
     },
@@ -460,6 +463,7 @@ export default {
     },
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value, isLP}) {
+      console.log('createAndFundLoan', asset, value, isLP);
       const provider = rootState.network.provider;
 
       if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
@@ -482,13 +486,13 @@ export default {
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
       if (parseFloat(allowance) < parseFloat(value)) {
-        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, {gasLimit: 100000});
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, {gasLimit: 10000000});
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 1000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 100000000});
 
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

@@ -650,9 +650,11 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
-      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      // modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.walletAssetBalance = 3
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        console.log(addFromWalletEvent);
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
 
@@ -673,6 +675,7 @@ export default {
                   this.handleTransactionError(error);
                 });
             } else {
+              console.log('createAndFundLoan');
               this.handleTransaction(this.createAndFundLoan, {
                   asset: addFromWalletEvent.asset,
                   value: value,
@@ -849,7 +852,11 @@ export default {
 
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+      console.log(tokenContract);
+      console.log(this.account);
+      const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+      console.log('walletTokenBalance', walletTokenBalance);
+      return walletTokenBalance;
     },
 
     async getSmartLoanContractNativeTokenBalance() {

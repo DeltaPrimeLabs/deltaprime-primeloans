@@ -142,7 +142,9 @@ export default {
       this.chartPointRadius = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 4 : 0)
       this.chartPointHoverBorderWidth = this.chartSelectedData.map(chartDataEntry => chartDataEntry.event ? 3 : 0)
       setTimeout(() => {
-        this.$refs.chart.rerender();
+        if (this.$refs.chart) {
+          this.$refs.chart.rerender();
+        }
       })
     },
     // TODO move to service

@@ -69,11 +69,15 @@ import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
 import SimpleSwapModal from './SimpleSwapModal.vue';
-import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 
 const DEPOSIT_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
+
+let TOKEN_ADDRESSES;
+(async () => {
+  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+})();
 
 export default {
   name: 'PoolsTableRowBeta',

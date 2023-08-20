@@ -407,12 +407,12 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
+          options: config.ASSET_FILTER_TOKENS_OPTIONS,
           key: 'asset'
         },
         {
           label: 'Filter by DEX',
-          options: ['Pangolin', 'TraderJoe'],
+          options: config.ASSET_FILTER_DEXES_OPTIONS,
           key: 'dex',
         }
       ];

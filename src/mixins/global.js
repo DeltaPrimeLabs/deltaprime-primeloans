@@ -3,6 +3,7 @@ import config from '@/config';
 import {formatUnits} from '../utils/calculate';
 import {handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
 import Vue from 'vue';
+import {token} from '@redstone-finance/evm-connector/dist/typechain-types/@openzeppelin/contracts';
 
 export default {
   methods: {
@@ -93,7 +94,12 @@ export default {
     },
 
     async getWalletTokenBalance(account, assetSymbol, tokenContract, type) {
-      const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
+      console.log('global.js getWalletTokenBalance');
+      console.log(config);
+      console.log(tokenContract);
+      console.log(account);
+      const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
+      console.log(walletAssetBalanceResponse);
       let walletAssetBalance;
       if (!type) {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
