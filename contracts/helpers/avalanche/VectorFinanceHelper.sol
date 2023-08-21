@@ -82,11 +82,13 @@ contract VectorFinanceHelper {
     ) internal {
         IVectorFinanceCompounder compounder = _getAssetPoolHelper(asset)
             .compounder();
+        uint256 balance = compounder.balanceOf(address(this));
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        amount = Math.min(compounder.depositTracking(address(this)), amount);
+        amount = Math.min(balance, amount);
+        uint256 stakedBalance = compounder.getDepositTokensForShares(amount);
 
-        compounder.withdraw(amount, minAmount);
+        compounder.withdraw(stakedBalance, minAmount);
     }
 
     function _getAssetPoolHelper(
