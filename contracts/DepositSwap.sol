@@ -58,7 +58,6 @@ contract DepositSwap {
 
         require(userInitialFromTokenDepositBalance >= amount, "Insufficient fromToken deposit balance");
         require(pool.balanceOf(address(this)) == 0, "Contract initial deposit balance should be 0");
-        require(token.balanceOf(address(this)) == 0, "Contract initial fromToken balance must be 0");
 
         pool.transferFrom(user, address(this), amount);
         require(pool.balanceOf(address(this)) == amount, "amountFromToken and post-transfer contract balance mismatch");
