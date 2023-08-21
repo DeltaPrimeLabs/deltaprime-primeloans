@@ -82,22 +82,24 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
         uint256 borrowed = 0;
 
         for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+            uint256 _balance = token.balanceOf(address(this));
+
             Pool pool;
             try tokenManager.getPoolAddress(ownedAssetsPrices[i].asset) returns (address poolAddress) {
                 pool = Pool(poolAddress);
+                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * _balance * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             } catch {
                 continue;
             }
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-            uint256 _balance = token.balanceOf(address(this));
             uint256 _borrowed = pool.getBorrowed(address(this));
             if (_balance > _borrowed) {
                 weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * (_balance - _borrowed) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             } else {
                 weightedCollateralMinus = weightedCollateralMinus + (ownedAssetsPrices[i].price * (_borrowed - _balance) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
-            weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
-            borrowed = borrowed + (ownedAssetsPrices[i].price * pool.getBorrowed(address(this)) * 1e10 / (10 ** token.decimals()));
+            weightedBorrowed = weightedBorrowed + (ownedAssetsPrices[i].price * _borrowed * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+            borrowed = borrowed + (ownedAssetsPrices[i].price * _borrowed * 1e10 / (10 ** token.decimals()));
         }
         if (weightedCollateralPlus > weightedCollateralMinus) {
             weightedCollateral = weightedCollateralPlus - weightedCollateralMinus;
