@@ -11,8 +11,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
  */
 contract VestingDistributor {
 
-    Pool pool;
-    IERC20Metadata poolToken;
+    Pool immutable pool;
+    IERC20Metadata immutable poolToken;
     address keeper;
     address pendingKeeper;
 
