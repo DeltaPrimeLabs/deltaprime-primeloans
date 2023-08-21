@@ -88,7 +88,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 false
             );
 
-            //joins the pools
+            //joins the pool
             IVault(MASTER_VAULT_ADDRESS).joinPool(request.poolId, address(this), address(this), joinRequest);
         }
 
@@ -187,7 +187,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             );
         }
 
-        //joins the pools
+        //exit the pool
         IVault(MASTER_VAULT_ADDRESS).exitPool(request.poolId, address(this), payable(address(this)), exitRequest);
 
         bytes32[] memory unstakedAssets = new bytes32[](1);
@@ -213,6 +213,27 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
+
+    function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
+
+        IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
+
+        gauge.claim_rewards();
+
+        bytes32[] memory rewardTokens = rewardTokens(pool);
+
+        for (uint256 i; i < rewardTokens.length; i++) {
+            address rewardToken = tokenManager.getAssetAddress(rewardTokens[i], false);
+            if(IERC20(rewardToken).balanceOf(address(this)) > 0) {
+                DiamondStorageLib.addOwnedAsset(rewardTokens[i], rewardToken);
+            }
+        }
+    }
+
+
     // INTERNAL FUNCTIONS
 
     function poolToGauge(address pool) internal returns (address) {
@@ -221,6 +242,19 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
 
         revert BalancerV2PoolNotWhitelisted();
+    }
+
+    function rewardTokens(address pool) internal returns (bytes32[] memory) {
+        if (pool == 0xA154009870E9B6431305F19b09F9cfD7284d4E7A) {
+            bytes32[] memory tokens = new bytes32[](3);
+            tokens[0] = "AVAX";
+            tokens[1] = "QI";
+            tokens[2] = "USDC";
+
+            return tokens;
+        }
+
+        revert BalancerV2RewardsNotDefined();
     }
 
     // MODIFIERS
@@ -233,6 +267,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // ERRORS
     error BalancerV2PoolNotWhitelisted();
+
+    error BalancerV2RewardsNotDefined();
 
     error ArgArrayLengthsDiffer();
 

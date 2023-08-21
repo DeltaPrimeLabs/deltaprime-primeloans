@@ -71,7 +71,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'sAVAX', 'BAL_sAVAX_WAVAX_BPT'];
+            let assetsList = ['AVAX', 'sAVAX', 'QI', 'USDC', 'BAL_sAVAX_WAVAX_BPT'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -83,7 +83,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
-                ['AVAX', 'sAVAX'],
+                ['AVAX', 'sAVAX', 'USDC', 'QI'],
                 getRedstonePrices,
                 [
                     //TODO: put price that makes sense
@@ -250,6 +250,12 @@ describe('Smart loan', () => {
             //TODO: uncomment after RS feed is ready
             // expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
             // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
+        });
+
+        it("should claim rewards", async () => {
+            await expect(wrappedLoan.claimRewardsBalancerV2(
+                "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+            )).not.to.be.reverted;
         });
 
         it("should not allow staking in a non-whitelisted Balancer vault", async () => {
