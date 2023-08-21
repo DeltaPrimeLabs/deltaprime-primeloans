@@ -4,4 +4,4 @@ pragma solidity 0.8.17;
 
 import "../../LinearIndex.sol";
 
-contract UsdtDepositIndex is LinearIndex {}
+contract FraxDepositIndex is LinearIndex {}

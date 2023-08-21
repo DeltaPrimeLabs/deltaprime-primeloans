@@ -36,6 +36,14 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 
     console.log(`Deployed linear index at address: ${resultIndex.address}`);
 
+    await verifyContract(hre,
+        {
+            address: resultIndex.address,
+            contract: `contracts/deployment/arbitrum/${name}.sol:${name}`,
+            constructorArguments: []
+        });
+    console.log(`Verified ${name}`)
+
     let result = await deploy(`${name}TUP`, {
         contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
         from: deployer,
@@ -44,6 +52,14 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     });
 
     console.log(`${name}TUP deployed at address: ${result.address}`);
+
+    await verifyContract(hre,
+        {
+            address: result.address,
+            contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
+            constructorArguments: [resultIndex.address, admin, []]
+        });
+    console.log(`Verified ${name}TUP.sol`)
 
     renameSync(`./deployments/${networkName}/${name}TUP.json`, `./deployments/${networkName}/${name}TUP.json`);
 

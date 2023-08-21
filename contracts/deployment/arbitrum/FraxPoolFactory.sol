@@ -2,16 +2,16 @@
 // Last deployed from commit: ac51526ea73cc486f4527cf20f228688d343110b;
 pragma solidity 0.8.17;
 
-import "./UsdtPool.sol";
+import "./FraxPool.sol";
 
 
 /**
  * @title PoolFactory
  * @dev Contract factory allowing anyone to deploy a pool contract
  */
-contract UsdtPoolFactory {
+contract FraxPoolFactory {
     function deployPool() public {
-        UsdtPool pool = new UsdtPool();
+        FraxPool pool = new FraxPool();
         emit PoolDeployed(msg.sender, address(pool), block.timestamp);
     }
 

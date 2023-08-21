@@ -6,19 +6,19 @@ import "../../Pool.sol";
 
 
 /**
- * @title UsdtPool
- * @dev Contract allowing user to deposit to and borrow USDT from a dedicated user account
+ * @title DaiPool
+ * @dev Contract allowing user to deposit to and borrow DAI from a dedicated user account
  */
-contract UsdtPool is Pool {
+contract DaiPool is Pool {
     function name() public virtual override pure returns(string memory _name){
-        _name = "DeltaPrimeTetherToken";
+        _name = "DeltaPrimeDAIToken";
     }
 
     function symbol() public virtual override pure returns(string memory _symbol){
-        _symbol = "DPUSDt";
+        _symbol = "DPDAI";
     }
 
     function decimals() public virtual override pure returns(uint8 decimals){
-        decimals = 6;
+        decimals = 18;
     }
 }
