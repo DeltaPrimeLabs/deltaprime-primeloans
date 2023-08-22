@@ -88,8 +88,8 @@ contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
             Pool pool;
             try tokenManager.getPoolAddress(ownedAssetsPrices[i].asset) returns (address poolAddress) {
                 pool = Pool(poolAddress);
-                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * _balance * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             } catch {
+                weightedCollateralPlus = weightedCollateralPlus + (ownedAssetsPrices[i].price * _balance * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
                 continue;
             }
             uint256 _borrowed = pool.getBorrowed(address(this));
