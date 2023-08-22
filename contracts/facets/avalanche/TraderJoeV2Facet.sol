@@ -120,8 +120,6 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
                     i--;
                     binsStorage.pop();
                 }
-
-                break;
             }
         }
 
