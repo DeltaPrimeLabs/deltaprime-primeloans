@@ -1306,7 +1306,7 @@ export default {
 
       const transaction = await wrappedContract[addLiquidityRequest.method](
         addLiquidityRequest.addLiquidityInput,
-        {gasLimit: 5000000}
+        {gasLimit: 15000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1333,7 +1333,6 @@ export default {
     },
 
     async removeLiquidityTraderJoeV2Pool({state, rootState, dispatch}, {removeLiquidityRequest}) {
-      console.log(removeLiquidityRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1347,7 +1346,7 @@ export default {
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
         removeLiquidityRequest.removeLiquidityInput,
-        {gasLimit: 5000000}
+        {gasLimit: 15000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

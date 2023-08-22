@@ -262,7 +262,8 @@ export default {
             this.tokenX,
             this.tokenY,
             this.lpToken.binStep,
-            removeLiquidityEvent.binRangeToRemove
+            removeLiquidityEvent.binRangeToRemove,
+            this.lpToken.userBinIds
           );
           const removeLiquidityRequest = {
             symbol: this.lpToken.symbol,

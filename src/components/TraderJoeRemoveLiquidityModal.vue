@@ -133,8 +133,9 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const removeLiquidityEvent = {
-        binRangeToRemove: this.binRange,
+        binRangeToRemove: this.binRange.filter(binId => this.userBinIds.indexOf(binId) !== -1),
         remainingBinRange: this.userBinIds.filter((binId) => binId < this.binRange[0] || binId > this.binRange[1])
+
       };
 
       this.$emit('REMOVE_LIQUIDITY', removeLiquidityEvent);
