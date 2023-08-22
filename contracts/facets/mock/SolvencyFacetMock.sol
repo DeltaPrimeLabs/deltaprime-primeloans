@@ -3,9 +3,9 @@
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/mocks/AuthorisedMockSignersBase.sol";
-import "../SolvencyFacetProd.sol";
+import "../avalanche/SolvencyFacetProdAvalanche.sol";
 
-contract SolvencyFacetMock is SolvencyFacetProd, AuthorisedMockSignersBase {
+contract SolvencyFacetMock is SolvencyFacetProdAvalanche, AuthorisedMockSignersBase {
     uint256 constant DEFAULT_MAX_DATA_TIMESTAMP_DELAY_SECONDS = 15 minutes; // Test sometimes be slow
 
     uint256 internal constant MIN_TIMESTAMP_MILLISECONDS = 1654353400000;

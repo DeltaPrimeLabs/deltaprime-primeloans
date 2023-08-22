@@ -713,7 +713,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig)
     } else {
-        await deployFacet("SolvencyFacetProd", diamondAddress, [
+        await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
                 'canRepayDebtFully',
                 'isSolvent',
                 'isSolventWithPrices',

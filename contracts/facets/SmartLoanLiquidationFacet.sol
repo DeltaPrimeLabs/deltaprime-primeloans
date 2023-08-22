@@ -13,7 +13,7 @@ import "../interfaces/ITokenManager.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-import "./SolvencyFacetProd.sol";
+import "./avalanche/SolvencyFacetProdAvalanche.sol";
 import "../SmartLoanDiamondBeacon.sol";
 
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
@@ -134,7 +134,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal recalculateAssetsExposure{
-        SolvencyFacetProd.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
+        SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
         
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
         uint256 initialDebt = _getDebtWithPrices(cachedPrices.debtAssetsPrices); 
