@@ -3,6 +3,8 @@ import { pool, toWei } from "../../test/_helpers";
 import web3Abi from "web3-eth-abi";
 import TokenManagerArtifact from "../../artifacts/contracts/TokenManager.sol/TokenManager.json";
 import { supportedAssetsArb } from "../../common/addresses/arbitrum/arbitrum_supported_assets";
+import verifyContract from "../../tools/scripts/verify-contract";
+import hre from "hardhat";
 
 const { ethers } = require("hardhat");
 
@@ -26,9 +28,18 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     args: [],
   });
 
+
+
   let tokenManager = await ethers.getContract("TokenManager");
 
   console.log(`Deployed tokenManager at address: ${tokenManager.address}`);
+
+  await verifyContract(hre, {
+    address: tokenManager.address,
+    contract: "contracts/TokenManager.sol:TokenManager"
+  })
+
+  console.log('Verified.')
 
   const calldata = web3Abi.encodeFunctionCall(
     TokenManagerArtifact.abi.find((method) => method.name === "initialize"),
