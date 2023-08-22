@@ -6,7 +6,7 @@ export const toWei = ethers.utils.parseUnits;
 export const toBytes32 = ethers.utils.formatBytes32String;
 export const fromBytes32 = ethers.utils.parseBytes32String;
 
-export async function syncTime() {
+export async function syncTime(rpcUrl = "https://api.avax.network/ext/bc/C/rpc") {
     const now = Math.ceil(new Date().getTime() / 1000);
     try {
         await provider.send('evm_setNextBlockTimestamp', [now]);
@@ -16,13 +16,13 @@ export async function syncTime() {
             params: [
                 {
                     forking: {
-                        jsonRpcUrl: "https://api.avax.network/ext/bc/C/rpc"
+                        jsonRpcUrl: rpcUrl
                     },
                 },
             ],
         });
 
-        await syncTime();
+        await syncTime(rpcUrl);
     }
 }
 

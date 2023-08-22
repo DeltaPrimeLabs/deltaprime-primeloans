@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2acdb552b47bad8d3e496bb9f359d0c91d204633;
+// Last deployed from commit: 83717555c511b82ae0d517b5f6fd5e09b7728852;
 pragma solidity 0.8.17;
 
 import "./WavaxVariableUtilisationRatesCalculator.sol";

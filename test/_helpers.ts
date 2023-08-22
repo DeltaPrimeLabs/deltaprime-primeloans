@@ -2,20 +2,35 @@ import {ethers, network, waffle} from "hardhat";
 import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
-import {CompoundingIndex, MockToken, Pool, MockVariableUtilisationRatesCalculator} from "../typechain";
+import {
+    MockToken,
+    Pool,
+    MockVariableUtilisationRatesCalculator,
+    LinearIndex,
+    RecoveryManager,
+    VectorFinanceHelper,
+    YieldYakHelper,
+} from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
+import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
+import ETHEREUM_TOKEN_ADDRESSES from '../common/addresses/ethereum/token_addresses.json';
 import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
-import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
+import IDiamondCutArtifact from "../artifacts/contracts/interfaces/IDiamondCut.sol/IDiamondCut.json";
+import RecoveryManagerArtifact from '../artifacts/contracts/RecoveryManager.sol/RecoveryManager.json';
+import VectorFinanceHelperArtifact from '../artifacts/contracts/helpers/avalanche/VectorFinanceHelper.sol/VectorFinanceHelper.json';
+import YieldYakHelperArtifact from '../artifacts/contracts/helpers/avalanche/YieldYakHelper.sol/YieldYakHelper.json';
 import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
+import { getSelectors } from "../tools/diamond/selectors";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
@@ -441,6 +456,69 @@ export const getDeliveredAmounts = function (
     return deliveredAmounts;
 }
 
+export const deployRecoveryManager = async function (
+    owner: SignerWithAddress | JsonRpcSigner,
+) {
+    let recoveryManager = await deployContract(
+        owner,
+        RecoveryManagerArtifact,
+        []
+    ) as RecoveryManager;
+
+    let vectorFinanceHelper = await deployContract(owner, VectorFinanceHelperArtifact, []) as VectorFinanceHelper;
+    let yieldYakHelper = await deployContract(owner, YieldYakHelperArtifact, []) as YieldYakHelper;
+
+    let assets = [
+        "VF_USDC_MAIN_AUTO",
+        "VF_USDT_MAIN_AUTO",
+        "VF_AVAX_SAVAX_AUTO",
+        "VF_SAVAX_MAIN_AUTO",
+    ];
+    let functions = [
+        "vectorUnstakeUSDC",
+        "vectorUnstakeUSDT",
+        "vectorUnstakeWAVAX",
+        "vectorUnstakeSAVAX",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addHelper(
+            toBytes32(assets[i]),
+            vectorFinanceHelper.address,
+            (getSelectors(vectorFinanceHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    assets = [
+        "YY_AAVE_AVAX",
+        "YY_PTP_sAVAX",
+        "YY_GLP",
+        "YY_PNG_AVAX_USDC_LP",
+        "YY_PNG_AVAX_ETH_LP",
+        "YY_TJ_AVAX_USDC_LP",
+        "YY_TJ_AVAX_ETH_LP",
+        "YY_TJ_AVAX_sAVAX_LP",
+    ];
+    functions = [
+        "unstakeAVAXYak",
+        "unstakeSAVAXYak",
+        "unstakeGLPYak",
+        "unstakePNGAVAXUSDCYak",
+        "unstakePNGAVAXETHYak",
+        "unstakeTJAVAXUSDCYak",
+        "unstakeTJAVAXETHYak",
+        "unstakeTJAVAXSAVAXYak",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addHelper(
+            toBytes32(assets[i]),
+            yieldYakHelper.address,
+            (getSelectors(yieldYakHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    return recoveryManager;
+}
+
 export const deployPools = async function(
     smartLoansFactory: Contract,
     tokens: Array<PoolInitializationObject>,
@@ -540,18 +618,12 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX', hardhatConfig = undefined) {
-    const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
-    console.log('Pausing')
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig = undefined, provider = undefined) {
+    const diamondCut = provider ?
+        new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
+        : await ethers.getContractAt('IDiamondCut', diamondAddress);
     await diamondCut.pause();
-    await deployFacet(
-        "YieldYakSwapFacet",
-        diamondAddress,
-        [
-            'yakSwap',
-        ],
-        hardhatConfig
-    )
+
     await deployFacet(
         "ParaSwapFacet",
         diamondAddress,
@@ -571,7 +643,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
     await deployFacet(
-    "GMDFacet",
+        "GMDFacet",
         diamondAddress,
         [
             'gmdStakeUSDC',
@@ -584,7 +656,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'gmdUnstakeWETHe',
         ],
         hardhatConfig
-)
+    )
     await deployFacet(
         "OwnershipFacet",
         diamondAddress,
@@ -679,6 +751,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
+        await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
+        await deployFacet("UniswapV3Facet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
         await deployFacet("YieldYakFacet", diamondAddress, [
             'stakeAVAXYak',
             'unstakeAVAXYak',
@@ -700,7 +774,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeTJAVAXSAVAXYak'
 
         ], hardhatConfig)
-        // await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
+        await deployFacet("BeefyFinanceAvalancheFacet", diamondAddress, ['stakePngUsdcAvaxLpBeefy', 'stakePngUsdceAvaxLpBeefy' ,'stakeTjUsdcAvaxLpBeefy', 'unstakePngUsdcAvaxLpBeefy', 'unstakePngUsdceAvaxLpBeefy', 'unstakeTjUsdcAvaxLpBeefy'], hardhatConfig)
         await deployFacet("VectorFinanceFacet", diamondAddress, [
                 'vectorStakeUSDC1Auto',
                 'vectorUnstakeUSDC1Auto',
@@ -751,6 +825,36 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'unstakeSteakHutEUROCUSDC',
             ],
             hardhatConfig)
+
+        await deployFacet(
+            "YieldYakSwapFacet",
+            diamondAddress,
+            [
+                'yakSwap',
+            ],
+            hardhatConfig
+        )
+        await deployFacet("TraderJoeV2AutopoolsFacet", diamondAddress, [
+            'stakeTraderJoeV2AutopoolAVAXUSDC',
+            'unstakeTraderJoeV2AutopoolAVAXUSDC'
+        ],
+        hardhatConfig)
+    }
+    if (chain == 'ARBITRUM') {
+        // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
+        // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
+        // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
+        await deployFacet(
+            "YieldYakSwapFacet",
+            diamondAddress,
+            [
+                'yakSwap',
+            ],
+            hardhatConfig
+        )
+    }
+    if (chain == 'ETHEREUM') {
+        console.log('here')
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)
@@ -765,6 +869,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'whitelistLiquidators',
             'delistLiquidators',
             'isLiquidatorWhitelisted'
+        ],
+        hardhatConfig
+    )
+    await deployFacet(
+        "RecoveryFacet",
+        diamondAddress,
+        [
+            'notifyRefund',
+            'emergencyWithdraw',
         ],
         hardhatConfig
     )
@@ -910,12 +1023,40 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 tokenContract = new ethers.Contract(CELO_TOKEN_ADDRESSES['ETH'], erc20ABI, provider);
                 break;
         }
+    } else if (chain === "ARBITRUM") {
+        switch (tokenName) {
+            case 'ETH':
+                tokenContract = new ethers.Contract(ARBITRUM_TOKEN_ADDRESSES['ETH'], wavaxAbi, provider);
+                for (const user of tokenAirdropList) {
+                    await tokenContract.connect(user).deposit({value: toWei("5000")});
+                }
+                break;
+            case 'USDC':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+        }
+    } else if (chain === "ETHEREUM") {
+        switch (tokenName) {
+            case 'ETH':
+                tokenContract = new ethers.Contract(ETHEREUM_TOKEN_ADDRESSES['ETH'], wavaxAbi, provider);
+                for (const user of tokenAirdropList) {
+                    await tokenContract.connect(user).deposit({value: toWei("5000")});
+                }
+                break;
+            case 'USDC':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
+                tokenContract = new ethers.Contract(ETHEREUM_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+        }
     }
 
     rewarder = rewarder !== '' ? rewarder : ethers.constants.AddressZero;
 
-    const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-    const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+    const depositIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+    await depositIndex.initialize(pool.address);
+    const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+    await borrowingIndex.initialize(pool.address);
     await pool.initialize(
         mockVariableUtilisationRatesCalculator.address,
         smartLoansFactoryAddress,
@@ -928,11 +1069,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateConstants(chain, exchanges, tokenManagerAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
+    await updateConstants(chain, exchanges, tokenManagerAddress, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
     execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }

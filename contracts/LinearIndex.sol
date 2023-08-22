@@ -82,7 +82,7 @@ contract LinearIndex is IIndex, OwnableUpgradeable {
      **/
     function getIndexedValue(uint256 value, address user) public view override returns (uint256) {
         uint256 userTime = userUpdateTime[user];
-        uint256 prevUserIndex = userTime == 0 ? BASE_RATE : prevIndex[userTime];
+        uint256 prevUserIndex = userTime == 0 ? getIndex() : prevIndex[userTime];
 
         return value * getIndex() / prevUserIndex;
     }

@@ -8,6 +8,7 @@ pragma solidity 0.8.17;
 import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
 import "../lib/Bytes32EnumerableMap.sol";
 import "../interfaces/IStakingPositions.sol";
+import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 
 // Remember to add the loupe functions from DiamondLoupeFacet to the diamond.
 // The loupe functions are required by the EIP2535 Diamonds standard
@@ -19,6 +20,9 @@ library DiamondStorageLib {
     bytes32 constant LIQUIDATION_STORAGE_POSITION = keccak256("diamond.standard.liquidation.storage");
     bytes32 constant SMARTLOAN_STORAGE_POSITION = keccak256("diamond.standard.smartloan.storage");
     bytes32 constant REENTRANCY_GUARD_STORAGE_POSITION = keccak256("diamond.standard.reentrancy.guard.storage");
+    bytes32 constant OWNED_TRADERJOE_V2_BINS_POSITION = keccak256("diamond.standard.traderjoe_v2_bins_1685370112");
+    //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
+    bytes32 constant OWNED_UNISWAP_V3_TOKEN_IDS_POSITION = keccak256("diamond.standard.uniswap_v3_token_ids_1685370112");
 
     struct FacetAddressAndPosition {
         address facetAddress;
@@ -68,6 +72,16 @@ library DiamondStorageLib {
         IStakingPositions.StakedPosition[] currentStakedPositions;
     }
 
+    struct TraderJoeV2Storage {
+        // TJ v2 bins of the contract
+        ITraderJoeV2Facet.TraderJoeV2Bin[] ownedTjV2Bins;
+    }
+
+    struct UniswapV3Storage {
+        // UniswapV3 token IDs of the contract
+        uint256[] ownedUniswapV3TokenIds;
+    }
+
     struct LiquidationStorage {
         // Mapping controlling addresses that can execute the liquidation methods
         mapping(address=>bool) canLiquidate;
@@ -83,6 +97,21 @@ library DiamondStorageLib {
             rgs.slot := position
         }
     }
+
+    function traderJoeV2Storage() internal pure returns (TraderJoeV2Storage storage tjv2s) {
+        bytes32 position = OWNED_TRADERJOE_V2_BINS_POSITION;
+        assembly {
+            tjv2s.slot := position
+        }
+    }
+
+    function uniswapV3Storage() internal pure returns (UniswapV3Storage storage uv3s) {
+        bytes32 position = OWNED_UNISWAP_V3_TOKEN_IDS_POSITION;
+        assembly {
+            uv3s.slot := position
+        }
+    }
+
 
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;
@@ -114,6 +143,26 @@ library DiamondStorageLib {
         address previousOwner = sls.contractOwner;
         sls.contractOwner = _newOwner;
         emit OwnershipTransferred(previousOwner, _newOwner);
+    }
+
+    function getTjV2OwnedBins() internal returns(ITraderJoeV2Facet.TraderJoeV2Bin[] storage bins){
+        TraderJoeV2Storage storage tjv2s = traderJoeV2Storage();
+        bins = tjv2s.ownedTjV2Bins;
+    }
+
+    function getTjV2OwnedBinsView() internal view returns(ITraderJoeV2Facet.TraderJoeV2Bin[] storage bins){
+        TraderJoeV2Storage storage tjv2s = traderJoeV2Storage();
+        bins = tjv2s.ownedTjV2Bins;
+    }
+
+    function getUV3OwnedTokenIds() internal returns(uint256[] storage tokenIds){
+        UniswapV3Storage storage uv3s = uniswapV3Storage();
+        tokenIds = uv3s.ownedUniswapV3TokenIds;
+    }
+
+    function getUV3OwnedTokenIdsView() internal view returns(uint256[] storage tokenIds){
+        UniswapV3Storage storage uv3s = uniswapV3Storage();
+        tokenIds = uv3s.ownedUniswapV3TokenIds;
     }
 
     function setContractPauseAdmin(address _newPauseAdmin) internal {

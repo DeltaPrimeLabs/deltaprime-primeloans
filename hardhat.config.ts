@@ -5,6 +5,8 @@ import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "hardhat-interface-generator";
+import * as tdly from "@tenderly/hardhat-tenderly";
+tdly.setup({ automaticVerifications: false });
 require('hardhat-deploy');
 
 const fs = require('fs');
@@ -17,30 +19,25 @@ export default {
         version: "0.4.18",
       },
       {
+        version: "0.7.6",
+      },
+      {
         version: "0.8.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
       },
     ]
   },
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337,
-      gas: 8000000,
-      blockGasLimit: 0x1fffffffffffff,
-      timeout: 1800000,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200
-        }
+      forking: {
+        url: "https://api.avax.network/ext/bc/C/rpc",
       },
-      accounts: {
-        accountsBalance: "1000000000000000000000000" // 1000.000 ETH
-      },
-      // mining: {
-      //   auto: false,
-      //   interval: 1000
-      // }
     },
     localhost: {
       timeout: 1800000,

@@ -5,9 +5,17 @@ import {solidity} from "ethereum-waffle";
 import TokenManagerArtifact from '../../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinIntermediary, TokenManager} from '../../../typechain';
-import {Asset, erc20ABI, fromWei, getFixedGasSigners, syncTime, toBytes32, toWei} from "../../_helpers";
+import {
+    Asset,
+    erc20ABI,
+    fromWei,
+    getFixedGasSigners,
+    getRedstonePrices,
+    syncTime,
+    toBytes32,
+    toWei
+} from "../../_helpers";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
-import redstone from "redstone-api";
 
 chai.use(solidity);
 
@@ -76,10 +84,7 @@ describe('Price manipulation test', () => {
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            const redstonePriceDataRequest = await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
-            const redstonePriceData = await redstonePriceDataRequest.json();
-
-            AVAX_PRICE = redstonePriceData['AVAX'][0].dataPoints[0].value;
+            AVAX_PRICE = (await getRedstonePrices(['AVAX']))[0];
 
             await sut.initialize(pangolinRouterAddress, tokenManager.address, [
                 TOKEN_ADDRESSES['AVAX'],

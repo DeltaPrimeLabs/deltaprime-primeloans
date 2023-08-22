@@ -4,6 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -28,6 +29,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -123,6 +125,12 @@ describe('Smart loan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -133,6 +141,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -233,7 +242,7 @@ describe('Smart loan', () => {
             await wrappedLoan.gmdStakeUSDC(parseUnits(stakedAmount.toString(), 6), expectedSharesReceived.mul("995").div("1000"));
 
             let sharesAfterStaking = fromWei(await GMDTokensContracts.get('gmdUSDC')!.balanceOf(wrappedLoan.address));
-            expect(formatUnits(initialUSDCBalance, 6) - formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), 6)).to.be.eq(10);
+            expect(formatUnits(initialUSDCBalance, 6) - formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), 6)).to.be.closeTo(10, 1e-8);
             expect(toWei(sharesAfterStaking.toString())).to.be.gte(toWei(expectedSharesReceived.toString()))
 
             // Should stake max if amount > balance

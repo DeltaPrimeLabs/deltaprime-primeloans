@@ -106,6 +106,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address,
     bytes calldata _params
   ) public override returns (bool) {
+    require(msg.sender == address(POOL), "msg.sender != POOL");
+
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
 
     // Use calldata instead of memory in order to avoid the "Stack Too deep" CompileError
@@ -114,8 +116,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256[] calldata premiums = getPremiums();
 
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(lep.loan, 0);
-      IERC20(assets[i]).approve(lep.loan, amounts[i]);
+      assets[i].safeApprove(lep.loan, 0);
+      assets[i].safeApprove(lep.loan, amounts[i]);
     }
 
     (
@@ -128,15 +130,17 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       if (assetDeficit[i].amount != 0) {
         for (uint32 j = 0; j < assetSurplus.length; j++) {
           if (assetSurplus[j].amount != 0) {
+            bool shouldBreak;
             for (uint32 k = 0; k < lep.offers.length; ++k) {
               IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
               if (
                 offer.path[0] == assetSurplus[j].asset &&
                 offer.path[offer.path.length - 1] == assetDeficit[i].asset
               ) {
+                uint256 remainDeficitAmount;
                 (
-                  bool shouldBreak,
-                  uint256 remainDeficitAmount
+                  shouldBreak,
+                  remainDeficitAmount
                 ) = swapToNegateDeficits(
                     assetDeficit[i],
                     assetSurplus[j],
@@ -150,6 +154,9 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                   break;
                 }
               }
+            }
+            if (shouldBreak) {
+              break;
             }
           }
         }
@@ -168,8 +175,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Approve AAVE POOL
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(address(POOL), 0);
-      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
+      assets[i].safeApprove(address(POOL), 0);
+      assets[i].safeApprove(address(POOL), amounts[i] + premiums[i]);
     }
 
     return true;

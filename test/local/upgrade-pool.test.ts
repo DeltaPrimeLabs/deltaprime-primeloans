@@ -5,14 +5,13 @@ import {solidity} from "ethereum-waffle";
 import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import CompoundingIndexArtifact from '../../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
+import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import OpenBorrowersRegistryArtifact
     from '../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {erc20ABI, fromWei, getFixedGasSigners, toWei} from "../_helpers";
 import {
-    CompoundingIndex,
     MockToken,
     MockUpgradedPool__factory,
     OpenBorrowersRegistry,
@@ -20,7 +19,7 @@ import {
     Pool__factory,
     TransparentUpgradeableProxy,
     TransparentUpgradeableProxy__factory,
-    MockVariableUtilisationRatesCalculator
+    MockVariableUtilisationRatesCalculator, LinearIndex
 } from "../../typechain";
 import {Contract} from "ethers";
 
@@ -54,8 +53,10 @@ describe('Upgradeable pool', () => {
 
             MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-            const depositIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
-            const borrowingIndex = (await deployContract(owner, CompoundingIndexArtifact, [pool.address])) as CompoundingIndex;
+            const depositIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+            await depositIndex.initialize(pool.address);
+            const borrowingIndex = (await deployContract(owner, LinearIndexArtifact, [])) as LinearIndex;
+            await borrowingIndex.initialize(pool.address);
 
             tokenContract = new ethers.Contract(mockUsdToken.address, erc20ABI, provider);
 
