@@ -1,7 +1,6 @@
 <template>
   <div class="wallet">
-    <img class="logo" src="src/assets/icons/avax-icon.svg"/>
-    <div class="network">{{network}}</div>
+    <NetworkSelect></NetworkSelect>
     <div class="prime-account" v-if="hasSmartLoanContract">
       <div class="separator"></div>
       <img class="logo" src="src/assets/logo/deltaprime.svg"/>
@@ -38,6 +37,7 @@
 <script>
   import { mapState } from "vuex";
   import IconButton from "./IconButton.vue";
+  import NetworkSelect from "./NetworkSelect.vue";
   import NotifiModal from "./notifi/NotifiModal.vue";
   const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -45,7 +45,8 @@
     name: 'Wallet',
     components: {
       IconButton,
-      NotifiModal
+      NotifiModal,
+      NetworkSelect,
     },
     computed: {
       ...mapState('network', ['provider', 'account', 'accountBalance']),

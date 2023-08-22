@@ -464,4 +464,17 @@
   --bridge-modal__slippage-bar-border: solid 2px #{$goose-gray};
   --bridge-modal__slippage-bar-color: #{$steel-gray};
   // endregion
+
+  // region NetworkSelect
+  --network-select__indicator-network-color: #{$black};
+  --network-select__chevron-color: #{$delta-accent};
+  --network-select__dropdown-header-color: #{$dark-gray};
+  --network-select__dropdown-background: #{$white};
+  --network-select__dropdown-border-color: #{$delta-secondary};
+  --network-select__dropdown-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
+  --network-select__option-background--selected: #{$delta-burnt-out};
+  --network-select__option-border--hover: #{$delta-light};
+  --network-select__option-name-color: #{$dark-gray};
+  --network-select__option-name-color--selected: #{$black};
+  // endregion
 }
