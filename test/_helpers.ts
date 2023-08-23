@@ -627,7 +627,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig = undefined, provider = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
-        : await ethers.getContractAt('IDiamondCut', diamondAddress);
+        : await ethers.getContractAt('IDiamondCut', diamondAddress, hardhatConfig.deployer);
     await diamondCut.pause();
 
     await deployFacet(
@@ -713,7 +713,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig)
     } else {
-        await deployFacet("SolvencyFacetProd", diamondAddress, [
+        await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
                 'canRepayDebtFully',
                 'isSolvent',
                 'isSolventWithPrices',
@@ -851,7 +851,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig)
     }
     if (chain == 'ARBITRUM') {
-        // await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
+        await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
         // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
         await deployFacet(

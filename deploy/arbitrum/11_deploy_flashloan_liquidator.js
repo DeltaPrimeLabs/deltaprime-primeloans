@@ -39,4 +39,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 };
 
-module.exports.tags = ["arbitrum-1"];
+module.exports.tags = ["arbitrum-x11"];

@@ -42,7 +42,7 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   await deploy(poolFactory, {
     contract: `contracts/deployment/arbitrum/${poolFactory}.sol:${poolFactory}`,
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 50000000,
     args: [],
   });
 
@@ -66,11 +66,11 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
   let result = await deploy(tup, {
     contract: `contracts/proxies/tup/arbitrum/${tup}.sol:${tup}`,
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 80000000,
     args: [poolAddress, admin, []],
   });
 
   console.log(`${tup} deployed at address: ${result.address}`);
 }
 
-module.exports.tags = ["arbitrum"];
+module.exports.tags = ["arbitrum-x2"];

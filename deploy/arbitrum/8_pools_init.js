@@ -31,7 +31,7 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
         tokenAddress,
         ZERO_ADDRESS,
         0,
-        { gasLimit: 8000000 }
+        { gasLimit: 50000000 }
     );
 
     await initializeTx.wait();
@@ -41,5 +41,5 @@ async function initPool(deploy, deployer, ratesCalculator, poolTup, depositIndex
     tokenAddress: ${tokenAddress}`);
 }
 
-module.exports.tags = ['arbitrum'];
+module.exports.tags = ['arbitrum-x8'];
 module.exports.initPool = initPool;

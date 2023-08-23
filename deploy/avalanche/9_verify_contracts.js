@@ -208,8 +208,8 @@ module.exports = async ({
     })
 
     await verifyContract(hre, {
-        address: (await ethers.getContract("SolvencyFacetProd")).address,
-        contract: `contracts/facets/SolvencyFacetProd.sol:SolvencyFacetProd`,
+        address: (await ethers.getContract("SolvencyFacetProdAvalanche")).address,
+        contract: `contracts/facets/avalanche/SolvencyFacetProdAvalanche.sol:SolvencyFacetProdAvalanche`,
     })
 
     await verifyContract(hre, {

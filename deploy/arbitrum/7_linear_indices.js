@@ -30,20 +30,36 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
     let resultIndex = await deploy(name, {
         contract: `contracts/deployment/arbitrum/${name}.sol:${name}`,
         from: deployer,
-        gasLimit: 8000000,
+        gasLimit: 50000000,
         args: [],
     });
 
     console.log(`Deployed linear index at address: ${resultIndex.address}`);
 
+    await verifyContract(hre,
+        {
+            address: resultIndex.address,
+            contract: `contracts/deployment/arbitrum/${name}.sol:${name}`,
+            constructorArguments: []
+        });
+    console.log(`Verified ${name}`)
+
     let result = await deploy(`${name}TUP`, {
         contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
         from: deployer,
-        gasLimit: 8000000,
+        gasLimit: 50000000,
         args: [resultIndex.address, admin, []],
     });
 
     console.log(`${name}TUP deployed at address: ${result.address}`);
+
+    await verifyContract(hre,
+        {
+            address: result.address,
+            contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
+            constructorArguments: [resultIndex.address, admin, []]
+        });
+    console.log(`Verified ${name}TUP.sol`)
 
     renameSync(`./deployments/${networkName}/${name}TUP.json`, `./deployments/${networkName}/${name}TUP.json`);
 
@@ -51,11 +67,11 @@ async function deployLinearIndex(name, poolTup, deploy, deployer, admin) {
 
     let initializeTx = await index.attach(result.address).initialize(
         poolTUP.address,
-        { gasLimit: 8000000 }
+        { gasLimit: 50000000 }
     );
 
     await initializeTx.wait();
 }
 
-module.exports.tags = ['arbitrum'];
+module.exports.tags = ['arbitrum-x7'];
 module.exports.deployLinearIndex = deployLinearIndex;

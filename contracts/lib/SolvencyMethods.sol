@@ -3,183 +3,183 @@
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
-import "../facets/SolvencyFacetProd.sol";
+import "../facets/avalanche/SolvencyFacetProdAvalanche.sol";
 import "../facets/AssetsExposureController.sol";
 import "../DiamondHelper.sol";
 
 // TODO Rename to contract instead of lib
 contract SolvencyMethods is DiamondHelper, ProxyConnector {
-    // This function executes SolvencyFacetProd.getDebt()
+    // This function executes SolvencyFacetProdAvalanche.getDebt()
     function _getDebt() internal virtual returns (uint256 debt) {
         debt = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebt.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getDebt.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getDebt.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getDebt.selector)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getDebtWithPrices()
-    function _getDebtWithPrices(SolvencyFacetProd.AssetPrice[] memory debtAssetsPrices) internal virtual returns (uint256 debt) {
+    // This function executes SolvencyFacetProdAvalanche.getDebtWithPrices()
+    function _getDebtWithPrices(SolvencyFacetProdAvalanche.AssetPrice[] memory debtAssetsPrices) internal virtual returns (uint256 debt) {
         debt = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebtWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getDebtWithPrices.selector, debtAssetsPrices)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getDebtWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getDebtWithPrices.selector, debtAssetsPrices)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.isSolventWithPrices()
-    function _isSolventWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) internal virtual returns (bool solvent){
+    // This function executes SolvencyFacetProdAvalanche.isSolventWithPrices()
+    function _isSolventWithPrices(SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices) internal virtual returns (bool solvent){
         solvent = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolventWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.isSolventWithPrices.selector, cachedPrices)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.isSolventWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.isSolventWithPrices.selector, cachedPrices)
             ),
             (bool)
         );
     }
 
-    // This function executes SolvencyFacetProd.isSolvent()
+    // This function executes SolvencyFacetProdAvalanche.isSolvent()
     function _isSolvent() internal virtual returns (bool solvent){
         solvent = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolvent.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.isSolvent.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.isSolvent.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.isSolvent.selector)
             ),
             (bool)
         );
     }
 
-    // This function executes SolvencyFacetProd.canRepayDebtFully()
+    // This function executes SolvencyFacetProdAvalanche.canRepayDebtFully()
     function _canRepayDebtFully() internal virtual returns (bool solvent){
         solvent = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.canRepayDebtFully.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.canRepayDebtFully.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.canRepayDebtFully.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.canRepayDebtFully.selector)
             ),
             (bool)
         );
     }
 
-    // This function executes SolvencyFacetProd.getTotalValue()
+    // This function executes SolvencyFacetProdAvalanche.getTotalValue()
     function _getTotalValue() internal virtual returns (uint256 totalValue) {
         totalValue = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getTotalValue.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getTotalValue.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getTotalValue.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getTotalValue.selector)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getTotalAssetsValue()
+    // This function executes SolvencyFacetProdAvalanche.getTotalAssetsValue()
     function _getTotalAssetsValue() internal virtual returns (uint256 assetsValue) {
         assetsValue = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getTotalAssetsValue.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getTotalAssetsValue.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getTotalAssetsValue.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getTotalAssetsValue.selector)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
-    function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
+    // This function executes SolvencyFacetProdAvalanche.getHealthRatioWithPrices()
+    function _getHealthRatioWithPrices(SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
         health = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatioWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getHealthRatioWithPrices.selector, cachedPrices)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getHealthRatioWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getHealthRatioWithPrices.selector, cachedPrices)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getHealthRatio()
+    // This function executes SolvencyFacetProdAvalanche.getHealthRatio()
     function _getHealthRatio() public virtual returns (uint256 health) {
         health = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getHealthRatio.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getHealthRatio.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getHealthRatio.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getHealthRatio.selector)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getPrices()
+    // This function executes SolvencyFacetProdAvalanche.getPrices()
     function getPrices(bytes32[] memory symbols) public virtual returns (uint256[] memory prices) {
         prices = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getPrices.selector, symbols)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getPrices.selector, symbols)
             ),
             (uint256[])
         );
     }
 
-    // This function executes SolvencyFacetProd.getPrices()
-    function _getAllPricesForLiquidation(bytes32[] memory assetsToRepay) public virtual returns (SolvencyFacetProd.CachedPrices memory result) {
+    // This function executes SolvencyFacetProdAvalanche.getPrices()
+    function _getAllPricesForLiquidation(bytes32[] memory assetsToRepay) public virtual returns (SolvencyFacetProdAvalanche.CachedPrices memory result) {
         result = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getAllPricesForLiquidation.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getAllPricesForLiquidation.selector, assetsToRepay)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getAllPricesForLiquidation.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getAllPricesForLiquidation.selector, assetsToRepay)
             ),
-            (SolvencyFacetProd.CachedPrices)
+            (SolvencyFacetProdAvalanche.CachedPrices)
         );
     }
 
-    // This function executes SolvencyFacetProd.getOwnedAssetsWithNativePrices()
-    function _getOwnedAssetsWithNativePrices() internal virtual returns (SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices) {
+    // This function executes SolvencyFacetProdAvalanche.getOwnedAssetsWithNativePrices()
+    function _getOwnedAssetsWithNativePrices() internal virtual returns (SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices) {
         ownedAssetsPrices = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getOwnedAssetsWithNativePrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getOwnedAssetsWithNativePrices.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getOwnedAssetsWithNativePrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getOwnedAssetsWithNativePrices.selector)
             ),
-            (SolvencyFacetProd.AssetPrice[])
+            (SolvencyFacetProdAvalanche.AssetPrice[])
         );
     }
 
-    // This function executes SolvencyFacetProd.getDebtAssetsPrices()
-    function _getDebtAssetsPrices() internal virtual returns (SolvencyFacetProd.AssetPrice[] memory debtAssetsPrices) {
+    // This function executes SolvencyFacetProdAvalanche.getDebtAssetsPrices()
+    function _getDebtAssetsPrices() internal virtual returns (SolvencyFacetProdAvalanche.AssetPrice[] memory debtAssetsPrices) {
         debtAssetsPrices = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebtAssetsPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getDebtAssetsPrices.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getDebtAssetsPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getDebtAssetsPrices.selector)
             ),
-            (SolvencyFacetProd.AssetPrice[])
+            (SolvencyFacetProdAvalanche.AssetPrice[])
         );
     }
 
-    // This function executes SolvencyFacetProd.getStakedPositionsPrices()
-    function _getStakedPositionsPrices() internal virtual returns (SolvencyFacetProd.AssetPrice[] memory stakedPositionsPrices) {
+    // This function executes SolvencyFacetProdAvalanche.getStakedPositionsPrices()
+    function _getStakedPositionsPrices() internal virtual returns (SolvencyFacetProdAvalanche.AssetPrice[] memory stakedPositionsPrices) {
         stakedPositionsPrices = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getStakedPositionsPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getStakedPositionsPrices.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getStakedPositionsPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getStakedPositionsPrices.selector)
             ),
-            (SolvencyFacetProd.AssetPrice[])
+            (SolvencyFacetProdAvalanche.AssetPrice[])
         );
     }
 
-    // This function executes SolvencyFacetProd.getTotalAssetsValueWithPrices()
-    function _getTotalValueWithPrices(SolvencyFacetProd.AssetPrice[] memory ownedAssetsPrices, SolvencyFacetProd.AssetPrice[] memory stakedPositionsPrices) internal virtual returns (uint256 totalValue) {
+    // This function executes SolvencyFacetProdAvalanche.getTotalAssetsValueWithPrices()
+    function _getTotalValueWithPrices(SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices, SolvencyFacetProdAvalanche.AssetPrice[] memory stakedPositionsPrices) internal virtual returns (uint256 totalValue) {
         totalValue = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getTotalValueWithPrices.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getTotalValueWithPrices.selector, ownedAssetsPrices, stakedPositionsPrices)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getTotalValueWithPrices.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getTotalValueWithPrices.selector, ownedAssetsPrices, stakedPositionsPrices)
             ),
             (uint256)
         );
     }
 
-    // This function executes SolvencyFacetProd.getPrices()
+    // This function executes SolvencyFacetProdAvalanche.getPrices()
     function getPrice(bytes32 symbol) public virtual returns (uint256 price) {
         price = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrice.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getPrice.selector, symbol)
+                DiamondHelper._getFacetAddress(SolvencyFacetProdAvalanche.getPrice.selector),
+                abi.encodeWithSelector(SolvencyFacetProdAvalanche.getPrice.selector, symbol)
             ),
             (uint256)
         );

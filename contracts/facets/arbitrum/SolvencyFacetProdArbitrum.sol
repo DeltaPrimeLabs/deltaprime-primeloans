@@ -1,29 +1,27 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: f8402055bb953d57a7e5a9bfbd19230c6d6b326d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
-import "../interfaces/ITokenManager.sol";
-import "../Pool.sol";
-import "../DiamondHelper.sol";
-import "../interfaces/IStakingPositions.sol";
-import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
-import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
-import "../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
-import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
-import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
-import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
-import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/ArbitrumProdDataServiceConsumerBase.sol";
+import "../../interfaces/ITokenManager.sol";
+import "../../Pool.sol";
+import "../../DiamondHelper.sol";
+import "../../interfaces/IStakingPositions.sol";
+import "../../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
+import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
+import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
+import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
+import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
+import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
-//TODO: that probably can be removed later
-import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
-import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
+import "../../lib/local/DeploymentConstants.sol";
+import "../../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
-contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
+contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, DiamondHelper {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
 
