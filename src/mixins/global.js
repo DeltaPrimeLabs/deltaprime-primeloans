@@ -94,12 +94,7 @@ export default {
     },
 
     async getWalletTokenBalance(account, assetSymbol, tokenContract, type) {
-      console.log('global.js getWalletTokenBalance');
-      console.log(config);
-      console.log(tokenContract);
-      console.log(account);
       const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
-      console.log(walletAssetBalanceResponse);
       let walletAssetBalance;
       if (!type) {
         walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);

@@ -42,6 +42,8 @@ export default {
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
+    NATIVE_ASSET_TOGGLE_OPTIONS: ['AVAX', 'WAVAX'],
+    WRAPPED_TOKEN_ADDRESS: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     POOLS_CONFIG: {
         AVAX: {
             address: WAVAX_POOL_TUP.address,

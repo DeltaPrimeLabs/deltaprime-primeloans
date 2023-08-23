@@ -11,11 +11,12 @@ export function transactionUrl(tx) {
 
 export const wrapContract = async function wrapContract(contract, assets) {
   //for more symbols in data feed it's more optimal to not specify asset list
-  let providedAssets = (assets && assets.length <= 5) ? assets : undefined;
+  const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
+  const dataServiceId = `redstone-${window.chain}-prod`;
 
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId: 'redstone-avalanche-prod',
+      dataServiceId,
       uniqueSignersCount: 3,
       dataFeeds: providedAssets,
       disablePayloadsDryRun: true
