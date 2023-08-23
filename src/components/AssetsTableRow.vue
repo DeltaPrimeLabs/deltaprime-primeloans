@@ -144,7 +144,6 @@ import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
@@ -162,7 +161,7 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
 
 const ethers = require('ethers');
-
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'AssetsTableRow',
@@ -173,7 +172,8 @@ export default {
   props: {
     asset: {},
   },
-  mounted() {
+  async mounted() {
+    await this.setupFiles();
     this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
@@ -263,6 +263,9 @@ export default {
         'claimGLPRewards'
       ]),
     ...mapActions('network', ['updateBalance']),
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
@@ -325,6 +328,8 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
+        console.log('TOKEN_ADDRESSES')
+        console.log(TOKEN_ADDRESSES)
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
@@ -332,9 +337,19 @@ export default {
           const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
           const maxHops = 3;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
+            console.log(
+                await yakRouter.findBestPathWithGas(
+                    amountIn,
+                    tknFrom,
+                    tknTo,
+                    maxHops,
+                    gasPrice,
+                    {gasLimit: 1e9}
+                )
+            )
             return await yakRouter.findBestPathWithGas(
               amountIn,
               tknFrom,

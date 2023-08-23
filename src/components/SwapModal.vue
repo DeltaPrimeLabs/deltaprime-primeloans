@@ -38,7 +38,6 @@
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
                           :max="maxSourceValue"
-                          :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
                           v-on:ongoingTyping="ongoingTyping"
@@ -53,7 +52,6 @@
                           :asset-options="targetAssetOptions"
                           :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
-                          :info="() => targetAssetValue"
                           :disabled="true"
                           info-icon-message="Minimum received amount"
                           :validators="targetValidators">
@@ -275,24 +273,6 @@ export default {
   },
 
   computed: {
-    sourceAssetValue() {
-      const sourceAssetUsdPrice = Number(this.sourceAssetAmount) * this.sourceAssetData.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
-
-      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX 
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    },
-
-    targetAssetValue() {
-      const targetAssetUsdPrice = Number(this.targetAssetAmount) * this.targetAssetData.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
-
-      if (this.valueAsset === "USDC") return `~ $${targetAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX 
-      return `~ ${(targetAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    },
-
     maxSourceValue() {
       if (this.swapDex === 'ParaSwap') {
         return null;
@@ -352,6 +332,10 @@ export default {
       let decimals = this.sourceAssetData.decimals;
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
+      console.log('query')
+      console.log('this.sourceAsset: ', this.sourceAsset)
+      console.log('this.targetAsset: ', this.targetAsset)
+      console.log('amountInWei: ', amountInWei)
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
       console.warn('QUERY RESPONSE YAK SWAP');
       console.log(queryResponse);
@@ -371,6 +355,11 @@ export default {
           }
         }
 
+        console.log('estimatedReceivedTokens')
+        console.log('estimated')
+        console.log(estimated)
+        console.log('this.targetAssetData.decimals')
+        console.log(this.targetAssetData.decimals)
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
         this.updateSlippageWithAmounts();

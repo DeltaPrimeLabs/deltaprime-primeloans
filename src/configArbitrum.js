@@ -31,8 +31,8 @@ export default {
       "WSTETH": {name: "WSTETH", symbol: "WSTETH", logoExt: "png", decimals: 18, address: addresses.WSTETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
-        ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'sAVAX', 'QI', 'PNG', 'PTP']
+        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'WSTETH'],
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'WSTETH']
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
