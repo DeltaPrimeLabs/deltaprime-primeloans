@@ -11,10 +11,10 @@
           <br><br>
         </div>
         <div>
-          <b>It will require accepting Terms and <span v-if="isNativeAvax">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
+          <b>It will require accepting Terms and <span v-if="isNativeAsset">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
         </div>
       </div>
-      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
+      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== toggleOptions[0] || selectedDepositAsset !== toggleOptions[0])">
         <b>This action requires two separate transactions to be approved.</b>
       </div>
       <div class="modal-top-info">
@@ -23,10 +23,10 @@
           <LoadedValue :check="() => getAvailableAssetAmount != null || Number.isNaN(getAvailableAssetAmount)"
                        :value="isLP ? formatTokenBalance(getAvailableAssetAmount, 12, true) : formatTokenBalance(getAvailableAssetAmount, 10, true)"></LoadedValue>
           <div v-if="getAvailableAssetAmount != null">
-            <span v-if="asset.name === 'AVAX'" class="top-info__currency">
+            <span v-if="asset.name === toggleOptions[0]" class="top-info__currency">
               {{ selectedDepositAsset }}
             </span>
-            <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
+            <span v-if="asset.name !== toggleOptions[0]" class="top-info__currency">
               {{ isLP ? asset.name : asset.symbol }}
             </span>
           </div>
@@ -48,7 +48,7 @@
                      :symbol="asset.symbol"
                      v-on:newValue="inputChange"
                      :validators="validators"
-                     :max="asset.symbol === 'AVAX' && selectedDepositAsset === 'AVAX' ? null : getAvailableAssetAmount"
+                     :max="asset.symbol === toggleOptions[0] && selectedDepositAsset === toggleOptions[0] ? null : getAvailableAssetAmount"
                      :info="() => sourceAssetValue"
       >
       </CurrencyInput>
@@ -84,18 +84,14 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
+      <div class="toggle-container" v-if="asset.symbol === toggleOptions[0]">
+        <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
       <div class="button-wrapper">
-<!--        <Button :label="'Add funds'"
+       <Button :label="'Add funds'"
                 v-on:click="submit()"
                 :disabled="validationError || (!getAvailableAssetAmount && getAvailableAssetAmount !== 0)"
-                :waiting="transactionOngoing">
-        </Button>-->
-        <Button :label="'Add funds'"
-                v-on:click="submit()"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -155,7 +151,8 @@ export default {
       value: 0,
       healthAfterTransaction: 1,
       validators: [],
-      selectedDepositAsset: 'AVAX',
+      selectedDepositAsset: config.NATIVE_ASSET_TOGGLE_OPTIONS[0], // native token e.g. AVAX in Avalanche
+      toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       validationError: true,
       availableAssetAmount: 0,
       valueAsset: "USDC",
@@ -175,12 +172,12 @@ export default {
   computed: {
     ...mapState('network', ['account', 'accountBalance']),
     getModalHeight() {
-      return this.asset.symbol === 'AVAX' ? '561px' : null;
+      return this.asset.symbol === this.toggleOptions[0] ? '561px' : null;
     },
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      if (this.isNativeAvax) {
+      if (this.isNativeAsset) {
         return this.walletNativeTokenBalance;
       } else {
         const walletAssetBalance = parseFloat(this.walletAssetBalance);
@@ -188,8 +185,8 @@ export default {
       }
     },
 
-    isNativeAvax() {
-      return this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX';
+    isNativeAsset() {
+      return this.asset.symbol === this.toggleOptions[0] && this.selectedDepositAsset === this.toggleOptions[0];
     },
 
     sourceAssetValue() {
@@ -206,7 +203,7 @@ export default {
     submit() {
       console.log('AddFromWallet.submit()');
       this.transactionOngoing = true;
-      if (this.asset.symbol === 'AVAX') {
+      if (this.asset.symbol === this.toggleOptions[0]) {
         this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
         console.log('emit ADD_FROM_WALLET');
@@ -276,22 +273,22 @@ export default {
 
     setupValidators() {
       this.validators = [
-        // {
-        //   validate: (value) => {
-        //     if (value > this.getAvailableAssetAmount) {
-        //       return 'Exceeds account balance';
-        //     }
-        //   }
-        // },
-        // {
-        //   validate: async (value) => {
-        //     const allowed = this.asset.maxExposure - this.asset.currentExposure;
-        //
-        //     if (value > allowed) {
-        //       return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
-        //     }
-        //   }
-        // }
+        {
+          validate: (value) => {
+            if (value > this.getAvailableAssetAmount) {
+              return 'Exceeds account balance';
+            }
+          }
+        },
+        {
+          validate: async (value) => {
+            const allowed = this.asset.maxExposure - this.asset.currentExposure;
+        
+            if (value > allowed) {
+              return `Max. allowed ${this.asset.symbol} amount is ${allowed.toFixed(0)}.`;
+            }
+          }
+        }
       ];
     },
 
@@ -302,8 +299,8 @@ export default {
     },
 
     setupAvailableAssetAmount() {
-      if (this.asset.symbol === 'AVAX') {
-        const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
+      if (this.asset.symbol === this.toggleOptions[0]) {
+        const balance = this.selectedDepositAsset === this.toggleOptions[0] ? this.walletNativeTokenBalance : this.walletAssetBalance;
         this.availableAssetAmount = balance;
       } else {
         this.availableAssetAmount = this.walletAssetBalance ? this.walletAssetBalance : null;

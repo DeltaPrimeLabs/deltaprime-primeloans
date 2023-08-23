@@ -23,6 +23,8 @@ export default {
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
+    NATIVE_ASSET_TOGGLE_OPTIONS: ['ETH', 'WETH'],
+    WRAPPED_TOKEN_ADDRESS: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     POOLS_CONFIG: {
         USDC: {
             address: USDC_POOL_TUP.address,

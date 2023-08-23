@@ -86,7 +86,7 @@
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
-          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
+          <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan)" v-slot:bubble>
             To create your Prime Account, click on the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
@@ -200,6 +200,7 @@ export default {
       healthLoaded: false,
       totalStaked: null,
       availableFarms: [],
+      nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS
     };
   },
   computed: {
@@ -285,9 +286,9 @@ export default {
               }
             ]
             : []),
-          this.asset.symbol === 'AVAX' ? {
+          this.asset.symbol === this.nativeAssetOptions[0] ? {
             key: 'WRAP',
-            name: 'Wrap native AVAX',
+            name: `Wrap native ${this.nativeAssetOptions[0]}`,
             hidden: true,
           } : null,
           this.asset.symbol === 'GLP' ? {
@@ -650,11 +651,9 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
-      // modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
-      modalInstance.walletAssetBalance = 3
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
       modalInstance.noSmartLoan = this.noSmartLoan;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
-        console.log(addFromWalletEvent);
         if (this.smartLoanContract) {
           const value = addFromWalletEvent.value;
 
@@ -689,7 +688,7 @@ export default {
                 });
             }
           } else {
-            if (addFromWalletEvent.asset === 'AVAX') {
+            if (addFromWalletEvent.asset === this.nativeAssetOptions[0]) {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.$forceUpdate();
               }, (error) => {
@@ -733,7 +732,7 @@ export default {
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
-        if (withdrawEvent.withdrawAsset === 'AVAX') {
+        if (withdrawEvent.withdrawAsset === this.nativeAssetOptions[0]) {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
             value: value,
@@ -851,11 +850,8 @@ export default {
     },
 
     async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
-      console.log(tokenContract);
-      console.log(this.account);
+      const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
       const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
-      console.log('walletTokenBalance', walletTokenBalance);
       return walletTokenBalance;
     },
 

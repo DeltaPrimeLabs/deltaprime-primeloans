@@ -70,8 +70,8 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.name === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
+      <div class="toggle-container" v-if="asset.name === toggleOptions[0]">
+        <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -126,7 +126,8 @@ export default {
       validators: [],
       currencyInputError: true,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
-      selectedWithdrawAsset: 'AVAX',
+      selectedWithdrawAsset: config.NATIVE_ASSET_TOGGLE_OPTIONS[0],
+      toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       isLP: false,
       transactionOngoing: false,
       debt: 0,
@@ -146,16 +147,16 @@ export default {
 
   computed: {
     getModalHeight() {
-      return this.asset.symbol === 'AVAX' ? '561px' : null;
+      return this.asset.symbol === this.toggleOptions[0] ? '561px' : null;
     },
 
     sourceAssetValue() {
       const sourceAssetUsdPrice = Number(this.withdrawValue) * this.asset.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+      const nativeAssetUsdPrice = config.ASSETS_CONFIG[this.toggleOptions[0]].price;
 
       if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+      // otherwise return amount in native symbol
+      return `~ ${(sourceAssetUsdPrice / nativeAssetUsdPrice).toFixed(2)} ${this.toggleOptions[0]}`;
     },
   },
 
@@ -163,7 +164,7 @@ export default {
     submit() {
       this.transactionOngoing = true;
       let withdrawEvent = {};
-      if (this.asset.symbol === 'AVAX') {
+      if (this.asset.symbol === this.toggleOptions[0]) {
         withdrawEvent = {
           withdrawAsset: this.selectedWithdrawAsset,
           value: this.withdrawValue,

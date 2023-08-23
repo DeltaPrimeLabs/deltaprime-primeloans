@@ -14,13 +14,20 @@ import {initializeApp} from 'firebase/app';
 import {getFirestore, collection, query, getDocs} from 'firebase/firestore/lite';
 import firebaseConfig from '../../.secrets/firebaseConfig.json';
 import {mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
-import wavaxAbi from '../../test/abis/WAVAX.json';
+import wrappedAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router';
 
 import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 
+const toBytes32 = require('ethers').utils.formatBytes32String;
+const fromBytes32 = require('ethers').utils.parseBytes32String;
+const ethers = require('ethers');
+
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+const HARD_REFRESH_DELAY = 60000;
 
 let SMART_LOAN_FACTORY_TUP;
 let DIAMOND_BEACON;
@@ -28,29 +35,6 @@ let SMART_LOAN_FACTORY;
 let TOKEN_MANAGER;
 let TOKEN_MANAGER_TUP;
 let TOKEN_ADDRESSES;
-(async () => {
-  SMART_LOAN_FACTORY_TUP = await import(`/deployments/${window.chain}/SmartLoansFactoryTUP.json`);
-  DIAMOND_BEACON = await import(`/deployments/${window.chain}/SmartLoanDiamondBeacon.json`);
-  SMART_LOAN_FACTORY = await import(`/deployments/${window.chain}/SmartLoansFactory.json`);
-  TOKEN_MANAGER = await import(`/deployments/${window.chain}/TokenManager.json`);
-  TOKEN_MANAGER_TUP = await import(`/deployments/${window.chain}/TokenManagerTUP.json`);
-  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
-  console.log(TOKEN_ADDRESSES);
-})();
-
-
-const toBytes32 = require('ethers').utils.formatBytes32String;
-const fromBytes32 = require('ethers').utils.parseBytes32String;
-
-const ethers = require('ethers');
-
-const wavaxTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
-const usdcTokenAddress = '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
-
-const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
-
-const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
-const HARD_REFRESH_DELAY = 60000;
 
 const fireStore = getFirestore(initializeApp(firebaseConfig));
 
@@ -64,7 +48,7 @@ export default {
     provider: null,
     smartLoanContract: null,
     smartLoanFactoryContract: null,
-    wavaxTokenContract: null,
+    wrappedTokenContract: null,
     usdcTokenContract: null,
     assetBalances: null,
     lpBalances: null,
@@ -110,8 +94,8 @@ export default {
       state.smartLoanFactoryContract = smartLoanFactoryContract;
     },
 
-    setWavaxTokenContract(state, wavaxTokenContract) {
-      state.wavaxTokenContract = wavaxTokenContract;
+    setWrappedTokenContract(state, wrappedTokenContract) {
+      state.wrappedTokenContract = wrappedTokenContract;
     },
 
     setUsdcTokenContract(state, usdcTokenContract) {
@@ -177,6 +161,7 @@ export default {
   actions: {
     async fundsStoreSetup({state, rootState, dispatch, commit}) {
       if (!rootState.network.provider) return;
+      await dispatch('loadDeployments');
       await dispatch('setupContracts');
       await dispatch('setupSmartLoanContract');
       await dispatch('setupSupportedAssets');
@@ -209,6 +194,15 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
+    },
+
+    async loadDeployments() {
+      SMART_LOAN_FACTORY_TUP = await import(`/deployments/${window.chain}/SmartLoansFactoryTUP.json`);
+      DIAMOND_BEACON = await import(`/deployments/${window.chain}/SmartLoanDiamondBeacon.json`);
+      SMART_LOAN_FACTORY = await import(`/deployments/${window.chain}/SmartLoansFactory.json`);
+      TOKEN_MANAGER = await import(`/deployments/${window.chain}/TokenManager.json`);
+      TOKEN_MANAGER_TUP = await import(`/deployments/${window.chain}/TokenManagerTUP.json`);
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
@@ -364,13 +358,12 @@ export default {
 
     async setupContracts({rootState, commit}) {
       const provider = rootState.network.provider;
-      console.log(SMART_LOAN_FACTORY_TUP);
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
-      const wavaxTokenContract = new ethers.Contract(wavaxTokenAddress, wavaxAbi, provider.getSigner());
-      const usdcTokenContract = new ethers.Contract(usdcTokenAddress, erc20ABI, provider.getSigner());
+      const wrappedTokenContract = new ethers.Contract(config.WRAPPED_TOKEN_ADDRESS, wrappedAbi, provider.getSigner());
+      const usdcTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider.getSigner());
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
-      commit('setWavaxTokenContract', wavaxTokenContract);
+      commit('setWrappedTokenContract', wrappedTokenContract);
       commit('setUsdcTokenContract', usdcTokenContract);
     },
 
@@ -465,18 +458,19 @@ export default {
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value, isLP}) {
       console.log('createAndFundLoan', asset, value, isLP);
       const provider = rootState.network.provider;
+      const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
       if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
 
       //TODO: make it more robust
-      if (asset === 'AVAX') {
-        asset = config.ASSETS_CONFIG['AVAX'];
-        let depositTransaction = await state.wavaxTokenContract.deposit({value: toWei(String(value))});
+      if (asset === nativeAssetOptions[0]) {
+        asset = config.ASSETS_CONFIG[nativeAssetOptions[0]];
+        let depositTransaction = await state.wrappedTokenContract.deposit({value: toWei(String(value))});
         await awaitConfirmation(depositTransaction, provider, 'deposit');
       }
 
-      if (asset === 'WAVAX') {
-        asset = config.ASSETS_CONFIG['AVAX'];
+      if (asset === nativeAssetOptions[1]) {
+        asset = config.ASSETS_CONFIG[nativeAssetOptions[0]];
       }
 
       const decimals = config.ASSETS_CONFIG[asset.symbol].decimals;
@@ -610,6 +604,7 @@ export default {
       //     }
       // }
 
+      if (Object.keys(concentratedLpAssets).length == 0) return;
       //TODO: replace with for logic
       try {
         concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
@@ -631,8 +626,10 @@ export default {
       const debts = await state.smartLoanContract.getDebts();
       debts.forEach(debt => {
         const asset = fromBytes32(debt.name);
-        const debtValue = formatUnits(debt.debt, config.ASSETS_CONFIG[asset].decimals);
-        debtsPerAsset[asset] = {asset: asset, debt: debtValue};
+        if (config.ASSETS_CONFIG[asset]) {
+          const debtValue = formatUnits(debt.debt, config.ASSETS_CONFIG[asset].decimals);
+          debtsPerAsset[asset] = {asset: asset, debt: debtValue};
+        }
       });
       await commit('setDebtsPerAsset', debtsPerAsset);
       dataRefreshNotificationService.emitDebtsPerAssetDataRefreshEvent(debtsPerAsset);
@@ -754,7 +751,7 @@ export default {
 
     async swapToWavax({state, rootState}) {
       const provider = rootState.network.provider;
-      await state.wavaxTokenContract.connect(provider.getSigner()).deposit({value: toWei('1000')});
+      await state.wrappedTokenContract.connect(provider.getSigner()).deposit({value: toWei('1000')});
     },
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
@@ -778,6 +775,10 @@ export default {
         [fundRequest.asset]
       ]);
 
+      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+      const arbiTokenIndex = loanAssets.indexOf('ARBI');
+      loanAssets.splice(arbiTokenIndex, 1);
+
       const transaction = fundRequest.asset === 'GLP' ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
           amountInWei,
@@ -786,7 +787,7 @@ export default {
         await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
           toBytes32(fundRequest.asset),
           amountInWei,
-          {gasLimit: 500000});
+          {gasLimit: 5000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -846,6 +847,7 @@ export default {
 
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
       const provider = rootState.network.provider;
+      const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -854,22 +856,26 @@ export default {
         [config.nativeToken]
       ]);
 
+      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+      const arbiTokenIndex = loanAssets.indexOf('ARBI');
+      loanAssets.splice(arbiTokenIndex, 1);
+
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
-        gasLimit: 500000
+        gasLimit: 5000000
       });
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
       let tx = await awaitConfirmation(transaction, provider, 'fund');
-      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'DepositNative').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
-      const depositAmountUSD = Number(depositAmount) * state.assets['AVAX'].price;
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'DepositNative').args.amount, config.ASSETS_CONFIG[nativeAssetOptions[0]].decimals);
+      const depositAmountUSD = Number(depositAmount) * state.assets[nativeAssetOptions[0]].price;
       const collateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt + depositAmountUSD;
-      const assetBalanceAfterDeposit = Number(state.assetBalances['AVAX']) + Number(depositAmount);
+      const assetBalanceAfterDeposit = Number(state.assetBalances[nativeAssetOptions[0]]) + Number(depositAmount);
 
-      await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterDeposit});
+      await commit('setSingleAssetBalance', {asset: nativeAssetOptions[0], balance: assetBalanceAfterDeposit});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterDeposit, false, true);
+        .emitExternalAssetBalanceUpdate(nativeAssetOptions[0], assetBalanceAfterDeposit, false, true);
       rootState.serviceRegistry.collateralService.emitCollateral(collateralAfterTransaction);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
@@ -894,6 +900,10 @@ export default {
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
+
+      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+      const arbiTokenIndex = loanAssets.indexOf('ARBI');
+      loanAssets.splice(arbiTokenIndex, 1);
 
       const transaction = withdrawRequest.asset === 'GLP' ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
@@ -960,6 +970,7 @@ export default {
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
+      const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -967,21 +978,25 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
+      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+      const arbiTokenIndex = loanAssets.indexOf('ARBI');
+      loanAssets.splice(arbiTokenIndex, 1);
+
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount, config.ASSETS_CONFIG['AVAX'].decimals);
-      const withdrawAmountUSD = Number(withdrawAmount) * state.assets['AVAX'].price;
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnwrapAndWithdraw').args.amount, config.ASSETS_CONFIG[nativeAssetOptions[0]].decimals);
+      const withdrawAmountUSD = Number(withdrawAmount) * state.assets[nativeAssetOptions[0]].price;
 
-      const assetBalanceAfterWithdraw = Number(state.assetBalances['AVAX']) - Number(withdrawAmount);
+      const assetBalanceAfterWithdraw = Number(state.assetBalances[nativeAssetOptions[0]]) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
 
-      await commit('setSingleAssetBalance', {asset: 'AVAX', balance: assetBalanceAfterWithdraw});
+      await commit('setSingleAssetBalance', {asset: nativeAssetOptions[0], balance: assetBalanceAfterWithdraw});
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate('AVAX', assetBalanceAfterWithdraw, false, true);
+        .emitExternalAssetBalanceUpdate(nativeAssetOptions[0], assetBalanceAfterWithdraw, false, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
 

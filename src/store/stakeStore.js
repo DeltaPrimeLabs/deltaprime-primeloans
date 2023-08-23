@@ -276,57 +276,59 @@ export default {
       const wrappedSmartLoanContract = await wrapContract(smartLoanContract, loanAssets);
       const smartLoanContractAddress = rootState.fundsStore.smartLoanContract.address;
 
-      combineLatest(
-        Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
-          return combineLatest(tokenFarms.map(farm => {
-            const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
-            return combineLatest([
-              of(farm.token),
-              of(farm.protocolIdentifier),
-              of(farm.protocol),
-              farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
-                .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
-              of(apys[farm.token][farm.protocolIdentifier]),
-              farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress) :
-                farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
-                  vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
-            ]);
-          }));
-        })
-      ).subscribe(farmsDataPerToken => {
-        const farmsDataPerFarm = farmsDataPerToken.flat();
-
-        Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
-          tokenFarms.forEach(farm => {
-            const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
-            farm.totalBalance = farmData[3];
-            farm.currentApy = farmData[4];
-
-            if (farm.protocol === 'YIELD_YAK') {
-              farm.totalStaked = farmData[5];
-            } else if (farm.protocol === 'VECTOR_FINANCE') {
-              if (farm.autoCompounding) {
-                farm.totalStaked = farmData[5];
-
-                if (farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO') {
-                  farm.totalBalance = farm.totalStaked;
-                }
-
-              } else {
-                farm.rewards = farmData[5];
-                farm.totalStaked = farm.totalBalance;
-              }
-            }
-          });
-        });
-        farmService.emitRefreshFarm();
-        commit('setFarms', farms);
-        farmService.emitRefreshFarm();
-        farmService.emitFarms(farms);
+      if (Object.values(config.FARMED_TOKENS_CONFIG).length == 0) {
         rootState.serviceRegistry.healthService.emitRefreshHealth();
-      });
+      } else {
+        combineLatest(
+          Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
+            return combineLatest(tokenFarms.map(farm => {
+              const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
+              return combineLatest([
+                of(farm.token),
+                of(farm.protocolIdentifier),
+                of(farm.protocol),
+                farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
+                  .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
+                of(apys[farm.token][farm.protocolIdentifier]),
+                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress) :
+                  farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
+                    vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
+              ]);
+            }));
+          })
+        ).subscribe(farmsDataPerToken => {
+          const farmsDataPerFarm = farmsDataPerToken.flat();
 
+          Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
+            tokenFarms.forEach(farm => {
+              const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
+              farm.totalBalance = farmData[3];
+              farm.currentApy = farmData[4];
 
+              if (farm.protocol === 'YIELD_YAK') {
+                farm.totalStaked = farmData[5];
+              } else if (farm.protocol === 'VECTOR_FINANCE') {
+                if (farm.autoCompounding) {
+                  farm.totalStaked = farmData[5];
+
+                  if (farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO') {
+                    farm.totalBalance = farm.totalStaked;
+                  }
+
+                } else {
+                  farm.rewards = farmData[5];
+                  farm.totalStaked = farm.totalBalance;
+                }
+              }
+            });
+          });
+          farmService.emitRefreshFarm();
+          commit('setFarms', farms);
+          farmService.emitRefreshFarm();
+          farmService.emitFarms(farms);
+          rootState.serviceRegistry.healthService.emitRefreshHealth();
+        });
+      }
     },
 
     async updateStakedPrices({state, rootState, commit}) {
