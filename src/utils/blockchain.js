@@ -15,7 +15,7 @@ export const wrapContract = async function wrapContract(contract, assets) {
 
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId: 'redstone-avalanche-prod',
+      dataServiceId: config.dataProviderId,
       uniqueSignersCount: 3,
       dataFeeds: providedAssets,
       disablePayloadsDryRun: true

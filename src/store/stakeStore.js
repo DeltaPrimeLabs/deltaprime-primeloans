@@ -331,7 +331,7 @@ export default {
 
     async updateStakedPrices({state, rootState, commit}) {
       //TODO: optimize, it's used in other place as well
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       let farms;
