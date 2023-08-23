@@ -19,7 +19,7 @@
       The protocol is paused because of an upgrade.
     </Banner>
     <Banner v-if="oracleError">
-      The protocol detected unusual market behavior. Some functions might be not available.
+      Data feeds error. Some functions might be not available.
     </Banner>
     <Banner v-if="false" background="green-accent" :closable="true">
       DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.

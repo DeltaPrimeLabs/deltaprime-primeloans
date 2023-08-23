@@ -277,7 +277,7 @@ export default {
         }
       );
 
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(assets).forEach(assetSymbol => {
@@ -322,7 +322,7 @@ export default {
         }
       );
 
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(lpTokens).forEach(async assetSymbol => {
@@ -345,7 +345,7 @@ export default {
         }
       );
 
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(lpTokens).forEach(async assetSymbol => {

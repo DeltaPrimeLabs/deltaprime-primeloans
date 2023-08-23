@@ -1,6 +1,11 @@
 import addresses from '../common/addresses/arbitrum/token_addresses.json';
 import USDC_POOL_TUP from '/deployments/arbitrum/UsdcPoolTUP.json';
+import USDT_POOL_TUP from '/deployments/arbitrum/UsdtPoolTUP.json';
 import WETH_POOL_TUP from '/deployments/arbitrum/WethPoolTUP.json';
+import DAI_POOL_TUP from '/deployments/arbitrum/DaiPoolTUP.json';
+import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
+import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
+import UNI_POOL_TUP from '/deployments/arbitrum/UniPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '../deployments/avalanche/PangolinIntermediaryTUP.json';
 import TRADERJOE_INTERMEDIARY_TUP from '../deployments/avalanche/TraderJoeIntermediaryTUP.json';
 import {vectorFinanceBalance, yieldYakBalance} from './utils/calculate';
@@ -16,6 +21,14 @@ export default {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
+      "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333},
+      "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333},
+      "DAI": {name: "DAI", symbol: "DAI", logoExt: "png", decimals: 18, isStableCoin: true, address: addresses.DAI, debtCoverage: 0.83333333333},
+      "FRAX": {name: "FRAX", symbol: "FRAX", decimals: 18, isStableCoin: true, address: addresses.FRAX, debtCoverage: 0.83333333333},
+      "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, debtCoverage: 0.83333333333},
+      "UNI": {name: "UNI", symbol: "UNI", logoExt: "png", decimals: 18, address: addresses.UNI, debtCoverage: 0.83333333333},
+      "WSTETH": {name: "WSTETH", symbol: "WSTETH", logoExt: "png", decimals: 18, address: addresses.WSTETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
         YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
@@ -30,12 +43,31 @@ export default {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
         },
+        USDT: {
+            address: USDT_POOL_TUP.address,
+            tokenAddress: addresses.USDT
+        },
         ETH: {
             address: WETH_POOL_TUP.address,
             tokenAddress: addresses.ETH
+        },
+        DAI: {
+            address: DAI_POOL_TUP.address,
+            tokenAddress: addresses.DAI
+        },
+        FRAX: {
+            address: FRAX_POOL_TUP.address,
+            tokenAddress: addresses.FRAX
+        },
+        LINK: {
+            address: LINK_POOL_TUP.address,
+            tokenAddress: addresses.LINK
+        },
+        UNI: {
+            address: UNI_POOL_TUP.address,
+            tokenAddress: addresses.UNI
         }
     },
-
     LP_ASSETS_CONFIG: {},
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
@@ -58,12 +90,13 @@ export default {
     },
     FARMED_TOKENS_CONFIG: {},
 
-    yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
-    yakWrapRouterAddress: '0x44f4737C3Bb4E5C1401AE421Bd34F135E0BB8394',
-    yieldYakGlpWrapperAddress: '0x442DB6e78e54449B2a5f08A943Fa8a79041C797b',
-    glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
+    yakRouterAddress: '0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3',
+    yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
+    yieldYakGlpWrapperAddress: '0x5190B15497e5EC8Fb94eFac4ebd8B089645F68c2',
+    glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
-    dataProviderId: "redstone-avalanche-prod",
+    dataProviderId: "redstone-arbitrum-prod",
+    redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
 }

@@ -167,7 +167,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   let iterate = true;
 
   //TODO: get prices from store
-  const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+  const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
   const redstonePriceData = await redstonePriceDataRequest.json();
 
   while (iterate) {

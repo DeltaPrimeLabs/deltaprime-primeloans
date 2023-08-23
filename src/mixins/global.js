@@ -7,18 +7,6 @@ import {token} from '@redstone-finance/evm-connector/dist/typechain-types/@openz
 
 export default {
   methods: {
-    avaxToUSD(avax) {
-      if (this.avaxPrice) {
-        return avax * this.avaxPrice;
-      }
-    },
-
-    usdToAVAX(price) {
-      if (this.avaxPrice) {
-        return price / this.avaxPrice;
-      }
-    },
-
     toHex(dec) {
       return '0x' + dec.toString(16);
     },

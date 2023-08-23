@@ -419,5 +419,6 @@ export default {
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",
+    redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
 }

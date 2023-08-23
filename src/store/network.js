@@ -2,14 +2,14 @@ const ethers = require('ethers');
 let ethereum = window.ethereum;
 import Vue from "vue";
 import redstone from 'redstone-api';
+import config from "../config";
 
 export default {
   namespaced: true,
   state: {
     provider: null,
     account: null,
-    accountBalance: null,
-    avaxPrice: null
+    accountBalance: null
   },
   mutations: {
     setProvider(state, provider) {
@@ -31,7 +31,6 @@ export default {
       await dispatch('initProvider');
       await dispatch('initAccount');
       await dispatch('updateBalance');
-      await dispatch('updateAvaxPrice');
     },
     async initProvider({ commit, rootState }) {
       await ethereum.request({ method: 'eth_requestAccounts' });
@@ -62,13 +61,6 @@ export default {
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
 
       commit('setAccountBalance', balance);
-    },
-    async updateAvaxPrice({ commit }) {
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
-      const redstonePriceData = await redstonePriceDataRequest.json();
-
-      const avaxPrice = redstonePriceData['AVAX'][0].dataPoints[0].value;
-      commit('setAvaxPrice', avaxPrice);
     }
   },
 };
