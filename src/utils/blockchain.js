@@ -2,6 +2,7 @@ import Vue from 'vue';
 import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {utils} from "ethers";
+import config from '../config';
 
 const ethers = require('ethers');
 
@@ -12,11 +13,10 @@ export function transactionUrl(tx) {
 export const wrapContract = async function wrapContract(contract, assets) {
   //for more symbols in data feed it's more optimal to not specify asset list
   const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
-  const dataServiceId = `redstone-${window.chain}-prod`;
 
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId,
+      dataServiceId: config.dataProviderId,
       uniqueSignersCount: 3,
       dataFeeds: providedAssets,
       disablePayloadsDryRun: true
