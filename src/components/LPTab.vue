@@ -1,7 +1,13 @@
 <template>
   <div class="lp-tab">
     <div class="lp-tokens">
-      <div class="lp-table" v-if="concentratedLpTokens">
+      <div class="lp-table" v-if="traderJoeLpTokens">
+        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
+        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :lp-token="lpToken"></TraderJoeLpTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens">
+      <div class="lp-table" v-if="Object.keys(concentratedLpTokens).length">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
           {{ lpToken }}
@@ -12,11 +18,11 @@
       </div>
     </div>
     <div class="lp-tokens">
-      <div class="filters" v-if="assetFilterGroups">
+      <div class="filters" v-if="Object.keys(lpTokens).length && filteredLpTokens && assetFilterGroups">
         <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
                      v-on:filterChange="setLpFilter"></AssetFilter>
       </div>
-      <div class="lp-table" v-if="lpTokens && filteredLpTokens">
+      <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
                     showFarmed="false">{{ lpToken }}
@@ -35,10 +41,11 @@ import ConcentratedLpTableRow from "./concentrated-lp/ConcentratedLpTableRow.vue
 import AssetFilter from "./AssetFilter.vue";
 import LpTableRow from "./LpTableRow.vue";
 import config from "../config";
+import TraderJoeLpTableRow from "./TraderJoeLpTableRow.vue";
 
 export default {
   name: "LPTab",
-  components: {LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
+  components: {TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
   data() {
     return {
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,
@@ -46,6 +53,8 @@ export default {
       assetFilterGroups: null,
       lpTokens: config.LP_ASSETS_CONFIG,
       lpTableHeaderConfig: null,
+      traderJoeLpTokens: config.TRADERJOEV2_LP_ASSETS_CONFIG,
+      traderJoeLpTableHeaderConfig: null,
       selectedLpTokens: [] = [],
     }
   },
@@ -53,6 +62,7 @@ export default {
     this.setupAssetFilterGroups();
     this.setupConcentratedLpTableHeaderConfig();
     this.updateLpPriceData();
+    this.setupTraderJoeLpTableHeaderConfig();
     this.setupLpTableHeaderConfig();
   },
   computed: {
@@ -150,6 +160,75 @@ export default {
         this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
         this.$refs.assetFilter.setupFilterValue();
       });
+    },
+    setupTraderJoeLpTableHeaderConfig() {
+      this.traderJoeLpTableHeaderConfig = {
+        gridTemplateColumns: '140px 150px 120px 200px 140px repeat(2, 1fr) 35px 80px',
+        cells: [
+          {
+            label: 'TraderJoe V2',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The TraderJoe V2 LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Your Liquidity',
+            sortable: false,
+            class: 'balance',
+            id: 'LIQUIDITY',
+            tooltip: `The prices of your bins in liquidity pool.`
+          },
+          {
+            label: 'Fees',
+            sortable: false,
+            class: 'balance',
+            id: 'FEES-CLAIMABLE',
+            tooltip: `Fees claimable from your liquidity pool.`
+          },
+          {
+            label: 'Composition',
+            sortable: false,
+            class: 'balance',
+            id: 'COMPOSITION',
+            tooltip: `Underlying assets`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool. These numbers are regularly updated.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
     },
     async updateLpPriceData() {
       //TODO: we have to make sure somehow that it's called in a right moment ->when funds have prices already

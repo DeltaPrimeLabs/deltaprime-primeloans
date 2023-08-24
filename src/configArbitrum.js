@@ -68,6 +68,13 @@ export default {
             tokenAddress: addresses.UNI
         }
     },
+    TRADERJOEV2_LP_ASSETS_CONFIG: {
+        // 'TJLB_DAI_USDCe': { primary: 'DAI', secondary: 'USDCe', name: 'DAI-USDCe', dex: 'TraderJoe', symbol: 'TJLB_DAI_USDCe', decimals: 18, baseFee: '0.00005', address: addresses['TJLB_DAI_USDCe'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJLB_ETH_USDT': { primary: 'ETH', secondary: 'USDT', name: 'ETH-USDT', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDT', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDT'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        // 'TJLB_ETH_USDCe': { primary: 'ETH', secondary: 'USDCe', name: 'ETH-USDCe', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDCe', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDCe'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJLB_GMX_ETH': { primary: 'GMX', secondary: 'ETH', name: 'GMX-ETH', dex: 'TraderJoe', symbol: 'TJLB_GMX_ETH', decimals: 18, baseFee: '0.002', address: addresses['TJLB_GMX_ETH'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        // 'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+    },
     LP_ASSETS_CONFIG: {},
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
@@ -89,7 +96,23 @@ export default {
         },
     },
     FARMED_TOKENS_CONFIG: {},
-
+    liquidityShapes: {
+        spot: {
+            name: "Spot",
+            imgSrc: "src/assets/icons/liquidity_shape_spot_on.svg",
+            distributionMethod: "getUniformDistributionFromBinRange"
+        },
+        curve: {
+            name: "Curve",
+            imgSrc: "src/assets/icons/liquidity_shape_curve_on.svg",
+            distributionMethod: "getCurveDistributionFromBinRange"
+        },
+        bidAsk: {
+            name: "Bid-Ask",
+            imgSrc: "src/assets/icons/liquidity_shape_bid-ask_on.svg",
+            distributionMethod: "getBidAskDistributionFromBinRange"
+        },
+    },
     yakRouterAddress: '0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3',
     yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
     yieldYakGlpWrapperAddress: '0x5190B15497e5EC8Fb94eFac4ebd8B089645F68c2',

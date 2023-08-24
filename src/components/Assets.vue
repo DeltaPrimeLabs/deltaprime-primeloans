@@ -20,12 +20,6 @@
         <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
       </div>
     </div>
-    <div class="lp-tokens">
-      <div class="lp-table" v-if="traderJoeLpTokens">
-        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
-        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :lp-token="lpToken"></TraderJoeLpTableRow>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -41,7 +35,6 @@ import {formatUnits} from '../utils/calculate';
 import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
-import TraderJoeLpTableRow from './TraderJoeLpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
@@ -53,14 +46,11 @@ export default {
     Checkbox,
     Paginator,
     DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta,
-    TraderJoeLpTableRow
   },
   data() {
     return {
       funds: null,
       selectedDexes: [] = [],
-      traderJoeLpTokens: config.TRADERJOEV2_LP_ASSETS_CONFIG,
-      traderJoeLpTableHeaderConfig: null,
       fundsTableHeaderConfig: null,
       lpAssetsFilterOptions: null,
       lpDexFilterOptions: null,
@@ -80,7 +70,6 @@ export default {
   mounted() {
     this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
-    this.setupTraderJoeLpTableHeaderConfig();
   },
   methods: {
     ...mapActions('fundsStore',

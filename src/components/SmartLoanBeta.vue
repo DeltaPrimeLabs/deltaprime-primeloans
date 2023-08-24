@@ -196,7 +196,7 @@ export default {
       healthLoading: false,
       liquidationTimestamps: [],
       collateral: null,
-      showLPTab: Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
+      showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
       showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
       tabsRefs: [],
     };
