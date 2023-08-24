@@ -158,8 +158,6 @@ import axios from 'axios';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
-
 const ethers = require('ethers');
 let TOKEN_ADDRESSES;
 
@@ -174,6 +172,7 @@ export default {
   },
   async mounted() {
     await this.setupFiles();
+    this.setupBorrowable();
     this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
@@ -190,6 +189,7 @@ export default {
   },
   data() {
     return {
+      borrowable: [],
       moreActionsConfig: null,
       showChart: false,
       rowExpanded: false,
@@ -266,12 +266,15 @@ export default {
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
+    setupBorrowable() {
+      this.borrowable = Object.keys(config.POOLS_CONFIG);
+    },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          ...(BORROWABLE_ASSETS.includes(this.asset.symbol) ?
+          ...(this.borrowable.includes(this.asset.symbol) ?
             [
               {
                 key: 'BORROW',
@@ -525,6 +528,9 @@ export default {
     },
 
     borrowDisabled() {
+      console.log('borrowDisabled')
+      console.log(this.pools)
+      console.log(this.hasSmartLoanContract)
       if (!this.pools) {
         return true;
       }
@@ -619,8 +625,8 @@ export default {
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.sourceAssetDebt = this.debtsPerAsset[this.asset.symbol].debt;
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = BORROWABLE_ASSETS;
-      modalInstance.targetAssets = BORROWABLE_ASSETS;
+      modalInstance.sourceAssets = this.borrowable;
+      modalInstance.targetAssets = this.borrowable;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -628,7 +634,7 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
-      modalInstance.targetAsset = BORROWABLE_ASSETS.filter(asset => asset !== this.asset.symbol)[0];
+      modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
