@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState } from 'vuex';
 import EditContact from './settings/EditContact.vue';
 import HealthRateButton from './settings/HealthRateButton.vue';
 import InfoIcon from '../InfoIcon.vue';
@@ -139,7 +139,6 @@ export default ({
     ...mapState('serviceRegistry', ['notifiService'])
   },
   mounted() {
-    console.log(this.alertSettings);
     if (this.$route.name === 'Pools') return;
 
     const currentHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'];

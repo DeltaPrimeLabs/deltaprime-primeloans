@@ -12,7 +12,7 @@
       <Button
         :label="'Connect to notifi'"
         @click.stop.native="handleClick"
-        :customStyle="customStyles.button"
+        :variant="'medium'"
         :waiting="screenLoading"
       ></Button>
     </div>
@@ -30,7 +30,6 @@ export default ({
   props: {
     title: String,
     topInfo: String,
-    customStyles: { type: Object, default: () => {} },
     screenLoading: Boolean
   },
   data() {

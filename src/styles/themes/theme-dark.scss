@@ -137,6 +137,8 @@
   --modal__backdrop-backdrop-filter: blur(45px);
   --modal__backdrop-background: #{$dark-space}4c;
   --modal__pool-name-color: #{$mist-blue};
+  --modal__scroll-bar-background: #{$pale-space};
+  --modal__scroll-bar-hover-background: #{$dark-space};
   // endregion
 
   // region CurrencyInput
@@ -475,5 +477,36 @@
   --network-select__option-border--hover: #{$mist-navy};
   --network-select__option-name-color: #{$washed-blue};
   --network-select__option-name-color--selected: #{$mist-blue};
+  // endregion
+
+  // region TraderJoeAddLiquidityModal
+  --traderjoe-add-liquidity-modal__liquidity-shape-border: solid 2px #{$mist-space};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-hover: #{$light-navy};
+  --traderjoe-add-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --traderjoe-add-liquidity-modal__liquidity-shape-background: #{$shallow-space};
+  --traderjoe-add-liquidity-modal__price-slider-input-color: #{$storm-blue};
+  --traderjoe-add-liquidity-modal__label-with-separator: #{$washed-blue};
+  --traderjoe-add-liquidity-modal__label-with-separator-background: #{$mist-space};
+  // endregion
+
+  // region TraderJoeRemoveLiquidityModal
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border: solid 2px #{$mist-space};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-hover: #{$light-navy};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --traderjoe-remove-liquidity-modal__liquidity-shape-background: #{$shallow-space};
+  --traderjoe-remove-liquidity-modal__price-slider-input-color: #{$storm-blue};
+  --traderjoe-remove-liquidity-modal__label-with-separator: #{$washed-blue};
+  --traderjoe-remove-liquidity-modal__label-with-separator-background: #{$mist-space};
+  // endregion
+
+  // region RangeSlider
+  --range-slider__container-box-shadow: inset 0 1px 3px 0 #{$dark-space}b3;
+  --range-slider__container-box-background: #{$dark-space}33;
+  --range-slider__slider-track: #{$dark-lilac};
+  --range-slider__slider-thumb-box-shadow: -1px 1px 4px 0 #{$light-purple}80;
+  --range-slider__slider-thumb-border: solid 3px #{$dark-lilac};
+  --range-slider__slider-thumb-background: #{$space};
   // endregion
 }

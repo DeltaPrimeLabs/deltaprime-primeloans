@@ -18,7 +18,7 @@
         class="close-icon"
         :icon-src="'src/assets/icons/cross.svg'"
         :size="17"
-        @click.stop.native="addWindow = false"
+        @click.stop.native="closeAndReset"
       ></DeltaIcon>
       <div>
         <div class="borrow-rate-edit">
@@ -47,7 +47,7 @@
               :label="'Save'"
               :disabled="!poolAddress || !thresholdDirection || !threshold"
               @click.stop.native="handleSave"
-              :customStyle="buttonStyles"
+              :variant="'slim'"
               :waiting="saving"
             ></Button>
           </div>
@@ -95,7 +95,7 @@ export default ({
       })),
       poolAddress: null,
       thresholdDirection: 'above',
-      threshold: null,
+      threshold: 0,
       saving: false,
       buttonStyles: {
         fontSize: '15px',
@@ -130,10 +130,16 @@ export default ({
       };
 
       await this.notifiService.handleCreateAlert(alert, payload);
-
       this.saving = false;
-      this.addWindow = false;
+      this.closeAndReset();
     },
+
+    closeAndReset() {
+      this.addWindow = false;
+      this.poolAddress = null;
+      this.threshold = 0;
+      this.thresholdDirection = 'above';
+    }
   }
 })
 </script>

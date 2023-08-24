@@ -91,7 +91,7 @@
         <Button
           :label="'Save'"
           @click.stop.native="handleClick"
-          :customStyle="buttonStyles"
+          :variant="'slim'"
           :disabled="isFormInvalid"
           :waiting="loading"
         ></Button>
@@ -106,6 +106,7 @@ import IconButton from "../../IconButton.vue";
 import DeltaIcon from '../../DeltaIcon.vue';
 import FormInput from '../../FormInput.vue';
 import Button from '../../Button.vue';
+import config from '../../../config';
 
 export default ({
   name: 'Settings',
@@ -133,17 +134,12 @@ export default ({
       },
       invalid: false,
       emailValidators: [],
-      buttonStyles: {
-        fontSize: "15px",
-        padding: "7px 8px"
-      },
       loading: false
     }
   },
   computed: {
     ...mapState('serviceRegistry', ['notifiService']),
     isFormInvalid() {
-      console.log(this.invalid, !this.targets.emailAddress, !this.targets.telegramId)
       return this.invalid || !this.targets.emailAddress && !this.targets.telegramId;
     }
   },
@@ -155,7 +151,7 @@ export default ({
       this.emailValidators = [
         {
           validate: (value) => {
-            if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
+            if (!config.EMAIL_REGEX.test(value)) {
               return 'Your email address is invalid';
             }
           }
@@ -211,7 +207,6 @@ export default ({
         name: 'Default',
       };
       const targetGroups = await this.notifiService.createTargetGroups(this.notifiClient, targetsPayload);
-      console.log(targetGroups);
       
       this.contacts = {
         emailInfo: targetGroups.emailTargets.length > 0
