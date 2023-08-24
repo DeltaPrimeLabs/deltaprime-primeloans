@@ -25,15 +25,24 @@
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
-            <Tab ref="tab-1" :title="'Assets'"
+            <Tab ref="tab-0" :title="'Assets'"
                  :tab-icon="'src/assets/icons/assets_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
             >
               <Assets></Assets>
             </Tab>
+            <Tab ref="tab-1" :title="'LP'"
+                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+                 v-if="showLPTab"
+            >
+              <LPTab></LPTab>
+            </Tab>
             <Tab ref="tab-2" :title="'Farms'"
                  :tab-icon="'src/assets/icons/plant_on-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'">
+                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
+                 v-if="showFarmsTab"
+            >
               <Farm></Farm>
             </Tab>
             <Tab ref="tab-3" :title="'Stats'"
@@ -70,16 +79,21 @@ import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
-import {combineLatest} from 'rxjs';
+import {combineLatest, map} from 'rxjs';
 import {fetchLiquidatedEvents} from '../utils/graph';
 import InfoBubble from './InfoBubble.vue';
 import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
+import LPTab from "./LPTab.vue";
 
 const TABS = [
   {
     path: 'assets',
     pathName: 'Prime Account Assets'
+  },
+  {
+    path: 'lp',
+    pathName: 'Prime Account LP'
   },
   {
     path: 'farms',
@@ -96,6 +110,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    LPTab,
     TransactionHistory,
     Stats,
     InfoBubble,
@@ -175,12 +190,15 @@ export default {
       totalValue: 0,
       health: 0,
       noSmartLoanInternal: null,
-      selectedTabIndex: 0,
+      selectedTabIndex: undefined,
       videoVisible: true,
       apr: null,
       healthLoading: false,
       liquidationTimestamps: [],
       collateral: null,
+      showLPTab: Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
+      showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
+      tabsRefs: [],
     };
   },
 
@@ -200,10 +218,10 @@ export default {
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
-        .subscribe(async ([provider, account]) => {
-          await this.poolStoreSetup();
-          await this.fundsStoreSetup();
-        });
+          .subscribe(async ([provider, account]) => {
+            await this.poolStoreSetup();
+            await this.fundsStoreSetup();
+          });
     },
 
     initAccountApr() {
@@ -215,9 +233,9 @@ export default {
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
       ])
-        .subscribe(async ([provider, account]) => {
-          await this.getAccountApr();
-        });
+          .subscribe(async ([provider, account]) => {
+            await this.getAccountApr();
+          });
     },
 
     async assetBalancesChange(balances) {
@@ -257,7 +275,10 @@ export default {
       if (!TABS.some(tab => tab.path === lastUrlPart)) {
         this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart);
+        const pathIndexFromRoute = TABS.findIndex(tab => tab.path === lastUrlPart)
+        let tabIndex = Object.keys(this.$refs).findIndex(key => key === `tab-${pathIndexFromRoute}`)
+        tabIndex = Math.max(0, tabIndex)
+        this.selectedTabIndex = tabIndex
       }
     },
 
@@ -274,30 +295,32 @@ export default {
 
     getLiquidatedEvents() {
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
-        events => {
-          this.liquidationTimestamps = events.map(event => event.timestamp);
-        }
+          events => {
+            this.liquidationTimestamps = events.map(event => event.timestamp);
+          }
       );
     },
 
     tabChange(tabIndex) {
+      console.log(tabIndex);
       const url = document.location.href;
-      this.$router.push({name: TABS[tabIndex].pathName, query: this.extractQueryParams(url)});
+      const pathIndex = Number(Object.entries(this.$refs)[tabIndex][0].replace('tab-', ''))
+      this.$router.push({name: TABS[pathIndex].pathName, query: this.extractQueryParams(url)});
     },
 
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
-          this.noSmartLoanInternal,
-          this.debtsPerAsset,
-          this.assets,
-          this.assetBalances,
-          this.lpAssets,
-          this.lpBalances,
-          this.concentratedLpAssets,
-          this.concentratedLpBalances,
-          this.farms
+            this.noSmartLoanInternal,
+            this.debtsPerAsset,
+            this.assets,
+            this.assetBalances,
+            this.lpAssets,
+            this.lpBalances,
+            this.concentratedLpAssets,
+            this.concentratedLpBalances,
+            this.farms
         );
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
