@@ -403,14 +403,6 @@ export default {
         console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
 
-        console.log('sourceAsset', sourceAsset);
-        console.log('targetAsset', targetAsset);
-        console.log('srcToken', TOKEN_ADDRESSES[sourceAsset]);
-        console.log('destToken', TOKEN_ADDRESSES[targetAsset]);
-        console.log('amount', amountIn);
-        console.log('userAddress', this.smartLoanContract.address);
-        console.log('side', SwapSide.SELL);
-
         const swapRate = await paraSwapSDK.swap.getRate({
           srcToken: TOKEN_ADDRESSES[sourceAsset],
           srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
@@ -528,9 +520,6 @@ export default {
     },
 
     borrowDisabled() {
-      console.log('borrowDisabled')
-      console.log(this.pools)
-      console.log(this.hasSmartLoanContract)
       if (!this.pools) {
         return true;
       }
@@ -872,7 +861,7 @@ export default {
 
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
-      const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+      const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
       return walletTokenBalance;
     },
 

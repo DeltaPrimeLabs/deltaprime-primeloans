@@ -20,7 +20,7 @@
               :tooltip="{content: infoIconMessage, classes: 'info-tooltip long', placement: 'right'}"></InfoIcon>
         </div>
         <div v-if="!embedded" class="logo-wrapper">
-          <img class="logo" :src="logoSrc(symbol)"/>
+          <img class="logo" :src="logo ? `src/assets/logo/${logo}` : logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
           <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
@@ -66,6 +66,7 @@ export default {
     infoIconMessage: {default: null},
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
+    logo: {default: null},
     flexDirection: {type: String, default: 'column'},
     validators: {
       type: Array, default: () => []

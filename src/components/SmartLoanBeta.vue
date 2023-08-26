@@ -214,6 +214,7 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
+    ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
@@ -221,6 +222,7 @@ export default {
           .subscribe(async ([provider, account]) => {
             await this.poolStoreSetup();
             await this.fundsStoreSetup();
+            await this.stakeStoreSetup();
           });
     },
 
@@ -311,6 +313,8 @@ export default {
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
+        console.log('watchHealthRefresh')
+
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
             this.noSmartLoanInternal,
             this.debtsPerAsset,

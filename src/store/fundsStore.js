@@ -254,7 +254,7 @@ export default {
       console.log(whiteListedTokenAddresses);
 
       const supported = whiteListedTokenAddresses
-        .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
+        .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => symbol !== 'default' && TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
 
       commit('setSupportedAssets', supported);
     },

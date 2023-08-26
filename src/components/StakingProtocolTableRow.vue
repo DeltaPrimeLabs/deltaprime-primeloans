@@ -70,12 +70,16 @@
           <FlatButton v-if="farm.migrateMethod" :tooltip="'Migrates assets from the manual pool to the autocompounding pool'" v-on:buttonClick="migrateButtonClick()">Migrate
           </FlatButton>
           <IconButtonMenuBeta
-            class="action"
-            v-for="(actionConfig, index) of actionsConfig"
-            :disabled="disabled"
-            v-bind:key="index"
-            :config="actionConfig"
-            v-on:iconButtonClick="actionClick">
+              class="actions__icon-button"
+              :config="addActionsConfig"
+              v-on:iconButtonClick="actionClick"
+              :disabled="disableAllButtons || !healthLoaded">
+          </IconButtonMenuBeta>
+          <IconButtonMenuBeta
+              class="actions__icon-button"
+              :config="removeActionsConfig"
+              v-on:iconButtonClick="actionClick"
+              :disabled="disableAllButtons || !healthLoaded">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -94,6 +98,11 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import FlatButton from './FlatButton';
 import MigrateModal from './MigrateModal';
 import InfoIcon from "./InfoIcon.vue";
+import AddFromWalletModal from "./AddFromWalletModal.vue";
+import erc20ABI from "../../test/abis/ERC20.json";
+import WithdrawModal from "./WithdrawModal.vue";
+
+const ethers = require('ethers');
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -109,7 +118,8 @@ export default {
     }
   },
   async mounted() {
-    this.setupActionsConfiguration();
+    this.setupAddActionsConfiguration();
+    this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHealth();
@@ -128,7 +138,8 @@ export default {
       disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
-      actionsConfig: {},
+      addActionsConfig: null,
+      removeActionsConfig: null,
       healthLoaded: false,
     };
   },
@@ -148,9 +159,19 @@ export default {
     }
   },
   computed: {
+    ...mapState('network', ['account']),
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('fundsStore', ['smartLoanContract']),
+    ...mapState('fundsStore', [
+      'smartLoanContract',
+      'fullLoanStatus',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'concentratedLpAssets',
+      'concentratedLpBalances',
+      'noSmartLoan'
+    ]),
     ...mapState('serviceRegistry', [
       'assetBalancesExternalUpdateService',
       'stakedExternalUpdateService',
@@ -170,17 +191,103 @@ export default {
     }
   },
   methods: {
-    ...mapActions('stakeStore', ['stake', 'unstake', 'migrateToAutoCompoundingPool']),
+    ...mapActions('stakeStore', ['fund','withdraw', 'stake', 'unstake', 'migrateToAutoCompoundingPool']),
 
     actionClick(key) {
       switch (key) {
+        case 'ADD_FROM_WALLET':
+          this.openAddFromWalletModal();
+          break;
         case 'STAKE':
           this.openStakeModal();
+          break;
+        case 'WITHDRAW':
+          this.openWithdrawModal();
           break;
         case 'UNSTAKE':
           this.openUnstakeModal();
           break;
       }
+    },
+
+    async openAddFromWalletModal() {
+      const modalInstance = this.openModal(AddFromWalletModal);
+      modalInstance.asset = this.farm;
+      modalInstance.assetBalance = this.balance ? this.balance : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.loan = this.debt;
+      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
+      modalInstance.isLP = false;
+      modalInstance.isFarm = true;
+      modalInstance.logo = this.protocol.logo;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+
+      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          const fundRequest = {
+            value: addFromWalletEvent.value.toString(),
+            farmSymbol: this.farm.feedSymbol,
+            farmDecimals: this.farm.decimals,
+            receiptTokenAddress: this.farm.receiptTokenAddress ? this.farm.receiptTokenAddress : this.farm.stakingContractAddress,
+            assetSymbol: this.asset.symbol,
+            protocolIdentifier: this.farm.protocolIdentifier,
+            type: 'FARM',
+          };
+          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+
+    async openWithdrawModal() {
+      const modalInstance = this.openModal(WithdrawModal);
+      modalInstance.asset = this.farm;
+      modalInstance.assetBalance = this.balance ? this.balance : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.loan = this.debt;
+      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
+      modalInstance.isLP = false;
+      modalInstance.isFarm = true;
+      modalInstance.logo = this.protocol.logo;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
+        if (this.smartLoanContract) {
+          const withdrawRequest = {
+            value: withdrawEvent.value.toString(),
+            farmSymbol: this.farm.feedSymbol,
+            farmDecimals: this.farm.decimals,
+            receiptTokenAddress: this.farm.receiptTokenAddress ? this.farm.receiptTokenAddress : this.farm.stakingContractAddress,
+            assetSymbol: this.asset.symbol,
+            protocolIdentifier: this.farm.protocolIdentifier,
+            type: 'FARM',
+          };
+          this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
     },
 
     async openStakeModal() {
@@ -352,22 +459,46 @@ export default {
       this.disableAllButtons = false;
       this.isStakedBalanceEstimated = false;
     },
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =   {
+        iconSrc: 'src/assets/icons/plus.svg',
+        tooltip: 'Add',
+        menuOptions: [
+          {
+            key: 'ADD_FROM_WALLET',
+            name: 'Add from wallet',
+            disabled: !this.farm.feedSymbol,
+            disabledInfo: 'Coming soon'
+          },
+          {
+            key: 'STAKE',
+            name: 'Stake into vault',
+          },
+        ]
+      }
+    },
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =   {
+        iconSrc: 'src/assets/icons/minus.svg',
+        tooltip: 'Remove',
+        menuOptions: [
+          {
+            key: 'WITHDRAW',
+            name: 'Withdraw to wallet',
+            disabled: !this.farm.feedSymbol,
+            disabledInfo: 'Coming soon'
+          },
+          {
+            key: 'UNSTAKE',
+            name: 'Unstake from vault',
+          },
+        ]
+      }
+    },
 
-    setupActionsConfiguration() {
-      this.actionsConfig = [
-        {
-          iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Stake',
-          iconButtonActionKey: 'STAKE',
-          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN' || this.farm.protocolIdentifier === 'YY_TJ_AVAX_sAVAX_LP'
-        },
-        {
-          iconSrc: 'src/assets/icons/minus.svg',
-          tooltip: 'Unstake',
-          iconButtonActionKey: 'UNSTAKE',
-          disabled: this.farm.protocolIdentifier === 'VF_USDC_MAIN'
-        },
-      ];
+    async getWalletAssetBalance() {
+      const tokenContract = new ethers.Contract(this.farm.receiptTokenAddress ? this.farm.receiptTokenAddress : this.farm.stakingContractAddress, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, this.farm.decimals);
     },
 
     migrateButtonClick() {

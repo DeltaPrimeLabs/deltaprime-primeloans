@@ -9,7 +9,9 @@
         <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
       <div class="modal-top-info">
-        <div class="top-info__label">Available:</div>
+        <div class="top-info__label">Available:&nbsp;
+          <InfoIcon v-if="isFarm" :tooltip="{content: 'Receipt token amount, can differ from `Staked` amount.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+        </div>
         <div class="top-info__value">
           {{ isLP ? formatTokenBalance(assetBalance, 12, true) : formatTokenBalance(assetBalance, 10, true) }}
           <span class="top-info__currency">
@@ -28,6 +30,7 @@
       <CurrencyInput v-else
                      :symbol="asset.symbol"
                      v-on:newValue="withdrawValueChange"
+                     :logo="logo"
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
@@ -94,10 +97,12 @@ import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth} from '../utils/calculate';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'WithdrawModal',
   components: {
+    InfoIcon,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -111,6 +116,7 @@ export default {
     health: {},
     assetBalances: {},
     assets: {},
+    logo: null,
     farms: {},
     debtsPerAsset: {},
     lpAssets: {},
@@ -129,6 +135,7 @@ export default {
       selectedWithdrawAsset: config.NATIVE_ASSET_TOGGLE_OPTIONS[0],
       toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       isLP: false,
+      isFarm: false,
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,

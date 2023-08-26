@@ -81,18 +81,11 @@ export default {
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
 
-    async getWalletTokenBalance(account, assetSymbol, tokenContract, type) {
+    async getWalletTokenBalance(account, assetSymbol, tokenContract, decimals) {
       const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
-      let walletAssetBalance;
-      if (!type) {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
-      } else if (type === 'LP') {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
-      } else if (type === 'CONCENTRATED_LP') {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.CONCENTRATED_LP_ASSETS_CONFIG[assetSymbol].decimals);
-      }
-      return walletAssetBalance;
-    },
+
+      return formatUnits(walletAssetBalanceResponse, decimals);
+      },
   },
   computed: {
     ...mapState('network', ['provider', 'avaxPrice']),

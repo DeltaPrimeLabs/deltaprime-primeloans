@@ -27,7 +27,7 @@
               {{ selectedDepositAsset }}
             </span>
             <span v-if="asset.name !== toggleOptions[0]" class="top-info__currency">
-              {{ isLP ? asset.name : asset.symbol }}
+              {{ isLP || isFarm ? asset.name : asset.symbol }}
             </span>
           </div>
         </div>
@@ -46,6 +46,7 @@
       <CurrencyInput ref="currencyInput"
                      v-if="!isLP"
                      :symbol="asset.symbol"
+                     :logo="logo"
                      v-on:newValue="inputChange"
                      :validators="validators"
                      :max="asset.symbol === toggleOptions[0] && selectedDepositAsset === toggleOptions[0] ? null : getAvailableAssetAmount"
@@ -127,6 +128,7 @@ export default {
   props: {
     asset: {},
     assets: {},
+    logo: null,
     assetBalances: {},
     debtsPerAsset: {},
     lpAssets: {},
@@ -138,6 +140,7 @@ export default {
     loan: Number,
     assetBalance: Number,
     isLP: false,
+    isFarm: false,
     walletAssetBalance: {}, // this prop is string, we need to convert when it's being used in calculation
     walletNativeTokenBalance: {
       default: null,
@@ -201,12 +204,10 @@ export default {
 
   methods: {
     submit() {
-      console.log('AddFromWallet.submit()');
       this.transactionOngoing = true;
       if (this.asset.symbol === this.toggleOptions[0]) {
         this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
-        console.log('emit ADD_FROM_WALLET');
         this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.asset});
       }
     },

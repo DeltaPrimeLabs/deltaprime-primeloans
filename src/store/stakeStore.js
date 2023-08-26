@@ -12,9 +12,14 @@ import {
 } from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import {combineLatest, map, of, tap, from} from 'rxjs';
+import erc20ABI from "../../test/abis/ERC20.json";
 
-const fromBytes32 = require('ethers').utils.parseBytes32String;
+const ethers = require('ethers');
+const fromBytes32 = ethers.utils.parseBytes32String;
+const toBytes32 = ethers.utils.formatBytes32String;
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+
+let TOKEN_ADDRESSES;
 
 export default {
   namespaced: true,
@@ -37,6 +42,157 @@ export default {
     },
   },
   actions: {
+    async stakeStoreSetup({rootState, dispatch}) {
+      if (!rootState.network.provider) return;
+      await dispatch('loadDeployments');
+    },
+    async loadDeployments() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+    async fund({state, rootState, dispatch, commit}, {fundRequest}) {
+      const provider = rootState.network.provider;
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+      const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.farmDecimals);
+
+      let assets = [
+        (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ];
+
+      const loanAssets = mergeArrays(assets);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      const fundToken = new ethers.Contract(fundRequest.receiptTokenAddress, erc20ABI, provider.getSigner());
+
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, rootState.fundsStore.smartLoanContract.address), fundRequest.farmDecimals);
+
+      if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(rootState.fundsStore.smartLoanContract.address, amountInWei, {gasLimit: 100000});
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
+
+      const fundTransaction = await (await wrapContract(smartLoanContract, loanAssets)).fund
+      (
+          toBytes32(fundRequest.farmSymbol),
+          amountInWei,
+          {gasLimit: fundRequest.gas ? fundRequest.gas : 8000000}
+      );
+
+      let tx = await awaitConfirmation(fundTransaction, provider, 'fund');
+      //TODO: update after rebase
+      const depositTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.farmDecimals);
+
+      const farm = state.farms[fundRequest.assetSymbol].find(farm => farm.protocolIdentifier === fundRequest.protocolIdentifier);
+
+      const totalStakedAfterTransaction = Number(farm.totalStaked) + Number(depositTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: fundRequest.assetSymbol,
+        protocolIdentifier: fundRequest.protocolIdentifier,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = Number(farm.totalBalance) + Number(depositTokenAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: fundRequest.assetSymbol,
+        protocolIdentifier: fundRequest.protocolIdentifier,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalStakedBalancesPerFarmUpdate(fundRequest.assetSymbol, fundRequest.protocolIdentifier, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceBeforeStaking =
+          fundRequest.isLP ? rootState.fundsStore.lpBalances[fundRequest.assetSymbol] : rootState.fundsStore.assetBalances[fundRequest.assetSymbol];
+      const assetBalanceAfterStaking = Number(assetBalanceBeforeStaking) - Number(depositTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(fundRequest.assetSymbol, assetBalanceAfterStaking, fundRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalTotalStakedUpdate(fundRequest.assetSymbol, depositTokenAmount, 'STAKE', true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, fundRequest.refreshDelay);
+    },
+
+    async withdraw({state, rootState, dispatch, commit}, {withdrawRequest}) {
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
+      const amountInWei = parseUnits(withdrawRequest.value.toString(), withdrawRequest.farmDecimals);
+
+      const loanAssets = mergeArrays([(
+          await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        withdrawRequest.rewardTokens,
+        withdrawRequest.assetSymbol,
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const withdrawTransaction = await (await wrapContract(smartLoanContract, loanAssets)).withdraw
+      (
+          toBytes32(withdrawRequest.farmSymbol),
+          amountInWei,
+          {gasLimit: withdrawRequest.gas ? withdrawRequest.gas : 8000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(withdrawTransaction, provider, 'withdraw');
+      const unstakedTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.decimals);
+      //TODO: this is simplificaton, unstaked amount is actually different
+      const unstakedReceiptTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, 18);
+
+      const farm = state.farms[withdrawRequest.assetSymbol].find(farm => farm.protocolIdentifier === withdrawRequest.protocolIdentifier);
+
+      const totalStakedAfterTransaction = withdrawRequest.isMax ? 0 : Number(farm.totalStaked) - Number(unstakedTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: withdrawRequest.assetSymbol,
+        protocolIdentifier: withdrawRequest.protocolIdentifier,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = withdrawRequest.isMax ? 0 : Number(farm.totalBalance) - Number(unstakedReceiptTokenAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: withdrawRequest.assetSymbol,
+        protocolIdentifier: withdrawRequest.protocolIdentifier,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalStakedBalancesPerFarmUpdate(withdrawRequest.assetSymbol, withdrawRequest.protocolIdentifier, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceBeforeUnstaking =
+          withdrawRequest.isLP ? rootState.fundsStore.lpBalances[withdrawRequest.assetSymbol] : rootState.fundsStore.assetBalances[withdrawRequest.assetSymbol];
+
+      const assetBalanceAfterUnstaking = Number(assetBalanceBeforeUnstaking) + Number(unstakedTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(withdrawRequest.assetSymbol, assetBalanceAfterUnstaking, withdrawRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalTotalStakedUpdate(withdrawRequest.assetSymbol, unstakedTokenAmount, 'WITHDRAW', true);
+
+
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, withdrawRequest.refreshDelay);
+    },
 
     //TODO: stakeRequest
     async stake({state, rootState, dispatch, commit}, {stakeRequest}) {
@@ -89,6 +245,8 @@ export default {
 
       const assetBalanceBeforeStaking =
         stakeRequest.isLP ? rootState.fundsStore.lpBalances[stakeRequest.assetSymbol] : rootState.fundsStore.assetBalances[stakeRequest.assetSymbol];
+
+      //TODO: not depositTokenAmount but the underlying token amount
       const assetBalanceAfterStaking = Number(assetBalanceBeforeStaking) - Number(depositTokenAmount);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(stakeRequest.assetSymbol, assetBalanceAfterStaking, stakeRequest.isLP, true);
