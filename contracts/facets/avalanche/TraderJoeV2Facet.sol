@@ -14,7 +14,10 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
 
     using TransferHelper for address;
 
-    address private constant JOE_V2_ROUTER_ADDRESS = 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
+
+    function getJoeV2RouterAddress() public view virtual returns (address){
+        return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
+    }
 
     function getOwnedTraderJoeV2Bins() public view returns (TraderJoeV2Bin[] memory result){
         return DiamondStorageLib.getTjV2OwnedBinsView();
@@ -24,15 +27,16 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         return DiamondStorageLib.getTjV2OwnedBins();
     }
 
-    function getWhitelistedTraderJoeV2Pairs() internal view returns (ILBPair[2] memory pools){
+    function getWhitelistedTraderJoeV2Pairs() internal view virtual returns (ILBPair[3] memory pools){
         return [
             ILBPair(0xD446eb1660F766d533BeCeEf890Df7A69d26f7d1),
-            ILBPair(0x1901011a39B11271578a1283D620373aBeD66faA)
+            ILBPair(0x1901011a39B11271578a1283D620373aBeD66faA),
+            ILBPair(0xD9fa522F5BC6cfa40211944F2C8DA785773Ad99D)
         ];
     }
 
-    function isPairWhitelisted(address pair) internal view returns (bool){
-        ILBPair[2] memory pairs = getWhitelistedTraderJoeV2Pairs();
+    function isPairWhitelisted(address pair) internal view virtual returns (bool){
+        ILBPair[3] memory pairs = getWhitelistedTraderJoeV2Pairs();
 
         for (uint i; i < pairs.length; ++i) {
             if (pair == address(pairs[i])) return true;
@@ -40,9 +44,60 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
         return false;
     }
 
+    function fundLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant {
+        if (!isPairWhitelisted(address(pair))) revert TraderJoeV2PoolNotWhitelisted();
+
+        pair.batchTransferFrom(msg.sender, address(this), ids, amounts);
+
+        TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
+
+        for (uint256 i; i < ids.length; ++i) {
+            bool userHadBin;
+
+            for (int256 j; uint(j) < ownedBins.length; ++j) {
+                if (address(ownedBins[uint(j)].pair) == address(pair)
+                    && ownedBins[uint(j)].id == ids[i]
+                ) {
+                    userHadBin = true;
+                    break;
+                }
+            }
+
+            if (!userHadBin) {
+                getOwnedTraderJoeV2BinsStorage().push(TraderJoeV2Bin(pair, uint24(ids[i])));
+            }
+        }
+
+        emit FundedLiquidityTraderJoeV2(msg.sender, address(pair), ids, amounts, block.timestamp);
+    }
+
+
+    function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock remainsSolvent {
+        if (!isPairWhitelisted(address(pair))) revert TraderJoeV2PoolNotWhitelisted();
+
+        pair.batchTransferFrom(address(this), msg.sender, ids, amounts);
+
+        TraderJoeV2Bin[] storage binsStorage = getOwnedTraderJoeV2BinsStorage();
+        TraderJoeV2Bin storage bin;
+
+        for (int256 i; uint(i) < binsStorage.length; i++) {
+            if (address(binsStorage[uint(i)].pair) == address(pair)) {
+                bin = binsStorage[uint(i)];
+
+                if (bin.pair.balanceOf(address(this), bin.id) == 0) {
+                    binsStorage[uint(i)] = binsStorage[binsStorage.length - 1];
+                    i--;
+                    binsStorage.pop();
+                }
+            }
+        }
+
+        emit WithdrawnLiquidityTraderJoeV2(msg.sender, address(pair), ids, amounts, block.timestamp);
+    }
+
 
     function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
-        ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
+        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
@@ -77,7 +132,7 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
                 }
             }
 
-        if (!userHadBin) {
+            if (!userHadBin) {
                 getOwnedTraderJoeV2BinsStorage().push(TraderJoeV2Bin(pairInfo.LBPair, uint24(depositIds[i])));
             }
         }
@@ -94,7 +149,7 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
     }
 
     function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
-        ILBRouter traderJoeV2Router = ILBRouter(JOE_V2_ROUTER_ADDRESS);
+        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
         ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair).approveForAll(address(traderJoeV2Router), true);
 
@@ -169,6 +224,26 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
      * @param timestamp time of the transaction
      **/
     event RemoveLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, bytes32 firstAsset, bytes32 secondAsset, uint256 timestamp);
+
+    /**
+     * @dev emitted after funding account with TraderJoe V2 LB tokens
+     * @param user the address of user removing liquidity
+     * @param pair TraderJoe V2 pair
+     * @param binIds the ids of bin
+     * @param amounts The list of amounts to burn of each id in binIds
+     * @param timestamp time of the transaction
+     **/
+    event FundedLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, uint256 timestamp);
+
+    /**
+     * @dev emitted after withdrawing TraderJoe V2 LB tokens
+     * @param user the address of user removing liquidity
+     * @param pair TraderJoe V2 pair
+     * @param binIds the ids of bin
+     * @param amounts The list of amounts to burn of each id in binIds
+     * @param timestamp time of the transaction
+     **/
+    event WithdrawnLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, uint256 timestamp);
 
     error TraderJoeV2PoolNotWhitelisted();
 }
