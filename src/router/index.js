@@ -21,6 +21,10 @@ export default new Router({
       component: PrimeAccount,
       children: [
         {
+          name: 'Prime Account Zaps',
+          path: 'zaps'
+        },
+        {
           name: 'Prime Account Assets',
           path: 'assets'
         },

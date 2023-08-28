@@ -25,27 +25,33 @@
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
-            <Tab ref="tab-0" :title="'Assets'"
+            <Tab ref="tab-0" :title="'Zaps'"
+                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+            >
+              <Zaps></Zaps>
+            </Tab>
+            <Tab ref="tab-1" :title="'Assets'"
                  :tab-icon="'src/assets/icons/assets_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
             >
               <Assets></Assets>
             </Tab>
-            <Tab ref="tab-1" :title="'LP'"
-                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+            <Tab ref="tab-2" :title="'LP'"
+                 :tab-icon="'src/assets/icons/lp-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/lp-icon-slim.svg'"
                  v-if="showLPTab"
             >
               <LPTab></LPTab>
             </Tab>
-            <Tab ref="tab-2" :title="'Farms'"
+            <Tab ref="tab-3" :title="'Farms'"
                  :tab-icon="'src/assets/icons/plant_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
                  v-if="showFarmsTab"
             >
               <Farm></Farm>
             </Tab>
-            <Tab ref="tab-3" :title="'Stats'"
+            <Tab ref="tab-4" :title="'Stats'"
                  :tab-icon="'src/assets/icons/stats-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'">
               <Stats></Stats>
@@ -85,8 +91,13 @@ import InfoBubble from './InfoBubble.vue';
 import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
+import Zaps from "./Zaps.vue";
 
 const TABS = [
+  {
+    path: 'zaps',
+    pathName: 'Prime Account Zaps'
+  },
   {
     path: 'assets',
     pathName: 'Prime Account Assets'
@@ -110,6 +121,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    Zaps,
     LPTab,
     TransactionHistory,
     Stats,
