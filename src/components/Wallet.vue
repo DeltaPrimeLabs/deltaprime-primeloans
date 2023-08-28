@@ -13,7 +13,7 @@
       <a :href='`https://snowtrace.io/address/${account}`' target="_blank">{{ account | tx(true) }}</a>
     </div>
     <div class="balance">{{ accountBalance | avax }}</div>
-    <img class="logo" src="src/assets/icons/avax-icon.svg"/>
+    <img class="logo" :src="tokenLogos[nativeToken]"/>
     <div class="separator"></div>
     <IconButton :disabled="!account || !notifiScreenLoaded"
                 ref="notifiBtn"
@@ -39,7 +39,13 @@
   import IconButton from "./IconButton.vue";
   import NetworkSelect from "./NetworkSelect.vue";
   import NotifiModal from "./notifi/NotifiModal.vue";
+  import config from '../config';
   const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+  const nativeTokesLogos = {
+    ETH: 'src/assets/logo/eth.svg',
+    AVAX: 'src/assets/icons/avax-icon.svg',
+  }
 
   export default {
     name: 'Wallet',
@@ -63,7 +69,9 @@
       return {
         showModal: false,
         notifiScreenLoaded: false,
-        notifi: null
+        notifi: null,
+        tokenLogos: nativeTokesLogos,
+        nativeToken: config.nativeToken,
       }
     },
     mounted() {
