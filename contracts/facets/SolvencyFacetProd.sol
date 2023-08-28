@@ -500,7 +500,8 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
                         debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
                         debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
                     )
-                    * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
+                    .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
+                    .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
                 }
             }
 
