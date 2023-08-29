@@ -96,7 +96,7 @@ import {mapActions, mapState} from 'vuex';
 import {wrapContract} from "../utils/blockchain";
 const ethers = require('ethers');
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {fromWei} from "../utils/calculate";
 
 // This could be abstracted in separate store

@@ -3,6 +3,7 @@ import {deployContract, solidity} from "ethereum-waffle";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {
     addMissingTokenContracts,
     Asset, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices,
@@ -17,6 +18,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import { parseUnits } from "ethers/lib/utils";
 import {
+    AddressProvider,
     TraderJoeIntermediary,
     MockTokenManager,
     SmartLoanGigaChadInterface,
@@ -26,7 +28,7 @@ import {ethers} from "hardhat";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import CACHE_LAYER_URLS from "../../../common/redstone-cache-layer-urls.json";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 import { Contract, BigNumber } from "ethers";
 
 chai.use(solidity);
@@ -79,11 +81,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib',
@@ -215,11 +224,18 @@ describe('Smart loan', () => {
                     .connect(owner)
                     .setFactoryAddress(smartLoansFactory.address);
 
+                let addressProvider = await deployContract(
+                    owner,
+                    AddressProviderArtifact,
+                    []
+                ) as AddressProvider;
+
                 await recompileConstantsFile(
                     "local",
                     "DeploymentConstants",
                     [],
                     tokenManager.address,
+                    addressProvider.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     "lib"
@@ -245,6 +261,7 @@ describe('Smart loan', () => {
                         },
                     ],
                     tokenManager.address,
+                    addressProvider.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     "lib"

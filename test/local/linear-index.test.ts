@@ -86,7 +86,7 @@ describe('LinearIndex', () => {
 
         let sut: LinearIndex;
 
-        before("deploy the Compounding index", async () => {
+        before("deploy the Linear index", async () => {
             sut = await init("0.05", owner);
         });
 
@@ -120,7 +120,7 @@ describe('LinearIndex', () => {
 
         let sut: LinearIndex;
 
-        before("deploy the Compounding index", async () => {
+        before("deploy the Linear index", async () => {
             sut = await init("0.05", owner);
         });
 
@@ -136,20 +136,26 @@ describe('LinearIndex', () => {
         });
 
         it("should get user value with the default start", async () => {
+            let oneYear = fromWei(await sut.getIndex());
+            expect(oneYear).to.be.closeTo(1.05, 0.001);
             let userValue = fromWei(await sut.getIndexedValue(toWei("1000"), owner.address));
-            expect(userValue).to.be.closeTo(1050, 0.001);
+            expect(userValue).to.be.closeTo(1000, 0.001);
         });
 
         it("should increase index 2 years", async () => {
             await time.increase(time.duration.years(1));
+            let twoYears = fromWei(await sut.getIndex());
+            expect(twoYears).to.be.closeTo(1.1, 0.000001);
             let userValue = fromWei(await sut.getIndexedValue(toWei("1000"), owner.address));
-            expect(userValue).to.be.closeTo(1100, 0.001);
+            expect(userValue).to.be.closeTo(1000, 0.001);
         });
 
         it("should increase index 3 years", async () => {
             await time.increase(time.duration.years(1));
+            let threeYears = fromWei(await sut.getIndex());
+            expect(threeYears).to.be.closeTo(1.15, 0.000001);
             let userValue = fromWei(await sut.getIndexedValue(toWei("1000"), owner.address));
-            expect(userValue).to.be.closeTo(1150, 0.001);
+            expect(userValue).to.be.closeTo(1000, 0.001);
         });
     });
 
@@ -157,7 +163,7 @@ describe('LinearIndex', () => {
 
         let sut: LinearIndex;
 
-        before("deploy the Compounding index", async function () {
+        before("deploy the Linear index", async function () {
             [owner] = await getFixedGasSigners(10000000);
             sut = sut = await init("0.05", owner);
         });

@@ -2,7 +2,7 @@
   <div class="page-content">
     <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
-      You are connected to a wrong network. Please change to Avalanche C-Chain.
+      You are connected to a wrong network. Please change to Avalanche or Arbitrum.
     </Banner>
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
@@ -19,19 +19,10 @@
       The protocol is paused because of an upgrade.
     </Banner>
     <Banner v-if="oracleError">
-      The protocol detected unusual market behavior. Some functions might be not available.
+      Data feeds error. Some functions might be not available.
     </Banner>
     <Banner v-if="false" background="green-accent" :closable="true">
-      Reminder: max. utilization for borrowers = 90%, keep utilization below 90% to keep room for growth.
-    </Banner>
-    <Banner v-if="false" background="green" :closable="true">
-      SteakHut integration ready: Expect significant APR fluctuations in the following days, as they adjust to unlocked liquidity
-    </Banner>
-    <Banner v-if="false" background="green-accent" :closable="true">
-      All borrowing rates will significantly lower this Friday, 09:00 CET. First come, first serve!
-    </Banner>
-    <Banner v-if="showDepositBanner" background="green-accent" :closable="true">
-      Reminder: max utilization for borrowers = 90%, keep utilization below 90% to keep room for growth
+      DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -123,6 +114,7 @@ export default {
   },
 
   mounted() {
+    window.testProperty = 'test value'
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Escape') {
         this.closeModal();
@@ -140,8 +132,16 @@ export default {
     async checkConnectedChain() {
       const chainId = await ethereum.request({method: 'eth_chainId'});
 
-      ethereum.on('chainChanged', () => {
-        window.location.reload();
+      ethereum.on('chainChanged', async () => {
+        const chainId = await ethereum.request({method: 'eth_chainId'});
+        console.log('chain changed');
+        location.reload();
+
+        if (chainId == this.toHex(config.chainId)) {
+          this.showNetworkBanner = false;
+        } else {
+          this.showNetworkBanner = true;
+        }
       });
 
       return this.toDec(chainId);

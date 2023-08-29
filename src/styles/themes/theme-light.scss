@@ -138,6 +138,8 @@
   --modal__backdrop-backdrop-filter: blur(25px);
   --modal__backdrop-background: transparent;
   --modal__pool-name-color: #{$black};
+  --modal__scroll-bar-background: #{$delta-light};
+  --modal__scroll-bar-hover-background: #{$delta-steel};
   // endregion
 
   // region CurrencyInput TODO
@@ -167,6 +169,11 @@
   --currency-combo-input__select-dropdown-option-name-color: #{$medium-gray};
   --currency-combo-input__select-dropdown-border-color: #{$delta-light};
   --currency-combo-input__select-dropdown-background: #{$white};
+  --currency-combo-input__select-dropdown-select-title-color: #{$steel-gray};
+  --currency-combo-input__select-dropdown-chains-border: 2px solid #{$smoke-gray};
+  --currency-combo-input__select-dropdown-chain-item-border: 1px solid transparent;
+  --currency-combo-input__select-dropdown-chain-item-border-active: 2px solid #{$delta-tertiary};
+  --currency-combo-input__select-dropdown-placeholder-font-color: #{$steel-gray};
   // endregion
 
   // region Bubble
@@ -353,6 +360,89 @@
   --stats-chart-section__no-data-color: #{$steel-gray};
   // endregion
 
+  // region NotifiModal
+  --notifi-modal__container-box-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
+  --notifi-modal__container-border: solid 2px #{$delta-secondary};
+  --notifi-modal__container-background-color: #{$white};
+  --notifi-modal__container-info-color: #{$steel-gray};
+  --notifi-modal__container-footer-font-color: #{$black}b3;
+  --notifi-modal__container-inner-border-color: #{$violet-smoke};
+  --notifi-modal__container-separator: linear-gradient(to right, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
+  --notifi-modal__container-common-color: #{$black};
+  --notifi-modal__container-text-small: #{$medium-gray};
+  --notifi-modal__container-notification-box-hover-color: #{$violet-mist};
+  --notifi-modal__container-header-box-shadow: 0 2px 6px 0 #{$delta-steel}1a;
+  --notifi-modal__container-footer-box-shadow: 0 -2px 6px 0 #{$delta-steel}1a;
+  --notifi-modal__scroll-bar-background: #{$delta-light};
+  --notifi-modal__scroll-bar-hover-background: #{$delta-steel};
+  // endregion
+
+  // region FromInput
+  --form-input__border: solid 2px #{$violet-smoke};
+  --form-input__background-color: #{$violet-mist};
+  --form-input__error-color: #{$red};
+  // endregion
+
+  // region EditContact
+  --edit-contact__border: solid 2px #{$violet-smoke};
+  --edit-contact__background-color: #{$violet-mist};
+  --edit-contact__contact-info-color: #{$dark-gray};
+  --edit-contact__contact-verify-color: #{$persian-blue};
+  --edit-contact__contact-box-top-border: 1px solid #{$violet-smoke};
+  --edit-contact__edit-container-box-shadow: 1px 1px 8px 0 #{$mist-lilac}80;
+  --edit-contact__edit-container-background-color: #{$white};
+  // endregion
+
+  // region ToggleButton
+  --toggle-button__background: #{$delta-light};
+  --toggle-button__toggle-on-background: #{$delta-accent};
+  --toggle-button__switch-box-shadow: 1px 1px 4px 0 #{$smoke-purple}4c;
+  --toggle-button__switch-background: #{$white};
+  --toggle-button__switch-on-background: #{$white};
+  // endregion
+
+  // region HealthRateButton
+  --health-rate-button__border-color: #{$smoke-gray};
+  --health-rate-button__background-color: #{$white};
+  --health-rate-button__rate-inactive-color: #{$steel-gray};
+  --health-rate-button__active-border-color: #{$delta-primary};
+  --health-rate-button__active-background-color: #{$delta-burnt-out};
+  // endregion
+
+  // region Settings (Notifi)
+  --notifi-settings__borrow-rate-border: 1px solid #{$violet-smoke};
+  --notifi-settings__box-shadow: 2px 2px 4px 0 #{$delta-steel}7f;
+  --notifi-settings__active-option-font-color: #{$black};
+  // endregion
+
+  // region AddInterestRate
+  --add-borrow-rate__container-box-shadow: 1px 1px 8px 0 #{$mist-lilac}80;
+  --add-borrow-rate__container-background-color: #{$white};
+  // endregion
+
+  // region Dropdown (Notifi)
+  --notifi-dropdown__border-color: #{$smoke-gray};
+  --notifi-dropdown__background-color: #{$white};
+  --notifi-dropdown__hover-background-color: #{$light-violet};
+  --notifi-dropdown__chevron-color: #{$delta-accent};
+  --notifi-dropdown__select-font-color: #{$black};
+  --notifi-dropdown__dropdown-box-shadow: 2px 2px 8px 0 #{$mist-lilac}80;
+  // endregion
+
+  // region RoundToggle (Notifi)
+  --notifi-round-toggle__pointer-background-color: #{$delta-burnt-out};
+  --notifi-round-toggle__pointer-border: solid 2px #{$delta-primary};
+  --notifi-round-toggle__background-border: solid 1px #{$goose-gray};
+  --notifi-round-toggle__background-color: #{$mist-gray};
+  // endregion
+
+  // region ApyInput
+  --apy-input__font-color: #{$black};
+  --apy-input__unit-font-color: #{$steel-gray};
+  --apy-input__background-image: linear-gradient(120deg, #{$steel-blue}14 32%, #{$mist-orange}14 59%, #{$raspberry}14 84%);
+  --apy-input__box-shadow: inset 2px 2px 6px 0 #{$delta-steel}80;
+  // endregion
+
   // region RealYield
   --real-yield__header-text-color: #{$dark-gray};
   --real-yield__token-name-color: #{$black};
@@ -370,5 +460,67 @@
   --slide-switch__indicator-color--on: #{$white};
   --slide-switch__indicator-color--off: #{$white};
   --slide-switch__indicator-box-shadow: 1px 1px 3px 0 #{$dark-lapis}7f;
+  // endregion
+
+  // region BridgeModal
+  --bridge-modal__slippage-bar-border: solid 2px #{$goose-gray};
+  --bridge-modal__slippage-bar-color: #{$steel-gray};
+  // endregion
+
+  // region NetworkSelect
+  --network-select__indicator-network-color: #{$black};
+  --network-select__chevron-color: #{$delta-accent};
+  --network-select__dropdown-header-color: #{$dark-gray};
+  --network-select__dropdown-background: #{$white};
+  --network-select__dropdown-border-color: #{$delta-secondary};
+  --network-select__dropdown-shadow: 2px 2px 8px 0 #{$mist-lilac}7F;
+  --network-select__option-background--selected: #{$delta-burnt-out};
+  --network-select__option-border--hover: #{$delta-light};
+  --network-select__option-name-color: #{$dark-gray};
+  --network-select__option-name-color--selected: #{$black};
+  // endregion
+
+  // region TraderJoeAddLiquidityModal
+  --traderjoe-add-liquidity-modal__liquidity-shape-border: solid 2px #{$goose-gray};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-active: solid 2px #{$delta-primary};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-hover: #{$delta-primary};
+  --traderjoe-add-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$delta-steel}80;
+  --traderjoe-add-liquidity-modal__liquidity-shape-background: #{$delta-burnt-out};
+  --traderjoe-add-liquidity-modal__price-slider-input-color: #{$steel-gray};
+  --traderjoe-add-liquidity-modal__label-with-separator: #{$dark-gray};
+  --traderjoe-add-liquidity-modal__label-with-separator-background: #{$goose-gray};
+  // endregion
+
+  // region TraderJoeRemoveLiquidityModal
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border: solid 2px #{$goose-gray};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-active: solid 2px #{$delta-primary};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-hover: #{$delta-primary};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$delta-steel}80;
+  --traderjoe-remove-liquidity-modal__liquidity-shape-background: #{$delta-burnt-out};
+  --traderjoe-remove-liquidity-modal__price-slider-input-color: #{$steel-gray};
+  --traderjoe-remove-liquidity-modal__label-with-separator: #{$dark-gray};
+  --traderjoe-remove-liquidity-modal__label-with-separator-background: #{$goose-gray};
+  // endregion
+
+  // region RangeSlider
+  --range-slider__container-box-shadow: inset 0 1px 3px 0 #{$delta-steel}b3;
+  --range-slider__container-box-background: #{$delta-steel}33;
+  --range-slider__slider-track: #{$delta-accent};
+  --range-slider__slider-thumb-box-shadow: -1px 1px 4px 0 #{$persian-blue}80;
+  --range-slider__slider-thumb-border: solid 3px #{$delta-accent};
+  --range-slider__slider-thumb-background: #{$white};
+  // endregion
+
+  // region Zaps
+  --zaps__header-color: #{$dark-gray};
+  // endregion
+
+  // region ZapLong
+  --zap-long__label-color: #{$dark-gray};
+  --zap-long__label-background-color: #{$washed-raspberry}77;
+  --zap-long__header-color: #{$dark-gray};
+  --zap-long__more-label-color: #{$dark-gray};
+  --zap-long__zap-tile-shadow: 7px 17px 55px 0 #{$washed-raspberry}77;
+  --zap-long__zap-tile-shadow--hover: 7px 17px 55px 0 #{$raspberry}77;
   // endregion
 }

@@ -83,7 +83,7 @@ describe('Pool with multiple users interactions', () => {
             expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.000000, 0.000001);
             expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0.9, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.3914996085, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.3132, 0.000001);
             expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.435, 0.000001);
         });
 
@@ -92,12 +92,12 @@ describe('Pool with multiple users interactions', () => {
             await time.increase(time.duration.years(1));
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.equal(0.1);
 
-            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.3914996085, 0.000001);
+            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.3132, 0.000001);
 
             expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(1.2915, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.4859957010109852, 0.000001);
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.5236264064676522, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.5491316074213156, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.6979477611940298, 0.000001);
         });
 
 
@@ -106,11 +106,11 @@ describe('Pool with multiple users interactions', () => {
             await pool.connect(user3).deposit(toWei("1.0"));
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.equal(1.1);
 
-            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.3914996333287424, 0.000001);
+            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.3132000198630136, 0.000001);
             expect(fromWei(await pool.balanceOf(user3.address))).to.be.closeTo(1, 0.000001);
-            expect(fromWei(await pool.totalSupply())).to.be.closeTo(2.3914996333287424, 0.000001);
+            expect(fromWei(await pool.totalSupply())).to.be.closeTo(2.3132000198630136, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.016201115592868784, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.013399619717159597, 0.000001);
             expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
         });
 
@@ -118,8 +118,8 @@ describe('Pool with multiple users interactions', () => {
             await time.increase(time.duration.years(1));
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.equal(1.1);
 
-            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.4140434797357357, 0.000001);
-            expect(fromWei(await pool.balanceOf(user3.address))).to.be.closeTo(1.0162011161066027, 0.000001);
+            expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.3307964007417445, 0.000001);
+            expect(fromWei(await pool.balanceOf(user3.address))).to.be.closeTo(1.0133996197171595, 0.000001);
             expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(1.3302450255736302, 0.000001);
         });
 
@@ -130,9 +130,9 @@ describe('Pool with multiple users interactions', () => {
             expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.equal(0.6);
 
             expect(fromWei(await pool.getBorrowed(user4.address))).to.be.closeTo(0.5, 0.000001);
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.07448276189573219, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.06954361046004168, 0.000001);
 
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.09890015165583, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.11134018432553701, 0.000001);
         });
 
 
@@ -145,14 +145,14 @@ describe('Pool with multiple users interactions', () => {
             const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
             const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
-            expect(depositUser1).to.be.closeTo(1.5193653450833162, 0.000001);
-            expect(depositUser3).to.be.closeTo(1.0918905830352734, 0.000001);
-            expect(borrowedUser2).to.be.closeTo(1.4618064629677694, 0.000001);
-            expect(borrowedUser4).to.be.closeTo(0.5494500760921107, 0.000001);
+            expect(depositUser1).to.be.closeTo(1.4233447884301167, 0.000001);
+            expect(depositUser3).to.be.closeTo(1.083875091254783, 0.000001);
+            expect(borrowedUser2).to.be.closeTo(1.4783547546499027, 0.000001);
+            expect(borrowedUser4).to.be.closeTo(0.5556700926234913, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.08210720278047828, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.10091589132660564, 0.000001);
 
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.106601584666613, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.15549117374422977, 0.000001);
 
             expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
         });
@@ -162,11 +162,11 @@ describe('Pool with multiple users interactions', () => {
             await mockToken.connect(user2).approve(pool.address, toRepay);
             await pool.connect(user2).repay(toRepay);
 
-            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(2.0618064629677693, 0.000001);
+            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(2.078354754649903, 0.000001);
 
             expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.006312474316312758, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.005319071774236778, 0.000001);
             expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
         });
 
@@ -174,16 +174,16 @@ describe('Pool with multiple users interactions', () => {
             await time.increase(time.duration.years(1));
 
             const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
-            expect(poolBalance).to.be.closeTo(2.0618064777968073, 0.000001);
+            expect(poolBalance).to.be.closeTo(2.078354754649903, 0.000001);
 
             const depositUser1 = fromWei(await pool.balanceOf(user1.address));
             const depositUser3 = fromWei(await pool.balanceOf(user3.address));
             const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
             const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
-            expect(depositUser1).to.be.closeTo(1.5289563065733205, 0.000001);
-            expect(depositUser3).to.be.closeTo(1.0987831187708486, 0.000001);
-            expect(borrowedUser4).to.be.closeTo(0.5659335813040133, 0.000001);
+            expect(depositUser1).to.be.closeTo(1.430915670370162, 0.000001);
+            expect(depositUser3).to.be.closeTo(1.0896403028996955, 0.000001);
+            expect(borrowedUser4).to.be.closeTo(0.5723401990386874, 0.000001);
 
             expect(depositUser1 + depositUser3).to.be.below(borrowedUser4 + borrowedUser2 + poolBalance);
         });
@@ -196,9 +196,9 @@ describe('Pool with multiple users interactions', () => {
             const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
             expect(borrowedUser2).to.be.closeTo(0, 0.000001);
-            expect(borrowedUser4).to.be.closeTo(0.06593358287207855, 0.000001);
+            expect(borrowedUser4).to.be.closeTo(0.07234019962135385, 0.000001);
 
-            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(2.5618064629677693, 0.000001);
+            expect(fromWei(await mockToken.balanceOf(pool.address))).to.be.closeTo(2.5783547593464315, 0.000001);
 
 
             await pool.connect(user1).withdraw(await pool.balanceOf(user1.address));
@@ -207,14 +207,14 @@ describe('Pool with multiple users interactions', () => {
             const depositUser3 = fromWei(await pool.balanceOf(user3.address));
 
             expect(depositUser1).to.be.closeTo(0, 0.000001);
-            expect(depositUser3).to.be.closeTo(1.0987831190156365, 0.000001);
+            expect(depositUser3).to.be.closeTo(1.0896403032891222, 0.000001);
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.001800178504633681, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.001593337755170775, 0.000001);
             expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
 
             const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
 
-            expect(poolBalance).to.be.closeTo(1.0328501557861944, 0.000001);
+            expect(poolBalance).to.be.closeTo(1.1474390867583408, 0.000001);
 
             expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
         });
@@ -228,10 +228,10 @@ describe('Pool with multiple users interactions', () => {
             const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
             const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
-            expect(depositUser1).to.be.closeTo(0, 0.000001);
-            expect(depositUser3).to.be.closeTo(1.1007611247677427, 0.000001);
+            expect(depositUser1).to.be.closeTo(3.1303543e-11, 0.000001);
+            expect(depositUser3).to.be.closeTo(1.091376469149563, 0.000001);
             expect(borrowedUser2).to.be.closeTo(0, 0.000001);
-            expect(borrowedUser4).to.be.closeTo(0.0679115898844757, 0.000001);
+            expect(borrowedUser4).to.be.closeTo(0.07451040568087576, 0.000001);
 
             //TODO: check this scenario
             expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
@@ -288,7 +288,7 @@ describe('Pool with multiple users interactions', () => {
             await pool.connect(borrower).borrow(toWei("0.5"));
             expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("0.5", "ether"));
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.014999985, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.012, 0.000001);
             expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
 
             const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
@@ -314,20 +314,20 @@ describe('Pool with multiple users interactions', () => {
         it("borrow more", async () => {
             await pool.connect(borrower).borrow(toWei("0.1"));
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.05423785918589893, 0.000001);
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.07699507872207254, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.04405009467148032, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.0779347828268384, 0.000001);
 
             const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
             const deposits = fromWei(await pool.balanceOf(depositor.address));
             const borrowings = fromWei(await pool.getBorrowed(borrower.address));
 
-            expect(deposits).to.be.closeTo(1.0149999861125676, 0.000001);
+            expect(deposits).to.be.closeTo(1.012000000902665, 0.000001);
             expect(borrowings).to.be.closeTo(0.7150000011125686, 0.000001);
 
-            expect(fromWei(await depositIndex.getIndex())).to.be.closeTo(1.0149999861125676, 0.000001);
+            expect(fromWei(await depositIndex.getIndex())).to.be.closeTo(1.012000000902665, 0.000001);
             expect(fromWei(await borrowingIndex.getIndex())).to.be.closeTo(1.030000004957506, 0.000001);
 
-            expect(fromWei(await depositIndex.getIndexedValue(toWei("1"), depositor.address))).to.be.closeTo(1.0149999861125676, 0.000001);
+            expect(fromWei(await depositIndex.getIndexedValue(toWei("1"), depositor.address))).to.be.closeTo(1.012000000902665, 0.000001);
             expect(fromWei(await borrowingIndex.getIndexedValue(toWei("1"), borrower.address))).to.be.closeTo(1, 0.000001);
 
             expect(deposits).to.be.lessThanOrEqual(poolBalance + borrowings);
@@ -336,15 +336,15 @@ describe('Pool with multiple users interactions', () => {
         it("after 1 year", async () => {
             await time.increase(time.duration.years(1));
 
-            expect(fromWei(await depositIndex.getIndex())).to.be.closeTo(1.0700514124330303, 0.000001);
-            expect(fromWei(await borrowingIndex.getIndex())).to.be.closeTo(1.1093049364229441, 0.000001);
+            expect(fromWei(await depositIndex.getIndex())).to.be.closeTo(1.0565786981635468, 0.000001);
+            expect(fromWei(await borrowingIndex.getIndex())).to.be.closeTo(1.1102728316839683, 0.000001);
 
             const poolBalance = fromWei(await mockToken.balanceOf(pool.address));
             const deposits = fromWei(await pool.balanceOf(depositor.address));
             const borrowings = fromWei(await pool.getBorrowed(borrower.address));
 
-            expect(deposits).to.be.closeTo(1.0700514124330303, 0.000001);
-            expect(borrowings).to.be.closeTo(0.7700514824845127, 0.000001);
+            expect(deposits).to.be.closeTo(1.0565786967499655, 0.000001);
+            expect(borrowings).to.be.closeTo(0.7707233709374569, 0.000001);
 
             expect(deposits).to.be.lessThanOrEqual(poolBalance + borrowings);
         });
@@ -356,15 +356,15 @@ describe('Pool with multiple users interactions', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             borrower: SignerWithAddress,
-            ratesCalculator: MockVariableUtilisationRatesCalculatorChangedOffset,
-            updatedRatesCalculator: MockVariableUtilisationRatesCalculator,
+            ratesCalculator: MockVariableUtilisationRatesCalculator,
+            updatedRatesCalculator: MockVariableUtilisationRatesCalculatorChangedOffset,
             depositIndex: LinearIndex,
             borrowingIndex: LinearIndex,
             mockToken: Contract;
 
         const SLOPE_1 = 0;
-        const OFFSET_1_INIT = 0.05;
-        const OFFSET_1_UPDATE = 0.03;
+        const OFFSET_1_INIT = 0.03;
+        const OFFSET_1_UPDATE = 0.05;
         const BREAKPOINT_1 = 0.6;
 
         const SLOPE_2 = 0.45;
@@ -374,7 +374,7 @@ describe('Pool with multiple users interactions', () => {
         const SLOPE_3 = 3.15;
         const OFFSET_3 = 2.4;
 
-        const depositRateFactor = 1e18 - 1e12;
+        const spread = 0.2
 
         function calculateBorrowingRate(utilisation: number, offset_1: number) {
             if (utilisation < BREAKPOINT_1) {
@@ -387,13 +387,13 @@ describe('Pool with multiple users interactions', () => {
         }
 
         function calculateDepositRate(utilisation: number, offset: number) {
-            return calculateBorrowingRate(utilisation, offset) * utilisation * depositRateFactor / 1e18;
+            return calculateBorrowingRate(utilisation, offset) * utilisation * (1.0 - spread);
         }
 
         before("Deploy Pool contract", async () => {
             [owner, depositor, borrower] = await getFixedGasSigners(10000000);
-            ratesCalculator = (await deployContract(owner, MockVariableUtilisationRatesCalculatorChangedOffsetArtifact) as MockVariableUtilisationRatesCalculatorChangedOffset);
-            updatedRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
+            ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact) as MockVariableUtilisationRatesCalculator);
+            updatedRatesCalculator = (await deployContract(owner, MockVariableUtilisationRatesCalculatorChangedOffsetArtifact) as MockVariableUtilisationRatesCalculatorChangedOffset );
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
             const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
             depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
@@ -423,14 +423,14 @@ describe('Pool with multiple users interactions', () => {
             expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1.000000, 0.000001);
             expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0, 0.000001);
 
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.05, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
 
             await pool.connect(borrower).borrow(toWei("0.5"));
 
             expect(await mockToken.balanceOf(pool.address)).to.be.equal(toWei("0.5", "ether"));
 
-            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.024999975, 0.000001);
-            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.05, 0.000001);
+            expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.012, 0.000001);
+            expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.03, 0.000001);
 
             await time.increase(time.duration.years(1));
         });

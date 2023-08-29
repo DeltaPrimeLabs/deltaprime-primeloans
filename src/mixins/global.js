@@ -3,21 +3,10 @@ import config from '@/config';
 import {formatUnits} from '../utils/calculate';
 import {handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
 import Vue from 'vue';
+import {token} from '@redstone-finance/evm-connector/dist/typechain-types/@openzeppelin/contracts';
 
 export default {
   methods: {
-    avaxToUSD(avax) {
-      if (this.avaxPrice) {
-        return avax * this.avaxPrice;
-      }
-    },
-
-    usdToAVAX(price) {
-      if (this.avaxPrice) {
-        return price / this.avaxPrice;
-      }
-    },
-
     toHex(dec) {
       return '0x' + dec.toString(16);
     },
@@ -47,7 +36,7 @@ export default {
 
     async handleTransaction(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);
-      await handleTransaction(fun, args, onSuccess, onFail);
+      return await handleTransaction(fun, args, onSuccess, onFail);
     },
     async handleCall(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);
@@ -92,18 +81,11 @@ export default {
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
 
-    async getWalletTokenBalance(account, assetSymbol, tokenContract, type) {
-      const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
-      let walletAssetBalance;
-      if (!type) {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
-      } else if (type === 'LP') {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
-      } else if (type === 'CONCENTRATED_LP') {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.CONCENTRATED_LP_ASSETS_CONFIG[assetSymbol].decimals);
-      }
-      return walletAssetBalance;
-    },
+    async getWalletTokenBalance(account, assetSymbol, tokenContract, decimals) {
+      const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
+
+      return formatUnits(walletAssetBalanceResponse, decimals);
+      },
   },
   computed: {
     ...mapState('network', ['provider', 'avaxPrice']),

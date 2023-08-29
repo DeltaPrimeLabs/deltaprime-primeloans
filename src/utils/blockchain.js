@@ -2,6 +2,7 @@ import Vue from 'vue';
 import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {utils} from "ethers";
+import config from '../config';
 
 const ethers = require('ethers');
 
@@ -11,11 +12,11 @@ export function transactionUrl(tx) {
 
 export const wrapContract = async function wrapContract(contract, assets) {
   //for more symbols in data feed it's more optimal to not specify asset list
-  let providedAssets = (assets && assets.length <= 5) ? assets : undefined;
+  const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
 
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId: 'redstone-avalanche-prod',
+      dataServiceId: config.dataProviderId,
       uniqueSignersCount: 3,
       dataFeeds: providedAssets,
       disablePayloadsDryRun: true
@@ -24,16 +25,27 @@ export const wrapContract = async function wrapContract(contract, assets) {
   );
 };
 
+export const switchChain = async (chainId, signer) => {
+  const currentChainId = await signer.getChainId();
+
+  if (currentChainId !== chainId) {
+    const ethereum = window.ethereum;
+    if (typeof ethereum === 'undefined') return;
+
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + chainId.toString(16) }],
+    });
+  }
+}
+
 export async function handleTransaction(fun, args, onSuccess, onFail) {
   try {
-    const tx = Array.isArray(args) ? await fun(...args) : await fun(args);
-    if (tx) {
-      await provider.waitForTransaction(tx.hash);
-    }
+    const res = Array.isArray(args) ? await fun(...args) : await fun(args);
 
     if (onSuccess) {
       console.log('BLOCKCHAIN.js onSuccess');
-      onSuccess();
+      onSuccess(res);
     }
 
   } catch (error) {
@@ -146,6 +158,19 @@ export async function signMessage(provider, message, wallet, depositor = false) 
     return false;
   }
   return true;
+}
+
+export async function signMessageForNotifi(provider, message, wallet, depositor = false) {
+  const signer = provider.getSigner();
+  let signedMessage = await signer.signMessage(message);
+
+  let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
+
+  if (signingWallet !== wallet) {
+    Vue.$toast.error(`Wrong signing wallet. Please do not change your Metamask wallet during the procedure.`);
+    return false;
+  }
+  return {signedMessage: utils.arrayify(signedMessage), account: wallet};
 }
 
 export const loanTermsToSign =

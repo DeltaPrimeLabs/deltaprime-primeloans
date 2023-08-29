@@ -5,5 +5,6 @@
   "function allowance(address owner, address spender) public view returns (uint256)",
   "function transfer(address _to, uint256 _value) public returns (bool success)",
   "function totalSupply() public view returns (uint256)",
-  "function totalDeposits() external view returns (uint256)"
+  "function totalDeposits() external view returns (uint256)",
+  "event Transfer(from, to, value)"
 ]

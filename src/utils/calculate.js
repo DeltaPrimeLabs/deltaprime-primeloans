@@ -11,7 +11,7 @@ import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVect
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import redstone from 'redstone-api';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {TransactionParams} from '@paraswap/sdk';
@@ -22,10 +22,13 @@ export function minAvaxToBeBought(amount, currentSlippage) {
 
 export function calculateHealth(tokens) {
 
-  let weightedCollateral = tokens.reduce((acc, t) => acc + t.price * (t.balance - t.borrowed) * t.debtCoverage, 0);
-  let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
-  let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
+  let weightedCollateral = tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
+  let weightedBorrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed * token.debtCoverage, 0);
+  let borrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed, 0);
 
+  console.log('weightedCollateral: ', weightedCollateral)
+  console.log('weightedBorrowed: ', weightedBorrowed)
+  console.log('borrowed: ', borrowed)
   if (borrowed === 0) return 1;
 
   return Math.max(weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0, 0);
@@ -105,10 +108,17 @@ export async function yieldYakRewards(stakingContractAddress, address) {
 }
 
 export async function yieldYakBalance(stakingContractAddress, address) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
-  const stakedYrtWei = await tokenContract.balanceOf(address);
+  try {
+    console.log('try yieldYakBalance')
+    const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
+    const stakedYrtWei = await tokenContract.balanceOf(address);
 
-  return formatUnits(stakedYrtWei, 18);
+    return formatUnits(stakedYrtWei, 18);
+  } catch (e) {
+    console.log('yieldYakBalance error')
+    return 0;
+  }
+
 }
 
 export async function yieldYakStaked(address) {
@@ -135,9 +145,17 @@ export async function yieldYakStaked(address) {
 }
 
 export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
+  let result = 0;
+  try {
+    const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
 
-  return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+    result = formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+  } catch (e) {
+    console.log('vector balance error')
+  }
+
+  return result;
+
 }
 
 export async function vectorFinanceRewards(stakingContractAddress, loanAddress) {
@@ -152,7 +170,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   let iterate = true;
 
   //TODO: get prices from store
-  const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+  const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
   const redstonePriceData = await redstonePriceDataRequest.json();
 
   while (iterate) {
@@ -178,18 +196,31 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 }
 
 export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
-  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-  const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
-  const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
-  const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+  try {
+    const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
+    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
 
-  return loanBalance / totalSupply * totalDeposits;
+    return loanBalance / totalSupply * totalDeposits;
+  } catch (e) {
+    console.log('yieldYakMaxUnstaked error');
+    return 0;
+  }
+
+
 }
 
 export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
   const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
-  const stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  let stakedBalance = 0;
+  try {
+    stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  } catch (e) {
+
+  }
+
   return stakedBalance;
 }
 

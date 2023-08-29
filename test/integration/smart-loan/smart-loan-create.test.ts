@@ -3,6 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -24,12 +25,13 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    AddressProvider,
     MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
 } from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 import {Contract} from "ethers";
 
 chai.use(solidity);
@@ -86,11 +88,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, []);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -141,6 +150,20 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(1 * tokensPrices.get('AVAX')!, 0.05)
             expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(loan.address))).to.equal(1);
             expect(fromWei(await tokenContracts.get('MCKUSD')!.balanceOf(loan.address))).to.be.equal(0);
+        });
+
+        it("should get loans length", async () => {
+            const length = await smartLoansFactory.getLoansLength();
+            expect(length).to.be.eq(2);
+        });
+
+        it("should get loans", async () => {
+            const loans = await smartLoansFactory.getLoans(0, 5);
+            expect(loans.length).to.be.eq(2);
+            const loanAddress1 = await smartLoansFactory.getLoanForOwner(borrower1.address);
+            const loanAddress2 = await smartLoansFactory.getLoanForOwner(borrower2.address);
+            expect(loans[0]).to.be.eq(loanAddress1);
+            expect(loans[1]).to.be.eq(loanAddress2);
         });
 
         it("should not create a smart loan when wrong data is sent", async () => {

@@ -15,6 +15,8 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    using TransferHelper for address;
+
     // Used to deposit/withdraw tokens
     address private constant CURVE_POOL_ADDRESS = 0x58e57cA18B7A47112b877E31929798Cd3D703b0f;
     // crvUSDBTCETH
@@ -38,7 +40,8 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amounts[i] = Math.min(token.balanceOf(address(this)), amounts[i]);
             if (amounts[i] > 0) {
                 allZero = false;
-                token.approve(CURVE_POOL_ADDRESS, amounts[i]);
+                address(token).safeApprove(CURVE_POOL_ADDRESS, 0);
+                address(token).safeApprove(CURVE_POOL_ADDRESS, amounts[i]);
                 ++numStakeTokens;
             }
         }
@@ -92,7 +95,8 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
         amount = Math.min(curveTokenBalance, amount);
 
-        curveToken.approve(CURVE_POOL_ADDRESS, amount);
+        curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, 0);
+        curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, amount);
         pool.remove_liquidity(amount, min_amounts);
 
         // Add/remove owned tokens
@@ -135,7 +139,8 @@ contract CurveFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         amount = Math.min(maxWithdrawAmount, amount);
 
         uint256 burnAmount = curveTokenBalance * amount / maxWithdrawAmount;
-        curveToken.approve(CURVE_POOL_ADDRESS, burnAmount);
+        curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, 0);
+        curveTokenAddress.safeApprove(CURVE_POOL_ADDRESS, burnAmount);
         pool.remove_liquidity_one_coin(burnAmount, i, 0);
 
         // Add/remove owned tokens

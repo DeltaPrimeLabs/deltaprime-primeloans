@@ -86,7 +86,7 @@
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
-          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
+          <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan)" v-slot:bubble>
             To create your Prime Account, click on the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
@@ -137,14 +137,13 @@ import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
 import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
@@ -159,10 +158,8 @@ import axios from 'axios';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
-
 const ethers = require('ethers');
-
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'AssetsTableRow',
@@ -173,7 +170,9 @@ export default {
   props: {
     asset: {},
   },
-  mounted() {
+  async mounted() {
+    await this.setupFiles();
+    this.setupBorrowable();
     this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
@@ -190,6 +189,7 @@ export default {
   },
   data() {
     return {
+      borrowable: [],
       moreActionsConfig: null,
       showChart: false,
       rowExpanded: false,
@@ -200,6 +200,7 @@ export default {
       healthLoaded: false,
       totalStaked: null,
       availableFarms: [],
+      nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS
     };
   },
   computed: {
@@ -262,12 +263,18 @@ export default {
         'claimGLPRewards'
       ]),
     ...mapActions('network', ['updateBalance']),
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+    setupBorrowable() {
+      this.borrowable = Object.keys(config.POOLS_CONFIG);
+    },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          ...(BORROWABLE_ASSETS.includes(this.asset.symbol) ?
+          ...(this.borrowable.includes(this.asset.symbol) ?
             [
               {
                 key: 'BORROW',
@@ -285,9 +292,9 @@ export default {
               }
             ]
             : []),
-          this.asset.symbol === 'AVAX' ? {
+          this.asset.symbol === this.nativeAssetOptions[0] ? {
             key: 'WRAP',
-            name: 'Wrap native AVAX',
+            name: `Wrap native ${this.nativeAssetOptions[0]}`,
             hidden: true,
           } : null,
           this.asset.symbol === 'GLP' ? {
@@ -324,6 +331,8 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
+        console.log('TOKEN_ADDRESSES')
+        console.log(TOKEN_ADDRESSES)
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
@@ -331,9 +340,19 @@ export default {
           const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
           const maxHops = 3;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
+            console.log(
+                await yakRouter.findBestPathWithGas(
+                    amountIn,
+                    tknFrom,
+                    tknTo,
+                    maxHops,
+                    gasPrice,
+                    {gasLimit: 1e9}
+                )
+            )
             return await yakRouter.findBestPathWithGas(
               amountIn,
               tknFrom,
@@ -349,7 +368,7 @@ export default {
           const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
 
           // const maxHops = sourceAsset === 'GLP' ? 1 : 2;
-          const maxHops = 3;
+          const maxHops = 1;
           const gasPrice = ethers.utils.parseUnits('225', 'gwei');
 
           if (targetAsset === 'GLP') {
@@ -383,14 +402,6 @@ export default {
       return async (sourceAsset, targetAsset, amountIn) => {
         console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
-
-        console.log('sourceAsset', sourceAsset);
-        console.log('targetAsset', targetAsset);
-        console.log('srcToken', TOKEN_ADDRESSES[sourceAsset]);
-        console.log('destToken', TOKEN_ADDRESSES[targetAsset]);
-        console.log('amount', amountIn);
-        console.log('userAddress', this.smartLoanContract.address);
-        console.log('side', SwapSide.SELL);
 
         const swapRate = await paraSwapSDK.swap.getRate({
           srcToken: TOKEN_ADDRESSES[sourceAsset],
@@ -482,6 +493,9 @@ export default {
             break;
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
+            break;
+          case 'BRIDGE_COLLATERAL':
+            this.openBridgeModal();
             break;
           case 'WITHDRAW':
             this.openWithdrawModal();
@@ -600,8 +614,8 @@ export default {
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.sourceAssetDebt = this.debtsPerAsset[this.asset.symbol].debt;
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = BORROWABLE_ASSETS;
-      modalInstance.targetAssets = BORROWABLE_ASSETS;
+      modalInstance.sourceAssets = this.borrowable;
+      modalInstance.targetAssets = this.borrowable;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -609,7 +623,7 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
-      modalInstance.targetAsset = BORROWABLE_ASSETS.filter(asset => asset !== this.asset.symbol)[0];
+      modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
@@ -670,6 +684,7 @@ export default {
                   this.handleTransactionError(error);
                 });
             } else {
+              console.log('createAndFundLoan');
               this.handleTransaction(this.createAndFundLoan, {
                   asset: addFromWalletEvent.asset,
                   value: value,
@@ -683,7 +698,7 @@ export default {
                 });
             }
           } else {
-            if (addFromWalletEvent.asset === 'AVAX') {
+            if (addFromWalletEvent.asset === this.nativeAssetOptions[0]) {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.$forceUpdate();
               }, (error) => {
@@ -727,7 +742,7 @@ export default {
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
-        if (withdrawEvent.withdrawAsset === 'AVAX') {
+        if (withdrawEvent.withdrawAsset === this.nativeAssetOptions[0]) {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
             value: value,
@@ -755,6 +770,16 @@ export default {
           })
             .then(() => {
             });
+        }
+      });
+    },
+
+    async openBridgeModal() {
+      const modalInstance = this.openModal(BridgeModal);
+      modalInstance.noSmartLoan = this.noSmartLoan;
+      modalInstance.$on('BRIDGE', bridgeEvent => {
+        if (this.smartLoanContract) {
+          // To-Do: Lifi Bridge for prime account page
         }
       });
     },
@@ -835,8 +860,9 @@ export default {
     },
 
     async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+      const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
+      const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
+      return walletTokenBalance;
     },
 
     async getSmartLoanContractNativeTokenBalance() {

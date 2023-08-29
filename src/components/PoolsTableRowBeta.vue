@@ -65,19 +65,19 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
-import SwapModal from './SwapModal.vue';
+import BridgeDepositModal from './BridgeDepositModal';
 
 const ethers = require('ethers');
-import addresses from '../../common/addresses/avax/token_addresses.json';
-import erc20ABI from '../../test/abis/ERC20.json';
 import SimpleSwapModal from './SimpleSwapModal.vue';
-import {forkJoin} from 'rxjs';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
-import YAK_WRAP_ROUTER from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 
 const DEPOSIT_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
+
+let TOKEN_ADDRESSES;
+(async () => {
+  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+})();
 
 export default {
   name: 'PoolsTableRowBeta',
@@ -90,6 +90,7 @@ export default {
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
+    this.watchLifi();
   },
 
   data() {
@@ -99,6 +100,7 @@ export default {
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
+      lifiData: {}
     };
   },
 
@@ -113,7 +115,7 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService'])
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService'])
   },
 
   methods: {
@@ -122,8 +124,21 @@ export default {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          tooltip: 'Deposit',
-          iconButtonActionKey: 'DEPOSIT'
+          tooltip: 'Deposit / Bridge',
+          menuOptions: [
+            {
+              key: 'DEPOSIT',
+              name: 'Deposit'
+            },
+            ...(this.pool.asset.symbol === 'AVAX' ? [{
+              key: 'BRIDGE',
+              name: 'Bridge'
+            }] : []),
+            {
+              key: 'BRIDGE_DEPOSIT',
+              name: 'Bridge and deposit'
+            },
+          ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
@@ -160,10 +175,33 @@ export default {
       })
     },
 
+    watchLifi() {
+      this.lifiService.observeLifi().subscribe(async lifiData => {
+        this.lifiData = lifiData;
+      });
+    },
+
     actionClick(key) {
+      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
+          break;
+        case 'BRIDGE':
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', activeTransfer);
+          } else {
+            this.openBridgeModal(true);
+          }
+          break;
+        case 'BRIDGE_DEPOSIT':
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', activeTransfer);
+          } else {
+            this.openBridgeModal(false);
+          }
           break;
         case 'WITHDRAW':
           this.openWithdrawModal();
@@ -191,9 +229,44 @@ export default {
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error, true);
         }).then(() => {
+        });
+      });
+    },
+
+    openBridgeModal(disableDeposit = false) {
+      const modalInstance = this.openModal(BridgeDepositModal);
+      modalInstance.account = this.account;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.targetAsset = this.pool.asset.symbol;
+      modalInstance.targetAssetAddress = this.pool.asset.address;
+      modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
+      modalInstance.disableDeposit = disableDeposit;
+      modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
+        const bridgeRequest = {
+          lifi: this.lifiData.lifi,
+          ...bridgeEvent,
+          signer: this.provider.getSigner(),
+          depositFunc: this.deposit,
+          targetSymbol: this.pool.asset.symbol,
+          disableDeposit
+        };
+
+        this.handleTransaction(this.lifiService.bridgeAndDeposit, {
+          bridgeRequest: bridgeRequest,
+          progressBarService: this.progressBarService,
+          resume: false
+        }, (res) => {
+          if (!res) return;
+          this.pool.deposit = Number(this.pool.deposit) + Number(res.amount);
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+          this.closeModal();
         });
       });
     },
@@ -213,8 +286,8 @@ export default {
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         });
       });
@@ -247,8 +320,8 @@ export default {
 
         this.handleTransaction(this.swapDeposit, {swapDepositRequest: swapDepositRequest}, () => {
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
         })
       })
@@ -277,6 +350,31 @@ export default {
           this.handleTransactionError(e);
         }
       };
+    },
+
+    handleTransactionError(error, isBridge = false) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+
+        if (isBridge) {
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const userKey = this.account.toLowerCase();
+          const updatedHistory = {
+            ...history,
+            [userKey]: {
+              ...history[userKey],
+              cancelled: true
+            }
+          };
+
+          localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
+        }
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
     },
   }
 };

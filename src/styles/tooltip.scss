@@ -12,11 +12,24 @@
     font-weight: 500;
     color: var(--tooltip__color);
     max-width: 200px;
+    text-align: center;
 
     a {
       text-decoration: none;
       color: var(--tooltip__color);
       font-weight: 700;
+    }
+
+    .tooltip-extra {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .tooltip-extra__icon {
+        height: 16px;
+        margin-right: 5px;
+        transform: translateY(-1.5px);
+      }
     }
   }
 
