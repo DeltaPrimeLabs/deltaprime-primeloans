@@ -8,6 +8,7 @@ import { deployLinearIndex } from "./7_linear_indices";
 import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
 import { initPool } from "./8_pools_init";
 import { pool } from "../../test/_helpers";
+import verifyContract from "../../tools/scripts/verify-contract";
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
@@ -89,12 +90,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 };
 
 async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
-  await deploy(poolFactory, {
+  let result = await deploy(poolFactory, {
     contract: `contracts/deployment/arbitrum/${poolFactory}.sol:${poolFactory}`,
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 80000000,
     args: [],
   });
+
+  await verifyContract(hre,
+      {
+        address: result.address,
+        contract: `contracts/deployment/arbitrum/${poolFactory}.sol:${poolFactory}`,
+        constructorArguments: []
+      });
+  console.log(`${poolFactory} contract verified`);
 
   const factory = await ethers.getContract(poolFactory);
 
@@ -106,6 +115,14 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
     `${contract} pool deployed at address: ${poolAddress} by a factory`
   );
 
+  await verifyContract(hre,
+      {
+        address: poolAddress,
+        contract: `contracts/deployment/arbitrum/${contract}.sol:${contract}`,
+        constructorArguments: []
+      });
+  console.log(`Verified pool contract ${contract}`)
+
   createMigrationFile(
     networkName,
     contract,
@@ -113,14 +130,22 @@ async function deployPool(deploy, deployer, admin, contract, poolFactory, tup) {
     receipt.transactionHash
   );
 
-  let result = await deploy(tup, {
+  result = await deploy(tup, {
     contract: `contracts/proxies/tup/arbitrum/${tup}.sol:${tup}`,
     from: deployer,
-    gasLimit: 8000000,
+    gasLimit: 80000000,
     args: [poolAddress, admin, []],
   });
 
   console.log(`${tup} deployed at address: ${result.address}`);
+
+  await verifyContract(hre,
+      {
+        address: result.address,
+        contract: `contracts/proxies/tup/arbitrum/${tup}.sol:${tup}`,
+        constructorArguments: [poolAddress, admin, []]
+      });
+  console.log(`Verified ${tup}`)
 }
 
-module.exports.tags = ["arbitrum-2"];
+module.exports.tags = ["arbitrum-btc"];
