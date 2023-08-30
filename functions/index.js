@@ -745,7 +745,7 @@ const getApysFromTraderJoe = async () => {
 
       if (apy && Number(apy) != 0) {
         await db.collection('apys').doc(pool).set({
-          apy: apy / 100
+          lp_apy: apy / 100
         });
       }
     }
@@ -754,7 +754,6 @@ const getApysFromTraderJoe = async () => {
   // close browser
   await browser.close();
 }
-getApysFromTraderJoe();
 
 exports.traderJoeScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })

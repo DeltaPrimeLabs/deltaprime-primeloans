@@ -121,5 +121,5 @@ export default {
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
+    subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime"
 }

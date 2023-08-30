@@ -705,6 +705,19 @@ export default {
 
       commit('setConcentratedLpAssets', concentratedLpAssets);
 
+      let traderJoeV2LpAssets = state.traderJoeV2LpAssets;
+
+      if (Object.keys(traderJoeV2LpAssets).length == 0) return;
+
+      for (let [symbol, traderJoeV2LpAsset] of Object.entries(traderJoeV2LpAssets)) {
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].lp_apy) {
+          traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+        }
+      }
+
+      commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
+
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 

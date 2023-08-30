@@ -111,6 +111,7 @@ export default {
       'smartLoanContract',
     ]),
     ...mapState('stakeStore', ['farms']),
+    ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
     ...mapState('serviceRegistry', [
       'dataRefreshEventService',
