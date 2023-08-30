@@ -125,7 +125,7 @@ export default {
     },
 
     maxApr() {
-      return this.apr;
+      return calculateMaxApy(this.pools, this.apr / 100);
     },
 
     firstAsset() {

@@ -8,14 +8,14 @@ const ApolloClient = require("apollo-client").ApolloClient;
 const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 const gql = require("graphql-tag");
-const cors = require('cors')({ origin: true });
-const retry = require('async-retry');
+const cors = require('cors')({origin: true});
 
 const vectorApyConfig = require('./vectorApy.json');
 const yieldYakConfig = require('./yieldYakApy.json');
 const tokenAddresses = require('./token_addresses.json');
 const lpAssets = require('./lpAssets.json');
 const steakHutApyConfig = require('./steakHutApy.json');
+const traderJoeConfig = require('./traderJoeApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -62,7 +62,6 @@ function wrap(contract) {
   );
 }
 
-// fetch status of all the loans
 exports.scheduledFunction = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -122,7 +121,7 @@ const getGlpApr = async () => {
   });
 
   console.log(glpApy);
-  if (glpApy) {
+  if (glpApy && Number(glpApy) != 0) {
     await db.collection('apys').doc('GLP').set({
       apy: glpApy
     }, { merge: true });
@@ -131,7 +130,6 @@ const getGlpApr = async () => {
   await browser.close();
 };
 
-// scrape GLP APY(Assets) from GMX
 exports.gmxScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -152,18 +150,12 @@ const getApysFromVector = async () => {
 
   // navigate pools page and wait till javascript fully load.
   await page.goto(URL);
-
-  const vtxPriceSelector = "div.MuiBox-root[title='VTX']";
-
-  try {
-    await page.waitForFunction(
-      vtxPriceSelector => !!document.querySelector(vtxPriceSelector).innerText,
-      {},
-      vtxPriceSelector
-    );
-  } catch(e) {
-    console.log(`The element "${vtxPriceSelector}" was not found on the page`);
-  }
+  const vtxPriceSelector = "div.price-and-gas div[title='VTX']";
+  await page.mainFrame().waitForFunction(
+    selector => !!document.querySelector(selector).innerText,
+    {},
+    vtxPriceSelector
+  )
 
   functions.logger.info("parsing auto compounding APYs...");
   const [avaxApy, savaxApy, usdcApy, usdtApy] = await page.evaluate(() => {
@@ -171,17 +163,17 @@ const getApysFromVector = async () => {
       const assetPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith(keyword));
       const assetColumns = assetPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
       const assetApy = parseFloat(assetColumns[2].innerText.split('%')[0].trim());
-
+    
       return assetApy;
     }
 
     // select the pools with the class and find relevant records
     const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
 
-    // parsing AVAX main auto APY
+    // parsing USDT main auto APY
     const avaxApy = parseApyFromTable(pools, "avaxautopairedwithsavax");
 
-    // parsing sAVAX main auto APY
+    // parsing USDT main auto APY
     const savaxApy = parseApyFromTable(pools, "savaxautopairedwithavax");
 
     // parsing USDC main auto APY
@@ -196,25 +188,25 @@ const getApysFromVector = async () => {
   console.log(avaxApy, savaxApy, usdcApy, usdtApy);
 
   // update APYs in db
-  if (avaxApy) {
+  if (avaxApy && Number(avaxApy) != 0) {
     await db.collection('apys').doc('AVAX').set({
       VF_AVAX_SAVAX_AUTO: avaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (savaxApy) {
+  if (savaxApy && Number(savaxApy) != 0) {
     await db.collection('apys').doc('sAVAX').set({
       VF_SAVAX_MAIN_AUTO: savaxApy / 100 // avax pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (usdcApy) {
+  if (usdcApy && Number(usdcApy) != 0) {
     await db.collection('apys').doc('USDC').set({
       VF_USDC_MAIN_AUTO: usdcApy / 100 // USDC pool protocolIdentifier from config
     }, { merge: true });
   }
 
-  if (usdtApy) {
+  if (usdtApy && Number(usdtApy) != 0) {
     await db.collection('apys').doc('USDT').set({
       VF_USDT_MAIN_AUTO: usdtApy / 100 // USDT pool protocolIdentifier from config
     }, { merge: true });
@@ -224,7 +216,6 @@ const getApysFromVector = async () => {
   await browser.close();
 }
 
-// scrape apys for AVAX, sAVAX, USDC, and USDT(Farms) from Vector Finance
 exports.vectorScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -329,7 +320,6 @@ const getTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
   return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
 }
 
-// fetch LP and Farm token APYs using APIs
 exports.lpAndFarmApyAggregator = functions
   .runWith({ timeoutSeconds: 120, memory: "1GB" })
   .pubsub.schedule('*/1 * * * *')
@@ -348,7 +338,7 @@ exports.lpAndFarmApyAggregator = functions
 
         console.log(asset, apy);
 
-        if (apy) {
+        if (apy && Number(apy) != 0) {
           await db.collection('apys').doc(asset).set({
             lp_apy: apy
           }, { merge: true });
@@ -424,78 +414,44 @@ exports.lpAndFarmApyAggregator = functions
     return null;
   });
 
-const getApysFromSteakHut = async () => {
-  functions.logger.info("parsing APYs from SteakHut");
-  const URL = "https://app.steakhut.finance/pool/";
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
-
-    // navigate pools page and wait till javascript fully load.
-    await page.goto(URL + address, {
-      waitUntil: "networkidle0",
-    });
-
-    functions.logger.info("parsing APR (7-Day)...");
-
-    const apy = await page.evaluate(() => {
-      const fields = document.querySelectorAll(".chakra-heading");
-      return fields[0].innerText.replace("%", "").trim();
-    });
-
-    console.log(asset, apy)
-
-    // update APY in db
-    if (apy) {
-      await db.collection('apys').doc(asset).set({
-        apy: apy / 100
-      });
-    }
-  }
-
-  // close browser
-  await browser.close();
-}
-
-exports.steakhutScrapper = functions
-  .runWith({ timeoutSeconds: 300, memory: "2GB" })
-  .pubsub.schedule('*/1 * * * *')
-  .onRun(async (context) => {
-    return getApysFromSteakHut()
-      .then(() => {
-        functions.logger.info("SteakHut APYs scrapped and updated.");
-      }).catch((err) => {
-        functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
-      });
-  });
-
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
-  const timestamps = [
-    // 1688932800000,
-    // 1689019200000,
-    // 1689105600000,
-    // 1689192000000,
-    // 1689278400000,
-    // 1689364800000,
-    // 1689451200000,
-    // 1689537600000,
-    // 1689624000000,
-    // 1689710400000,
-    // 1689796800000,
-    // 1689883200000,
-    // 1690200000000,
-    1690286400000,
-    // 1690372800000
-  ];
+  const timestamps = [1687262400000, 1687348800000, 1687435200000, 1687550400000, 1687636800000];
 
   await Promise.all(
     loanAddresses.map(async loanAddress => {
+      // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
       const loanHistoryRef = db
         .collection('loansHistory')
         .doc(loanAddress.toLowerCase())
         .collection('loanStatus');
+      // const loanHistorySnap = await loanHistoryRef.get();
+      // const loanHistory = {};
+
+      // loanHistorySnap.forEach(doc => {
+      //   loanHistory[doc.id] = doc.data();
+      // });
+
+      // const timestamps = [];
+      // let timestamp;
+
+      // if (Object.keys(loanHistory).length === 0) {
+      //   // loan's single history is not saved yet, we create from 30 days ago
+      //   timestamp = defaultTimestamp;
+      // } else {
+      //   // we add new history after the latest timestamp
+      //   timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
+      //             + timestampInterval; // next timestamp where we get loan status
+      // }
+
+      // // const limitTimestamp = timestamp + 30 * timestampInterval;
+
+      // // get timestamps
+      // while (timestamp < Date.now()) {
+      //   timestamps.push(timestamp);
+      //   timestamp += timestampInterval;
+      // }
+      // console.log(timestamps);
 
       if (timestamps.length > 0) {
         await Promise.all(
@@ -503,55 +459,37 @@ const uploadLoanStatusCustom = async () => {
             const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
             if (!status.exists) {
-              try {
-                const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-                if (loanStatus) {
-                  await loanHistoryRef.doc(timestamp.toString()).set({
-                    totalValue: loanStatus.totalValue,
-                    borrowed: loanStatus.borrowed,
-                    collateral: loanStatus.totalValue - loanStatus.borrowed,
-                    twv: loanStatus.twv,
-                    health: loanStatus.health,
-                    solvent: loanStatus.solvent === 1e-18,
-                    timestamp: timestamp
-                  });
-                  functions.logger.info(`Upload loan status success. loan address: ${loanAddress}, timestamp:${timestamp}`)
-                }
-              } catch(error) {
-                console.log(error);
-                functions.logger.info(`Upload loan status failed. loan address: ${loanAddress}, timestamp:${timestamp}`)
-              }
+              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+
+              await loanHistoryRef.doc(timestamp.toString()).set({
+                totalValue: loanStatus.totalValue,
+                borrowed: loanStatus.borrowed,
+                collateral: loanStatus.totalValue - loanStatus.borrowed,
+                twv: loanStatus.twv,
+                health: loanStatus.health,
+                solvent: loanStatus.solvent === 1e-18,
+                timestamp: timestamp
+              });
             }
           })
         );
       }
     })
   );
-
-  return true;
 }
 
-const uploadLoanStatusCustomWithRetry = async () => {
-  return retry(async () => uploadLoanStatusCustom(), {
-    retries: 5,
-    onRetry: (e) => {
-      functions.logger.info(`Retrying upload loan status custom. Error: ${e.message}`);
-    }
-  })
-}
-
-exports.saveLoansStatusCustom = functions
-  .runWith({ timeoutSeconds: 540, memory: "2GB" })
-  .pubsub.schedule('*/15 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting Loans Status.");
-    return uploadLoanStatusCustom()
-      .then(() => {
-        functions.logger.info("Loans Status upload success.");
-      }).catch((err) => {
-        functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-      });
-  });
+// exports.saveLoansStatusCustom = functions
+//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//   .pubsub.schedule('*/5 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting Loans Status.");
+//     return uploadLoanStatusCustom()
+//       .then(() => {
+//         functions.logger.info("Loans Status upload success.");
+//       }).catch((err) => {
+//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//       });
+//   });
 
 const uploadLiveLoansStatus = async () => {
   const loanAddresses = await factory.getAllLoans();
@@ -560,51 +498,36 @@ const uploadLiveLoansStatus = async () => {
 
   await Promise.all(
     loanAddresses.map(async (loanAddress) => {
-      try {
-        const loanHistoryRef = db
-          .collection('loansHistory')
-          .doc(loanAddress.toLowerCase())
-          .collection('loanStatus');
-        const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-        const wrappedContract = wrap(loanContract);
-        const status = await wrappedContract.getFullLoanStatus();
+      console.log(loanAddress, timestamp);
+      const loanHistoryRef = db
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+      const wrappedContract = wrap(loanContract);
+      const status = await wrappedContract.getFullLoanStatus();
 
-        if (status) {
-          await loanHistoryRef.doc(timestamp.toString()).set({
-            totalValue: fromWei(status[0]),
-            borrowed: fromWei(status[1]),
-            collateral: fromWei(status[0]) - fromWei(status[1]),
-            twv: fromWei(status[2]),
-            health: fromWei(status[3]),
-            solvent: fromWei(status[4]) === 1e-18,
-            timestamp
-          });
-        }
-      } catch (error) {
-        console.log(error);
-        functions.logger.info(`Upload live loan status failed. loan address: ${loanAddress}, timestamp:${timestamp}`)
+      if (status) {
+        await loanHistoryRef.doc(timestamp.toString()).set({
+          totalValue: fromWei(status[0]),
+          borrowed: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
+          twv: fromWei(status[2]),
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18,
+          timestamp
+        });
       }
     })
   );
-
-  return true
-}
-
-const uploadLiveLoansStatusWithRetry = async () => {
-  return retry(async () => uploadLiveLoansStatus(), {
-    retries: 5,
-    onRetry: (e) => {
-      functions.logger.info(`Retrying upload live loan status. Error: ${e.message}`);
-    }
-  })
 }
 
 exports.saveLiveLoansStatus = functions
-  .runWith({ timeoutSeconds: 540, memory: "2GB" })
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLiveLoansStatusWithRetry()
+    return uploadLiveLoansStatus()
       .then(() => {
         functions.logger.info("Live Loans Status upload success.");
       }).catch((err) => {
@@ -612,18 +535,19 @@ exports.saveLiveLoansStatus = functions
       });
   });
 
-// exports.saveLoansStatusFromFile = functions
-//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//   .pubsub.schedule('*/5 * * * *')
-//   .onRun(async (context) => {
-//     functions.logger.info("Getting Loans Status.");
-//     return uploadLoanStatusFromFile()
-//       .then(() => {
-//         functions.logger.info("Loans Status upload success.");
-//       }).catch((err) => {
-//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-//       });
-//   });
+exports.saveLoansStatusFromFile = functions
+    .runWith({ timeoutSeconds: 120, memory: "2GB" })
+    .pubsub.schedule('*/5 * * * *')
+    .onRun(async (context) => {
+      functions.logger.info("Getting Loans Status.");
+      return uploadLoanStatusFromFile()
+          .then(() => {
+            functions.logger.info("Loans Status upload success.");
+          }).catch((err) => {
+            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+          });
+    });
+
 
 // const getEventsForPeriod = (from, to) => {
 // }
@@ -679,26 +603,26 @@ exports.loanhistory = functions
         const events = [];
         console.log(loanHistory);
 
-        timestamps.map((timestamp) => {
-          data.push({
-            timestamp: timestamp,
-            totalValue: loanHistory[timestamp].totalValue,
-            borrowed: loanHistory[timestamp].debtValue,
-            collateral: loanHistory[timestamp].collateral,
-            health: loanHistory[timestamp].health,
-            solvent: loanHistory[timestamp].solvent,
-            events
+          timestamps.map((timestamp) => {
+            data.push({
+              timestamp: timestamp,
+              totalValue: loanHistory[timestamp].totalValue,
+              borrowed: loanHistory[timestamp].debtValue,
+              collateral: loanHistory[timestamp].collateral,
+              health: loanHistory[timestamp].health,
+              solvent: loanHistory[timestamp].solvent,
+              events
+            });
           });
-        });
 
-        res.status(200).send({
-          success: true,
-          data,
-        })
-      }
+          res.status(200).send({
+            success: true,
+            data,
+          })
+        }      
     });
   }
-  )
+)
 
 const uploadLoanStatusFromFile = async () => {
   // const loanAddresses = await factory.getAllLoans();
@@ -710,9 +634,9 @@ const uploadLoanStatusFromFile = async () => {
 
   for (const loanAddress of loanAddresses) {
     const loanHistoryRef = db
-      .collection('loansHistory')
-      .doc(loanAddress.toLowerCase())
-      .collection('loanStatus');
+        .collection('loansHistory')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
     const loanHistorySnap = await loanHistoryRef.get();
     const loanHistory = [];
 
@@ -740,10 +664,106 @@ const uploadLoanStatusFromFile = async () => {
           solvent: dataPoint.solvent === 1e-18,
           timestamp: dataPoint.timestamp
         });
-      } catch (e) {
+      } catch(e) {
         console.log('ERRRORRRR')
         console.log(e)
       }
     }
   }
 }
+
+const getApysFromSteakHut = async () => {
+  functions.logger.info("parsing APYs from SteakHut");
+  const URL = "https://app.steakhut.finance/pool/";
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
+
+    // navigate pools page and wait till javascript fully load.
+    await page.goto(URL + address, {
+      waitUntil: "networkidle0",
+    });
+
+    functions.logger.info("parsing APR (7-Day)...");
+
+    const apy = await page.evaluate(() => {
+      const fields = document.querySelectorAll(".chakra-heading");
+      return fields[0].innerText.replace("%", "").trim();
+    });
+
+    console.log(apy)
+
+    // update APY in db
+    if (apy && Number(apy) != 0) {
+      await db.collection('apys').doc(asset).set({
+        apy: apy / 100
+      });
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.steakhutScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromSteakHut()
+      .then(() => {
+        functions.logger.info("SteakHut APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromTraderJoe = async () => {
+  functions.logger.info("parsing APYs from TraderJoe");
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(traderJoeConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
+      await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
+        waitUntil: "networkidle0",
+      });
+
+      await page.evaluate(() => {
+        const tabs = document.querySelectorAll(".chakra-tabs__tab");
+        tabs[4].click();
+        return tabs[4].innerText;
+      })
+      await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+
+      const stats = await page.$$(".chakra-stat__number");
+      const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(apy);
+
+      if (apy && Number(apy) != 0) {
+        await db.collection('apys').doc(pool).set({
+          apy: apy / 100
+        });
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+getApysFromTraderJoe();
+
+exports.traderJoeScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromTraderJoe()
+      .then(() => {
+        functions.logger.info("TraderJoe APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from TraderJoe failed. Error: ${err}`);
+      });
+  });
