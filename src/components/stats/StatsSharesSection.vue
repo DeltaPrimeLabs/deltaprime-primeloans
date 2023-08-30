@@ -86,7 +86,7 @@ export default {
       this.switchSharesOnGraph();
     },
     reloadHeld() {
-      if (this.assetBalances && Object.keys(this.assets).length > 0) {
+      if (this.assetBalances && this.assets) {
         this.held = this.recalculateShares(
             this.assetBalances,
             (asset) => this.assets[asset].price,
@@ -98,7 +98,7 @@ export default {
       }
     },
     reloadLpTokens() {
-      if (this.lpBalances && Object.keys(this.lpAssets).length > 0) {
+      if (this.lpBalances && this.lpAssets) {
         this.lpTokens = this.recalculateShares(
             this.lpBalances,
             (asset) => this.lpAssets[asset].price,
@@ -117,7 +117,7 @@ export default {
       Object.keys(config.FARMED_TOKENS_CONFIG).forEach((farm) => {
         farmsBalances[farm] = config.FARMED_TOKENS_CONFIG[farm].reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
       });
-      if (farmsBalances && Object.keys(this.lpAssets).length > 0 && Object.keys(this.assets) > 0 && this.farmsLoaded) {
+      if (farmsBalances && this.lpAssets && this.assets && this.farmsLoaded) {
         this.farms = this.recalculateShares(
             farmsBalances,
             (asset) => {
@@ -131,7 +131,7 @@ export default {
       }
     },
     reloadBorrowed() {
-      if (this.debtsPerAsset && Object.keys(this.assets).length > 0) {
+      if (this.debtsPerAsset && this.assets) {
         const debts = {}
         Object.keys(this.debtsPerAsset).forEach(assetKey => {
           debts[assetKey] = this.debtsPerAsset[assetKey].debt
