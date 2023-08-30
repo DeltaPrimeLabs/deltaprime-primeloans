@@ -18,6 +18,7 @@ export default {
     MAX_BUTTON_MULTIPLIER: 1.01,
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 43114,
+    chainSlug: 'avalanche',
     // chainId: 1337,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
