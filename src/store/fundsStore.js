@@ -593,7 +593,7 @@ export default {
       });
     },
 
-    async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds}) {
+    async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds, lpToken}) {
       const LBPAIR_ABI = [
         'function balanceOf(address, uint256) public view returns (uint256)',
         'function getBin(uint24) public view returns (uint128, uint128)',
@@ -601,19 +601,30 @@ export default {
       ];
       const poolContract = new ethers.Contract(lbPairAddress, LBPAIR_ABI, provider.getSigner());
 
-      let tokenXAmount = BigNumber.from(0);
-      let tokenYAmount = BigNumber.from(0);
+      let cumulativeTokenXAmount = BigNumber.from(0);
+      let cumulativeTokenYAmount = BigNumber.from(0);
+
+      let binBalances = [];
+      let binBalancesPrimary = [];
+      let binBalancesSecondary = [];
 
       await Promise.all(
-        binIds.map(async (binId) => {
+        binIds.map(async (binId, i) => {
           const [lbTokenAmount, reserves, totalSupply] = await Promise.all([
             poolContract.balanceOf(state.smartLoanContract.address, binId),
             poolContract.getBin(binId),
             poolContract.totalSupply(binId)
           ]);
 
-          tokenXAmount = tokenXAmount.add(BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply)));
-          tokenYAmount = tokenYAmount.add(BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply)));
+          const binTokenXAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply));
+          const binTokenYAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply));
+
+          cumulativeTokenXAmount = cumulativeTokenXAmount.add(binTokenXAmount);
+          cumulativeTokenYAmount = cumulativeTokenYAmount.add(binTokenYAmount);
+
+          binBalances[i] = lbTokenAmount;
+          binBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
+          binBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
 
           return {
             lbTokenAmount,
@@ -624,8 +635,11 @@ export default {
       );
 
       return {
-        tokenXAmount,
-        tokenYAmount
+        cumulativeTokenXAmount,
+        cumulativeTokenYAmount,
+        binBalances,
+        binBalancesPrimary,
+        binBalancesSecondary
       }
     },
 
@@ -640,14 +654,18 @@ export default {
         const loanBinIds = loanBinsForPair.map(bin => bin.id);
         loanBinIds.sort((a, b) => a - b);
 
-        const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+        const { cumulativeTokenXAmount, cumulativeTokenYAmount, binBalances, binBalancesPrimary, binBalancesSecondary } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
           lbPairAddress: traderJoeV2LpAssets[assetSymbol].address,
-          binIds: loanBinIds
+          binIds: loanBinIds,
+          lpToken: traderJoeV2LpAssets[assetSymbol]
         });
 
-        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(tokenXAmount, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
-        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(tokenYAmount, state.assets[traderJoeV2LpAssets[assetSymbol].secondary].decimals);
+        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(cumulativeTokenXAmount, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
+        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(cumulativeTokenYAmount, state.assets[traderJoeV2LpAssets[assetSymbol].secondary].decimals);
         traderJoeV2LpAssets[assetSymbol].userBinIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
+        traderJoeV2LpAssets[assetSymbol].binBalances = binBalances; // balances of user owned bins (the same order as userBinIds)
+        traderJoeV2LpAssets[assetSymbol].binBalancesPrimary = binBalancesPrimary; // balances of user owned bins (the same order as userBinIds)
+        traderJoeV2LpAssets[assetSymbol].binBalancesSecondary = binBalancesSecondary; // balances of user owned bins (the same order as userBinIds)
 
         const lpService = rootState.serviceRegistry.lpService;
         lpService.emitRefreshLp('TJV2');
@@ -1476,12 +1494,12 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind traderjoe v2 token');
 
-      const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const { cumulativeTokenXAmount, cumulativeTokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
         lbPairAddress: removeLiquidityRequest.lbPairAddress,
         binIds: removeLiquidityRequest.remainingBinRange
       });
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(tokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
-      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(tokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
