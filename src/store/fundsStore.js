@@ -962,7 +962,6 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
-        gasLimit: 5000000
       });
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1068,6 +1067,7 @@ export default {
     },
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
+      console.log('withdrawRequest', withdrawRequest);
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
@@ -1077,11 +1077,15 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
-      const arbiTokenIndex = loanAssets.indexOf('ARBI');
-      loanAssets.splice(arbiTokenIndex, 1);
+      console.log(loanAssets);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unwrapAndWithdraw(toWei(String(withdrawRequest.value)));
+      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+      // const arbiTokenIndex = loanAssets.indexOf('ARBI');
+      // loanAssets.splice(arbiTokenIndex, 1);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))
+        .unwrapAndWithdraw(parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals));
+      console.log(transaction);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
