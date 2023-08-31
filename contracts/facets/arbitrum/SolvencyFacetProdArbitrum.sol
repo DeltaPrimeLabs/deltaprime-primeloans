@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: f8402055bb953d57a7e5a9bfbd19230c6d6b326d;
+// Last deployed from commit: 20f2b91bd9dfe7424173ae665bc19310ec37d9dd;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -498,7 +498,8 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
                         debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
                         debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
                     )
-                    * binInfo.pair.balanceOf(address(this), binInfo.id) / binInfo.pair.totalSupply(binInfo.id);
+                    .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
+                    .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
                 }
             }
 
@@ -546,8 +547,8 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
                     uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
                     uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
-                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
 
                     total = total +
 

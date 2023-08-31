@@ -16,7 +16,7 @@ library DeploymentConstants {
     // Used for LiquidationBonus calculations
     uint256 private constant _PERCENTAGE_PRECISION = 1000;
 
-    bytes32 private constant _NATIVE_TOKEN_SYMBOL = 'ARBI';
+    bytes32 private constant _NATIVE_TOKEN_SYMBOL = 'ETH';
 
     address private constant _NATIVE_ADDRESS = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 

@@ -16,6 +16,7 @@ export default {
     MAX_BUTTON_MULTIPLIER: 1.01,
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 42161,
+    chainSlug: 'arbitrum',
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
