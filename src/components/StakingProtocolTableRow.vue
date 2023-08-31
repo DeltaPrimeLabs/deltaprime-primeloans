@@ -138,8 +138,8 @@ export default {
       disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
-      addActionsConfig: null,
-      removeActionsConfig: null,
+      addActionsConfig: {},
+      removeActionsConfig: {},
       healthLoaded: false,
     };
   },

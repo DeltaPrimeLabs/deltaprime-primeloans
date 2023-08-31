@@ -449,6 +449,23 @@ export default {
             }
         ],
     },
+    liquidityShapes: {
+        spot: {
+            name: "Spot",
+            imgSrc: "src/assets/icons/liquidity_shape_spot_on.svg",
+            distributionMethod: "getUniformDistributionFromBinRange"
+        },
+        curve: {
+            name: "Curve",
+            imgSrc: "src/assets/icons/liquidity_shape_curve_on.svg",
+            distributionMethod: "getCurveDistributionFromBinRange"
+        },
+        bidAsk: {
+            name: "Bid-Ask",
+            imgSrc: "src/assets/icons/liquidity_shape_bid-ask_on.svg",
+            distributionMethod: "getBidAskDistributionFromBinRange"
+        },
+    },
     yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
     yakWrapRouterAddress: '0x44f4737C3Bb4E5C1401AE421Bd34F135E0BB8394',
     yieldYakGlpWrapperAddress: '0x442DB6e78e54449B2a5f08A943Fa8a79041C797b',
