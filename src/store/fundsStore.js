@@ -1012,8 +1012,7 @@ export default {
         :
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
           toBytes32(withdrawRequest.asset),
-          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals),
-          {gasLimit: 3500000});
+          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals));
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1550,8 +1549,7 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(
         toBytes32(repayRequest.asset),
-        parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)),
-        {gasLimit: 3500000});
+        parseUnits(parseFloat(repayRequest.amount).toFixed(repayRequest.decimals), BigNumber.from(repayRequest.decimals)));
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1737,8 +1735,7 @@ export default {
         sourceAmount,
         targetAmount,
         reversedSwapPath,
-        swapDebtRequest.adapters,
-        {gasLimit: 4000000}
+        swapDebtRequest.adapters
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
