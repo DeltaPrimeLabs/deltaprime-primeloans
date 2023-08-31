@@ -20,6 +20,7 @@ import router from '@/router';
 
 import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
+import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -251,7 +252,6 @@ export default {
     async setupSupportedAssets({commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
-      console.log(whiteListedTokenAddresses);
 
       const supported = whiteListedTokenAddresses
         .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => symbol !== 'default' && TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
@@ -311,8 +311,6 @@ export default {
           asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
         }
       }
-
-      console.log(assets);
 
       commit('setAssets', assets);
     },
@@ -692,7 +690,6 @@ export default {
       //     }
       // }
 
-      if (Object.keys(concentratedLpAssets).length == 0) return;
       //TODO: replace with for logic
       try {
         concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
@@ -1334,6 +1331,84 @@ export default {
         await dispatch('updateFunds');
       }, HARD_REFRESH_DELAY);
     },
+
+    async fundLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {fundLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const lbTokenContract = new ethers.Contract(
+          fundLiquidityRequest.pair,
+          LB_TOKEN.abi,
+          provider.getSigner()
+      );
+
+      const approveTransaction = await lbTokenContract.approveForAll(state.smartLoanContract.address, true);
+
+      await approveTransaction.wait();
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract.fundLiquidityTraderJoeV2(
+          fundLiquidityRequest.pair,
+          fundLiquidityRequest.ids,
+          fundLiquidityRequest.amounts,
+          {gasLimit: 15000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'deposit TraderJoe V2 LP token');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
+
+    async withdrawLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {withdrawLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract.withdrawLiquidityTraderJoeV2(
+          withdrawLiquidityRequest.pair,
+          withdrawLiquidityRequest.ids,
+          withdrawLiquidityRequest.amounts,
+          {gasLimit: 15000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw TraderJoe V2 LP token');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
 
     async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
       console.log(addLiquidityRequest.addLiquidityInput);

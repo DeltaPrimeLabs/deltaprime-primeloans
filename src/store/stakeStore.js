@@ -436,6 +436,7 @@ export default {
 
       if (Object.values(config.FARMED_TOKENS_CONFIG).length == 0) {
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+        farmService.emitRefreshFarm();
       } else {
         combineLatest(
           Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {

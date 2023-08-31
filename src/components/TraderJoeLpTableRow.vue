@@ -38,14 +38,17 @@
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
-        <DeltaIcon :class="['action-button', 1 || !hasSmartLoanContract || inProcess || !healthLoaded ? 'action-button--disabled' : '']"
-                   :icon-src="'src/assets/icons/plus.svg'" :size="26"
-                   v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
-                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
-            v-if="moreActionsConfig"
             class="actions__icon-button"
-            :config="moreActionsConfig"
+            v-if="addActionsConfig"
+            :config="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="inProcess || !healthLoaded">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="removeActionsConfig"
+            :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="inProcess || !healthLoaded">
         </IconButtonMenuBeta>
@@ -64,6 +67,9 @@ import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
 import { calculateMaxApy, formatUnits, fromWei, parseUnits } from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
 import { ethers, BigNumber } from 'ethers';
+import AddTraderJoeV2FromWalletModal from "./AddTraderJoeV2FromWalletModal.vue";
+import WithdrawTraderJoeV2Modal from "./WithdrawTraderJoeV2Modal.vue";
+import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -79,31 +85,38 @@ export default {
   },
 
   async mounted() {
-    this.setupActionsConfiguration();
+    this.setupAddActionsConfiguration();
+    this.setupRemoveActionsConfiguration();
     this.watchRefreshLP();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHealth();
     this.watchAssetApysRefresh();
     this.watchHardRefreshScheduledEvent();
+    this.initAccount();
   },
 
   data() {
     return {
       tokenX: null,
       tokenY: null,
-      moreActionsConfig: null,
+      addActionsConfig: null,
+      removeActionsConfig: null,
       rowExpanded: false,
+      userBins: null,
+      userBalances: null,
       apr: 0,
       tvl: 0,
       inProcess: false,
       healthLoaded: false,
       feesClaimable: 0,
       activeId: null,
-      hasBinsInPool: false
+      hasBinsInPool: false,
+      account: null
     };
   },
 
   computed: {
+    ...mapState('network', ['provider']),
     ...mapState('fundsStore', [
       'assets',
       'health',
@@ -112,13 +125,13 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('network', ['provider', 'account']),
     ...mapState('serviceRegistry', [
       'dataRefreshEventService',
       'progressBarService',
       'healthService',
       'lpService',
-      'traderJoeService'
+      'traderJoeService',
+      'accountService'
     ]),
 
     hasSmartLoanContract() {
@@ -139,47 +152,96 @@ export default {
   },
 
   methods: {
-    ...mapActions('fundsStore', ['addLiquidityTraderJoeV2Pool', 'removeLiquidityTraderJoeV2Pool']),
+    ...mapActions('fundsStore', [
+        'fundLiquidityTraderJoeV2Pool',
+        'addLiquidityTraderJoeV2Pool',
+        'withdrawLiquidityTraderJoeV2Pool',
+        'removeLiquidityTraderJoeV2Pool'
+    ]),
     watchRefreshLP() {
       this.lpService.observeRefreshLp().subscribe(async (lpType) => {
         if (lpType !== 'TJV2') return;
         await this.setupPool();
-        this.setupActionsConfiguration();
+        this.setupAddActionsConfiguration();
+        this.setupRemoveActionsConfiguration();
         this.setupApr();
       })
     },
-
-    setupActionsConfiguration() {
-      this.moreActionsConfig = {
-        iconSrc: 'src/assets/icons/icon_a_more.svg',
-        tooltip: 'More',
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =   {
+        iconSrc: 'src/assets/icons/plus.svg',
+        tooltip: 'Add',
         menuOptions: [
           {
+            key: 'ADD_FROM_WALLET',
+            name: 'Add LB tokens from wallet'
+          },
+          {
             key: 'ADD_LIQUIDITY',
-            name: 'Add Liquidity',
+            name: 'Add liquidity',
             disabled: !this.hasSmartLoanContract || this.inProcess,
             disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+          },
+        ]
+      }
+    },
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =   {
+        iconSrc: 'src/assets/icons/minus.svg',
+        tooltip: 'Remove',
+        menuOptions: [
+          {
+            key: 'WITHDRAW',
+            name: 'Withdraw LB tokens to wallet',
+            disabled: true && !this.hasSmartLoanContract //TODO: needs implementation
           },
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove Liquidity',
             disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool
           },
-          {
-            key: 'WITHDRAW',
-            name: 'Withdraw LP to wallet',
-            disabled: true || !this.hasSmartLoanContract || !this.lpTokenBalances,
-            disabledInfo: 'Coming soon'
-          }
         ]
-      };
+      }
+    },
+
+    initAccount() {
+      this.accountService.observeAccountLoaded().subscribe(account => {
+        this.account = account;
+        this.getUserBinsAndBalances();
+      });
+    },
+
+    async getUserBinsAndBalances() {
+      console.log('getUserBinsAndBalances')
+      console.log('this.account: ', this.account)
+      let result = await fetch(`https://corsproxy.io/?https://barn.traderjoexyz.com/v1/user/bin-ids/${this.account.toLowerCase()}/${config.chainSlug}/${this.lpToken.address.toLowerCase()}`);
+
+      console.log(`https://corsproxy.io/?https://barn.traderjoexyz.com/v1/user/bin-ids/${this.account}/${config.chainSlug}/${this.lpToken.address}`)
+      result = await result.text();
+      if (/^[0-9\[\]\,]*$/.test(result)) {
+        this.userBins = JSON.parse(result);
+        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, provider.getSigner());
+
+        this.userBalances = [];
+        await Promise.all(
+            this.userBins.map(async (id, i) => {
+              return lbToken.balanceOf(this.account, id).then(
+                  res => {
+                    this.userBalances[i] = res;
+                  }
+              )
+            })
+        );
+      }
+      console.log(this.userBins)
+      console.log(this.userBalances)
     },
 
     actionClick(key) {
       if (!this.inProcess && this.healthLoaded) {
         switch (key) {
           case 'ADD_FROM_WALLET':
-            this.openAddFromWalletModal();
+            this.openAddTraderJoeV2FromWalletModal();
             break;
           case 'ADD_LIQUIDITY':
             this.openAddLiquidityModal();
@@ -191,10 +253,33 @@ export default {
       }
     },
 
-    async openAddFromWalletModal() {
-      const modalInstance = this.openModal(AddFromWalletModal);
+    async openAddTraderJoeV2FromWalletModal() {
+      const modalInstance = this.openModal(AddTraderJoeV2FromWalletModal);
+      modalInstance.userBins = this.userBins;
+      modalInstance.userBalances = this.userBalances;
+      modalInstance.lpToken = this.lpToken;
+
+        modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        const fundLiquidityRequest = {
+          ids: this.userBins,
+          amounts: this.userBalances,
+          pair: this.lpToken.address
+        };
+
+        this.handleTransaction(this.fundLiquidityTraderJoeV2Pool, {fundLiquidityRequest: fundLiquidityRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+          this.closeModal();
+        });
+      });
+    },
+
+    async openWithdrawTraderJoeV2Modal() {
+      const modalInstance = this.openModal(WithdrawTraderJoeV2Modal);
       modalInstance.asset = this.lpToken;
-      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
         // To-do: add LP token from wallet
       });
     },

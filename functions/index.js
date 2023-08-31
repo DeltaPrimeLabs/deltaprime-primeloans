@@ -24,11 +24,13 @@ initializeApp({
 });
 
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
+const factoryArbitrumAddress = "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20";
 
 const fs = require("fs");
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRPC = config.jsonRpc;
+const jsonRPCArbitrum = config.jsonRpcArbitrum;
 
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const FACTORY = require(`./SmartLoansFactory.json`);
@@ -48,6 +50,10 @@ const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea06
   .connect(provider);
 
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
+
+const providerArbitrum = new ethers.providers.JsonRpcProvider(jsonRPCArbitrum);
+const walletArbitrum = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+let factoryArbitrum = new ethers.Contract(factoryArbitrumAddress, FACTORY.abi, providerArbitrum);
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
@@ -92,6 +98,40 @@ exports.scheduledFunction = functions
     )
 
     functions.logger.info(`Uploaded ${loanAddresses.length} loans.`);
+
+    return null;
+  });
+
+exports.scheduledFunctionArbitrum = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting loans");
+
+    const loanAddresses = await factoryArbitrum.getAllLoans();
+    const batchTime = new Date().getTime();
+
+    await Promise.all(
+      loanAddresses.map(async (address) => {
+        const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
+        const wrappedContract = wrap(loanContract);
+        const status = await wrappedContract.getFullLoanStatus();
+
+        const loan = {
+          time: batchTime,
+          address: address,
+          total: fromWei(status[0]),
+          debt: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18
+        };
+
+        await db.collection('loansArbitrum').doc(address).set(loan);
+      })
+    )
+
+    functions.logger.info(`Uploaded Arbitrum ${loanAddresses.length} loans.`);
 
     return null;
   });
@@ -491,7 +531,7 @@ const uploadLoanStatusCustom = async () => {
 //       });
 //   });
 
-const uploadLiveLoansStatus = async () => {
+const uploadLiveLoansStatusAvalanche = async () => {
   const loanAddresses = await factory.getAllLoans();
 
   const timestamp = Date.now();
@@ -522,16 +562,60 @@ const uploadLiveLoansStatus = async () => {
   );
 }
 
-exports.saveLiveLoansStatus = functions
+exports.saveLiveLoansStatusAvalanche = functions
   .runWith({ timeoutSeconds: 120, memory: "2GB" })
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLiveLoansStatus()
+    return uploadLiveLoansStatusAvalanche()
       .then(() => {
-        functions.logger.info("Live Loans Status upload success.");
+        functions.logger.info("Live Loans Status Avalanche upload success.");
       }).catch((err) => {
-        functions.logger.info(`Live Loans Status upload failed. Error: ${err}`);
+        functions.logger.info(`Live Loans Status Avalanche upload failed. Error: ${err}`);
+      });
+  });
+
+const uploadLiveLoansStatusArbitrum = async () => {
+  const loanAddresses = await factoryArbitrum.getAllLoans();
+
+  const timestamp = Date.now();
+
+  await Promise.all(
+    loanAddresses.map(async (loanAddress) => {
+      console.log(loanAddress, timestamp);
+      const loanHistoryRef = db
+        .collection('loansHistoryArbitrum')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, walletArbitrum);
+      const wrappedContract = wrap(loanContract);
+      const status = await wrappedContract.getFullLoanStatus();
+
+      if (status) {
+        await loanHistoryRef.doc(timestamp.toString()).set({
+          totalValue: fromWei(status[0]),
+          borrowed: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
+          twv: fromWei(status[2]),
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18,
+          timestamp
+        });
+      }
+    })
+  );
+}
+
+exports.saveLiveLoansStatusArbitrum = functions
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .pubsub.schedule('0 5 * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting Loans Status.");
+    return uploadLiveLoansStatusArbitrum()
+      .then(() => {
+        functions.logger.info("Live Loans Status Arbitrum upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Live Loans Status Arbitrum upload failed. Error: ${err}`);
       });
   });
 
@@ -560,6 +644,7 @@ exports.loanhistory = functions
       const address = req.query.address
       const from = req.query.from;
       const to = req.query.to;
+      const network = req.query.network;
       console.log(address, from, to)
 
       if (!address) {
@@ -570,8 +655,20 @@ exports.loanhistory = functions
         })
       }
 
+      let historyCol;
+      if (network === 'avalanche') {
+        historyCol = 'loansHistory';
+      } else if (network === 'arbitrum') {
+        historyCol = 'loansHistoryArbitrum';
+      } else {
+        res.status(400).send({
+          success: false,
+          message: 'wrong network',
+        })
+      }
+
       const loanHistoryRef = db
-        .collection('loansHistory')
+        .collection(historyCol)
         .doc(address.toLowerCase())
         .collection('loanStatus');
       let snapshot;
