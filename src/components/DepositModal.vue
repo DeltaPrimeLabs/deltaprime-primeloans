@@ -113,7 +113,7 @@ export default {
 
   computed: {
     config() {
-      return config
+      return config;
     },
     calculateDailyInterest() {
       return this.apy / 365 * (Number(this.deposit) + this.depositValue);
@@ -124,7 +124,8 @@ export default {
     },
 
     available() {
-      return (this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken) ? this.accountBalance : this.walletAssetBalance;
+      return (this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken)
+        ? this.accountBalance : this.walletAssetBalance;
     },
 
     symbol() {

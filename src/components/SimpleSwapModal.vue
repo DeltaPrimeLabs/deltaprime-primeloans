@@ -288,7 +288,9 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
+      console.log('this.sourceAssets', this.sourceAssets);
       this.sourceAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,

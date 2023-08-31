@@ -169,7 +169,8 @@ export default {
             return this.getWalletTokenBalance(
               this.account,
               pool.asset.symbol,
-              contract
+              contract,
+              config.ASSETS_CONFIG[pool.asset.symbol].decimals
             );
           }
         )

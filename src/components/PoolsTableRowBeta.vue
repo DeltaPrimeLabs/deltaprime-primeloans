@@ -72,8 +72,6 @@ import SimpleSwapModal from './SimpleSwapModal.vue';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 
-const DEPOSIT_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
-
 let TOKEN_ADDRESSES;
 (async () => {
   TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -156,6 +154,7 @@ export default {
     setupWalletAssetBalances() {
       this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
         this.walletAssetBalances = balances;
+        console.log('this.walletAssetBalances', this.walletAssetBalances);
       });
     },
 
@@ -232,6 +231,7 @@ export default {
         }, (error) => {
           this.handleTransactionError(error, true);
         }).then(() => {
+          this.closeModal();
         });
       });
     },
@@ -294,14 +294,15 @@ export default {
     },
 
     openSwapDepositModal() {
+      const depositAssets = Object.keys(config.POOLS_CONFIG);
       const modalInstance = this.openModal(SimpleSwapModal);
       modalInstance.sourceAsset = this.pool.asset.symbol;
       modalInstance.sourceAssetBalance = this.pool.deposit;
-      modalInstance.sourceAssets = DEPOSIT_ASSETS;
-      modalInstance.targetAssets = DEPOSIT_ASSETS;
+      modalInstance.sourceAssets = depositAssets;
+      modalInstance.targetAssets = depositAssets;
       modalInstance.assetBalances = this.poolDepositBalances;
       modalInstance.assetPrices = this.poolAssetsPrices;
-      modalInstance.targetAsset = DEPOSIT_ASSETS.filter(asset => asset !== this.pool.asset.symbol)[0];
+      modalInstance.targetAsset = depositAssets.filter(asset => asset !== this.pool.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;

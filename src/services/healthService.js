@@ -1,6 +1,6 @@
 import {Subject} from 'rxjs';
 import {calculateHealth} from '../utils/calculate';
-import config from "../config";
+import config from '../config';
 
 export default class HealthService {
   refreshHealth$ = new Subject();
@@ -19,10 +19,16 @@ export default class HealthService {
   }
 
   async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, stakeStoreFarms) {
-    if (noSmartLoan) return 1;
+    console.log('healthService.calculateHealth()');
+    if (noSmartLoan) {
+      console.log('healthService - noSmartLoan');
+      return 1;
+    }
 
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
+
+    console.log(debtsPerAsset);
 
     if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
       let tokens = [];
@@ -75,6 +81,7 @@ export default class HealthService {
 
       const health = calculateHealth(tokens);
       this.health$.next(health >= 0 ? health : 0);
+      console.warn('EMITTING HEALTH: ', health);
       return health >= 0 ? health : 0;
     }
 

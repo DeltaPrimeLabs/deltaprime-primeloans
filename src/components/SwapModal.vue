@@ -421,6 +421,7 @@ export default {
       this.sourceAssetOptions = [];
       const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
       sourceAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,

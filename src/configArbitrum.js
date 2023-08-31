@@ -28,11 +28,11 @@ export default {
       "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333},
-      "WSTETH": {name: "WSTETH", symbol: "WSTETH", logoExt: "png", decimals: 18, address: addresses.WSTETH, debtCoverage: 0.83333333333},
+      "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'WSTETH'],
-        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'WSTETH']
+        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],

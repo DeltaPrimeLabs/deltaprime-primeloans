@@ -87,6 +87,9 @@ export default {
           .connect(provider.getSigner())
           .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
       await awaitConfirmation(depositTransaction, provider, 'deposit');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();

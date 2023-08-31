@@ -732,8 +732,10 @@ export default {
           debtsPerAsset[asset] = {asset: asset, debt: debtValue};
         }
       });
+      console.log(debtsPerAsset);
       await commit('setDebtsPerAsset', debtsPerAsset);
       dataRefreshNotificationService.emitDebtsPerAssetDataRefreshEvent(debtsPerAsset);
+      rootState.serviceRegistry.healthService.emitRefreshHealth();
     },
 
     async getFullLoanStatus({state, rootState, commit}) {
@@ -1430,8 +1432,7 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(
         toBytes32(borrowRequest.asset),
-        parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals),
-        {gasLimit: 3500000});
+        parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals));
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1638,6 +1639,7 @@ export default {
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
       const provider = rootState.network.provider;
+      console.log('swapDebtRequest', swapDebtRequest);
 
       const loanAssets = mergeArrays([(
         await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),

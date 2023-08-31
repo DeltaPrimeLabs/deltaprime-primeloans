@@ -338,6 +338,7 @@ export default {
             this.concentratedLpBalances,
             this.farms
         );
+        console.log('healthCalculatedDirectly', healthCalculatedDirectly);
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
       });

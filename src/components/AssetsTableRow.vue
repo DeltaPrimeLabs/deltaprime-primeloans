@@ -862,6 +862,7 @@ export default {
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
       const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
+      console.log('walletTokenBalance', this.asset.symbol, walletTokenBalance);
       return walletTokenBalance;
     },
 
