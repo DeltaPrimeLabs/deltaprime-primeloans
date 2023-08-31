@@ -211,13 +211,17 @@ export default {
       let sumBalance = 0;
       let sumPercentage = 0;
       for (const asset in assetsBalances) {
-        const assetBalance = assetsBalances[asset] * priceCallback(asset);
-        if (assetBalance !== 0) {
-          updatedShares.push({
-            asset: nameCallback(asset),
-            balance: assetBalance,
-          });
-          sumBalance += assetBalance;
+        try {
+          const assetBalance = assetsBalances[asset] * priceCallback(asset);
+          if (assetBalance !== 0) {
+            updatedShares.push({
+              asset: nameCallback(asset),
+              balance: assetBalance,
+            });
+            sumBalance += assetBalance;
+          }
+        } catch(error) {
+          console.log(`recalculateShares error with ${asset}. ${error}`);
         }
       }
       updatedShares = updatedShares

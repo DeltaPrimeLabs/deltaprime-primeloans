@@ -251,7 +251,6 @@ export default {
     async setupSupportedAssets({commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
-      console.log(whiteListedTokenAddresses);
 
       const supported = whiteListedTokenAddresses
         .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => symbol !== 'default' && TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
@@ -311,8 +310,6 @@ export default {
           asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
         }
       }
-
-      console.log(assets);
 
       commit('setAssets', assets);
     },
@@ -692,7 +689,6 @@ export default {
       //     }
       // }
 
-      if (Object.keys(concentratedLpAssets).length == 0) return;
       //TODO: replace with for logic
       try {
         concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
