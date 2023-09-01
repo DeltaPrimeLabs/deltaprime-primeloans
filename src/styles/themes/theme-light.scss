@@ -523,4 +523,16 @@
   --zap-long__zap-tile-shadow: 7px 17px 55px 0 #{$washed-raspberry}77;
   --zap-long__zap-tile-shadow--hover: 7px 17px 55px 0 #{$raspberry}77;
   // endregion
+
+  // region LiquidityChart
+  --liquidity-chart__main-token-color: #{$delta-primary};
+  --liquidity-chart__main-token-color--hover: #{$persian-blue};
+  --liquidity-chart__secondary-token-color: #{$lighter-raspberry};
+  --liquidity-chart__secondary-token-color--hover: #{$raspberry};
+  --liquidity-chart__tooltip-background-color: #{$persian-blue};
+  --liquidity-chart__tooltip-color: #{$white};
+  --liquidity-chart__tooltip-box-shadow: 2px 2px 4px 0 #{$delta-steel}7f;
+  --liquidity-chart__axis-label-color: #{$steel-gray};
+  --liquidity-chart__boundary-color: #{$delta-pale};
+  // endregion
 }

@@ -39,6 +39,7 @@ export default {
 
     .cross {
       align-self: flex-end;
+      flex-shrink: 0;
       background: var(--small-block__cross-color);
 
       &:hover {

@@ -26,8 +26,8 @@
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
             <Tab ref="tab-0" :title="'Zaps'"
-                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+                 :tab-icon="'src/assets/icons/zaps-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/zaps-icon-slim.svg'"
             >
               <Zaps></Zaps>
             </Tab>
@@ -316,7 +316,6 @@ export default {
     },
 
     tabChange(tabIndex) {
-      console.log(tabIndex);
       const url = document.location.href;
       const pathIndex = Number(Object.entries(this.$refs)[tabIndex][0].replace('tab-', ''))
       this.$router.push({name: TABS[pathIndex].pathName, query: this.extractQueryParams(url)});
