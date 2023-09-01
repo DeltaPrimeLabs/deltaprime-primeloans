@@ -27,7 +27,7 @@ export default {
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
-      "USDT.e": {name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses.USDTe, isStableCoin: true, debtCoverage: 0.83333333333},
+      "USDT.e": {name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'], isStableCoin: true, debtCoverage: 0.83333333333},
       "EUROC": {name: "EUROC", symbol: "EUROC", logoExt: "png", decimals: 6, address: addresses.EUROC, isStableCoin: true, debtCoverage: 0.83333333333, groupIdentifier: "EUROC_GROUP"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, swappableAssets: ['BTC', 'ETH', 'USDC']},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 6.06},
