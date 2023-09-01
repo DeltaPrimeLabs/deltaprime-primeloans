@@ -5,6 +5,7 @@
     </div>
     <div class="zaps__tiles">
       <ZapLong></ZapLong>
+      <ZapShort></ZapShort>
     </div>
   </div>
 </template>
@@ -12,10 +13,11 @@
 <script>
 
 import ZapLong from "./zaps-tiles/ZapLong.vue";
+import ZapShort from './zaps-tiles/ZapShort.vue';
 
 export default {
   name: "Zaps",
-  components: {ZapLong}
+  components: {ZapLong, ZapShort}
 }
 </script>
 
