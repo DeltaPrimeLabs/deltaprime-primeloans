@@ -109,7 +109,7 @@ describe('Smart loan', () => {
                 )
             }
 
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(gmdTokensList.includes(el))), getRedstonePrices, gmdTokensList.map(token => {return {symbol: token, value: GMDTokensPrices.get(token)}}));
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(gmdTokensList.includes(el))), "avalanche", getRedstonePrices, gmdTokensList.map(token => {return {symbol: token, value: GMDTokensPrices.get(token)}}));
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);

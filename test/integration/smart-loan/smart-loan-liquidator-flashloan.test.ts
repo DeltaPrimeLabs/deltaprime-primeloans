@@ -89,7 +89,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -268,7 +268,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -434,7 +434,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -611,7 +611,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -810,7 +810,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;
@@ -995,7 +995,7 @@ describe('Test liquidator with a flashloan', () => {
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
             exchangePNG = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;
@@ -1172,7 +1172,7 @@ describe('Test liquidator with a flashloan', () => {
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;

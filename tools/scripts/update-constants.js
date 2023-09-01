@@ -1,4 +1,4 @@
-export default function updateConstants(chain, exchanges, tokenManager, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol) {
+export default function updateConstants(chain, exchanges, tokenManager, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol, nativeAssetAddress) {
     var fs = require('fs')
     const replace = require('replace-in-file');
 
@@ -71,6 +71,14 @@ export default function updateConstants(chain, exchanges, tokenManager, addressP
     );
 
     newLine = `    bytes32 private constant _NATIVE_TOKEN_SYMBOL = '${nativeAssetSymbol}';`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_NATIVE_ADDRESS')
+    );
+
+    newLine = `    address private constant _NATIVE_ADDRESS = ${nativeAssetAddress};`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

@@ -101,6 +101,7 @@ describe('Smart loan', () => {
 
             tokensPrices = await getTokensPricesMap(
                 assetsList,
+                "avalanche",
                 getRedstonePrices,
                 []
             );
