@@ -3,7 +3,7 @@
     <div class="label">
       up to <b>5x</b>
     </div>
-    <div class="header">Long</div>
+    <div class="header">Short</div>
     <div class="icons">
       <img class="icon" v-for="icon in tokenIcons" :src="'src/assets/icons/' + icon">
     </div>
@@ -22,13 +22,14 @@ import YAK_ROUTER_ABI from '../../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER from '../../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import {parseUnits} from '../../utils/calculate';
 import {BigNumber} from 'ethers';
+import ZapShortModal from '../zaps-modals/ZapShortModal.vue';
 
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
 
 export default {
-  name: 'ZapLong',
+  name: 'ZapShort',
   data() {
     return {
       tokenIcons: [
@@ -85,7 +86,7 @@ export default {
           stableCoinsWalletBalances[coin] = balances[index];
         });
         console.log(stableCoinsWalletBalances);
-        const modalInstance = this.openModal(ZapLongModal);
+        const modalInstance = this.openModal(ZapShortModal);
 
         modalInstance.assets = this.assets;
         modalInstance.assetBalances = this.assetBalances;
@@ -103,47 +104,33 @@ export default {
 
         this.$forceUpdate();
 
-        modalInstance.$on('ZAP_LONG_EVENT', async zapLongEvent => {
-          console.log(zapLongEvent);
-          const totalLongValue = Number(zapLongEvent.stableCoinAmount) * Number(zapLongEvent.leverage);
+        modalInstance.$on('ZAP_SHORT_EVENT', async zapShortEvent => {
+          console.log(zapShortEvent);
+          const totalLongValue = Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage);
           const borrowRequest = {
-            asset: zapLongEvent.stableCoin,
-            amount: Number(zapLongEvent.stableCoinAmount) * (zapLongEvent.leverage - 1)
+            asset: zapShortEvent.shortAsset,
+            amount: zapShortEvent.shortAssetAmount
           };
-          const stableCoinDecimals = config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals;
-          const totalLongValueInWei = parseUnits(totalLongValue.toFixed(stableCoinDecimals), BigNumber.from(stableCoinDecimals));
-          const swapQueryResponse = await this.yakSwapQueryMethod()(zapLongEvent.stableCoin, zapLongEvent.longAsset, totalLongValueInWei);
+          const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
+          const totalShortValueInWei = parseUnits(Number(zapShortEvent.shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
+          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.stableCoin, zapShortEvent.shortAsset, totalShortValueInWei);
           console.log(swapQueryResponse);
 
           const swapRequest = {
-            sourceAsset: zapLongEvent.stableCoin,
-            targetAsset: zapLongEvent.longAsset,
-            sourceAmount: (Number(zapLongEvent.stableCoinAmount) * zapLongEvent.leverage).toString(),
+            sourceAsset: zapShortEvent.shortAsset,
+            targetAsset: zapShortEvent.stableCoin,
+            sourceAmount: zapShortEvent.shortAssetAmount,
             targetAmount: 0,
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
-
-          if (zapLongEvent.depositAmount) {
-            const fundRequest = {
-              value: parseFloat(zapLongEvent.depositAmount).toFixed(stableCoinDecimals),
-              asset: zapLongEvent.stableCoin,
-              assetDecimals: config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals,
-              type: 'ASSET'
-            };
-            await this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-            });
-          }
           await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
             console.log('inside borrow callback');
           });
           console.log('after borrow');
           await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
-
           });
-
-
         });
       });
     },
@@ -165,8 +152,7 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.log('TOKEN_ADDRESSES');
-        console.log(TOKEN_ADDRESSES);
+
         console.log(sourceAsset);
         console.log(targetAsset);
         const tknFrom = config.ASSETS_CONFIG[sourceAsset].address;

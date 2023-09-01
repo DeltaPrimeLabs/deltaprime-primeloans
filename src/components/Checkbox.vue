@@ -28,7 +28,7 @@ export default {
   methods: {
     checkboxClick() {
       this.value = !this.value;
-      this.$emit('CHANGE', this.value);
+      this.$emit('checkboxChange', this.value);
     },
   }
 };

@@ -277,6 +277,9 @@ export default {
       return this.$refs.currencyInput.setValue(value);
     },
 
+    forceValidationCheck() {
+      this.$refs.currencyInput.forceValidationCheck();
+    },
   },
   watch: {
     searchPhrase: {

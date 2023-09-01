@@ -1531,6 +1531,7 @@ export default {
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
+      console.log('borrowRequest', borrowRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1623,6 +1624,7 @@ export default {
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
+      console.log('swapRequest', swapRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
