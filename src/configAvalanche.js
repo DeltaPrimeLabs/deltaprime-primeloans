@@ -19,6 +19,7 @@ export default {
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 43114,
     chainSlug: 'avalanche',
+    notifiEnabled: true,
     // chainId: 1337,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {

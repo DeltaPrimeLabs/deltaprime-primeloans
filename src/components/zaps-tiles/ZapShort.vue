@@ -5,10 +5,10 @@
     </div>
     <div class="header">Short</div>
     <div class="icons">
-      <img class="icon" v-for="icon in tokenIcons" :src="'src/assets/icons/' + icon">
+      <img class="icon" v-for="icon in tokenIcons" :src="icon">
     </div>
     <div class="more-label">...and more!</div>
-    <img class="image" src="src/assets/icons/avax-icon.svg">
+    <img class="image" src="src/assets/icons/chart-down.png">
   </div>
 </template>
 
@@ -32,14 +32,7 @@ export default {
   name: 'ZapShort',
   data() {
     return {
-      tokenIcons: [
-        'avax-icon.svg',
-        'avax-icon.svg',
-        'avax-icon.svg',
-        'avax-icon.svg',
-        'avax-icon.svg',
-        'avax-icon.svg',
-      ]
+      tokenIcons: []
     };
   },
 
@@ -61,6 +54,7 @@ export default {
 
   async mounted() {
     await this.setupFiles();
+    this.setupLogos();
   },
 
   methods: {
@@ -73,6 +67,10 @@ export default {
 
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+
+    setupLogos() {
+      this.tokenIcons = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin).map(asset => this.logoSrc(asset.symbol)).slice(0,6)
     },
 
     async onTileClick() {
@@ -203,6 +201,7 @@ export default {
     transform: translateX(-50%);
     border-radius: 0 0 8px 8px;
     background: var(--zap-long__label-background-color);
+    color: var(--zap-long__label-color);
     padding: 4px;
 }
 

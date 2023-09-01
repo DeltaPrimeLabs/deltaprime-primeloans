@@ -36,10 +36,11 @@ export default {
 }
 
 .zaps__tiles {
-  width: 80%;
+  width: 100%;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
 }
 </style>

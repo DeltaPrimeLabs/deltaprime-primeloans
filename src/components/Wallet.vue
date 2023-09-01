@@ -15,7 +15,7 @@
     <div class="balance">{{ accountBalance | avax }}</div>
     <img class="logo" :src="tokenLogos[nativeToken]"/>
     <div class="separator"></div>
-    <IconButton :disabled="!account || !notifiScreenLoaded"
+    <IconButton :disabled="!account || !notifiScreenLoaded || !isNotifiEnabled"
                 ref="notifiBtn"
                 class="alert-icon"
                 :icon-src="'src/assets/icons/alert_icon.svg'" :size="20"
@@ -64,6 +64,9 @@
       hasSmartLoanContract() {
         return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
       },
+      isNotifiEnabled() {
+        return config.notifiEnabled;
+      },
     },
     data() {
       return {
@@ -97,13 +100,16 @@
       },
 
       notificationTooltip() {
-        return `
+        return this.isNotifiEnabled ?
+            `
           <span>Notifications</span>
           <div class='tooltip-extra'>
             <img class="tooltip-extra__icon" src="src/assets/icons/rating.png"/>
             <span>This is a Prime feature</span>
           </div>
-        `;
+        `
+        :
+       `<span>Coming soon!</span>`
       }
     }
   }

@@ -511,14 +511,14 @@
   // endregion
 
   // region Zaps
-  --zaps__header-color: #{$dark-gray};
+  --zaps__header-color: #{$white};
   // endregion
 
   // region ZapLong
-  --zap-long__label-color: #{$dark-gray};
-  --zap-long__label-background-color: #{$washed-raspberry}77;
-  --zap-long__header-color: #{$dark-gray};
-  --zap-long__more-label-color: #{$dark-gray};
+  --zap-long__label-color: #{$white};
+  --zap-long__label-background-color: #{$shallow-space}77;
+  --zap-long__header-color: #{$white};
+  --zap-long__more-label-color: #{$white};
   --zap-long__zap-tile-shadow: 7px 17px 55px 0 #{$washed-raspberry}77;
   --zap-long__zap-tile-shadow--hover: 7px 17px 55px 0 #{$raspberry}77;
   // endregion
