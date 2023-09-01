@@ -4,68 +4,6 @@
   "sourceName": "contracts/interfaces/SmartLoanGigaChadInterface.sol",
   "abi": [
     {
-      "inputs": [],
-      "name": "CalldataMustHaveValidPayload",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "CalldataOverOrUnderFlow",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "EachSignerMustProvideTheSameValue",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "EmptyCalldataPointersArr",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "IncorrectUnsignedMetadataSize",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "receivedSignersCount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "requiredSignersCount",
-          "type": "uint256"
-        }
-      ],
-      "name": "InsufficientNumberOfUniqueSigners",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidCalldataPointer",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "receivedSigner",
-          "type": "address"
-        }
-      ],
-      "name": "SignerNotAuthorised",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "TimestampIsNotValid",
-      "type": "error"
-    },
-    {
       "anonymous": false,
       "inputs": [
         {
@@ -649,6 +587,61 @@
           "type": "address"
         },
         {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "asset0",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "asset1",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "depositTokenAmount0",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "depositTokenAmount1",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "receiptTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "Staked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
           "indexed": true,
           "internalType": "bytes32",
           "name": "asset",
@@ -760,6 +753,61 @@
         }
       ],
       "name": "Swap",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "asset0",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "asset1",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "depositTokenAmount0",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "depositTokenAmount1",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "receiptTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "Unstaked",
       "type": "event"
     },
     {
@@ -1022,6 +1070,96 @@
     {
       "inputs": [
         {
+          "components": [
+            {
+              "internalType": "contract IERC20",
+              "name": "tokenX",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20",
+              "name": "tokenY",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "binStep",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountX",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountY",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountXMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountYMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "activeIdDesired",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "idSlippage",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int256[]",
+              "name": "deltaIds",
+              "type": "int256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "distributionX",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "distributionY",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "refundTo",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ILBRouter.LiquidityParameters",
+          "name": "liquidityParameters",
+          "type": "tuple"
+        }
+      ],
+      "name": "addLiquidityTraderJoeV2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "bytes32",
           "name": "_asset",
           "type": "bytes32"
@@ -1038,8 +1176,61 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnLiquidityUniswapV3",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "claimGLpFees",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint128",
+              "name": "liquidity",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct INonfungiblePositionManager.DecreaseLiquidityParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "decreaseLiquidityUniswapV3",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1167,6 +1358,29 @@
         }
       ],
       "name": "fundGLP",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract ILBPair",
+          "name": "pair",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "fundLiquidityTraderJoeV2",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1397,6 +1611,44 @@
     },
     {
       "inputs": [],
+      "name": "getOwnedTraderJoeV2Bins",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "contract ILBPair",
+              "name": "pair",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "id",
+              "type": "uint24"
+            }
+          ],
+          "internalType": "struct ITraderJoeV2Facet.TraderJoeV2Bin[]",
+          "name": "result",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getOwnedUniswapV3TokenIds",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "result",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "getPercentagePrecision",
       "outputs": [
         {
@@ -1554,6 +1806,195 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "amountStaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minSharesOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdStakeAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountStaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minSharesOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdStakeBTCb",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountStaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minSharesOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdStakeUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountStaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minSharesOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdStakeWETHe",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountUnstaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minTokenOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdUnstakeAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountUnstaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minTokenOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdUnstakeBTCb",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountUnstaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minTokenOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdUnstakeUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountUnstaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minTokenOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "gmdUnstakeWETHe",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0Desired",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1Desired",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct INonfungiblePositionManager.IncreaseLiquidityParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "increaseLiquidityUniswapV3",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "owner",
           "type": "address"
@@ -1692,6 +2133,76 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "token0",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "token1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickLower",
+              "type": "int24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickUpper",
+              "type": "int24"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0Desired",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1Desired",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1Min",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct INonfungiblePositionManager.MintParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "mintLiquidityUniswapV3",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "owner",
       "outputs": [
@@ -1702,6 +2213,96 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "fromToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "toToken",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fromAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "toAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expectedAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "callees",
+              "type": "address[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "exchangeData",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "startIndexes",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "values",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "address payable",
+              "name": "beneficiary",
+              "type": "address"
+            },
+            {
+              "internalType": "address payable",
+              "name": "partner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "feePercent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "permit",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes16",
+              "name": "uuid",
+              "type": "bytes16"
+            }
+          ],
+          "internalType": "struct IParaSwapRouter.SimpleData",
+          "name": "data",
+          "type": "tuple"
+        }
+      ],
+      "name": "paraSwap",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1825,6 +2426,61 @@
     {
       "inputs": [
         {
+          "components": [
+            {
+              "internalType": "contract IERC20",
+              "name": "tokenX",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20",
+              "name": "tokenY",
+              "type": "address"
+            },
+            {
+              "internalType": "uint16",
+              "name": "binStep",
+              "type": "uint16"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountXMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amountYMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "ids",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "amounts",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ITraderJoeV2Facet.RemoveLiquidityParameters",
+          "name": "parameters",
+          "type": "tuple"
+        }
+      ],
+      "name": "removeLiquidityTraderJoeV2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "bytes32",
           "name": "_asset",
           "type": "bytes32"
@@ -1849,6 +2505,19 @@
         }
       ],
       "name": "stakeAVAXYak",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[5]",
+          "name": "amounts",
+          "type": "uint256[5]"
+        }
+      ],
+      "name": "stakeCurve",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1935,6 +2604,146 @@
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeSteakHutAVAXUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeSteakHutBTCAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeSteakHutEUROCUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeSteakHutJOEAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeSteakHutUSDTeUSDT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
         }
@@ -1979,6 +2788,34 @@
         }
       ],
       "name": "stakeTjUsdcAvaxLpBeefy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount0Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Desired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeTraderJoeV2AutopoolAVAXUSDC",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2194,9 +3031,45 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256[5]",
+          "name": "min_amounts",
+          "type": "uint256[5]"
+        }
+      ],
+      "name": "unstakeCurve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
         }
       ],
       "name": "unstakeGLPYak",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "i",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeOneTokenCurve",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2270,6 +3143,121 @@
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeSteakHutAVAXUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeSteakHutBTCAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeSteakHutEUROCUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeSteakHutJOEAVAX",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeSteakHutUSDTeUSDT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
         }
@@ -2314,6 +3302,29 @@
         }
       ],
       "name": "unstakeTjUsdcAvaxLpBeefy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0Min",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1Min",
+          "type": "uint256"
+        }
+      ],
+      "name": "unstakeTraderJoeV2AutopoolAVAXUSDC",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2693,6 +3704,29 @@
         }
       ],
       "name": "withdrawGLP",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract ILBPair",
+          "name": "pair",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "withdrawLiquidityTraderJoeV2",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

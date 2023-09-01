@@ -53,14 +53,16 @@ let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
 
 const providerArbitrum = new ethers.providers.JsonRpcProvider(jsonRPCArbitrum);
 const walletArbitrum = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(providerArbitrum);
+
 let factoryArbitrum = new ethers.Contract(factoryArbitrumAddress, FACTORY.abi, providerArbitrum);
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
-function wrap(contract) {
+function wrap(contract, network) {
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId: 'redstone-avalanche-prod',
+      dataServiceId: `redstone-${network}-prod`,
       uniqueSignersCount: 3,
       disablePayloadsDryRun: true
     },
@@ -68,7 +70,7 @@ function wrap(contract) {
   );
 }
 
-exports.scheduledFunction = functions
+exports.scheduledFunctionAvalanche = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
@@ -79,23 +81,27 @@ exports.scheduledFunction = functions
 
     await Promise.all(
       loanAddresses.map(async (address) => {
-        const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
-        const wrappedContract = wrap(loanContract);
-        const status = await wrappedContract.getFullLoanStatus();
+        try {
+          const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
+          const wrappedContract = wrap(loanContract, 'avalanche');
+          const status = await wrappedContract.getFullLoanStatus();
 
-        const loan = {
-          time: batchTime,
-          address: address,
-          total: fromWei(status[0]),
-          debt: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18
-        };
+          const loan = {
+            time: batchTime,
+            address: address,
+            total: fromWei(status[0]),
+            debt: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18
+          };
 
-        await db.collection('loans').doc(address).set(loan);
-      })
-    )
+          await db.collection('loans').doc(address).set(loan);
+        } catch(error) {
+          console.log(error);
+        }
+      }),
+    );
 
     functions.logger.info(`Uploaded ${loanAddresses.length} loans.`);
 
@@ -108,30 +114,34 @@ exports.scheduledFunctionArbitrum = functions
   .onRun(async (context) => {
     functions.logger.info("Getting loans");
 
-    const loanAddresses = await factoryArbitrum.getAllLoans();
+    const loanAddressesArbitrum = await factoryArbitrum.getAllLoans();
     const batchTime = new Date().getTime();
 
     await Promise.all(
-      loanAddresses.map(async (address) => {
-        const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
-        const wrappedContract = wrap(loanContract);
-        const status = await wrappedContract.getFullLoanStatus();
+      loanAddressesArbitrum.map(async (address) => {
+        try {
+          const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
+          const wrappedContract = wrap(loanContract, 'arbitrum');
+          const status = await wrappedContract.getFullLoanStatus();
 
-        const loan = {
-          time: batchTime,
-          address: address,
-          total: fromWei(status[0]),
-          debt: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18
-        };
-
-        await db.collection('loansArbitrum').doc(address).set(loan);
+          const loan = {
+            time: batchTime,
+            address: address,
+            total: fromWei(status[0]),
+            debt: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18
+          };
+      
+          await db.collection('loansArbitrum').doc(address).set(loan);
+        } catch(error) {
+          console.log(error);
+        }
       })
-    )
+    );
 
-    functions.logger.info(`Uploaded Arbitrum ${loanAddresses.length} loans.`);
+    functions.logger.info(`Uploaded ${loanAddressesArbitrum.length} loans.`);
 
     return null;
   });
@@ -544,7 +554,7 @@ const uploadLiveLoansStatusAvalanche = async () => {
         .doc(loanAddress.toLowerCase())
         .collection('loanStatus');
       const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-      const wrappedContract = wrap(loanContract);
+      const wrappedContract = wrap(loanContract, 'avalanche');
       const status = await wrappedContract.getFullLoanStatus();
 
       if (status) {
@@ -588,7 +598,7 @@ const uploadLiveLoansStatusArbitrum = async () => {
         .doc(loanAddress.toLowerCase())
         .collection('loanStatus');
       const loanContract = new ethers.Contract(loanAddress, LOAN.abi, walletArbitrum);
-      const wrappedContract = wrap(loanContract);
+      const wrappedContract = wrap(loanContract, 'arbitrum');
       const status = await wrappedContract.getFullLoanStatus();
 
       if (status) {
@@ -619,18 +629,18 @@ exports.saveLiveLoansStatusArbitrum = functions
       });
   });
 
-exports.saveLoansStatusFromFile = functions
-    .runWith({ timeoutSeconds: 120, memory: "2GB" })
-    .pubsub.schedule('*/5 * * * *')
-    .onRun(async (context) => {
-      functions.logger.info("Getting Loans Status.");
-      return uploadLoanStatusFromFile()
-          .then(() => {
-            functions.logger.info("Loans Status upload success.");
-          }).catch((err) => {
-            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-          });
-    });
+// exports.saveLoansStatusFromFile = functions
+//     .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//     .pubsub.schedule('*/5 * * * *')
+//     .onRun(async (context) => {
+//       functions.logger.info("Getting Loans Status.");
+//       return uploadLoanStatusFromFile()
+//           .then(() => {
+//             functions.logger.info("Loans Status upload success.");
+//           }).catch((err) => {
+//             functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//           });
+//     });
 
 
 // const getEventsForPeriod = (from, to) => {

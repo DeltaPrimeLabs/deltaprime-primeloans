@@ -1386,6 +1386,19 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit TraderJoe V2 LP token');
 
+      const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+        lbPairAddress: fundLiquidityRequest.pair,
+        binIds: fundLiquidityRequest.ids,
+        lpToken: fundLiquidityRequest.lpToken
+      });
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.firstAsset]) + Number(formatUnits(tokenXAmount, state.assets[fundLiquidityRequest.firstAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.secondAsset]) + Number(formatUnits(tokenYAmount, state.assets[fundLiquidityRequest.secondAsset].decimals));
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(fundLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(fundLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
@@ -1496,10 +1509,11 @@ export default {
 
       const { cumulativeTokenXAmount, cumulativeTokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
         lbPairAddress: removeLiquidityRequest.lbPairAddress,
-        binIds: removeLiquidityRequest.remainingBinRange
+        binIds: removeLiquidityRequest.remainingBinRange,
+        lpToken: removeLiquidityRequest.lpToken
       });
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
-      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(formatUnits(cumulativeTokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);

@@ -5,7 +5,7 @@ export default class LoanHistoryService {
     const endDate = new Date().getTime();
     const startDate = 1673352000000;
 
-    const response = await fetch(`https://us-central1-delta-prime-db.cloudfunctions.net/loanhistory?address=${walletAddress}&from=${startDate}&to=${endDate}`);
+    const response = await fetch(`https://us-central1-delta-prime-db.cloudfunctions.net/loanhistory?address=${walletAddress}&from=${startDate}&to=${endDate}&network=${window.chain}`);
     const body = await response.json()
 
     return {

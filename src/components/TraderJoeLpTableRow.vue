@@ -263,7 +263,10 @@ export default {
         const fundLiquidityRequest = {
           ids: this.userBins,
           amounts: this.userBalances,
-          pair: this.lpToken.address
+          pair: this.lpToken.address,
+          firstAsset: this.lpToken.primary,
+          secondAsset: this.lpToken.secondary,
+          lpToken: this.lpToken
         };
 
         this.handleTransaction(this.fundLiquidityTraderJoeV2Pool, {fundLiquidityRequest: fundLiquidityRequest}, () => {
@@ -359,6 +362,7 @@ export default {
             secondAsset: this.lpToken.secondary,
             remainingBinRange: removeLiquidityEvent.remainingBinRange,
             removeLiquidityInput,
+            lpToken: this.lpToken
           };
 
           this.handleTransaction(this.removeLiquidityTraderJoeV2Pool, { removeLiquidityRequest }, () => {
