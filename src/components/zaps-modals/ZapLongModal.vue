@@ -35,6 +35,7 @@
         </div>
 
         <div class="assets-container">
+          <div class="assets-label">Choose asset to long:</div>
           <AssetFilter ref="assetFilter"
                        :asset-filter-groups="longAssetOptions"
                        :show-clear-button="false"
@@ -46,9 +47,8 @@
         <div class="leverage">
           Leverage: {{leverage}}x
         </div>
-
         <div class="slider-container">
-          <Slider :min="1" :max="5" :step="0.1" v-on:newValue="leverageChange"></Slider>
+          <Slider :min="1" :max="selectedLongAsset ? Math.round((1 / (1 - assets[selectedLongAsset].debtCoverage) - 1)) : 1" :step="0.1" v-on:newValue="leverageChange"></Slider>
         </div>
       </div>
 
@@ -89,7 +89,7 @@
 
 
       <div class="button-wrapper">
-        <Button :label="'Leverage'" v-on:click="submit()"></Button>
+        <Button :disabled="!(stableCoinAmount && selectedLongAsset && leverage)" :label="'Long'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -138,7 +138,6 @@ export default {
       farms: {},
       debtsPerAsset: {},
       thresholdWeightedValue: Number,
-
       toggleOptions: ['Top up', 'Existing funds'],
       stableCoinsOptions: null,
       longAssetOptions: [],
@@ -148,7 +147,7 @@ export default {
       availableAssetAmount: 0,
       includeBalanceFromWallet: false,
       validators: [],
-      leverage: 2,
+      leverage: null,
       stableCoinAmount: 0,
       extraDepositRequired: 0,
       selectedLongAsset: null,
@@ -188,7 +187,7 @@ export default {
     setupLongAssetOptions() {
       this.longAssetOptions = [
         {
-          options: Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin).map(asset => asset.symbol),
+          options: Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && asset.debtCoverage > 0).map(asset => asset.symbol),
           key: 'asset'
         }
       ];
@@ -208,6 +207,13 @@ export default {
 
     setupValidators() {
       this.validators = [
+        {
+          validate: (value) => {
+            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+              return `Health should be higher than 0%`;
+            }
+          },
+        },
         {
           validate: (value) => {
             if (value > Number(this.availableAssetAmount)) {
@@ -345,18 +351,25 @@ export default {
 .assets-container {
   margin-bottom: 20px;
 
+  .assets-label {
+    text-align: center;
+    color: var(--modal__top-info-color);
+    margin-bottom: 15px;
+  }
+
   .asset-filter-component {
     justify-content: center;
   }
 }
 
 .leverage {
+  color: var(--modal__top-info-color);
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   font-weight: 500;
-  font-size: $font-size-xl;
+  font-size: $font-size-lg;
   margin-bottom: 20px;
 }
 

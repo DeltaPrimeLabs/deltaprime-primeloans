@@ -244,13 +244,15 @@ export default {
 }
 
 .more-label {
-    text-align: center;
+  margin-top: 20px;
+  text-align: center;
+  color: var(--zap-long__label-color);
 }
 
 .image {
     width: 118px;
     height: 118px;
-    margin-top: 32px;
+    margin-top: 12px;
     user-select: none;
 }
 

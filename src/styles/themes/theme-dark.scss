@@ -511,11 +511,11 @@
   // endregion
 
   // region Zaps
-  --zaps__header-color: #{$white};
+  --zaps__header-color: #{$storm-blue};
   // endregion
 
   // region ZapLong
-  --zap-long__label-color: #{$white};
+  --zap-long__label-color: #{$storm-blue};
   --zap-long__label-background-color: #{$shallow-space}77;
   --zap-long__header-color: #{$white};
   --zap-long__more-label-color: #{$white};
@@ -533,5 +533,9 @@
   --liquidity-chart__tooltip-box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
   --liquidity-chart__axis-label-color: #{$washed-blue};
   --liquidity-chart__boundary-color: #{$washed-space};
+  // endregion
+
+  // region CurrencyComboInput
+  --checkbox: #{$storm-blue};
   // endregion
 }

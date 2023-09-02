@@ -7,7 +7,6 @@
     <div class="icons">
       <img class="icon" v-for="icon in tokenIcons" :src="icon">
     </div>
-    <div class="more-label">...and more!</div>
     <img class="image" src="src/assets/icons/chart-down.png">
   </div>
 </template>
@@ -70,7 +69,7 @@ export default {
     },
 
     setupLogos() {
-      this.tokenIcons = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin).map(asset => this.logoSrc(asset.symbol)).slice(0,6)
+      this.tokenIcons = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && config.POOLS_CONFIG[asset.symbol]).map(asset => this.logoSrc(asset.symbol)).slice(0,6)
     },
 
     async onTileClick() {
@@ -236,7 +235,7 @@ export default {
 .image {
     width: 118px;
     height: 118px;
-    margin-top: 32px;
+    margin-top: 52px;
     user-select: none;
 }
 
