@@ -668,10 +668,10 @@ export default {
 
         traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(cumulativeTokenXAmount, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
         traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(cumulativeTokenYAmount, state.assets[traderJoeV2LpAssets[assetSymbol].secondary].decimals);
-        traderJoeV2LpAssets[assetSymbol].userBinIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
-        traderJoeV2LpAssets[assetSymbol].binBalances = binBalances; // balances of user owned bins (the same order as userBinIds)
-        traderJoeV2LpAssets[assetSymbol].binBalancesPrimary = binBalancesPrimary; // balances of user owned bins (the same order as userBinIds)
-        traderJoeV2LpAssets[assetSymbol].binBalancesSecondary = binBalancesSecondary; // balances of user owned bins (the same order as userBinIds)
+        traderJoeV2LpAssets[assetSymbol].binIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
+        traderJoeV2LpAssets[assetSymbol].binBalances = binBalances; // balances of user owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].binBalancesPrimary = binBalancesPrimary; // balances of user owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].binBalancesSecondary = binBalancesSecondary; // balances of user owned bins (the same order as binIds)
 
         const lpService = rootState.serviceRegistry.lpService;
         lpService.emitRefreshLp('TJV2');

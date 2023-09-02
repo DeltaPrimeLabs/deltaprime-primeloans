@@ -1,35 +1,61 @@
 <template>
-  <div class="modal-component">
-    <div class="modal-container">
-      <div class="backdrop">
-        <div class="modal">
-          <div class="close-button-container">
-            <DeltaIcon class="close-button-container__icon" :icon-src="'src/assets/icons/cross.svg'" :size="21" v-on:click.native="close()"></DeltaIcon>
-          </div>
-          <div class="modal-scroll">
-            <slot></slot>
-          </div>
+  <div v-if="lpToken" id="modal" class="add-from-wallet-modal-component modal-component">
+    <Modal>
+      <div class="modal__title">
+        Withdraw LB tokens to wallet
+      </div>
+      <div class="modal-top-desc">
+        <div v-if="lpToken.binIds && lpToken.binIds.length > 0 && lpToken.binBalances && lpToken.binBalances.length > 0">
+          This action will transfer your {{ lpToken.name}} LB tokens from your Prime Account to your wallet.
+        </div>
+        <div v-else>
+          Currently you have no LB tokens in your account.
         </div>
       </div>
-    </div>
+      <div class="button-wrapper">
+        <Button :label="'Withdraw LB tokens'"
+                v-on:click="submit()"
+                :disabled="!(lpToken.binIds && lpToken.binIds.length > 0 && lpToken.binBalances && lpToken.binBalances.length > 0)"
+                :waiting="transactionOngoing">
+        </Button>
+      </div>
+    </Modal>
   </div>
 </template>
 
 <script>
 import DeltaIcon from "./DeltaIcon.vue";
+import Toggle from "./Toggle.vue";
+import CurrencyInput from "./CurrencyInput.vue";
+import LoadedValue from "./LoadedValue.vue";
+import Modal from "./Modal.vue";
+import TransactionResultSummaryBeta from "./TransactionResultSummaryBeta.vue";
+import BarGaugeBeta from "./BarGaugeBeta.vue";
+import Button from "./Button.vue";
 
 export default {
   name: 'WithdrawTraderJoeV2Modal',
-  components: {DeltaIcon},
+  components: {Button, BarGaugeBeta, TransactionResultSummaryBeta, Modal, LoadedValue, CurrencyInput, Toggle, DeltaIcon},
+  props: {
+    lpToken: {},
+    transactionOngoing: false
+  },
   methods: {
     close() {
       this.closeModal();
+    },
+    submit() {
+      this.transactionOngoing = true;
+      this.$emit('WITHDRAW');
     }
-  },
-  props: {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+@import "~@/styles/variables";
+@import "~@/styles/modal";
+</style>
 
 <style lang="scss" scoped>
 
@@ -120,4 +146,7 @@ export default {
   }
 }
 
+.modal-top-desc {
+  text-align: center;
+}
 </style>

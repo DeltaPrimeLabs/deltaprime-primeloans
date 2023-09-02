@@ -13,7 +13,7 @@
 
       <!-- To-do: Show price graph or similar one on click -->
       <div class="table__cell liquidity">
-        <FlatButton :active="lpToken.userBinIds && lpToken.userBinIds.length" v-on:buttonClick="toggleLiquidityChart()">
+        <FlatButton :active="lpToken.binIds && lpToken.binIds.length" v-on:buttonClick="toggleLiquidityChart()">
           {{ rowExpanded ? 'Hide' : 'Show' }}
         </FlatButton>
       </div>
@@ -100,6 +100,7 @@ import WithdrawTraderJoeV2Modal from "./WithdrawTraderJoeV2Modal.vue";
 import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
+import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -229,12 +230,14 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw LB tokens to wallet',
-            disabled: true && !this.hasSmartLoanContract //TODO: needs implementation
+            disabled: !this.hasSmartLoanContract || !this.hasBinsInPool,
+            disabledInfo: 'No LB tokens in Prime Account'
           },
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove Liquidity',
-            disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool
+            disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
+            disabledInfo: 'No LB tokens in Prime Account'
           },
         ]
       }
@@ -279,6 +282,9 @@ export default {
           case 'ADD_FROM_WALLET':
             this.openAddTraderJoeV2FromWalletModal();
             break;
+            case 'WITHDRAW':
+            this.openWithdrawTraderJoeV2Modal();
+            break;
           case 'ADD_LIQUIDITY':
             this.openAddLiquidityModal();
             break;
@@ -317,9 +323,22 @@ export default {
 
     async openWithdrawTraderJoeV2Modal() {
       const modalInstance = this.openModal(WithdrawTraderJoeV2Modal);
-      modalInstance.asset = this.lpToken;
-      modalInstance.$on('WITHDRAW', withdrawEvent => {
-        // To-do: add LP token from wallet
+      modalInstance.lpToken = this.lpToken;
+
+      modalInstance.$on('WITHDRAW', addFromWalletEvent => {
+        const withdrawLiquidityRequest = {
+          ids: this.lpToken.binIds,
+          amounts: this.lpToken.binBalances,
+          pair: this.lpToken.address
+        };
+
+        this.handleTransaction(this.withdrawLiquidityTraderJoeV2Pool, {withdrawLiquidityRequest: withdrawLiquidityRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+          this.closeModal();
+        });
       });
     },
 
@@ -377,7 +396,7 @@ export default {
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.activeId = this.activeId;
       modalInstance.binStep = this.lpToken.binStep;
-      modalInstance.userBinIds = this.lpToken.userBinIds;
+      modalInstance.binIds = this.lpToken.binIds;
       modalInstance.$on('REMOVE_LIQUIDITY', async removeLiquidityEvent => {
         if (this.smartLoanContract) {
           const removeLiquidityInput = await this.traderJoeService.getRemoveLiquidityParameters(
@@ -388,7 +407,7 @@ export default {
               this.tokenY,
               this.lpToken.binStep,
               removeLiquidityEvent.binRangeToRemove,
-              this.lpToken.userBinIds
+              this.lpToken.binIds
           );
           const removeLiquidityRequest = {
             symbol: this.lpToken.symbol,
@@ -454,7 +473,7 @@ export default {
 
       this.lpToken.tvl = tokenXTVL + tokenYTVL;
       this.activeId = activeId;
-      this.hasBinsInPool = this.lpToken.userBinIds && this.lpToken.userBinIds.length > 0;
+      this.hasBinsInPool = this.lpToken.binIds && this.lpToken.binIds.length > 0;
     },
 
     setupApr() {
@@ -487,8 +506,8 @@ export default {
       }
     },
     calculateChartData() {
-      if (this.lpToken.userBinIds) {
-        this.chartData = this.lpToken.userBinIds.map((binId, index) => ({
+      if (this.lpToken.binIds) {
+        this.chartData = this.lpToken.binIds.map((binId, index) => ({
           isPrimary: this.lpToken.binBalancesPrimary[index] > this.lpToken.binBalancesSecondary[index],
           primaryTokenBalance: this.lpToken.binBalancesPrimary[index],
           secondaryTokenBalance: this.lpToken.binBalancesSecondary[index],

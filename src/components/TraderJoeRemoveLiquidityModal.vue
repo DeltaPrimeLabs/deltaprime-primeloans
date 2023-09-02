@@ -87,7 +87,7 @@ export default {
     secondAssetBalance: Number,
     activeId: null,
     binStep: null,
-    userBinIds: []
+    binIds: []
   },
 
   data() {
@@ -112,8 +112,8 @@ export default {
   watch: {
     binRange: {
       handler(newRange) {
-        if (!this.userBinIds) return;
-        this.hasLiquidityInRange = this.userBinIds.some(binId => binId >= newRange[0] && binId <= newRange[1]);
+        if (!this.binIds) return;
+        this.hasLiquidityInRange = this.binIds.some(binId => binId >= newRange[0] && binId <= newRange[1]);
       },
       immediate: true
     }
@@ -121,8 +121,8 @@ export default {
 
   methods: {
     setupSlider() {
-      this.minMaxRange = [this.userBinIds[0], this.userBinIds[this.userBinIds.length - 1]];
-      this.binRange = [this.userBinIds[0], this.userBinIds[this.userBinIds.length - 1]];
+      this.minMaxRange = [this.binIds[0], this.binIds[this.binIds.length - 1]];
+      this.binRange = [this.binIds[0], this.binIds[this.binIds.length - 1]];
     },
 
     getBinPrice(binId) {
@@ -133,8 +133,8 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const removeLiquidityEvent = {
-        binRangeToRemove: this.binRange.filter(binId => this.userBinIds.indexOf(binId) !== -1),
-        remainingBinRange: this.userBinIds.filter((binId) => binId < this.binRange[0] || binId > this.binRange[1])
+        binRangeToRemove: this.binRange.filter(binId => this.binIds.indexOf(binId) !== -1),
+        remainingBinRange: this.binIds.filter((binId) => binId < this.binRange[0] || binId > this.binRange[1])
 
       };
 
