@@ -208,6 +208,7 @@ export default {
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
+    dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime"
 }

@@ -123,7 +123,7 @@ export default {
             startDate: Date.now() - 3600 * 1000 * 24,
             interval: 600 * 1000,
             endDate: Date.now(),
-            provider: 'redstone-avalanche'
+            provider: config.dataProviderHistoricalPrices
           }).then(
             (response) => {
 
