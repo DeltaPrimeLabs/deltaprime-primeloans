@@ -2,7 +2,7 @@
   <div id="modal" class="zap-short-modal-component modal-component">
     <Modal :height="'1200px'">
       <div class="modal__title">
-        Zap Short
+        Short
       </div>
 
       <div class="modal__content">

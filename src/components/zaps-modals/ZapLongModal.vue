@@ -2,12 +2,12 @@
   <div id="modal" class="zap-long-modal-component modal-component">
     <Modal :height="'1200px'">
       <div class="modal__title">
-        Zap long
+        Long
       </div>
 
       <div class="modal__content">
         <div class="checkbox-container">
-          <Checkbox :label="'Add from wallet'" v-on:checkboxChange="addFromWalletCheckboxChange"></Checkbox>
+          <Checkbox :label="'Include funds from your wallet'" v-on:checkboxChange="addFromWalletCheckboxChange"></Checkbox>
         </div>
 
         <div class="modal-top-info">
