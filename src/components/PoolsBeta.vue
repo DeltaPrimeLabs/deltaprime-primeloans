@@ -183,52 +183,111 @@ export default {
     },
 
     setupPoolsTableHeaderConfig() {
-      this.poolsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 20% 1fr 90px 110px 22px',
-        cells: [
+      this.poolsTableHeaderConfig =
+        config.poolsUnlocking ?
           {
-            label: 'Asset',
-            sortable: false,
-            class: 'asset',
-            id: 'ASSET',
-            tooltip: `The asset name. These names are simplified for a smoother UI.
-                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
-          },
-          {
-            label: 'Deposit',
-            sortable: false,
-            class: 'deposit',
-            id: 'DEPOSIT',
-          },
-          {
-            label: 'APY',
-            sortable: false,
-            class: 'apy',
-            id: 'APY',
-          },
-          {
-            label: 'Pool size',
-            sortable: false,
-            class: 'tvl',
-            id: 'TVL',
-          },
-          {
-            label: 'Utilisation',
-            sortable: false,
-            class: 'utilisation',
-            id: 'UTILISATION',
-          },
-          {
-            label: ''
-          },
-          {
-            label: 'Actions',
-            sortable: false,
-            class: 'actions',
-            id: 'ACTIONS'
-          },
-        ]
-      };
+          gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 90px 90px 22px',
+          cells: [
+            {
+              label: 'Asset',
+              sortable: false,
+              class: 'asset',
+              id: 'ASSET',
+              tooltip: `The asset name. These names are simplified for a smoother UI.
+                                         <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+            },
+            {
+              label: 'Deposit',
+              sortable: false,
+              class: 'deposit',
+              id: 'DEPOSIT',
+            },
+            {
+              label: 'APY',
+              sortable: false,
+              class: 'apy',
+              id: 'APY',
+              tooltip: `Deposit interest coming from borrowers + Liquidity Mining Program.<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+            },
+            {
+              label: 'Pool size',
+              sortable: false,
+              class: 'tvl',
+              id: 'TVL',
+            },
+            {
+              label: 'Unlocked',
+              sortable: false,
+              class: 'unlocked',
+              id: 'UNLOCKED',
+              tooltip: `When $1M is hit, a new pool will be unlocked.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+            },
+            {
+              label: 'Utilisation',
+              sortable: false,
+              class: 'utilisation',
+              id: 'UTILISATION',
+            },
+            {
+              label: ''
+            },
+            {
+              label: 'Actions',
+              sortable: false,
+              class: 'actions',
+              id: 'ACTIONS'
+            },
+          ]
+        }
+        :
+        {
+          gridTemplateColumns: 'repeat(2, 1fr) 175px 150px 150px 90px 110px 22px',
+          cells: [
+            {
+              label: 'Asset',
+              sortable: false,
+              class: 'asset',
+              id: 'ASSET',
+              tooltip: `The asset name. These names are simplified for a smoother UI.
+                                   <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+            },
+            {
+              label: 'Deposit',
+              sortable: false,
+              class: 'deposit',
+              id: 'DEPOSIT',
+            },
+            {
+              label: 'APY',
+              sortable: false,
+              class: 'apy',
+              id: 'APY',
+              tooltip: `Deposit interest coming from borrowers + Liquidity Mining Program.<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+            },
+            {
+              label: 'Pool size',
+              sortable: false,
+              class: 'tvl',
+              id: 'TVL',
+            },
+            {
+              label: 'Utilisation',
+              sortable: false,
+              class: 'utilisation',
+              id: 'UTILISATION',
+            },
+            {
+              label: ''
+            },
+            {
+              label: 'Actions',
+              sortable: false,
+              class: 'actions',
+              id: 'ACTIONS'
+            },
+          ]
+        };
     },
 
   },

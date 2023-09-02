@@ -1,6 +1,6 @@
 <template>
   <div class="pools-table-row-component">
-    <div class="table__row" v-if="pool">
+    <div class="table__row" v-if="pool" :class="{'unlocking': poolsUnlocking, 'disabled': pool.disabled}">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(pool.asset.symbol)">
         <div class="asset__info">
@@ -23,9 +23,16 @@
         </template>
       </div>
 
-      <div class="table__cell apy">
-        <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy)">
-        </LoadedValue>
+      <div class="table__cell table__cell--double-value apy">
+        <template>
+          <div class="double-value__pieces">
+            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + miningApy)">
+            </LoadedValue>
+          </div>
+          <div class="double-value__usd">
+            <span v-if="pool.apy != null && miningApy">{{formatPercent(pool.apy)}}&nbsp;+&nbsp;{{formatPercent(miningApy)}}</span>
+          </div>
+        </template>
       </div>
 
       <div class="table__cell table__cell--double-value tvl">
@@ -38,8 +45,12 @@
         </div>
       </div>
 
+      <div class="table__cell unlocked" v-if="poolsUnlocking">
+        <bar-gauge-beta :min="0" :max="1" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
+      </div>
+
       <div class="table__cell utilisation">
-        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation | percent"></LoadedValue>
+        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation || 0 | percent"></LoadedValue>
       </div>
 
       <div></div>
@@ -48,7 +59,7 @@
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-for="(actionConfig, index) of actionsConfig"
-            :disabled="!pool.contract"
+            :disabled="!pool.contract || pool.disabled"
             v-bind:key="index"
             :config="actionConfig"
             v-on:iconButtonClick="actionClick">
@@ -71,6 +82,8 @@ const ethers = require('ethers');
 import SimpleSwapModal from './SimpleSwapModal.vue';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
+import BarGaugeBeta from "./BarGaugeBeta.vue";
+import InfoIcon from "./InfoIcon.vue";
 
 let TOKEN_ADDRESSES;
 (async () => {
@@ -79,7 +92,7 @@ let TOKEN_ADDRESSES;
 
 export default {
   name: 'PoolsTableRowBeta',
-  components: {LoadedValue, IconButtonMenuBeta},
+  components: {InfoIcon, BarGaugeBeta, LoadedValue, IconButtonMenuBeta},
   props: {
     pool: {},
   },
@@ -98,7 +111,8 @@ export default {
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
-      lifiData: {}
+      lifiData: {},
+      poolsUnlocking: config.poolsUnlocking
     };
   },
 
@@ -113,7 +127,10 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService'])
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    miningApy() {
+      return Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
+    }
   },
 
   methods: {
@@ -390,13 +407,23 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 90px 110px 22px;
+    grid-template-columns: repeat(2, 1fr) 175px 150px 150px 90px 110px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
     border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
+
+    &.disabled {
+      .table__cell {
+        opacity: 30%;
+      }
+    }
+
+    &.unlocking {
+      grid-template-columns: repeat(3, 1fr) 140px 140px 140px 90px 90px 22px;
+    }
 
     .table__cell {
       display: flex;
@@ -443,6 +470,12 @@ export default {
         justify-content: center;
         align-items: flex-end;
         font-weight: 500;
+      }
+
+      &.unlocked {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
       }
 
       &.utilisation {
@@ -495,4 +528,14 @@ export default {
 
 }
 
+</style>
+
+<style lang="scss">
+.pools-table-row-component {
+  .table__row {
+    .bar-gauge-beta-component .bar-gauge .bar {
+      width: 80px;
+    }
+  }
+}
 </style>

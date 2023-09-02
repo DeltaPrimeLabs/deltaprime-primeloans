@@ -53,6 +53,8 @@ export default class PoolService {
             interest: deposit * apy / 365,
             maxUtilisation: fromWei(poolDetails[5]),
             utilisation: totalBorrowed / tvl,
+            disabled: config.POOLS_CONFIG[poolAsset].disabled,
+            poolsUnlocking: config.poolsUnlocking
           };
           return pool;
         }))
