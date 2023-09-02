@@ -63,7 +63,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'USDT', 'ETH', 'sAVAX', 'GLP'],
+          options: Object.keys(config.FARMED_TOKENS_CONFIG),
           key: 'asset'
         },
       ];

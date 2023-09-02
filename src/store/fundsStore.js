@@ -267,6 +267,12 @@ export default {
         apys[doc.id] = doc.data();
       });
 
+
+      console.log('apys')
+      console.log(apys)
+      //TODO: remove this dirty hack
+      apys['USDC.e'] = {'YIELD_YAK': 0};
+
       commit('setApys', apys);
     },
 

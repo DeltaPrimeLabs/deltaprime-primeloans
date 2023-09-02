@@ -22,6 +22,7 @@ export default {
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
+      "USDC.e": {name: "USDC.e", symbol: "USDC.e", decimals: 6, address: addresses["USDC.e"], isStableCoin: true, debtCoverage: 0.83333333333},
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
       "DAI": {name: "DAI", symbol: "DAI", logoExt: "png", decimals: 18, isStableCoin: true, address: addresses.DAI, debtCoverage: 0.83333333333},
@@ -83,11 +84,11 @@ export default {
     },
     poolsUnlocking: true,
     TRADERJOEV2_LP_ASSETS_CONFIG: {
-        // 'TJLB_DAI_USDCe': { primary: 'DAI', secondary: 'USDCe', name: 'DAI-USDCe', dex: 'TraderJoe', symbol: 'TJLB_DAI_USDCe', decimals: 18, baseFee: '0.00005', address: addresses['TJLB_DAI_USDCe'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJLB_DAI_USDCe': { primary: 'DAI', secondary: 'USDC.e', name: 'DAI-USDCe', dex: 'TraderJoe', symbol: 'TJLB_DAI_USDCe', decimals: 18, baseFee: '0.00005', address: addresses['TJLB_DAI_USDCe'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
         'TJLB_ETH_USDT': { primary: 'ETH', secondary: 'USDT', name: 'ETH-USDT', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDT', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDT'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
-        // 'TJLB_ETH_USDCe': { primary: 'ETH', secondary: 'USDCe', name: 'ETH-USDCe', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDCe', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDCe'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJLB_ETH_USDCe': { primary: 'ETH', secondary: 'USDC.e', name: 'ETH-USDCe', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDCe', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDCe'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
         'TJLB_GMX_ETH': { primary: 'GMX', secondary: 'ETH', name: 'GMX-ETH', dex: 'TraderJoe', symbol: 'TJLB_GMX_ETH', decimals: 18, baseFee: '0.002', address: addresses['TJLB_GMX_ETH'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
-        // 'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
+        'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
     },
     LP_ASSETS_CONFIG: {},
     CONCENTRATED_LP_ASSETS_CONFIG: {},
@@ -109,7 +110,80 @@ export default {
             name: 'Vector Finance'
         },
     },
-    FARMED_TOKENS_CONFIG: {},
+    FARMED_TOKENS_CONFIG: {
+        "USDC.e": [
+            {
+                protocol: 'YIELD_YAK',
+                autoCompounding: true,
+                protocolIdentifier: 'YY_WOMBEX_USDC.e',
+                balance: async (address) => yieldYakBalance('0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C', address),
+                stakingContractAddress: '0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'stakeUSDCeYak',
+                unstakeMethod: 'unstakeUSDCeYak',
+                feedSymbol: 'YY_WOMBEX_USDC.e',
+                symbol: 'YRT',
+                token: 'USDC.e',
+                isTokenLp: false,
+                info: 'Provides liquidity to Wombex.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['USDC.e'],
+                strategy: 'USDC.e',
+                refreshDelay: 60000,
+                gasStake: 4000000,
+                gasUnstake: 4000000
+            }
+        ],
+        "USDT": [
+            {
+                protocol: 'YIELD_YAK',
+                autoCompounding: true,
+                protocolIdentifier: 'YY_WOMBEX_USDT',
+                balance: async (address) => yieldYakBalance('0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2', address),
+                stakingContractAddress: '0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'stakeUSDTYak',
+                unstakeMethod: 'unstakeUSDTYak',
+                feedSymbol: 'YY_WOMBEX_USDT',
+                symbol: 'YRT',
+                token: 'USDT',
+                isTokenLp: false,
+                info: 'Provides liquidity to Wombex.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['USDT'],
+                strategy: 'USDT',
+                refreshDelay: 60000,
+                gasStake: 4000000,
+                gasUnstake: 4000000
+            }
+        ],
+        "GLP": [
+            {
+                protocol: 'YIELD_YAK',
+                autoCompounding: true,
+                protocolIdentifier: 'YY_WOMBEX_GLP',
+                balance: async (address) => yieldYakBalance('0x28f37fa106AA2159c91C769f7AE415952D28b6ac', address),
+                stakingContractAddress: '0x28f37fa106AA2159c91C769f7AE415952D28b6ac',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'stakeGLPYakk',
+                unstakeMethod: 'unstakeGLPYak',
+                feedSymbol: 'YY_WOMBEX_GLP',
+                symbol: 'YRT',
+                token: 'USDT',
+                isTokenLp: false,
+                info: 'Continuously stakes esGMX in order to maximize GLP rewards.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['GLP'],
+                strategy: 'GLP',
+                refreshDelay: 60000,
+                gasStake: 4000000,
+                gasUnstake: 4000000
+            }
+        ],
+    },
     liquidityShapes: {
         spot: {
             name: "Spot",
