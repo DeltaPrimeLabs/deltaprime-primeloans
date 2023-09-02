@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: ed3c84e46734ba7ddf3828db52bfb5271fccc16c;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -625,7 +625,7 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
      * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
      * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
     **/
-    function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory assetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
+    function getTotalValueWithPrices(AssetPrice[] memory ownedAssetsPrices, AssetPrice[] memory stakedPositionsPrices) public view virtual returns (uint256) {
         return getTotalAssetsValueWithPrices(ownedAssetsPrices) + getStakedValueWithPrices(stakedPositionsPrices) + getTotalTraderJoeV2WithPrices() + getTotalUniswapV3WithPrices();
     }
 
