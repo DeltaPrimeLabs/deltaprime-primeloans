@@ -1,6 +1,7 @@
 import addresses from '../common/addresses/arbitrum/token_addresses.json';
 import USDC_POOL_TUP from '/deployments/arbitrum/UsdcPoolTUP.json';
 import USDT_POOL_TUP from '/deployments/arbitrum/UsdtPoolTUP.json';
+import BTC_POOL_TUP from '/deployments/arbitrum/BtcPoolTUP.json';
 import WETH_POOL_TUP from '/deployments/arbitrum/WethPoolTUP.json';
 import DAI_POOL_TUP from '/deployments/arbitrum/DaiPoolTUP.json';
 import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
@@ -21,6 +22,7 @@ export default {
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333},
+      "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333},
       "DAI": {name: "DAI", symbol: "DAI", logoExt: "png", decimals: 18, isStableCoin: true, address: addresses.DAI, debtCoverage: 0.83333333333},
       "FRAX": {name: "FRAX", symbol: "FRAX", decimals: 18, isStableCoin: true, address: addresses.FRAX, debtCoverage: 0.83333333333},
@@ -44,31 +46,42 @@ export default {
             address: USDC_POOL_TUP.address,
             tokenAddress: addresses.USDC
         },
-        USDT: {
-            address: USDT_POOL_TUP.address,
-            tokenAddress: addresses.USDT
-        },
         ETH: {
             address: WETH_POOL_TUP.address,
             tokenAddress: addresses.ETH
         },
+        BTC: {
+            address: BTC_POOL_TUP.address,
+            tokenAddress: addresses.BTC,
+            disabled: true
+        },
+        USDT: {
+            address: USDT_POOL_TUP.address,
+            tokenAddress: addresses.USDT,
+            disabled: true
+        },
         DAI: {
             address: DAI_POOL_TUP.address,
-            tokenAddress: addresses.DAI
+            tokenAddress: addresses.DAI,
+            disabled: true
         },
         FRAX: {
             address: FRAX_POOL_TUP.address,
-            tokenAddress: addresses.FRAX
+            tokenAddress: addresses.FRAX,
+            disabled: true
         },
-        // LINK: {
-        //     address: LINK_POOL_TUP.address,
-        //     tokenAddress: addresses.LINK
-        // },
+        LINK: {
+            address: LINK_POOL_TUP.address,
+            tokenAddress: addresses.LINK,
+            disabled: true
+        },
         UNI: {
             address: UNI_POOL_TUP.address,
-            tokenAddress: addresses.UNI
+            tokenAddress: addresses.UNI,
+            disabled: true
         }
     },
+    poolsUnlocking: true,
     TRADERJOEV2_LP_ASSETS_CONFIG: {
         // 'TJLB_DAI_USDCe': { primary: 'DAI', secondary: 'USDCe', name: 'DAI-USDCe', dex: 'TraderJoe', symbol: 'TJLB_DAI_USDCe', decimals: 18, baseFee: '0.00005', address: addresses['TJLB_DAI_USDCe'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
         'TJLB_ETH_USDT': { primary: 'ETH', secondary: 'USDT', name: 'ETH-USDT', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDT', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDT'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
