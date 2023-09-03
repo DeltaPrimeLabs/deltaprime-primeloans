@@ -464,7 +464,7 @@ export default {
               farm.totalBalance = farmData[3];
               farm.currentApy = farmData[4];
 
-              if (farm.protocol === 'YIELD_YAK') {
+              if (['YIELD_YAK','BEEFY_FINANCE'].includes(farm.protocol)) {
                 farm.totalStaked = farmData[5];
               } else if (farm.protocol === 'VECTOR_FINANCE') {
                 if (farm.autoCompounding) {

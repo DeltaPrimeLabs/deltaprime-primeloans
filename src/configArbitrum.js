@@ -34,8 +34,8 @@ export default {
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
-        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
+        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
@@ -99,9 +99,9 @@ export default {
             logo: 'yak.svg',
             name: 'Yield Yak'
         },
-        VECTOR_FINANCE: {
-            logo: 'vector.png',
-            name: 'Vector Finance'
+        BEEFY_FINANCE: {
+            logo: 'beefy.png',
+            name: 'Beefy Finance'
         },
     },
     FARMED_TOKENS_CONFIG: {
@@ -148,6 +148,30 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDT'],
                 strategy: 'USDT',
+                refreshDelay: 60000,
+                gasStake: 4000000,
+                gasUnstake: 4000000
+            }
+        ],
+        "GMX": [
+            {
+                protocol: 'BEEFY_FINANCE',
+                autoCompounding: true,
+                protocolIdentifier: 'MOO_GMX',
+                balance: async (address) => yieldYakBalance('0x5B904f19fb9ccf493b623e5c8cE91603665788b0', address),
+                stakingContractAddress: '0x5B904f19fb9ccf493b623e5c8cE91603665788b0',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'stakeGmxBeefy',
+                unstakeMethod: 'unstakeGmxBeefy',
+                feedSymbol: 'MOO_GMX',
+                symbol: 'BEEFY',
+                token: 'GMX',
+                isTokenLp: false,
+                info: 'Stakes GMX token.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['GMX'],
+                strategy: 'GMX',
                 refreshDelay: 60000,
                 gasStake: 4000000,
                 gasUnstake: 4000000

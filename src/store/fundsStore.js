@@ -757,6 +757,10 @@ export default {
 
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
 
+      //TODO: hardcoded values
+      apys['GMX'] = {};
+      apys['GMX']['BEEFY_FINANCE'] = 2;
+
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
