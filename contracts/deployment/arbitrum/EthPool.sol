@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: d511a90d3722e4a323de89435179465e006f8335;
+// Last deployed from commit: 9c92fb9e3145f5c6df5afa94924e0ab9dd25255e;
 pragma solidity 0.8.17;
 
 import "../../Pool.sol";
@@ -19,7 +19,7 @@ contract EthPool is Pool {
     }
 
     function symbol() public virtual override pure returns(string memory _symbol){
-        _symbol = "DPWETHe";
+        _symbol = "DPWETH";
     }
 
     function decimals() public virtual override pure returns(uint8 decimals){

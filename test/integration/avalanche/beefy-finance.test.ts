@@ -87,7 +87,7 @@ describe('Smart loan', () => {
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), "avalanche", getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
             tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
@@ -105,6 +105,7 @@ describe('Smart loan', () => {
 
             tokensPrices = await getTokensPricesMap(
                 [],
+                "avalanche",
                 getRedstonePrices,
                 [
                     {symbol: 'TJ_AVAX_USDC_LP', value: tjLPTokenPrice},
@@ -162,7 +163,7 @@ describe('Smart loan', () => {
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
-            tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices,
+            tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], "avalanche", getRedstonePrices,
                 [{
                     symbol: 'TJ_AVAX_USDC_LP',
                     value: tjLPTokenPrice

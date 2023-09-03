@@ -66,7 +66,7 @@ describe('TraderJoeIntermediary', () => {
 
             let assetsList = ['AVAX', 'USDC'];
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices);
             addMissingTokenContracts(tokenContracts, assetsList);
 
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");

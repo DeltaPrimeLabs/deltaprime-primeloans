@@ -109,7 +109,7 @@ describe('ParaSwap', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000);
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));

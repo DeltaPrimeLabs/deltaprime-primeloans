@@ -6,13 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
-import "../../interfaces/facets/avalanche/IBeefyFinance.sol";
+import "../../interfaces/facets/IBeefyFinance.sol";
 
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
-import "../../interfaces/facets/avalanche/IBeefyFinance.sol";
 
 contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;

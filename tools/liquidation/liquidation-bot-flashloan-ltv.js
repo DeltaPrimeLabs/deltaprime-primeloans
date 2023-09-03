@@ -64,7 +64,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
     let pricesArg = {}
-    let tokensPrices = await getTokensPricesMap(Object.keys(TOKEN_ADDRESSES), getRedstonePrices, []);
+    let tokensPrices = await getTokensPricesMap(Object.keys(TOKEN_ADDRESSES), "avalanche", getRedstonePrices, []);
     for (const asset of await tokenManager.getAllPoolAssets()) {
         pricesArg[fromBytes32(asset)] = tokensPrices.get(fromBytes32(asset));
     }

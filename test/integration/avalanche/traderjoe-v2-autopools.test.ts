@@ -83,6 +83,7 @@ describe('Smart loan', () => {
 
             tokensPrices = await getTokensPricesMap(
                 assetsList.filter(el => el !== 'TJ_AVAX_USDC_AUTO'),
+                "avalanche",
                 getRedstonePrices,
                 [{symbol: 'TJ_AVAX_USDC_AUTO', value: 0.7921586398264056}]
             );

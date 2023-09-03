@@ -180,7 +180,7 @@ describe('PangolinIntermediary', () => {
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices, []);
+            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             USD_PRICE = tokensPrices.get('USDC')!;
 
