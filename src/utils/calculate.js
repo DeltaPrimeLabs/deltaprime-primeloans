@@ -235,6 +235,7 @@ export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddre
   try {
     stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
   } catch (e) {
+    console.log(e)
 
   }
 
