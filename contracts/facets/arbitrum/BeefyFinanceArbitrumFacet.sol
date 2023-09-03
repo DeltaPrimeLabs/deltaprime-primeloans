@@ -13,116 +13,83 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
     // Vaults
-    address private constant MOO_PNG_AVAX_USDC_LP = 0xf3340EdF16563D52C7E7C576F2fCC8f3D52464aB;
-    address private constant MOO_PNG_AVAX_USDCe_LP = 0x9B02209a331c072637C6eBd34cdCD6b6A16987a9;
-    address private constant MOO_TJ_AVAX_USDC_LP = 0x7E5bC7088aB3Da3e7fa1Aa7ceF1dC73F5B00681c;
+    address private constant MOO_SUSHI_DPX_ETH_LP = 0x4D323f77c32EDdC62BF8eAbA11E5C573FD0a2ccd;
+    address private constant MOO_GMX = 0x5B904f19fb9ccf493b623e5c8cE91603665788b0;
 
     // LPs
-    address private constant PNG_AVAX_USDC_LP = 0x0e0100Ab771E9288e0Aa97e11557E6654C3a9665;
-    address private constant PNG_AVAX_USDCe_LP = 0xbd918Ed441767fe7924e99F6a0E0B568ac1970D9;
-    address private constant TJ_AVAX_USDC_LP = 0xf4003F4efBE8691B60249E6afbD307aBE7758adb;
+    address private constant SUSHI_DPX_ETH_LP = 0x0C1Cf6883efA1B496B01f654E247B9b419873054;
+    address private constant GMX = 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a;
 
     // ----- STAKE -----
 
     /**
-      * Stakes PNG_AVAX_USDC_LP in the Beefy protocol
+      * Stakes SUSHI_DPX_ETH_LP in the Beefy protocol
       * @dev This function uses the redstone-evm-connector
-      * @param amount amount of PNG_AVAX_USDC_LP to be staked
+      * @param amount amount of SUSHI_DPX_ETH_LP to be staked
     **/
-    function stakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-            lpTokenAddress: PNG_AVAX_USDC_LP,
-            vaultAddress: MOO_PNG_AVAX_USDC_LP,
-            lpTokenSymbol: "PNG_AVAX_USDC_LP",
-            vaultTokenSymbol: "MOO_PNG_AVAX_USDC_LP",
+            lpTokenAddress: SUSHI_DPX_ETH_LP,
+            vaultAddress: MOO_SUSHI_DPX_ETH_LP,
+            lpTokenSymbol: "SUSHI_DPX_ETH_LP",
+            vaultTokenSymbol: "MOO_SUSHI_DPX_ETH_LP",
             amount: amount
         }));
     }
 
     /**
-      * Stakes PNG_AVAX_USDCe_LP in the Beefy protocol
+      * Stakes GMX in the Beefy protocol
       * @dev This function uses the redstone-evm-connector
-      * @param amount amount of PNG_AVAX_USDCe_LP to be staked
+      * @param amount amount of GMX to be staked
     **/
-    function stakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-        lpTokenAddress: PNG_AVAX_USDCe_LP,
-        vaultAddress: MOO_PNG_AVAX_USDCe_LP,
-        lpTokenSymbol: "PNG_AVAX_USDCe_LP",
-        vaultTokenSymbol: "MOO_PNG_AVAX_USDCe_LP",
-        amount: amount
-        }));
-    }
-
-    /**
-      * Stakes TJ_AVAX_USDC_LP in the Beefy protocol
-      * @dev This function uses the redstone-evm-connector
-      * @param amount amount of TJ_AVAX_USDC_LP to be staked
-    **/
-    function stakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
-        _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-        lpTokenAddress: TJ_AVAX_USDC_LP,
-        vaultAddress: MOO_TJ_AVAX_USDC_LP,
-        lpTokenSymbol: "TJ_AVAX_USDC_LP",
-        vaultTokenSymbol: "MOO_TJ_AVAX_USDC_LP",
-        amount: amount
+            lpTokenAddress: GMX,
+            vaultAddress: MOO_GMX,
+            lpTokenSymbol: "GMX",
+            vaultTokenSymbol: "MOO_GMX",
+            amount: amount
         }));
     }
 
     // ----- UNSTAKE -----
 
     /**
-      * Unstakes PNG_AVAX_USDC_LP from the Beefy protocol
+      * Unstakes SUSHI_DPX_ETH_LP from the Beefy protocol
       * @dev This function uses the redstone-evm-connector
-      * @param amount amount of PNG_AVAX_USDC_LP to be unstaked
+      * @param amount amount of SUSHI_DPX_ETH_LP to be unstaked
     **/
-    function unstakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
-        _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-        lpTokenAddress: PNG_AVAX_USDC_LP,
-        vaultAddress: MOO_PNG_AVAX_USDC_LP,
-        lpTokenSymbol: "PNG_AVAX_USDC_LP",
-        vaultTokenSymbol: "MOO_PNG_AVAX_USDC_LP",
-        amount: amount
+    function unstakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+            _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
+            lpTokenAddress: SUSHI_DPX_ETH_LP,
+            vaultAddress: MOO_SUSHI_DPX_ETH_LP,
+            lpTokenSymbol: "SUSHI_DPX_ETH_LP",
+            vaultTokenSymbol: "MOO_SUSHI_DPX_ETH_LP",
+            amount: amount
         }));
     }
 
     /**
-      * Unstakes PNG_AVAX_USDCe_LP from the Beefy protocol
+      * Untakes GMX from the Beefy protocol
       * @dev This function uses the redstone-evm-connector
-      * @param amount amount of PNG_AVAX_USDCe_LP to be unstaked
+      * @param amount amount of GMX to be unstaked
     **/
-    function unstakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-        lpTokenAddress: PNG_AVAX_USDCe_LP,
-        vaultAddress: MOO_PNG_AVAX_USDCe_LP,
-        lpTokenSymbol: "PNG_AVAX_USDCe_LP",
-        vaultTokenSymbol: "MOO_PNG_AVAX_USDCe_LP",
-        amount: amount
-        }));
-    }
-
-    /**
-      * Untakes TJ_AVAX_USDC_LP from the Beefy protocol
-      * @dev This function uses the redstone-evm-connector
-      * @param amount amount of TJ_AVAX_USDC_LP to be unstaked
-    **/
-    function unstakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
-        _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
-        lpTokenAddress: TJ_AVAX_USDC_LP,
-        vaultAddress: MOO_TJ_AVAX_USDC_LP,
-        lpTokenSymbol: "TJ_AVAX_USDC_LP",
-        vaultTokenSymbol: "MOO_TJ_AVAX_USDC_LP",
-        amount: amount
+            lpTokenAddress: GMX,
+            vaultAddress: MOO_GMX,
+            lpTokenSymbol: "GMX",
+            vaultTokenSymbol: "MOO_GMX",
+            amount: amount
         }));
     }
 
     // ----- PRIVATE METHODS -----
-
 
     /**
       * Stakes {stakingDetails.lpTokenAddress} LP token in the Beefy protocol
@@ -157,9 +124,9 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
     }
 
     /**
-              * Unstakes {stakingDetails.lpTokenAddress} LP token in the Beefy protocol
-              * @dev This function uses the redstone-evm-connector
-              * @param stakingDetails IBeefyFinance.BeefyStakingDetails staking details
+     * Unstakes {stakingDetails.lpTokenAddress} LP token in the Beefy protocol
+     * @dev This function uses the redstone-evm-connector
+     * @param stakingDetails IBeefyFinance.BeefyStakingDetails staking details
     **/
     function _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails memory stakingDetails) private {
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);

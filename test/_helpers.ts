@@ -576,8 +576,8 @@ function getPriceWithLatestTimestamp(prices: any, symbol: any){
     }
 }
 
-export const getRedstonePrices = async function(tokenSymbols: Array<string>, priceProvider: string = "redstone-avalanche-prod-1"): Promise<any> {
-    const redstonePrices = await (await fetch('https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-avalanche-prod')).json();
+export const getRedstonePrices = async function(tokenSymbols: Array<string>, chain: string = "avalanche"): Promise<any> {
+    const redstonePrices = await (await fetch(`https://oracle-gateway-1.a.redstone.finance/data-packages/latest/redstone-${chain}-prod`)).json();
     let result = [];
     for(const symbol of tokenSymbols){
         result.push(getPriceWithLatestTimestamp(redstonePrices, symbol));
@@ -585,8 +585,8 @@ export const getRedstonePrices = async function(tokenSymbols: Array<string>, pri
     return result;
 }
 
-export const getTokensPricesMap = async function(tokenSymbols: Array<string>, priceProviderFunc: Function, additionalMockTokensPrices: Array<MockTokenPriceObject> = [], resultMap: Map<string, number> = new Map()): Promise<Map<string, number>> {
-    for (const [tokenSymbol, tokenPrice] of zip([tokenSymbols, await priceProviderFunc(tokenSymbols)])) {
+export const getTokensPricesMap = async function(tokenSymbols: Array<string>, chain: string, priceProviderFunc: Function, additionalMockTokensPrices: Array<MockTokenPriceObject> = [], resultMap: Map<string, number> = new Map()): Promise<Map<string, number>> {
+    for (const [tokenSymbol, tokenPrice] of zip([tokenSymbols, await priceProviderFunc(tokenSymbols, chain)])) {
         resultMap.set(tokenSymbol, tokenPrice);
     }
     if(additionalMockTokensPrices.length > 0) {
@@ -601,7 +601,7 @@ export const convertTokenPricesMapToMockPrices = function(tokensPrices: Map<stri
 
 export const convertAssetsListToSupportedAssets = function(assetsList: Array<string>, customTokensAddresses: any = [], chain = 'AVAX') {
 
-    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
+    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : chain === 'ARBITRUM' ? ARBITRUM_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
     return assetsList.map(asset => {
         let debtCoverage = ['JOE', 'SHLB_JOE-AVAX_B'].includes(asset) ? '0.8' : '0.8333333333333333';
         // @ts-ignore
@@ -624,10 +624,12 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig = undefined, provider = undefined) {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
-        : await ethers.getContractAt('IDiamondCut', diamondAddress, hardhatConfig.deployer);
+        : (hardhatConfig && hardhatConfig.deployer) ?
+        await ethers.getContractAt('IDiamondCut', diamondAddress, hardhatConfig.deployer)
+        : await ethers.getContractAt('IDiamondCut', diamondAddress);
     await diamondCut.pause();
 
     await deployFacet(
@@ -876,6 +878,27 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+        await deployFacet(
+            "SushiSwapDEXFacet",
+            diamondAddress,
+            [
+                'swapSushiSwap',
+                'addLiquiditySushiSwap',
+                'removeLiquiditySushiSwap'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "BeefyFinanceArbitrumFacet",
+            diamondAddress,
+            [
+                'stakeSushiDpxEthLpBeefy',
+                'stakeGmxBeefy',
+                'unstakeSushiDpxEthLpBeefy',
+                'unstakeGmxBeefy'
+            ],
+            hardhatConfig
+        )
     }
     if (chain == 'ETHEREUM') {
         console.log('here')
@@ -957,7 +980,7 @@ function getMissingTokenContracts(assetsList: Array<string>, tokenContracts: Map
 
 export const addMissingTokenContracts = function (tokensContract: Map<string, Contract>, assetsList: Array<string>, chain: string = 'AVAX') {
     let missingTokens: Array<string> = getMissingTokenContracts(assetsList, tokensContract);
-    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
+    const tokenAddresses = chain === 'AVAX' ? AVAX_TOKEN_ADDRESSES : chain === 'ARBITRUM' ? ARBITRUM_TOKEN_ADDRESSES : CELO_TOKEN_ADDRESSES
     for (const missingToken of missingTokens) {
         // @ts-ignore
         tokensContract.set(missingToken, new ethers.Contract(tokenAddresses[missingToken] , wavaxAbi, provider));
@@ -1093,11 +1116,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX', nativeAssetAddress: string = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
-    await updateConstants(chain, exchanges, tokenManagerAddress, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol);
+    await updateConstants(chain, exchanges, tokenManagerAddress, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, minSelloutLTV, maxLiquidationBonus, nativeAssetSymbol, nativeAssetAddress);
     execSync(`npx hardhat compile`, {encoding: 'utf-8', stdio: "ignore"});
     return require(artifactsDirectory);
 }

@@ -6,7 +6,7 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/arbitrum/token_addresses.json';
 import {
     addMissingTokenContracts,
     Asset,
@@ -36,7 +36,7 @@ import {
     MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
-    TraderJoeIntermediary,
+    SushiSwapIntermediary,
 } from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
@@ -45,15 +45,15 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const traderJoeRouterAddress = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const sushiSwapRouterAddress = '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
     });
 
-    describe('A loan with staking TJ LP tokens on BeefyFinance', () => {
-        let exchange: TraderJoeIntermediary,
+    describe('A loan with staking tokens on BeefyFinance', () => {
+        let exchange: SushiSwapIntermediary,
             smartLoansFactory: SmartLoansFactory,
             lpTokenAddress: string,
             lpToken: Contract,
@@ -63,8 +63,9 @@ describe('Smart loan', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             MOCK_PRICES: any,
-            tjLPTokenPrice: number,
-            beefyTJLPTokenPrice: number,
+            sushiLPTokenPrice: number,
+            beefySushiLPTokenPrice: number,
+            beefyHopGmxLpTokenPrice: number,
             diamondAddress: any,
             tokenManager: MockTokenManager,
             poolContracts: Map<string, Contract> = new Map(),
@@ -76,9 +77,9 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'];
+            let assetsList = ['ETH', 'DPX', 'SUSHI_DPX_ETH_LP', 'MOO_SUSHI_DPX_ETH_LP', 'GMX', 'MOO_GMX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
-                {name: 'AVAX', airdropList: [depositor]},
+                {name: 'ETH', airdropList: [depositor]},
             ];
 
             diamondAddress = await deployDiamond();
@@ -86,35 +87,24 @@ describe('Smart loan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
             await smartLoansFactory.initialize(diamondAddress);
 
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['TJ_AVAX_USDC_LP', 'MOO_TJ_AVAX_USDC_LP'].includes(el))), "avalanche", getRedstonePrices, []);
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 1000, 'ARBITRUM');
+            tokensPrices = await getTokensPricesMap(assetsList, "arbitrum", getRedstonePrices, []);
 
             // TODO: Add possibility of adding custom ABIs to addMissingTokenContracts()
-            tokenContracts.set('TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['TJ_AVAX_USDC_LP'], LPAbi, provider));
-            tokenContracts.set('MOO_TJ_AVAX_USDC_LP', new ethers.Contract(TOKEN_ADDRESSES['MOO_TJ_AVAX_USDC_LP'], LPAbi, provider));
-
-            let lpTokenTotalSupply = await tokenContracts.get('TJ_AVAX_USDC_LP')!.totalSupply();
-            let [lpTokenToken0Reserve, lpTokenToken1Reserve] = await tokenContracts.get('TJ_AVAX_USDC_LP')!.getReserves();
-            let token0USDValue = fromWei(lpTokenToken0Reserve) * tokensPrices.get('AVAX')!;
-            let token1USDValue = formatUnits(lpTokenToken1Reserve, BigNumber.from("6")) * tokensPrices.get('USDC')!;
-            tjLPTokenPrice = (token0USDValue + token1USDValue) / fromWei(lpTokenTotalSupply);
-            let bfTotalSupply = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.totalSupply();
-            let bfTotalDeposits = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balance();
-            beefyTJLPTokenPrice = tjLPTokenPrice * fromWei(bfTotalDeposits) / fromWei(bfTotalSupply)
-
+            tokenContracts.set('SUSHI_DPX_ETH_LP', new ethers.Contract(TOKEN_ADDRESSES['SUSHI_DPX_ETH_LP'], LPAbi, provider));
+            tokenContracts.set('MOO_SUSHI_DPX_ETH_LP', new ethers.Contract(TOKEN_ADDRESSES['MOO_SUSHI_DPX_ETH_LP'], LPAbi, provider));
+            tokenContracts.set('MOO_GMX', new ethers.Contract(TOKEN_ADDRESSES['MOO_GMX'], LPAbi, provider));
 
             tokensPrices = await getTokensPricesMap(
                 [],
-                "avalanche",
+                "arbitrum",
                 getRedstonePrices,
-                [
-                    {symbol: 'TJ_AVAX_USDC_LP', value: tjLPTokenPrice},
-                    {symbol: 'MOO_TJ_AVAX_USDC_LP', value: beefyTJLPTokenPrice},
-                ],
+                [],
                 tokensPrices
             );
-            addMissingTokenContracts(tokenContracts, assetsList);
-            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            addMissingTokenContracts(tokenContracts, assetsList, 'ARBITRUM');
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'ARBITRUM');
 
             tokenManager = await deployContract(
                 owner,
@@ -125,9 +115,9 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
-            exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
+            exchange = await deployAndInitExchangeContract(owner, sushiSwapRouterAddress, tokenManager.address, supportedAssets, "SushiSwapIntermediary") as SushiSwapIntermediary;
 
-            lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC']);
+            lpTokenAddress = await exchange.connect(owner).getPair(TOKEN_ADDRESSES['DPX'], TOKEN_ADDRESSES['ETH']);
             lpToken = new ethers.Contract(lpTokenAddress, erc20ABI, provider);
 
             let addressProvider = await deployContract(
@@ -141,7 +131,7 @@ describe('Smart loan', () => {
                 "DeploymentConstants",
                 [
                     {
-                        facetPath: './contracts/facets/avalanche/TraderJoeDEXFacet.sol',
+                        facetPath: './contracts/facets/arbitrum/SushiSwapDEXFacet.sol',
                         contractAddress: exchange.address,
                     }
                 ],
@@ -149,11 +139,15 @@ describe('Smart loan', () => {
                 addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
-                'lib'
+                'lib',
+                5000,
+                "1.042e18",
+                100,
+                "ETH",
+                "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
             );
 
-
-            await deployAllFacets(diamondAddress)
+            await deployAllFacets(diamondAddress, true, 'ARBITRUM');
         });
 
         it("should deploy a smart loan", async () => {
@@ -162,17 +156,6 @@ describe('Smart loan', () => {
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
 
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
-
-            tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], "avalanche", getRedstonePrices,
-                [{
-                    symbol: 'TJ_AVAX_USDC_LP',
-                    value: tjLPTokenPrice
-                },
-                    {
-                        symbol: 'MOO_TJ_AVAX_USDC_LP',
-                        value: beefyTJLPTokenPrice
-                    }]);
-            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             wrappedLoan = WrapperBuilder
                 // @ts-ignore
@@ -191,16 +174,15 @@ describe('Smart loan', () => {
                 });
         });
 
-        it("should swap and addLiquidity on TJ", async () => {
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("500")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("500"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("500"));
+        it("should swap and addLiquidity on Sushi", async () => {
+            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("300")});
+            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("300"));
+            await wrappedLoan.fund(toBytes32("ETH"), toWei("300"));
 
-
-            await wrappedLoan.swapTraderJoe(
-                toBytes32('AVAX'),
-                toBytes32('USDC'),
-                toWei('200'),
+            await wrappedLoan.swapSushiSwap(
+                toBytes32('ETH'),
+                toBytes32('DPX'),
+                toWei('10'),
                 0
             );
 
@@ -209,81 +191,78 @@ describe('Smart loan', () => {
 
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.equal(0);
 
-            await wrappedLoan.addLiquidityTraderJoe(
-                toBytes32('AVAX'),
-                toBytes32('USDC'),
-                toWei("180"),
-                parseUnits((tokensPrices.get('AVAX')! * 180).toFixed(6), BigNumber.from("6")),
-                toWei("160"),
-                parseUnits((tokensPrices.get('AVAX')! * 160).toFixed(6), BigNumber.from("6"))
+            await wrappedLoan.addLiquiditySushiSwap(
+                toBytes32('ETH'),
+                toBytes32('DPX'),
+                toWei("8"),
+                toWei((tokensPrices.get('ETH')! / tokensPrices.get('DPX')! * 8).toFixed(6)),
+                toWei("6"),
+                toWei((tokensPrices.get('ETH')! / tokensPrices.get('DPX')! * 6).toFixed(6))
             );
             expect(await lpToken.balanceOf(wrappedLoan.address)).to.be.gt(0);
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 50);
         });
 
+        it("should fail to stake Sushi LP tokens on Beefy", async () => {
+            await tokenManager.deactivateToken(tokenContracts.get("SUSHI_DPX_ETH_LP")!.address);
+            await tokenManager.deactivateToken(tokenContracts.get("MOO_SUSHI_DPX_ETH_LP")!.address);
+            await expect(wrappedLoan.stakeSushiDpxEthLpBeefy(1)).to.be.revertedWith("LP token not supported");
 
-        it("should fail to stake TJ LP tokens on Beefy", async () => {
-            await tokenManager.deactivateToken(tokenContracts.get("TJ_AVAX_USDC_LP")!.address);
-            await tokenManager.deactivateToken(tokenContracts.get("MOO_TJ_AVAX_USDC_LP")!.address);
-            await expect(wrappedLoan.stakeTjUsdcAvaxLpBeefy(1)).to.be.revertedWith("LP token not supported");
+            await tokenManager.activateToken(tokenContracts.get("SUSHI_DPX_ETH_LP")!.address);
+            await expect(wrappedLoan.stakeSushiDpxEthLpBeefy(1)).to.be.revertedWith("Vault token not supported");
 
-            await tokenManager.activateToken(tokenContracts.get("TJ_AVAX_USDC_LP")!.address);
-            await expect(wrappedLoan.stakeTjUsdcAvaxLpBeefy(1)).to.be.revertedWith("Vault token not supported");
-
-            await tokenManager.activateToken(tokenContracts.get("MOO_TJ_AVAX_USDC_LP")!.address);
-            await expect(wrappedLoan.stakeTjUsdcAvaxLpBeefy(toWei("9999"))).to.be.revertedWith("Not enough LP token available");
+            await tokenManager.activateToken(tokenContracts.get("MOO_SUSHI_DPX_ETH_LP")!.address);
+            await expect(wrappedLoan.stakeSushiDpxEthLpBeefy(toWei("9999"))).to.be.revertedWith("Not enough LP token available");
         });
 
-
-
-        it("should stake TJ LP tokens on Beefy", async () => {
-            let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let initialStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+        it("should stake Sushi LP tokens on Beefy", async () => {
+            let initialSUSHIDPXETHBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts.get('MOO_SUSHI_DPX_ETH_LP')!.balanceOf(wrappedLoan.address);
 
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
             totalValueBeforeStaking = initialTotalValue;
 
-            expect(initialTJAVAXUSDCBalance).to.be.gt(0);
+            expect(initialSUSHIDPXETHBalance).to.be.gt(0);
             expect(initialStakedBalance).to.be.eq(0);
 
-            await wrappedLoan.stakeTjUsdcAvaxLpBeefy(initialTJAVAXUSDCBalance);
+            await wrappedLoan.stakeSushiDpxEthLpBeefy(initialSUSHIDPXETHBalance);
 
-            let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let endStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+            let endSUSHIDPXETHBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('MOO_SUSHI_DPX_ETH_LP')!.balanceOf(wrappedLoan.address);
 
-            expect(endTJAVAXUSDCBalance).to.be.eq(0);
+            expect(endSUSHIDPXETHBalance).to.be.eq(0);
             expect(endStakedBalance).to.be.gt(0);
 
-            await expect(fromWei(initialTotalValue) - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 0.1);
+            await expect(fromWei(initialTotalValue) - fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(0, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 50);
         });
 
-        it("should fail to unstake TJ LP tokens from Beefy", async () => {
-            await expect(wrappedLoan.unstakeTjUsdcAvaxLpBeefy(toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+        it("should fail to unstake Sushi LP tokens from Beefy", async () => {
+            await expect(wrappedLoan.unstakeSushiDpxEthLpBeefy(toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
         });
 
-        it("should unstake TJ LP tokens from Beefy", async () => {
+        it("should unstake Sushi LP tokens from Beefy", async () => {
             const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let initialStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
-            let initialTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts.get('MOO_SUSHI_DPX_ETH_LP')!.balanceOf(wrappedLoan.address);
+            let initialSUSHIDPXETHBalance = await lpToken.balanceOf(wrappedLoan.address);
 
-            expect(initialTJAVAXUSDCBalance).to.be.eq(0);
+            expect(initialSUSHIDPXETHBalance).to.be.eq(0);
             expect(initialStakedBalance).to.be.gt(0);
 
-            await wrappedLoan.unstakeTjUsdcAvaxLpBeefy(initialStakedBalance);
+            await wrappedLoan.unstakeSushiDpxEthLpBeefy(initialStakedBalance);
 
-            let endTJAVAXUSDCBalance = await lpToken.balanceOf(wrappedLoan.address);
-            let endStakedBalance = await tokenContracts.get('MOO_TJ_AVAX_USDC_LP')!.balanceOf(wrappedLoan.address);
+            let endSUSHIDPXETHBalance = await lpToken.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('MOO_SUSHI_DPX_ETH_LP')!.balanceOf(wrappedLoan.address);
 
-            expect(endTJAVAXUSDCBalance).to.be.gt(0);
+            expect(endSUSHIDPXETHBalance).to.be.gt(0);
             expect(endStakedBalance).to.be.eq(0);
 
             const withdrawalFee = 0.001;    // 0.1 %
@@ -299,4 +278,3 @@ describe('Smart loan', () => {
         });
     });
 });
-

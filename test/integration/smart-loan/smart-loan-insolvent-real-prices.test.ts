@@ -356,7 +356,7 @@ describe('Smart loan - real prices', () => {
 
 
             let assetsList = ['AVAX', 'sAVAX', 'USDC', 'USDT', 'PNG', 'QI', 'ETH', 'BTC', 'YY_AAVE_AVAX', 'GLP']
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
 
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
