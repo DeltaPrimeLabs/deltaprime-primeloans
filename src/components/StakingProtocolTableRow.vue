@@ -72,12 +72,14 @@
           <IconButtonMenuBeta
               class="actions__icon-button"
               :config="addActionsConfig"
+              v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
               :disabled="disableAllButtons || !healthLoaded">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
-              class="actions__icon-button"
+              class="actions__icon-button last"
               :config="removeActionsConfig"
+              v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
               :disabled="disableAllButtons || !healthLoaded">
           </IconButtonMenuBeta>
@@ -118,6 +120,7 @@ export default {
     }
   },
   async mounted() {
+    console.log('mounted')
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
@@ -138,8 +141,8 @@ export default {
       disableAllButtons: false,
       assetBalances: {},
       lpBalances: {},
-      addActionsConfig: {},
-      removeActionsConfig: {},
+      addActionsConfig: null,
+      removeActionsConfig: null,
       healthLoaded: false,
     };
   },
@@ -463,6 +466,7 @@ export default {
       this.isStakedBalanceEstimated = false;
     },
     setupAddActionsConfiguration() {
+      console.log('setupAddActionsConfiguration')
       this.addActionsConfig =   {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
@@ -481,6 +485,7 @@ export default {
       }
     },
     setupRemoveActionsConfiguration() {
+      console.log('setupRemoveActionsConfiguration')
       this.removeActionsConfig =   {
         iconSrc: 'src/assets/icons/minus.svg',
         tooltip: 'Remove',
@@ -660,7 +665,7 @@ export default {
         flex-direction: row;
         align-items: center;
 
-        .action {
+        .actions__icon-button {
           width: 26px;
           height: 26px;
           cursor: pointer;

@@ -153,8 +153,8 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 26px;
+        height: 26px;
         border-radius: 26px;
         filter: grayscale(1);
         margin-right: 8px;
@@ -178,8 +178,8 @@ export default {
         }
 
         .option__icon {
-          height: 34px;
-          width: 34px;
+          height: 22px;
+          width: 22px;
         }
       }
     }

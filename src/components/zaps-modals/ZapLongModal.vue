@@ -374,7 +374,7 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 500;
-  font-size: $font-size-lg;
+  font-size: $font-size-md;
   margin-bottom: 20px;
 }
 
