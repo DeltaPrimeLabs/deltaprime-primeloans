@@ -13,7 +13,7 @@ import {BigNumber, utils} from 'ethers';
 import {initializeApp} from 'firebase/app';
 import {getFirestore, collection, query, getDocs} from 'firebase/firestore/lite';
 import firebaseConfig from '../../.secrets/firebaseConfig.json';
-import {mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
+import {getBinPrice, mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wrappedAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import router from '@/router';
@@ -610,9 +610,12 @@ export default {
       let cumulativeTokenXAmount = BigNumber.from(0);
       let cumulativeTokenYAmount = BigNumber.from(0);
 
-      let binBalances = [];
-      let binBalancesPrimary = [];
-      let binBalancesSecondary = [];
+      let accountBalances = [];
+      let accountBalancesPrimary = [];
+      let accountBalancesSecondary = [];
+      let binBalancePrimary = [];
+      let binBalanceSecondary = [];
+      let binTotalSupply = [];
 
       await Promise.all(
         binIds.map(async (binId, i) => {
@@ -628,9 +631,12 @@ export default {
           cumulativeTokenXAmount = cumulativeTokenXAmount.add(binTokenXAmount);
           cumulativeTokenYAmount = cumulativeTokenYAmount.add(binTokenYAmount);
 
-          binBalances[i] = lbTokenAmount;
-          binBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
-          binBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
+          accountBalances[i] = fromWei(lbTokenAmount);
+          accountBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
+          accountBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
+          binBalancePrimary[i] = formatUnits(reserves[0], state.assets[lpToken.primary].decimals);
+          binBalanceSecondary[i] = formatUnits(reserves[1], state.assets[lpToken.secondary].decimals);
+          binTotalSupply[i] = fromWei(totalSupply);
 
           return {
             lbTokenAmount,
@@ -643,9 +649,12 @@ export default {
       return {
         cumulativeTokenXAmount,
         cumulativeTokenYAmount,
-        binBalances,
-        binBalancesPrimary,
-        binBalancesSecondary
+        accountBalances,
+        accountBalancesPrimary,
+        accountBalancesSecondary,
+        binBalancePrimary,
+        binBalanceSecondary,
+        binTotalSupply
       }
     },
 
@@ -660,18 +669,27 @@ export default {
         const loanBinIds = loanBinsForPair.map(bin => bin.id);
         loanBinIds.sort((a, b) => a - b);
 
-        const { cumulativeTokenXAmount, cumulativeTokenYAmount, binBalances, binBalancesPrimary, binBalancesSecondary } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+        const { cumulativeTokenXAmount, cumulativeTokenYAmount, accountBalances, accountBalancesPrimary, accountBalancesSecondary, binBalancePrimary, binBalanceSecondary, binTotalSupply  } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
           lbPairAddress: traderJoeV2LpAssets[assetSymbol].address,
           binIds: loanBinIds,
           lpToken: traderJoeV2LpAssets[assetSymbol]
         });
 
-        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(cumulativeTokenXAmount, state.assets[traderJoeV2LpAssets[assetSymbol].primary].decimals);
-        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(cumulativeTokenYAmount, state.assets[traderJoeV2LpAssets[assetSymbol].secondary].decimals);
+        let primaryToken = state.assets[traderJoeV2LpAssets[assetSymbol].primary];
+        let secondaryToken = state.assets[traderJoeV2LpAssets[assetSymbol].secondary];
+
+        let binPrices = loanBinIds.map(id => getBinPrice(id, traderJoeV2LpAssets[assetSymbol].binStep, primaryToken.decimals, secondaryToken.decimals))
+
+        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(cumulativeTokenXAmount, primaryToken.decimals);
+        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(cumulativeTokenYAmount, secondaryToken.decimals);
         traderJoeV2LpAssets[assetSymbol].binIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
-        traderJoeV2LpAssets[assetSymbol].binBalances = binBalances; // balances of user owned bins (the same order as binIds)
-        traderJoeV2LpAssets[assetSymbol].binBalancesPrimary = binBalancesPrimary; // balances of user owned bins (the same order as binIds)
-        traderJoeV2LpAssets[assetSymbol].binBalancesSecondary = binBalancesSecondary; // balances of user owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].accountBalances = accountBalances; // balances of account owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].accountBalancesPrimary = accountBalancesPrimary; // balances of account owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].accountBalancesSecondary = accountBalancesSecondary; // balances of account owned bins (the same order as binIds)
+        traderJoeV2LpAssets[assetSymbol].binPrices = binPrices; // price assigned to each bin
+        traderJoeV2LpAssets[assetSymbol].binBalancePrimary = binBalancePrimary; // price assigned to each bin
+        traderJoeV2LpAssets[assetSymbol].binBalanceSecondary = binBalanceSecondary; // price assigned to each bin
+        traderJoeV2LpAssets[assetSymbol].binTotalSupply = binTotalSupply; // price assigned to each bin
 
         const lpService = rootState.serviceRegistry.lpService;
         lpService.emitRefreshLp('TJV2');

@@ -5,7 +5,7 @@
         Withdraw LB tokens to wallet
       </div>
       <div class="modal-top-desc">
-        <div v-if="lpToken.binIds && lpToken.binIds.length > 0 && lpToken.binBalances && lpToken.binBalances.length > 0">
+        <div v-if="lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0">
           This action will transfer your {{ lpToken.name}} LB tokens from your Prime Account to your wallet.
         </div>
         <div v-else>
@@ -15,7 +15,7 @@
       <div class="button-wrapper">
         <Button :label="'Withdraw LB tokens'"
                 v-on:click="submit()"
-                :disabled="!(lpToken.binIds && lpToken.binIds.length > 0 && lpToken.binBalances && lpToken.binBalances.length > 0)"
+                :disabled="!(lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0)"
                 :waiting="transactionOngoing">
         </Button>
       </div>

@@ -215,6 +215,7 @@ export default {
       'concentratedLpAssets',
       'lpBalances',
       'concentratedLpBalances',
+      'traderJoeV2LpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -538,6 +539,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -582,6 +584,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -620,6 +623,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -658,6 +662,7 @@ export default {
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -733,6 +738,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -793,6 +799,7 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;

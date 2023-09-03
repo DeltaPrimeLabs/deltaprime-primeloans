@@ -96,6 +96,7 @@ export default {
     lpBalances: {},
     concentratedLpAssets: {},
     concentratedLpBalances: {},
+    traderJoeV2LpAssets: {},
     farms: {}
   },
 
@@ -184,7 +185,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
     setupValidators() {

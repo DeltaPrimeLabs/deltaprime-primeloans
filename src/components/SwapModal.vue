@@ -240,6 +240,7 @@ export default {
       lpBalances: {},
       concentratedLpAssets: {},
       concentratedLpBalances: {},
+      traderJoeV2LpAssets: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -653,7 +654,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
   }
 };

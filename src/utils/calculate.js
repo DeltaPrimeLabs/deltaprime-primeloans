@@ -20,17 +20,32 @@ export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
-export function calculateHealth(tokens) {
+export function calculateHealth(tokens, lbTokens) {
+  let weightedCollateralFromLBs = 0;
 
-  console.log(tokens);
+  if (lbTokens) {
+    for (let lbToken of lbTokens) {
+      lbToken.binIds.forEach(
+          (binId, i) => {
+            let balancePrimary = parseFloat(lbToken.binBalancePrimary[i]);
+            let balanceSecondary = parseFloat(lbToken.binBalanceSecondary[i])
+            let liquidity = lbToken.binPrices[i] * balancePrimary + balanceSecondary
+            let debtCoveragePrimary = config.ASSETS_CONFIG[lbToken.primary].debtCoverage;
+            let debtCoverageSecondary = config.ASSETS_CONFIG[lbToken.secondary].debtCoverage;
 
-  let weightedCollateral = tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
+            weightedCollateralFromLBs += Math.min(
+                debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
+                debtCoverageSecondary * liquidity / config.ASSETS_CONFIG[lbToken.secondary].price
+            ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
+          }
+      );
+    }
+  }
+
+  let weightedCollateral = weightedCollateralFromLBs + tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
   let weightedBorrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed * token.debtCoverage, 0);
   let borrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed, 0);
 
-  console.log('weightedCollateral: ', weightedCollateral)
-  console.log('weightedBorrowed: ', weightedBorrowed)
-  console.log('borrowed: ', borrowed)
   if (borrowed === 0) return 1;
 
   return Math.max(weightedCollateral >= 0 ? (weightedCollateral + weightedBorrowed - borrowed) / weightedCollateral : 0, 0);
@@ -339,6 +354,11 @@ export const paraSwapRouteToSimpleData = (txParams) => {
     uuid: decoded[14],
   };
 };
+
+export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
+  const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
+  return binPrice.toFixed(5);
+}
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;

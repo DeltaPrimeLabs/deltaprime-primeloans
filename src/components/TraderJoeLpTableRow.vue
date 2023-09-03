@@ -328,7 +328,7 @@ export default {
       modalInstance.$on('WITHDRAW', addFromWalletEvent => {
         const withdrawLiquidityRequest = {
           ids: this.lpToken.binIds,
-          amounts: this.lpToken.binBalances,
+          amounts: this.lpToken.accountBalances,
           pair: this.lpToken.address
         };
 
@@ -508,11 +508,11 @@ export default {
     calculateChartData() {
       if (this.lpToken.binIds) {
         this.chartData = this.lpToken.binIds.map((binId, index) => ({
-          isPrimary: this.lpToken.binBalancesPrimary[index] > this.lpToken.binBalancesSecondary[index],
-          primaryTokenBalance: this.lpToken.binBalancesPrimary[index],
-          secondaryTokenBalance: this.lpToken.binBalancesSecondary[index],
+          isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
+          primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
+          secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
           price: ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)).toFixed(5),
-          value: this.lpToken.binBalancesPrimary[index] * this.firstAsset.price + this.lpToken.binBalancesSecondary[index] * this.secondAsset.price
+          value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
       }
     }

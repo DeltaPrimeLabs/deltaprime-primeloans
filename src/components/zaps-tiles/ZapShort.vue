@@ -43,6 +43,7 @@ export default {
       'assets',
       'lpAssets',
       'concentratedLpAssets',
+      'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
       'fullLoanStatus'
@@ -91,6 +92,7 @@ export default {
         modalInstance.concentratedLpAssets = this.concentratedLpAssets;
         modalInstance.lpBalances = this.lpBalances;
         modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+        modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
         modalInstance.farms = this.farms;
         modalInstance.debtsPerAsset = this.debtsPerAsset;
         modalInstance.debt = this.fullLoanStatus.debt;

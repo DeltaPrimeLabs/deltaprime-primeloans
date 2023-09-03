@@ -166,7 +166,8 @@ export default {
       'assets',
       'debtsPerAsset',
       'lpAssets',
-      'lpBalances'
+      'lpBalances',
+      'traderJoeV2LpAssets'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -296,6 +297,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -329,6 +331,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;

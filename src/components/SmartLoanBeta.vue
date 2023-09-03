@@ -144,6 +144,7 @@ export default {
       'lpBalances',
       'concentratedLpAssets',
       'concentratedLpBalances',
+      'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
       'smartLoanContract',
@@ -335,7 +336,8 @@ export default {
             this.lpBalances,
             this.concentratedLpAssets,
             this.concentratedLpBalances,
-            this.farms
+            this.traderJoeV2LpAssets,
+            this.farms,
         );
         console.log('healthCalculatedDirectly', healthCalculatedDirectly);
         this.health = healthCalculatedDirectly;
