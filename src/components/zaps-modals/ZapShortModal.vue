@@ -10,6 +10,8 @@
           <Checkbox :label="'Include funds from your wallet'" v-on:checkboxChange="addFromWalletCheckboxChange"></Checkbox>
         </div>
 
+        <div class="input-label"><b>Your collateral:</b></div>
+
         <div class="modal-top-info">
           <div class="top-info__label">Available:</div>
           <div class="top-info__value" v-bind:class="{'available-balance--loading': !availableAssetAmount}">
@@ -23,7 +25,6 @@
             </div>
           </div>
         </div>
-
         <div class="top-up-input">
           <CurrencyComboInput ref="stableCoinInput"
                               :asset-options="stableCoinsOptions"
@@ -78,10 +79,10 @@
             <div class="summary__divider"></div>
             <div>
               <div class="summary__label">
-                {{selectedShortAsset}} short for:
+                {{selectedShortAsset}} shorted:
               </div>
               <div class="summary__value">
-                {{shortPositionValueInStableCoin | smartRound(5, true)}} {{selectedStableCoin}}
+                {{assets[selectedShortAsset] ? stableCoinAmount * leverage / assets[selectedShortAsset].price : 0 | smartRound(5, true)}} {{selectedShortAsset}}
               </div>
             </div>
           </div>
@@ -90,7 +91,7 @@
 
 
       <div class="button-wrapper">
-        <Button :disabled="!(stableCoinAmount && selectedShortAsset && leverage)" :label="'Short'" v-on:click="submit()"></Button>
+        <Button :disabled="!(stableCoinAmount && selectedShortAsset && leverage)" :waiting="transactionOngoing" :label="'Short'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -155,6 +156,7 @@ export default {
       shortAssetAmount: 0,
       extraDepositRequired: 0,
       shortPositionValueInStableCoin: 0,
+      transactionOngoing: false
     };
   },
 
@@ -316,11 +318,18 @@ export default {
     },
 
     submit() {
+      const depositAmount = this.stableCoinAmount > Number(this.accountAssetBalances[this.selectedStableCoin]) ?
+          (Number(this.stableCoinAmount) - Number(this.accountAssetBalances[this.selectedStableCoin])) * 1.02 : 0;
+
+      this.transactionOngoing = true;
+
       this.$emit('ZAP_SHORT_EVENT',
         {
           stableCoin: this.selectedStableCoin,
+          stableCoinAmount: this.stableCoinAmount,
           shortAsset: this.selectedShortAsset,
-          shortAssetAmount: this.shortAssetAmount,
+          leverage: this.leverage,
+          depositAmount: depositAmount
         }
       );
     },
@@ -345,6 +354,12 @@ export default {
 
 .top-up-input {
   margin-bottom: 20px;
+}
+
+.input-label {
+  text-align: center;
+  color: var(--modal__top-info-color);
+  margin-bottom: 15px;
 }
 
 .assets-container {

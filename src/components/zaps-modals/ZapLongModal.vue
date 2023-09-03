@@ -89,7 +89,7 @@
 
 
       <div class="button-wrapper">
-        <Button :disabled="!(stableCoinAmount && selectedLongAsset && leverage)" :label="'Long'" v-on:click="submit()"></Button>
+        <Button :disabled="!(stableCoinAmount && selectedLongAsset && leverage)" :waiting="transactionOngoing" :label="'Long'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -154,6 +154,7 @@ export default {
       selectedLongAsset: null,
       longPositionValue: 0,
       longPositionTokenAmount: 0,
+      transactionOngoing: false
     };
   },
 
@@ -318,6 +319,7 @@ export default {
     submit() {
       const depositAmount = this.stableCoinAmount > Number(this.accountAssetBalances[this.selectedStableCoin]) ?
         (Number(this.stableCoinAmount) - Number(this.accountAssetBalances[this.selectedStableCoin])) * 1.02 : 0;
+      this.transactionOngoing = true;
       this.$emit('ZAP_LONG_EVENT',
         {
           stableCoin: this.selectedStableCoin,

@@ -43,6 +43,7 @@ export default {
       'assets',
       'lpAssets',
       'concentratedLpAssets',
+      'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
       'fullLoanStatus'
@@ -91,6 +92,7 @@ export default {
         modalInstance.concentratedLpAssets = this.concentratedLpAssets;
         modalInstance.lpBalances = this.lpBalances;
         modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+        modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
         modalInstance.farms = this.farms;
         modalInstance.debtsPerAsset = this.debtsPerAsset;
         modalInstance.debt = this.fullLoanStatus.debt;
@@ -106,7 +108,8 @@ export default {
           const totalLongValue = Number(zapLongEvent.stableCoinAmount) * Number(zapLongEvent.leverage);
           const borrowRequest = {
             asset: zapLongEvent.stableCoin,
-            amount: Number(zapLongEvent.stableCoinAmount) * (zapLongEvent.leverage - 1)
+            amount: Number(zapLongEvent.stableCoinAmount) * (zapLongEvent.leverage - 1),
+            keepModalOpen: true
           };
           const stableCoinDecimals = config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals;
           const totalLongValueInWei = parseUnits(totalLongValue.toFixed(stableCoinDecimals), BigNumber.from(stableCoinDecimals));
@@ -117,18 +120,20 @@ export default {
             sourceAsset: zapLongEvent.stableCoin,
             targetAsset: zapLongEvent.longAsset,
             sourceAmount: (Number(zapLongEvent.stableCoinAmount) * zapLongEvent.leverage).toString(),
-            targetAmount: 0,
+            targetAmount: 0.95 * (Number(zapLongEvent.stableCoinAmount) * zapLongEvent.leverage) / config.ASSETS_CONFIG[zapLongEvent.longAsset].price,
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
 
           if (zapLongEvent.depositAmount) {
+            console.log('zapLongEvent.depositAmount: ', zapLongEvent.depositAmount)
             const fundRequest = {
               value: parseFloat(zapLongEvent.depositAmount).toFixed(stableCoinDecimals),
               asset: zapLongEvent.stableCoin,
               assetDecimals: config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals,
-              type: 'ASSET'
+              type: 'ASSET',
+              keepModalOpen: true
             };
             await this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             });

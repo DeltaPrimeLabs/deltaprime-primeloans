@@ -6,7 +6,6 @@ import WETH_POOL_TUP from '/deployments/arbitrum/WethPoolTUP.json';
 import DAI_POOL_TUP from '/deployments/arbitrum/DaiPoolTUP.json';
 import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
 import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
-import UNI_POOL_TUP from '/deployments/arbitrum/UniPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '../deployments/avalanche/PangolinIntermediaryTUP.json';
 import TRADERJOE_INTERMEDIARY_TUP from '../deployments/avalanche/TraderJoeIntermediaryTUP.json';
 import {vectorFinanceBalance, yieldYakBalance} from './utils/calculate';
@@ -74,11 +73,6 @@ export default {
         LINK: {
             address: LINK_POOL_TUP.address,
             tokenAddress: addresses.LINK,
-            disabled: true
-        },
-        UNI: {
-            address: UNI_POOL_TUP.address,
-            tokenAddress: addresses.UNI,
             disabled: true
         }
     },

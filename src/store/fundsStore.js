@@ -931,8 +931,11 @@ export default {
           amountInWei,
           {gasLimit: 5000000});
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
-      rootState.serviceRegistry.modalService.closeModal();
+
+      if (!fundRequest.keepModalOpen) {
+        rootState.serviceRegistry.progressBarService.requestProgressBar();
+        rootState.serviceRegistry.modalService.closeModal();
+      }
 
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
@@ -1569,8 +1572,10 @@ export default {
         toBytes32(borrowRequest.asset),
         parseUnits(String(borrowRequest.amount), config.ASSETS_CONFIG[borrowRequest.asset].decimals));
 
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
-      rootState.serviceRegistry.modalService.closeModal();
+      if (!borrowRequest.keepModalOpen) {
+        rootState.serviceRegistry.progressBarService.requestProgressBar();
+        rootState.serviceRegistry.modalService.closeModal();
+      }
 
       let tx = await awaitConfirmation(transaction, provider, 'borrow');
       const borrowedAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Borrowed').args.amount, config.ASSETS_CONFIG[borrowRequest.asset].decimals);
