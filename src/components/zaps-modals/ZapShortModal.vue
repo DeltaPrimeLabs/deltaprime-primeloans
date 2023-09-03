@@ -241,7 +241,7 @@ export default {
 
     leverageChange(leverage) {
       this.leverage = leverage.value;
-      console.log(leverage);
+      this.shortAssetAmount = this.stableCoinAmount * this.leverage / this.assets[this.selectedShortAsset].price;
       this.calculateHealthAfterTransaction();
       this.setupShortPositionDetails();
     },

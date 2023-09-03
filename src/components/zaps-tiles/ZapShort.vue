@@ -105,28 +105,28 @@ export default {
 
         modalInstance.$on('ZAP_SHORT_EVENT', async zapShortEvent => {
           console.log(zapShortEvent);
+          const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
+          const shortAssetAmount = ((Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage) / config.ASSETS_CONFIG[zapShortEvent.shortAsset].price)).toFixed(shortAssetDecimals);
           let stableCoinAmount = Number(zapShortEvent.stableCoinAmount) * zapShortEvent.leverage;
-          const shortAssetAmount = Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage) / config.ASSETS_CONFIG[zapShortEvent.shortAsset].price;
           const borrowRequest = {
-            asset: zapShortEvent.stableCoin,
-            amount: stableCoinAmount,
+            asset: zapShortEvent.shortAsset,
+            amount: shortAssetAmount,
             keepModalOpen: true
           };
           console.log('shortAssetAmount: ', shortAssetAmount)
-          const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
           const totalShortValueInWei = parseUnits(Number(shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
-          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.stableCoin, zapShortEvent.shortAsset, totalShortValueInWei);
-          console.log(swapQueryResponse);
+          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, totalShortValueInWei);
 
           const swapRequest = {
             sourceAsset: zapShortEvent.shortAsset,
             targetAsset: zapShortEvent.stableCoin,
-            sourceAmount: stableCoinAmount,
-            targetAmount: 0.95 * shortAssetAmount,
+            sourceAmount: shortAssetAmount,
+            targetAmount: 0.95 * stableCoinAmount,
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
+
           await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
             console.log('inside borrow callback');
           });
