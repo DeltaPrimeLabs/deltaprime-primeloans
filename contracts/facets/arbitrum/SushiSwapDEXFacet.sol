@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 48601850463d2b56407c5b1e6a596b5a87c4e428;
 pragma solidity 0.8.17;
 
 import "../UniswapV2DEXFacet.sol";
@@ -34,6 +34,6 @@ contract SushiSwapDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x8B4e21F25229076651f843c0a7A7342D844634E7;
+        return 0xfd5665022359586Af38836b88E52E4690a3a7B79;
     }
 }
