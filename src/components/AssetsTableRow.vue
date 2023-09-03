@@ -268,7 +268,7 @@ export default {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
     setupBorrowable() {
-      this.borrowable = Object.keys(config.POOLS_CONFIG);
+      this.borrowable = Object.entries(config.POOLS_CONFIG).filter(([asset, info]) => !info.disabled).map(el => el[0]);
     },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
@@ -1025,7 +1025,9 @@ export default {
     setupPoolsApy() {
       this.poolService.observePools().subscribe(pools => {
         pools.forEach(pool => {
-          this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+          if (!pool.disabled) {
+            this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+          }
         });
       });
     },
