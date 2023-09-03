@@ -70,7 +70,7 @@ export default {
     },
 
     setupLogos() {
-      this.tokenIcons = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && config.POOLS_CONFIG[asset.symbol]).map(asset => this.logoSrc(asset.symbol)).slice(0,6)
+      this.tokenIcons = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && config.POOLS_CONFIG[asset.symbol] && !config.POOLS_CONFIG[asset.symbol].disabled).map(asset => this.logoSrc(asset.symbol)).slice(0,6)
     },
 
     async onTileClick() {

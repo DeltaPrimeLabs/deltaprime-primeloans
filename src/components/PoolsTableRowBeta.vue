@@ -452,7 +452,7 @@ export default {
       }
 
       &.apy {
-        align-items: center;
+        align-items: flex-end;
         justify-content: flex-end;
         font-weight: 600;
         color: var(--asset-table-row__apy-color);

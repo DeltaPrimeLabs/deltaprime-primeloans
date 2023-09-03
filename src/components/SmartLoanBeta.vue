@@ -28,12 +28,14 @@
             <Tab ref="tab-0" :title="'Zaps'"
                  :tab-icon="'src/assets/icons/zaps-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/zaps-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
             >
               <Zaps></Zaps>
             </Tab>
             <Tab ref="tab-1" :title="'Assets'"
                  :tab-icon="'src/assets/icons/assets_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+                 :disabled="primeAccountsBlocked"
             >
               <Assets></Assets>
             </Tab>
@@ -41,6 +43,7 @@
                  :tab-icon="'src/assets/icons/lp-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/lp-icon-slim.svg'"
                  v-if="showLPTab"
+                 :disabled="primeAccountsBlocked"
             >
               <LPTab></LPTab>
             </Tab>
@@ -48,12 +51,15 @@
                  :tab-icon="'src/assets/icons/plant_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
                  v-if="showFarmsTab"
+                 :disabled="primeAccountsBlocked"
             >
               <Farm></Farm>
             </Tab>
             <Tab ref="tab-4" :title="'Stats'"
                  :tab-icon="'src/assets/icons/stats-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'">
+                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
               <Stats></Stats>
             </Tab>
           </Tabs>
@@ -164,6 +170,9 @@ export default {
       'debtService'
     ]),
     ...mapState('network', ['account']),
+    primeAccountsBlocked() {
+      return config.primeAccountsBlocked;
+    }
   },
   watch: {
     assetBalances: {
