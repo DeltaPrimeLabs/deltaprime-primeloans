@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: de0a4e9ee653d2aade275c436805bb3217a8979d;
+// Last deployed from commit: 9c92fb9e3145f5c6df5afa94924e0ab9dd25255e;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -43,25 +43,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     VestingDistributor public vestingDistributor;
 
     uint8 internal _decimals;
-
-    modifier onlyWhitelistedAccounts {
-        if(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
-            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
-            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
-            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
-            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
-            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
-
-        ){
-            _;
-        } else {
-            revert("Not whitelisted");
-        }
-    }
 
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
@@ -154,7 +135,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    function transfer(address recipient, uint256 amount) external override returns (bool) {
+    function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
@@ -222,7 +203,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -260,7 +241,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual onlyWhitelistedAccounts{
+    function deposit(uint256 _amount) public virtual {
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -268,7 +249,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount on behalf of `_of` user.
      * It updates `_of` user deposited balance, total deposited and rates
      **/
-    function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant onlyWhitelistedAccounts {
+    function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant {
         if(_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
@@ -306,7 +287,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdraw(uint256 _amount) external nonReentrant onlyWhitelistedAccounts {
+    function withdraw(uint256 _amount) external nonReentrant {
         if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);
