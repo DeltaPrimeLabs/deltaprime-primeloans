@@ -5,7 +5,7 @@
     </div>
     <div class="zaps__tiles">
       <ZapLong></ZapLong>
-      <ZapShort></ZapShort>
+<!--      <ZapShort></ZapShort>-->
     </div>
   </div>
 </template>
