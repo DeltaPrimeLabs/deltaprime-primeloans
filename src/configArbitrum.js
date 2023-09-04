@@ -85,7 +85,18 @@ export default {
         'TJLB_GMX_ETH': { primary: 'GMX', secondary: 'ETH', name: 'GMX-ETH', dex: 'TraderJoe', symbol: 'TJLB_GMX_ETH', decimals: 18, baseFee: '0.002', address: addresses['TJLB_GMX_ETH'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
         'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2'},
     },
-    LP_ASSETS_CONFIG: {},
+    LP_ASSETS_CONFIG: {
+        "SUSHI_DPX_ETH_LP": {
+            primary: 'DPX',
+            secondary: 'ETH',
+            name: "DPX-ETH",
+            dex: 'Sushi',
+            symbol: 'SUSHI_DPX_ETH_LP',
+            decimals: 18,
+            address: addresses.SUSHI_DPX_ETH_LP,
+            debtCoverage: 0.83333333333
+        },
+    },
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
         'Pangolin': {
