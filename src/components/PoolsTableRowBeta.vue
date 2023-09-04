@@ -151,7 +151,9 @@ export default {
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
-              name: 'Bridge and deposit'
+              name: 'Bridge and deposit',
+              disabled: true,
+              disabledInfo: 'Available soon'
             },
           ]
         },
