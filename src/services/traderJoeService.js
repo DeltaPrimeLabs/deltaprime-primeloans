@@ -62,14 +62,15 @@ export default class TraderJoeService {
     distributionMethod,
     binStep,
     activeBinId,
-    binRange
+    binRange,
+    userPriceSlippage,
+    userAmountsSlippage
   ) {
     // wrap into TokenAmount
     const tokenXAmount = new TokenAmount(tokenX, JSBI.BigInt(tokenXValue));
     const tokenYAmount = new TokenAmount(tokenY, JSBI.BigInt(tokenYValue));
 
-    // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
-    const allowedAmountsSlippage = 50;
+    const allowedAmountsSlippage = userAmountsSlippage * 100;
     const minTokenXAmount =  JSBI.divide(
       JSBI.multiply(tokenXAmount.raw, JSBI.BigInt(10000 - allowedAmountsSlippage)),
       JSBI.BigInt(10000)
@@ -79,8 +80,7 @@ export default class TraderJoeService {
       JSBI.BigInt(10000)
     );
 
-    // To-do: set the dynamic price slippage tolerance. for now we set it to 0.5%
-    const allowedPriceSlippage = 50;
+    const allowedPriceSlippage = userPriceSlippage * 100;
     const priceSlippage = allowedPriceSlippage / 10000; // 0.005
 
     // set deadline for the transaction

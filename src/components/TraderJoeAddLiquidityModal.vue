@@ -89,34 +89,48 @@
         </div>
       </div>
 
-      <div class="transaction-summary-wrapper summary">
-        <TransactionResultSummaryBeta>
-          <div class="summary__title">
-            Values after transaction:
-          </div>
-          <div class="summary__horizontal__divider"></div>
-          <div class="summary__values">
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                {{ firstAsset.symbol }} balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(firstAssetBalance) - Number(firstAmount ? firstAmount : 0)) }}
-              </div>
-            </div>
-
-            <div class="summary__divider divider--long"></div>
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                {{ secondAsset.symbol }} balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(secondAssetBalance) - Number(secondAmount ? secondAmount : 0)) }}
-              </div>
-            </div>
-          </div>
-        </TransactionResultSummaryBeta>
+      <div class="slippage-bar">
+        <div class="slippage-info">
+          <span class="slippage-label">Max. price slippage:</span>
+          <SimpleInput :percent="true" :default-value="priceSlippage" v-on:newValue="priceSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
+        </div>
+        <div class="slippage__divider"></div>
+        <div class="slippage-info">
+          <span class="slippage-label">Max. amounts slippage:</span>
+          <SimpleInput :percent="true" :default-value="amountsSlippage" v-on:newValue="amountsSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
+        </div>
       </div>
+
+<!--      <div class="transaction-summary-wrapper summary">-->
+<!--        <TransactionResultSummaryBeta>-->
+<!--          <div class="summary__title">-->
+<!--            Values after transaction:-->
+<!--          </div>-->
+<!--          <div class="summary__horizontal__divider"></div>-->
+<!--          <div class="summary__values">-->
+<!--            <div class="summary__value__pair">-->
+<!--              <div class="summary__label">-->
+<!--                {{ firstAsset.symbol }} balance:-->
+<!--              </div>-->
+<!--              <div class="summary__value">-->
+<!--                {{ formatTokenBalance(Number(firstAssetBalance) - Number(firstAmount ? firstAmount : 0)) }}-->
+<!--              </div>-->
+<!--            </div>-->
+
+<!--            <div class="summary__divider divider&#45;&#45;long"></div>-->
+<!--            <div class="summary__value__pair">-->
+<!--              <div class="summary__label">-->
+<!--                {{ secondAsset.symbol }} balance:-->
+<!--              </div>-->
+<!--              <div class="summary__value">-->
+<!--                {{ formatTokenBalance(Number(secondAssetBalance) - Number(secondAmount ? secondAmount : 0)) }}-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </TransactionResultSummaryBeta>-->
+<!--      </div>-->
 
       <div class="button-wrapper">
         <Button :label="'Add Liquidity'"
@@ -144,6 +158,7 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {fromWei} from '../utils/calculate';
 import {formatUnits} from "ethers/lib/utils";
 import {BigNumber} from "ethers";
+import SimpleInput from "./SimpleInput.vue";
 
 const ethers = require('ethers');
 
@@ -151,6 +166,7 @@ const ethers = require('ethers');
 export default {
   name: 'AddLiquidityModal',
   components: {
+    SimpleInput,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -187,7 +203,9 @@ export default {
       priceRadius: 5,
       maxPriceRadius: 29,
       minAboveActive: false,
-      maxBelowActive: false
+      maxBelowActive: false,
+      priceSlippage: 0.5,
+      amountsSlippage: 0.5
     };
   },
 
@@ -216,7 +234,9 @@ export default {
         tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
         tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
         distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
-        binRange: this.binRange
+        binRange: this.binRange,
+        priceSlippage: this.priceSlippage,
+        amountsSlippage: this.amountsSlippage
       };
       this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
@@ -271,6 +291,14 @@ export default {
         }
       ];
 
+    },
+
+    async priceSlippageChange(changeEvent) {
+      this.priceSlippage = changeEvent.value ? changeEvent.value : 0;
+    },
+
+    async amountsSlippageChange(changeEvent) {
+      this.amountsSlippage = changeEvent.value ? changeEvent.value : 0;
     },
   }
 };
@@ -383,6 +411,54 @@ export default {
           }
         }
       }
+    }
+  }
+
+  .slippage-bar {
+    border-top: var(--swap-modal__slippage-bar-border);
+    border-bottom: var(--swap-modal__slippage-bar-border);
+    margin-top: 26px;
+    height: 42px;
+    font-family: Montserrat;
+    font-size: 16px;
+    color: var(--swap-modal__slippage-bar-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    .info__icon {
+      transform: translateY(-1px);
+    }
+
+    .percent {
+      font-weight: 600;
+    }
+
+    .slippage-info {
+      display: flex;
+      align-items: center;
+
+      .percent {
+        margin-left: 6px;
+      }
+
+      .slippage-label {
+        margin-right: 6px;
+        font-size: 13px;
+      }
+    }
+
+    .deviation-value {
+      font-weight: 600;
+    }
+
+    .slippage__divider {
+      width: 2px;
+      height: 17px;
+      background-color: var(--swap-modal__slippage-divider-color);
+      margin: 0 10px;
     }
   }
   .summary {

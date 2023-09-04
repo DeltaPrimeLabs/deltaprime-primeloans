@@ -362,7 +362,9 @@ export default {
               addLiquidityEvent.distributionMethod,
               this.lpToken.binStep,
               this.activeId,
-              addLiquidityEvent.binRange
+              addLiquidityEvent.binRange,
+              addLiquidityEvent.priceSlippage,
+              addLiquidityEvent.amountsSlippage
           );
           const addLiquidityRequest = {
             symbol: this.lpToken.symbol,
