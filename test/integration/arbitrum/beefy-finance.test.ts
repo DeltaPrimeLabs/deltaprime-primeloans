@@ -186,6 +186,13 @@ describe('Smart loan', () => {
                 0
             );
 
+            await wrappedLoan.swapSushiSwap(
+                toBytes32('ETH'),
+                toBytes32('GMX'),
+                toWei('10'),
+                0
+            );
+
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
@@ -263,6 +270,78 @@ describe('Smart loan', () => {
             let endStakedBalance = await tokenContracts.get('MOO_SUSHI_DPX_ETH_LP')!.balanceOf(wrappedLoan.address);
 
             expect(endSUSHIDPXETHBalance).to.be.gt(0);
+            expect(endStakedBalance).to.be.eq(0);
+
+            const withdrawalFee = 0.001;    // 0.1 %
+            const expectedDelta = initialTotalValue * withdrawalFee
+
+            const currentTotalValue = fromWei(await wrappedLoan.getTotalValue());
+
+            await expect(initialTotalValue - currentTotalValue).to.be.closeTo(0, expectedDelta);
+            expect(currentTotalValue).to.be.closeTo(fromWei(totalValueBeforeStaking), 5);
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
+        });
+
+        it("should fail to stake GMX on Beefy", async () => {
+            await tokenManager.deactivateToken(tokenContracts.get("GMX")!.address);
+            await tokenManager.deactivateToken(tokenContracts.get("MOO_GMX")!.address);
+            await expect(wrappedLoan.stakeGmxBeefy(1)).to.be.revertedWith("LP token not supported");
+
+            await tokenManager.activateToken(tokenContracts.get("GMX")!.address);
+            await expect(wrappedLoan.stakeGmxBeefy(1)).to.be.revertedWith("Vault token not supported");
+
+            await tokenManager.activateToken(tokenContracts.get("MOO_GMX")!.address);
+            await expect(wrappedLoan.stakeGmxBeefy(toWei("9999"))).to.be.revertedWith("Not enough LP token available");
+        });
+
+        it("should stake GMX on Beefy", async () => {
+            let initialGmxBalance = await tokenContracts.get('GMX')!.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await tokenContracts.get('MOO_GMX')!.balanceOf(wrappedLoan.address);
+
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+            totalValueBeforeStaking = initialTotalValue;
+
+            expect(initialGmxBalance).to.be.gt(0);
+            expect(initialStakedBalance).to.be.eq(0);
+
+            await wrappedLoan.stakeGmxBeefy(initialGmxBalance);
+
+            let endGmxBalance = await tokenContracts.get('GMX')!.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('MOO_GMX')!.balanceOf(wrappedLoan.address);
+
+            expect(endGmxBalance).to.be.eq(0);
+            expect(endStakedBalance).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 50);
+        });
+
+        it("should fail to unstake GMX from Beefy", async () => {
+            await expect(wrappedLoan.unstakeGmxBeefy(toWei("9999"))).to.be.revertedWith("Cannot unstake more than was initially staked");
+        });
+
+        it("should unstake GMX from Beefy", async () => {
+            const initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
+            let initialStakedBalance = await tokenContracts.get('MOO_GMX')!.balanceOf(wrappedLoan.address);
+            let initialGmxBalance = await tokenContracts.get('GMX')!.balanceOf(wrappedLoan.address);
+
+            expect(initialGmxBalance).to.be.eq(0);
+            expect(initialStakedBalance).to.be.gt(0);
+
+            await wrappedLoan.unstakeGmxBeefy(initialStakedBalance);
+
+            let endGmxBalance = await tokenContracts.get('GMX')!.balanceOf(wrappedLoan.address);
+            let endStakedBalance = await tokenContracts.get('MOO_GMX')!.balanceOf(wrappedLoan.address);
+
+            expect(endGmxBalance).to.be.gt(0);
             expect(endStakedBalance).to.be.eq(0);
 
             const withdrawalFee = 0.001;    // 0.1 %
