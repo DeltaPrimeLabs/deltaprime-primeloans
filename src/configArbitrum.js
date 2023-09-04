@@ -35,8 +35,8 @@ export default {
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
-        ParaSwap: ['ETH', 'USDC', 'USDT', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
+        YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
@@ -197,7 +197,7 @@ export default {
                 balance: async (address) => yieldYakBalance('0x28f37fa106AA2159c91C769f7AE415952D28b6ac', address),
                 stakingContractAddress: '0x28f37fa106AA2159c91C769f7AE415952D28b6ac',
                 decimals: 18, //decimals of staking contract
-                stakeMethod: 'stakeGLPYakk',
+                stakeMethod: 'stakeGLPYak',
                 unstakeMethod: 'unstakeGLPYak',
                 feedSymbol: 'YY_WOMBEX_GLP',
                 symbol: 'YRT',
@@ -209,8 +209,8 @@ export default {
                 rewardTokens: ['GLP'],
                 strategy: 'GLP',
                 refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                gasStake: 7000000,
+                gasUnstake: 7000000
             }
         ],
     },
