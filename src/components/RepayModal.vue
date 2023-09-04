@@ -129,11 +129,11 @@ export default {
     sourceAssetValue() {
       const nativeSymbol = config.nativeToken;
       const sourceAssetUsdPrice = Number(this.repayValue) * this.asset.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
 
       if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
       // otherwise return amount in AVAX
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} ${nativeSymbol}`;
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
     },
   },
 

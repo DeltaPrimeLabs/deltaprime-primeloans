@@ -72,7 +72,8 @@
           <span class="percent">%</span>
         </div>
         <div class="slippage__divider"></div>
-        DEX slippage: <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+        <span class="slippage-label">DEX slippage:</span>
+         <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
         <div class="info__icon__wrapper">
           <InfoIcon
               class="info__icon"
@@ -757,16 +758,17 @@ export default {
     font-weight: 600;
   }
 
+  .slippage-label {
+    margin-right: 6px;
+    font-size: 13px;
+  }
+
   .slippage-info {
     display: flex;
     align-items: center;
 
     .percent {
       margin-left: 6px;
-    }
-
-    .slippage-label {
-      margin-right: 6px;
     }
   }
 

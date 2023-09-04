@@ -1694,7 +1694,7 @@ export default {
         targetAmount,
         swapRequest.path,
         swapRequest.adapters,
-        {gasLimit: 7000000}
+        {gasLimit: 10000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

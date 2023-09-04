@@ -125,15 +125,16 @@ export default {
       this.calculateMaxBorrow();
     });
   },
-  
+
   computed: {
     sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
       const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
 
       if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
       // otherwise return amount in AVAX
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
     },
   },
 
