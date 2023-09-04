@@ -11,51 +11,51 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     embedCommitHash("Pool", "./contracts");
 
     embedCommitHash("EthPool", "./contracts/deployment/arbitrum");
-    embedCommitHash("UsdcPool", "./contracts/deployment/arbitrum");
+    // embedCommitHash("UsdcPool", "./contracts/deployment/arbitrum");
 
-    const ethPool = await deploy("EthPool", {
-        contract: "contracts/deployment/arbitrum/EthPool.sol:EthPool",
+    const ethPool = await deploy("WethPool", {
+        contract: "contracts/deployment/arbitrum/WethPool.sol:WethPool",
         from: deployer,
         gasLimit: 20000000,
         args: [],
     });
 
     console.log(
-        `Deployed EthPool at address: ${ethPool.address}`
+        `Deployed WethPool at address: ${ethPool.address}`
     );
 
     await verifyContract(hre,
         {
             address: ethPool.address,
-            contract: `contracts/deployment/arbitrum/EthPool.sol:EthPool`,
+            contract: `contracts/deployment/arbitrum/WethPool.sol:WethPool`,
             constructorArguments: []
         });
-    console.log(`Verified EthPool`);
+    console.log(`Verified WethPool`);
 
-    const usdcPool = await deploy("UsdcPool", {
-        contract: "contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool",
-        from: deployer,
-        gasLimit: 20000000,
-        args: [],
-    });
-
-    console.log(
-        `Deployed UsdcPool at address: ${usdcPool.address}`
-    );
-
-    await verifyContract(hre,
-        {
-            address: usdcPool.address,
-            contract: `contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool`,
-            constructorArguments: []
-        });
-    console.log(`Verified UsdcPool`);
-
-    // const ethPoolTUP = await ethers.getContract("EthPoolTUP", admin);
-    // const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP", admin);
+    // const usdcPool = await deploy("UsdcPool", {
+    //     contract: "contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool",
+    //     from: deployer,
+    //     gasLimit: 20000000,
+    //     args: [],
+    // });
     //
-    // await ethPoolTUP.upgradeTo(<INSERT ETH IMPL ADDRESS>);
-    // await usdcPoolTUP.upgradeTo(<INSERT USDC IMPL ADDRESS>);
+    // console.log(
+    //     `Deployed UsdcPool at address: ${usdcPool.address}`
+    // );
+    //
+    // await verifyContract(hre,
+    //     {
+    //         address: usdcPool.address,
+    //         contract: `contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool`,
+    //         constructorArguments: []
+    //     });
+    // console.log(`Verified UsdcPool`);
+
+    const ethPoolTUP = await ethers.getContract("WethPoolTUP", admin);
+    // const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP", admin);
+
+    await ethPoolTUP.upgradeTo(ethPool.address);
+    // await usdcPoolTUP.upgradeTo("0xEaf5a4259D8c9828c46Eb87b4801D7caDcEF340f");
 };
 
 
