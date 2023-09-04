@@ -9,7 +9,7 @@
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ apy | percent }}</div>
+        <div class="top-info__value">{{ apy + miningApy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available:</div>
         <div class="top-info__value">{{ available | smartRound }}<span class="top-info__currency"> {{ symbol }}</span>
@@ -19,7 +19,7 @@
       <CurrencyInput v-on:newValue="depositValueChange"
                      :symbol="assetSymbol"
                      :validators="validators"
-                     :max="assetSymbol === config.nativeToken && selectedDepositAsset === config.native ? null : walletAssetBalance">
+                     :max="assetSymbol === config.nativeToken && selectedDepositAsset === config.nativeToken ? null : walletAssetBalance">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -91,6 +91,7 @@ export default {
   },
 
   props: {
+    pool: null,
     apy: null,
     walletAssetBalance: null,
     accountBalance: null,
@@ -116,7 +117,11 @@ export default {
       return config;
     },
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.deposit) + this.depositValue);
+      return (this.apy + this.miningApy) / 365 * (Number(this.deposit) + this.depositValue);
+    },
+
+    miningApy() {
+      return this.pool ? Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0) : 0;
     },
 
     getModalHeight() {

@@ -38,7 +38,7 @@ import ResumeBridgeModal from './ResumeBridgeModal';
 
 const ethers = require('ethers');
 
-let TOKEN_ADDRESSES;
+let TOKEN_ADDRESSES = import(`/common/addresses/${window.chain}/token_addresses.json`);
 (async () => {
   TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
 })();
@@ -53,6 +53,8 @@ export default {
     TableHeader
   },
   async mounted() {
+    console.log('1')
+    console.log(2)
     this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();

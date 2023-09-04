@@ -232,6 +232,7 @@ export default {
 
     async openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
+      modalInstance.pool = this.pool;
       modalInstance.apy = this.pool.apy;
       modalInstance.walletAssetBalance = this.walletAssetBalances[this.pool.asset.symbol];
       modalInstance.accountBalance = this.accountBalance;
