@@ -857,6 +857,22 @@ export default {
           }
         }
 
+        let yearlyTraderJoeV2Interest = 0;
+
+        if (state.traderJoeV2LpAssets) {
+          for (let entry of Object.entries(state.concentratedLpAssets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+            const userValueInPool =
+                state.assets[lpAsset.primary].price * lpAsset.primaryBalance
+                + state.assets[lpAsset.secondary].price * lpAsset.secondaryBalance;
+
+            yearlyTraderJoeV2Interest += userValueInPool * apy;
+          }
+        }
+
         let yearlyFarmInterest = 0;
 
         if (rootState.stakeStore.farms) {
@@ -886,7 +902,7 @@ export default {
         const collateral = getters.getCollateral;
 
         if (collateral) {
-          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest - yearlyDebtInterest) / collateral;
+          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;
         }
 
         commit('setAccountApr', apr);
@@ -1187,7 +1203,7 @@ export default {
         parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
         parseUnits((minAmount * parseFloat(provideLiquidityRequest.firstAmount)).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
         parseUnits((minAmount * parseFloat(provideLiquidityRequest.secondAmount)).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 4000000}
+        {gasLimit: 7000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -1242,7 +1258,7 @@ export default {
         parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
         parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
         parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString())),
-        {gasLimit: 4000000}
+        {gasLimit: 7000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

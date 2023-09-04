@@ -7,6 +7,8 @@ import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import IYieldYak
   from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IBeefyFinance
+  from '../../artifacts/contracts/interfaces/facets/IBeefyFinance.sol/IBeefyFinance.json';
 import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
@@ -212,16 +214,38 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
-export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
   try {
+    console.log('yieldYakMaxUnstaked')
+    console.log('stakingContractAddress: ', stakingContractAddress)
     const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
-    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
-    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
+    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from(decimals));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
 
+    console.log(loanBalance)
+    console.log(totalDeposits)
+    console.log(totalSupply)
     return loanBalance / totalSupply * totalDeposits;
   } catch (e) {
     console.log('yieldYakMaxUnstaked error');
+    return 0;
+  }
+
+
+}
+
+export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
+  try {
+    console.log('beefyMaxUnstaked')
+    const stakingContract = new ethers.Contract(stakingContractAddress, IBeefyFinance.abi, provider.getSigner());
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
+    const balance = formatUnits(await stakingContract.balance(), BigNumber.from(decimals));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
+
+    return loanBalance / totalSupply * balance;
+  } catch (e) {
+    console.log('beefyMaxUnstaked error');
     return 0;
   }
 

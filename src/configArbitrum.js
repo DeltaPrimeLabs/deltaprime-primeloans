@@ -6,9 +6,8 @@ import WETH_POOL_TUP from '/deployments/arbitrum/WethPoolTUP.json';
 import DAI_POOL_TUP from '/deployments/arbitrum/DaiPoolTUP.json';
 import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
 import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
-import PANGOLIN_INTERMEDIARY_TUP from '../deployments/avalanche/PangolinIntermediaryTUP.json';
-import TRADERJOE_INTERMEDIARY_TUP from '../deployments/avalanche/TraderJoeIntermediaryTUP.json';
-import {vectorFinanceBalance, yieldYakBalance} from './utils/calculate';
+import SUSHISWAP_INTERMEDIARY_TUP from '../deployments/arbitrum/SushiSwapIntermediaryTUP.json';
+import {yieldYakBalance} from './utils/calculate';
 
 export default {
     MIN_ALLOWED_HEALTH: 0.0182,
@@ -32,14 +31,15 @@ export default {
       "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333},
+      "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333},
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
-        ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
+        YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH'],
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH']
     },
-    ASSET_FILTER_TOKENS_OPTIONS: ['USDC', 'ETH',],
-    ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
+    ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],
+    ASSET_FILTER_DEXES_OPTIONS: ['Sushi'],
     NATIVE_ASSET_TOGGLE_OPTIONS: ['ETH', 'WETH'],
     WRAPPED_TOKEN_ADDRESS: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     POOLS_CONFIG: {
@@ -99,11 +99,13 @@ export default {
     },
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
-        'Pangolin': {
-            logo: 'png.png'
-        },
-        'TraderJoe': {
-            logo: 'joe.png'
+        'Sushi': {
+            intermediaryAddress: SUSHISWAP_INTERMEDIARY_TUP.address,
+            routerAddress: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+            swapMethod: 'swapSushiSwap',
+            addLiquidityMethod: 'addLiquiditySushiSwap',
+            removeLiquidityMethod: 'removeLiquiditySushiSwap',
+            logo: 'sushi.png'
         }
     },
     PROTOCOLS_CONFIG: {
@@ -137,8 +139,8 @@ export default {
                 rewardTokens: ['USDC.e'],
                 strategy: 'USDC.e',
                 refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                gasStake: 10000000,
+                gasUnstake: 10000000
             }
         ],
         "USDT": [
@@ -161,8 +163,8 @@ export default {
                 rewardTokens: ['USDT'],
                 strategy: 'USDT',
                 refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                gasStake: 10000000,
+                gasUnstake: 10000000
             }
         ],
         "GMX": [
@@ -185,8 +187,8 @@ export default {
                 rewardTokens: ['GMX'],
                 strategy: 'GMX',
                 refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                gasStake: 15000000,
+                gasUnstake: 15000000
             }
         ],
         "GLP": [
@@ -209,8 +211,8 @@ export default {
                 rewardTokens: ['GLP'],
                 strategy: 'GLP',
                 refreshDelay: 60000,
-                gasStake: 7000000,
-                gasUnstake: 7000000
+                gasStake: 10000000,
+                gasUnstake: 10000000
             }
         ],
     },

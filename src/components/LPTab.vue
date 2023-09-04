@@ -42,6 +42,7 @@ import AssetFilter from "./AssetFilter.vue";
 import LpTableRow from "./LpTableRow.vue";
 import config from "../config";
 import TraderJoeLpTableRow from "./TraderJoeLpTableRow.vue";
+import {mapState} from "vuex";
 
 export default {
   name: "LPTab",
@@ -56,9 +57,11 @@ export default {
       traderJoeLpTokens: config.TRADERJOEV2_LP_ASSETS_CONFIG,
       traderJoeLpTableHeaderConfig: null,
       selectedLpTokens: [] = [],
+      assets: null
     }
   },
   mounted() {
+    this.watchAssetPricesUpdate();
     this.setupAssetFilterGroups();
     this.setupConcentratedLpTableHeaderConfig();
     this.updateLpPriceData();
@@ -66,6 +69,9 @@ export default {
     this.setupLpTableHeaderConfig();
   },
   computed: {
+    ...mapState('serviceRegistry', [
+      'priceService'
+    ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
           (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
@@ -231,13 +237,22 @@ export default {
       };
     },
     async updateLpPriceData() {
-      //TODO: we have to make sure somehow that it's called in a right moment ->when funds have prices already
-      if (this.funds) {
+      //TODO: we have to make sure somehow that it's called in a right moment ->when assets have prices already
+      console.log('updateLpPriceData')
+      console.log(this.assets)
+      console.log(this.lpTokens)
+      if (this.assets) {
         Object.keys(this.lpTokens).forEach(
             key => {
               const lpToken = this.lpTokens[key];
-              lpToken.firstPrice = this.funds[lpToken.primary].price;
-              lpToken.secondPrice = this.funds[lpToken.secondary].price;
+              console.log('updateLpPriceData')
+              console.log(this.assets)
+              console.log(lpToken.primary)
+              console.log(lpToken.secondary)
+              console.log(this.assets[lpToken.primary].price)
+              console.log(this.assets[lpToken.secondary].price)
+              lpToken.firstPrice = this.assets[lpToken.primary].price;
+              lpToken.secondPrice = this.assets[lpToken.secondary].price;
             }
         );
       }
@@ -304,14 +319,12 @@ export default {
         ]
       };
     },
-  },
-  watch: {
-    funds: {
-      handler() {
+    watchAssetPricesUpdate() {
+      this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
+        this.assets = config.ASSETS_CONFIG;
         this.updateLpPriceData();
-      },
-      immediate: true
-    },
+      });
+    }
   }
 }
 </script>
