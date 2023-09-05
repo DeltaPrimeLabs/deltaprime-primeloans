@@ -7,7 +7,7 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{firstAssetBalance | smartRound(10, true)}}</div>
+        <div class="top-info__value"> {{firstAssetBalance}}</div>
         <span class="top-info__currency">
           {{firstAsset.symbol}}
         </span>
@@ -16,11 +16,12 @@
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
+                     :max="firstAssetBalance"
                      :validators="firstInputValidators">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{secondAssetBalance | smartRound(10, true)}}</div>
+        <div class="top-info__value"> {{secondAssetBalance}}</div>
         <span class="top-info__currency">
           {{secondAsset.symbol}}
         </span>
@@ -29,6 +30,7 @@
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
+                     :max="secondAssetBalance"
                      :validators="secondInputValidators">
       </CurrencyInput>
 

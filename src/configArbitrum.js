@@ -124,9 +124,9 @@ export default {
                 protocol: 'YIELD_YAK',
                 autoCompounding: true,
                 protocolIdentifier: 'YY_WOMBEX_USDC.e',
-                balance: async (address) => yieldYakBalance('0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C', address),
+                balance: async (address) => yieldYakBalance('0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C', address, 6),
                 stakingContractAddress: '0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C',
-                decimals: 18, //decimals of staking contract
+                decimals: 6, //decimals of staking contract
                 stakeMethod: 'stakeUSDCeYak',
                 unstakeMethod: 'unstakeUSDCeYak',
                 feedSymbol: 'YY_WOMBEX_USDC.e',
@@ -148,9 +148,9 @@ export default {
                 protocol: 'YIELD_YAK',
                 autoCompounding: true,
                 protocolIdentifier: 'YY_WOMBEX_USDT',
-                balance: async (address) => yieldYakBalance('0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2', address),
+                balance: async (address) => yieldYakBalance('0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2', address, 6),
                 stakingContractAddress: '0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2',
-                decimals: 18, //decimals of staking contract
+                decimals: 6, //decimals of staking contract
                 stakeMethod: 'stakeUSDTYak',
                 unstakeMethod: 'unstakeUSDTYak',
                 feedSymbol: 'YY_WOMBEX_USDT',
@@ -203,7 +203,7 @@ export default {
                 unstakeMethod: 'unstakeGLPYak',
                 feedSymbol: 'YY_WOMBEX_GLP',
                 symbol: 'YRT',
-                token: 'USDT',
+                token: 'GLP',
                 isTokenLp: false,
                 info: 'Continuously stakes esGMX in order to maximize GLP rewards.',
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',

@@ -37,7 +37,7 @@ export function calculateHealth(tokens, lbTokens) {
 
             weightedCollateralFromLBs += Math.min(
                 debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
-                debtCoverageSecondary * liquidity / config.ASSETS_CONFIG[lbToken.secondary].price
+                debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
             ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
           }
       );
@@ -126,13 +126,14 @@ export async function yieldYakRewards(stakingContractAddress, address) {
   return stakedYrt * yrtToAvaxConversionRate - stakedYrt;
 }
 
-export async function yieldYakBalance(stakingContractAddress, address) {
+export async function yieldYakBalance(stakingContractAddress, address, decimals = 18) {
   try {
     console.log('try yieldYakBalance')
     const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
     const stakedYrtWei = await tokenContract.balanceOf(address);
 
-    return formatUnits(stakedYrtWei, 18);
+    console.log('result: ', formatUnits(stakedYrtWei, decimals))
+    return formatUnits(stakedYrtWei, decimals);
   } catch (e) {
     console.log('yieldYakBalance error')
     return 0;
