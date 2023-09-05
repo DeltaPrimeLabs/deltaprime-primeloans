@@ -169,7 +169,7 @@ export default {
     },
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '140px 150px 120px 200px 140px repeat(2, 1fr) 35px 80px',
+        gridTemplateColumns: '170px 110px 100px 195px 160px 120px 120px 35px 80px',
         cells: [
           {
             label: 'TraderJoe V2',
@@ -180,7 +180,7 @@ export default {
                                        <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
-            label: 'Your Liquidity',
+            label: 'Your Bins',
             sortable: false,
             class: 'balance',
             id: 'LIQUIDITY',
@@ -213,7 +213,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `The APR of the pool. Remember that you need to be in an active bin to get generated fees.`
           },
           {
             label: 'Max. APR',

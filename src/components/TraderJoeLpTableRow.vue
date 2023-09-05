@@ -22,13 +22,22 @@
         {{ feesClaimable | usd }}
       </div>
 
-      <div class="table__cell composition">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{
-          formatTokenBalance(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 4, true)
-        }}
-        <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{
-          formatTokenBalance(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 4, true)
-        }}
+      <div class="table__cell table__cell--double-value balance">
+        <template>
+          <div class="table__cell composition">
+            <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{
+              formatTokenBalance(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 4, true)
+            }}
+            <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{
+              formatTokenBalance(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 4, true)
+            }}
+          </div>
+          <div class="double-value__usd">
+            <span>
+              {{userValue ? userValue : 0 | usd}}
+            </span>
+          </div>
+        </template>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
@@ -42,7 +51,6 @@
       <div class="table__cell table__cell--double-value max-apr">
         {{ maxApr | percent }}
       </div>
-
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
@@ -127,6 +135,7 @@ export default {
     this.watchHealth();
     this.watchAssetApysRefresh();
     this.watchHardRefreshScheduledEvent();
+    this.watchAssetPricesUpdate();
     this.initAccount();
   },
 
@@ -149,6 +158,7 @@ export default {
       hasBinsInPool: false,
       account: null,
       chartData: [],
+      userValue: 0
     };
   },
 
@@ -168,7 +178,8 @@ export default {
       'healthService',
       'lpService',
       'traderJoeService',
-      'accountService'
+      'accountService',
+      'priceService',
     ]),
 
     hasSmartLoanContract() {
@@ -185,7 +196,7 @@ export default {
 
     secondAsset() {
       return config.ASSETS_CONFIG[this.lpToken.secondary];
-    }
+    },
   },
 
   methods: {
@@ -251,11 +262,8 @@ export default {
     },
 
     async getUserBinsAndBalances() {
-      console.log('getUserBinsAndBalances')
-      console.log('this.account: ', this.account)
       let result = await fetch(`https://corsproxy.io/?https://barn.traderjoexyz.com/v1/user/bin-ids/${this.account.toLowerCase()}/${config.chainSlug}/${this.lpToken.address.toLowerCase()}`);
 
-      console.log(`https://corsproxy.io/?https://barn.traderjoexyz.com/v1/user/bin-ids/${this.account}/${config.chainSlug}/${this.lpToken.address}`)
       result = await result.text();
       if (/^[0-9\[\]\,]*$/.test(result)) {
         this.userBins = JSON.parse(result);
@@ -272,8 +280,6 @@ export default {
             })
         );
       }
-      console.log(this.userBins)
-      console.log(this.userBalances)
     },
 
     actionClick(key) {
@@ -459,6 +465,17 @@ export default {
       })
     },
 
+    watchAssetPricesUpdate() {
+      this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
+        console.log('watchAssetPricesUpdate')
+        console.log(this.lpToken.primaryBalance)
+        console.log(this.firstAsset.price)
+        console.log(this.lpToken.secondaryBalance)
+        console.log(this.secondAsset.price)
+        this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
+      });
+    },
+
     async setupPool() {
       const tokenX = this.traderJoeService.initializeToken(this.firstAsset);
       const tokenY = this.traderJoeService.initializeToken(this.secondAsset);
@@ -539,13 +556,30 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 153px 150px 120px 200px 140px repeat(2, 1fr) 35px 80px;
+    grid-template-columns: 170px 110px 100px 195px 160px 120px 120px 35px 80px;
     height: 60px;
     padding-left: 6px;
 
     .table__cell {
       display: flex;
       flex-direction: row;
+
+      &.table__cell--double-value {
+        flex-direction: column;
+        justify-content: center;
+
+        .double-value__pieces {
+          font-size: $font-size-xsm;
+          font-weight: 600;
+        }
+
+        .double-value__usd {
+          font-size: $font-size-xxs;
+          color: var(--asset-table-row__double-value-color);
+          font-weight: 500;
+          text-align: right;
+        }
+      }
 
       &.asset {
         align-items: center;
