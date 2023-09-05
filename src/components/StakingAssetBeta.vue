@@ -208,7 +208,7 @@ export default {
           heightOfRows += 102;
         });
 
-        return this.tableBodyExpanded ? `${Math.max(heightOfRows + headerHeight, 230)}px` : 0;
+        return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;
       }
     },
 

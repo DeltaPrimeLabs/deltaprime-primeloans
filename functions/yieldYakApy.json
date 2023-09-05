@@ -34,15 +34,15 @@
     }
   },
   "arbitrum": {
-    "WOMBEX_USDC.e": {
+    "USDC.e": {
       "protocolIdentifier": "YY_WOMBEX_USDC.e",
       "stakingContractAddress": "0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C"
     },
-    "WOMBEX_USDT": {
+    "USDT": {
       "protocolIdentifier": "YY_WOMBEX_USDT",
       "stakingContractAddress": "0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2"
     },
-    "WOMBEX_GLP": {
+    "GLP": {
       "protocolIdentifier": "YY_WOMBEX_GLP",
       "stakingContractAddress": "0x28f37fa106AA2159c91C769f7AE415952D28b6ac"
     }

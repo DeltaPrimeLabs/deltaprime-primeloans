@@ -757,10 +757,6 @@ export default {
 
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
 
-      //TODO: hardcoded values
-      apys['GMX'] = {};
-      apys['GMX']['BEEFY_FINANCE'] = 2;
-
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
@@ -860,7 +856,7 @@ export default {
         let yearlyTraderJoeV2Interest = 0;
 
         if (state.traderJoeV2LpAssets) {
-          for (let entry of Object.entries(state.concentratedLpAssets)) {
+          for (let entry of Object.entries(state.traderJoeV2LpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
 

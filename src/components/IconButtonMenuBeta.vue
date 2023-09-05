@@ -140,9 +140,8 @@ export default {
   }
 
   .menu {
-    position: absolute;
-    top: 40px;
-    right: -8px;
+    position: fixed;
+    transform: translate(calc(-100% + 34px), 14px);
     z-index: 1;
     display: flex;
     flex-direction: column;

@@ -912,7 +912,7 @@ const getApysFromSushi = async () => {
 
       if (apy && Number(apy) != 0) {
         await db.collection('apys').doc(pool).set({
-          lp_apy: apy / 100
+          lp_apy: apy
         });
       }
     }
@@ -968,7 +968,7 @@ const getApysFromBeefy = async () => {
 
         if (apy && Number(apy) != 0) {
           await db.collection('apys').doc(poolData.symbol).set({
-            lp_apy: apy / 100
+            [poolData.protocolIdentifier]: apy / 100
           });
         }
       }
