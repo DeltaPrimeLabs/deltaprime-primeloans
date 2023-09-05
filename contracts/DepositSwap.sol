@@ -55,23 +55,26 @@ contract DepositSwap {
 
     function _withdrawFromPool(Pool pool, IERC20 token, uint256 amount, address user) private {
         uint256 userInitialFromTokenDepositBalance = pool.balanceOf(user);
+        uint256 poolInitialBalance = pool.balanceOf(address(this));
 
         require(userInitialFromTokenDepositBalance >= amount, "Insufficient fromToken deposit balance");
-        require(pool.balanceOf(address(this)) == 0, "Contract initial deposit balance should be 0");
 
         pool.transferFrom(user, address(this), amount);
-        require(pool.balanceOf(address(this)) == amount, "amountFromToken and post-transfer contract balance mismatch");
+        require(pool.balanceOf(address(this)) - poolInitialBalance == amount, "amountFromToken and post-transfer contract balance mismatch");
         require(pool.balanceOf(user) == userInitialFromTokenDepositBalance - amount, "user post-transfer balance is incorrect");
+
+        uint256 poolInitialTokenBalance = token.balanceOf(address(this));
 
         pool.withdraw(amount);
 
-        require(pool.balanceOf(address(this)) == 0, "Post-withdrawal contract deposit balance must be 0");
-        require(token.balanceOf(address(this)) == amount, "Post-withdrawal contract fromToken balance is incorrect");
+        require(pool.balanceOf(address(this)) == poolInitialBalance, "Post-withdrawal contract deposit balance must be 0");
+        require(token.balanceOf(address(this)) == poolInitialTokenBalance + amount, "Post-withdrawal contract fromToken balance is incorrect");
     }
 
     function _depositToPool(Pool pool, IERC20 token, uint256 amount, address user) private {
         uint256 contractInitialToTokenBalance = token.balanceOf(address(this));
         uint256 userInitialToTokenDepositBalance = pool.balanceOf(user);
+        uint256 poolInitialBalance = pool.balanceOf(address(this));
 
         require(contractInitialToTokenBalance >= amount, "Insufficient contract toToken balance");
 
@@ -79,12 +82,12 @@ contract DepositSwap {
         token.safeApprove(address(pool), amount);
         pool.deposit(amount);
 
-        require(token.balanceOf(address(this)) == 0, "Post-deposit contract toToken balance must be 0");
-        require(pool.balanceOf(address(this)) == amount, "Post-deposit contract deposit balance is incorrect");
+        require(token.balanceOf(address(this)) == contractInitialToTokenBalance - amount, "Post-deposit contract toToken balance must be 0");
+        require(pool.balanceOf(address(this)) == poolInitialBalance + amount, "Post-deposit contract deposit balance is incorrect");
 
         pool.transfer(user, amount);
 
-        require(token.balanceOf(address(this)) == 0, "Post-transfer contract deposit balance must be 0");
+        require(token.balanceOf(address(this)) == contractInitialToTokenBalance - amount, "Post-transfer contract deposit balance must be 0");
         require(pool.balanceOf(user) == userInitialToTokenDepositBalance + amount, "Post-transfer user deposit balance is incorrect");
     }
 
