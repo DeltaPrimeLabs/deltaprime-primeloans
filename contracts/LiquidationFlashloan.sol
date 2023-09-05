@@ -101,10 +101,11 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address[] calldata,
     uint256[] calldata,
     uint256[] calldata,
-    address,
+    address _initiator,
     bytes calldata _params
   ) public override returns (bool) {
     require(msg.sender == address(POOL), "msg.sender != POOL");
+    require(_initiator == address(this), "unauthorized initiator");
 
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
 
