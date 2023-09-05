@@ -894,7 +894,7 @@ exports.traderJoeScraper = functions
 
 const getApysFromSushi = async () => {
   functions.logger.info("parsing APYs from Sushi");
-  const browser = await puppeteer.launch({headless: false});
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   // fetch APYs for Avalanche and Arbitrum
@@ -936,7 +936,7 @@ exports.sushiScraper = functions
 
 const getApysFromBeefy = async () => {
   functions.logger.info("parsing APYs from Beefy");
-  const browser = await puppeteer.launch({headless: false});
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   // fetch APYs for Avalanche and Arbitrum
