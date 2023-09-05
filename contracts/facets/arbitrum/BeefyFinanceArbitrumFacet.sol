@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: c437ae214746257939417edde53ab3b5d4987164;
+// Last deployed from commit: 45f08bc19838959bd87aa0b1a083ddbe9bc5e5b2;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -64,7 +64,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of SUSHI_DPX_ETH_LP to be unstaked
     **/
-    function unstakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
             _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: SUSHI_DPX_ETH_LP,
             vaultAddress: MOO_SUSHI_DPX_ETH_LP,
@@ -79,7 +79,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of GMX to be unstaked
     **/
-    function unstakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: GMX,
             vaultAddress: MOO_GMX,
