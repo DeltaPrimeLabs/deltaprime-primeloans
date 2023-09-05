@@ -100,7 +100,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure("GLP", _amount * 1e18 / 10 ** token.decimals());
+        tokenManager.decreaseProtocolExposure("GLP", _amount);
 
         emit Withdrawn(msg.sender, "GLP", _amount, block.timestamp);
     }
