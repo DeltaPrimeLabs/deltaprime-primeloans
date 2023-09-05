@@ -383,9 +383,8 @@ export default {
       }
 
       .select-dropdown {
-        position: absolute;
-        top: 52px;
-        left: 0;
+        position: fixed;
+        transform: translate(-16px, calc(50% + 36px));
         display: flex;
         flex-direction: column;
         width: 311px;

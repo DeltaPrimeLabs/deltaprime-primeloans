@@ -16,6 +16,8 @@ const tokenAddresses = require('./token_addresses.json');
 const lpAssets = require('./lpAssets.json');
 const steakHutApyConfig = require('./steakHutApy.json');
 const traderJoeConfig = require('./traderJoeApy.json');
+const sushiConfig = require('./sushiApy.json');
+const beefyConfig = require('./beefyApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -38,7 +40,8 @@ const LOAN = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
 const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
-const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
+const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
+const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
 const { getLoanStatusAtTimestamp } = require('./loan-history');
 const timestampInterval = 24 * 3600 * 1000;
@@ -404,14 +407,14 @@ exports.lpAndFarmApyAggregator = functions
     const apys = {};
     const urls = [
       VECTOR_APY_URL,
-      YIELDYAK_APY_URL
-    ]
+      YIELDYAK_APY_AVA_URL,
+      YIELDYAK_APY_ARB_URL
+    ];
 
     try {
-
       Promise.all(urls.map(url =>
         fetch(url).then(resp => resp.json())
-      )).then(async ([vectorAprs, yieldYakApys]) => {
+      )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
 
         if (!vectorAprs["Staking"]) functions.logger.info('APRs not available from Vector.');
         const stakingAprs = vectorAprs['Staking'];
@@ -433,11 +436,26 @@ exports.lpAndFarmApyAggregator = functions
           }
         }
 
-        // fetching YieldYak APYs
-        for (const [token, farm] of Object.entries(yieldYakConfig)) {
-          if (!yieldYakApys[farm.stakingContractAddress]) continue
+        // fetching YieldYak APYs Avalanche
+        for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
+          if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
 
-          const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
+          const yieldApy = yieldYakAvaApys[farm.stakingContractAddress].apy / 100;
+
+          if (token in apys) {
+            apys[token][farm.protocolIdentifier] = yieldApy;
+          } else {
+            apys[token] = {
+              [farm.protocolIdentifier]: yieldApy
+            };
+          }
+        }
+
+        // fetching YieldYak APYs Arbitrum
+        for (const [token, farm] of Object.entries(yieldYakConfig.arbitrum)) {
+          if (!yieldYakArbApys[farm.stakingContractAddress]) continue
+
+          const yieldApy = yieldYakArbApys[farm.stakingContractAddress].apy / 100;
 
           if (token in apys) {
             apys[token][farm.protocolIdentifier] = yieldApy;
@@ -871,5 +889,104 @@ exports.traderJoeScraper = functions
         functions.logger.info("TraderJoe APYs scrapped and updated.");
       }).catch((err) => {
         functions.logger.info(`Scraping APYs from TraderJoe failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromSushi = async () => {
+  functions.logger.info("parsing APYs from Sushi");
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(sushiConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = "https://www.sushi.com/pool";
+      await page.goto(URL + `/${network}%3A${poolData.address}`, {
+        waitUntil: "networkidle0",
+      });
+
+      const stats = await page.$$(".decoration-dotted");
+      const apy = (await (await stats[0].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(apy);
+
+      if (apy && Number(apy) != 0) {
+        await db.collection('apys').doc(pool).set({
+          lp_apy: apy / 100
+        });
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.sushiScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromSushi()
+      .then(() => {
+        functions.logger.info("Sushi APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Sushi failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromBeefy = async () => {
+  functions.logger.info("parsing APYs from Beefy");
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [protocol, networks] of Object.entries(beefyConfig)) {
+    for (const [network, pools] of Object.entries(networks)) {
+      for (const [pool, poolData] of Object.entries(pools)) {
+        // navigate pools page and wait till javascript fully load.
+        const URL = `https://app.beefy.com/vault/${protocol}-${network}-${pool}`;
+
+        await page.goto(URL, {
+          waitUntil: "networkidle0",
+          timeout: 60000
+        });
+
+        const apy = await page.evaluate(() => {      
+          const boxes = document.querySelectorAll("div.MuiBox-root");
+          let apy;
+          Array.from(boxes).map(box => {
+            const content = box.innerText.replace(/\s+/g, "").toLowerCase();
+            if (content.startsWith('apy')) {
+              apy = content.replace('apy', '').replace('%', '').trim();
+            }
+          });
+
+          return apy;
+        });
+
+        console.log(apy);
+
+        if (apy && Number(apy) != 0) {
+          await db.collection('apys').doc(poolData.symbol).set({
+            lp_apy: apy / 100
+          });
+        }
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.beefyScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromBeefy()
+      .then(() => {
+        functions.logger.info("Beefy APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Beefy failed. Error: ${err}`);
       });
   });
