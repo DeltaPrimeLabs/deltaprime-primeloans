@@ -1,5 +1,5 @@
 <template>
-  <div class="zap-tile" @click="onTileClick()">
+  <div class="zap-tile" @click="onTileClick()" :class="{'disabled': !hasSmartLoanContract}">
     <div class="label">
       up to <b>5x</b>
     </div>
@@ -27,6 +27,9 @@ const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
 
+//TODO: make common logic to check if user has a smart account
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 export default {
   name: 'ZapLong',
   data() {
@@ -37,6 +40,7 @@ export default {
 
   computed: {
     ...mapState('fundsStore', [
+      'smartLoanContract',
       'health',
       'assetBalances',
       'debtsPerAsset',
@@ -53,6 +57,10 @@ export default {
     ...mapState('serviceRegistry', [
       'progressBarService'
     ]),
+
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
   },
 
   async mounted() {
@@ -77,7 +85,7 @@ export default {
     },
 
     async onTileClick() {
-      if (!this.smartLoanContract) return;
+      if (!this.hasSmartLoanContract) return;
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
@@ -200,8 +208,13 @@ export default {
     cursor: pointer;
     transition: box-shadow 200ms ease-in-out;
 
-    &:hover {
+    &:hover &:not(.disabled){
         box-shadow: var(--zap-long__zap-tile-shadow--hover);
+    }
+
+    &.disabled {
+      cursor: default;
+      opacity: 30%;
     }
 }
 

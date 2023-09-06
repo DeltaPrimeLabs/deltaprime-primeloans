@@ -87,11 +87,11 @@
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
           <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan)" v-slot:bubble>
-            To create your Prime Account, click on the
+            To create your Prime Account, click one of the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
             ></DeltaIcon>
-            button, and then click &quot;Deposit collateral&quot;
+            buttons.
           </template>
         </IconButton>
         <IconButton :disabled="disableAllButtons || !healthLoaded"
