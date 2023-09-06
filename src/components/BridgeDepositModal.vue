@@ -431,52 +431,6 @@ export default {
   }
 }
 
-.slippage-bar {
-  border-top: var(--swap-modal__slippage-bar-border);
-  border-bottom: var(--swap-modal__slippage-bar-border);
-  margin-top: 26px;
-  height: 42px;
-  font-family: Montserrat;
-  font-size: 16px;
-  color: var(--swap-modal__slippage-bar-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-left: 15px;
-  padding-right: 15px;
-
-  .info__icon {
-    transform: translateY(-1px);
-  }
-
-  .percent {
-    font-weight: 600;
-  }
-
-  .slippage-info {
-    display: flex;
-    align-items: center;
-
-    .percent {
-      margin-left: 6px;
-    }
-
-    .slippage-label {
-      margin-right: 6px;
-    }
-  }
-
-  .deviation-value {
-    font-weight: 600;
-  }
-
-  .slippage__divider {
-    width: 2px;
-    height: 17px;
-    background-color: var(--swap-modal__slippage-divider-color);
-    margin: 0 10px;
-  }
-}
 
 .alert-wrapper {
   margin-top: 30px;

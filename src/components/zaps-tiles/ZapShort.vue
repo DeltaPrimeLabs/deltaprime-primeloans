@@ -50,6 +50,9 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
+    ...mapState('serviceRegistry', [
+      'progressBarService'
+    ]),
   },
 
   async mounted() {
@@ -101,34 +104,50 @@ export default {
 
         modalInstance.$on('ZAP_SHORT_EVENT', async zapShortEvent => {
           const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
-          const shortAssetAmount = ((Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage) / config.ASSETS_CONFIG[zapShortEvent.shortAsset].price)).toFixed(shortAssetDecimals);
-          let stableCoinAmount = Number(zapShortEvent.stableCoinAmount) * zapShortEvent.leverage;
+          const stableCoinDecimals = config.ASSETS_CONFIG[zapShortEvent.stableCoin].decimals;
+
           const borrowRequest = {
             asset: zapShortEvent.shortAsset,
-            amount: shortAssetAmount,
+            amount: zapShortEvent.shortAssetAmount,
             keepModalOpen: true
           };
-          const totalShortValueInWei = parseUnits(Number(shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
-          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, totalShortValueInWei);
+          const shortAssetAmountInWei = parseUnits(Number(zapShortEvent.shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
+          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, shortAssetAmountInWei);
 
           const swapRequest = {
             sourceAsset: zapShortEvent.shortAsset,
             targetAsset: zapShortEvent.stableCoin,
-            sourceAmount: shortAssetAmount,
-            targetAmount: 0.95 * stableCoinAmount,
+            sourceAmount: zapShortEvent.shortAssetAmount,
+            targetAmount: zapShortEvent.stableCoinAmount,
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
 
-          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-          });
-          await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, async () => {
+            await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+            }, (error) => {
+              this.handleTransactionError(error);
+            });
+          }, (error) => {
+            this.handleTransactionError(error);
           });
         });
       });
     },
 
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.inProcess = false;
+    },
+
+
+    //TODO: remove
     getStableCoinsWalletBalances(stableCoins) {
       return combineLatest(
         stableCoins.map(stableCoin => {

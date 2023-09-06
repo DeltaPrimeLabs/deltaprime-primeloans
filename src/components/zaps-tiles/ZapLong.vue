@@ -50,6 +50,9 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
+    ...mapState('serviceRegistry', [
+      'progressBarService'
+    ]),
   },
 
   async mounted() {
@@ -100,48 +103,50 @@ export default {
         this.$forceUpdate();
 
         modalInstance.$on('ZAP_LONG_EVENT', async zapLongEvent => {
-          const totalLongValue = Number(zapLongEvent.stableCoinAmount) * Number(zapLongEvent.leverage);
+          const stableCoinDecimals = config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals;
+
           const borrowRequest = {
             asset: zapLongEvent.stableCoin,
-            amount: Number(zapLongEvent.stableCoinAmount) * (zapLongEvent.leverage - 1),
+            amount: Number(zapLongEvent.stableCoinAmount.toFixed(stableCoinDecimals)),
             keepModalOpen: true
           };
-          const stableCoinDecimals = config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals;
-          const totalLongValueInWei = parseUnits(totalLongValue.toFixed(stableCoinDecimals), BigNumber.from(stableCoinDecimals));
-          const swapQueryResponse = await this.yakSwapQueryMethod()(zapLongEvent.stableCoin, zapLongEvent.longAsset, totalLongValueInWei);
+          const longAssetDecimals = config.ASSETS_CONFIG[zapLongEvent.longAsset].decimals;
+          const longAssetAmountInWei = parseUnits(zapLongEvent.longAssetAmount.toFixed(longAssetDecimals), BigNumber.from(longAssetDecimals));
+          const swapQueryResponse = await this.yakSwapQueryMethod()(zapLongEvent.stableCoin, zapLongEvent.longAsset, longAssetAmountInWei);
 
           const swapRequest = {
             sourceAsset: zapLongEvent.stableCoin,
             targetAsset: zapLongEvent.longAsset,
-            sourceAmount: (Number(zapLongEvent.stableCoinAmount) * zapLongEvent.leverage).toString(),
-            targetAmount: 0.95 * (Number(zapLongEvent.stableCoinAmount) * zapLongEvent.leverage) / config.ASSETS_CONFIG[zapLongEvent.longAsset].price,
+            sourceAmount: Number(zapLongEvent.stableCoinAmount).toString(),
+            targetAmount: Number(zapLongEvent.longAssetAmount),
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
 
-          if (zapLongEvent.depositAmount) {
-            const fundRequest = {
-              value: parseFloat(zapLongEvent.depositAmount).toFixed(stableCoinDecimals),
-              asset: zapLongEvent.stableCoin,
-              assetDecimals: config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals,
-              type: 'ASSET',
-              keepModalOpen: true
-            };
-            await this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, async () => {
+            await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+            }, (error) => {
+              this.handleTransactionError(error);
             });
-          }
-          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
+          }, (error) => {
+            this.handleTransactionError(error);
           });
-          await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
-
-          });
-
 
         });
       });
     },
 
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+    },
+
+    //TODO: remove
     getStableCoinsWalletBalances(stableCoins) {
       return combineLatest(
         stableCoins.map(stableCoin => {

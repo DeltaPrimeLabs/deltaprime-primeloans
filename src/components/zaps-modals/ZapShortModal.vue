@@ -6,51 +6,34 @@
       </div>
 
       <div class="modal__content">
-        <div class="checkbox-container">
-          <Checkbox :label="'Include funds from your wallet'" v-on:checkboxChange="addFromWalletCheckboxChange"></Checkbox>
-        </div>
+        <span class="modal-top-desc">Borrows assets and swaps into the chosen stablecoin.</span>
 
-        <div class="input-label"><b>Your collateral:</b></div>
-
-        <div class="modal-top-info">
-          <div class="top-info__label">Available:</div>
-          <div class="top-info__value" v-bind:class="{'available-balance--loading': !availableAssetAmount}">
-            <LoadedValue :check="() => availableAssetAmount != null"
-                         :value="formatTokenBalance(availableAssetAmount, 10, true)">
-            </LoadedValue>
-            <div v-if="availableAssetAmount">
-              <span class="top-info__currency">
-                {{selectedStableCoin}}
-              </span>
-            </div>
-          </div>
-        </div>
         <div class="top-up-input">
-          <CurrencyComboInput ref="stableCoinInput"
-                              :asset-options="stableCoinsOptions"
-                              :default-asset="'USDC'"
+          <CurrencyComboInput ref="shortAssetInput"
+                              :asset-options="shortAssetOptions"
                               :typingTimeout="100"
                               :validators="validators"
-                              v-on:valueChange="stableCoinInputChange"
+                              v-on:valueChange="shortAssetInputChange"
           >
           </CurrencyComboInput>
         </div>
-
         <div class="assets-container">
-          <div class="assets-label">Choose asset to short:</div>
+          <div class="assets-label">Choose stablecoin to swap to:</div>
           <AssetFilter ref="assetFilter"
-                       :asset-filter-groups="shortAssetOptions"
+                       :asset-filter-groups="stableCoinsOptions"
+                       :first-one-as-default="true"
                        :show-clear-button="false"
                        :single-select-mode="true"
-                       v-on:filterChange="assetSelectChange">
+                       v-on:filterChange="stableCoinSelectChange">
           </AssetFilter>
         </div>
+      </div>
 
-        <div class="leverage">
-          Leverage: {{leverage}}x
-        </div>
-        <div class="slider-container">
-          <Slider :min="1" :max="selectedShortAsset ? Math.round((1 / (1 - assets[selectedShortAsset].debtCoverage) - 1)) : 1" :step="0.1" v-on:newValue="leverageChange"></Slider>
+      <div class="slippage-bar">
+        <div class="slippage-info">
+          <span class="slippage-label">Max. acceptable slippage:</span>
+          <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
         </div>
       </div>
 
@@ -79,10 +62,10 @@
             <div class="summary__divider"></div>
             <div>
               <div class="summary__label">
-                {{selectedShortAsset}} shorted:
+                {{selectedStableCoin}} amount:
               </div>
               <div class="summary__value">
-                {{assets[selectedShortAsset] ? stableCoinAmount * leverage / assets[selectedShortAsset].price : 0 | smartRound(5, true)}} {{selectedShortAsset}}
+                {{ stableCoinAmount | smartRound(5, true)}} {{selectedStableCoin}}
               </div>
             </div>
           </div>
@@ -91,7 +74,7 @@
 
 
       <div class="button-wrapper">
-        <Button :disabled="!(stableCoinAmount && selectedShortAsset && leverage)" :waiting="transactionOngoing" :label="'Short'" v-on:click="submit()"></Button>
+        <Button :disabled="!(stableCoinAmount && selectedShortAsset)" :waiting="transactionOngoing" :label="'Short'" v-on:click="submit()"></Button>
       </div>
     </Modal>
   </div>
@@ -107,26 +90,23 @@ import BarGaugeBeta from '../BarGaugeBeta.vue';
 import Modal from '../Modal.vue';
 import CurrencyComboInput from '../CurrencyComboInput.vue';
 import config from '../../config';
-import RangeSlider from '../RangeSlider.vue';
-import Slider from '../Slider.vue';
 import AssetFilter from '../AssetFilter.vue';
 import Checkbox from '../Checkbox.vue';
 import {calculateHealth} from '../../utils/calculate';
+import SimpleInput from "../SimpleInput.vue";
+import InfoIcon from "../InfoIcon.vue";
 
 export default {
   name: 'ZapShortModal',
   components: {
+    InfoIcon, SimpleInput,
     Checkbox,
     AssetFilter,
-    RangeSlider,
-    Slider,
     CurrencyComboInput,
     Modal, BarGaugeBeta, Button, LoadedValue, CurrencyInput, Toggle, TransactionResultSummaryBeta
   },
 
   props: {
-    stableCoinsWalletBalances: {},
-    accountAssetBalances: {},
   },
 
   data() {
@@ -151,7 +131,7 @@ export default {
       availableAssetAmount: 0,
       includeBalanceFromWallet: false,
       validators: [],
-      leverage: null,
+      userSlippage: 2,
       stableCoinAmount: 0,
       shortAssetAmount: 0,
       extraDepositRequired: 0,
@@ -161,10 +141,9 @@ export default {
   },
 
   mounted() {
-    this.setupStableCoinsOptions();
     this.setupShortAssetOptions();
+    this.setupStableCoinsOptions();
     setTimeout(() => {
-      this.setupAvailableAssetAmount();
       this.setupValidators();
       this.calculateHealthAfterTransaction();
     });
@@ -174,37 +153,29 @@ export default {
   computed: {},
 
   methods: {
-    setupShortAssetOptions() {
-      this.shortAssetOptions = [
+    setupStableCoinsOptions() {
+      this.stableCoinsOptions = [
         {
-          options: Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && asset.debtCoverage > 0 && config.POOLS_CONFIG[asset.symbol]).map(asset => asset.symbol),
+          options: Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol),
           key: 'asset'
         }
       ];
       setTimeout(() => {
-        this.$refs.assetFilter.assetFilterGroups = this.shortAssetOptions;
+        this.$refs.assetFilter.assetFilterGroups = this.stableCoinsOptions;
         this.$refs.assetFilter.setupFilterValue();
       });
     },
-    setupStableCoinsOptions() {
-      this.stableCoinsOptions = [];
-      const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin);
-      stableCoins.forEach(stableCoin => {
-        const stableCoinOption = {
-          symbol: stableCoin.symbol,
-          name: stableCoin.name,
-          logo: `src/assets/logo/${stableCoin.symbol.toLowerCase()}.${stableCoin.logoExt ? stableCoin.logoExt : 'svg'}`
+    setupShortAssetOptions() {
+      this.shortAssetOptions = [];
+      const shortAssets = Object.values(config.ASSETS_CONFIG).filter(asset => !asset.isStableCoin && asset.debtCoverage > 0 && config.POOLS_CONFIG[asset.symbol] && !config.POOLS_CONFIG[asset.symbol].disabled);
+      shortAssets.forEach(shortAsset => {
+        const shortAssetOption = {
+          symbol: shortAsset.symbol,
+          name: shortAsset.name,
+          logo: `src/assets/logo/${shortAsset.symbol.toLowerCase()}.${shortAsset.logoExt ? shortAsset.logoExt : 'svg'}`
         };
-        this.stableCoinsOptions.push(stableCoinOption);
+        this.shortAssetOptions.push(shortAssetOption);
       });
-    },
-
-    setupAvailableAssetAmount() {
-      if (this.includeBalanceFromWallet) {
-        this.availableAssetAmount = Number(this.stableCoinsWalletBalances[this.selectedStableCoin]) + Number(this.accountAssetBalances[this.selectedStableCoin]);
-      } else {
-        this.availableAssetAmount = this.accountAssetBalances[this.selectedStableCoin];
-      }
     },
 
     setupValidators() {
@@ -215,34 +186,20 @@ export default {
               return `Health should be higher than 0%`;
             }
           },
-        },
-        {
-          validate: (value) => {
-            if (value > Number(this.availableAssetAmount)) {
-              return 'Amount exceeds available balance.';
-            }
-          }
         }
       ];
     },
 
-    setupShortPositionDetails() {
+    setupStableCoinAmount() {
       const shortAssetPrice = this.assets[this.selectedShortAsset].price;
       const stableCoinPrice = this.assets[this.selectedStableCoin].price;
-      this.shortPositionValueInStableCoin = this.shortAssetAmount * shortAssetPrice / stableCoinPrice;
+      this.stableCoinAmount = (1 - this.userSlippage / 100) * this.shortAssetAmount * shortAssetPrice / stableCoinPrice;
     },
 
 
-    assetSelectChange(changeEvent) {
-      this.selectedShortAsset = changeEvent.asset[0];
-      this.setupShortPositionDetails();
-    },
-
-    leverageChange(leverage) {
-      this.leverage = leverage.value;
-      this.shortAssetAmount = this.stableCoinAmount * this.leverage / this.assets[this.selectedShortAsset].price;
-      this.calculateHealthAfterTransaction();
-      this.setupShortPositionDetails();
+    stableCoinSelectChange(changeEvent) {
+      this.selectedStableCoin = changeEvent.asset[0];
+      this.setupStableCoinAmount();
     },
 
     calculateHealthAfterTransaction() {
@@ -252,7 +209,10 @@ export default {
         let balance = parseFloat(this.assetBalances[symbol]);
         if (symbol === this.selectedShortAsset) {
           borrowed += Number(this.shortAssetAmount);
-          balance += Number(this.shortAssetAmount);
+        }
+
+        if (symbol === this.selectedStableCoin) {
+          balance += Number(this.stableCoinAmount);
         }
 
         tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
@@ -292,30 +252,20 @@ export default {
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
-    addFromWalletCheckboxChange(changeEvent) {
-      this.includeBalanceFromWallet = changeEvent;
-      this.setupAvailableAssetAmount();
-      this.$refs.stableCoinInput.forceValidationCheck();
+    shortAssetInputChange(changeEvent) {
+      this.selectedShortAsset = changeEvent.asset;
+      this.shortAssetAmount = changeEvent.value;
+      this.$refs.shortAssetInput.forceValidationCheck();
+      this.calculateHealthAfterTransaction();
+      this.setupStableCoinAmount();
     },
 
-    stableCoinInputChange(changeEvent) {
-      this.selectedStableCoin = changeEvent.asset;
-      this.stableCoinAmount = changeEvent.value;
-      this.setupAvailableAssetAmount();
-      if (changeEvent.value > Number(this.accountAssetBalances[this.selectedStableCoin])) {
-        this.extraDepositRequired = (Number(changeEvent.value) - Number(this.accountAssetBalances[this.selectedStableCoin])) * 1.02;
-      } else {
-        this.extraDepositRequired = 0;
-      }
-      this.$refs.stableCoinInput.forceValidationCheck();
-      this.calculateHealthAfterTransaction();
-      this.setupShortPositionDetails();
+    async userSlippageChange(changeEvent) {
+      this.userSlippage = changeEvent.value ? changeEvent.value : 0;
+      this.setupStableCoinAmount();
     },
 
     submit() {
-      const depositAmount = this.stableCoinAmount > Number(this.accountAssetBalances[this.selectedStableCoin]) ?
-          (Number(this.stableCoinAmount) - Number(this.accountAssetBalances[this.selectedStableCoin])) * 1.02 : 0;
-
       this.transactionOngoing = true;
 
       this.$emit('ZAP_SHORT_EVENT',
@@ -323,8 +273,7 @@ export default {
           stableCoin: this.selectedStableCoin,
           stableCoinAmount: this.stableCoinAmount,
           shortAsset: this.selectedShortAsset,
-          leverage: this.leverage,
-          depositAmount: depositAmount
+          shortAssetAmount: this.shortAssetAmount
         }
       );
     },
@@ -369,21 +318,6 @@ export default {
   .asset-filter-component {
     justify-content: center;
   }
-}
-
-.leverage {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  font-size: $font-size-md;
-  margin-bottom: 20px;
-}
-
-.slider-container {
-  margin-bottom: 20px;
-
 }
 
 </style>
