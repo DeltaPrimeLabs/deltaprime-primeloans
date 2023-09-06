@@ -9,6 +9,10 @@
   --app-page-content__background--opacity: 1;
   // endregion
 
+  // region labels
+  --label-color: #{$storm-blue};
+  // endregion
+
   // region AccountAprWidget
   --account-apr-widget-component__background: #{$space}80;
   --account-apr-widget-component__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
@@ -515,7 +519,6 @@
   // endregion
 
   // region ZapLong
-  --zap-long__label-color: #{$storm-blue};
   --zap-long__label-background-color: #{$shallow-space}77;
   --zap-long__header-color: #{$white};
   --zap-long__more-label-color: #{$white};

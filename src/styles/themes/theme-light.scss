@@ -10,6 +10,10 @@
   --app-page-content__background--opacity: 0.08;
   // endregion
 
+  // region labels
+  --label-color: #{$dark-gray};
+  // endregion
+
   // region AccountAprWidget
   --account-apr-widget-component__background: #{$white}4c;
   --account-apr-widget-component__box-shadow: 7px 7px 30px 0 #{$delta-steel}80;

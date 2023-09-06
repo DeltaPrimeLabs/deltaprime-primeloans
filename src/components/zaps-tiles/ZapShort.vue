@@ -77,6 +77,7 @@ export default {
     },
 
     async onTileClick() {
+      if (!this.smartLoanContract) return;
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
