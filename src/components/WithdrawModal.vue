@@ -279,7 +279,7 @@ export default {
             );
 
             if (!canRepayAllDebts) {
-              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw. Read more.'
+              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw.'
             }
           }
         }

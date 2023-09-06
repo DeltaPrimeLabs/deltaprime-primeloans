@@ -154,11 +154,8 @@ import config from '../config';
 import InfoIcon from './InfoIcon.vue';
 import RangeSlider from './RangeSlider';
 import FormInput from './FormInput';
-import erc20ABI from '../../test/abis/ERC20.json';
-import {fromWei} from '../utils/calculate';
-import {formatUnits} from "ethers/lib/utils";
-import {BigNumber} from "ethers";
 import SimpleInput from "./SimpleInput.vue";
+import Paginator from "./Paginator.vue";
 
 const ethers = require('ethers');
 
@@ -166,6 +163,7 @@ const ethers = require('ethers');
 export default {
   name: 'AddLiquidityModal',
   components: {
+    Paginator,
     SimpleInput,
     Button,
     CurrencyInput,

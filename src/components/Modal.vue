@@ -95,7 +95,7 @@ export default {
       }
 
       .modal-scroll {
-        max-height: 720px;
+        max-height: 75vh;
         overflow-y: auto;
         overflow-x: hidden;
         padding: 0 100px;

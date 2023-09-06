@@ -58,15 +58,17 @@
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
-        <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances}"
-                   :icon-src="'src/assets/icons/plus.svg'" :size="26"
-                   v-tooltip="{content: 'Deposit', classes: 'button-tooltip'}"
-                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
-            v-if="moreActionsConfig"
             class="actions__icon-button"
-            :config="moreActionsConfig"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
@@ -127,7 +129,8 @@ export default {
 
   async mounted() {
     this.setupAvailableFarms();
-    this.setupActionsConfiguration();
+    this.setupAddActionsConfiguration();
+    this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchHealth();
@@ -141,7 +144,8 @@ export default {
 
   data() {
     return {
-      moreActionsConfig: null,
+      addActionsConfig: null,
+      removeActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -195,7 +199,8 @@ export default {
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.setupActionsConfiguration();
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
         }
       },
     },
@@ -226,21 +231,35 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
-    setupActionsConfiguration() {
-      this.moreActionsConfig =
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =
           {
-            iconSrc: 'src/assets/icons/icon_a_more.svg',
-            tooltip: 'More',
+            iconSrc: 'src/assets/icons/plus.svg',
+            tooltip: 'Add',
             menuOptions: [
+              {
+                key: 'ADD_FROM_WALLET',
+                name: 'Add LP token from wallet'
+              },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LP token',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-              },
+              }
+            ]
+          }
+    },
+
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =
+          {
+            iconSrc: 'src/assets/icons/minus.svg',
+            tooltip: 'Remove',
+            menuOptions: [
               {
                 key: 'WITHDRAW',
-                name: 'Withdraw collateral',
+                name: 'Withdraw LP token to wallet',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {

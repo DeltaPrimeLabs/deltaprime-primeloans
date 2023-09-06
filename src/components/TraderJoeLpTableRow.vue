@@ -9,6 +9,9 @@
             by {{ lpToken.dex }}
           </div>
         </div>
+        <div class="bin-step"
+             v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
+        {{lpToken.binStep}}</div>
       </div>
 
       <!-- To-do: Show price graph or similar one on click -->
@@ -557,7 +560,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 170px 110px 100px 195px 160px 120px 120px 35px 80px;
+    grid-template-columns: 180px 100px 100px 195px 150px 120px 120px 35px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -584,6 +587,7 @@ export default {
 
       &.asset {
         align-items: center;
+        justify-content: space-between;
 
         .asset__icon {
           width: 20px;
@@ -597,6 +601,7 @@ export default {
           justify-content: center;
           margin-left: 8px;
           font-weight: 500;
+          width: 135px;
         }
 
         .asset__dex {
@@ -613,7 +618,7 @@ export default {
         align-items: center;
         justify-content: end;
         .flat-button-component {
-          transform: translateX(12px);
+          transform: translateX(31px);
         }
       }
 
@@ -704,6 +709,23 @@ export default {
     width: 22px;
     border-radius: 50%;
     margin-right: 9px;
+  }
+
+  .bin-step {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: nowrap;
+    align-items: center;
+    padding: 0 4px;
+    width: 30px;
+    height: 20px;
+    border-radius: 6px;
+    border: solid 1px var(--flat-button__border-color);
+    text-transform: uppercase;
+    font-size: $font-size-xs;
+    color: var(--flat-button__color);
+    font-weight: bold;
   }
 
   .chart-container {
