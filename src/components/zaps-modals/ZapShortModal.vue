@@ -167,7 +167,6 @@ export default {
       this.setupAvailableAssetAmount();
       this.setupValidators();
       this.calculateHealthAfterTransaction();
-      console.log(this.assets);
     });
   },
 
@@ -295,14 +294,11 @@ export default {
 
     addFromWalletCheckboxChange(changeEvent) {
       this.includeBalanceFromWallet = changeEvent;
-      console.log('this.includeBalanceFromWallet', this.includeBalanceFromWallet);
       this.setupAvailableAssetAmount();
       this.$refs.stableCoinInput.forceValidationCheck();
     },
 
     stableCoinInputChange(changeEvent) {
-      console.log(this.assets['BTC'].price);
-      console.log(changeEvent);
       this.selectedStableCoin = changeEvent.asset;
       this.stableCoinAmount = changeEvent.value;
       this.setupAvailableAssetAmount();
@@ -311,7 +307,6 @@ export default {
       } else {
         this.extraDepositRequired = 0;
       }
-      console.log('this.extraDepositRequired', this.extraDepositRequired);
       this.$refs.stableCoinInput.forceValidationCheck();
       this.calculateHealthAfterTransaction();
       this.setupShortPositionDetails();

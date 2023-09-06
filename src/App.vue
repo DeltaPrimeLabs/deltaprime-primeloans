@@ -134,7 +134,6 @@ export default {
 
       ethereum.on('chainChanged', async () => {
         const chainId = await ethereum.request({method: 'eth_chainId'});
-        console.log('chain changed');
         location.reload();
 
         if (chainId == this.toHex(config.chainId)) {

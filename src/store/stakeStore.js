@@ -210,7 +210,6 @@ export default {
       if (stakeRequest.feedSymbol) assets.push([stakeRequest.feedSymbol]);
 
       const loanAssets = mergeArrays(assets);
-      console.log(3)
 
       const stakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[stakeRequest.method]
       (

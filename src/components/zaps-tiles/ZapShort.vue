@@ -74,16 +74,12 @@ export default {
     },
 
     async onTileClick() {
-      console.log('tile click');
-      console.log(this.assetBalances);
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
-        console.log(balances);
         stableCoins.forEach((coin, index) => {
           stableCoinsWalletBalances[coin] = balances[index];
         });
-        console.log(stableCoinsWalletBalances);
         const modalInstance = this.openModal(ZapShortModal);
 
         modalInstance.assets = this.assets;
@@ -104,7 +100,6 @@ export default {
         this.$forceUpdate();
 
         modalInstance.$on('ZAP_SHORT_EVENT', async zapShortEvent => {
-          console.log(zapShortEvent);
           const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
           const shortAssetAmount = ((Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage) / config.ASSETS_CONFIG[zapShortEvent.shortAsset].price)).toFixed(shortAssetDecimals);
           let stableCoinAmount = Number(zapShortEvent.stableCoinAmount) * zapShortEvent.leverage;
@@ -113,7 +108,6 @@ export default {
             amount: shortAssetAmount,
             keepModalOpen: true
           };
-          console.log('shortAssetAmount: ', shortAssetAmount)
           const totalShortValueInWei = parseUnits(Number(shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
           const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, totalShortValueInWei);
 
@@ -128,9 +122,7 @@ export default {
           };
 
           await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-            console.log('inside borrow callback');
           });
-          console.log('after borrow');
           await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
           });
         });
@@ -155,13 +147,10 @@ export default {
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
 
-        console.log(sourceAsset);
-        console.log(targetAsset);
         const tknFrom = config.ASSETS_CONFIG[sourceAsset].address;
         const tknTo = config.ASSETS_CONFIG[targetAsset].address;
 
         const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
-        console.log(yakRouter);
 
         const maxHops = 3;
         const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');

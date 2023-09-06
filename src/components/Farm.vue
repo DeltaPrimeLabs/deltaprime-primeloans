@@ -67,10 +67,6 @@ export default {
           key: 'asset'
         },
       ];
-      console.log('setupAssetFilterGroups')
-      console.log(Object.entries(config.FARMED_TOKENS_CONFIG))
-      console.log(Object.entries(config.FARMED_TOKENS_CONFIG).filter(([key,value]) => { console.log('key: ', key); console.log('value: ', value[0]);return !value[0].isTokenLp}))
-      // console.log(Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value.isTokenLp).map(el => el[0]))
 
       this.selectedLpTokens = this.assetFilterGroups[0].options;
       setTimeout(() => {

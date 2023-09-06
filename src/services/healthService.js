@@ -28,8 +28,6 @@ export default class HealthService {
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
 
-    console.log(debtsPerAsset);
-
     if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
       let tokens = [];
       for (const [symbol, data] of Object.entries(assets)) {

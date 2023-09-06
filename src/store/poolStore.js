@@ -65,17 +65,12 @@ export default {
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();
       } else {
-        console.log('deposit NOT native token');
         const allowance = formatUnits(await tokenContract.allowance(rootState.network.account, poolContract.address), decimals);
-        console.log('allowance', allowance);
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(poolContract.address,
               parseUnits(String(depositRequest.amount), decimals));
-
-          console.log(approveTransaction);
-          console.log('after approve');
 
           rootState.serviceRegistry.progressBarService.requestProgressBar();
           rootState.serviceRegistry.modalService.closeModal();

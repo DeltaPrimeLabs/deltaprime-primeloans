@@ -332,8 +332,6 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.log('TOKEN_ADDRESSES')
-        console.log(TOKEN_ADDRESSES)
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 

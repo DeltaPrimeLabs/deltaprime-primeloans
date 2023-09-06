@@ -12,7 +12,6 @@ export default class PoolService {
   pools = [];
 
   emitPools(pools) {
-    console.log('emitting pools', pools);
     this.pools = pools;
     this.pools$.next(pools);
   }
@@ -27,7 +26,6 @@ export default class PoolService {
     return combineLatest(
       poolsFromConfig.map(poolAsset => {
         const poolContract = new ethers.Contract(config.POOLS_CONFIG[poolAsset].address, POOL.abi, provider.getSigner());
-        console.log(poolContract);
         return combineLatest([
           poolContract.totalSupply(),
           poolContract.balanceOf(account),
@@ -36,7 +34,6 @@ export default class PoolService {
           poolContract.totalBorrowed(),
           poolContract.getMaxPoolUtilisationForBorrowing()
         ]).pipe(map(poolDetails => {
-          console.log(poolDetails);
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
           const apy = fromWei(poolDetails[2]);
           const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
@@ -65,7 +62,6 @@ export default class PoolService {
   }
 
   emitPoolDepositChange(amount, poolAssetSymbol, operation) {
-    console.log(`emitting ${poolAssetSymbol} deposit change: ${amount}, ${operation}`);
     const pool = this.pools.find(pool => pool.asset.symbol === poolAssetSymbol);
     if (operation === 'DEPOSIT') {
       pool.deposit = Number(pool.deposit) + Number(amount);

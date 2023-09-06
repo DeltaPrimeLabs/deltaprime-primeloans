@@ -132,7 +132,6 @@ export async function yieldYakBalance(stakingContractAddress, address, decimals 
     const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
     const stakedYrtWei = await tokenContract.balanceOf(address);
 
-    console.log('result: ', formatUnits(stakedYrtWei, decimals))
     return formatUnits(stakedYrtWei, decimals);
   } catch (e) {
     console.log('yieldYakBalance error')
@@ -217,16 +216,11 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 
 export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
   try {
-    console.log('yieldYakMaxUnstaked')
-    console.log('stakingContractAddress: ', stakingContractAddress)
     const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
     const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
     const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from(decimals));
     const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
 
-    console.log(loanBalance)
-    console.log(totalDeposits)
-    console.log(totalSupply)
     return loanBalance / totalSupply * totalDeposits;
   } catch (e) {
     console.log('yieldYakMaxUnstaked error');
@@ -238,7 +232,6 @@ export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, d
 
 export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
   try {
-    console.log('beefyMaxUnstaked')
     const stakingContract = new ethers.Contract(stakingContractAddress, IBeefyFinance.abi, provider.getSigner());
     const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
     const balance = formatUnits(await stakingContract.balance(), BigNumber.from(decimals));

@@ -81,13 +81,8 @@ export default {
         {
           text: 'Degen, activated!',
           min: 0.5,
-          max: 1
-        },
-        {
-          text: 'SteakHut Master',
-          min: 1,
-          max: 999999
-        },
+          max: 99999
+        }
       ];
     },
 

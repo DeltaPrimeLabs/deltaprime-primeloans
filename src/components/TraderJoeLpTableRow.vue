@@ -18,8 +18,10 @@
         </FlatButton>
       </div>
 
-      <div class="table__cell table__cell--double-value fees">
-        {{ feesClaimable | usd }}
+      <div class="table__cell liquidity">
+        <FlatButton :active="false" >
+          {{ 'SHOW' }}
+        </FlatButton>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
@@ -213,6 +215,7 @@ export default {
         this.setupAddActionsConfiguration();
         this.setupRemoveActionsConfiguration();
         this.setupApr();
+        this.calculateUserValue();
       })
     },
     setupAddActionsConfiguration() {
@@ -280,6 +283,10 @@ export default {
             })
         );
       }
+    },
+
+    calculateUserValue() {
+      this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
     },
 
     actionClick(key) {
@@ -382,8 +389,6 @@ export default {
             addLiquidityInput,
           };
 
-          // this.traderJoeService.addLiquidity({provider: this.provider, addLiquidityInput});
-
           this.handleTransaction(this.addLiquidityTraderJoeV2Pool, {addLiquidityRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
@@ -442,6 +447,7 @@ export default {
     watchAssetBalancesDataRefreshEvent() {
       this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
         this.inProcess = false;
+        this.calculateUserValue();
         this.$forceUpdate();
       });
     },
@@ -467,12 +473,7 @@ export default {
 
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
-        console.log('watchAssetPricesUpdate')
-        console.log(this.lpToken.primaryBalance)
-        console.log(this.firstAsset.price)
-        console.log(this.lpToken.secondaryBalance)
-        console.log(this.secondAsset.price)
-        this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
+        this.calculateUserValue();
       });
     },
 
@@ -610,7 +611,10 @@ export default {
 
       &.liquidity {
         align-items: center;
-        justify-content: center;
+        justify-content: end;
+        .flat-button-component {
+          transform: translateX(12px);
+        }
       }
 
       &.composition {

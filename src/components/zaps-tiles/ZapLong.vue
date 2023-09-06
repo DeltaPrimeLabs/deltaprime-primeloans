@@ -74,16 +74,12 @@ export default {
     },
 
     async onTileClick() {
-      console.log('tile click');
-      console.log(this.assetBalances);
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
-        console.log(balances);
         stableCoins.forEach((coin, index) => {
           stableCoinsWalletBalances[coin] = balances[index];
         });
-        console.log(stableCoinsWalletBalances);
         const modalInstance = this.openModal(ZapLongModal);
 
         modalInstance.assets = this.assets;
@@ -104,7 +100,6 @@ export default {
         this.$forceUpdate();
 
         modalInstance.$on('ZAP_LONG_EVENT', async zapLongEvent => {
-          console.log(zapLongEvent);
           const totalLongValue = Number(zapLongEvent.stableCoinAmount) * Number(zapLongEvent.leverage);
           const borrowRequest = {
             asset: zapLongEvent.stableCoin,
@@ -114,7 +109,6 @@ export default {
           const stableCoinDecimals = config.ASSETS_CONFIG[zapLongEvent.stableCoin].decimals;
           const totalLongValueInWei = parseUnits(totalLongValue.toFixed(stableCoinDecimals), BigNumber.from(stableCoinDecimals));
           const swapQueryResponse = await this.yakSwapQueryMethod()(zapLongEvent.stableCoin, zapLongEvent.longAsset, totalLongValueInWei);
-          console.log(swapQueryResponse);
 
           const swapRequest = {
             sourceAsset: zapLongEvent.stableCoin,
@@ -127,7 +121,6 @@ export default {
           };
 
           if (zapLongEvent.depositAmount) {
-            console.log('zapLongEvent.depositAmount: ', zapLongEvent.depositAmount)
             const fundRequest = {
               value: parseFloat(zapLongEvent.depositAmount).toFixed(stableCoinDecimals),
               asset: zapLongEvent.stableCoin,
@@ -139,9 +132,7 @@ export default {
             });
           }
           await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-            console.log('inside borrow callback');
           });
-          console.log('after borrow');
           await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
 
           });
@@ -168,15 +159,10 @@ export default {
 
     yakSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.log('TOKEN_ADDRESSES');
-        console.log(TOKEN_ADDRESSES);
-        console.log(sourceAsset);
-        console.log(targetAsset);
         const tknFrom = config.ASSETS_CONFIG[sourceAsset].address;
         const tknTo = config.ASSETS_CONFIG[targetAsset].address;
 
         const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
-        console.log(yakRouter);
 
         const maxHops = 3;
         const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');

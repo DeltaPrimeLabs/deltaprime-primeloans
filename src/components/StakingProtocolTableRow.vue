@@ -120,7 +120,6 @@ export default {
     }
   },
   async mounted() {
-    console.log('mounted')
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
@@ -466,7 +465,6 @@ export default {
       this.isStakedBalanceEstimated = false;
     },
     setupAddActionsConfiguration() {
-      console.log('setupAddActionsConfiguration')
       this.addActionsConfig =   {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
@@ -485,7 +483,6 @@ export default {
       }
     },
     setupRemoveActionsConfiguration() {
-      console.log('setupRemoveActionsConfiguration')
       this.removeActionsConfig =   {
         iconSrc: 'src/assets/icons/minus.svg',
         tooltip: 'Remove',

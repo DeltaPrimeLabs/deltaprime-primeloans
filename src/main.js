@@ -19,7 +19,6 @@ import ConfigArbitrum from './configArbitrum';
 
 window.ethereum.request({method: 'eth_chainId'}).then((id) => {
   const chainId = parseInt(id, 16);
-  console.log(chainId);
 
   switch (chainId) {
     case 43114: {

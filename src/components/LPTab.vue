@@ -184,14 +184,17 @@ export default {
             sortable: false,
             class: 'balance',
             id: 'LIQUIDITY',
-            tooltip: `The prices of your bins in liquidity pool.`
+            tooltip: `Your liquidity distributed among bins.`
           },
           {
-            label: 'Fees',
+            label: 'Stats',
             sortable: false,
             class: 'balance',
-            id: 'FEES-CLAIMABLE',
-            tooltip: `Fees claimable from your liquidity pool.`
+            id: 'STATS',
+            tooltip: `Statistics of your performance in the pool. Coming soon!<div class='tooltip-extra'>
+            <img class="tooltip-extra__icon" src="src/assets/icons/rating.png"/>
+            <span>This is a Prime feature</span>
+            </div>`
           },
           {
             label: 'Composition',

@@ -32,7 +32,6 @@
     <script>
         window.ethereum.request({method: 'eth_chainId'}).then((id) => {
             const chainId = parseInt(id, 16);
-            console.log(chainId);
             window.chainId = chainId
 
             switch (chainId) {
@@ -45,7 +44,6 @@
                     break;
                 }
             }
-            console.log(window.chain);
         });
     </script>
 </head>

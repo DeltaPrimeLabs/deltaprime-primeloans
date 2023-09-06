@@ -6,7 +6,6 @@ export default class ProgressBarService {
   progressBarState$ = new Subject();
 
   requestProgressBar(duration = 1000) {
-    console.log('request progress bar');
     this.progressBarRequested$.next({duration: duration});
     this.progressBarState$.next({state: 'MINING'});
   }
@@ -26,7 +25,6 @@ export default class ProgressBarService {
   }
 
   emitProgressBarInProgressState(statusInfo = {}) {
-    console.log('emit bar in progress');
     this.progressBarState$.next({state: 'IN_PROGRESS', statusInfo});
   }
 

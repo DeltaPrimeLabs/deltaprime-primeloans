@@ -133,7 +133,6 @@ export default {
     },
 
     setNoSmartLoan(state, noSmartLoan) {
-      console.log('has no smart loan: ', noSmartLoan);
       state.noSmartLoan = noSmartLoan;
     },
 
@@ -213,7 +212,6 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
-      console.log('updateFunds');
       try {
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
@@ -266,10 +264,6 @@ export default {
       apysQuerySnapshot.forEach((doc) => {
         apys[doc.id] = doc.data();
       });
-
-
-      console.log('apys')
-      console.log(apys)
 
       commit('setApys', apys);
     },
@@ -483,7 +477,6 @@ export default {
     },
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value, isLP}) {
-      console.log('createAndFundLoan', asset, value, isLP);
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
@@ -769,7 +762,6 @@ export default {
           debtsPerAsset[asset] = {asset: asset, debt: debtValue};
         }
       });
-      console.log(debtsPerAsset);
       await commit('setDebtsPerAsset', debtsPerAsset);
       dataRefreshNotificationService.emitDebtsPerAssetDataRefreshEvent(debtsPerAsset);
       rootState.serviceRegistry.healthService.emitRefreshHealth();
@@ -1126,7 +1118,6 @@ export default {
     },
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
-      console.log('withdrawRequest', withdrawRequest);
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
@@ -1136,15 +1127,12 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      console.log(loanAssets);
-
       // Note - temporary code to remove 'ARBI' from data feed request to Redstone
       // const arbiTokenIndex = loanAssets.indexOf('ARBI');
       // loanAssets.splice(arbiTokenIndex, 1);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))
         .unwrapAndWithdraw(parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals));
-      console.log(transaction);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

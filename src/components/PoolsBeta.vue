@@ -53,8 +53,6 @@ export default {
     TableHeader
   },
   async mounted() {
-    console.log('1')
-    console.log(2)
     this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();
