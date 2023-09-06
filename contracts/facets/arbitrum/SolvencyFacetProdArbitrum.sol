@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2aecc27a0a6256605892401f058e223cde352a62;
+// Last deployed from commit: ecd675d46c3f696de7562f6be071a442d97f37d9;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -16,6 +16,7 @@ import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
+
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -641,11 +642,11 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
     function getHealthRatio() public view virtual returns (uint256) {
         CachedPrices memory cachedPrices = getAllPricesForLiquidation(new bytes32[](0));
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }
@@ -657,11 +658,11 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
      **/
     function getHealthRatioWithPrices(CachedPrices memory cachedPrices) public view virtual returns (uint256) {
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }
