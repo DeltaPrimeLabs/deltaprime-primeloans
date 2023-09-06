@@ -167,6 +167,30 @@ export default {
                 gasUnstake: 10000000
             }
         ],
+        "DAI": [
+            {
+                protocol: 'YIELD_YAK',
+                autoCompounding: true,
+                protocolIdentifier: 'YY_WOMBEX_DAI',
+                balance: async (address) => yieldYakBalance('0x1817fE376740b53CAe73224B7F0a57F23DD4C9b5', address, 18),
+                stakingContractAddress: '0x1817fE376740b53CAe73224B7F0a57F23DD4C9b5',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'stakeDAIYak',
+                unstakeMethod: 'unstakeDAIYak',
+                feedSymbol: 'YY_WOMBEX_DAI',
+                symbol: 'YRT',
+                token: 'DAI',
+                isTokenLp: false,
+                info: 'Provides liquidity to Wombex.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['DAI'],
+                strategy: 'DAI',
+                refreshDelay: 60000,
+                gasStake: 15000000,
+                gasUnstake: 15000000
+            }
+        ],
         "GMX": [
             {
                 protocol: 'BEEFY_FINANCE',
