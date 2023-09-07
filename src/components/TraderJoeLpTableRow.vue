@@ -77,7 +77,7 @@
     </div>
 
     <div class="chart-container" v-if="showLiquidityChart && chartData.length">
-      <div id="chartjs-tooltip"></div>
+      <div class="chartjs-tooltip" :id="'chartjs-tooltip-' + index"></div>
       <SmallBlock v-on:close="toggleLiquidityChart()">
         <div class="small-block__content">
           <div class="legend">
@@ -91,7 +91,7 @@
             </div>
           </div>
           <LiquidityChart :tokens-data="chartData" :primary="lpToken.primary"
-                          :secondary="lpToken.secondary"></LiquidityChart>
+                          :secondary="lpToken.secondary" :index="index"></LiquidityChart>
         </div>
       </SmallBlock>
     </div>
@@ -129,7 +129,8 @@ export default {
     IconButtonMenuBeta
   },
   props: {
-    lpToken: null
+    lpToken: null,
+    index: null,
   },
 
   async mounted() {
@@ -785,9 +786,9 @@ export default {
 </style>
 
 <style>
-#chartjs-tooltip {
-  width: unset;
-  height: unset;
+.chartjs-tooltip {
+  width: unset !important;
+  height: unset !important;
   position: absolute;
   pointer-events: none;
   opacity: 0;
