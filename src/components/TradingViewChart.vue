@@ -36,6 +36,8 @@ export default {
         backgroundColor: "rgba(0, 0, 0, 0)",
         container_id: "tradingview-id",
         hide_side_toolbar: false,
+        allow_symbol_change: true,
+        hide_volume: true,
       }
     }
   },
