@@ -1,5 +1,6 @@
 <template>
-  <div class="fund-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="fund-table-row-component"
+       :class="{'expanded': rowExpanded, 'expanded--trading-view': selectedChart === 'TradingView'}">
     <div class="table__row" v-if="asset">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
@@ -111,12 +112,20 @@
 
     <div class="chart-container" v-if="showChart">
       <SmallBlock v-on:close="toggleChart()">
+        <Toggle class="chart-container__toggle" v-on:change="onOptionChange" :options="['Chart', 'TradingView']"
+                :initial-option="0"></Toggle>
         <Chart :data-points="asset.prices"
                :line-width="3"
                :min-y="asset.minPrice"
                :max-y="asset.maxPrice"
-               :positive-change="todayPriceChange > 0">
+               :positive-change="todayPriceChange > 0"
+               v-if="selectedChart === 'Chart'">
         </Chart>
+        <TradingViewChart :trading-view-symbol="asset.tradingViewSymbol"
+                          :index="index"
+                          v-if="selectedChart === 'TradingView'"
+                          class="trading-view-chart"
+                          :class="{'trading-view-chart--visible': showTradingViewChart}"></TradingViewChart>
       </SmallBlock>
     </div>
 
@@ -155,6 +164,8 @@ import DeltaIcon from './DeltaIcon.vue';
 import IconButton from './IconButton.vue';
 import {constructSimpleSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
+import TradingViewChart from "./TradingViewChart.vue";
+import Toggle from "./Toggle.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -164,11 +175,14 @@ let TOKEN_ADDRESSES;
 export default {
   name: 'AssetsTableRow',
   components: {
+    Toggle,
+    TradingViewChart,
     IconButton,
     DeltaIcon, LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta
   },
   props: {
     asset: {},
+    index: null,
   },
   async mounted() {
     await this.setupFiles();
@@ -200,7 +214,9 @@ export default {
       healthLoaded: false,
       totalStaked: null,
       availableFarms: [],
-      nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS
+      nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
+      selectedChart: 'Chart',
+      showTradingViewChart: false,
     };
   },
   computed: {
@@ -246,23 +262,23 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore',
-      [
-        'swap',
-        'paraSwap',
-        'swapDebt',
-        'fund',
-        'borrow',
-        'withdraw',
-        'withdrawNativeToken',
-        'repay',
-        'createAndFundLoan',
-        'createLoanAndDeposit',
-        'fundNativeToken',
-        'wrapNativeToken',
-        'mintAndStakeGlp',
-        'unstakeAndRedeemGlp',
-        'claimGLPRewards'
-      ]),
+        [
+          'swap',
+          'paraSwap',
+          'swapDebt',
+          'fund',
+          'borrow',
+          'withdraw',
+          'withdrawNativeToken',
+          'repay',
+          'createAndFundLoan',
+          'createLoanAndDeposit',
+          'fundNativeToken',
+          'wrapNativeToken',
+          'mintAndStakeGlp',
+          'unstakeAndRedeemGlp',
+          'claimGLPRewards'
+        ]),
     ...mapActions('network', ['updateBalance']),
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -270,29 +286,39 @@ export default {
     setupBorrowable() {
       this.borrowable = Object.entries(config.POOLS_CONFIG).filter(([asset, info]) => !info.disabled).map(el => el[0]);
     },
+    onOptionChange(selected) {
+      this.selectedChart = selected
+      if (this.selectedChart === 'TradingView') {
+        setTimeout(() => {
+          this.showTradingViewChart = true
+        }, 300)
+      } else {
+        this.showTradingViewChart = false
+      }
+    },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
           ...(this.borrowable.includes(this.asset.symbol) ?
-            [
-              {
-                key: 'BORROW',
-                name: 'Borrow',
-                disabled: this.borrowDisabled(),
-                disabledInfo: 'To borrow, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'REPAY',
-                name: 'Repay',
-              },
-              {
-                key: 'SWAP_DEBT',
-                name: 'Swap debt',
-              }
-            ]
-            : []),
+              [
+                {
+                  key: 'BORROW',
+                  name: 'Borrow',
+                  disabled: this.borrowDisabled(),
+                  disabledInfo: 'To borrow, you need to add some funds from you wallet first'
+                },
+                {
+                  key: 'REPAY',
+                  name: 'Repay',
+                },
+                {
+                  key: 'SWAP_DEBT',
+                  name: 'Swap debt',
+                }
+              ]
+              : []),
           this.asset.symbol === this.nativeAssetOptions[0] ? {
             key: 'WRAP',
             name: `Wrap native ${this.nativeAssetOptions[0]}`,
@@ -353,12 +379,12 @@ export default {
                 )
             )
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -373,22 +399,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -441,12 +467,12 @@ export default {
 
           try {
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -460,22 +486,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -560,8 +586,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -680,25 +706,25 @@ export default {
               };
 
               this.handleTransaction(this.createLoanAndDeposit, {request: request}, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             } else {
               console.log('createAndFundLoan');
               this.handleTransaction(this.createAndFundLoan, {
-                  asset: addFromWalletEvent.asset,
-                  value: value,
-                  isLP: false
-                }, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    asset: addFromWalletEvent.asset,
+                    value: value,
+                    isLP: false
+                  }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             }
           } else {
             if (addFromWalletEvent.asset === this.nativeAssetOptions[0]) {
@@ -758,8 +784,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
@@ -772,8 +798,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         }
       });
     },
@@ -816,8 +842,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -1057,7 +1083,11 @@ export default {
   transition: all 200ms;
 
   &.expanded {
-    height: 433px;
+    height: 477px;
+
+    &.expanded--trading-view {
+      height: 715px;
+    }
   }
 
   .table__row {
@@ -1184,6 +1214,19 @@ export default {
 
     .colored-value {
       font-weight: 500;
+    }
+
+    .chart-container__toggle {
+      margin-bottom: 16px;
+    }
+
+    .trading-view-chart {
+      transition: 200ms opacity ease-in-out;
+      opacity: 0;
+
+      &.trading-view-chart--visible {
+        opacity: 1;
+      }
     }
   }
 }
