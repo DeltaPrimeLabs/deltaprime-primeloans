@@ -2100,10 +2100,10 @@
     tiny-warning "^1.0.3"
     toformat "^2.0.0"
 
-"@traderjoe-xyz/sdk-v2@^2.1.4":
-  version "2.1.4"
-  resolved "https://registry.yarnpkg.com/@traderjoe-xyz/sdk-v2/-/sdk-v2-2.1.4.tgz#003667a147a3a47fca551692e04dd26e350288bc"
-  integrity sha512-ie9WPBA+8I3vjwjDLpiLY8ASXU2+0K4DjbeqvUMXHb7Dbkoy3g+DD6pP8R3ZYvXlGbEDxh3BVgUm61yMGl/wXw==
+"@traderjoe-xyz/sdk-v2@^2.1.5":
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/@traderjoe-xyz/sdk-v2/-/sdk-v2-2.1.5.tgz#21271d63927f0f297b86d09670d5c57903150b8b"
+  integrity sha512-AeNBFE5RIujbQwYEzsOiBSosibB7d8rubUWnRsHfGxk+DQIGGwlWAvPrtW34Ilo/vzmRULxRCvZohb69FnO5HA==
   dependencies:
     "@traderjoe-xyz/sdk-core" "^1.1.0"
     jsbi "^4.3.0"

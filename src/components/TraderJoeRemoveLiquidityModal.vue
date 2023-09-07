@@ -13,14 +13,14 @@
           <RangeSlider
             :min="minMaxRange[0]"
             :max="minMaxRange[1]"
-            :value="binRange"
+            :value="selectedRange"
             @input="updateBinRange"
           ></RangeSlider>
           <div class="price-range-inputs">
             <div class="price__input">
               <div class="input-label"><b>Min Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
-                :default-value="binRange && getBinPrice(binRange[0])"
+                :default-value="selectedRange && getBinPrice(selectedRange[0])"
                 :fontSize="18"
                 :disabled="true"
               ></FormInput>
@@ -28,7 +28,7 @@
             <div class="price__input">
               <div class="input-label"><b>Max Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
-                :default-value="binRange && getBinPrice(binRange[1])"
+                :default-value="selectedRange && getBinPrice(selectedRange[1])"
                 :fontSize="18"
                 :disabled="true"
               ></FormInput>
@@ -92,7 +92,7 @@ export default {
 
   data() {
     return {
-      binRange: [],
+      selectedRange: [],
       minMaxRange: [],
       transactionOngoing: false,
       priceRadius: 5,
@@ -110,7 +110,7 @@ export default {
   },
 
   watch: {
-    binRange: {
+    selectedRange: {
       handler(newRange) {
         if (!this.binIds) return;
         this.hasLiquidityInRange = this.binIds.some(binId => binId >= newRange[0] && binId <= newRange[1]);
@@ -122,7 +122,7 @@ export default {
   methods: {
     setupSlider() {
       this.minMaxRange = [this.binIds[0], this.binIds[this.binIds.length - 1]];
-      this.binRange = [this.binIds[0], this.binIds[this.binIds.length - 1]];
+      this.selectedRange = [this.binIds[0], this.binIds[this.binIds.length - 1]];
     },
 
     getBinPrice(binId) {
@@ -132,17 +132,22 @@ export default {
 
     submit() {
       this.transactionOngoing = true;
-      const removeLiquidityEvent = {
-        binRangeToRemove: this.binRange.filter(binId => this.binIds.indexOf(binId) !== -1),
-        remainingBinRange: this.binIds.filter((binId) => binId < this.binRange[0] || binId > this.binRange[1])
 
+      const selectedBinIds = Array.from(
+        { length: this.selectedRange[1] - this.selectedRange[0] + 1 },
+        (value, index) => this.selectedRange[0] + index
+      );
+
+      const removeLiquidityEvent = {
+        binIdsToRemove: selectedBinIds.filter(binId => this.binIds.indexOf(binId) !== -1),
+        remainingBinIds: this.binIds.filter((binId) => binId < this.selectedRange[0] || binId > this.selectedRange[1])
       };
 
       this.$emit('REMOVE_LIQUIDITY', removeLiquidityEvent);
     },
 
     updateBinRange(newRange) {
-      this.binRange = newRange;
+      this.selectedRange = newRange;
       if (this.activeId < newRange[0] && this.minAboveActive === false) {
         this.minAboveActive = true;
       } else if (this.activeId >= newRange[0] && this.minAboveActive === true) {

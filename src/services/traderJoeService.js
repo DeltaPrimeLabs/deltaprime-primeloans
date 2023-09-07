@@ -183,8 +183,7 @@ export default class TraderJoeService {
     tokenX,
     tokenY,
     binStep,
-    binRangeToRemove,
-    userBins
+    binIdsToRemove
   ) {
     const lbPairContract = new ethers.Contract(lbPairAddress, LBPairABI, provider);
     const amounts = [];
@@ -192,29 +191,27 @@ export default class TraderJoeService {
     let totalXBalanceWithdrawn = BigNumber.from(0);
     let totalYBalanceWithdrawn = BigNumber.from(0);
     
-    for (let binId = binRangeToRemove[0]; binId <= binRangeToRemove[1]; binId++) {
-      if (userBins.indexOf(binId) != -1) {
-        const [lbTokenAmount, binReserves, totalSupply] = await Promise.all([
-          lbPairContract.balanceOf(smartLoanAddress, binId),
-          lbPairContract.getBin(binId),
-          lbPairContract.totalSupply(binId)
-        ]);
+    binIdsToRemove.map(async (binId) => {
+      const [lbTokenAmount, binReserves, totalSupply] = await Promise.all([
+        lbPairContract.balanceOf(smartLoanAddress, binId),
+        lbPairContract.getBin(binId),
+        lbPairContract.totalSupply(binId)
+      ]);
 
-        ids.push(binId);
-        amounts.push(lbTokenAmount);
+      ids.push(binId);
+      amounts.push(lbTokenAmount);
 
-        totalXBalanceWithdrawn = totalXBalanceWithdrawn
-          .add(BigNumber.from(lbTokenAmount)
-              .mul(BigNumber.from(binReserves[0]))
-              .div(BigNumber.from(totalSupply))
-          );
-        totalYBalanceWithdrawn = totalYBalanceWithdrawn
-          .add(BigNumber.from(lbTokenAmount)
-              .mul(BigNumber.from(binReserves[1]))
-              .div(BigNumber.from(totalSupply))
-          );
-      }
-    }
+      totalXBalanceWithdrawn = totalXBalanceWithdrawn
+        .add(BigNumber.from(lbTokenAmount)
+            .mul(BigNumber.from(binReserves[0]))
+            .div(BigNumber.from(totalSupply))
+        );
+      totalYBalanceWithdrawn = totalYBalanceWithdrawn
+        .add(BigNumber.from(lbTokenAmount)
+            .mul(BigNumber.from(binReserves[1]))
+            .div(BigNumber.from(totalSupply))
+        );
+    });
 
     // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
     const allowedAmountsSlippage = 50;

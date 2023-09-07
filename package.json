@@ -38,7 +38,7 @@
     "@redstone-finance/evm-connector": "0.2.5",
     "@tenderly/hardhat-tenderly": "^1.7.7",
     "@traderjoe-xyz/sdk": "^4.1.0",
-    "@traderjoe-xyz/sdk-v2": "^2.1.4",
+    "@traderjoe-xyz/sdk-v2": "^2.1.5",
     "@ubeswap/core": "^1.0.2",
     "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",

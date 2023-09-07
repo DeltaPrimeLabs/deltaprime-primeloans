@@ -422,8 +422,7 @@ export default {
               this.tokenX,
               this.tokenY,
               this.lpToken.binStep,
-              removeLiquidityEvent.binRangeToRemove,
-              this.lpToken.binIds
+              removeLiquidityEvent.binIdsToRemove
           );
           const removeLiquidityRequest = {
             symbol: this.lpToken.symbol,
@@ -431,7 +430,7 @@ export default {
             method: this.lpToken.removeMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            remainingBinRange: removeLiquidityEvent.remainingBinRange,
+            remainingBinIds: removeLiquidityEvent.remainingBinIds,
             removeLiquidityInput,
             lpToken: this.lpToken
           };

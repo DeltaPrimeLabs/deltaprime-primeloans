@@ -649,41 +649,47 @@ export default {
       }
     },
 
+    async refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}, {lpAsset}) {
+      const loanAllBins = await state.smartLoanContract.getOwnedTraderJoeV2Bins();
+      const loanBinsForPair = loanAllBins.filter(bin =>
+        bin.pair.toLowerCase() === lpAsset.address.toLowerCase()
+      );
+      const loanBinIds = loanBinsForPair.map(bin => bin.id);
+      loanBinIds.sort((a, b) => a - b);
+
+      const { cumulativeTokenXAmount, cumulativeTokenYAmount, accountBalances, accountBalancesPrimary, accountBalancesSecondary, binBalancePrimary, binBalanceSecondary, binTotalSupply  } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+        lbPairAddress: lpAsset.address,
+        binIds: loanBinIds,
+        lpToken: lpAsset
+      });
+
+      let primaryToken = state.assets[lpAsset.primary];
+      let secondaryToken = state.assets[lpAsset.secondary];
+
+      let binPrices = loanBinIds.map(id => getBinPrice(id, lpAsset.binStep, primaryToken.decimals, secondaryToken.decimals))
+
+      lpAsset.primaryBalance = formatUnits(cumulativeTokenXAmount, primaryToken.decimals);
+      lpAsset.secondaryBalance = formatUnits(cumulativeTokenYAmount, secondaryToken.decimals);
+      lpAsset.binIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
+      lpAsset.accountBalances = accountBalances; // balances of account owned bins (the same order as binIds)
+      lpAsset.accountBalancesPrimary = accountBalancesPrimary; // balances of account owned bins (the same order as binIds)
+      lpAsset.accountBalancesSecondary = accountBalancesSecondary; // balances of account owned bins (the same order as binIds)
+      lpAsset.binPrices = binPrices; // price assigned to each bin
+      lpAsset.binBalancePrimary = binBalancePrimary; // price assigned to each bin
+      lpAsset.binBalanceSecondary = binBalanceSecondary; // price assigned to each bin
+      lpAsset.binTotalSupply = binTotalSupply; // price assigned to each bin
+
+      const lpService = rootState.serviceRegistry.lpService;
+      lpService.emitRefreshLp('TJV2');
+    },
+
     async setupTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}) {
       const traderJoeV2LpAssets = state.traderJoeV2LpAssets;
 
       Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
-        const loanAllBins = await state.smartLoanContract.getOwnedTraderJoeV2Bins();
-        const loanBinsForPair = loanAllBins.filter(bin =>
-          bin.pair.toLowerCase() === traderJoeV2LpAssets[assetSymbol].address.toLowerCase()
-        );
-        const loanBinIds = loanBinsForPair.map(bin => bin.id);
-        loanBinIds.sort((a, b) => a - b);
+        const lpAsset = traderJoeV2LpAssets[assetSymbol];
 
-        const { cumulativeTokenXAmount, cumulativeTokenYAmount, accountBalances, accountBalancesPrimary, accountBalancesSecondary, binBalancePrimary, binBalanceSecondary, binTotalSupply  } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
-          lbPairAddress: traderJoeV2LpAssets[assetSymbol].address,
-          binIds: loanBinIds,
-          lpToken: traderJoeV2LpAssets[assetSymbol]
-        });
-
-        let primaryToken = state.assets[traderJoeV2LpAssets[assetSymbol].primary];
-        let secondaryToken = state.assets[traderJoeV2LpAssets[assetSymbol].secondary];
-
-        let binPrices = loanBinIds.map(id => getBinPrice(id, traderJoeV2LpAssets[assetSymbol].binStep, primaryToken.decimals, secondaryToken.decimals))
-
-        traderJoeV2LpAssets[assetSymbol].primaryBalance = formatUnits(cumulativeTokenXAmount, primaryToken.decimals);
-        traderJoeV2LpAssets[assetSymbol].secondaryBalance = formatUnits(cumulativeTokenYAmount, secondaryToken.decimals);
-        traderJoeV2LpAssets[assetSymbol].binIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
-        traderJoeV2LpAssets[assetSymbol].accountBalances = accountBalances; // balances of account owned bins (the same order as binIds)
-        traderJoeV2LpAssets[assetSymbol].accountBalancesPrimary = accountBalancesPrimary; // balances of account owned bins (the same order as binIds)
-        traderJoeV2LpAssets[assetSymbol].accountBalancesSecondary = accountBalancesSecondary; // balances of account owned bins (the same order as binIds)
-        traderJoeV2LpAssets[assetSymbol].binPrices = binPrices; // price assigned to each bin
-        traderJoeV2LpAssets[assetSymbol].binBalancePrimary = binBalancePrimary; // price assigned to each bin
-        traderJoeV2LpAssets[assetSymbol].binBalanceSecondary = binBalanceSecondary; // price assigned to each bin
-        traderJoeV2LpAssets[assetSymbol].binTotalSupply = binTotalSupply; // price assigned to each bin
-
-        const lpService = rootState.serviceRegistry.lpService;
-        lpService.emitRefreshLp('TJV2');
+        await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
       });
     },
 
@@ -1474,7 +1480,6 @@ export default {
 
 
     async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
-      console.log(addLiquidityRequest.addLiquidityInput);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1503,6 +1508,10 @@ export default {
           .emitExternalAssetBalanceUpdate(addLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(addLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+
+      // update underlying assets' balances
+      const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
+      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1538,7 +1547,7 @@ export default {
 
       const { cumulativeTokenXAmount, cumulativeTokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
         lbPairAddress: removeLiquidityRequest.lbPairAddress,
-        binIds: removeLiquidityRequest.remainingBinRange,
+        binIds: removeLiquidityRequest.remainingBinIds,
         lpToken: removeLiquidityRequest.lpToken
       });
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
@@ -1548,6 +1557,9 @@ export default {
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+
+      const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
+      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
