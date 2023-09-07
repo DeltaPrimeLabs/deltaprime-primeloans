@@ -808,6 +808,7 @@ const getApysFromSteakHut = async () => {
     // navigate pools page and wait till javascript fully load.
     await page.goto(URL + address, {
       waitUntil: "networkidle0",
+      timeout: 60000
     });
 
     functions.logger.info("parsing APR (7-Day)...");
@@ -855,6 +856,7 @@ const getApysFromTraderJoe = async () => {
       const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
       await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
         waitUntil: "networkidle0",
+        timeout: 60000
       });
 
       await page.evaluate(() => {
@@ -904,6 +906,7 @@ const getApysFromSushi = async () => {
       const URL = "https://www.sushi.com/pool";
       await page.goto(URL + `/${network}%3A${poolData.address}`, {
         waitUntil: "networkidle0",
+        timeout: 60000
       });
 
       const stats = await page.$$(".decoration-dotted");
