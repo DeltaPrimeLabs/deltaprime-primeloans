@@ -110,9 +110,9 @@
       </div>
     </div>
 
-    <div class="chart-container" v-if="showChart">
+    <div class="chart-container" v-if="rowExpanded">
       <SmallBlock v-on:close="toggleChart()">
-        <Toggle class="chart-container__toggle" v-on:change="onOptionChange" :options="['Chart', 'TradingView']"
+        <Toggle class="chart-container__toggle" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
                 :initial-option="0"></Toggle>
         <Chart :data-points="asset.prices"
                :line-width="3"
@@ -205,7 +205,6 @@ export default {
     return {
       borrowable: [],
       moreActionsConfig: null,
-      showChart: false,
       rowExpanded: false,
       isBalanceEstimated: false,
       isDebtEstimated: false,
@@ -215,7 +214,7 @@ export default {
       totalStaked: null,
       availableFarms: [],
       nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
-      selectedChart: 'Chart',
+      selectedChart: 'TradingView',
       showTradingViewChart: false,
     };
   },
@@ -339,12 +338,13 @@ export default {
 
     toggleChart() {
       if (this.rowExpanded) {
-        this.showChart = false;
         this.rowExpanded = false;
+        this.showTradingViewChart = false;
+        this.selectedChart = 'TradingView'
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
-          this.showChart = true;
+          this.showTradingViewChart = true;
         }, 200);
       }
     },

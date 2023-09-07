@@ -34,7 +34,8 @@ export default {
         locale: "en",
         enable_publishing: false,
         backgroundColor: "rgba(0, 0, 0, 0)",
-        container_id: "tradingview-id"
+        container_id: "tradingview-id",
+        hide_side_toolbar: false,
       }
     }
   },
