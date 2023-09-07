@@ -449,7 +449,7 @@ export default {
                 of(farm.protocol),
                 farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
                   .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
-                of(apys[farm.token][farm.protocolIdentifier]),
+                of(apys[farm.token] ? apys[farm.token][farm.protocolIdentifier] : 0),
                 farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                 farm.protocol === 'BEEFY_FINANCE' ? beefyMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                   farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :

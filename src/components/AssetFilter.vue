@@ -34,6 +34,7 @@ export default {
     assetFilterGroups: null,
     showClearButton: true,
     singleSelectMode: false,
+    firstOneAsDefault: false
   },
 
   data() {
@@ -49,8 +50,8 @@ export default {
       this.filterValue = {};
       this.assetFilterGroups.forEach((group, index) => {
         this.filterValue[group.key] = {};
-        group.options.forEach(option => {
-          this.filterValue[group.key][option] = {asset: option, active: true};
+        group.options.forEach((option, i) => {
+          this.filterValue[group.key][option] = {asset: option, active: this.firstOneAsDefault ? i === 0 : true};
         });
       });
     },

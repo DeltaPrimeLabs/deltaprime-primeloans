@@ -12,7 +12,7 @@
         <TableHeader :config="fundsTableHeaderConfig"></TableHeader>
         <div class="funds-table__body">
           <!-- TODO: referring to index is pretty risky -->
-          <AssetsTableRow v-for="(asset) in funds" v-bind:key="asset.symbol" :asset="asset"></AssetsTableRow>
+          <AssetsTableRow v-for="(asset, index) in funds" v-bind:key="asset.symbol" :asset="asset" :index="index"></AssetsTableRow>
         </div>
       </div>
       <div class="loader-container" v-if="!funds">

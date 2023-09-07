@@ -10,6 +10,7 @@ export default {
     tokensData: null,
     primary: null,
     secondary: null,
+    index: null,
   },
   mounted() {
     this.rerender();
@@ -93,14 +94,13 @@ export default {
         tooltips: {
           enabled: false,
           custom: (tooltipModel) => {
-            const tooltipElement = document.getElementById('chartjs-tooltip');
+            const tooltipElement = document.getElementById(`chartjs-tooltip-${this.$props.index}`);
             if (tooltipModel.opacity === 0) {
               tooltipElement.style.opacity = '0';
               return;
             }
             const binData = this.tokensData[tooltipModel.dataPoints[0].index]
             const priceText = `<div>Price (${this.primary} / ${this.secondary})</div><div class="value">${binData.price}</div>`
-            console.log(binData.primaryTokenBalance);
             const primaryTokenText = binData.primaryTokenBalance === '0.0' ? '' : `<div>${this.primary}</div><div class="value">${binData.primaryTokenBalance}</div>`
             const secondaryTokenText = binData.secondaryTokenBalance === '0.0' ? '' : `<div>${this.secondary}</div><div class="value">${binData.secondaryTokenBalance}</div>`
             tooltipElement.innerHTML = priceText + primaryTokenText + secondaryTokenText;

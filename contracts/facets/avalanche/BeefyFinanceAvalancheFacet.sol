@@ -81,7 +81,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDC_LP to be unstaked
     **/
-    function unstakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: PNG_AVAX_USDC_LP,
         vaultAddress: MOO_PNG_AVAX_USDC_LP,
@@ -96,7 +96,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDCe_LP to be unstaked
     **/
-    function unstakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: PNG_AVAX_USDCe_LP,
         vaultAddress: MOO_PNG_AVAX_USDCe_LP,
@@ -111,7 +111,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_USDC_LP to be unstaked
     **/
-    function unstakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function unstakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: TJ_AVAX_USDC_LP,
         vaultAddress: MOO_TJ_AVAX_USDC_LP,

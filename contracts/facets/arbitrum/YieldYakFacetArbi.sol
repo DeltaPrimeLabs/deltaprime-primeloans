@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b5c62dcabdd9dc6577cb12be92681b37cadb26c9;
+// Last deployed from commit: 6aa84b329a745f26a16cbcc624daaeda0b030908;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -26,11 +26,13 @@ contract YieldYakFacetArbi is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     address private constant YY_WOMBEX_USDT = 0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2;
     address private constant YY_WOMBEX_USDCe = 0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C;
     address private constant YY_WOMBEX_GLP = 0x28f37fa106AA2159c91C769f7AE415952D28b6ac;
+    address private constant YY_WOMBEX_DAI = 0x1817fE376740b53CAe73224B7F0a57F23DD4C9b5;
 
     // Tokens
     address private constant USDT_TOKEN = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
     address private constant USDCe_TOKEN = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address private constant GLP_TOKEN = 0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf;
+    address private constant DAI_TOKEN = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
 
     // ----- STAKE -----
 
@@ -79,6 +81,21 @@ contract YieldYakFacetArbi is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         }));
     }
 
+    /**
+       * Stakes DAI in Yield Yak protocol
+       * @dev This function uses the redstone-evm-connector
+       * @param amount amount of DAI to be staked
+    **/
+    function stakeDAIYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
+        _stakeTokenYY(IYieldYak.YYStakingDetails({
+            tokenAddress: DAI_TOKEN,
+            vaultAddress: YY_WOMBEX_DAI,
+            tokenSymbol: "DAI",
+            vaultTokenSymbol: "YY_WOMBEX_DAI",
+            amount: amount
+        }));
+    }
+
     // ----- UNSTAKE -----
 
 
@@ -124,6 +141,21 @@ contract YieldYakFacetArbi is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         tokenSymbol: "GLP",
         vaultTokenSymbol: "YY_WOMBEX_GLP",
         amount: amount
+        }));
+    }
+
+    /**
+    * Unstakes DAI from Yield Yak protocol
+    * @dev This function uses the redstone-evm-connector
+        * @param amount amount of DAI to be unstaked
+    **/
+    function unstakeDAIYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
+        _unstakeTokenYY(IYieldYak.YYStakingDetails({
+            tokenAddress: DAI_TOKEN,
+            vaultAddress: YY_WOMBEX_DAI,
+            tokenSymbol: "DAI",
+            vaultTokenSymbol: "YY_WOMBEX_DAI",
+            amount: amount
         }));
     }
 

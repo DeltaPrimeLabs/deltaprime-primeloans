@@ -123,7 +123,11 @@ export default {
   computed: {
     calculateMaxRepay() {
       const assetBalance = this.assetBalances[this.asset.symbol];
-      return this.assetDebt > assetBalance ? assetBalance : this.assetDebt;
+      return this.isMaxFromDebt ? this.assetDebt : assetBalance;
+    },
+
+    isMaxFromDebt() {
+      return this.assetDebt < this.assetBalances[this.asset.symbol];
     },
 
     sourceAssetValue() {
@@ -140,8 +144,8 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      const repayValue = this.maxButtonUsed ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
-      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed });
+      const repayValue = (this.maxButtonUsed && this.isMaxFromDebt) ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
+      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed && this.isMaxFromDebt });
     },
 
     repayValueChange(event) {

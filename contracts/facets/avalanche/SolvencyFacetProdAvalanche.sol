@@ -641,11 +641,11 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
     function getHealthRatio() public view virtual returns (uint256) {
         CachedPrices memory cachedPrices = getAllPricesForLiquidation(new bytes32[](0));
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }
@@ -657,11 +657,11 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
      **/
     function getHealthRatioWithPrices(CachedPrices memory cachedPrices) public view virtual returns (uint256) {
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }

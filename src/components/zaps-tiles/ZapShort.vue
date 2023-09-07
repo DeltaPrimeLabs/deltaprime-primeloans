@@ -1,5 +1,5 @@
 <template>
-  <div class="zap-tile" @click="onTileClick()">
+  <div class="zap-tile" @click="onTileClick()" :class="{'disabled': !hasSmartLoanContract}">
     <div class="label">
       up to <b>5x</b>
     </div>
@@ -27,6 +27,9 @@ const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
 
+//TODO: make common logic to check if user has a smart account
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 export default {
   name: 'ZapShort',
   data() {
@@ -37,6 +40,7 @@ export default {
 
   computed: {
     ...mapState('fundsStore', [
+      'smartLoanContract',
       'health',
       'assetBalances',
       'debtsPerAsset',
@@ -50,6 +54,13 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
+    ...mapState('serviceRegistry', [
+      'progressBarService'
+    ]),
+
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
   },
 
   async mounted() {
@@ -74,6 +85,7 @@ export default {
     },
 
     async onTileClick() {
+      if (!this.hasSmartLoanContract) return;
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
@@ -101,34 +113,50 @@ export default {
 
         modalInstance.$on('ZAP_SHORT_EVENT', async zapShortEvent => {
           const shortAssetDecimals = config.ASSETS_CONFIG[zapShortEvent.shortAsset].decimals;
-          const shortAssetAmount = ((Number(zapShortEvent.stableCoinAmount) * Number(zapShortEvent.leverage) / config.ASSETS_CONFIG[zapShortEvent.shortAsset].price)).toFixed(shortAssetDecimals);
-          let stableCoinAmount = Number(zapShortEvent.stableCoinAmount) * zapShortEvent.leverage;
+          const stableCoinDecimals = config.ASSETS_CONFIG[zapShortEvent.stableCoin].decimals;
+
           const borrowRequest = {
             asset: zapShortEvent.shortAsset,
-            amount: shortAssetAmount,
+            amount: zapShortEvent.shortAssetAmount,
             keepModalOpen: true
           };
-          const totalShortValueInWei = parseUnits(Number(shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
-          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, totalShortValueInWei);
+          const shortAssetAmountInWei = parseUnits(Number(zapShortEvent.shortAssetAmount).toFixed(shortAssetDecimals), BigNumber.from(shortAssetDecimals));
+          const swapQueryResponse = await this.yakSwapQueryMethod()(zapShortEvent.shortAsset, zapShortEvent.stableCoin, shortAssetAmountInWei);
 
           const swapRequest = {
             sourceAsset: zapShortEvent.shortAsset,
             targetAsset: zapShortEvent.stableCoin,
-            sourceAmount: shortAssetAmount,
-            targetAmount: 0.95 * stableCoinAmount,
+            sourceAmount: zapShortEvent.shortAssetAmount,
+            targetAmount: zapShortEvent.stableCoinAmount,
             path: swapQueryResponse.path,
             adapters: swapQueryResponse.adapters,
             swapDex: 'YakSwap'
           };
 
-          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, () => {
-          });
-          await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+          await this.handleTransaction(this.borrow, {borrowRequest: borrowRequest}, async () => {
+            await this.handleTransaction(this.swap, {swapRequest: swapRequest}, () => {
+            }, (error) => {
+              this.handleTransactionError(error);
+            });
+          }, (error) => {
+            this.handleTransactionError(error);
           });
         });
       });
     },
 
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.inProcess = false;
+    },
+
+
+    //TODO: remove
     getStableCoinsWalletBalances(stableCoins) {
       return combineLatest(
         stableCoins.map(stableCoin => {
@@ -182,8 +210,13 @@ export default {
     cursor: pointer;
     transition: box-shadow 200ms ease-in-out;
 
-    &:hover {
-        box-shadow: var(--zap-long__zap-tile-shadow--hover);
+    &:hover &:not(.disabled){
+      box-shadow: var(--zap-long__zap-tile-shadow--hover);
+    }
+
+    &.disabled {
+      cursor: default;
+      opacity: 30%;
     }
 }
 

@@ -33,7 +33,7 @@ html {
 }
 
 .label {
-    color: #696969;
+    color: var(--label-color);
     font-size: $font-size-sm;
     text-align: center;
 }
