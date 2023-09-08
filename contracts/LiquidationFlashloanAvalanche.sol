@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 607001f27d5d6302c6a3c0a04e12a50b279f52ec;
+// Last deployed from commit: 1986a2dc4672422c92a84dd631143d1330d11421;
 pragma solidity 0.8.17;
 
 import "./LiquidationFlashloan.sol";
 
-contract LiquidationFlashloanArbitrum is LiquidationFlashloan {
+contract LiquidationFlashloanAvalanche is LiquidationFlashloan {
     constructor(
         address _addressProvider,
         address _wrappedNativeToken,
@@ -18,6 +18,6 @@ contract LiquidationFlashloanArbitrum is LiquidationFlashloan {
     {}
 
     function YY_ROUTER() internal pure override returns (address) {
-        return 0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3;
+        return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
 }
