@@ -288,9 +288,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
-
         _accumulateDepositInterest(msg.sender);
+        _amount = Math.min(_amount, _deposited[msg.sender]);
+
+        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         if(_amount > _deposited[address(this)]) revert BurnAmountExceedsBalance();
         // verified in "require" above
