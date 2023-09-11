@@ -112,7 +112,7 @@
 
     <div class="chart-container" v-if="rowExpanded">
       <SmallBlock v-on:close="toggleChart()">
-        <Toggle class="chart-container__toggle" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
+        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
                 :initial-option="0"></Toggle>
         <Chart :data-points="asset.prices"
                :line-width="3"
@@ -1057,6 +1057,11 @@ export default {
     },
   },
   watch: {
+    asset: function (asset) {
+      if (!asset.tradingViewSymbol) {
+        this.selectedChart = 'Chart'
+      }
+    },
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
