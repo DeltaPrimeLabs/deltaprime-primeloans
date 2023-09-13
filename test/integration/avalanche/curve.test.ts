@@ -82,6 +82,7 @@ describe('Smart loan', () => {
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
                 ['ETH', 'AVAX'],
+                "avalanche",
                 getRedstonePrices,
                 [
                     {symbol: 'DAIe', value: 1},

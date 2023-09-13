@@ -94,7 +94,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     /**
        * Stakes GLP in Yield Yak protocol
        * @dev This function uses the redstone-evm-connector
-       * @param amount amount of sAVAX to be staked
+       * @param amount amount of GLP to be staked
     **/
     function stakeGLPYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         // Extra approve for the stakedGLP contract that is being used to transfer fsGLP
@@ -242,7 +242,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     /**
     * Unstakes GLP from Yield Yak protocol
     * @dev This function uses the redstone-evm-connector
-        * @param amount amount of sAVAX to be unstaked
+        * @param amount amount of GLP to be unstaked
     **/
     function unstakeGLPYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeTokenYY(IYieldYak.YYStakingDetails({

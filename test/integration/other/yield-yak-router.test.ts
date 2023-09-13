@@ -89,7 +89,7 @@ describe('Yield Yak test stake AVAX', () => {
 
         await deployAllFacets(diamondAddress)
 
-        let tokensPrices = await getTokensPricesMap(['AVAX', 'YY_AAVE_AVAX'], getRedstonePrices, []);
+        let tokensPrices = await getTokensPricesMap(['AVAX', 'YY_AAVE_AVAX'], "avalanche", getRedstonePrices, []);
         AVAX_PRICE = tokensPrices.get('AVAX')!;
         YY_AAVE_AVAX_PRICE = tokensPrices.get('YY_AAVE_AVAX')!;
 
@@ -238,7 +238,7 @@ describe('Yield Yak test stake sAVAX', () => {
 
         await deployAllFacets(diamondAddress)
 
-        let tokensPrices = await getTokensPricesMap(['AVAX', 'sAVAX', 'YY_PTP_sAVAX'], getRedstonePrices, []);
+        let tokensPrices = await getTokensPricesMap(['AVAX', 'sAVAX', 'YY_PTP_sAVAX'], "avalanche", getRedstonePrices, []);
         AVAX_PRICE = tokensPrices.get('AVAX')!;
         SAVAX_PRICE = tokensPrices.get('sAVAX')!;
         YY_PTP_sAVAX_PRICE = tokensPrices.get('YY_PTP_sAVAX')!;

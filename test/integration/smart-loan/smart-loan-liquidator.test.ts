@@ -85,7 +85,7 @@ describe('Test liquidator', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -176,7 +176,7 @@ describe('Test liquidator', () => {
         it("replace facet", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -224,7 +224,7 @@ describe('Test liquidator', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -310,7 +310,7 @@ describe('Test liquidator', () => {
         it("replace facet", async () => {
             const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;

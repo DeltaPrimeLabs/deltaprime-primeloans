@@ -87,7 +87,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000, 'CELO');
 
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'mcUSD'), getRedstonePrices, [{symbol: 'mcUSD', value: 1}]);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'mcUSD'), "avalanche", getRedstonePrices, [{symbol: 'mcUSD', value: 1}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'CELO');
             addMissingTokenContracts(tokenContracts, assetsList, 'CELO');

@@ -83,7 +83,7 @@ describe('Smart loan', () => {
                 tokenContracts[token.name] = tokenContract;
             }
 
-            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices, []);
+            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             USD_PRICE = tokensPrices.get('USDC')!;
 

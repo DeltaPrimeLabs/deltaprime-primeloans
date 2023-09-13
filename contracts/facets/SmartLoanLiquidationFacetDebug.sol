@@ -14,7 +14,7 @@ import "../interfaces/ITokenManager.sol";
 import "../lib/local/DeploymentConstants.sol";
 import "../interfaces/facets/ISmartLoanLiquidationFacet.sol";
 
-import "./SolvencyFacetProd.sol";
+import "./avalanche/SolvencyFacetProdAvalanche.sol";
 import "../SmartLoanDiamondBeacon.sol";
 import "hardhat/console.sol";
 
@@ -137,7 +137,7 @@ contract SmartLoanLiquidationFacetDebug is ReentrancyGuardKeccak, SolvencyMethod
     **/
     function liquidate(LiquidationConfig memory config) internal {
         console.log('Welcome to the liquidation sir');
-        SolvencyFacetProd.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
+        SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
         
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
         uint256 initialDebt = _getDebtWithPrices(cachedPrices.debtAssetsPrices); 

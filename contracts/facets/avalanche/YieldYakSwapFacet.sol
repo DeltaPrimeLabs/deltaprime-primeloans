@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../../interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "../../interfaces/facets/IYieldYakRouter.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
@@ -16,8 +16,6 @@ import "../../lib/local/DeploymentConstants.sol";
 
 contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address;
-
-    address private constant YY_ROUTER = 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
 
     struct SwapTokensDetails {
         bytes32 tokenSoldSymbol;
@@ -63,10 +61,10 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amountIn = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), _amountIn);
         require(_amountIn > 0, "Amount of tokens to sell has to be greater than 0");
 
-        address(swapTokensDetails.soldToken).safeApprove(YY_ROUTER, 0);
-        address(swapTokensDetails.soldToken).safeApprove(YY_ROUTER, _amountIn);
+        address(swapTokensDetails.soldToken).safeApprove(YY_ROUTER(), 0);
+        address(swapTokensDetails.soldToken).safeApprove(YY_ROUTER(), _amountIn);
 
-        IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+        IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
 
         IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
             amountIn: _amountIn,
@@ -99,6 +97,10 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             block.timestamp
         );
 
+    }
+
+    function YY_ROUTER() internal virtual pure returns (address) {
+        return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
 
     modifier onlyOwner() {

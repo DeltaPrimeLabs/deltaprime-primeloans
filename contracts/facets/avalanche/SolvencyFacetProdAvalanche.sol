@@ -1,29 +1,27 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: ed3c84e46734ba7ddf3828db52bfb5271fccc16c;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
-import "../interfaces/ITokenManager.sol";
-import "../Pool.sol";
-import "../DiamondHelper.sol";
-import "../interfaces/IStakingPositions.sol";
-import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
-import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
-import "../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
-import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
-import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
-import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
-import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
+import "../../interfaces/ITokenManager.sol";
+import "../../Pool.sol";
+import "../../DiamondHelper.sol";
+import "../../interfaces/IStakingPositions.sol";
+import "../../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
+import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
+import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
+import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
+import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
+import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
-//TODO: that probably can be removed later
-import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
-import "../interfaces/facets/avalanche/IUniswapV3Facet.sol";
+import "../../lib/local/DeploymentConstants.sol";
+import "../../interfaces/facets/avalanche/IUniswapV3Facet.sol";
 
-contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, ProxyConnector {
+contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, DiamondHelper {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
 
@@ -643,11 +641,11 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
     function getHealthRatio() public view virtual returns (uint256) {
         CachedPrices memory cachedPrices = getAllPricesForLiquidation(new bytes32[](0));
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }
@@ -659,11 +657,11 @@ contract SolvencyFacetProd is AvalancheDataServiceConsumerBase, DiamondHelper, P
      **/
     function getHealthRatioWithPrices(CachedPrices memory cachedPrices) public view virtual returns (uint256) {
         uint256 debt = getDebtWithPrices(cachedPrices.debtAssetsPrices);
-        uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
 
         if (debt == 0) {
             return type(uint256).max;
         } else {
+            uint256 thresholdWeightedValue = getThresholdWeightedValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices);
             return thresholdWeightedValue * 1e18 / debt;
         }
     }

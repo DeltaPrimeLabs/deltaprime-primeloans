@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 238badc31ae1a0b7573b2f51c2daf669cf50df96;
+// Last deployed from commit: d006dde9ed1c9c0e7a24b60635fdc62ea22cca7b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -13,7 +13,7 @@ import "../interfaces/ITokenManager.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-import "./SolvencyFacetProd.sol";
+import "./avalanche/SolvencyFacetProdAvalanche.sol";
 import "../SmartLoanDiamondBeacon.sol";
 
 contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
@@ -134,7 +134,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal recalculateAssetsExposure{
-        SolvencyFacetProd.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
+        SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
         
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
         uint256 initialDebt = _getDebtWithPrices(cachedPrices.debtAssetsPrices); 

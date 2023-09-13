@@ -26,6 +26,8 @@ import "./facets/avalanche/ISteakHutFinanceFacet.sol";
 import "./facets/avalanche/ITraderJoeV2Facet.sol";
 import "./facets/avalanche/IUniswapV3Facet.sol";
 import "./facets/avalanche/ITraderJoeV2AutopoolsFacet.sol";
+import "./facets/arbitrum/ISushiSwapDEXFacet.sol";
+import "./facets/arbitrum/IBeefyFinanceArbitrumFacet.sol";
 
 interface SmartLoanGigaChadInterface is
     IGMDFacet,
@@ -35,6 +37,7 @@ interface SmartLoanGigaChadInterface is
     IParaSwapFacet,
     IDiamondLoupe,
     IBeefyFinanceFacet,
+    IBeefyFinanceArbitrumFacet,
     ISmartLoanWrappedNativeTokenFacet,
     IPangolinDEXFacet,
     IUniswapV2DEXFacet,
@@ -52,5 +55,6 @@ interface SmartLoanGigaChadInterface is
     ISteakHutFinanceFacet,
     ITraderJoeV2Facet,
     IUniswapV3Facet,
-    ITraderJoeV2AutopoolsFacet
+    ITraderJoeV2AutopoolsFacet,
+    ISushiSwapDEXFacet
 {}
