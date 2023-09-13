@@ -5,8 +5,8 @@ import "hardhat-watcher";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "hardhat-interface-generator";
-import * as tdly from "@tenderly/hardhat-tenderly";
-tdly.setup({ automaticVerifications: false });
+// import * as tdly from "@tenderly/hardhat-tenderly";
+// tdly.setup({ automaticVerifications: false });
 require('hardhat-deploy');
 
 const fs = require('fs');
@@ -17,6 +17,9 @@ export default {
     compilers: [
       {
         version: "0.4.18",
+      },
+      {
+        version: "0.7.6",
       },
       {
         version: "0.8.17",
@@ -32,29 +35,27 @@ export default {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337,
-      gas: 8000000,
-      blockGasLimit: 0x1fffffffffffff,
-      timeout: 1800000,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200
-        }
+      forking: {
+        url: "https://api.avax.network/ext/bc/C/rpc",
       },
-      accounts: {
-        accountsBalance: "1000000000000000000000000" // 1000.000 ETH
-      },
-      // mining: {
-      //   auto: false,
-      //   interval: 1000
-      // }
     },
     localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
-      chainId: 1337,
+      chainId: 31337,
       // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
+    },
+    arbitrum_devnet: {
+      timeout: 1800000,
+      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/4b9a3889-7e26-4e5c-b84f-9016e7caefc4',
+      chainId: 42161,
+      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
+    },
+    arbitrum: {
+      timeout: 1800000,
+      url: 'https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4',
+      chainId: 42161,
+      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
@@ -121,6 +122,7 @@ export default {
   etherscan: {
     apiKey: {
       avalanche: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4",
+      arbitrumOne: "XGXPCAQEJHHTZWC6YBR8JMX8HWZW61RGAQ",
       avalancheFujiTestnet: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4"
     }
   },

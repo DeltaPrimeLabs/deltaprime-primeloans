@@ -5,6 +5,7 @@ import {solidity} from "ethereum-waffle";
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -29,6 +30,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -77,7 +79,7 @@ describe('Smart loan', () => {
             await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), "avalanche", getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -91,11 +93,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -113,6 +122,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

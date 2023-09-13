@@ -7,8 +7,10 @@ import axios from 'axios';
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
+    AddressProvider,
     MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
@@ -106,7 +108,7 @@ describe('ParaSwap', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000);
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));
@@ -120,11 +122,18 @@ describe('ParaSwap', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

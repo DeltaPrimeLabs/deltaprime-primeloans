@@ -73,7 +73,7 @@ async function deployFacet(facetName, diamondAddress, newlyIntroducedFunctions =
 
 async function deployDiamond(hardhatConfig = undefined) {
     const accounts = await ethers.getSigners()
-    const contractOwner = accounts[0]
+    const contractOwner = hardhatConfig === undefined ? accounts[0] : hardhatConfig.deployer;
 
     // deploy DiamondCutFacet
     const diamondCutFacet = await deployContract('DiamondCutFacet', [], {}, hardhatConfig);
@@ -81,7 +81,7 @@ async function deployDiamond(hardhatConfig = undefined) {
     console.log('DiamondCutFacet deployed:', diamondCutFacet.address)
 
     // deploy Diamond
-    const diamond = await deployContract('SmartLoanDiamondBeacon', [contractOwner.address, diamondCutFacet.address], {}, hardhatConfig);
+    const diamond = await deployContract('SmartLoanDiamondBeacon', [contractOwner.address === undefined ? contractOwner : contractOwner.address, diamondCutFacet.address], {}, hardhatConfig);
 
     console.log('Diamond deployed:', diamond.address)
 
@@ -115,13 +115,13 @@ async function deployDiamond(hardhatConfig = undefined) {
     }
 
     // upgrade diamond with facets
-    const diamondCut = await ethers.getContractAt('IDiamondCut', diamond.address)
+    const diamondCut = await ethers.getContractAt('IDiamondCut', diamond.address, hardhatConfig === undefined ? undefined : hardhatConfig.deployer)
     let tx
     let receipt
     // call to init function
     let functionCall = diamondInit.interface.encodeFunctionData('init')
 
-    tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall, {gasLimit: 8000000})
+    tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall, {gasLimit: 20000000})
     console.log('Diamond cut tx: ', tx.hash)
     receipt = await tx.wait()
     if (!receipt.status) {
@@ -150,7 +150,7 @@ async function deployContract(name, args = [], libraries = undefined, hardhatCon
 
         await hardhatConfig.deploy(name, {
             from: hardhatConfig.deployer,
-            gasLimit: 8000000,
+            gasLimit: 50000000,
             args: args,
             libraries: libraries
         });

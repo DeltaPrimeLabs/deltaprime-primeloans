@@ -7,6 +7,7 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import IVectorFinanceStakingArtifact
     from '../../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
 import IVectorRewarderArtifact from '../../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     addMissingTokenContracts,
@@ -32,6 +33,7 @@ import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -89,7 +91,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 2000);
 
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'PTP'), getRedstonePrices, [{symbol: 'PTP', value: 0.072}]);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'PTP'), "avalanche", getRedstonePrices, [{symbol: 'PTP', value: 0.072}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList.filter(asset => !Array.from(tokenContracts.keys()).includes(asset)));
@@ -117,11 +119,18 @@ describe('Smart loan', () => {
             await tokenManager.setDebtCoverageStaked(toBytes32("VF_AVAX_SAVAX_AUTO"), toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverageStaked(toBytes32("VF_SAVAX_MAIN_AUTO"), toWei("0.8333333333333333"));
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -139,6 +148,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

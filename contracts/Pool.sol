@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 9f1e1bba11316303810f35a4440e20bc5ad0ef86;
+// Last deployed from commit: 16e2b34c1e27f64494655479ab269f0147cada9d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -43,6 +43,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     VestingDistributor public vestingDistributor;
 
     uint8 internal _decimals;
+
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
@@ -134,7 +135,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    function transfer(address recipient, uint256 amount) external override returns (bool) {
+    function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
@@ -202,7 +203,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -240,7 +241,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual  {
+    function deposit(uint256 _amount) public virtual {
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -287,9 +288,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
-
         _accumulateDepositInterest(msg.sender);
+        _amount = Math.min(_amount, _deposited[msg.sender]);
+
+        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         if(_amount > _deposited[address(this)]) revert BurnAmountExceedsBalance();
         // verified in "require" above

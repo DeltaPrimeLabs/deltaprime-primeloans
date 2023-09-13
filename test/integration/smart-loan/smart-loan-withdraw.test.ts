@@ -4,6 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -26,6 +27,7 @@ import {
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
+    AddressProvider,
     MockTokenManager,
     PangolinIntermediary,
     SmartLoanGigaChadInterface,
@@ -74,7 +76,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor)
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -88,11 +90,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -110,6 +119,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

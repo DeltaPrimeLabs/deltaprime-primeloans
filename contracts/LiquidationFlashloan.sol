@@ -9,14 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IWrappedNativeToken.sol";
-import "./interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "./interfaces/facets/IYieldYakRouter.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
-  address private constant YY_ROUTER =
-    0xC4729E56b831d74bBc18797e0e17A295fA77488c;
   address wrappedNativeToken;
   SmartLoanLiquidationFacet whitelistedLiquidatorsContract;
 
@@ -103,10 +101,11 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address[] calldata,
     uint256[] calldata,
     uint256[] calldata,
-    address,
+    address _initiator,
     bytes calldata _params
   ) public override returns (bool) {
     require(msg.sender == address(POOL), "msg.sender != POOL");
+    require(_initiator == address(this), "unauthorized initiator");
 
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
 
@@ -321,8 +320,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256 amountIn = expectedBuyTokenReturned > _deficit.amount
       ? (_surplus.amount * _deficit.amount) / expectedBuyTokenReturned
       : _surplus.amount;
-    address(_surplus.asset).safeApprove(YY_ROUTER, 0);
-    address(_surplus.asset).safeApprove(YY_ROUTER, amountIn);
+    address(_surplus.asset).safeApprove(YY_ROUTER(), 0);
+    address(_surplus.asset).safeApprove(YY_ROUTER(), amountIn);
 
     uint256 beforeDeficitAmount = IERC20(_deficit.asset).balanceOf(
       address(this)
@@ -335,7 +334,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       adapters: _offer.adapters
     });
 
-    IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+    IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
     router.swapNoSplit(trade, address(this), 0);
 
     uint256 swapAmount = IERC20(_deficit.asset).balanceOf(address(this)) -
@@ -367,6 +366,10 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     }
 
     return index;
+  }
+
+  function YY_ROUTER() internal virtual pure returns (address) {
+    return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
   }
 
   modifier onlyWhitelistedLiquidators() {

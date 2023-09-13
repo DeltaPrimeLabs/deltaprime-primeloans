@@ -4,6 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
     Asset,
@@ -25,6 +26,7 @@ import {
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     MockTokenManager,
+    AddressProvider,
 } from "../../../typechain";
 import {Contract} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
@@ -256,11 +258,18 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -305,6 +314,12 @@ describe('Smart loan', () => {
         });
 
         before("prepare smart loan implementations", async () => {
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -315,6 +330,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -324,6 +340,12 @@ describe('Smart loan', () => {
         });
 
         beforeEach("create a loan", async () => {
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -334,6 +356,7 @@ describe('Smart loan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

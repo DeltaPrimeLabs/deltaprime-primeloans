@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
-import "../interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -17,8 +17,6 @@ import "../lib/local/DeploymentConstants.sol";
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
-
-    address private constant YY_ROUTER = 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -70,7 +68,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _withdrawnAsset asset to be withdrawn
     * @param _amount to be withdrawn
     **/
-    function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
+    function withdraw(bytes32 _withdrawnAsset, uint256 _amount) public virtual onlyOwner nonReentrant canRepayDebtFully remainsSolvent {
         IERC20Metadata token = getERC20TokenInstance(_withdrawnAsset, true);
         _amount = Math.min(_amount, token.balanceOf(address(this)));
 
@@ -143,6 +141,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
 
+        _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
@@ -182,10 +181,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         {
             // swap toAsset to fromAsset
-            address(toToken).safeApprove(YY_ROUTER, 0);
-            address(toToken).safeApprove(YY_ROUTER, _borrowAmount);
+            address(toToken).safeApprove(YY_ROUTER(), 0);
+            address(toToken).safeApprove(YY_ROUTER(), _borrowAmount);
 
-            IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+            IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
 
             IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
                 amountIn: _borrowAmount,
@@ -219,6 +218,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function getBalance(bytes32 _asset) internal view returns (uint256) {
         IERC20 token = IERC20(DeploymentConstants.getTokenManager().getAssetAddress(_asset, true));
         return token.balanceOf(address(this));
+    }
+
+    function YY_ROUTER() internal virtual pure returns (address) {
+        return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
 
     /* ========== MODIFIERS ========== */
