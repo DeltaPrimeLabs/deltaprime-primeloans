@@ -526,11 +526,11 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
             for (uint256 i; i < ownedUniswapV3TokenIds.length; i++) {
 
-            IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0x655C406EBFa14EE2006250925e54ec43AD184f8B), ownedUniswapV3TokenIds[0]);
+                IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0x655C406EBFa14EE2006250925e54ec43AD184f8B), ownedUniswapV3TokenIds[i]);
 
-            uint256[] memory prices = new uint256[](2);
+                uint256[] memory prices = new uint256[](2);
 
-            {
+                {
                     bytes32[] memory symbols = new bytes32[](2);
 
                     symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(position.token0);
@@ -539,7 +539,6 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     prices = getOracleNumericValuesFromTxMsg(symbols);
                 }
 
-                //TODO: check if this approach is not too harsh for Market Maker (Prime Account)
                 {
                     uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token0) : 1e18;
                     uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token1) : 1e18;
@@ -550,18 +549,21 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
                     uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
 
-                    total = total +
+                    uint256 sqrtMarketPrice = UniswapV3IntegrationHelper.sqrt(prices[0] * 1e18 / prices[1] * 10 ** IERC20Metadata(position.token1).decimals());
 
-                    //TODO: there is an assumption here that the position value is the lowest at edges (x = 0 or y = 0). Need to confirm that!
+                    uint256 positionWorth;
 
-                    //TODO: tickerUpper = p_b, tickerLower = p_a, first check if that's correct, secondly check what's the denomination and accuracy of these numbers
-                    //TODO: check for possible under/overflowsL557
+                    if (sqrtMarketPrice < sqrtPrice_a) {
+                        positionWorth = debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8;
+                    } else if (sqrtMarketPrice < sqrtPrice_b) {
+                        positionWorth =
+                        position.liquidity * (debtCoverage0 * (sqrtPrice_b - sqrtMarketPrice) * 10 ** IERC20Metadata(position.token0).decimals() / (sqrtMarketPrice * sqrtPrice_b) * prices[0] / 10 ** 8
+                        + debtCoverage1 * (sqrtMarketPrice - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8) / 10**18;
+                    } else {
+                        positionWorth = debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
+                    }
 
-
-                    Math.min(
-                        debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8,
-                        debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8
-                    );
+                    total = total + positionWorth;
                 }
             }
 
