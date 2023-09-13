@@ -1049,17 +1049,32 @@ export default {
     },
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
+      console.log(withdrawRequest);
       const provider = rootState.network.provider;
 
-      const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+      const loanAssets = mergeArrays([
+        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
-      const arbiTokenIndex = loanAssets.indexOf('ARBI');
-      loanAssets.splice(arbiTokenIndex, 1);
+      const allOwnedAssets = (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el))
+      const allStakedPositions = (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol))
+      const poolKeys = Object.keys(config.POOLS_CONFIG);
+
+      console.log('allOwnedAssets', allOwnedAssets);
+      console.log('allStakedPositions', allStakedPositions);
+      console.log('poolKeys', poolKeys);
+
+
+      if (window.chain === 'arbitrum') {
+        // Note - temporary code to remove 'ARBI' from data feed request to Redstone
+        console.log(loanAssets);
+        const arbiTokenIndex = loanAssets.indexOf('ARBI');
+        loanAssets.splice(arbiTokenIndex, 1);
+      }
+
+      console.log(loanAssets);
 
       const transaction = withdrawRequest.asset === 'GLP' ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
