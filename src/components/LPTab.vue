@@ -1,11 +1,11 @@
 <template>
   <div class="lp-tab">
-    <div class="lp-tokens">
+<!--    <div class="lp-tokens">
       <div class="lp-table" v-if="traderJoeLpTokens">
         <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
         <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
       </div>
-    </div>
+    </div>-->
     <div class="lp-tokens">
       <div class="lp-table" v-if="Object.keys(concentratedLpTokens).length">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>

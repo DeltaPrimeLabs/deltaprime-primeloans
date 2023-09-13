@@ -930,8 +930,11 @@ export default {
       ]);
 
       // Note - temporary code to remove 'ARBI' from data feed request to Redstone
-      const arbiTokenIndex = loanAssets.indexOf('ARBI');
-      loanAssets.splice(arbiTokenIndex, 1);
+      if (window.chain === 'arbitrum') {
+        console.log(loanAssets);
+        const arbiTokenIndex = loanAssets.indexOf('ARBI');
+        loanAssets.splice(arbiTokenIndex, 1);
+      }
 
       const transaction = fundRequest.asset === 'GLP' ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
@@ -1014,8 +1017,11 @@ export default {
       ]);
 
       // Note - temporary code to remove 'ARBI' from data feed request to Redstone
-      const arbiTokenIndex = loanAssets.indexOf('ARBI');
-      loanAssets.splice(arbiTokenIndex, 1);
+      if (window.chain === 'arbitrum') {
+        console.log(loanAssets);
+        const arbiTokenIndex = loanAssets.indexOf('ARBI');
+        loanAssets.splice(arbiTokenIndex, 1);
+      }
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).depositNativeToken({
         value: toWei(String(value)),
