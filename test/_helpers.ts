@@ -691,54 +691,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     )
     console.log(3)
 
-    if(mock) {
-        await deployFacet("SolvencyFacetMock", diamondAddress, [
-                'canRepayDebtFully',
-                'isSolvent',
-                'isSolventWithPrices',
-                'getOwnedAssetsWithNativePrices',
-                'getTotalValueWithPrices',
-                'getHealthRatioWithPrices',
-                'getDebtAssets',
-                'getDebtAssetsPrices',
-                'getStakedPositionsPrices',
-                'getAllPricesForLiquidation',
-                'getDebt',
-                'getDebtWithPrices',
-                'getPrices',
-                'getTotalAssetsValue',
-                'getThresholdWeightedValue',
-                'getStakedValue',
-                'getTotalValue',
-                'getFullLoanStatus',
-                'getHealthRatio'
-            ],
-            hardhatConfig)
-    } else {
-        await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
-                'canRepayDebtFully',
-                'isSolvent',
-                'isSolventWithPrices',
-                'getOwnedAssetsWithNativePrices',
-                'getTotalValueWithPrices',
-                'getHealthRatioWithPrices',
-                'getDebtAssets',
-                'getDebtAssetsPrices',
-                'getStakedPositionsPrices',
-                'getAllPricesForLiquidation',
-                'getDebt',
-                'getDebtWithPrices',
-                'getPrices',
-                'getTotalAssetsValue',
-                'getThresholdWeightedValue',
-                'getStakedValue',
-                'getTotalValue',
-                'getFullLoanStatus',
-                'getHealthRatio'
-            ],
-            hardhatConfig)
-    }
-
     if (mock) {
         await deployFacet("HealthMeterFacetMock", diamondAddress, ['getHealthMeter'], hardhatConfig);
     } else {
@@ -746,6 +698,54 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     }
 
     if (chain == 'AVAX') {
+        if (mock) {
+            await deployFacet("SolvencyFacetMockAvalanche", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        } else {
+            await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        }
+
         await deployFacet(
             "AssetsOperationsFacet",
             diamondAddress,
@@ -853,6 +853,53 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig)
     }
     if (chain == 'ARBITRUM') {
+        if (mock) {
+            await deployFacet("SolvencyFacetMockArbitrum", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        } else {
+            await deployFacet("SolvencyFacetProdArbitrum", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        }
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
         // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
@@ -896,6 +943,16 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'stakeGmxBeefy',
                 'unstakeSushiDpxEthLpBeefy',
                 'unstakeGmxBeefy'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "SushiSwapFacet",
+            diamondAddress,
+            [
+                'sushiStakeDpxEthLp',
+                'sushiUnstakeDpxEthLp',
+                'sushiDpxEthLpBalance',
             ],
             hardhatConfig
         )
