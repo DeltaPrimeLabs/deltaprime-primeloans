@@ -58,7 +58,6 @@ describe('Yield Yak test stake AVAX', () => {
         let diamondAddress = await deployDiamond();
 
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-        await smartLoansFactory.initialize(diamondAddress);
 
         let tokenManager = await deployContract(
             owner,
@@ -68,6 +67,8 @@ describe('Yield Yak test stake AVAX', () => {
 
         await tokenManager.connect(owner).initialize(supportedAssets, []);
         await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+        await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
         let addressProvider = await deployContract(
             owner,
@@ -186,7 +187,6 @@ describe('Yield Yak test stake sAVAX', () => {
         let diamondAddress = await deployDiamond();
 
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-        await smartLoansFactory.initialize(diamondAddress);
 
         let tokenManager = await deployContract(
             owner,
@@ -196,6 +196,8 @@ describe('Yield Yak test stake sAVAX', () => {
 
         await tokenManager.connect(owner).initialize(supportedAssets, []);
         await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+        await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
         let addressProvider = await deployContract(
             owner,

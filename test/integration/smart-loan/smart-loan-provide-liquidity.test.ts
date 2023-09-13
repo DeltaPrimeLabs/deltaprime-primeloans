@@ -67,7 +67,6 @@ describe('Smart loan', () => {
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             let lendingPools = [];
             // TODO: Possibly further extract the body of this for loop into a separate function shared among test suits
@@ -113,6 +112,8 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             yakStakingContract = await new ethers.Contract(yakStakingTokenAddress, erc20ABI, provider);
 

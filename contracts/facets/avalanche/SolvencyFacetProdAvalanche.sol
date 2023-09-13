@@ -547,8 +547,8 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
                     uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
-                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
+                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
 
                     total = total +
 
